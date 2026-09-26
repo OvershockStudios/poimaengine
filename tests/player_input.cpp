@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: Apache-2.0
+#include "poima/player.hpp"
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <stdexcept>
+using namespace poima;
+void check(bool value,const char* message) { if(!value) throw std::runtime_error(message); }
+int main() {
+    try {
+        PlayerInput input;
+        input.button(PlayerAction::forward,true); input.button(PlayerAction::right,true);
+        input.button(PlayerAction::jump,true); input.button(PlayerAction::jump,false);
+        input.look(2.5,-1.25); input.look(.5,.25);
+        auto first=input.consume("player");
+        check(first.entity=="player" && first.move==std::array<float,2>{1,1} && first.look==std::array<float,2>{3,-1} && first.jump,"Sub-tick input was lost.");
+        auto second=input.consume("player");
+        check(second.move==first.move && second.look==std::array<float,2>{0,0} && !second.jump,"Edges repeated across ticks.");
+        input.button(PlayerAction::jump,true); check(input.consume("player").jump,"Jump press lost.");
+        input.button(PlayerAction::jump,true); check(!input.consume("player").jump,"Key repeat retriggered jump.");
+        input.button(PlayerAction::backward,true); check(input.consume("player").move[1]==0,"Opposed movement did not cancel.");
+        input.look(200,0); check(input.consume("player").look[0]==180 && input.consume("player").look[0]==20,"Look overflow was lost.");
+        input.look(4,5); input.clear(); auto cleared=input.consume("player");
+        check(cleared.move==std::array<float,2>{0,0} && cleared.look==std::array<float,2>{0,0} && !cleared.jump,"Focus loss retained input.");
+        PlayerClock a,b;
+        unsigned fast=0,slow=0;
+        for(int i=0;i<144;++i) fast+=a.advance(1.0/144,true);
+        for(int i=0;i<30;++i) slow+=b.advance(1.0/30,true);
+        check(fast==60 && slow==60,"Fixed timestep depends on presentation rate.");
+        PlayerClock paused; check(paused.advance(.01,true)==0,"Fractional time advanced.");
+        check(paused.advance(100,false)==0 && paused.advance(.01,true)==0,"Pause caught up elapsed wall time.");
+        check(paused.advance(10,true)==8 && paused.dropped_seconds()>9.8,"Stall catch-up is unbounded.");
+        bool rejected=false; try { paused.advance(std::numeric_limits<double>::quiet_NaN(),true); } catch(const std::invalid_argument&) { rejected=true; }
+        check(rejected,"NaN frame duration accepted.");
+        std::cout<<"Input edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n";
+    } catch(const std::exception& e) { std::cerr<<e.what()<<'\n'; return 1; }
+}

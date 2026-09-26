@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
+#include "poima/player.hpp"
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
 #include "poima/smoke_vs.hpp"
@@ -49,8 +50,8 @@ nvrhi::ShaderHandle create_embedded_shader(nvrhi::IDevice* device, const nvrhi::
     return device->createShader(desc, words.data(), Size);
 }
 
-// One bounded experiment owns the complete graphics lifetime. It is not the
-// future player/render-graph implementation or a concurrent session API.
+// A capture or player session owns one graphics lifetime. No concurrent
+// renderer access is supported yet; Vulkan dispatch is process-global.
 struct DrawConstants {
     float mvp[16];
     float normal[3][4];
@@ -111,6 +112,7 @@ struct Context {
     std::vector<DrawConstants> draws;
     bool hardware = false;
     std::string gpu_name;
+    bool swapchain_dirty=false;
 
     ~Context() {
         if (device) {
@@ -143,7 +145,7 @@ struct Context {
         if (sdl_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
 
-    void initialize(const RenderOptions& options, const SceneSnapshot* source) {
+    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false) {
         scene = source;
         samples = scene ? options.samples : 1;
         SDL_SetMainReady();
@@ -151,7 +153,7 @@ struct Context {
         require(initialized_video, std::string("SDL video initialization: ") + SDL_GetError());
         sdl_initialized = true;
         window = SDL_CreateWindow(scene ? "Poima — authored scene preview" : "Poima — Vulkan/NVRHI foundation", static_cast<int>(options.width),
-            static_cast<int>(options.height), SDL_WINDOW_VULKAN);
+            static_cast<int>(options.height), SDL_WINDOW_VULKAN | (player ? SDL_WINDOW_RESIZABLE : 0));
         require(window != nullptr, std::string("SDL window: ") + SDL_GetError());
         const auto get = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
         require(get != nullptr, "SDL could not load the Vulkan entry point.");
@@ -248,7 +250,7 @@ struct Context {
         const auto requested_samples = samples == 4 ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1;
         require((limits.framebufferColorSampleCounts & requested_samples) && (limits.framebufferDepthSampleCounts & requested_samples),
             "Requested scene MSAA sample count is unavailable on the selected GPU.");
-        create_swapchain(options);
+        require(create_swapchain(options),"The initial window has an empty rendering extent.");
         const nvrhi::ShaderDesc vs_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const nvrhi::ShaderDesc ps_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
         vertex_shader = scene ? create_embedded_shader(checked, vs_desc, poima_scene_vs) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
@@ -293,6 +295,11 @@ struct Context {
         commands->open(); commands->writeBuffer(vertices, mesh.data(), mesh.size() * sizeof(Vertex)); commands->close();
         checked->executeCommandList(commands);
         require(checked->waitForIdle(), "Scene geometry upload failed.");
+        update_scene();
+    }
+
+    void update_scene() {
+        draws.clear();
         const auto vp = multiply(perspective(scene->vertical_fov, static_cast<double>(extent.width) / extent.height,
             scene->near_plane, scene->far_plane), inverse_affine(scene->camera_world));
         auto number = [](double value) {
@@ -312,8 +319,29 @@ struct Context {
         }
     }
 
-    void create_swapchain(const RenderOptions& options) {
+    bool rebuild(const RenderOptions& options) {
+        device.waitIdle();
+        commands=nullptr;
+        framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; staging=nullptr;
+        checked->runGarbageCollection();
+        for(auto semaphore:finished) device.destroySemaphore(semaphore);
+        finished.clear(); initialized.clear();
+        device.destroySemaphore(acquired); acquired=nullptr;
+        device.destroySwapchainKHR(swapchain); swapchain=nullptr;
+        const auto previous_format=format;
+        if(!create_swapchain(options)) { swapchain_dirty=true; return false; }
+        require(format==previous_format,"Surface format changed; restart this player session.");
+        commands=checked->createCommandList();
+        require(static_cast<bool>(commands),"Player command-list recreation failed.");
+        swapchain_dirty=false;
+        return true;
+    }
+
+    bool create_swapchain(const RenderOptions& options) {
         const auto caps = physical.getSurfaceCapabilitiesKHR(surface);
+        // Native minimize/restore can race SDL's queued size notification.
+        // Zero surface extent is a suspended window, not a device failure.
+        if(caps.currentExtent.width==0 || caps.currentExtent.height==0) return false;
         const auto formats = physical.getSurfaceFormatsKHR(surface);
         require(!formats.empty(), "No Vulkan surface formats are available.");
         vk::SurfaceFormatKHR selected;
@@ -407,6 +435,7 @@ struct Context {
             staging = checked->createStagingTexture(texture_desc, nvrhi::CpuAccessMode::Read);
             require(static_cast<bool>(staging), "NVRHI capture staging texture creation failed.");
         }
+        return true;
     }
 
     void capture(const std::string& path) {
@@ -423,9 +452,12 @@ struct Context {
         require(saved, detail);
     }
 
-    void frame(bool capture_frame) {
+    bool frame(bool capture_frame) {
+        if(!swapchain) { swapchain_dirty=true; return false; }
         // A finite acquire timeout bounds the experiment if presentation stalls.
-        const auto next = device.acquireNextImageKHR(swapchain, 5'000'000'000ULL, acquired, {});
+        vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
+        try { next=device.acquireNextImageKHR(swapchain, 5'000'000'000ULL, acquired, {}); }
+        catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
             "Swapchain acquisition failed or timed out.");
         const auto index = next.value;
@@ -464,14 +496,18 @@ struct Context {
         present_info.swapchainCount = 1;
         present_info.pSwapchains = &swapchain;
         present_info.pImageIndices = &index;
-        const auto presented = queue.presentKHR(present_info);
-        require(presented == vk::Result::eSuccess || presented == vk::Result::eSuboptimalKHR,
+        vk::Result presented;
+        try { presented=queue.presentKHR(present_info); }
+        catch(const vk::OutOfDateKHRError&) { presented=vk::Result::eErrorOutOfDateKHR; }
+        swapchain_dirty = next.result==vk::Result::eSuboptimalKHR || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR;
+        require(presented == vk::Result::eSuccess || presented == vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR,
             "Vulkan presentation failed.");
         initialized[index] = true;
         // Deliberately serialized for this correctness test, not a frame-time benchmark.
         require(checked->waitForIdle(), "NVRHI device wait failed.");
         checked->runGarbageCollection();
         require(messages.errors == 0, "NVRHI reported a validation/backend error; inspect stderr.");
+        return presented!=vk::Result::eErrorOutOfDateKHR;
     }
 };
 } // namespace
@@ -491,7 +527,7 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
                     throw std::runtime_error("The window was closed before the requested frame count completed.");
             }
             const bool capture_frame = !options.capture.empty() && frame + 1 == options.frames;
-            context.frame(capture_frame);
+            require(context.frame(capture_frame),"Surface changed during capture; retry the capture.");
             ++report.frames_presented;
             if (capture_frame) {
                 context.capture(options.capture);
@@ -510,4 +546,105 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
 }
 RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene) { return render(options, &scene); }
+
+PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
+    PlayerReport result;
+    auto& report=result.render;
+    result.initial_tick=runtime.inspect().tick;
+    Context context;
+    SceneSnapshot snapshot;
+    PlayerClock clock;
+    PlayerInput input;
+    try {
+        snapshot=runtime.snapshot(options.camera);
+        context.initialize(options.render,&snapshot,true);
+        SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — WASD / mouse / Space — Esc exits, Tab releases mouse, click resumes");
+        bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
+        bool captured=!options.replay && focused;
+        if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
+        bool quit=false;
+        std::size_t segment=0;
+        std::uint32_t offset=0;
+        auto previous=SDL_GetTicksNS();
+        while(!quit) {
+            SDL_Event event;
+            while(SDL_PollEvent(&event)) {
+                if(event.type==SDL_EVENT_QUIT || event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) { quit=true; result.stop_reason="window_closed"; }
+                if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_ESCAPE) { quit=true; result.stop_reason="escape"; }
+                if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
+                    focused=false; captured=false; input.clear();
+                    if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
+                }
+                if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
+                if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) context.swapchain_dirty=true;
+                if(options.replay) continue;
+                if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
+                    captured=false; input.clear(); SDL_SetWindowRelativeMouseMode(context.window,false);
+                }
+                if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured) {
+                    require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError()); captured=true; input.clear();
+                }
+                if(!focused || !captured) continue;
+                if(event.type==SDL_EVENT_MOUSE_MOTION) input.look(-event.motion.xrel*0.1,-event.motion.yrel*0.1);
+                if(event.type==SDL_EVENT_KEY_DOWN || event.type==SDL_EVENT_KEY_UP) {
+                    const bool down=event.type==SDL_EVENT_KEY_DOWN;
+                    switch(event.key.scancode) {
+                        case SDL_SCANCODE_W: input.button(PlayerAction::forward,down); break;
+                        case SDL_SCANCODE_S: input.button(PlayerAction::backward,down); break;
+                        case SDL_SCANCODE_A: input.button(PlayerAction::left,down); break;
+                        case SDL_SCANCODE_D: input.button(PlayerAction::right,down); break;
+                        case SDL_SCANCODE_SPACE: input.button(PlayerAction::jump,down); break;
+                        default: break;
+                    }
+                }
+            }
+            if(quit) break;
+            // Occluded FIFO swapchains can return immediately. Keep an idle
+            // editor/player from spinning at thousands of frames per second.
+            if(!options.replay && !(focused && captured)) SDL_Delay(16);
+            int width=0,height=0;
+            require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
+            const auto now=SDL_GetTicksNS();
+            const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
+            const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
+            if(!drawable) { clock.advance(0,false); SDL_Delay(10); continue; }
+            require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
+            if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
+                auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
+                if(!context.rebuild(resized)) { clock.advance(0,false); SDL_Delay(10); continue; }
+                ++result.swapchain_rebuilds;
+            }
+            if(options.replay) {
+                if(segment==options.sequence.size()) { result.stop_reason="replay_complete"; break; }
+                auto control=options.sequence[segment].input;
+                if(offset!=0) { control.look={0,0}; control.jump=false; }
+                runtime.step(1,{control});
+                if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
+            } else {
+                const auto ticks=clock.advance(elapsed,focused && captured);
+                for(std::uint32_t tick=0;tick<ticks;++tick) runtime.step(1,{input.consume(options.controller)});
+            }
+            snapshot=runtime.snapshot(options.camera); context.update_scene();
+            if(context.frame(false)) ++report.frames_presented;
+            if(options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
+        }
+        if(!options.render.capture.empty()) {
+            // Final artifact observes the exact final tick without simulating an
+            // extra tick. Rebuild once if the surface changed during shutdown.
+            snapshot=runtime.snapshot(options.camera); context.update_scene();
+            bool drawn=context.frame(true);
+            if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
+            require(drawn,"Surface kept changing during final player capture.");
+            ++report.frames_presented; context.capture(options.render.capture); report.capture_written=true;
+        }
+        report.success=true;
+        report.detail="Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.";
+    } catch(const std::exception& error) {
+        report.detail=error.what(); result.stop_reason="error";
+    }
+    result.final_tick=runtime.inspect().tick; result.dropped_seconds=clock.dropped_seconds();
+    report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;
+    report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;
+    return result;
+}
 } // namespace poima

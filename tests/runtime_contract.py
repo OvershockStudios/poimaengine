@@ -56,6 +56,20 @@ class RuntimeContract(unittest.TestCase):
         self.assertIn('result',response,response);return response['result']
     def error(self,response,code):self.assertEqual(response['error']['code'],code,response)
 
+    def test_player_validation_does_not_advance_runtime(self):
+        play={'session_id':uid(900),'request_id':uid(5000),'expected_tick':0,'controller':uid(100),'camera':uid(101),'mode':'replay','sequence':[{'ticks':1}]}
+        invalid=[({**play,'mode':'unknown'},-32602),({**play,'sequence':[]},-32602),
+            ({**play,'sequence':[{'ticks':0}]},-32602),({**play,'sequence':[{'ticks':601}]},-32602),
+            ({**play,'sequence':[{'ticks':600}]*61},-32602),({**play,'sequence':[{'ticks':1,'move':[2,0]}]},-32602),
+            ({**play,'sequence':[{'ticks':1,'look':[0,181]}]},-32602),({**play,'sequence':[{'ticks':1,'jump':1}]},-32602),
+            ({**play,'controller':uid(3)},-32004),({**play,'camera':uid(3)},-32602),
+            ({**play,'max_frames':10},-32602),({**play,'mode':'interactive'},-32602),
+            ({**play,'expected_tick':1},-32009),({**play,'path':self.native(self.path)+'.pending'},-32602)]
+        requests=[FIXTURE,start()]+[rpc('runtime.play',value) for value,_ in invalid]+[rpc('runtime.inspect',{'session_id':uid(900)})]
+        responses=self.run_requests(requests)
+        for response,(_,code) in zip(responses[2:-1],invalid):self.error(response,code)
+        self.assertEqual(self.result(responses[-1])['tick'],0)
+
     def test_collision_jump_retries_and_live_authoring_separation(self):
         forward=step(120,180,[input_value(move=(0,1))],request_id=uid(10000))
         requests=[FIXTURE,start(),step(0,120),inspect_entity(),inspect_entity(3),forward,forward,inspect_entity(tick=300),

@@ -2,6 +2,7 @@
 #include "poima/world.hpp"
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
+#include "poima/player.hpp"
 #include "poima/build_info.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
@@ -171,7 +172,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 3}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 4}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -214,6 +215,14 @@ Json describe() {
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
+    auto play=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"controller",id},{"camera",id},
+        {"mode",{{"enum",{"interactive","replay"}}}}, {"max_frames",{{"type","integer"},{"minimum",0},{"maximum",36000}}}},
+        {"session_id","request_id","expected_tick","controller","camera","mode"});
+    auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
+    play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
+    for(const auto* key:{"path","width","height","gpu","samples"}) play["properties"][key]=capture["properties"][key];
+    methods["runtime.play"]=play;
+    result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -388,6 +397,32 @@ public:
         if (method == "session.close") { fields(params, {}); return {{"closed", true}}; }
         throw Error(-32601, "Unknown world method.");
     }
+    RenderOptions render_options(const Json& params) const {
+        RenderOptions options;
+        options.frames=2;
+        if(params.contains("path")) {
+            require(params.at("path").is_string(), "Capture path must be a string.");
+            const auto text = params.at("path").get<std::string>();
+            require(!text.empty() && text.find('\0') == std::string::npos, "Invalid capture path.");
+            const auto output = fs::weakly_canonical(fs::absolute(fs::path(std::u8string(text.begin(), text.end()))));
+            require(!fs::exists(output) && fs::is_directory(output.parent_path()), "Capture requires a new path in an existing directory.");
+            for (const char* suffix : {"", ".lock", ".pending", ".previous", ".previous.pending"})
+                require(!same_path_name(output, fs::path(path_).concat(suffix)), "Capture path is reserved by the world service.");
+            const auto resolved_utf8 = output.u8string();
+            options.capture.assign(resolved_utf8.begin(), resolved_utf8.end());
+        }
+        auto integer = [&](const char* key, std::uint32_t fallback, std::uint32_t low, std::uint32_t high) {
+            if (!params.contains(key)) return fallback;
+            const auto v = revision(params.at(key));
+            require(v >= low && v <= high, std::string("Out-of-range capture option: ") + key);
+            return static_cast<std::uint32_t>(v);
+        };
+        options.width = integer("width", 960, 128, 4096); options.height = integer("height", 540, 128, 4096);
+        if (params.contains("gpu")) options.gpu = static_cast<int>(integer("gpu", 0, 0, 4095));
+        options.samples = integer("samples", 4, 1, 4);
+        require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
+        return options;
+    }
     Json capture(const Json& params, bool live=false) const {
         if(live) {
             fields(params, {"session_id","tick","camera","path","width","height","gpu","samples"}, {"session_id","tick","camera","path"});
@@ -403,27 +438,7 @@ public:
             require(found!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
         }
         if(!live) require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
-        require(params.at("path").is_string(), "Capture path must be a string.");
-        const auto text = params.at("path").get<std::string>();
-        require(!text.empty() && text.find('\0') == std::string::npos, "Invalid capture path.");
-        const auto output = fs::weakly_canonical(fs::absolute(fs::path(std::u8string(text.begin(), text.end()))));
-        require(!fs::exists(output) && fs::is_directory(output.parent_path()), "Capture requires a new path in an existing directory.");
-        for (const char* suffix : {"", ".lock", ".pending", ".previous", ".previous.pending"})
-            require(!same_path_name(output, fs::path(path_).concat(suffix)), "Capture path is reserved by the world service.");
-        RenderOptions options;
-        options.frames = 2;
-        const auto resolved_utf8 = output.u8string();
-        options.capture.assign(resolved_utf8.begin(), resolved_utf8.end());
-        auto integer = [&](const char* key, std::uint32_t fallback, std::uint32_t low, std::uint32_t high) {
-            if (!params.contains(key)) return fallback;
-            const auto v = revision(params.at(key));
-            require(v >= low && v <= high, std::string("Out-of-range capture option: ") + key);
-            return static_cast<std::uint32_t>(v);
-        };
-        options.width = integer("width", 960, 128, 4096); options.height = integer("height", 540, 128, 4096);
-        if (params.contains("gpu")) options.gpu = static_cast<int>(integer("gpu", 0, 0, 4095));
-        options.samples = integer("samples", 4, 1, 4);
-        require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
+        const auto options=render_options(params);
         SceneSnapshot snapshot;
         snapshot.world_id = doc_.at("world_id"); snapshot.revision = revision(doc_.at("revision")); snapshot.camera_id = camera_id;
         try {
@@ -480,8 +495,75 @@ public:
             {"tick",state.tick},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
+    RuntimeInput parse_input(const Json& i) const {
+        fields(i,{"entity","move","look","jump"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
+        for(const auto* key:{"move","look"}) if(i.contains(key)) {
+            const auto& array=i.at(key); require(array.is_array() && array.size()==2,"Runtime input vector needs two numbers.");
+            const double bound=std::string_view(key)=="move" ? 1 : 180;
+            for(const auto& v:array) require(v.is_number() && std::isfinite(v.get<double>()) && std::abs(v.get<double>())<=bound,"Runtime input number out of range.");
+            if(std::string_view(key)=="move") input.move=array.get<std::array<float,2>>(); else input.look=array.get<std::array<float,2>>();
+        }
+        if(i.contains("jump")) { require(i.at("jump").is_boolean(),"Jump must be boolean."); input.jump=i.at("jump"); }
+        return input;
+    }
+    Json play(const Json& params) {
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples"},
+            {"session_id","request_id","expected_tick","controller","camera","mode"});
+        runtime_guard(params); identifier(params.at("request_id"));
+        auto normalized=params; normalized["method"]="runtime.play";
+        for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
+            require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
+            auto result=receipt["result"]; result["replayed"]=true; return result;
+        }
+        const auto expected=revision(params.at("expected_tick"));
+        require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        PlayerOptions options;
+        options.controller=identifier(params.at("controller")); options.camera=identifier(params.at("camera"));
+        require(params.at("mode")=="interactive" || params.at("mode")=="replay","Player mode must be interactive or replay.");
+        options.replay=params.at("mode")=="replay";
+        const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+            [&](const auto& e){return e.id==options.controller && e.character.has_value();});
+        require(controller!=runtime_definition_.entities.end(),"Player requires a CharacterController entity.",-32004);
+        try { runtime_->snapshot(options.camera); }
+        catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        if(options.replay) {
+            require(!params.contains("max_frames"),"Replay ends with its sequence; max_frames is interactive only.");
+            require(params.contains("sequence") && params.at("sequence").is_array() && !params.at("sequence").empty() && params.at("sequence").size()<=256,
+                "Replay requires 1..256 input segments.");
+            std::uint64_t total=0;
+            for(auto segment:params.at("sequence")) {
+                fields(segment,{"ticks","move","look","jump"},{"ticks"});
+                const auto ticks=revision(segment.at("ticks")); require(ticks>=1 && ticks<=600,"Replay segment must be 1..600 ticks.");
+                total+=ticks; require(total<=36000 && expected+total<=max_revision,"Replay exceeds the tick limit.");
+                segment.erase("ticks"); segment["entity"]=options.controller;
+                options.sequence.push_back({static_cast<std::uint32_t>(ticks),parse_input(segment)});
+            }
+        } else {
+            require(!params.contains("sequence"),"Interactive play takes input from the window, not a replay sequence.");
+            if(params.contains("max_frames")) { const auto n=revision(params.at("max_frames")); require(n<=36000,"max_frames must be 0..36000."); options.max_frames=static_cast<std::uint32_t>(n); }
+        }
+        options.render=render_options(params);
+        // Reserve the retry slot before entering an operation that may advance
+        // state. A failed/closed player reports its actual tick and is cached too.
+        auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
+        receipts.push_back({{"params",normalized},{"result",Json::object()}});
+        const auto report=run_player(options,*runtime_);
+        require(report.render.available,report.render.detail,-32003);
+        const auto camera=runtime_->snapshot(options.camera);
+        Json result={{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"revision",runtime_definition_.authored_revision},
+            {"previous_tick",report.initial_tick},{"tick",report.final_tick},{"mode",params.at("mode")},{"replayed",false},
+            {"success",report.render.success},{"stop_reason",report.stop_reason},{"detail",report.render.detail},
+            {"frames_presented",report.render.frames_presented},{"swapchain_rebuilds",report.swapchain_rebuilds},
+            {"dropped_wall_seconds",report.dropped_seconds},{"gpu",report.render.gpu_name},{"hardware",report.render.hardware},
+            {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
+            {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
+            {"camera",options.camera},{"camera_world",camera.camera_world},{"build_version",POIMA_VERSION}};
+        receipts.back()["result"]=result; runtime_receipts_.swap(receipts);
+        return result;
+    }
     Json runtime_dispatch(const std::string& method,const Json& params) {
         if(method=="runtime.capture") return capture(params,true);
+        if(method=="runtime.play") return play(params);
         if(method=="runtime.start") {
             fields(params,{"session_id","revision"},{"session_id","revision"});
             const auto id=identifier(params.at("session_id")); revision(params.at("revision"));
@@ -520,7 +602,7 @@ public:
         if(method=="runtime.step") {
             fields(params,{"session_id","request_id","expected_tick","ticks","inputs"},{"session_id","request_id","expected_tick","ticks"});
             runtime_guard(params); identifier(params.at("request_id"));
-            auto normalized=params; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();
+            auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();
             for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
                 require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
                 auto result=receipt["result"]; result["replayed"]=true; return result;
@@ -530,14 +612,7 @@ public:
             const auto& raw=normalized.at("inputs"); require(raw.is_array() && raw.size()<=32,"Runtime inputs must be an array of at most 32 characters.");
             std::vector<RuntimeInput> inputs;
             for(const auto& i:raw) {
-                fields(i,{"entity","move","look","jump"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
-                for(const auto* key:{"move","look"}) if(i.contains(key)) {
-                    const auto& array=i.at(key); require(array.is_array() && array.size()==2,"Runtime input vector needs two numbers.");
-                    const double bound=std::string_view(key)=="move" ? 1 : 180;
-                    for(const auto& v:array) require(v.is_number() && std::isfinite(v.get<double>()) && std::abs(v.get<double>())<=bound,"Runtime input number out of range.");
-                    if(std::string_view(key)=="move") input.move=array.get<std::array<float,2>>(); else input.look=array.get<std::array<float,2>>();
-                }
-                if(i.contains("jump")) { require(i.at("jump").is_boolean(),"Jump must be boolean."); input.jump=i.at("jump"); }
+                auto input=parse_input(i);
                 inputs.push_back(std::move(input));
             }
             Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"tick",expected+ticks},{"stepped",ticks},{"replayed",false}};

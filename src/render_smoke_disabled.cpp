@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
+#include "poima/player.hpp"
 
 namespace poima {
 RenderReport run_render_smoke(const RenderOptions&) {
@@ -11,5 +12,12 @@ RenderReport run_render_smoke(const RenderOptions&) {
 }
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot&) {
     return run_render_smoke(options);
+}
+PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
+    PlayerReport report;
+    report.render=run_render_smoke(options.render);
+    report.initial_tick=report.final_tick=runtime.inspect().tick;
+    report.stop_reason="unavailable";
+    return report;
 }
 } // namespace poima
