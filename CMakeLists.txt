@@ -1,0 +1,102 @@
+cmake_minimum_required(VERSION 3.24)
+project(Poima VERSION 0.0.2 LANGUAGES CXX)
+
+option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
+option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
+option(POIMA_BUILD_RENDER_SMOKE "Build the SDL/NVRHI Vulkan rendering experiment" OFF)
+option(POIMA_BUILD_MODULE_LAB "Build the isolated native reload experiment" ON)
+if(POIMA_BUILD_RENDER_SMOKE AND NOT POIMA_ENABLE_VULKAN_PROBE)
+    message(FATAL_ERROR "Rendering requires POIMA_ENABLE_VULKAN_PROBE=ON.")
+endif()
+
+if(NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    message(FATAL_ERROR "The bootstrap currently targets Windows and Linux only.")
+endif()
+
+configure_file(cmake/build_info.hpp.in generated/poima/build_info.hpp @ONLY)
+add_library(poima_core STATIC src/core.cpp src/host.cpp)
+target_compile_features(poima_core PUBLIC cxx_std_20)
+set_target_properties(poima_core PROPERTIES CXX_EXTENSIONS OFF)
+target_include_directories(poima_core PUBLIC include PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+
+if(POIMA_ENABLE_VULKAN_PROBE)
+    include(FetchContent)
+    set(VULKAN_HEADERS_ENABLE_TESTS OFF CACHE BOOL "" FORCE)
+    set(VULKAN_HEADERS_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+    FetchContent_Declare(vulkan_headers
+        URL https://codeload.github.com/KhronosGroup/Vulkan-Headers/tar.gz/015e25c3c91b70eb1a754d36fb14c4ba6ad9b0b9
+        URL_HASH SHA256=666700236101d288dea8bb080c6f8039467cb1d29ea1e1aae6f93a819f4f9029
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+    FetchContent_MakeAvailable(vulkan_headers)
+    target_sources(poima_core PRIVATE src/vulkan_probe.cpp)
+    target_link_libraries(poima_core PRIVATE Vulkan::Headers ${CMAKE_DL_LIBS})
+else()
+    target_sources(poima_core PRIVATE src/vulkan_probe_disabled.cpp)
+endif()
+target_compile_definitions(poima_core PRIVATE POIMA_VULKAN_PROBE=$<BOOL:${POIMA_ENABLE_VULKAN_PROBE}>)
+target_compile_definitions(poima_core PRIVATE POIMA_RENDER_SMOKE=$<BOOL:${POIMA_BUILD_RENDER_SMOKE}>)
+
+if(POIMA_BUILD_RENDER_SMOKE)
+    include(cmake/render_smoke.cmake)
+else()
+    target_sources(poima_core PRIVATE src/render_smoke_disabled.cpp)
+endif()
+
+add_executable(poima src/main.cpp)
+target_link_libraries(poima PRIVATE poima_core)
+set_target_properties(poima PROPERTIES CXX_EXTENSIONS OFF)
+
+if(POIMA_BUILD_MODULE_LAB)
+    add_executable(poima-module-lab experiments/native_module/host.cpp)
+    target_compile_features(poima-module-lab PRIVATE cxx_std_20)
+    target_include_directories(poima-module-lab PRIVATE include)
+    target_link_libraries(poima-module-lab PRIVATE ${CMAKE_DL_LIBS})
+    if(WIN32)
+        target_link_libraries(poima-module-lab PRIVATE psapi)
+    endif()
+    if(MSVC)
+        target_compile_options(poima-module-lab PRIVATE /W4 /permissive- /utf-8)
+    else()
+        target_compile_options(poima-module-lab PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+    endif()
+endif()
+
+foreach(target poima_core poima)
+    if(MSVC)
+        target_compile_options(${target} PRIVATE /W4 /permissive- /utf-8)
+        target_compile_definitions(${target} PRIVATE WIN32_LEAN_AND_MEAN NOMINMAX)
+    else()
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+    endif()
+endforeach()
+
+if(POIMA_BUILD_TESTS)
+    enable_testing()
+    find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter)
+    add_test(NAME cli_contract
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_contract.py"
+        "$<TARGET_FILE:poima>" "$<BOOL:${POIMA_ENABLE_VULKAN_PROBE}>" "$<BOOL:${POIMA_BUILD_RENDER_SMOKE}>")
+    set_tests_properties(cli_contract PROPERTIES TIMEOUT 60)
+    if(POIMA_BUILD_MODULE_LAB AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
+        add_test(NAME native_module_contract
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/measure_native_module.py"
+            --host "$<TARGET_FILE:poima-module-lab>" --output "${CMAKE_CURRENT_BINARY_DIR}/module-contract"
+            --warm-edits 2)
+        set_tests_properties(native_module_contract PROPERTIES TIMEOUT 90)
+    endif()
+endif()
+
+install(TARGETS poima RUNTIME DESTINATION bin)
+install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION share/poima)
+if(MINGW AND DEFINED POIMA_LLVM_MINGW)
+    install(FILES "${POIMA_LLVM_MINGW}/LICENSE.TXT"
+        DESTINATION share/poima/licenses/LLVM-MinGW)
+    install(DIRECTORY "${POIMA_LLVM_MINGW}/x86_64-w64-mingw32/share/mingw32/"
+        DESTINATION share/poima/licenses/LLVM-MinGW FILES_MATCHING PATTERN "COPYING*")
+endif()
+if(POIMA_ENABLE_VULKAN_PROBE)
+    install(FILES "${vulkan_headers_SOURCE_DIR}/LICENSE.md"
+        DESTINATION share/poima/licenses/Vulkan-Headers)
+    install(DIRECTORY "${vulkan_headers_SOURCE_DIR}/LICENSES/"
+        DESTINATION share/poima/licenses/Vulkan-Headers)
+endif()

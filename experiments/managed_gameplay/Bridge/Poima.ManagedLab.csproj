@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <RollForward>LatestPatch</RollForward>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Contracts/Poima.Lab.Contracts.csproj" />
+  </ItemGroup>
+</Project>

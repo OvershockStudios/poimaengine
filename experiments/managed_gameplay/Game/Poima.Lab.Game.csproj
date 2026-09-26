@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../Contracts/Poima.Lab.Contracts.csproj" />
+  </ItemGroup>
+</Project>

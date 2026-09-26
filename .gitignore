@@ -1,0 +1,7 @@
+/build/
+/.cache/
+/CMakeUserPresets.json
+__pycache__/
+*.pyc
+/experiments/managed_gameplay/**/bin/
+/experiments/managed_gameplay/**/obj/

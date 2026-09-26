@@ -1,0 +1,72 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "Native bootstrap with Vulkan inspection",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
+      }
+    },
+    {
+      "name": "headless",
+      "displayName": "Dependency-free headless bootstrap",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/headless",
+      "cacheVariables": {
+        "POIMA_ENABLE_VULKAN_PROBE": "OFF"
+      }
+    },
+    {
+      "name": "windows-render",
+      "displayName": "WSL cross-build: native Windows Vulkan experiment",
+      "inherits": "dev",
+      "binaryDir": "${sourceDir}/build/windows-render",
+      "toolchainFile": "${sourceDir}/cmake/windows-llvm-mingw.cmake",
+      "cacheVariables": {
+        "POIMA_BUILD_RENDER_SMOKE": "ON",
+        "POIMA_BUILD_TESTS": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "jobs": 2
+    },
+    {
+      "name": "headless",
+      "configurePreset": "headless",
+      "jobs": 2
+    },
+    {
+      "name": "windows-render",
+      "configurePreset": "windows-render",
+      "jobs": 2
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "headless",
+      "configurePreset": "headless",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
