@@ -34,6 +34,24 @@
         "POIMA_BUILD_RENDER_SMOKE": "ON",
         "POIMA_BUILD_TESTS": "OFF"
       }
+    },
+    {
+      "name": "runtime-headless",
+      "displayName": "Headless Jolt/EnTT runtime",
+      "inherits": "headless",
+      "binaryDir": "${sourceDir}/build/runtime-headless",
+      "cacheVariables": {
+        "POIMA_ENABLE_SIMULATION": "ON"
+      }
+    },
+    {
+      "name": "windows-runtime",
+      "displayName": "Native Windows runtime and Vulkan preview",
+      "inherits": "windows-render",
+      "binaryDir": "${sourceDir}/build/windows-runtime",
+      "cacheVariables": {
+        "POIMA_ENABLE_SIMULATION": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -51,6 +69,16 @@
       "name": "windows-render",
       "configurePreset": "windows-render",
       "jobs": 2
+    },
+    {
+      "name": "runtime-headless",
+      "configurePreset": "runtime-headless",
+      "jobs": 2
+    },
+    {
+      "name": "windows-runtime",
+      "configurePreset": "windows-runtime",
+      "jobs": 2
     }
   ],
   "testPresets": [
@@ -64,6 +92,13 @@
     {
       "name": "headless",
       "configurePreset": "headless",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "runtime-headless",
+      "configurePreset": "runtime-headless",
       "output": {
         "outputOnFailure": true
       }

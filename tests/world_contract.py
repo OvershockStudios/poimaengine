@@ -174,6 +174,18 @@ class WorldContract(unittest.TestCase):
         client.txn(2, [{'op': 'entity.reparent', 'id': uid(3), 'parent': uid(1), 'mode': 'keep_local'}])
         client.rpc('world.capture', {**capture, 'revision': 3}, error=-32602)
 
+    def test_runtime_discovery_and_optional_build(self):
+        client = self.open()
+        description = client.rpc('world.describe')
+        for name in ['runtime.start', 'runtime.step', 'runtime.entity', 'runtime.capture', 'runtime.stop']:
+            self.assertIn(name, description['methods'])
+        for name in ['BoxCollider', 'CharacterController']:
+            self.assertIn(name, description['components'])
+        if not description['runtime_available']:
+            client.rpc('runtime.start', {'session_id': uid(900), 'revision': 0}, error=-32003)
+        self.assertEqual(client.rpc('world.inspect')['revision'], 0)
+        self.assertFalse(self.path.exists())
+
     def test_pagination_recursive_delete_and_identity_retirement(self):
         client = self.open()
         client.txn(0, [create(1)] + [create(n, uid(1)) for n in range(2, 67)])

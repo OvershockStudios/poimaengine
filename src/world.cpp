@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/world.hpp"
 #include "poima/scene.hpp"
+#include "poima/runtime.hpp"
 #include "poima/build_info.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
@@ -90,6 +91,24 @@ void validate_component(const std::string& type, const Json& value) {
         for (const auto& item : color) require(item.is_number() && std::isfinite(item.get<double>()) && item >= 0 && item <= 1, "Albedo must be in [0, 1].");
         return;
     }
+    if (type == "BoxCollider") {
+        fields(value, {"half_extents", "motion", "mass", "friction", "restitution"}, {"half_extents", "motion", "mass", "friction", "restitution"});
+        const auto& extent=value.at("half_extents");
+        require(extent.is_array() && extent.size()==3,"BoxCollider needs three half extents.");
+        for(const auto& v:extent) require(v.is_number() && std::isfinite(v.get<double>()) && v>=0.001 && v<=10000,"Collider half extents must be 0.001..10000 meters.");
+        require(value.at("motion")=="static" || value.at("motion")=="dynamic","Collider motion must be static or dynamic.");
+        for(const auto* key:{"mass","friction","restitution"}) require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid collider parameter.");
+        require(value.at("mass")>0 && value.at("mass")<=1e6 && value.at("friction")>=0 && value.at("friction")<=2 && value.at("restitution")>=0 && value.at("restitution")<=1,"Collider material/mass out of range.");
+        return;
+    }
+    if (type == "CharacterController") {
+        fields(value, {"radius","height","speed","jump_speed","camera"}, {"radius","height","speed","jump_speed","camera"});
+        identifier(value.at("camera"));
+        for(const auto* key:{"radius","height","speed","jump_speed"}) require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid controller parameter.");
+        require(value.at("radius")>=0.05 && value.at("radius")<=2 && value.at("height")>2*value.at("radius").get<double>() && value.at("height")<=4,"Invalid capsule dimensions.");
+        require(value.at("speed")>0 && value.at("speed")<=30 && value.at("jump_speed")>=0 && value.at("jump_speed")<=20,"Controller speed out of range.");
+        return;
+    }
     throw Error(-32602, "Unknown component type.");
 }
 std::map<std::string, Matrix4> world_matrices(const Json& entities) {
@@ -128,12 +147,18 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController"}}};
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
         {"visible", {{"type", "boolean"}}}}, {"primitive", "albedo", "visible"});
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}};
+    const Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
+        {"motion",{{"enum",{"static","dynamic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
+        {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}}}, {"half_extents","motion","mass","friction","restitution"});
+    const Json character = object_schema({{"radius",{{"type","number"},{"minimum",0.05},{"maximum",2}}},
+        {"height",{{"type","number"},{"maximum",4}}}, {"speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30}}},
+        {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",id}}, {"radius","height","speed","jump_speed","camera"});
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -145,8 +170,8 @@ Json describe() {
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer"}}}}}, {"type"});
-    return {{"protocol_version", 1}, {"schema_revision", 2}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController"}}}}}, {"type"});
+    Json result = {{"protocol_version", 1}, {"schema_revision", 3}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -173,7 +198,24 @@ Json describe() {
             "Camera requires 0.001 <= near < far <= 10000000 and an unscaled world transform.",
             "Box primitive is centered at the origin with unit side lengths; albedo is linear RGB.",
             "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",
-            "No simulation, custom components, undo, prefab or keep_world transform support yet."}}};
+            "No custom components, undo, prefab or keep_world transform support yet.",
+            "Simulation is optional; runtime.start freezes authored state at a revision.",
+            "Dynamic bodies/controllers must be roots; colliders reject shear; controller camera must be a direct child.",
+            "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
+    auto& methods=result["methods"];
+    methods["runtime.start"]=object_schema({{"session_id",id},{"revision",rev}},{"session_id","revision"});
+    for(const auto* method:{"runtime.inspect","runtime.stop"}) methods[method]=object_schema({{"session_id",id}},{"session_id"});
+    methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
+    auto input=object_schema({{"entity",id},{"move",vector({{"type","number"},{"minimum",-1},{"maximum",1}},2)},
+        {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}}}, {"entity"});
+    methods["runtime.step"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
+        {"ticks",{{"type","integer"},{"minimum",1},{"maximum",600}}},
+        {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}}}, {"session_id","request_id","expected_tick","ticks"});
+    auto capture=methods["world.capture"];
+    capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;
+    capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
+    result["runtime_available"]=Runtime::available();
+    return result;
 }
 Json parse(const std::string& text) {
     std::vector<std::set<std::string>> keys;
@@ -215,7 +257,7 @@ void validate(const Json& doc) {
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer"}, {"Transform"});
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController"}, {"Transform"});
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
     std::map<std::string, int> colors;
@@ -253,6 +295,12 @@ class World {
     Json doc_;
     std::string disk_;
     bool exists_ = false;
+    std::unique_ptr<Runtime> runtime_;
+    RuntimeDefinition runtime_definition_;
+    std::string runtime_id_, stopped_runtime_id_;
+    std::set<std::string> used_runtime_ids_;
+    Json runtime_start_params_, runtime_start_result_;
+    Json runtime_receipts_=Json::array();
     void current_revision(const Json& params) const {
         if (params.contains("revision")) require(revision(params.at("revision")) == revision(doc_.at("revision")),
             "Revision conflict; inspect the current world and retry.", -32009);
@@ -310,7 +358,7 @@ public:
         }
         if (method == "entity.query") {
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
-            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer", "Unknown component type.");
+            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -335,15 +383,26 @@ public:
             } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
         }
         if (method == "world.capture") return capture(params);
+        if (method.starts_with("runtime.")) return runtime_dispatch(method,params);
         if (method == "world.transact") return transact(params);
         if (method == "session.close") { fields(params, {}); return {{"closed", true}}; }
         throw Error(-32601, "Unknown world method.");
     }
-    Json capture(const Json& params) const {
-        fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples"}, {"revision", "camera", "path"});
-        current_revision(params);
+    Json capture(const Json& params, bool live=false) const {
+        if(live) {
+            fields(params, {"session_id","tick","camera","path","width","height","gpu","samples"}, {"session_id","tick","camera","path"});
+            runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        } else {
+            fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples"}, {"revision", "camera", "path"});
+            current_revision(params);
+        }
         const auto camera_id = identifier(params.at("camera"));
-        require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
+        if(live) {
+            const auto found=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+                [&](const auto& e){return e.id==camera_id && e.camera.has_value();});
+            require(found!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
+        }
+        if(!live) require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
         require(params.at("path").is_string(), "Capture path must be a string.");
         const auto text = params.at("path").get<std::string>();
         require(!text.empty() && text.find('\0') == std::string::npos, "Invalid capture path.");
@@ -367,9 +426,11 @@ public:
         require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
         SceneSnapshot snapshot;
         snapshot.world_id = doc_.at("world_id"); snapshot.revision = revision(doc_.at("revision")); snapshot.camera_id = camera_id;
-        const auto& lens = doc_.at("entities").at(camera_id).at("components").at("Camera");
-        snapshot.vertical_fov = lens.at("vertical_fov"); snapshot.near_plane = lens.at("near"); snapshot.far_plane = lens.at("far");
         try {
+            if(live) snapshot=runtime_->snapshot(camera_id);
+            else {
+            const auto& lens = doc_.at("entities").at(camera_id).at("components").at("Camera");
+            snapshot.vertical_fov = lens.at("vertical_fov"); snapshot.near_plane = lens.at("near"); snapshot.far_plane = lens.at("far");
             const auto matrices = world_matrices(doc_.at("entities"));
             snapshot.camera_world = matrices.at(camera_id);
             require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
@@ -379,17 +440,114 @@ public:
                 if (!mesh.at("visible").get<bool>()) continue;
                 snapshot.objects.push_back({id, matrices.at(id), mesh.at("albedo").get<std::array<float,3>>()});
             }
+            }
         } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
+        const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
         const auto report = run_render_scene(options, snapshot);
         require(report.available, report.detail, -32003);
         require(report.success, report.detail, -32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
-            {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},
+            {"source",live ? "runtime" : "authored"}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
+            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},
             {"renderer", "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows"}};
+    }
+    void runtime_guard(const Json& params) const {
+        const auto id=identifier(params.at("session_id"));
+        require(runtime_ && id==runtime_id_,"Runtime session is absent or does not match.",-32030);
+    }
+    RuntimeDefinition runtime_definition() const {
+        RuntimeDefinition result; result.world_id=doc_.at("world_id"); result.authored_revision=revision(doc_.at("revision"));
+        for(const auto& [id,e]:doc_.at("entities").items()) {
+            RuntimeEntityDefinition value; value.id=id; if(!e.at("parent").is_null()) value.parent=e.at("parent");
+            const auto& components=e.at("components"); const auto& t=components.at("Transform");
+            value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
+            if(components.contains("Camera")) { const auto& c=components.at("Camera"); value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")}; }
+            if(components.contains("MeshRenderer")) { const auto& c=components.at("MeshRenderer"); value.mesh=RuntimeMesh{c.at("albedo").get<std::array<float,3>>(),c.at("visible")}; }
+            if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic",c.at("mass"),c.at("friction"),c.at("restitution")}; }
+            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
+            result.entities.push_back(std::move(value));
+        }
+        return result;
+    }
+    Json runtime_summary() const {
+        const auto state=runtime_->inspect();
+        return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
+            {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_definition_.authored_revision!=revision(doc_.at("revision"))},
+            {"tick",state.tick},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
+            {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
+    }
+    Json runtime_dispatch(const std::string& method,const Json& params) {
+        if(method=="runtime.capture") return capture(params,true);
+        if(method=="runtime.start") {
+            fields(params,{"session_id","revision"},{"session_id","revision"});
+            const auto id=identifier(params.at("session_id")); revision(params.at("revision"));
+            require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
+            if(runtime_) {
+                require(runtime_id_==id && params==runtime_start_params_,"Stop the current runtime before starting another session.",-32031);
+                auto result=runtime_start_result_; result["replayed"]=true; return result;
+            }
+            require(!used_runtime_ids_.contains(id),"Runtime session ID was already used; supply a fresh ID.",-32010);
+            require(used_runtime_ids_.size()<10000,"Runtime session count limit reached; reopen the authoring process.");
+            current_revision(params); auto definition=runtime_definition();
+            std::unique_ptr<Runtime> candidate;
+            try { candidate=std::make_unique<Runtime>(definition); }
+            catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+            Json result={{"session_id",id},{"authored_revision",definition.authored_revision},{"tick",0},{"started",true},{"replayed",false}};
+            runtime_start_params_=params; runtime_start_result_=result; runtime_id_=id;
+            used_runtime_ids_.insert(id); runtime_receipts_=Json::array(); runtime_definition_=std::move(definition); runtime_=std::move(candidate);
+            return result;
+        }
+        if(method=="runtime.stop") {
+            fields(params,{"session_id"},{"session_id"}); const auto id=identifier(params.at("session_id"));
+            if(!runtime_ && stopped_runtime_id_==id) return {{"session_id",id},{"stopped",true},{"replayed",true}};
+            runtime_guard(params); stopped_runtime_id_=id; runtime_.reset(); runtime_receipts_.clear();
+            return {{"session_id",id},{"stopped",true},{"replayed",false}};
+        }
+        if(method=="runtime.inspect") { fields(params,{"session_id"},{"session_id"}); runtime_guard(params); return runtime_summary(); }
+        if(method=="runtime.entity") {
+            fields(params,{"session_id","id","tick"},{"session_id","id"}); runtime_guard(params);
+            if(params.contains("tick")) require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            RuntimeEntityState e;
+            try { e=runtime_->entity(identifier(params.at("id"))); }
+            catch(const std::runtime_error& error) { throw Error(-32004,error.what()); }
+            return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"id",e.id},{"world_matrix",e.world},{"layout","column_major"},
+                {"velocity",e.velocity},{"has_body",e.has_body},{"is_character",e.is_character},{"ground",e.ground},{"yaw",e.yaw},{"pitch",e.pitch}};
+        }
+        if(method=="runtime.step") {
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs"},{"session_id","request_id","expected_tick","ticks"});
+            runtime_guard(params); identifier(params.at("request_id"));
+            auto normalized=params; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();
+            for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
+                require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
+                auto result=receipt["result"]; result["replayed"]=true; return result;
+            }
+            const auto expected=revision(params.at("expected_tick")); require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto ticks=revision(params.at("ticks")); require(ticks>=1 && ticks<=600 && expected+ticks<=max_revision,"Runtime step must contain 1..600 ticks within the tick range.");
+            const auto& raw=normalized.at("inputs"); require(raw.is_array() && raw.size()<=32,"Runtime inputs must be an array of at most 32 characters.");
+            std::vector<RuntimeInput> inputs;
+            for(const auto& i:raw) {
+                fields(i,{"entity","move","look","jump"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
+                for(const auto* key:{"move","look"}) if(i.contains(key)) {
+                    const auto& array=i.at(key); require(array.is_array() && array.size()==2,"Runtime input vector needs two numbers.");
+                    const double bound=std::string_view(key)=="move" ? 1 : 180;
+                    for(const auto& v:array) require(v.is_number() && std::isfinite(v.get<double>()) && std::abs(v.get<double>())<=bound,"Runtime input number out of range.");
+                    if(std::string_view(key)=="move") input.move=array.get<std::array<float,2>>(); else input.look=array.get<std::array<float,2>>();
+                }
+                if(i.contains("jump")) { require(i.at("jump").is_boolean(),"Jump must be boolean."); input.jump=i.at("jump"); }
+                inputs.push_back(std::move(input));
+            }
+            Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"tick",expected+ticks},{"stepped",ticks},{"replayed",false}};
+            auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
+            receipts.push_back({{"params",normalized},{"result",result}});
+            try { runtime_->step(static_cast<std::uint32_t>(ticks),inputs); }
+            catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
+            runtime_receipts_.swap(receipts); return result;
+        }
+        throw Error(-32601,"Unknown runtime method.");
     }
     Json transact(Json params) {
         fields(params, {"request_id", "base_revision", "ops", "preview"}, {"request_id", "base_revision", "ops"});
@@ -433,7 +591,7 @@ public:
                 entity(staged, id)["components"][type] = op.at("value");
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer", "Only optional built-in components can be removed.");
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController", "Only optional built-in components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

@@ -2,9 +2,10 @@
 
 A planned native 3D engine for the user's own games, with agent-native authoring, next-generation graphics, a headless API, CLI, optional editor and Vulkan graphics on PC. Permissive open source is a community benefit.
 
-**Status:** M0 foundation work continues, with the first M1 authored-world service now implemented. The native CLI passes tests on Linux/WSL and Windows. An optional Vulkan/NVRHI experiment presents and captures a triangle on the laptop's NVIDIA and AMD GPUs. The persistent headless world service supports hierarchy, transform, camera and box-renderer transactions, with a Vulkan scene-capture path. Advanced graphics and gameplay remain planned; this is not yet a playable engine.
+**Status:** M0 foundation work continues, with the first M1 authored-world service now implemented. The native CLI passes tests on Linux/WSL and Windows. An optional Vulkan/NVRHI experiment presents and captures a triangle on the laptop's NVIDIA and AMD GPUs. The persistent headless world service supports hierarchy, transform, camera and box-renderer transactions, with a Vulkan scene-capture path. An optional EnTT/Jolt runtime now supports fixed-step collision, capsule control and live captures. Advanced graphics, C# gameplay integration and a continuous player remain unfinished.
 
 - [Build and run the bootstrap](docs/BUILD.md)
+- [Run physics and inspect live state](docs/RUNTIME.md)
 - [Author and capture a 3D scene](docs/SCENE_CAPTURE.md)
 - [Persistent world service and protocol](docs/WORLD_SERVICE.md)
 - [Implementation status and evidence](docs/IMPLEMENTATION_STATUS.md)

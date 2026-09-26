@@ -36,6 +36,22 @@ Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 - License: zlib; original `LICENSE.txt` is installed. Individual upstream source files retain their notices.
 - Statically linked window/events, Vulkan surface creation and BMP output. SDL's own renderer/GPU/audio APIs are disabled in this experiment.
 
+## Jolt Physics (optional runtime)
+
+- Publisher: Jorrit Rouwe and contributors; [source](https://github.com/jrouwe/JoltPhysics/tree/v5.4.0).
+- Release: `5.4.0`; pinned commit `036ea7b1d717b3e713ac9d8cbd47118fb9cd5d60`.
+- Archive SHA-256: `4427d6ce190e049b186bb88dbfb8692c2373a7fc042c984b5f15396194aac958`.
+- License: MIT; original `LICENSE` is installed. Upstream sample applications/assets are not shipped.
+- Use: native collision, rigid bodies, capsules and internal state checkpoints. Double positions, deterministic build option, SSE2 baseline, static library, no LTO/debug renderer/object-stream serialization. The build supplies the standard `<type_traits>` header for LLVM-MinGW compatibility without changing upstream source.
+
+## EnTT (optional runtime)
+
+- Publisher: Michele Caini and contributors; [source](https://github.com/skypjack/entt/tree/v3.16.0).
+- Release: `3.16.0`; pinned commit `b4e58bdd364ad72246c123a0c28538eab3252672`.
+- Archive SHA-256: `3e996cf255b09527faf995c7c36e3daf92cefa0fb37540a4b9c359af557e19cd`.
+- License: MIT; original `LICENSE` is installed.
+- Use: private native runtime entity/component storage. Engine identity, schema, scheduling, transactions and presentation snapshots remain Poima responsibilities.
+
 ## Workspace build tools
 
 The optional `experiments/managed_gameplay` launcher also includes `hostfxr.h` and `coreclr_delegates.h` from a caller-supplied .NET SDK. Those files carry the .NET Foundation MIT notice; the tested headers come from the Windows host pack 10.0.8. The lab loads an existing CoreCLR runtime and does not redistribute a .NET SDK/runtime or install this launcher in the engine package. Runtime packaging will require pinning its distribution and preserving its full license/dependency notices. The initial measured SDK/runtime are 10.0.204/10.0.11; this is recorded development evidence, not a shipping dependency approval.
