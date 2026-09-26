@@ -129,29 +129,57 @@ void validate_animation_data(const ModelAsset& model) {
         check(std::isfinite(clip.duration) && clip.duration==duration,"Animation duration disagrees with its keys.");
     }
 }
-ModelPose sample_model(const ModelAsset& model,std::optional<std::uint32_t> clip,double time,bool loop) {
-    check(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be finite within 0..1e9 seconds.");validate_animation_data(model);ModelPose result;result.time=time;result.local.reserve(model.nodes.size());result.world.resize(model.nodes.size());
-    for(const auto& node:model.nodes)result.local.push_back({node.position,node.scale,node.rotation});
+struct CompiledAnimation::Data {
+    std::vector<NodePose> rest;
+    std::vector<int> parents;
+    std::vector<std::size_t> traversal;
+    std::vector<AnimationClip> clips;
+};
+CompiledAnimation::CompiledAnimation(const ModelAsset& model) {
+    validate_animation_data(model);
+    auto data=std::make_shared<Data>();const auto count=model.nodes.size();
+    data->rest.reserve(count);data->parents.reserve(count);data->traversal.reserve(count);
+    std::vector<std::vector<std::size_t>> children(count);std::vector<std::size_t> pending;
+    for(std::size_t i=0;i<count;++i) {
+        const auto& node=model.nodes[i];data->rest.push_back({node.position,node.scale,node.rotation});data->parents.push_back(node.parent);
+        if(node.parent<0)pending.push_back(i);else children[std::size_t(node.parent)].push_back(i);
+    }
+    while(!pending.empty()) {
+        const auto index=pending.back();pending.pop_back();data->traversal.push_back(index);
+        for(auto child:children[index])pending.push_back(child);
+    }
+    check(data->traversal.size()==count,"Animation hierarchy contains a cycle.");
+    // AnimationClip/Channel own their names, times and values by value. Do not
+    // retain the ModelAsset or shared geometry/material handles in this cache.
+    data->clips=model.animations;data_=std::move(data);
+}
+ModelPose CompiledAnimation::sample(std::optional<std::uint32_t> clip,double time,bool loop,std::span<const NodePose> baseline) const {
+    check(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be finite within 0..1e9 seconds.");
+    check(bool(data_),"Compiled animation has no data.");const auto& data=*data_;
+    check(baseline.empty() || baseline.size()==data.rest.size(),"Animation baseline must contain one local pose per model node.");
+    for(const auto& node:baseline) {
+        for(double x:node.position)check(std::isfinite(x) && std::abs(x)<=1e9,"Invalid animation baseline translation.");
+        for(double x:node.scale)check(std::isfinite(x) && x>0 && x<=1e9,"Invalid animation baseline scale.");
+        double norm=0;for(double x:node.rotation)norm+=x*x;
+        check(std::isfinite(norm) && std::abs(norm-1)<1e-6,"Invalid animation baseline quaternion.");
+    }
+    ModelPose result;result.time=time;result.world.resize(data.rest.size());
+    if(baseline.empty())result.local=data.rest;else result.local.assign(baseline.begin(),baseline.end());
     if(clip) {
-        check(*clip<model.animations.size(),"Animation clip index is invalid.");const auto& animation=model.animations[*clip];result.time=loop && animation.duration>0 ? std::fmod(time,animation.duration) : std::min(time,animation.duration);
+        check(*clip<data.clips.size(),"Animation clip index is invalid.");const auto& animation=data.clips[*clip];result.time=loop && animation.duration>0 ? std::fmod(time,animation.duration) : std::min(time,animation.duration);
         for(const auto& c:animation.channels) { const auto v=evaluate(c,result.time);auto& node=result.local[c.node];if(c.path==AnimationPath::rotation) { node.rotation=v;normalize(node.rotation); }else std::copy_n(v.begin(),3,c.path==AnimationPath::translation ? node.position.begin() : node.scale.begin()); }
     }
-    std::vector<unsigned char> marks(model.nodes.size());
-    for(std::size_t i=0;i<model.nodes.size();++i) {
-        if(marks[i]==2)continue;
-        std::vector<std::size_t> chain;int current=static_cast<int>(i);
-        while(current>=0 && marks[std::size_t(current)]!=2) {
-            const auto index=static_cast<std::size_t>(current);check(marks[index]==0,"Animation hierarchy contains a cycle.");marks[index]=1;chain.push_back(index);current=model.nodes[index].parent;
-            check(current>=-1 && (current<0 || std::size_t(current)<model.nodes.size()),"Animation parent index is invalid.");
-        }
-        for(auto it=chain.rbegin();it!=chain.rend();++it) {
-            const auto& node=result.local[*it];for(double x:node.scale)check(std::isfinite(x) && x>0 && x<=1e9,"Animation scale evaluates outside the positive scale range.");for(double x:node.position)check(std::isfinite(x) && std::abs(x)<=1e9,"Animation position evaluates outside the supported range.");
-            auto matrix=local_matrix(node.position,node.rotation,node.scale);const auto parent=model.nodes[*it].parent;if(parent>=0)matrix=multiply(result.world[std::size_t(parent)],matrix);
-            for(double x:matrix)check(std::isfinite(x) && std::abs(x)<=1e12,"Evaluated hierarchy matrix exceeds the supported range.");
-            result.world[*it]=matrix;marks[*it]=2;
-        }
+    for(auto index:data.traversal) {
+        const auto& node=result.local[index];for(double x:node.scale)check(std::isfinite(x) && x>0 && x<=1e9,"Animation scale evaluates outside the positive scale range.");for(double x:node.position)check(std::isfinite(x) && std::abs(x)<=1e9,"Animation position evaluates outside the supported range.");
+        auto matrix=local_matrix(node.position,node.rotation,node.scale);const auto parent=data.parents[index];if(parent>=0)matrix=multiply(result.world[std::size_t(parent)],matrix);
+        for(double x:matrix)check(std::isfinite(x) && std::abs(x)<=1e12,"Evaluated hierarchy matrix exceeds the supported range.");
+        result.world[index]=matrix;
     }
     return result;
+}
+ModelPose sample_model(const ModelAsset& model,std::optional<std::uint32_t> clip,double time,bool loop) {
+    check(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be finite within 0..1e9 seconds.");
+    return CompiledAnimation(model).sample(clip,time,loop);
 }
 std::vector<Matrix4> skin_palette(const ModelAsset& model,const ModelPose& pose,std::uint32_t node) {
     check(node<model.nodes.size() && pose.world.size()==model.nodes.size(),"Skin pose/node does not match the model.");const auto skin_index=model.nodes[node].skin;check(skin_index>=0 && std::size_t(skin_index)<model.skins.size(),"Selected node has no skin.");const auto& skin=model.skins[std::size_t(skin_index)];const auto inverse=inverse_affine(pose.world[node]);std::vector<Matrix4> result;result.reserve(skin.joints.size());

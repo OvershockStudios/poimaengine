@@ -42,6 +42,87 @@ void curves() {
     near(sample_model(m,0,1,false).local[1].rotation[2],std::sqrt(.5));
     c.values[4]={0,0,0,-1};rejects([&] { sample_model(m,0,1,false); }); // Cubic must not flip quaternion signs.
 }
+void same_pose(const ModelPose& a,const ModelPose& b) {
+    check(a.time==b.time && a.local.size()==b.local.size() && a.world==b.world,"Compiled/reference pose differs.");
+    for(std::size_t i=0;i<a.local.size();++i)
+        check(a.local[i].position==b.local[i].position && a.local[i].scale==b.local[i].scale &&
+            a.local[i].rotation==b.local[i].rotation,"Compiled/reference local pose differs.");
+}
+void compiled_sampling() {
+    auto source=model();source.animations.push_back({"linear",2,{translation()}});
+    source.animations.push_back({"step",2,{{1,AnimationPath::rotation,AnimationInterpolation::step,{0,2},{{0,0,0,1},{0,0,1,0}}}}});
+    source.animations.push_back({"cubic",2,{{1,AnimationPath::translation,AnimationInterpolation::cubic,{0,2},
+        {{0,0,0,0},{0,2,0,0},{2,0,0,0},{0,0,0,0},{4,2,0,0},{0,0,0,0}}}}});
+    const CompiledAnimation compiled(source);
+    for(auto clip:std::vector<std::optional<std::uint32_t>>{std::nullopt,0,1,2})
+        for(double time:{0.,.1,1.,1.99,2.,3.,1000000000.})for(bool loop:{false,true})
+            same_pose(compiled.sample(clip,time,loop),sample_model(source,clip,time,loop));
+    // Independent analytic checkpoints still qualify the cached path, rather
+    // than relying only on parity with the convenience wrapper that uses it.
+    near(compiled.sample(0,1,false).local[1].position[0],2);
+    near(compiled.sample(2,1,false).local[1].position[0],2.5);
+    near(compiled.sample(1,1.99,false).local[1].rotation[3],1);
+    near(compiled.sample(1,2,false).local[1].rotation[2],1);
+    near(compiled.sample(0,2,true).time,0);
+    near(compiled.sample(0,3,false).time,2);
+    near(compiled.sample(std::nullopt,1000000000.,true).time,1000000000.);
+
+    const auto expected=compiled.sample(0,1,false);
+    std::weak_ptr<const MeshAsset> geometry=source.primitives[0];
+    source.nodes[1].position={999,999,999};source.nodes[1].parent=1;
+    source.animations[0].channels[0].values[1][0]=-999;
+    source.animations[0].channels[0].times.clear();source.animations[0].duration=999;
+    source=ModelAsset{};
+    check(geometry.expired(),"Compiled curves unnecessarily retained shared model geometry.");
+    same_pose(compiled.sample(0,1,false),expected);
+    auto modified=compiled.sample(0,1,false);modified.local[1].position[0]=99;modified.world[1][12]=99;
+    same_pose(compiled.sample(0,1,false),expected);
+    const auto copy=compiled;same_pose(copy.sample(0,1,false),expected);
+
+    auto baseline=compiled.sample(std::nullopt,0,false).local;
+    baseline[0].position={17,0,0};baseline[2].position={10,20,30};baseline[2].scale={2,3,4};
+    baseline[1].position={100,200,300};baseline[1].scale={2,3,4};
+    baseline[1].rotation={0,0,std::sqrt(.5),std::sqrt(.5)};
+    const auto baseline_copy=baseline;
+    const auto custom=compiled.sample(0,1,false,baseline);
+    near(custom.local[1].position[0],2);near(custom.local[1].position[1],2);near(custom.local[1].position[2],0);
+    check(custom.local[1].scale==baseline[1].scale && custom.local[1].rotation==baseline[1].rotation,
+        "Animated translation overwrote unanimated authored channels.");
+    near(custom.world[1][12],14);near(custom.world[1][13],26);near(custom.world[1][14],30);near(custom.world[0][12],17);
+    const auto rest=compiled.sample(std::nullopt,0,false,baseline);
+    near(rest.world[1][12],210);near(rest.world[1][13],620);near(rest.world[1][14],1230);
+    for(std::size_t i=0;i<baseline.size();++i)
+        check(baseline[i].position==baseline_copy[i].position && baseline[i].scale==baseline_copy[i].scale &&
+            baseline[i].rotation==baseline_copy[i].rotation,"Sampling mutated caller baseline storage.");
+    baseline[2].position[0]=20;near(compiled.sample(0,1,false,baseline).world[1][12],24);
+    same_pose(compiled.sample(0,1,false),expected);
+
+    rejects([&] { compiled.sample(99,0,false); });
+    for(double time:{-1.,1000000001.,std::numeric_limits<double>::infinity(),std::nan("")})
+        rejects([&] { compiled.sample(0,time,false); });
+    rejects([&] { compiled.sample(0,0,false,std::span<const NodePose>(baseline.data(),2)); });
+    auto reject_baseline=[&](auto change) { auto invalid=baseline;change(invalid);rejects([&] { compiled.sample(0,1,false,invalid); }); };
+    // Invalid authored fields reject even when the animation would override them.
+    reject_baseline([](auto& nodes) { nodes[1].position[0]=std::nan(""); });
+    reject_baseline([](auto& nodes) { nodes[1].position[0]=1000000001.; });
+    reject_baseline([](auto& nodes) { nodes[1].scale[1]=0; });
+    reject_baseline([](auto& nodes) { nodes[0].scale[0]=std::numeric_limits<double>::infinity(); });
+    reject_baseline([](auto& nodes) { nodes[1].rotation={0,0,0,2}; });
+    reject_baseline([](auto& nodes) { nodes[0].rotation={0,0,0,std::nan("")}; });
+    reject_baseline([](auto& nodes) { nodes[2].scale={1e9,1e9,1e9};nodes[1].scale={1e9,1e9,1e9}; });
+    same_pose(compiled.sample(0,1,false),expected); // Failure leaves the compiled snapshot reusable.
+
+    auto one=model();one.animations.push_back({"constant",0,{{1,AnimationPath::translation,AnimationInterpolation::linear,{0},{{3,2,0,0}}}}});
+    CompiledAnimation constant(one);near(constant.sample(0,1000,true).local[1].position[0],3);near(constant.sample(0,1000,true).time,0);
+    auto overshoot=model();overshoot.animations.push_back({"invalid-between-keys",1,{{1,AnimationPath::scale,AnimationInterpolation::cubic,{0,1},
+        {{0,0,0,0},{1,1,1,0},{-8,0,0,0},{8,0,0,0},{1,1,1,0},{0,0,0,0}}}}});
+    const CompiledAnimation between(overshoot);rejects([&] { between.sample(0,.5,false); });
+    near(between.sample(0,0,false).local[1].scale[0],1);near(between.sample(0,1,false).local[1].scale[0],1);
+
+    ModelAsset deep;deep.nodes.resize(10000);deep.roots={9999};
+    for(std::size_t i=0;i<deep.nodes.size();++i) { deep.nodes[i].parent=i+1<deep.nodes.size() ? int(i+1) : -1;deep.nodes[i].position={.001,0,0}; }
+    const CompiledAnimation hierarchy(deep);near(hierarchy.sample(std::nullopt,0,false).world[0][12],10,1e-9);
+}
 void skinning() {
     auto m=model();m.animations.push_back({"move",2,{translation()}});auto pose=sample_model(m,0,1,false);
     auto palette=skin_palette(m,pose,0);auto deformed=deform_mesh(*m.primitives[0],palette);
@@ -69,7 +150,7 @@ void packages() {
 }
 void invalid() {
     auto base=model();base.animations.push_back({"move",2,{translation()}});
-    auto mutation=[&](auto change) { auto m=base;change(m);rejects([&] { validate_animation_data(m); }); };
+    auto mutation=[&](auto change) { auto m=base;change(m);rejects([&] { validate_animation_data(m); });rejects([&] { CompiledAnimation invalid(m); }); };
     mutation([](auto& m) { m.nodes[2].parent=1; });mutation([](auto& m) { m.nodes[1].parent=999; });
     mutation([](auto& m) { m.nodes[1].parent=-1; });mutation([](auto& m) { m.skins[0].skeleton=0; });
     mutation([](auto& m) { m.skins[0].joints[0]=999; });mutation([](auto& m) { m.skins[0].joints[1]=2; });
@@ -171,6 +252,6 @@ void tangent_weights() {
 }
 }
 int main() {
-    try { curves();skinning();packages();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation analytic curves, hierarchy, CPU skinning, package round trips, invalid inputs and tangent weights passed.\n"; }
+    try { curves();compiled_sampling();skinning();packages();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation immutable compiled sampling, analytic curves, authored baselines, hierarchy, CPU skinning, packages and invalid inputs passed.\n"; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

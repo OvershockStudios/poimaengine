@@ -7,6 +7,7 @@
 #include <optional>
 
 namespace poima {
+struct ModelAsset;
 struct RuntimeTransform {
     std::array<double,3> position{0,0,0};
     std::array<double,4> rotation{0,0,0,1};
@@ -29,6 +30,27 @@ struct RuntimeMesh {
     std::optional<PbrMaterial> material;
     std::shared_ptr<const MaterialTextures> textures;
 };
+struct RuntimeAnimationRig {
+    std::shared_ptr<const ModelAsset> model;
+    std::optional<std::uint32_t> clip;
+    double time=0,speed=1;
+    bool loop=true,playing=false;
+};
+struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
+struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
+struct AnimationCommand {
+    std::string entity;
+    std::optional<std::uint32_t> clip;
+    double time=0,speed=1;
+    bool loop=true,playing=false;
+};
+struct RuntimeAnimationState {
+    std::string entity;
+    std::optional<std::uint32_t> clip;
+    double time=0,speed=1;
+    bool loop=true,playing=false;
+    double duration=0;
+};
 struct RuntimeEntityDefinition {
     std::string id, parent;
     RuntimeTransform transform;
@@ -40,12 +62,17 @@ struct RuntimeEntityDefinition {
     std::optional<LightingEnvironment> environment;
     std::optional<AcousticMaterial> acoustics;
     std::optional<AudioEmitter> emitter;
+    std::optional<RuntimeAnimationRig> animation_rig;
+    std::optional<RuntimeRigNode> rig_node;
+    std::optional<RuntimeSkinnedMesh> skinned_mesh;
 };
 struct RuntimeDefinition {
     std::string world_id;
     std::uint64_t authored_revision=0;
     std::vector<RuntimeEntityDefinition> entities;
 };
+// Shared authoring/native validation, also available without Jolt.
+void validate_runtime_animation(const RuntimeDefinition& definition);
 struct RuntimeInput {
     std::string entity;
     std::array<float,2> move{0,0}; // right, forward; diagonal magnitude clamped to one
@@ -72,6 +99,8 @@ struct RuntimeRayHit {
 };
 struct RuntimeEntityState {
     std::string id;
+    RuntimeTransform local;
+    std::optional<RuntimeAnimationState> animation;
     Matrix4 world;
     std::array<double,3> velocity{};
     bool has_body=false, is_character=false;
@@ -99,7 +128,8 @@ public:
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
     RuntimeEntityState entity(const std::string& id) const;
-    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={});
+    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={});
+    std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
     std::uint64_t gameplay_revision() const;
     std::string gameplay_inspect() const;

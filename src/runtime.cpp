@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
+#include "poima/runtime_animation.hpp"
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>
@@ -115,6 +116,7 @@ struct Runtime::Impl {
     std::map<JPH::uint32,std::string> body_names;
     Runtime* owner=nullptr;
     std::unique_ptr<Gameplay> game;
+    std::unique_ptr<RuntimeAnimations> animations;
     std::uint64_t game_revision=0;
     std::vector<KinematicTarget> game_commands;
     SoundState sounds;
@@ -141,7 +143,11 @@ struct Runtime::Impl {
             auto& n=registry.get<Node>(e);
             const auto local=local_matrix(n.local.position,n.local.rotation,n.local.scale);
             n.world=n.parent.empty() ? local : multiply(registry.get<Node>(find(n.parent)).world,local);
+            for(double value:n.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Runtime hierarchy matrix exceeds the supported range.");
         }
+    }
+    void animation_locals() {
+        for(const auto& pose:animations->sample(tick))registry.get<Node>(find(pose.entity)).local=pose.local;
     }
     void sync() {
         for (auto e : order) {
@@ -164,6 +170,7 @@ struct Runtime::Impl {
     void initialize(const RuntimeDefinition& definition) {
         world_id=definition.world_id; revision=definition.authored_revision;
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
+        animations=std::make_unique<RuntimeAnimations>(definition);
         physics.Init(4096,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
         auto definitions=definition.entities;
@@ -205,7 +212,7 @@ struct Runtime::Impl {
             }
             for (auto it=chain.rbegin();it!=chain.rend();++it) { hierarchy.push_back(*it); done.insert(*it); }
         }
-        world_matrices();
+        animation_locals();world_matrices();
         std::set<std::string> controlled_cameras,moving_roots;
         for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
         for (const auto& d : definitions) {
@@ -335,7 +342,7 @@ struct Runtime::Impl {
             else *voice=self.play_sound(gameplay_id(command->emitter),command->gain);
         });
     }
-    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands) {
+    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands) {
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
         std::map<entt::entity,const RuntimeInput*> controls;
         for (const auto& input : inputs) {
@@ -357,7 +364,11 @@ struct Runtime::Impl {
         const auto previous_tick=tick;
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;
+        auto animation_checkpoint=animations->checkpoint();
+        std::vector<RuntimeTransform> local_checkpoint;local_checkpoint.reserve(order.size());
+        for(auto e:order)local_checkpoint.push_back(registry.get<Node>(e).local);
         try {
+            animations->apply(animation_commands,tick);animation_locals();sync();
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
                 for(auto e:characters) {
@@ -415,10 +426,12 @@ struct Runtime::Impl {
                         physics.GetBodyInterface().SetLinearAndAngularVelocity(body.id,JPH::Vec3::sZero(),JPH::Vec3::sZero());body.target.reset();
                     }
                 }
-                ++tick;
+                ++tick;animation_locals();sync();
             }
             sync();
         } catch(...) {
+            animations->restore(animation_checkpoint);
+            for(std::size_t i=0;i<order.size();++i)registry.get<Node>(order[i]).local=local_checkpoint[i];
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();
@@ -442,7 +455,7 @@ Runtime::~Runtime()=default;
 RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->order.size(),impl_->physics.GetNumBodies(),impl_->characters.size()}; }
 RuntimeEntityState Runtime::entity(const std::string& id) const {
     const auto e=impl_->find(id); const auto& node=impl_->registry.get<Node>(e);
-    RuntimeEntityState result; result.id=id; result.world=node.world;
+    RuntimeEntityState result; result.id=id; result.world=node.world;result.local=node.local;result.animation=impl_->animations->state(id,impl_->tick);
     JPH::Vec3 velocity=JPH::Vec3::sZero();
     if(const auto* body=impl_->registry.try_get<Body>(e)) {
         result.has_body=true;velocity=impl_->physics.GetBodyInterface().GetLinearVelocity(body->id);
@@ -455,7 +468,8 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     }
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }
-void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds) { impl_->step(ticks,inputs,motions,sounds); }
+void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations) { impl_->step(ticks,inputs,motions,sounds,animations); }
+std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
     double length=0;
@@ -535,7 +549,8 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     result.camera_world=impl_->registry.get<Node>(e).world; result.vertical_fov=lens.vertical_fov; result.near_plane=lens.near_plane; result.far_plane=lens.far_plane;
     require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
     for(auto object:impl_->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
-        const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures});
+        const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
+            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; })});
     }
     return result;
 }

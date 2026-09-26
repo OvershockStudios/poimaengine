@@ -60,13 +60,19 @@ class Animation(unittest.TestCase):
         for item in r['items']:
             x,y,z=item['world_position'];expected_weight=y/2;self.assertAlmostEqual(item['weights'][1],expected_weight)
             self.assertTrue(abs(x-expected_weight-.5)<1e-5 or abs(x-expected_weight+.5)<1e-5)
-    def test_invalid_requests_and_no_silent_static_instantiation(self):
+    def test_invalid_requests_and_explicit_rig_instantiation(self):
         asset=self.imported()['asset'];base=dict(asset=asset,clip=0,time=1)
         requests=[rpc('asset.animation.sample',**dict(base,**v)) for v in [{'clip':999},{'time':-1},{'time':'1'},{'loop':1},{'section':'bad'},{'limit':65},{'node':0},{'section':'vertices'},{'section':'vertices','node':1,'primitive':0}]]
         requests+=[rpc('asset.animation.channel',asset=asset,clip=0,channel=99),rpc('asset.animation.skin',asset=asset,skin=1)]
-        requests+=[rpc('world.transact',request_id='a'*32,base_revision=0,ops=[{'op':'asset.instantiate','id':'b'*32,'asset':asset,'name':'Rig'}])]
         for r in self.requests(*requests):self.assertEqual(r.get('error',{}).get('code'),-32602,r)
         self.assertFalse(self.world.exists())
+        self.result(self.requests(rpc('world.transact',request_id='a'*32,base_revision=0,
+            ops=[{'op':'asset.instantiate','id':'b'*32,'asset':asset,'name':'Rig'}]))[0])
+        entities=json.loads(self.world.read_text())['entities']
+        self.assertEqual(entities['b'*32]['components']['AnimationRig']['asset'],asset)
+        self.assertEqual(sum('RigNode' in e['components'] for e in entities.values()),3)
+        self.assertEqual(sum('SkinnedMesh' in e['components'] for e in entities.values()),1)
+        self.assertFalse(any('StaticMesh' in e['components'] for e in entities.values()),'Weighted geometry became a static draw.')
     def test_invalid_imports_leave_packages_unchanged(self):
         asset=self.imported()['asset'];before=sorted(self.cache(asset).parent.iterdir());base,blob=ribbon();variants=[]
         for change in [lambda d:d['skins'][0].update(skeleton=0),lambda d:d['scenes'][0].update(nodes=[0]),lambda d:d['nodes'][0].pop('mesh'),lambda d:d['skins'][0].update(joints=[2,2]),lambda d:d['nodes'][2].pop('children'),lambda d:d['animations'][0]['channels'].append(copy.deepcopy(d['animations'][0]['channels'][0]))]:

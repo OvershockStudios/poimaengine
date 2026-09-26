@@ -125,7 +125,32 @@ AudioEmitter emitter_value(const Json& v) {
     require(v.at("loop").is_boolean() && v.at("enabled").is_boolean(),"Audio loop/enabled must be Boolean.");
     return {v.at("asset").get<std::string>(),{},v.at("gain").get<float>(),v.at("loop").get<bool>(),v.at("enabled").get<bool>()};
 }
+AnimationCommand animation_value(const Json& value) {
+    AnimationCommand state;
+    if(!value.at("clip").is_null()) {
+        const auto clip=revision(value.at("clip"));require(clip<max_model_clips,"Animation clip index exceeds the model limit.");
+        state.clip=static_cast<std::uint32_t>(clip);
+    }
+    for(const auto* key:{"time","speed"})require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Animation time/speed must be finite numbers.");
+    state.time=value.at("time");state.speed=value.at("speed");
+    require(state.time>=0 && state.time<=1e9 && state.speed>=0 && state.speed<=8,"Animation time must be 0..1e9 and speed 0..8.");
+    require(value.at("loop").is_boolean() && value.at("playing").is_boolean(),"Animation loop/playing must be Boolean.");
+    state.loop=value.at("loop");state.playing=value.at("playing");return state;
+}
 void validate_component(const std::string& type, const Json& value) {
+    if(type=="AnimationRig") {
+        fields(value,{"asset","clip","time","speed","loop","playing"},{"asset","clip","time","speed","loop","playing"});
+        require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"AnimationRig requires a model content hash.");
+        (void)animation_value(value);return;
+    }
+    if(type=="RigNode") {
+        fields(value,{"rig","node"},{"rig","node"});identifier(value.at("rig"));require(revision(value.at("node"))<10000,"RigNode index must be 0..9999.");return;
+    }
+    if(type=="SkinnedMesh") {
+        fields(value,{"asset","primitive","visible","rig","node"},{"asset","primitive","visible","rig","node"});
+        require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"SkinnedMesh requires a model content hash.");
+        identifier(value.at("rig"));require(revision(value.at("node"))<10000 && revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid skinned mesh node/primitive/visibility.");return;
+    }
     if(type=="AcousticMaterial") { (void)acoustic_value(value);return; }
     if(type=="AudioEmitter") { (void)emitter_value(value);return; }
     if(type=="Light") { (void)light_value(value);return; }
@@ -230,7 +255,7 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}};
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -244,6 +269,15 @@ Json describe() {
     const Json asset_id={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
     const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}}}, {"asset","primitive","visible"});
+    const Json model_node={{"type","integer"},{"minimum",0},{"maximum",9999}};
+    const Json animation_fields={{"clip",{{"anyOf",Json::array({Json{{"type","null"}},Json{{"type","integer"},{"minimum",0},{"maximum",255}}})}}},
+        {"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"speed",{{"type","number"},{"minimum",0},{"maximum",8}}},
+        {"loop",{{"type","boolean"}}},{"playing",{{"type","boolean"}}}};
+    auto rig_fields=animation_fields;rig_fields["asset"]=asset_id;
+    const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
+    const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
+    auto skin_fields=static_mesh.at("properties");skin_fields["rig"]=id;skin_fields["node"]=model_node;
+    const auto skinned_mesh=object_schema(skin_fields,{"asset","primitive","visible","rig","node"});
     const Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}}}, {"base_color","emissive","metallic","roughness","double_sided"});
     const Json sampler_wrap={{"enum",{10497,33071,33648}}};
     const Json map_ref=object_schema({{"asset",asset_id},{"image",{{"type","integer"},{"minimum",0},{"maximum",255}}},
@@ -269,7 +303,7 @@ Json describe() {
         {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}}}, {"ambient","exposure"});
     const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
     const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}}, {"asset","gain","loop","enabled"});
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"RigNode",rig_node},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -282,8 +316,8 @@ Json describe() {
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 18}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
+    Json result = {{"protocol_version", 1}, {"schema_revision", 19}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -361,6 +395,10 @@ Json describe() {
     methods["runtime.step"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
         {"ticks",{{"type","integer"},{"minimum",1},{"maximum",600}}},
         {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}},{"motions",motions},{"sounds",sounds}}, {"session_id","request_id","expected_tick","ticks"});
+    auto animation_command=animation_fields;animation_command["entity"]=id;
+    methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},
+        {"items",object_schema(animation_command,{"entity","clip","time","speed","loop","playing"})}};
+    result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
@@ -462,11 +500,12 @@ void validate(const Json& doc) {
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}, {"Transform"});
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}, {"Transform"});
         const auto& audio_components=entity.at("components");
         if(audio_components.contains("AcousticMaterial"))require(audio_components.contains("BoxCollider") || audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh"),"AcousticMaterial requires box collider or mesh geometry.");
         if(audio_components.contains("AudioEmitter") && audio_components.at("AudioEmitter").at("enabled")==true)require(++audio_sources<=max_audio_sources,"At most 64 enabled audio emitters.");
-        require(!(entity.at("components").contains("MeshRenderer") && entity.at("components").contains("StaticMesh")),"An entity cannot combine MeshRenderer and StaticMesh.");
+        require(int(audio_components.contains("MeshRenderer"))+int(audio_components.contains("StaticMesh"))+int(audio_components.contains("SkinnedMesh"))<=1,"An entity can have only one mesh component.");
+        require(!audio_components.contains("SkinnedMesh") || !audio_components.contains("AcousticMaterial"),"Skinned mesh acoustics are not supported; use a separate explicit collision/acoustic proxy.");
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
     std::size_t light_count=0,environment_count=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
@@ -554,7 +593,7 @@ public:
         path_(fs::weakly_canonical(fs::absolute(fs::path(std::u8string(utf8_path.begin(), utf8_path.end()))))),
         lock_(fs::path(path_).concat(".lock")) {
         exists_ = fs::exists(path_);
-        if (exists_) { disk_ = read(path_); doc_ = parse(disk_); validate(doc_); }
+        if (exists_) { disk_ = read(path_); doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_); }
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
     }
@@ -580,7 +619,7 @@ public:
         }
         if (method == "entity.query") {
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
-            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment", "Unknown component type.");
+            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment" || params["component"] == "AcousticMaterial" || params["component"] == "AudioEmitter" || params["component"] == "AnimationRig" || params["component"] == "RigNode" || params["component"] == "SkinnedMesh", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -648,19 +687,22 @@ public:
     static Json material_json(const PbrMaterial& m) {
         return {{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}};
     }
-    std::optional<RuntimeMesh> mesh_component(const Json& components,ModelCache& cache) const {
+    std::optional<RuntimeMesh> mesh_component(const Json& components,ModelCache& cache,bool geometry_only=false) const {
         RuntimeMesh mesh;
-        if(components.contains("StaticMesh")) {
-            const auto& ref=components.at("StaticMesh");
+        if(components.contains("StaticMesh") || components.contains("SkinnedMesh")) {
+            const bool skinned=components.contains("SkinnedMesh");const auto& ref=components.at(skinned ? "SkinnedMesh" : "StaticMesh");
             std::shared_ptr<const ModelAsset> model;
             try { model=cache.get(asset_directory(),ref.at("asset")); }
             catch(const std::exception& error) { throw Error(-32050,error.what()); }
             const auto primitive=revision(ref.at("primitive"));
-            require(primitive<model->primitives.size(),"StaticMesh primitive does not exist in its asset.",-32050);
-            mesh.mesh=model->primitives[primitive];require(mesh.mesh->influences.empty(),"StaticMesh cannot render skin weights; use asset.animation.sample for reference inspection until runtime skinning is available.",-32050);mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
+            require(primitive<model->primitives.size(),"Mesh primitive does not exist in its asset.",-32050);
+            mesh.mesh=model->primitives[primitive];
+            require(skinned ? !mesh.mesh->influences.empty() : mesh.mesh->influences.empty(),"Weighted primitives require SkinnedMesh; unweighted primitives require StaticMesh.",-32050);
+            mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
         } else if(components.contains("MeshRenderer")) {
             const auto& ref=components.at("MeshRenderer");mesh.albedo=ref.at("albedo").get<std::array<float,3>>();mesh.visible=ref.at("visible");
         } else return std::nullopt;
+        if(geometry_only)return mesh;
         if(components.contains("PbrMaterial")) {
             const auto& value=components.at("PbrMaterial");PbrMaterial m;
             m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
@@ -859,27 +901,36 @@ public:
         fields(op,{"op","id","asset","name","parent"},{"op","id","asset","name"});
         require(op.at("asset").is_string() && valid_asset_id(op.at("asset").get<std::string>()),"Invalid asset ID.");validate_name(op.at("name"));
         const auto root=identifier(op.at("id"));const auto model=read_model_asset(asset_directory(),op.at("asset")).model;
-        require(model->skins.empty() && model->animations.empty(),"Animated asset instantiation awaits runtime rig binding; use asset.animation.sample for reference inspection.");
+        const bool animated=!model->skins.empty() || !model->animations.empty();
         auto derived=[&](const std::string& value) { return content_hash("poima.instance.v1/"+root+"/"+value).substr(0,32); };
         auto create=[&](const std::string& id,const std::string& name,const Json& parent,Json components) {
             auto& entities=staged["entities"];
             require(entities.size()<10000 && !entities.contains(id) && std::find(staged["retired_ids"].begin(),staged["retired_ids"].end(),id)==staged["retired_ids"].end(),"Instantiated ID collision/retirement or entity budget exceeded.");
             entities[id]={{"name",name},{"parent",parent},{"components",std::move(components)}};changed.insert(id);
         };
-        create(root,op.at("name"),op.value("parent",Json(nullptr)),{{"Transform",default_transform()}});
+        Json wrapper={{"Transform",default_transform()}};
+        if(animated)wrapper["AnimationRig"]={{"asset",op.at("asset")},{"clip",nullptr},{"time",0},{"speed",1},{"loop",true},{"playing",false}};
+        create(root,op.at("name"),op.value("parent",Json(nullptr)),std::move(wrapper));
         std::map<int,std::vector<std::uint32_t>> children;
-        for(std::size_t i=0;i<model->nodes.size();++i)children[model->nodes[i].parent].push_back(static_cast<std::uint32_t>(i));
+        for(std::size_t i=0;i<model->nodes.size();++i)if(model->nodes[i].parent>=0)children[model->nodes[i].parent].push_back(static_cast<std::uint32_t>(i));
         auto selected=model->roots;
-        for(std::size_t i=0;i<selected.size();++i) {
-            const auto index=selected[i];const auto& node=model->nodes[index];const auto id=derived("node/"+std::to_string(index));
-            create(id,node.name,node.parent<0 ? root : derived("node/"+std::to_string(node.parent)),
-                {{"Transform",{{"position",node.position},{"rotation",node.rotation},{"scale",node.scale}}}});
+        for(std::size_t i=0;i<selected.size();++i)for(auto child:children[static_cast<int>(selected[i])])selected.push_back(child);
+        const std::set<std::uint32_t> visible_nodes(selected.begin(),selected.end());
+        if(animated) { selected.clear();for(std::size_t i=0;i<model->nodes.size();++i)selected.push_back(static_cast<std::uint32_t>(i)); }
+        for(const auto index:selected) {
+            const auto& node=model->nodes[index];const auto id=derived("node/"+std::to_string(index));
+            Json components={{"Transform",{{"position",node.position},{"rotation",node.rotation},{"scale",node.scale}}}};
+            if(animated)components["RigNode"]={{"rig",root},{"node",index}};
+            create(id,node.name,node.parent<0 ? root : derived("node/"+std::to_string(node.parent)),std::move(components));
+            if(!visible_nodes.contains(index))continue;
             for(std::size_t slot=0;slot<node.primitives.size();++slot) {
                 const auto primitive=node.primitives[slot];const auto mesh_id=derived("node/"+std::to_string(index)+"/primitive/"+std::to_string(slot));
+                Json mesh={{"asset",op.at("asset")},{"primitive",primitive},{"visible",true}};
+                const bool skinned=node.skin>=0;
+                if(skinned) { mesh["rig"]=root;mesh["node"]=index; }
                 create(mesh_id,"Primitive "+std::to_string(slot),id,{{"Transform",default_transform()},
-                    {"StaticMesh",{{"asset",op.at("asset")},{"primitive",primitive},{"visible",true}}},{"PbrMaterial",material_json(model->primitives[primitive]->material)}});
+                    {skinned ? "SkinnedMesh" : "StaticMesh",mesh},{"PbrMaterial",material_json(model->primitives[primitive]->material)}});
             }
-            for(auto child:children[static_cast<int>(index)])selected.push_back(child);
         }
     }
     fs::path input_profile_path(const Json& value) const {
@@ -1066,9 +1117,29 @@ public:
                 }
             } else {
                 ModelCache cache;
+                // Authoring displays editable baseline TRS, independent of the
+                // initial runtime clip/time. Build palettes from those bones.
+                const auto definition=runtime_definition(false,nullptr,true);
+                std::map<std::string,const RuntimeEntityDefinition*> definitions;
+                std::map<std::string,std::map<std::uint32_t,std::string>> nodes;
+                for(const auto& e:definition.entities) {
+                    definitions[e.id]=&e;
+                    if(e.rig_node)nodes[e.rig_node->rig][e.rig_node->node]=e.id;
+                }
                 for(const auto& [id,e]:doc_.at("entities").items()) {
                     const auto mesh=mesh_component(e.at("components"),cache);
-                    if(mesh && mesh->visible)snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures});
+                    if(!mesh || !mesh->visible)continue;
+                    std::shared_ptr<const SkinPose> skin;
+                    const auto& owner=*definitions.at(id);
+                    if(owner.skinned_mesh) {
+                        const auto& ref=*owner.skinned_mesh;const auto& model=*definitions.at(ref.rig)->animation_rig->model;
+                        const auto& binding=model.skins.at(static_cast<std::size_t>(model.nodes.at(ref.node).skin));
+                        const auto inverse_mesh=inverse_affine(matrices.at(id));auto pose=std::make_shared<SkinPose>();
+                        for(std::size_t joint=0;joint<binding.joints.size();++joint)
+                            pose->palette.push_back(multiply(multiply(inverse_mesh,matrices.at(nodes.at(ref.rig).at(binding.joints[joint]))),binding.inverse_bind[joint]));
+                        skin=std::move(pose);
+                    }
+                    snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin});
                 }
             }
             }
@@ -1140,31 +1211,68 @@ public:
         const auto id=identifier(params.at("session_id"));
         require(runtime_ && id==runtime_id_,"Runtime session is absent or does not match.",-32030);
     }
-    RuntimeDefinition runtime_definition(bool audio_only=false) const {
+    void validate_animation_document(const Json& document) const {
+        // Resolve rig ownership in headless authoring too. Unrelated static
+        // meshes/audio are intentionally not loaded by this structural check.
+        for(const auto& e:document.at("entities")) {
+            const auto& c=e.at("components");
+            if(c.contains("AnimationRig") || c.contains("RigNode") || c.contains("SkinnedMesh")) {
+                (void)runtime_definition(false,&document,true);return;
+            }
+        }
+    }
+    RuntimeDefinition runtime_definition(bool audio_only=false,const Json* source=nullptr,bool animation_only=false) const {
+        const auto& document=source ? *source : doc_;
         ModelCache cache;AudioCache audio_cache;
-        RuntimeDefinition result; result.world_id=doc_.at("world_id"); result.authored_revision=revision(doc_.at("revision"));
-        for(const auto& [id,e]:doc_.at("entities").items()) {
+        std::set<std::string> rig_assets;
+        if(animation_only)for(const auto& e:document.at("entities"))
+            if(e.at("components").contains("AnimationRig"))rig_assets.insert(e.at("components").at("AnimationRig").at("asset").get<std::string>());
+        RuntimeDefinition result; result.world_id=document.at("world_id"); result.authored_revision=revision(document.at("revision"));
+        for(const auto& [id,e]:document.at("entities").items()) {
             RuntimeEntityDefinition value; value.id=id; if(!e.at("parent").is_null()) value.parent=e.at("parent");
             const auto& components=e.at("components"); const auto& t=components.at("Transform");
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
             if(components.contains("Camera")) { const auto& c=components.at("Camera"); value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")}; }
-            if(!audio_only)value.mesh=mesh_component(components,cache);
+            if(components.contains("AnimationRig")) {
+                const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
+                try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
+                catch(const std::exception& error) { throw Error(-32050,error.what()); }
+                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;value.animation_rig=std::move(rig);
+            }
+            if(components.contains("RigNode")) {
+                const auto& ref=components.at("RigNode");value.rig_node=RuntimeRigNode{identifier(ref.at("rig")),static_cast<std::uint32_t>(revision(ref.at("node")))};
+            }
+            if(components.contains("SkinnedMesh")) {
+                const auto& ref=components.at("SkinnedMesh");const auto rig=identifier(ref.at("rig"));
+                const auto& entities=document.at("entities");
+                require(entities.contains(rig) && entities.at(rig).at("components").contains("AnimationRig"),"SkinnedMesh references an absent AnimationRig.");
+                require(entities.at(rig).at("components").at("AnimationRig").at("asset")==ref.at("asset"),"SkinnedMesh asset differs from its rig model.");
+                value.skinned_mesh=RuntimeSkinnedMesh{rig,static_cast<std::uint32_t>(revision(ref.at("node")))};
+            }
+            if(animation_only || (audio_only && value.skinned_mesh)) {
+                if(value.skinned_mesh)value.mesh=mesh_component(components,cache,true);
+                else if(animation_only && components.contains("StaticMesh") && rig_assets.contains(components.at("StaticMesh").at("asset").get<std::string>()))
+                    value.mesh=mesh_component(components,cache,true);
+            }else if(!audio_only)value.mesh=mesh_component(components,cache);
             else if(components.contains("AcousticMaterial") && components.at("AcousticMaterial").at("enabled")==true && !components.contains("BoxCollider")) {
                 RuntimeMesh geometry;
                 if(components.contains("StaticMesh")) {
                     const auto& ref=components.at("StaticMesh");const auto model=cache.get(asset_directory(),ref.at("asset"));const auto primitive=revision(ref.at("primitive"));
                     require(primitive<model->primitives.size(),"Acoustic mesh primitive does not exist.",-32050);geometry.mesh=model->primitives[primitive];
+                    require(geometry.mesh->influences.empty(),"Skinned acoustic geometry requires an explicit separate proxy.",-32050);
                 }
                 value.mesh=std::move(geometry);
             }
             if(components.contains("AcousticMaterial"))value.acoustics=acoustic_value(components.at("AcousticMaterial"));
-            if(components.contains("AudioEmitter")) { value.emitter=emitter_value(components.at("AudioEmitter"));if(value.emitter->enabled)value.emitter->clip=audio_cache.get(asset_directory(),value.emitter->asset); }
+            if(!animation_only && components.contains("AudioEmitter")) { value.emitter=emitter_value(components.at("AudioEmitter"));if(value.emitter->enabled)value.emitter->clip=audio_cache.get(asset_directory(),value.emitter->asset); }
             if(components.contains("Light"))value.light=light_value(components.at("Light"));
             if(components.contains("LightingEnvironment"))value.environment=environment_value(components.at("LightingEnvironment"));
             if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")}; }
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
             result.entities.push_back(std::move(value));
         }
+        try { validate_runtime_animation(result); }
+        catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         return result;
     }
     Json runtime_summary() const {
@@ -1188,6 +1296,20 @@ public:
     }
     static Json motion_json(const KinematicTarget& m) {
         return {{"entity",m.entity},{"position",m.position},{"rotation",m.rotation},{"duration_ticks",m.duration_ticks}};
+    }
+    static Json animation_json(const RuntimeAnimationState& state) {
+        return {{"clip",state.clip ? Json(*state.clip) : Json(nullptr)},{"time",state.time},{"speed",state.speed},
+            {"loop",state.loop},{"playing",state.playing},{"duration",state.duration}};
+    }
+    static std::vector<AnimationCommand> parse_animations(const Json& raw) {
+        require(raw.is_array() && raw.size()<=64,"Animations must be an array of at most 64 complete playback commands.");
+        std::vector<AnimationCommand> result;std::set<std::string> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","clip","time","speed","loop","playing"},{"entity","clip","time","speed","loop","playing"});
+            auto command=animation_value(value);command.entity=identifier(value.at("entity"));
+            require(seen.insert(command.entity).second,"Duplicate animation command entity.");result.push_back(std::move(command));
+        }
+        return result;
     }
     static std::array<double,3> query_vector(const Json& v) {
         require(v.is_array() && v.size()==3,"Expected a three-element query vector.");
@@ -1466,13 +1588,16 @@ public:
             try { e=runtime_->entity(identifier(params.at("id"))); }
             catch(const std::runtime_error& error) { throw Error(-32004,error.what()); }
             return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"id",e.id},{"world_matrix",e.world},{"layout","column_major"},
+                {"local_transform",{{"position",e.local.position},{"rotation",e.local.rotation},{"scale",e.local.scale}}},
+                {"animation",e.animation ? animation_json(*e.animation) : Json(nullptr)},
                 {"motion",e.motion},{"kinematic_target",e.kinematic_target ? motion_json(*e.kinematic_target) : Json(nullptr)},{"motion_remaining_ticks",e.motion_remaining_ticks},
                 {"velocity",e.velocity},{"has_body",e.has_body},{"is_character",e.is_character},{"ground",e.ground},{"yaw",e.yaw},{"pitch",e.pitch}};
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations"},{"session_id","request_id","expected_tick","ticks"});
             runtime_guard(params); identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
+            if(!normalized.contains("animations"))normalized["animations"]=Json::array();
             for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
                 require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
                 auto result=receipt["result"]; result["replayed"]=true; return result;
@@ -1486,11 +1611,12 @@ public:
                 inputs.push_back(std::move(input));
             }
             const auto motions=parse_motions(normalized.at("motions"));const auto sounds=parse_sounds(normalized.at("sounds"));
+            const auto animations=parse_animations(normalized.at("animations"));
             const auto first_voice=runtime_->sound_state().next_id();
             Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"tick",expected+ticks},{"stepped",ticks},{"replayed",false}};
             auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
             receipts.push_back({{"params",normalized},{"result",result}});
-            try { runtime_->step(static_cast<std::uint32_t>(ticks),inputs,motions,sounds); }
+            try { runtime_->step(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations); }
             catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
             result["sound_events"]={{"first_voice",first_voice},{"next_voice",runtime_->sound_state().next_id()}};receipts.back()["result"]=result;
             runtime_receipts_.swap(receipts); return result;
@@ -1543,7 +1669,7 @@ public:
                 entity(staged, id)["components"][type] = op.at("value");
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter", "Only optional built-in components can be removed.");
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter" || op.at("type") == "AnimationRig" || op.at("type") == "RigNode" || op.at("type") == "SkinnedMesh", "Only optional built-in components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {
@@ -1563,6 +1689,7 @@ public:
         }
         staged["revision"] = revision(doc_.at("revision")) + 1;
         validate(staged);
+        validate_animation_document(staged);
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
         if (!params["preview"].get<bool>()) {

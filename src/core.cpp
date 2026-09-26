@@ -118,6 +118,7 @@ Reply capabilities() {
         ",\"gamepad_profiles\":true,\"gamepad_devices\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"input_profiles\":true,\"keyboard_mouse_rebinding\":true,\"gpu_skinning\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"animation_asset_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"animation_rig_authoring\":true,\"runtime_clip_playback\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"static_gltf_import\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"animation_asset_sampling\":true,\"vfx\":false,"
         "\"hot_reload\":false,\"mcp\":false,\"editor\":false},\"qualification\":\"bootstrap_with_authored_world\"}");
