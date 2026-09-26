@@ -5,3 +5,5 @@
 `textured-sphere.glb` adds UVs and original tile/wear images for base color, metallic/roughness and occlusion. Regenerate it with `python3 examples/assets/generate_textured_sphere.py` (standard library only); this is offline example-art generation, not a native engine procedural-material API. Its eight-instance authoring example is `examples/textured-grid.jsonl`. Both source assets and generator use Apache-2.0.
 
 `normal-sphere.glb` extends the same original surface with a tangent-space normal image derived from the tile-height function. Generate it with `python3 examples/assets/generate_textured_sphere.py --normal-map`. `examples/normal-grid.jsonl` compares disabled/enabled normal scales through per-object `PbrTextures` overrides.
+
+`acoustic-probe.wav` is an original mono 48 kHz PCM16 diagnostic tone (200, 1000 and 6000 Hz, 0.1 seconds), supplied under the repository Apache-2.0 license. It is used by `examples/audio-room.jsonl` to make material filtering measurable; it is not borrowed game audio or a realism demonstration.

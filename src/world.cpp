@@ -106,7 +106,26 @@ LightingEnvironment environment_value(const Json& value) {
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
     return {value.at("ambient").get<std::array<float,3>>(),value.at("exposure").get<float>(),value.value("shadow_resolution",1024u)};
 }
+AcousticMaterial acoustic_value(const Json& v) {
+    fields(v,{"absorption","transmission","scattering","enabled"},{"absorption","transmission","scattering","enabled"});
+    for(const auto* key:{"absorption","transmission"}) {
+        require(v.at(key).is_array() && v.at(key).size()==3,"Acoustic bands need three values.");
+        for(const auto& x:v.at(key))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1,"Acoustic bands must be in [0,1].");
+    }
+    require(v.at("scattering").is_number() && std::isfinite(v.at("scattering").get<double>()) && v.at("scattering")>=0 && v.at("scattering")<=1,"Scattering must be in [0,1].");
+    require(v.at("enabled").is_boolean(),"Acoustic enabled must be Boolean.");
+    return {v.at("absorption").get<std::array<float,3>>(),v.at("transmission").get<std::array<float,3>>(),v.at("scattering").get<float>(),v.at("enabled").get<bool>()};
+}
+AudioEmitter emitter_value(const Json& v) {
+    fields(v,{"asset","gain","loop","enabled"},{"asset","gain","loop","enabled"});
+    require(v.at("asset").is_string() && valid_asset_id(v.at("asset").get<std::string>()),"AudioEmitter needs a clip content hash.");
+    require(v.at("gain").is_number() && std::isfinite(v.at("gain").get<double>()) && v.at("gain")>=0 && v.at("gain")<=4,"Audio gain must be in [0,4].");
+    require(v.at("loop").is_boolean() && v.at("enabled").is_boolean(),"Audio loop/enabled must be Boolean.");
+    return {v.at("asset").get<std::string>(),{},v.at("gain").get<float>(),v.at("loop").get<bool>(),v.at("enabled").get<bool>()};
+}
 void validate_component(const std::string& type, const Json& value) {
+    if(type=="AcousticMaterial") { (void)acoustic_value(value);return; }
+    if(type=="AudioEmitter") { (void)emitter_value(value);return; }
     if(type=="Light") { (void)light_value(value);return; }
     if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
@@ -209,7 +228,7 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}};
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -246,7 +265,9 @@ Json describe() {
     }
     const Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
         {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}}}, {"ambient","exposure"});
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment}};
+    const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
+    const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}}, {"asset","gain","loop","enabled"});
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -259,8 +280,8 @@ Json describe() {
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 12}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}}}}, {"type"});
+    Json result = {{"protocol_version", 1}, {"schema_revision", 13}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -338,6 +359,17 @@ Json describe() {
     methods["world.lighting"]=object_schema({{"revision",rev}});
     methods["runtime.lighting"]=object_schema({{"session_id",id},{"tick",rev}}, {"session_id"});
     methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});
+    methods["asset.audio.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
+    methods["asset.audio.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
+    for(const auto* method:{"world.audio.inspect","world.audio.capture","runtime.audio.inspect","runtime.audio.capture"}) {
+        const bool live=std::string_view(method).starts_with("runtime"),capture_audio=std::string_view(method).ends_with("capture");
+        Json props={{"listener",id}};Json required={"listener"};
+        if(live) { props["session_id"]=id;props["tick"]=rev;required.push_back("session_id");required.push_back("tick"); }
+        else { props["revision"]=rev;required.push_back("revision"); }
+        if(capture_audio) { props["path"]={{"type","string"},{"minLength",1}};props["frames"]={{"type","integer"},{"minimum",1},{"maximum",480000},{"default",48000}};required.push_back("path"); }
+        methods[method]=object_schema(props,required);
+    }
+    result["invariants"].push_back("Audio observation is synchronous and frozen: fresh geometry and poses on every query, no simulation advance, source cursor or device playback. AcousticMaterial requires box/mesh geometry. At most 64 enabled emitters, 131072 acoustic triangles, 64 MiB clip packages; mono 48 kHz PCM16/float32 WAV import, up to 60 seconds per clip. Captures are 1..480000 stereo float frames with direct paths and HRTF only.");
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
@@ -379,13 +411,17 @@ void validate(const Json& doc) {
     identifier(doc.at("world_id")); revision(doc.at("revision"));
     const auto& entities = doc.at("entities");
     require(entities.is_object() && entities.size() <= 10000, "World must contain at most 10,000 entities.");
+    std::size_t audio_sources=0;
     for (const auto& [id, entity] : entities.items()) {
         identifier(id);
         fields(entity, {"name", "parent", "components"}, {"name", "parent", "components"});
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}, {"Transform"});
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}, {"Transform"});
+        const auto& audio_components=entity.at("components");
+        if(audio_components.contains("AcousticMaterial"))require(audio_components.contains("BoxCollider") || audio_components.contains("MeshRenderer") || audio_components.contains("StaticMesh"),"AcousticMaterial requires box collider or mesh geometry.");
+        if(audio_components.contains("AudioEmitter") && audio_components.at("AudioEmitter").at("enabled")==true)require(++audio_sources<=max_audio_sources,"At most 64 enabled audio emitters.");
         require(!(entity.at("components").contains("MeshRenderer") && entity.at("components").contains("StaticMesh")),"An entity cannot combine MeshRenderer and StaticMesh.");
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
@@ -523,6 +559,7 @@ public:
             } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
         }
         if (method.starts_with("asset.")) return asset_dispatch(method,params);
+        if (method=="world.audio.inspect" || method=="world.audio.capture") return audio_dispatch(method,params,false);
         if (method == "world.capture") return capture(params);
         if (method.starts_with("runtime.")) return runtime_dispatch(method,params);
         if (method == "world.transact") return transact(params);
@@ -647,7 +684,19 @@ public:
             return {{"asset",loaded.id},{"format","poima.image.v1"},{"bytes",loaded.bytes},{"color_space",loaded.image->srgb ? "srgb" : "linear"},{"mips",mips}};
         } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
     }
+    Json audio_asset_dispatch(const std::string& method,const Json& params) const {
+        try {
+            LoadedAudio loaded;
+            if(method=="asset.audio.import") {
+                fields(params,{"source"},{"source"});require(params.at("source").is_string(),"WAV source must be a path.");
+                const auto text=params.at("source").get<std::string>();require(!text.empty() && text.find('\0')==std::string::npos,"Invalid WAV source path.");
+                auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;loaded=store_audio_asset(asset_directory(),source);
+            } else { fields(params,{"asset"},{"asset"});require(params.at("asset").is_string(),"Audio asset must be a hash.");loaded=read_audio_asset(asset_directory(),params.at("asset")); }
+            return {{"asset",loaded.id},{"format","poima.audio.v1"},{"bytes",loaded.bytes},{"sample_rate",audio_rate},{"channels",1},{"frames",loaded.clip->samples.size()},{"duration_seconds",double(loaded.clip->samples.size())/audio_rate}};
+        }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
+    }
     Json asset_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);
         if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
         try {
             LoadedModel loaded;
@@ -797,19 +846,78 @@ public:
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},{"render_diagnostics",render_diagnostics(report.diagnostics)},
             {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
     }
+    Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
+        const bool capture_audio=std::string_view(method).ends_with("capture");
+        if(live) {
+            if(capture_audio)fields(params,{"session_id","tick","listener","path","frames"},{"session_id","tick","listener","path"});
+            else fields(params,{"session_id","tick","listener"},{"session_id","tick","listener"});
+            runtime_guard(params);require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        } else {
+            if(capture_audio)fields(params,{"revision","listener","path","frames"},{"revision","listener","path"});
+            else fields(params,{"revision","listener"},{"revision","listener"});
+            current_revision(params);
+        }
+        require(audio_available(),"Audio observation is not built. Configure POIMA_ENABLE_AUDIO=ON.",-32003);
+        const auto listener=identifier(params.at("listener"));const auto frame_count=capture_audio ? revision(params.value("frames",Json(48000))) : 0;
+        require(!capture_audio || (frame_count>=1 && frame_count<=480000),"Audio capture frames must be 1..480000.");
+        std::string output;if(capture_audio)output=render_options(Json{{"path",params.at("path")}}).capture;
+        try {
+            AudioSnapshot snapshot;RuntimeDefinition definition;std::map<std::string,Matrix4> matrices;
+            if(!live) { definition=runtime_definition(true);matrices=world_matrices(doc_.at("entities")); }
+            const auto& source_definition=live ? runtime_definition_ : definition;
+            auto pose=[&](const std::string& id) { return live ? runtime_->entity(id).world : matrices.at(id); };
+            require(std::any_of(source_definition.entities.begin(),source_definition.entities.end(),[&](const auto& e){return e.id==listener;}),"Audio listener entity does not exist.",-32004);
+            snapshot.listener=pose(listener);
+            Json geometry=Json::array();
+            for(const auto& e:source_definition.entities) {
+                if(e.emitter && e.emitter->enabled)snapshot.sources.push_back({e.id,*e.emitter,pose(e.id)});
+                if(!e.acoustics || !e.acoustics->enabled)continue;
+                AcousticGeometry g;g.entity=e.id;g.world=pose(e.id);g.material=*e.acoustics;
+                std::string shape;
+                if(e.collider) { for(std::size_t c=0;c<3;++c)for(std::size_t r=0;r<3;++r)g.world[c*4+r]*=2*e.collider->half_extents[c];shape="box_collider"; }
+                else if(e.mesh) { g.mesh=e.mesh->mesh;shape=g.mesh ? "static_mesh" : "box_renderer"; }
+                else throw Error(-32602,"Acoustic material lacks geometry.");
+                geometry.push_back({{"entity",e.id},{"shape",shape},{"world_matrix",g.world},{"absorption",g.material.absorption},{"scattering",g.material.scattering},{"transmission",g.material.transmission}});snapshot.geometry.push_back(std::move(g));
+            }
+            auto report=observe_audio(snapshot,static_cast<std::uint32_t>(frame_count));Json paths=Json::array();
+            for(const auto& p:report.paths)paths.push_back({{"entity",p.entity},{"asset",p.asset},{"source_position",p.source},{"listener_position",p.listener},{"listener_local_direction",p.direction},{"distance_m",p.distance},{"propagation_delay_samples",p.propagation_delay_samples},{"distance_gain",p.distance_gain},{"direct_visibility",p.occlusion},{"air_absorption",p.air},{"transmission",p.transmission}});
+            for(std::size_t i=0;i<snapshot.sources.size();++i) {
+                paths[i]["gain"]=snapshot.sources[i].emitter.gain;paths[i]["loop"]=snapshot.sources[i].emitter.loop;paths[i]["clip_frames"]=snapshot.sources[i].emitter.clip->samples.size();
+            }
+            Json result={{"world_id",source_definition.world_id},{"revision",source_definition.authored_revision},{"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},{"session_id",live ? Json(runtime_id_) : Json(nullptr)},
+                {"source",live ? "runtime" : "authored"},{"listener",listener},{"listener_world",snapshot.listener},{"backend","Steam Audio 4.8.1; CPU direct paths; default HRTF"},{"build_version",POIMA_VERSION},
+                {"geometry",geometry},{"triangles",report.triangles},{"sources",paths},{"scene_ms",report.scene_ms},{"simulation_ms",report.simulation_ms},{"dsp_ms",report.dsp_ms},
+                {"reflections",false},{"diffraction",false},{"device_playback",false},{"snapshot_policy","fresh synchronous frozen geometry/poses; capture restarts clips at sample zero"}};
+            if(capture_audio) {
+                const auto bytes=audio_wave(report.samples,2);const auto utf8=fs::path(std::u8string(output.begin(),output.end()));write_flushed(utf8,bytes);
+                result["capture"]={{"path",output},{"format","WAV IEEE float32"},{"sample_rate",audio_rate},{"channels",2},{"frames",frame_count},{"sha256",content_hash(bytes)},{"peak",report.peak},{"rms",report.rms},{"over_range_samples",report.over_range_samples}};
+            }
+            return result;
+        }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32070,e.what()); }
+    }
     void runtime_guard(const Json& params) const {
         const auto id=identifier(params.at("session_id"));
         require(runtime_ && id==runtime_id_,"Runtime session is absent or does not match.",-32030);
     }
-    RuntimeDefinition runtime_definition() const {
-        ModelCache cache;
+    RuntimeDefinition runtime_definition(bool audio_only=false) const {
+        ModelCache cache;AudioCache audio_cache;
         RuntimeDefinition result; result.world_id=doc_.at("world_id"); result.authored_revision=revision(doc_.at("revision"));
         for(const auto& [id,e]:doc_.at("entities").items()) {
             RuntimeEntityDefinition value; value.id=id; if(!e.at("parent").is_null()) value.parent=e.at("parent");
             const auto& components=e.at("components"); const auto& t=components.at("Transform");
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
             if(components.contains("Camera")) { const auto& c=components.at("Camera"); value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")}; }
-            value.mesh=mesh_component(components,cache);
+            if(!audio_only)value.mesh=mesh_component(components,cache);
+            else if(components.contains("AcousticMaterial") && components.at("AcousticMaterial").at("enabled")==true && !components.contains("BoxCollider")) {
+                RuntimeMesh geometry;
+                if(components.contains("StaticMesh")) {
+                    const auto& ref=components.at("StaticMesh");const auto model=cache.get(asset_directory(),ref.at("asset"));const auto primitive=revision(ref.at("primitive"));
+                    require(primitive<model->primitives.size(),"Acoustic mesh primitive does not exist.",-32050);geometry.mesh=model->primitives[primitive];
+                }
+                value.mesh=std::move(geometry);
+            }
+            if(components.contains("AcousticMaterial"))value.acoustics=acoustic_value(components.at("AcousticMaterial"));
+            if(components.contains("AudioEmitter")) { value.emitter=emitter_value(components.at("AudioEmitter"));if(value.emitter->enabled)value.emitter->clip=audio_cache.get(asset_directory(),value.emitter->asset); }
             if(components.contains("Light"))value.light=light_value(components.at("Light"));
             if(components.contains("LightingEnvironment"))value.environment=environment_value(components.at("LightingEnvironment"));
             if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")}; }
@@ -960,6 +1068,7 @@ public:
         auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
     }
     Json runtime_dispatch(const std::string& method,const Json& params) {
+        if(method=="runtime.audio.inspect" || method=="runtime.audio.capture")return audio_dispatch(method,params,true);
         if(method.starts_with("runtime.gameplay."))return gameplay_dispatch(method,params);
         if(method=="runtime.capture") return capture(params,true);
         if(method=="runtime.play") return play(params);
@@ -1092,7 +1201,7 @@ public:
                 entity(staged, id)["components"][type] = op.at("value");
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment", "Only optional built-in components can be removed.");
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment" || op.at("type") == "AcousticMaterial" || op.at("type") == "AudioEmitter", "Only optional built-in components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

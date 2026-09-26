@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/assets.hpp"
+#include "poima/audio.hpp"
 #include "world_storage.hpp"
 #include <fstream>
 #include <map>
@@ -28,6 +29,33 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
     return {id,bytes.size(),model};
 }
 struct LoadedImage { std::string id;std::size_t bytes=0;std::shared_ptr<const TextureImage> image; };
+struct LoadedAudio { std::string id;std::size_t bytes=0;std::shared_ptr<const AudioClip> clip; };
+inline LoadedAudio read_audio_asset(const std::filesystem::path& directory,const std::string& id) {
+    if(!valid_asset_id(id))throw std::runtime_error("Invalid audio asset ID.");
+    const auto path=directory/(id+".paudio");const auto length=std::filesystem::file_size(path);
+    if(length>12+std::size_t(max_audio_clip_frames)*4)throw std::runtime_error("Audio package exceeds size limit.");
+    std::string bytes(static_cast<std::size_t>(length),'\0');std::ifstream input(path,std::ios::binary);
+    if(!input.read(bytes.data(),static_cast<std::streamsize>(length)) || content_hash(bytes)!=id)throw std::runtime_error("Audio content hash mismatch or read failure.");
+    return {id,bytes.size(),decode_audio(bytes)};
+}
+inline LoadedAudio store_audio_asset(const std::filesystem::path& directory,const std::filesystem::path& source) {
+    const auto length=std::filesystem::file_size(source);if(length>32*1024*1024)throw std::runtime_error("WAV source exceeds 32 MiB.");
+    std::string encoded(static_cast<std::size_t>(length),'\0');std::ifstream input(source,std::ios::binary);
+    if(!input.read(encoded.data(),static_cast<std::streamsize>(length)))throw std::runtime_error("WAV source read failed.");
+    const auto imported=decode_wave(std::as_bytes(std::span(encoded.data(),encoded.size())));const auto bytes=encode_audio(*imported);
+    const auto clip=decode_audio(bytes);const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
+    const auto path=directory/(id+".paudio");if(std::filesystem::exists(path))return read_audio_asset(directory,id);
+    const auto pending=directory/(id+".pending");world_detail::write_flushed(pending,bytes);world_detail::replace_file(pending,path);return {id,bytes.size(),clip};
+}
+struct AudioCache {
+    std::map<std::string,LoadedAudio> clips;std::size_t bytes=0;
+    std::shared_ptr<const AudioClip> get(const std::filesystem::path& directory,const std::string& id) {
+        if(const auto found=clips.find(id);found!=clips.end())return found->second.clip;
+        if(!valid_asset_id(id))throw std::runtime_error("Invalid audio asset ID.");
+        const auto length=std::filesystem::file_size(directory/(id+".paudio"));if(length>64*1024*1024-bytes)throw std::runtime_error("Audio packages exceed the initial 64 MiB budget.");
+        auto loaded=read_audio_asset(directory,id);bytes+=loaded.bytes;auto result=loaded.clip;clips.emplace(id,std::move(loaded));return result;
+    }
+};
 inline LoadedImage read_image_asset(const std::filesystem::path& directory,const std::string& id) {
     if(!valid_asset_id(id))throw std::runtime_error("Invalid image asset ID.");
     const auto path=directory/(id+".pimage");const auto length=std::filesystem::file_size(path);

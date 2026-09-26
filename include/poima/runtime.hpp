@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include "poima/gameplay.hpp"
+#include "poima/audio.hpp"
 #include <memory>
 #include <optional>
 
@@ -37,6 +38,8 @@ struct RuntimeEntityDefinition {
     std::optional<RuntimeMesh> mesh;
     std::optional<Light> light;
     std::optional<LightingEnvironment> environment;
+    std::optional<AcousticMaterial> acoustics;
+    std::optional<AudioEmitter> emitter;
 };
 struct RuntimeDefinition {
     std::string world_id;

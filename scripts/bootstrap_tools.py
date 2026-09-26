@@ -7,10 +7,18 @@ from pathlib import Path
 import platform
 import shutil
 import tarfile
+import zipfile
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 TOOLS = {
+    "audio": {
+        "url": "https://github.com/ValveSoftware/steam-audio/releases/download/v4.8.1/steamaudio_4.8.1.zip",
+        "sha256": "4a0aa5ec1176f38f0b0993a37c2259d9e86f27e22d5e24f83ec4c3cb9a1d5449",
+        "archive": "steamaudio_4.8.1.zip",
+        "destination": ".cache/sdk/steam-audio-4.8.1",
+        "ready": ".cache/sdk/steam-audio-4.8.1/steamaudio/include/phonon.h",
+    },
     "dotnet": {
         "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.401/dotnet-sdk-10.0.401-linux-x64.tar.gz",
         "sha512": "51c8b999af9e8dd9998c9edc5944e19a90788862068acd38694e098889054ce8c23d4f0c5cccfa16bf187d044562359e5ee69a9f8ad0bbe913ba90311fbce25b",
@@ -57,15 +65,23 @@ def fetch(name):
     if not (ROOT / spec["ready"]).exists():
         destination = ROOT / spec["destination"]
         destination.mkdir(parents=True, exist_ok=True)
-        with tarfile.open(archive) as bundle:
-            bundle.extractall(destination, filter="data")
+        if archive.suffix == ".zip":
+            with zipfile.ZipFile(archive) as bundle:
+                for name in bundle.namelist():
+                    path = Path(name)
+                    if path.is_absolute() or ".." in path.parts:
+                        raise RuntimeError("Unexpected SDK archive path")
+                bundle.extractall(destination)
+        else:
+            with tarfile.open(archive) as bundle:
+                bundle.extractall(destination, filter="data")
     print(f"{name}: {ROOT / spec['ready']}", flush=True)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--only", choices=["compiler", "shaders", "dotnet", "graphics", "all"], default="graphics",
-                        help="Default: graphics tools. dotnet is the optional Linux C# SDK; all includes it.")
+    parser.add_argument("--only", choices=["compiler", "shaders", "dotnet", "audio", "graphics", "all"], default="graphics",
+                        help="Default: graphics tools. dotnet is the optional Linux C# SDK; audio is the native Steam Audio SDK. all includes both.")
     args = parser.parse_args()
     if platform.system() != "Linux" or platform.machine() not in ["x86_64", "AMD64"]:
         parser.error("This bootstrap supplies Linux x64 host tools (including WSL), not native Windows host tools.")
