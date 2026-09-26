@@ -47,6 +47,22 @@ struct RenderOptions {
     bool allow_software = false;
     std::string capture;
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
+    bool culling = true;
+    bool profile = false;
+};
+
+struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
+struct DrawCounts {
+    std::uint64_t objects=0,camera_draws=0,camera_culled=0,camera_triangles=0;
+    std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
+};
+struct RenderDiagnostics {
+    bool culling=true,profile_requested=false,gpu_timestamps=false;
+    std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;
+    std::uint64_t completed_submissions=0,gpu_samples_dropped=0;
+    std::string gpu_timing_detail="Profiling not requested.";
+    DrawCounts last_draws;
+    TimingSummary prepare_cpu,record_cpu,render_call_cpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
 };
 
 struct RenderReport {
@@ -61,6 +77,7 @@ struct RenderReport {
     std::uint32_t samples = 1;
     std::string gpu_name;
     std::string detail;
+    RenderDiagnostics diagnostics;
 };
 
 struct Reply {

@@ -23,6 +23,7 @@
 #include <atomic>
 #include <cstring>
 #include <cmath>
+#include <chrono>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -67,7 +68,14 @@ struct GpuShadow { float view_projection[16],splits[4]; };
 struct FrameConstants { float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];GpuLight lights[max_scene_lights];GpuShadow shadows[max_shadow_views]; };
 static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==6528);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
-struct DrawItem { DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false; };
+struct DrawItem { DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false,camera_visible=true;std::uint32_t shadow_mask=0; };
+using SteadyClock=std::chrono::steady_clock;
+double elapsed_ms(SteadyClock::time_point start) { return std::chrono::duration<double,std::milli>(SteadyClock::now()-start).count(); }
+void timing_sample(TimingSummary& value,double ms) {
+    if(value.samples==0)value.min_ms=value.max_ms=ms;
+    else { value.min_ms=std::min(value.min_ms,ms);value.max_ms=std::max(value.max_ms,ms); }
+    ++value.samples;value.total_ms+=ms;value.last_ms=ms;
+}
 using Vertex=MeshVertex;
 std::vector<Vertex> box_vertices() {
     std::vector<Vertex> result;
@@ -132,6 +140,10 @@ struct Context {
     nvrhi::GraphicsPipelineHandle shadow_pipeline;
     std::vector<ShadowView> shadow_plan;
     std::map<const MeshAsset*,Geometry> geometry_cache;
+    std::map<const MeshAsset*,Bounds> bounds_cache;
+    RenderDiagnostics diagnostics;
+    DrawCounts pending_draws;
+    vk::QueryPool timestamp_pool;
     std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
     std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
@@ -164,6 +176,7 @@ struct Context {
         if (device) {
             for (auto semaphore : finished) device.destroySemaphore(semaphore);
             if (acquired) device.destroySemaphore(acquired);
+            if (timestamp_pool) device.destroyQueryPool(timestamp_pool);
             if (swapchain) device.destroySwapchainKHR(swapchain);
             device.destroy();
         }
@@ -175,6 +188,7 @@ struct Context {
 
     void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false) {
         scene = source;
+        diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
         samples = scene ? options.samples : 1;
         SDL_SetMainReady();
         const bool initialized_video = SDL_Init(SDL_INIT_VIDEO);
@@ -321,7 +335,40 @@ struct Context {
         }
         commands = checked->createCommandList();
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
+        if(options.profile)prepare_timestamps();
         if (scene) { prepare_shadows();prepare_scene(); }
+    }
+
+    void prepare_timestamps() {
+        const auto limits=physical.getProperties().limits;
+        diagnostics.timestamp_period_ns=limits.timestampPeriod;
+        diagnostics.timestamp_valid_bits=physical.getQueueFamilyProperties().at(queue_family).timestampValidBits;
+        if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
+            diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
+        }
+        timestamp_pool=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,4));
+        diagnostics.gpu_timestamps=true;
+        diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
+    }
+    vk::CommandBuffer native_commands() {
+        const auto object=commands->getNativeObject(nvrhi::ObjectTypes::VK_CommandBuffer);
+        require(object.pointer!=nullptr,"Native Vulkan command buffer unavailable.");
+        return vk::CommandBuffer(static_cast<VkCommandBuffer>(object.pointer));
+    }
+    void timestamp(std::uint32_t index) {
+        if(timestamp_pool)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index);
+    }
+    void collect_timestamps(double cpu_interval_ms) {
+        if(!timestamp_pool)return;
+        std::array<std::uint64_t,4> values{};
+        const auto status=device.getQueryPoolResults(timestamp_pool,0,4,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64);
+        const auto bits=diagnostics.timestamp_valid_bits;
+        const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
+        if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) { ++diagnostics.gpu_samples_dropped;return; }
+        const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
+        auto ms=[&](std::size_t a,std::size_t b) { return static_cast<double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns*1e-6; };
+        timing_sample(diagnostics.shadow_gpu,ms(0,1));timing_sample(diagnostics.opaque_gpu,ms(1,2));
+        timing_sample(diagnostics.post_gpu,ms(2,3));timing_sample(diagnostics.total_gpu,ms(0,3));
     }
 
     void prepare_shadows() {
@@ -360,6 +407,7 @@ struct Context {
             const auto size=static_cast<float>(shadow_texture->getDesc().width);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(size,size));
             state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(0));
             for(const auto& draw:draws) {
+                if(!(draw.shadow_mask & (1u<<layer)))continue;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);auto constants=draw.constants;constants.normal[0][3]=static_cast<float>(layer);
@@ -436,7 +484,7 @@ struct Context {
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
     }
     void update_scene() {
-        draws.clear();
+        const auto started=SteadyClock::now();draws.clear();pending_draws={};
         auto lighting=scene->lighting;finalize_lighting(lighting);
         require(lighting.lights.size()<=max_scene_lights,"Too many lights for the forward renderer.");
         const auto vp=multiply(perspective(scene->vertical_fov,static_cast<double>(extent.width)/extent.height,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
@@ -465,6 +513,11 @@ struct Context {
             for(std::size_t k=0;k<16;++k)view.view_projection[k]=number(source.view_projection[k]);
             view.splits[0]=number(source.split_near);view.splits[1]=number(source.split_far);
         }
+        // Use the actual rounded GPU matrices for clipping decisions.
+        auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
+        const auto camera_frustum=frustum(frame_constants.view_projection);
+        std::vector<Frustum> shadow_frusta;for(std::size_t i=0;i<shadow_plan.size();++i)shadow_frusta.push_back(frustum(frame_constants.shadows[i].view_projection));
+        pending_draws.objects=scene->objects.size();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=scene->objects.size()*shadow_plan.size();
         for(const auto& object:scene->objects) {
             DrawItem item;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
             for(std::size_t row=0;row<3;++row) {
@@ -480,8 +533,18 @@ struct Context {
             draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
             draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
             item.bindings=mesh_bindings(object.mesh.get(),object.textures.get());
-            item.geometry=mesh_geometry(object.mesh);draws.push_back(std::move(item));
+            item.geometry=mesh_geometry(object.mesh);
+            auto [entry,inserted]=bounds_cache.try_emplace(object.mesh.get());if(inserted)entry->second=mesh_bounds(object.mesh.get());
+            const auto bounds=transform_bounds(entry->second,object.world);
+            item.camera_visible=!diagnostics.culling || intersects(bounds,camera_frustum);
+            if(item.camera_visible) { ++pending_draws.camera_draws;pending_draws.camera_triangles+=item.geometry.count/3; }else ++pending_draws.camera_culled;
+            for(std::size_t layer=0;layer<shadow_frusta.size();++layer) {
+                if(!diagnostics.culling || intersects(bounds,shadow_frusta[layer])) { item.shadow_mask|=1u<<layer;++pending_draws.shadow_draws;pending_draws.shadow_triangles+=item.geometry.count/3; }
+                else ++pending_draws.shadow_culled;
+            }
+            draws.push_back(std::move(item));
         }
+        if(diagnostics.profile_requested)timing_sample(diagnostics.prepare_cpu,elapsed_ms(started));
     }
 
     bool rebuild(const RenderOptions& options) {
@@ -618,6 +681,7 @@ struct Context {
     }
 
     bool frame(bool capture_frame) {
+        const auto frame_started=SteadyClock::now();
         if(!swapchain) { swapchain_dirty=true; return false; }
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
@@ -628,8 +692,11 @@ struct Context {
         const auto index = next.value;
         auto texture = images.at(index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
-        commands->open();
+        const auto record_started=SteadyClock::now();commands->open();
+        if(timestamp_pool)native_commands().resetQueryPool(timestamp_pool,0,4);
+        timestamp(0);
         if(scene) { commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));render_shadows(); }
+        timestamp(1);
         commands->beginTrackingTextureState(texture, nvrhi::AllSubresources,
             initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
         commands->clearTextureFloat(multisample_color ? multisample_color.Get() : texture.Get(), nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));
@@ -645,6 +712,7 @@ struct Context {
         commands->setGraphicsState(state);
         if (scene) {
             for (const auto& draw : draws) {
+                if(!draw.camera_visible)continue;
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
@@ -653,12 +721,14 @@ struct Context {
                 if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
                 else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
             }
-            if (multisample_color) commands->resolveTexture(texture, nvrhi::AllSubresources, multisample_color, nvrhi::AllSubresources);
         } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+        timestamp(2);
+        if(scene && multisample_color)commands->resolveTexture(texture,nvrhi::AllSubresources,multisample_color,nvrhi::AllSubresources);
         if (capture_frame) commands->copyTexture(staging, {}, texture, {});
         commands->setTextureState(texture, nvrhi::AllSubresources, nvrhi::ResourceStates::Present);
-        commands->commitBarriers();
+        commands->commitBarriers();timestamp(3);
         commands->close();
+        const auto record_ms=elapsed_ms(record_started);
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
         checked->executeCommandList(commands);
         vk::PresentInfoKHR present_info;
@@ -678,6 +748,10 @@ struct Context {
         require(checked->waitForIdle(), "NVRHI device wait failed.");
         checked->runGarbageCollection();
         require(messages.errors == 0, "NVRHI reported a validation/backend error; inspect stderr.");
+        ++diagnostics.completed_submissions;diagnostics.last_draws=pending_draws;
+        if(diagnostics.profile_requested) {
+            const auto frame_ms=elapsed_ms(frame_started);timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,frame_ms);collect_timestamps(frame_ms);
+        }
         return presented!=vk::Result::eErrorOutOfDateKHR;
     }
 };
@@ -712,7 +786,7 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
     }
     report.hardware = context.hardware;
     report.gpu_name = context.gpu_name;
-    report.validation_errors = context.messages.errors;
+    report.validation_errors = context.messages.errors;report.diagnostics=context.diagnostics;
     return report;
 }
 RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
@@ -815,7 +889,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     }
     result.final_tick=runtime.inspect().tick; result.dropped_seconds=clock.dropped_seconds();
     report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;
-    report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;
+    report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
     return result;
 }
 } // namespace poima

@@ -16,6 +16,7 @@ parser.add_argument('--windows-interop',action='store_true')
 parser.add_argument('--gpu',type=int,default=0)
 parser.add_argument('--authored-lights',action='store_true')
 parser.add_argument('--shadows',action='store_true')
+parser.add_argument('--profile',action='store_true')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 if args.shadows and not args.authored_lights:parser.error('--shadows requires --authored-lights')
 run=args.output/uuid.uuid4().hex;run.mkdir()
@@ -43,7 +44,7 @@ sequence=[{'ticks':120},{'ticks':60,'move':[0,1]},{'ticks':10,'jump':True},{'tic
 total=sum(s['ticks'] for s in sequence)
 request('world.transact',fixture['params']);request('runtime.start',{'session_id':uid(900),'revision':1})
 play={'session_id':uid(900),'request_id':uid(1000),'expected_tick':0,'controller':uid(100),'camera':uid(101),'mode':'replay',
-      'sequence':sequence,'gpu':args.gpu,'path':native(run/'player.bmp')}
+      'sequence':sequence,'gpu':args.gpu,'path':native(run/'player.bmp'),'profile':args.profile}
 played=request('runtime.play',play)
 retry=request('runtime.play',play)
 changed=request('runtime.play',{**play,'sequence':[{'ticks':1}]})
@@ -56,7 +57,7 @@ for segment in sequence:
     control={k:v for k,v in segment.items() if k!='ticks'};control['entity']=uid(100)
     request('runtime.step',{'session_id':uid(901),'request_id':uuid.uuid4().hex,'expected_tick':tick,'ticks':segment['ticks'],'inputs':[control]});tick+=segment['ticks']
 second_states=[request('runtime.entity',{'session_id':uid(901),'id':uid(n),'tick':total}) for n in [100,101,3]]
-baseline=request('runtime.capture',{'session_id':uid(901),'tick':total,'camera':uid(101),'gpu':args.gpu,'path':native(run/'baseline.bmp')})
+baseline=request('runtime.capture',{'session_id':uid(901),'tick':total,'camera':uid(101),'gpu':args.gpu,'path':native(run/'baseline.bmp'),'profile':args.profile,'culling':not args.profile})
 # A graphics initialization failure must expose the current tick, be retryable
 # without relaunching, and allow a new request to recover in the same runtime.
 bad={**play,'session_id':uid(901),'request_id':uid(1002),'expected_tick':total,'sequence':[{'ticks':1}],'gpu':4095,'path':native(run/'bad.bmp')}
@@ -91,6 +92,13 @@ try:
         assert abs(lights[uid(202)]['direction'][0])>.1
         if args.shadows:assert report['lighting']['shadow_views']==7 and report['lighting']['shadow_bytes']==7*512*512*4
     assert pixels(run/'player.bmp')==pixels(run/'baseline.bmp')
+    diagnostics=report['render_diagnostics'];assert diagnostics['completed_submissions']==report['frames_presented']
+    if args.profile:
+        uncull=responses[baseline]['result']['render_diagnostics'];assert not uncull['culling'] and diagnostics['culling']
+        assert diagnostics['gpu']['available'] and diagnostics['gpu']['total']['samples']==report['frames_presented']
+        assert diagnostics['gpu']['samples_dropped']==0
+        for key in ['camera_draws','shadow_draws']:assert diagnostics['last_draws'][key]<=uncull['last_draws'][key]
+        record['profile_comparison']={'culled_player':diagnostics,'unculled_capture':uncull}
     assert not responses[failed]['result']['success'] and responses[failed]['result']['tick']==total
     assert responses[failed_retry]['result']=={**responses[failed]['result'],'replayed':True}
     assert responses[recovered]['result']['success'] and responses[recovered]['result']['tick']==total+1

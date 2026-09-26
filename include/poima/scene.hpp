@@ -48,6 +48,12 @@ struct PbrMaterial {
     bool double_sided=false;
 };
 struct MeshAsset;
+struct Bounds { std::array<double,3> minimum{},maximum{}; };
+using Frustum=std::array<std::array<double,4>,6>;
+Bounds mesh_bounds(const MeshAsset* mesh); // null selects the built-in unit box
+Bounds transform_bounds(const Bounds& local,const Matrix4& world);
+Frustum make_frustum(const Matrix4& view_projection);
+bool intersects(const Bounds& world,const Frustum& frustum);
 struct MaterialTextures;
 struct SceneObject {
     std::string entity_id;
