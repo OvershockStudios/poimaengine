@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "poima/scene.hpp"
 
 namespace poima {
 RenderReport run_render_smoke(const RenderOptions&) {
@@ -7,5 +8,8 @@ RenderReport run_render_smoke(const RenderOptions&) {
     report.available = false;
     report.detail = "This build has no rendering experiment. Configure POIMA_BUILD_RENDER_SMOKE=ON.";
     return report;
+}
+RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot&) {
+    return run_render_smoke(options);
 }
 } // namespace poima

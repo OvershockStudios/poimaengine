@@ -37,6 +37,7 @@ class CliContract(unittest.TestCase):
         self.assertTrue(features["scene_editing"])
         self.assertEqual(features["vulkan_device_inspection"], PROBE_ENABLED)
         self.assertEqual(features["render_smoke"], RENDER_ENABLED)
+        self.assertEqual(features["scene_capture"], RENDER_ENABLED)
         for name in ["renderer", "animation", "vfx", "hot_reload", "mcp", "editor"]:
             self.assertFalse(features[name], name)
         for operation in first["result"]["commands"]:

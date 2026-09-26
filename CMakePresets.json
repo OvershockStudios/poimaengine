@@ -17,7 +17,7 @@
     },
     {
       "name": "headless",
-      "displayName": "Dependency-free headless bootstrap",
+      "displayName": "Headless world service (no dependency downloads)",
       "inherits": "dev",
       "binaryDir": "${sourceDir}/build/headless",
       "cacheVariables": {

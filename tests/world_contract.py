@@ -128,6 +128,52 @@ class WorldContract(unittest.TestCase):
                     {**transform, 'scale': [1, 0, 1]}, {**transform, 'position': [1e10, 0, 0]}]:
             client.txn(2, [{'op': 'component.set', 'id': uid(2), 'type': 'Transform', 'value': bad}], error=-32602)
 
+    def test_components_hierarchy_matrices_and_capture_validation(self):
+        import math
+        client = self.open()
+        def component(n, kind, value):
+            return {'op': 'component.set', 'id': uid(n), 'type': kind, 'value': value}
+        camera = {'vertical_fov': 60, 'near': 0.1, 'far': 1000}
+        mesh = {'primitive': 'box', 'visible': True, 'albedo': [0.5, 0.1, 0.2]}
+        transform = {'position': [10, 0, 0], 'rotation': [0, 0, math.sqrt(0.5), math.sqrt(0.5)], 'scale': [2, 3, 4]}
+        child = {'position': [1, 0, 0], 'rotation': [0, 0, 0, 1], 'scale': [1, 2, 1]}
+        client.txn(0, [create(1), create(2, uid(1)), create(3), component(1, 'Transform', transform),
+                       component(2, 'Transform', child), component(2, 'MeshRenderer', mesh), component(3, 'Camera', camera)])
+        expected = [0, 2, 0, 0, -6, 0, 0, 0, 0, 0, 4, 0, 10, 2, 0, 1]
+        result = client.rpc('entity.world_transform', {'id': uid(2), 'revision': 1})
+        self.assertEqual(result['layout'], 'column_major')
+        for actual, wanted in zip(result['matrix'], expected): self.assertAlmostEqual(actual, wanted, places=10)
+        for kind, n in [('MeshRenderer', 2), ('Camera', 3)]:
+            page = client.rpc('entity.query', {'component': kind, 'revision': 1})
+            self.assertEqual([e['id'] for e in page['entities']], [uid(n)])
+            self.assertIn(kind, page['entities'][0]['components'])
+        self.assertEqual(client.rpc('entity.get', {'id': uid(2), 'component': 'MeshRenderer'})['value'], mesh)
+        saved = self.path.read_bytes()
+        for kind, value in [('Camera', {**camera, 'far': 0.01}), ('Camera', {**camera, 'vertical_fov': 0}),
+                            ('MeshRenderer', {**mesh, 'albedo': [-0.1, 0, 0]}), ('MeshRenderer', {**mesh, 'primitive': 'missing'})]:
+            client.txn(1, [component(2, kind, value)], error=-32602)
+        capture = {'revision': 1, 'camera': uid(3), 'path': native(Path(self.directory.name) / 'new.bmp')}
+        client.rpc('world.capture', {**capture, 'revision': 0}, error=-32009)
+        client.rpc('world.capture', {**capture, 'camera': uid(1)}, error=-32004)
+        client.rpc('world.capture', {**capture, 'path': native(self.path)}, error=-32602)
+        client.rpc('world.capture', {**capture, 'path': native(Path(str(self.path)+'.pending'))}, error=-32602)
+        if args.windows_interop:
+            client.rpc('world.capture', {**capture, 'path': native(Path(str(self.path)+'.PENDING'))}, error=-32602)
+        for extra in [{'width': 127}, {'height': 4097}, {'gpu': -1}, {'samples': 2}]:
+            client.rpc('world.capture', {**capture, **extra}, error=-32602)
+        capabilities = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
+        if not capabilities['scene_capture']: client.rpc('world.capture', capture, error=-32003)
+        self.assertEqual(self.path.read_bytes(), saved)
+        client.txn(1, [{'op': 'component.remove', 'id': uid(2), 'type': 'Transform'}], error=-32602)
+        client.txn(1, [{'op': 'component.remove', 'id': uid(2), 'type': 'MeshRenderer'}])
+        client.rpc('entity.get', {'id': uid(2), 'component': 'MeshRenderer'}, error=-32004)
+        client.rpc('entity.world_transform', {'id': uid(2), 'revision': 1}, error=-32009)
+        client.close(); client = self.open()
+        self.assertEqual(client.rpc('entity.get', {'id': uid(3), 'component': 'Camera'})['value'], camera)
+        self.assertEqual(client.rpc('entity.query', {'component': 'MeshRenderer'})['entities'], [])
+        client.txn(2, [{'op': 'entity.reparent', 'id': uid(3), 'parent': uid(1), 'mode': 'keep_local'}])
+        client.rpc('world.capture', {**capture, 'revision': 3}, error=-32602)
+
     def test_pagination_recursive_delete_and_identity_retirement(self):
         client = self.open()
         client.txn(0, [create(1)] + [create(n, uid(1)) for n in range(2, 67)])

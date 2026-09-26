@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.3 LANGUAGES CXX)
+project(Poima VERSION 0.0.4 LANGUAGES CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -14,7 +14,7 @@ if(NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 configure_file(cmake/build_info.hpp.in generated/poima/build_info.hpp @ONLY)
-add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp)
+add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp src/scene.cpp)
 target_compile_features(poima_core PUBLIC cxx_std_20)
 set_target_properties(poima_core PROPERTIES CXX_EXTENSIONS OFF)
 target_include_directories(poima_core PUBLIC include PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -76,6 +76,9 @@ endforeach()
 
 if(POIMA_BUILD_TESTS)
     enable_testing()
+    add_executable(poima-scene-math-test tests/scene_math.cpp)
+    target_link_libraries(poima-scene-math-test PRIVATE poima_core)
+    add_test(NAME scene_math COMMAND poima-scene-math-test)
     find_package(Python3 3.9 REQUIRED COMPONENTS Interpreter)
     add_test(NAME cli_contract
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_contract.py"

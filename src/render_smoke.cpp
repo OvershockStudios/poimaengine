@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "poima/scene.hpp"
+#include "poima/scene_vs.hpp"
+#include "poima/scene_ps.hpp"
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
@@ -15,6 +18,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cstring>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -47,6 +51,30 @@ nvrhi::ShaderHandle create_embedded_shader(nvrhi::IDevice* device, const nvrhi::
 
 // One bounded experiment owns the complete graphics lifetime. It is not the
 // future player/render-graph implementation or a concurrent session API.
+struct DrawConstants {
+    float mvp[16];
+    float normal[3][4];
+    float albedo[4];
+};
+static_assert(sizeof(DrawConstants) == 128);
+struct Vertex { float position[3]; float normal[3]; };
+std::vector<Vertex> box_vertices() {
+    std::vector<Vertex> result;
+    for (int axis = 0; axis < 3; ++axis) for (float sign : {-1.0f, 1.0f}) {
+        std::array<Vertex, 4> corners{};
+        const float u[] = {-0.5f, 0.5f, 0.5f, -0.5f};
+        const float v[] = {-0.5f, -0.5f, 0.5f, 0.5f};
+        for (std::size_t k = 0; k < corners.size(); ++k) {
+            corners[k].position[axis] = sign * 0.5f;
+            corners[k].position[(axis + 1) % 3] = u[k];
+            corners[k].position[(axis + 2) % 3] = v[k];
+            corners[k].normal[axis] = sign;
+        }
+        for (auto k : {0u, 1u, 2u, 0u, 2u, 3u}) result.push_back(corners[k]);
+    }
+    return result;
+}
+
 struct Context {
     Messages messages;
     bool sdl_initialized = false;
@@ -72,6 +100,15 @@ struct Context {
     nvrhi::GraphicsPipelineHandle pipeline;
     nvrhi::CommandListHandle commands;
     nvrhi::StagingTextureHandle staging;
+    const SceneSnapshot* scene = nullptr;
+    std::uint32_t samples = 1;
+    nvrhi::TextureHandle depth;
+    nvrhi::TextureHandle multisample_color;
+    nvrhi::BufferHandle vertices;
+    nvrhi::InputLayoutHandle input_layout;
+    nvrhi::BindingLayoutHandle binding_layout;
+    nvrhi::BindingSetHandle bindings;
+    std::vector<DrawConstants> draws;
     bool hardware = false;
     std::string gpu_name;
 
@@ -84,8 +121,14 @@ struct Context {
         vertex_shader = nullptr;
         pixel_shader = nullptr;
         staging = nullptr;
+        bindings = nullptr;
+        binding_layout = nullptr;
+        input_layout = nullptr;
+        vertices = nullptr;
         framebuffers.clear();
         images.clear();
+        depth = nullptr;
+        multisample_color = nullptr;
         checked = nullptr;
         native = nullptr;
         if (device) {
@@ -100,12 +143,14 @@ struct Context {
         if (sdl_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
 
-    void initialize(const RenderOptions& options) {
+    void initialize(const RenderOptions& options, const SceneSnapshot* source) {
+        scene = source;
+        samples = scene ? options.samples : 1;
         SDL_SetMainReady();
         const bool initialized_video = SDL_Init(SDL_INIT_VIDEO);
         require(initialized_video, std::string("SDL video initialization: ") + SDL_GetError());
         sdl_initialized = true;
-        window = SDL_CreateWindow("Poima — Vulkan/NVRHI foundation", static_cast<int>(options.width),
+        window = SDL_CreateWindow(scene ? "Poima — authored scene preview" : "Poima — Vulkan/NVRHI foundation", static_cast<int>(options.width),
             static_cast<int>(options.height), SDL_WINDOW_VULKAN);
         require(window != nullptr, std::string("SDL window: ") + SDL_GetError());
         const auto get = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
@@ -199,22 +244,72 @@ struct Context {
         require(static_cast<bool>(native), "NVRHI device initialization failed.");
         checked = nvrhi::validation::createValidationLayer(native);
 
+        const auto limits = physical.getProperties().limits;
+        const auto requested_samples = samples == 4 ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1;
+        require((limits.framebufferColorSampleCounts & requested_samples) && (limits.framebufferDepthSampleCounts & requested_samples),
+            "Requested scene MSAA sample count is unavailable on the selected GPU.");
         create_swapchain(options);
         const nvrhi::ShaderDesc vs_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const nvrhi::ShaderDesc ps_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-        vertex_shader = create_embedded_shader(checked, vs_desc, poima_smoke_vs);
-        pixel_shader = create_embedded_shader(checked, ps_desc, poima_smoke_ps);
+        vertex_shader = scene ? create_embedded_shader(checked, vs_desc, poima_scene_vs) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
+        pixel_shader = scene ? create_embedded_shader(checked, ps_desc, poima_scene_ps) : create_embedded_shader(checked, ps_desc, poima_smoke_ps);
         require(vertex_shader && pixel_shader, "Compiled SPIR-V shader creation failed.");
         nvrhi::GraphicsPipelineDesc pipeline_desc;
         pipeline_desc.VS = vertex_shader;
         pipeline_desc.PS = pixel_shader;
-        pipeline_desc.renderState.depthStencilState.depthTestEnable = false;
-        pipeline_desc.renderState.depthStencilState.depthWriteEnable = false;
+        pipeline_desc.renderState.depthStencilState.depthTestEnable = scene != nullptr;
+        pipeline_desc.renderState.depthStencilState.depthWriteEnable = scene != nullptr;
+        pipeline_desc.renderState.depthStencilState.depthFunc = nvrhi::ComparisonFunc::LessOrEqual;
+        if (scene) {
+            const nvrhi::VertexAttributeDesc attributes[] = {
+                nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)),
+                nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex))};
+            input_layout = checked->createInputLayout(attributes, 2, vertex_shader);
+            require(static_cast<bool>(input_layout), "Scene vertex layout creation failed.");
+            binding_layout = checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Vertex)
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))));
+            require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
+            bindings = checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(DrawConstants))), binding_layout);
+            require(static_cast<bool>(bindings), "Scene binding set creation failed.");
+            pipeline_desc.inputLayout = input_layout;
+            pipeline_desc.bindingLayouts.push_back(binding_layout);
+        }
         pipeline_desc.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
         pipeline = checked->createGraphicsPipeline(pipeline_desc, framebuffers.front()->getFramebufferInfo());
         require(static_cast<bool>(pipeline), "NVRHI graphics pipeline creation failed.");
         commands = checked->createCommandList();
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
+        if (scene) prepare_scene();
+    }
+
+    void prepare_scene() {
+        const auto mesh = box_vertices();
+        nvrhi::BufferDesc desc;
+        desc.byteSize = mesh.size() * sizeof(Vertex); desc.isVertexBuffer = true;
+        desc.initialState = nvrhi::ResourceStates::VertexBuffer; desc.keepInitialState = true;
+        desc.debugName = "Shared unit box";
+        vertices = checked->createBuffer(desc);
+        require(static_cast<bool>(vertices), "Scene vertex buffer creation failed.");
+        commands->open(); commands->writeBuffer(vertices, mesh.data(), mesh.size() * sizeof(Vertex)); commands->close();
+        checked->executeCommandList(commands);
+        require(checked->waitForIdle(), "Scene geometry upload failed.");
+        const auto vp = multiply(perspective(scene->vertical_fov, static_cast<double>(extent.width) / extent.height,
+            scene->near_plane, scene->far_plane), inverse_affine(scene->camera_world));
+        auto number = [](double value) {
+            require(std::isfinite(value) && std::abs(value) <= std::numeric_limits<float>::max(), "Scene matrix exceeds GPU float range.");
+            return static_cast<float>(value);
+        };
+        for (const auto& object : scene->objects) {
+            DrawConstants draw{};
+            const auto mvp = multiply(vp, object.world);
+            const auto inverse = inverse_affine(object.world);
+            for (std::size_t k=0;k<16;++k) draw.mvp[k] = number(mvp[k]);
+            for (std::size_t row=0;row<3;++row) for (std::size_t col=0;col<3;++col)
+                draw.normal[row][col] = number(inverse[row*4+col]);
+            for (std::size_t k=0;k<3;++k) draw.albedo[k] = object.albedo[k];
+            draw.albedo[3] = (format == vk::Format::eB8G8R8A8Srgb || format == vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
+            draws.push_back(draw);
+        }
     }
 
     void create_swapchain(const RenderOptions& options) {
@@ -223,8 +318,12 @@ struct Context {
         require(!formats.empty(), "No Vulkan surface formats are available.");
         vk::SurfaceFormatKHR selected;
         nvrhi::Format nvrhi_format = nvrhi::Format::UNKNOWN;
-        for (const auto preferred : {vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm,
-                                    vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb}) {
+        // Prefer sRGB attachments for scene previews: lighting and MSAA resolve
+        // operate in linear light. Preserve the triangle fixture's old format.
+        const std::array preferred_formats = scene
+            ? std::array{vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm}
+            : std::array{vk::Format::eB8G8R8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::Format::eB8G8R8A8Srgb, vk::Format::eR8G8B8A8Srgb};
+        for (const auto preferred : preferred_formats) {
             const auto found = std::find_if(formats.begin(), formats.end(), [preferred](const auto& item) {
                 return item.format == preferred && item.colorSpace == vk::ColorSpaceKHR::eSrgbNonlinear;
             });
@@ -274,12 +373,29 @@ struct Context {
         texture_desc.format = nvrhi_format;
         texture_desc.isRenderTarget = true;
         texture_desc.isShaderResource = false;
+        if (scene) {
+            nvrhi::TextureDesc scene_desc = texture_desc;
+            scene_desc.sampleCount = samples;
+            scene_desc.dimension = samples > 1 ? nvrhi::TextureDimension::Texture2DMS : nvrhi::TextureDimension::Texture2D;
+            scene_desc.keepInitialState = true;
+            if (samples > 1) {
+                scene_desc.initialState = nvrhi::ResourceStates::RenderTarget;
+                multisample_color = checked->createTexture(scene_desc);
+                require(static_cast<bool>(multisample_color), "Scene MSAA color creation failed.");
+            }
+            scene_desc.format = nvrhi::Format::D32;
+            scene_desc.initialState = nvrhi::ResourceStates::DepthWrite;
+            depth = checked->createTexture(scene_desc);
+            require(static_cast<bool>(depth), "Scene depth creation failed.");
+        }
         for (const auto image : device.getSwapchainImagesKHR(swapchain)) {
             auto texture = checked->createHandleForNativeTexture(nvrhi::ObjectTypes::VK_Image,
                 nvrhi::Object(static_cast<VkImage>(image)), texture_desc);
             require(static_cast<bool>(texture), "NVRHI swapchain image wrapping failed.");
             images.push_back(texture);
-            auto framebuffer = checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(texture));
+            auto framebuffer_desc = nvrhi::FramebufferDesc().addColorAttachment(multisample_color ? multisample_color.Get() : texture.Get());
+            if (depth) framebuffer_desc.setDepthAttachment(depth);
+            auto framebuffer = checked->createFramebuffer(framebuffer_desc);
             require(static_cast<bool>(framebuffer), "NVRHI framebuffer creation failed.");
             framebuffers.push_back(framebuffer);
             finished.push_back(device.createSemaphore({}));
@@ -318,13 +434,24 @@ struct Context {
         commands->open();
         commands->beginTrackingTextureState(texture, nvrhi::AllSubresources,
             initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
-        commands->clearTextureFloat(texture, nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));
+        commands->clearTextureFloat(multisample_color ? multisample_color.Get() : texture.Get(), nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));
+        if (depth) commands->clearDepthStencilTexture(depth, nvrhi::AllSubresources, true, 1.0f, false, 0);
         nvrhi::GraphicsState state;
         state.pipeline = pipeline;
         state.framebuffer = framebuffers[index];
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width), static_cast<float>(extent.height)));
+        if (scene) {
+            state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));
+            state.bindings.push_back(bindings);
+        }
         commands->setGraphicsState(state);
-        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+        if (scene) {
+            for (const auto& draw : draws) {
+                commands->setPushConstants(&draw, sizeof(draw));
+                commands->draw(nvrhi::DrawArguments().setVertexCount(36));
+            }
+            if (multisample_color) commands->resolveTexture(texture, nvrhi::AllSubresources, multisample_color, nvrhi::AllSubresources);
+        } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
         if (capture_frame) commands->copyTexture(staging, {}, texture, {});
         commands->setTextureState(texture, nvrhi::AllSubresources, nvrhi::ResourceStates::Present);
         commands->commitBarriers();
@@ -349,13 +476,14 @@ struct Context {
 };
 } // namespace
 
-RenderReport run_render_smoke(const RenderOptions& options) {
+RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
     RenderReport report;
     Context context;
     try {
-        context.initialize(options);
+        context.initialize(options, scene);
         report.width = context.extent.width;
         report.height = context.extent.height;
+        report.samples = context.samples;
         for (std::uint32_t frame = 0; frame < options.frames; ++frame) {
             SDL_Event event;
             while (SDL_PollEvent(&event)) {
@@ -371,7 +499,7 @@ RenderReport run_render_smoke(const RenderOptions& options) {
             }
         }
         report.success = true;
-        report.detail = "Vulkan triangle drawn and presented through NVRHI. Serialized smoke test; no game-performance qualification.";
+        report.detail = scene ? "Authored scene rendered through the bounded forward preview." : "Vulkan triangle drawn and presented through NVRHI. Serialized smoke test; no game-performance qualification.";
     } catch (const std::exception& error) {
         report.detail = error.what();
     }
@@ -380,4 +508,6 @@ RenderReport run_render_smoke(const RenderOptions& options) {
     report.validation_errors = context.messages.errors;
     return report;
 }
+RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
+RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene) { return render(options, &scene); }
 } // namespace poima

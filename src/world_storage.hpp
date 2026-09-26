@@ -18,6 +18,14 @@ namespace poima::world_detail {
 namespace fs = std::filesystem;
 inline constexpr std::size_t max_document_bytes = 16 * 1024 * 1024;
 
+inline bool same_path_name(const fs::path& left, const fs::path& right) {
+#ifdef _WIN32
+    return CompareStringOrdinal(left.c_str(), -1, right.c_str(), -1, TRUE) == CSTR_EQUAL;
+#else
+    return left == right;
+#endif
+}
+
 // An OS-held, cooperative, per-document writer lock. A process crash releases
 // ownership. The empty sidecar remains; its existence is not the lock state.
 class WriterLock {

@@ -46,6 +46,7 @@ struct RenderOptions {
     int gpu = -1;
     bool allow_software = false;
     std::string capture;
+    std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
 };
 
 struct RenderReport {
@@ -57,6 +58,7 @@ struct RenderReport {
     std::uint32_t width = 0;
     std::uint32_t height = 0;
     std::uint32_t validation_errors = 0;
+    std::uint32_t samples = 1;
     std::string gpu_name;
     std::string detail;
 };

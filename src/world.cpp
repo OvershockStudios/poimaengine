@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/world.hpp"
+#include "poima/scene.hpp"
+#include "poima/build_info.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -70,6 +72,47 @@ void validate_transform(const Json& value) {
     for (const auto& v : value.at("rotation")) norm += v.get<double>() * v.get<double>();
     require(std::abs(norm - 1) <= 1e-6, "Rotation must be a normalized XYZW quaternion.");
 }
+void validate_component(const std::string& type, const Json& value) {
+    if (type == "Transform") { validate_transform(value); return; }
+    if (type == "Camera") {
+        fields(value, {"vertical_fov", "near", "far"}, {"vertical_fov", "near", "far"});
+        for (const auto* key : {"vertical_fov", "near", "far"})
+            require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()), "Invalid camera number.");
+        require(value.at("vertical_fov") >= 5 && value.at("vertical_fov") <= 150, "Camera field of view must be 5..150 degrees.");
+        require(value.at("near") >= 0.001 && value.at("far") <= 1e7 && value.at("far") > value.at("near"), "Camera needs 0.001 <= near < far <= 10000000.");
+        return;
+    }
+    if (type == "MeshRenderer") {
+        fields(value, {"primitive", "albedo", "visible"}, {"primitive", "albedo", "visible"});
+        require(value.at("primitive") == "box" && value.at("visible").is_boolean(), "MeshRenderer currently supports box primitives and boolean visibility.");
+        const auto& color = value.at("albedo");
+        require(color.is_array() && color.size() == 3, "Albedo needs three linear RGB values.");
+        for (const auto& item : color) require(item.is_number() && std::isfinite(item.get<double>()) && item >= 0 && item <= 1, "Albedo must be in [0, 1].");
+        return;
+    }
+    throw Error(-32602, "Unknown component type.");
+}
+std::map<std::string, Matrix4> world_matrices(const Json& entities) {
+    std::map<std::string, Matrix4> result;
+    for (const auto& [id, unused] : entities.items()) {
+        (void)unused;
+        std::vector<std::string> chain;
+        auto current = id;
+        while (!current.empty() && !result.contains(current)) {
+            chain.push_back(current);
+            const auto& parent = entities.at(current).at("parent");
+            current = parent.is_null() ? "" : parent.get<std::string>();
+        }
+        auto matrix = current.empty() ? identity_matrix() : result.at(current);
+        for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+            const auto& t = entities.at(*it).at("components").at("Transform");
+            matrix = multiply(matrix, local_matrix(t.at("position").get<std::array<double,3>>(),
+                t.at("rotation").get<std::array<double,4>>(), t.at("scale").get<std::array<double,3>>()));
+            result.emplace(*it, matrix);
+        }
+    }
+    return result;
+}
 Json default_transform() {
     return {{"position", {0, 0, 0}}, {"rotation", {0, 0, 0, 1}}, {"scale", {1, 1, 1}}};
 }
@@ -85,6 +128,12 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer"}}};
+    const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
+        {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
+    const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
+        {"visible", {{"type", "boolean"}}}}, {"primitive", "albedo", "visible"});
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -94,24 +143,36 @@ Json describe() {
     op("entity.rename", {{"name", name}}, {"name"});
     op("entity.reparent", {{"parent", parent}, {"mode", {{"const", "keep_local"}}}}, {"parent", "mode"});
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
-    op("component.set", {{"type", {{"const", "Transform"}}}, {"value", transform}}, {"type", "value"});
-    return {{"protocol_version", 1}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    for (const auto& [type, value] : components.items())
+        op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer"}}}}}, {"type"});
+    return {{"protocol_version", 1}, {"schema_revision", 2}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
-            {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", {{"const", "Transform"}}}}, {"id"})},
-            {"entity.query", object_schema({{"revision", rev}, {"parent", parent}, {"after", id},
+            {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", component_type}}, {"id"})},
+            {"entity.world_transform", object_schema({{"id", id}, {"revision", rev}}, {"id"})},
+            {"world.capture", object_schema({{"revision", rev}, {"camera", id},
+                {"path", {{"type", "string"}, {"minLength", 1}, {"description", "New BMP path; parent must exist. Opens a bounded native window."}}},
+                {"width", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 960}}},
+                {"height", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 540}}},
+                {"gpu", {{"type", "integer"}, {"minimum", 0}, {"maximum", 4095}}},
+                {"samples", {{"enum", {1, 4}}, {"default", 4}}}}, {"revision", "camera", "path"})},
+            {"entity.query", object_schema({{"revision", rev}, {"parent", parent}, {"after", id}, {"component", component_type},
                 {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 256}, {"default", 64}}}})},
             {"world.transact", object_schema({{"request_id", id}, {"base_revision", rev},
                 {"ops", {{"type", "array"}, {"minItems", 1}, {"maxItems", 256}, {"items", {{"oneOf", ops}}}}},
                 {"preview", {{"type", "boolean"}, {"default", false}}}}, {"request_id", "base_revision", "ops"})}}},
-        {"components", {{"Transform", transform}}},
+        {"components", components},
         {"limits", {{"entities", 10000}, {"request_bytes", 1048576}, {"document_bytes", max_document_bytes},
             {"receipt_window", 128}, {"json_depth", 64}}},
         {"invariants", {"Normalized XYZW quaternion; meters; local transforms; positive scale.",
             "Stable IDs are caller-supplied and cannot be reused after deletion.",
             "Pagination with after requires the returned revision.",
             "Single cooperative writer per document; manual file changes require reopening.",
+            "Camera requires 0.001 <= near < far <= 10000000 and an unscaled world transform.",
+            "Box primitive is centered at the origin with unit side lengths; albedo is linear RGB.",
+            "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",
             "No simulation, custom components, undo, prefab or keep_world transform support yet."}}};
 }
 Json parse(const std::string& text) {
@@ -154,8 +215,8 @@ void validate(const Json& doc) {
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform"}, {"Transform"});
-        validate_transform(entity.at("components").at("Transform"));
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer"}, {"Transform"});
+        for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
     std::map<std::string, int> colors;
     for (const auto& [id, unused] : entities.items()) {
@@ -242,13 +303,14 @@ public:
             fields(params, {"id", "revision", "component"}, {"id"}); current_revision(params);
             auto value = entity(doc_, params.at("id"));
             if (params.contains("component")) {
-                require(params.at("component") == "Transform", "Unknown component type.");
-                value = value.at("components").at("Transform");
+                require(params.at("component").is_string() && value.at("components").contains(params.at("component").get<std::string>()), "Entity does not have the requested component.", -32004);
+                value = value.at("components").at(params.at("component").get<std::string>());
             }
             return {{"revision", doc_.at("revision")}, {"id", params.at("id")}, {"value", value}};
         }
         if (method == "entity.query") {
-            fields(params, {"revision", "parent", "after", "limit"}); current_revision(params);
+            fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
+            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -256,15 +318,78 @@ public:
             require(limit >= 1 && limit <= 256, "Query limit must be 1..256.");
             Json result = Json::array(); Json next = nullptr;
             for (const auto& [id, e] : doc_.at("entities").items()) {
-                if (id <= after || (params.contains("parent") && params.at("parent") != e.at("parent"))) continue;
+                if (id <= after || (params.contains("parent") && params.at("parent") != e.at("parent")) ||
+                    (params.contains("component") && !e.at("components").contains(params["component"].get<std::string>()))) continue;
                 if (result.size() == limit) { next = result.back().at("id"); break; }
-                result.push_back({{"id", id}, {"name", e.at("name")}, {"parent", e.at("parent")}, {"components", {"Transform"}}});
+                Json types = Json::array();
+                for (const auto& [type, unused] : e.at("components").items()) { (void)unused; types.push_back(type); }
+                result.push_back({{"id", id}, {"name", e.at("name")}, {"parent", e.at("parent")}, {"components", types}});
             }
             return {{"revision", doc_.at("revision")}, {"entities", result}, {"next_after", next}};
         }
+        if (method == "entity.world_transform") {
+            fields(params, {"id", "revision"}, {"id"}); current_revision(params); entity(doc_, params.at("id"));
+            try {
+                return {{"id", params.at("id")}, {"revision", doc_.at("revision")},
+                    {"matrix", world_matrices(doc_.at("entities")).at(identifier(params.at("id")))}, {"layout", "column_major"}};
+            } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
+        }
+        if (method == "world.capture") return capture(params);
         if (method == "world.transact") return transact(params);
         if (method == "session.close") { fields(params, {}); return {{"closed", true}}; }
         throw Error(-32601, "Unknown world method.");
+    }
+    Json capture(const Json& params) const {
+        fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples"}, {"revision", "camera", "path"});
+        current_revision(params);
+        const auto camera_id = identifier(params.at("camera"));
+        require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
+        require(params.at("path").is_string(), "Capture path must be a string.");
+        const auto text = params.at("path").get<std::string>();
+        require(!text.empty() && text.find('\0') == std::string::npos, "Invalid capture path.");
+        const auto output = fs::weakly_canonical(fs::absolute(fs::path(std::u8string(text.begin(), text.end()))));
+        require(!fs::exists(output) && fs::is_directory(output.parent_path()), "Capture requires a new path in an existing directory.");
+        for (const char* suffix : {"", ".lock", ".pending", ".previous", ".previous.pending"})
+            require(!same_path_name(output, fs::path(path_).concat(suffix)), "Capture path is reserved by the world service.");
+        RenderOptions options;
+        options.frames = 2;
+        const auto resolved_utf8 = output.u8string();
+        options.capture.assign(resolved_utf8.begin(), resolved_utf8.end());
+        auto integer = [&](const char* key, std::uint32_t fallback, std::uint32_t low, std::uint32_t high) {
+            if (!params.contains(key)) return fallback;
+            const auto v = revision(params.at(key));
+            require(v >= low && v <= high, std::string("Out-of-range capture option: ") + key);
+            return static_cast<std::uint32_t>(v);
+        };
+        options.width = integer("width", 960, 128, 4096); options.height = integer("height", 540, 128, 4096);
+        if (params.contains("gpu")) options.gpu = static_cast<int>(integer("gpu", 0, 0, 4095));
+        options.samples = integer("samples", 4, 1, 4);
+        require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
+        SceneSnapshot snapshot;
+        snapshot.world_id = doc_.at("world_id"); snapshot.revision = revision(doc_.at("revision")); snapshot.camera_id = camera_id;
+        const auto& lens = doc_.at("entities").at(camera_id).at("components").at("Camera");
+        snapshot.vertical_fov = lens.at("vertical_fov"); snapshot.near_plane = lens.at("near"); snapshot.far_plane = lens.at("far");
+        try {
+            const auto matrices = world_matrices(doc_.at("entities"));
+            snapshot.camera_world = matrices.at(camera_id);
+            require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
+            for (const auto& [id, e] : doc_.at("entities").items()) {
+                if (!e.at("components").contains("MeshRenderer")) continue;
+                const auto& mesh = e.at("components").at("MeshRenderer");
+                if (!mesh.at("visible").get<bool>()) continue;
+                snapshot.objects.push_back({id, matrices.at(id), mesh.at("albedo").get<std::array<float,3>>()});
+            }
+        } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
+        const auto report = run_render_scene(options, snapshot);
+        require(report.available, report.detail, -32003);
+        require(report.success, report.detail, -32020);
+        return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
+            {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},
+            {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
+            {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
+            {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
+            {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},
+            {"renderer", "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows"}};
     }
     Json transact(Json params) {
         fields(params, {"request_id", "base_revision", "ops", "preview"}, {"request_id", "base_revision", "ops"});
@@ -303,8 +428,14 @@ public:
                 entity(staged, id)["parent"] = op.at("parent");
             } else if (name == "component.set") {
                 fields(op, {"op", "id", "type", "value"}, {"op", "id", "type", "value"});
-                require(op.at("type") == "Transform", "Unknown component type."); validate_transform(op.at("value"));
-                entity(staged, id)["components"]["Transform"] = op.at("value");
+                require(op.at("type").is_string(), "Component type must be a string.");
+                const auto type = op.at("type").get<std::string>(); validate_component(type, op.at("value"));
+                entity(staged, id)["components"][type] = op.at("value");
+            } else if (name == "component.remove") {
+                fields(op, {"op", "id", "type"}, {"op", "id", "type"});
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer", "Only optional built-in components can be removed.");
+                auto& components = entity(staged, id)["components"];
+                require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {
                 fields(op, {"op", "id", "recursive"}, {"op", "id", "recursive"});
                 require(op.at("recursive").is_boolean(), "Recursive must be boolean."); entity(staged, id);

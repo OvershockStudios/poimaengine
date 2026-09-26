@@ -40,23 +40,25 @@ find_program(POIMA_DXC NAMES dxc
     HINTS "${CMAKE_SOURCE_DIR}/.cache/toolchains/dxc-v1.8.2505.1/bin"
     DOC "Host DXC executable with SPIR-V support" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
+foreach(shader smoke scene)
 foreach(stage vs ps)
     if(stage STREQUAL "vs")
         set(entry vertex_main)
     else()
         set(entry pixel_main)
     endif()
-    set(header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/smoke_${stage}.hpp")
+    set(header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.hpp")
     add_custom_command(OUTPUT "${header}"
-        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/smoke_${stage}.spv"
+        BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
         COMMAND "${POIMA_DXC}" -spirv -T "${stage}_6_0" -E "${entry}"
             -fspv-target-env=vulkan1.3 -fvk-use-dx-layout
-            -Fo "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/smoke_${stage}.spv"
-            -Fh "${header}" -Vn "poima_smoke_${stage}"
-            "${CMAKE_SOURCE_DIR}/shaders/smoke.hlsl"
-        DEPENDS "${CMAKE_SOURCE_DIR}/shaders/smoke.hlsl"
+            -Fo "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
+            -Fh "${header}" -Vn "poima_${shader}_${stage}"
+            "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl"
+        DEPENDS "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl"
         VERBATIM)
     target_sources(poima_core PRIVATE "${header}")
+endforeach()
 endforeach()
 target_sources(poima_core PRIVATE src/render_smoke.cpp)
 target_link_libraries(poima_core PRIVATE nvrhi nvrhi_vk SDL3::SDL3-static)
