@@ -7,6 +7,7 @@
 #include "poima/build_info.hpp"
 #include "world_storage.hpp"
 #include "asset_store.hpp"
+#include "input_profile_store.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -282,7 +283,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 16}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 17}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -314,6 +315,17 @@ Json describe() {
             "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; controller camera must be a direct child.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
+    const Json input_path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Profile file ending .poima-input.json; relative paths resolve beside the world."}};
+    methods["input.describe"]=object_schema(Json::object());
+    methods["input.inspect"]=object_schema({{"path",input_path}},{"path"});
+    const Json input_event={{"oneOf",Json::array({
+        object_schema({{"control",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"down",{{"type","boolean"}}}},{"control","down"}),
+        object_schema({{"motion",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},2)}},{"motion"}),
+        object_schema({{"consume",{{"const",true}}}},{"consume"}),object_schema({{"clear",{{"const",true}}}},{"clear"})})}};
+    methods["input.evaluate"]=object_schema({{"path",input_path},{"events",{{"type","array"},{"maxItems",256},{"items",input_event}}}},{"events"});
+    methods["input.transact"]=object_schema({{"path",input_path},{"request_id",id},{"expected_revision",rev},
+        {"profile",input_profiles::profile_schema()},{"preview",{{"type","boolean"},{"default",false}}}},
+        {"path","request_id","expected_revision","profile"});
     methods["runtime.start"]=object_schema({{"session_id",id},{"revision",rev}},{"session_id","revision"});
     for(const auto* method:{"runtime.inspect","runtime.stop"}) methods[method]=object_schema({{"session_id",id}},{"session_id"});
     methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
@@ -355,6 +367,8 @@ Json describe() {
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
     for(const auto* key:{"path","width","height","gpu","samples","culling","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
+    play["properties"]["input_profile"]=input_path;
+    play["properties"]["input_revision"]=rev;
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
     result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
@@ -538,6 +552,7 @@ public:
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
     }
     Json dispatch(const std::string& method, const Json& params) {
+        if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") { fields(params, {}); return describe(); }
         if (method == "world.inspect") {
             fields(params, {});
@@ -860,6 +875,66 @@ public:
             for(auto child:children[static_cast<int>(index)])selected.push_back(child);
         }
     }
+    fs::path input_profile_path(const Json& value) const {
+        require(value.is_string(),"Input profile path must be a string.");
+        const auto text=value.get<std::string>();
+        require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid input profile path.");
+        auto raw=fs::path(std::u8string(text.begin(),text.end()));if(raw.is_relative())raw=path_.parent_path()/raw;
+        for(const auto* suffix:{"", ".lock", ".pending", ".previous", ".previous.pending"})
+            require(!fs::is_symlink(fs::path(raw).concat(suffix)),"Input profile paths cannot be symbolic links.");
+        const auto output=fs::weakly_canonical(fs::absolute(raw));
+        for(const auto* suffix:{"", ".lock", ".pending", ".previous", ".previous.pending"}) {
+            const auto candidate=fs::path(output).concat(suffix);
+            const auto relative=candidate.lexically_relative(fs::weakly_canonical(asset_directory()));
+            require(relative.empty() || relative.is_absolute() || *relative.begin()=="..","Input profile cannot use the immutable asset store.");
+            for(const auto* reserved:{"", ".lock", ".pending", ".previous", ".previous.pending"}) {
+                const auto world=fs::path(path_).concat(reserved);
+                require(!same_path_name(candidate,world),"Input profile path is reserved by the world service.");
+            }
+        }
+        return output;
+    }
+    Json input_dispatch(const std::string& method,const Json& params) {
+        if(method=="input.describe") { fields(params,{});return input_profiles::describe(); }
+        if(method=="input.evaluate") {
+            fields(params,{"path","events"},{"events"});
+            const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input evaluation takes at most 256 events.");
+            auto profile=default_input_profile();Json info={{"source","defaults"},{"revision",0},{"content_hash",nullptr}};
+            if(params.contains("path"))try {
+                auto loaded=input_profiles::load(input_profile_path(params.at("path")));profile=std::move(loaded.profile);
+                info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash}};
+            }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
+            BoundPlayerInput evaluator(std::move(profile));Json frames=Json::array();
+            for(std::size_t i=0;i<events.size();++i) {
+                const auto& event=events[i];require(event.is_object(),"Input event must be an object.");
+                if(event.contains("control")) {
+                    fields(event,{"control","down"},{"control","down"});require(event.at("control").is_string() && event.at("down").is_boolean(),"Invalid input control event.");
+                    const auto id=event.at("control").get<std::string>();const auto controls=input_controls();
+                    const auto found=std::find_if(controls.begin(),controls.end(),[&](const auto& c) { return c.id==id; });
+                    require(found!=controls.end() && !found->reserved,"Unknown or reserved gameplay control.");
+                    evaluator.control(found->kind,found->code,event.at("down").get<bool>());
+                }else if(event.contains("motion")) {
+                    fields(event,{"motion"},{"motion"});const auto& motion=event.at("motion");require(motion.is_array() && motion.size()==2,"Mouse motion needs two values.");
+                    for(const auto& v:motion)require(v.is_number() && std::isfinite(v.get<double>()) && std::abs(v.get<double>())<=1e6,"Mouse motion is out of bounds.");
+                    evaluator.motion(motion[0].get<double>(),motion[1].get<double>());
+                }else if(event.contains("consume")) {
+                    fields(event,{"consume"},{"consume"});require(event.at("consume").is_boolean() && event.at("consume")==Json(true),"consume must be true.");
+                    const auto frame=evaluator.consume("");frames.push_back({{"event",i},{"move",frame.move},{"look",frame.look},{"jump",frame.jump},{"use",frame.use}});
+                }else {
+                    fields(event,{"clear"},{"clear"});require(event.at("clear").is_boolean() && event.at("clear")==Json(true),"clear must be true.");evaluator.clear();
+                }
+            }
+            return {{"input_profile",info},{"frames",frames}};
+        }
+        require(method=="input.inspect" || method=="input.transact","Unknown input method.",-32601);
+        if(method=="input.inspect")fields(params,{"path"},{"path"});
+        else fields(params,{"path","request_id","expected_revision","profile","preview"},{"path","request_id","expected_revision","profile"});
+        const auto file=input_profile_path(params.at("path"));
+        try {
+            if(method=="input.inspect")return input_profiles::inspect(file);
+            auto operation=params;operation.erase("path");return input_profiles::transact(file,operation);
+        }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
+    }
     RenderOptions render_options(const Json& params) const {
         RenderOptions options;
         options.frames=2;
@@ -968,7 +1043,7 @@ public:
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},{"render_diagnostics",render_diagnostics(report.diagnostics)},
-            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
+            {"renderer", "forward static and skinned geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
     }
     Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
         const bool capture_audio=std::string_view(method).ends_with("capture");
@@ -1157,7 +1232,7 @@ public:
         receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision"},
             {"session_id","request_id","expected_tick","controller","camera","mode"});
         runtime_guard(params); identifier(params.at("request_id"));
         auto normalized=params; normalized["method"]="runtime.play";
@@ -1173,6 +1248,16 @@ public:
         options.controller=identifier(params.at("controller")); options.camera=identifier(params.at("camera"));
         require(params.at("mode")=="interactive" || params.at("mode")=="replay","Player mode must be interactive or replay.");
         options.replay=params.at("mode")=="replay";
+        Json input_info={{"source","defaults"},{"revision",0},{"content_hash",nullptr},{"applied",!options.replay}};
+        require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
+        if(params.contains("input_profile")) {
+            try {
+                const auto loaded=input_profiles::load(input_profile_path(params.at("input_profile")));
+                if(params.contains("input_revision"))require(revision(params.at("input_revision"))==loaded.revision,"Input profile revision conflict.",-32009);
+                options.input_profile=std::make_shared<const InputProfile>(loaded.profile);
+                input_info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"applied",!options.replay}};
+            }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
+        }
         const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
             [&](const auto& e){return e.id==options.controller && e.character.has_value();});
         require(controller!=runtime_definition_.entities.end(),"Player requires a CharacterController entity.",-32004);
@@ -1212,6 +1297,7 @@ public:
             {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
             {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
             {"camera",options.camera},{"camera_world",camera.camera_world},{"lighting",lighting_json(camera.lighting)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",POIMA_VERSION}};
+        result["input_profile"]=input_info;
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
         receipts.back()["result"]=result; runtime_receipts_.swap(receipts);
         return result;

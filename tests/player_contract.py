@@ -18,6 +18,7 @@ parser.add_argument('--authored-lights',action='store_true')
 parser.add_argument('--shadows',action='store_true')
 parser.add_argument('--profile',action='store_true')
 parser.add_argument('--kinematic',action='store_true')
+parser.add_argument('--input-profile',action='store_true')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 if args.shadows and not args.authored_lights:parser.error('--shadows requires --authored-lights')
 run=args.output/uuid.uuid4().hex;run.mkdir()
@@ -48,11 +49,20 @@ if args.kinematic:
     sequence[1]['motions']=[{'entity':uid(2),'position':[8,1.5,-3],'rotation':[0,0,0,1],'duration_ticks':120}]
 total=sum(s['ticks'] for s in sequence)
 request('world.transact',fixture['params']);request('runtime.start',{'session_id':uid(900),'revision':1})
+input_profile_created=None
+if args.input_profile:
+    profile={'bindings':{'forward':['key.up'],'backward':['key.down'],'left':['key.left'],'right':['key.right'],'jump':['mouse.3'],'use':['key.f1']},
+             'sensitivity_x':.3,'sensitivity_y':.7,'invert_x':True,'invert_y':True}
+    input_profile_created=request('input.transact',{'path':native(run/'rebound.poima-input.json'),'request_id':uid(990),'expected_revision':0,'profile':profile})
 if args.kinematic:
     query={'session_id':uid(900),'tick':0,'origin':[0,1.5,2],'direction':[0,0,-1],'distance':10,'ignore':[uid(100)]}
     initial_ray=request('runtime.raycast',query)
 play={'session_id':uid(900),'request_id':uid(1000),'expected_tick':0,'controller':uid(100),'camera':uid(101),'mode':'replay',
       'sequence':sequence,'gpu':args.gpu,'path':native(run/'player.bmp'),'profile':args.profile}
+if args.input_profile:play.update(input_profile=native(run/'rebound.poima-input.json'),input_revision=1)
+profile_stale=None
+if args.input_profile:
+    profile_stale=request('runtime.play',{**play,'request_id':uid(991),'input_revision':0,'path':native(run/'profile-stale.bmp')})
 played=request('runtime.play',play)
 retry=request('runtime.play',play)
 changed=request('runtime.play',{**play,'sequence':[{'ticks':1}]})
@@ -81,12 +91,21 @@ try:
     responses={r['id']:r for r in map(json.loads,p.stdout.splitlines())};record['responses']=responses
     assert len(responses)==len(requests)
     expected_errors={changed:-32010,conflict:-32010,stale:-32009}
+    if profile_stale is not None:expected_errors[profile_stale]=-32009
     for n,response in responses.items():
         if n in expected_errors:assert response['error']['code']==expected_errors[n],response
         else:assert 'result' in response,response
     report=responses[played]['result'];assert report['success'] and report['stop_reason']=='replay_complete',report
     assert report['tick']==total and report['previous_tick']==0 and report['frames_presented']>=total
     assert report['hardware'] and report['nvrhi_errors']==0 and report['capture_written']
+    input_metadata=report['input_profile']
+    assert input_metadata['applied'] is False,input_metadata
+    if args.input_profile:
+        configured=responses[input_profile_created]['result']
+        assert input_metadata['source']=='profile' and input_metadata['revision']==1
+        assert input_metadata['content_hash']==configured['content_hash']
+        record['input_profile']=input_metadata
+    else:assert input_metadata['source']=='defaults' and input_metadata['content_hash'] is None
     assert responses[retry]['result']=={**report,'replayed':True}
     for first,second in zip(first_states,second_states):
         a=dict(responses[first]['result']);b=dict(responses[second]['result']);a.pop('session_id');b.pop('session_id');assert a==b,(a,b)
@@ -117,10 +136,12 @@ try:
     assert responses[recovered]['result']['success'] and responses[recovered]['result']['tick']==total+1
     assert responses[inspected]['result']['tick']==total+1
     assert not (run/'stale.bmp').exists() and not (run/'bad.bmp').exists()
+    assert not (run/'profile-stale.bmp').exists()
     saved=json.loads((run/'world.json').read_text());assert saved['revision']==1
     assert saved['entities'][uid(100)]['components']['Transform']['position']==[0,1,2]
     record['checks']={'continuous_replay_matches_headless_state':True,'final_pixels_match_independent_capture':True,'retry_does_not_advance':True,
         'stale_tick_guard':True,'request_id_cross_method_conflict':True,'device_failure_state_and_recovery':True,'authored_spawn_unchanged':True}
+    if args.input_profile:record['checks']['saved_profile_validated_but_replay_semantics_unchanged']=True
     record['images']={name:{'path':str((run/name).resolve()),'sha256':hashlib.sha256((run/name).read_bytes()).hexdigest()} for name in ['player.bmp','baseline.bmp','recovered.bmp']}
     record['passed']=True
 finally:

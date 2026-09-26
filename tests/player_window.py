@@ -18,6 +18,7 @@ import uuid
 
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('binary',type=Path);parser.add_argument('--output',type=Path,required=True)
+parser.add_argument('--input-profile',action='store_true')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 run=args.output/uuid.uuid4().hex;run.mkdir()
 u=c.WinDLL('user32',use_last_error=True)
@@ -29,6 +30,12 @@ u.SetWindowPos.argtypes=[w.HWND,w.HWND,c.c_int,c.c_int,c.c_int,c.c_int,w.UINT];u
 u.ShowWindow.argtypes=[w.HWND,c.c_int];u.SetForegroundWindow.argtypes=[w.HWND]
 u.GetForegroundWindow.restype=w.HWND
 u.GetClientRect.argtypes=[w.HWND,c.POINTER(w.RECT)]
+# SDL renders in physical pixels. Match that coordinate space when Python
+# queries/resizes the child; otherwise Windows virtualizes an unaware harness
+# at e.g. 125% desktop scaling and the capture-size assertion compares DIP/px.
+u.SetThreadDpiAwarenessContext.argtypes=[c.c_void_p]
+u.SetThreadDpiAwarenessContext.restype=c.c_void_p
+assert u.SetThreadDpiAwarenessContext(c.c_void_p(-4)),c.get_last_error() # PER_MONITOR_AWARE_V2
 
 def uid(n):return f'{n:032x}'
 record={'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'requests':[],'responses':[],'input_source':'Targeted Win32 window messages; not physical keyboard/mouse qualification.'}
@@ -64,8 +71,16 @@ try:
     send('world.transact',fixture['params']);receive()
     send('runtime.start',{'session_id':uid(900),'revision':1});receive()
     send('runtime.step',{'session_id':uid(900),'request_id':uid(1000),'expected_tick':0,'ticks':120});receive()
-    send('runtime.play',{'session_id':uid(900),'request_id':uid(1001),'expected_tick':120,'controller':uid(100),'camera':uid(101),'mode':'interactive',
-                         'path':str((run/'window.bmp').resolve())})
+    play={'session_id':uid(900),'request_id':uid(1001),'expected_tick':120,'controller':uid(100),'camera':uid(101),'mode':'interactive',
+          'path':str((run/'window.bmp').resolve())}
+    profile_receipt=None
+    if args.input_profile:
+        profile={'bindings':{'forward':['key.up'],'backward':['key.s'],'left':['key.a'],'right':['key.d'],'jump':['key.space'],'use':['key.e']},
+                 'sensitivity_x':.1,'sensitivity_y':.1,'invert_x':False,'invert_y':False}
+        profile_path=str((run/'rebound.poima-input.json').resolve())
+        send('input.transact',{'path':profile_path,'request_id':uid(990),'expected_revision':0,'profile':profile});profile_receipt=receive()
+        play.update(input_profile=profile_path,input_revision=1)
+    send('runtime.play',play)
     hwnd=find_window();start=time.monotonic()
     focus_requested=bool(u.SetForegroundWindow(hwnd))
     time.sleep(.15)
@@ -75,7 +90,9 @@ try:
     # Explicit click also handles a window created without initial focus.
     post(hwnd,0x0201,1,100|(100<<16));post(hwnd,0x0202,0,100|(100<<16))
     time.sleep(.1)
-    post(hwnd,0x0100,ord('W'),1|(0x11<<16));time.sleep(.35)
+    # UP uses the extended-key flag; W is a nonextended physical scancode.
+    post(hwnd,0x0100,0x26 if args.input_profile else ord('W'),
+         1|(0x48<<16)|(1<<24) if args.input_profile else 1|(0x11<<16));time.sleep(.35)
     # Minimize while a movement key is held. Restoration must clear that key.
     u.ShowWindow(hwnd,6);time.sleep(.75)
     u.ShowWindow(hwnd,9);u.SetForegroundWindow(hwnd);time.sleep(.15)
@@ -87,6 +104,9 @@ try:
     played=receive();elapsed=time.monotonic()-start
     assert played['success'] and played['stop_reason']=='window_closed',played
     assert played['capture_written'] and played['nvrhi_errors']==0 and played['swapchain_rebuilds']>=2,played
+    if args.input_profile:
+        metadata=played['input_profile'];assert metadata['source']=='profile' and metadata['applied'] and metadata['revision']==1,metadata
+        assert metadata['content_hash']==profile_receipt['content_hash'];record['input_profile']=metadata
     assert [played['width'],played['height']]==expected_size,(played,expected_size)
     send('runtime.entity',{'session_id':uid(900),'id':uid(100)});state=receive()
     # Loose wall-time bounds avoid interpreting scheduling jitter as game speed.
@@ -95,6 +115,7 @@ try:
     z=state['world_matrix'][14]
     if initial_foreground:
         assert played['tick']>125 and -.5<z<1.8,(state,played)
+        record['input_qualification']='Targeted synthetic key message moved the focused player; physical devices remain unqualified.'
     else:
         record['input_qualification']='Foreground unavailable: movement and physical input remain unqualified by this desktop run.'
     assert state['velocity'][2]==0,'Held movement survived focus loss.'
@@ -102,6 +123,7 @@ try:
     send('session.close',{});receive();p.stdin.close();assert p.wait(timeout=10)==0
     record.update(passed=True,elapsed_seconds=elapsed,expected_size=expected_size,checks={'targeted_keyboard_moves_character':initial_foreground,'focus_loss_clears_held_input':initial_foreground,
         'minimize_restore_survives':True,'paused_time_bound':True,'resize_rebuilds_swapchain_and_capture':True,'window_close_preserves_runtime':True},image={'path':str((run/'window.bmp').resolve()),'sha256':hashlib.sha256((run/'window.bmp').read_bytes()).hexdigest()})
+    if args.input_profile:record['checks']['saved_remapping_moves_character_with_synthetic_up_key']=initial_foreground
 finally:
     while not lines.empty():record['responses'].append(lines.get_nowait())
     if p.poll() is None:p.kill();p.wait(timeout=10)

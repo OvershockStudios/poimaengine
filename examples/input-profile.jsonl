@@ -1,0 +1,4 @@
+{"jsonrpc":"2.0","id":1,"method":"input.inspect","params":{"path":"personal.poima-input.json"}}
+{"jsonrpc":"2.0","id":2,"method":"input.transact","params":{"path":"personal.poima-input.json","request_id":"0000000000000000000000000000a101","expected_revision":0,"profile":{"bindings":{"forward":["key.up"],"backward":["key.down"],"left":["key.left"],"right":["key.right"],"jump":["key.space"],"use":["mouse.3"]},"sensitivity_x":0.15,"sensitivity_y":0.1,"invert_x":false,"invert_y":true}}}
+{"jsonrpc":"2.0","id":3,"method":"input.evaluate","params":{"path":"personal.poima-input.json","events":[{"control":"key.w","down":true},{"consume":true},{"control":"key.up","down":true},{"control":"mouse.3","down":true},{"control":"mouse.3","down":false},{"motion":[10,-5]},{"consume":true},{"clear":true},{"consume":true}]}}
+{"jsonrpc":"2.0","id":4,"method":"input.inspect","params":{"path":"personal.poima-input.json"}}

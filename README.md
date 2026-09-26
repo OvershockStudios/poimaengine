@@ -12,6 +12,7 @@ A planned native 3D engine for the user's own games, with agent-native authoring
 - [Author and inspect scene lighting](docs/LIGHTING.md)
 - [Author texture slots and normal maps](docs/MATERIAL_AUTHORING.md)
 - [Open the native player or replay input](docs/PLAYER.md)
+- [Configure keyboard/mouse bindings and evaluate input](docs/INPUT_PROFILES.md)
 - [Author and capture native acoustics](docs/AUDIO.md)
 - [Write and reload C# gameplay](docs/MANAGED_GAMEPLAY.md)
 - [Query physics and move solid doors](docs/PHYSICS_INTERACTIONS.md)

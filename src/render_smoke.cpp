@@ -2,6 +2,7 @@
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
 #include "poima/player.hpp"
+#include "poima/input_profile.hpp"
 #include "poima/assets.hpp"
 #include "poima/animation.hpp"
 #include "poima/skinning_cs.hpp"
@@ -925,12 +926,12 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
-    PlayerInput input;
+    BoundPlayerInput input(options.input_profile ? *options.input_profile : default_input_profile());
     std::unique_ptr<PlayerAudio> audio;
     try {
         snapshot=runtime.snapshot(options.camera);
         context.initialize(options.render,&snapshot,true);
-        SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — WASD / mouse / Space — Esc exits, Tab releases mouse, click resumes");
+        SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab releases mouse, click resumes");
         if(options.audio)audio=std::make_unique<PlayerAudio>(runtime,options.camera);
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
         bool captured=!options.replay && focused;
@@ -955,22 +956,14 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                     captured=false; input.clear(); SDL_SetWindowRelativeMouseMode(context.window,false);
                 }
                 if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured) {
-                    require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError()); captured=true; input.clear();
+                    require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError()); captured=true; input.clear(); continue;
                 }
                 if(!focused || !captured) continue;
-                if(event.type==SDL_EVENT_MOUSE_MOTION) input.look(-event.motion.xrel*0.1,-event.motion.yrel*0.1);
-                if(event.type==SDL_EVENT_KEY_DOWN || event.type==SDL_EVENT_KEY_UP) {
-                    const bool down=event.type==SDL_EVENT_KEY_DOWN;
-                    switch(event.key.scancode) {
-                        case SDL_SCANCODE_W: input.button(PlayerAction::forward,down); break;
-                        case SDL_SCANCODE_S: input.button(PlayerAction::backward,down); break;
-                        case SDL_SCANCODE_A: input.button(PlayerAction::left,down); break;
-                        case SDL_SCANCODE_D: input.button(PlayerAction::right,down); break;
-                        case SDL_SCANCODE_E: input.button(PlayerAction::use,down); break;
-                        case SDL_SCANCODE_SPACE: input.button(PlayerAction::jump,down); break;
-                        default: break;
-                    }
-                }
+                if(event.type==SDL_EVENT_MOUSE_MOTION) input.motion(event.motion.xrel,event.motion.yrel);
+                if((event.type==SDL_EVENT_KEY_DOWN && !event.key.repeat) || event.type==SDL_EVENT_KEY_UP)
+                    input.control(InputControlKind::keyboard,static_cast<std::uint16_t>(event.key.scancode),event.type==SDL_EVENT_KEY_DOWN);
+                if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP)
+                    input.control(InputControlKind::mouse,event.button.button,event.type==SDL_EVENT_MOUSE_BUTTON_DOWN);
             }
             if(audio)audio->active(options.replay || (focused && captured));
             if(quit) break;
@@ -998,7 +991,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                 if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
             } else {
                 const auto ticks=clock.advance(elapsed,focused && captured);
-                for(std::uint32_t tick=0;tick<ticks;++tick) { runtime.step(1,{input.consume(options.controller)});if(audio)audio->advance(runtime,options.camera); }
+                for(std::uint32_t tick=0;tick<ticks;++tick) { runtime.step(1,{input.peek(options.controller)});input.consume(options.controller);if(audio)audio->advance(runtime,options.camera); }
             }
             snapshot=runtime.snapshot(options.camera); context.update_scene();
             if(context.frame(false)) ++report.frames_presented;

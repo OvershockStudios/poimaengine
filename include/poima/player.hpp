@@ -23,7 +23,9 @@ public:
     double dropped_seconds() const { return dropped_; }
 };
 struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; std::vector<KinematicTarget> motions; std::vector<SoundCommand> sounds; };
+struct InputProfile;
 struct PlayerOptions {
+    std::shared_ptr<const InputProfile> input_profile;
     RenderOptions render;
     std::string camera, controller;
     bool replay=false,audio=false;
