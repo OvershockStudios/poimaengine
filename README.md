@@ -2,10 +2,11 @@
 
 A planned native 3D engine for the user's own games, with agent-native authoring, next-generation graphics, a headless API, CLI, optional editor and Vulkan graphics on PC. Permissive open source is a community benefit.
 
-**Status:** M0 foundation work continues, with the first M1 authored-world service now implemented. The native CLI passes tests on Linux/WSL and Windows. An optional Vulkan/NVRHI experiment presents and captures a triangle on the laptop's NVIDIA and AMD GPUs. The persistent headless world service supports hierarchy, transform, camera and box-renderer transactions, with a Vulkan scene-capture path. An optional EnTT/Jolt runtime now supports fixed-step collision, capsule control and live captures. A continuous native player now supports keyboard/mouse input, deterministic visual replay and window resizing. Static glTF geometry now imports into editable hierarchies and renders with an initial PBR path supporting PNG/JPEG material maps and mipmaps. Normal maps, advanced graphics, C# gameplay integration and packaging remain unfinished.
+**Status:** M0 foundation work continues, with the first M1 authored-world service now implemented. The native CLI passes tests on Linux/WSL and Windows. An optional Vulkan/NVRHI experiment presents and captures a triangle on the laptop's NVIDIA and AMD GPUs. The persistent headless world service supports hierarchy, transform, camera and box-renderer transactions, with a Vulkan scene-capture path. An optional EnTT/Jolt runtime now supports fixed-step collision, capsule control and live captures. A continuous native player now supports keyboard/mouse input, deterministic visual replay and window resizing. Static glTF geometry now imports into editable hierarchies and renders with an initial PBR path supporting PNG/JPEG material maps, normal maps and mipmaps. Independent image imports and per-object texture overrides are exposed through the world API. Advanced graphics, C# gameplay integration and packaging remain unfinished.
 
 - [Build and run the bootstrap](docs/BUILD.md)
 - [Import static glTF assets and edit materials](docs/ASSETS.md)
+- [Author texture slots and normal maps](docs/MATERIAL_AUTHORING.md)
 - [Open the native player or replay input](docs/PLAYER.md)
 - [Run physics and inspect live state](docs/RUNTIME.md)
 - [Author and capture a 3D scene](docs/SCENE_CAPTURE.md)

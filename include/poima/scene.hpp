@@ -23,12 +23,14 @@ struct PbrMaterial {
     bool double_sided=false;
 };
 struct MeshAsset;
+struct MaterialTextures;
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
     std::array<float, 3> albedo;
     std::shared_ptr<const MeshAsset> mesh;
     std::optional<PbrMaterial> material;
+    std::shared_ptr<const MaterialTextures> textures;
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {

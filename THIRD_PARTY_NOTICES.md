@@ -79,3 +79,9 @@ CMake verifies downloaded source archive hashes and installs dependency licenses
 - Source: https://github.com/nothings/stb/tree/2c980bb59875b0d32144a71867fbdebb2f77cd20
 - Selected license: MIT (the upstream distribution also offers the Unlicense alternative). The unmodified header and full upstream license are retained in `third_party/stb`; `LICENSE` is installed into `share/poima/licenses/stb`.
 - Native PNG/JPEG decoding only, memory input, no stdio, no SIMD-specific decoder path. Poima supplies bounded allocation callbacks and image limits. Exact hashes are in `third_party/stb/PROVENANCE.json`.
+
+## MikkTSpace
+
+- Source: https://github.com/mmikk/MikkTSpace/tree/3e895b49d05ea07e4c2133156cfa94369e19e409
+- Copyright (C) 2011 by Morten S. Mikkelsen; zlib-style permissive terms are preserved in both source headers. The full header containing the notice is installed in `share/poima/licenses/mikktspace/mikktspace.h`.
+- The unmodified C/header pair generates tangent frames during native import. Exact hashes are recorded in `third_party/mikktspace/PROVENANCE.json`. Poima's callback/reindexing integration is separate original code.

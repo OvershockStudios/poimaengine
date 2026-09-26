@@ -316,7 +316,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     result.camera_world=impl_->registry.get<Node>(e).world; result.vertical_fov=lens.vertical_fov; result.near_plane=lens.near_plane; result.far_plane=lens.far_plane;
     require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
     for(auto object:impl_->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
-        const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material});
+        const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures});
     }
     return result;
 }

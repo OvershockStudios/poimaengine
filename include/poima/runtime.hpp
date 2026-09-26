@@ -24,6 +24,7 @@ struct RuntimeMesh {
     std::array<float,3> albedo{}; bool visible=true;
     std::shared_ptr<const MeshAsset> mesh;
     std::optional<PbrMaterial> material;
+    std::shared_ptr<const MaterialTextures> textures;
 };
 struct RuntimeEntityDefinition {
     std::string id, parent;

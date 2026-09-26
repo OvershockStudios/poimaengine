@@ -24,6 +24,25 @@ struct Reader {
 std::size_t count(const Json& value,std::size_t max) {
     require(value.is_number_unsigned() && value.get<std::uint64_t>()<=max,"Invalid model count/index.");return value.get<std::size_t>();
 }
+Json image_metadata(const TextureImage& image,std::string& binary) {
+    Json levels=Json::array();
+    for(const auto& mip:image.mips) { levels.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}});binary.append(reinterpret_cast<const char*>(mip.rgba.data()),mip.rgba.size()); }
+    return {{"srgb",image.srgb},{"mips",levels}};
+}
+std::shared_ptr<const TextureImage> parse_image(const Json& image,Reader& reader,std::size_t& total_texture_bytes) {
+    auto decoded=std::make_shared<TextureImage>();decoded->srgb=image.at("srgb");
+    const auto& levels=image.at("mips");require(levels.is_array() && !levels.empty() && levels.size()<=13,"Invalid texture mip count.");
+    std::uint32_t previous_w=0,previous_h=0;
+    for(const auto& level:levels) {
+        TextureMip mip;mip.width=static_cast<std::uint32_t>(count(level.at("width"),4096));mip.height=static_cast<std::uint32_t>(count(level.at("height"),4096));
+        const auto length=count(level.at("bytes"),32*1024*1024-total_texture_bytes);
+        require(mip.width && mip.height && std::size_t(mip.width)*mip.height<=4*1024*1024 && length==std::size_t(mip.width)*mip.height*4 && length<=reader.bytes.size()-reader.offset,"Invalid texture mip dimensions/length.");
+        if(previous_w)require((previous_w>1 || previous_h>1) && mip.width==std::max(1u,previous_w/2) && mip.height==std::max(1u,previous_h/2),"Invalid texture mip sequence.");
+        const auto* first=reinterpret_cast<const std::uint8_t*>(reader.bytes.data()+reader.offset);mip.rgba.assign(first,first+length);
+        previous_w=mip.width;previous_h=mip.height;reader.offset+=length;total_texture_bytes+=length;decoded->mips.push_back(std::move(mip));
+    }
+    require(previous_w==1 && previous_h==1,"Texture mip chain is incomplete.");return decoded;
+}
 PbrMaterial parse_material(const Json& value) {
     PbrMaterial m;m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
     m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");
@@ -33,72 +52,74 @@ PbrMaterial parse_material(const Json& value) {
     return m;
 }
 }
+std::string encode_image(const TextureImage& image) {
+    std::string binary;auto metadata=image_metadata(image,binary);metadata["version"]=1;const auto header=metadata.dump();
+    require(header.size()<=65536 && binary.size()<=32*1024*1024,"Image package exceeds limits.");
+    std::string result="POIMAI01";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));return result+header+binary;
+}
+std::shared_ptr<const TextureImage> decode_image(const std::string& bytes) {
+    require(bytes.size()>=16 && bytes.size()<=32*1024*1024+65552 && bytes.substr(0,8)=="POIMAI01","Invalid image package header/size.");
+    Reader reader{bytes,8};const auto length=reader.integer(),binary=reader.integer();
+    require(length<=65536 && std::size_t(length)+binary==bytes.size()-16,"Invalid image package lengths.");
+    const auto metadata=Json::parse(bytes.begin()+16,bytes.begin()+16+length,[](int depth,Json::parse_event_t,Json&) { require(depth<=16,"Image metadata is too deeply nested.");return true; });
+    require(metadata.at("version")==1,"Unsupported image package version.");reader.offset=16+length;std::size_t total=0;
+    const auto image=parse_image(metadata,reader,total);require(reader.offset==bytes.size(),"Trailing image package bytes.");return image;
+}
 std::string encode_model(const ModelAsset& model) {
-    Json metadata={{"version",2},{"importer","cgltf-1.15/poima-static-2"},{"primitives",Json::array()},{"nodes",Json::array()},{"roots",model.roots},{"diagnostics",model.diagnostics}};
+    Json metadata={{"version",3},{"importer","cgltf-1.15/poima-static-3"},{"primitives",Json::array()},{"nodes",Json::array()},{"roots",model.roots},{"diagnostics",model.diagnostics}};
     std::string binary;
     for(const auto& p:model.primitives) {
         const auto& m=p->material;
         metadata["primitives"].push_back({{"vertices",p->vertices.size()},{"indices",p->indices.size()},
             {"material",{{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}}}});
-        auto& description=metadata["primitives"].back();description["textures"]=Json::array();description["occlusion_strength"]=p->occlusion_strength;
+        auto& description=metadata["primitives"].back();description["textures"]=Json::array();description["occlusion_strength"]=p->occlusion_strength;description["normal_scale"]=p->normal_scale;description["has_uv"]=p->has_uv;
         for(const auto& map:p->textures) {
             if(!map.image) { description["textures"].push_back(nullptr);continue; }
             const auto found=std::find(model.images.begin(),model.images.end(),map.image);require(found!=model.images.end(),"Texture image is not owned by the model.");
             description["textures"].push_back({{"image",std::size_t(found-model.images.begin())},{"wrap_s",map.wrap_s},{"wrap_t",map.wrap_t},{"min_filter",map.min_filter},{"mag_filter",map.mag_filter}});
         }
-        for(const auto& v:p->vertices) { for(auto x:v.position)u32(binary,std::bit_cast<std::uint32_t>(x));for(auto x:v.normal)u32(binary,std::bit_cast<std::uint32_t>(x));for(auto x:v.uv)u32(binary,std::bit_cast<std::uint32_t>(x)); }
+        for(const auto& v:p->vertices) { for(auto x:v.position)u32(binary,std::bit_cast<std::uint32_t>(x));for(auto x:v.normal)u32(binary,std::bit_cast<std::uint32_t>(x));for(auto x:v.uv)u32(binary,std::bit_cast<std::uint32_t>(x));for(auto x:v.tangent)u32(binary,std::bit_cast<std::uint32_t>(x)); }
         for(auto index:p->indices)u32(binary,index);
     }
     metadata["geometry_bytes"]=binary.size();metadata["images"]=Json::array();
-    for(const auto& image:model.images) {
-        Json levels=Json::array();
-        for(const auto& mip:image->mips) { levels.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}});binary.append(reinterpret_cast<const char*>(mip.rgba.data()),mip.rgba.size()); }
-        metadata["images"].push_back({{"srgb",image->srgb},{"mips",levels}});
-    }
+    for(const auto& image:model.images)metadata["images"].push_back(image_metadata(*image,binary));
     for(const auto& n:model.nodes) metadata["nodes"].push_back({{"name",n.name},{"parent",n.parent},{"position",n.position},{"rotation",n.rotation},{"scale",n.scale},{"primitives",n.primitives}});
     const auto header=metadata.dump();require(header.size()<=8*1024*1024 && binary.size()<=64*1024*1024-16-header.size(),"Model package exceeds size limits.");
-    std::string result="POIMAM02";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));
+    std::string result="POIMAM03";u32(result,static_cast<std::uint32_t>(header.size()));u32(result,static_cast<std::uint32_t>(binary.size()));
     result+=header;result+=binary;return result;
 }
 std::shared_ptr<const ModelAsset> decode_model(const std::string& bytes) {
-    require(bytes.size()>=16 && bytes.size()<=64*1024*1024 && (bytes.substr(0,8)=="POIMAM01" || bytes.substr(0,8)=="POIMAM02"),"Invalid model package header/size.");
+    require(bytes.size()>=16 && bytes.size()<=64*1024*1024 && (bytes.substr(0,8)=="POIMAM01" || bytes.substr(0,8)=="POIMAM02" || bytes.substr(0,8)=="POIMAM03"),"Invalid model package header/size.");
     Reader reader{bytes,8};const auto json_size=reader.integer(),binary_size=reader.integer();
     require(json_size<=8*1024*1024 && std::size_t(json_size)+binary_size==bytes.size()-16,"Invalid model package lengths.");
     const auto metadata=Json::parse(bytes.begin()+16,bytes.begin()+16+json_size,[](int depth,Json::parse_event_t,Json&) { require(depth<=32,"Model metadata is too deeply nested.");return true; });
-    const bool textured=bytes.substr(0,8)=="POIMAM02";
-    require(metadata.at("version")== (textured ? 2 : 1),"Unsupported model package version.");
+    const bool tangent_format=bytes.substr(0,8)=="POIMAM03";
+    const bool textured=bytes.substr(0,8)!="POIMAM01";
+    require(metadata.at("version")== (tangent_format ? 3 : textured ? 2 : 1),"Unsupported model package version.");
     const auto& primitives=metadata.at("primitives");const auto& nodes=metadata.at("nodes");
     require(primitives.is_array() && !primitives.empty() && primitives.size()<=10000 && nodes.is_array() && !nodes.empty() && nodes.size()<=10000,"Invalid model object counts.");
-    reader.offset=16+json_size;auto result=std::make_shared<ModelAsset>();std::size_t vertices=0,indices=0;result->package_version=textured ? 2u : 1u;
+    reader.offset=16+json_size;auto result=std::make_shared<ModelAsset>();std::size_t vertices=0,indices=0;result->package_version=tangent_format ? 3u : textured ? 2u : 1u;
     std::size_t geometry_end=bytes.size();
     if(textured) {
         geometry_end=reader.offset+count(metadata.at("geometry_bytes"),binary_size);
         Reader images_reader{bytes,geometry_end};const auto& images=metadata.at("images");
         require(images.is_array() && images.size()<=256,"Invalid model image count.");std::size_t total_texture_bytes=0;
         for(const auto& image:images) {
-            auto decoded=std::make_shared<TextureImage>();decoded->srgb=image.at("srgb");
-            const auto& levels=image.at("mips");require(levels.is_array() && !levels.empty() && levels.size()<=13,"Invalid texture mip count.");
-            std::uint32_t previous_w=0,previous_h=0;
-            for(const auto& level:levels) {
-                TextureMip mip;mip.width=static_cast<std::uint32_t>(count(level.at("width"),4096));mip.height=static_cast<std::uint32_t>(count(level.at("height"),4096));
-                const auto length=count(level.at("bytes"),32*1024*1024-total_texture_bytes);
-                require(mip.width && mip.height && std::size_t(mip.width)*mip.height<=4*1024*1024 && length==std::size_t(mip.width)*mip.height*4 && length<=bytes.size()-images_reader.offset,"Invalid texture mip dimensions/length.");
-                if(previous_w)require((previous_w>1 || previous_h>1) && mip.width==std::max(1u,previous_w/2) && mip.height==std::max(1u,previous_h/2),"Invalid texture mip sequence.");
-                const auto* first=reinterpret_cast<const std::uint8_t*>(bytes.data()+images_reader.offset);mip.rgba.assign(first,first+length);
-                previous_w=mip.width;previous_h=mip.height;images_reader.offset+=length;total_texture_bytes+=length;decoded->mips.push_back(std::move(mip));
-            }
-            require(previous_w==1 && previous_h==1,"Texture mip chain is incomplete.");result->images.push_back(decoded);
+            result->images.push_back(parse_image(image,images_reader,total_texture_bytes));
         }
         require(images_reader.offset==bytes.size(),"Trailing model texture bytes.");
     }
     for(const auto& p:primitives) {
         const auto nv=count(p.at("vertices"),1000000-vertices),ni=count(p.at("indices"),3000000-indices);vertices+=nv;indices+=ni;
-        require(nv && ni && ni%3==0 && nv*32+ni*4<=geometry_end-reader.offset,"Invalid model geometry lengths.");
+        require(nv && ni && ni%3==0 && nv*(tangent_format ? 48u : 32u)+ni*4<=geometry_end-reader.offset,"Invalid model geometry lengths.");
         auto mesh=std::make_shared<MeshAsset>();mesh->material=parse_material(p.at("material"));mesh->vertices.resize(nv);mesh->indices.resize(ni);
+        if(tangent_format) {
+            mesh->has_uv=p.at("has_uv");mesh->normal_scale=p.at("normal_scale");require(std::isfinite(mesh->normal_scale) && mesh->normal_scale>=0 && mesh->normal_scale<=16,"Invalid normal scale.");
+        }
         if(textured) {
             mesh->occlusion_strength=p.at("occlusion_strength");require(std::isfinite(mesh->occlusion_strength) && mesh->occlusion_strength>=0 && mesh->occlusion_strength<=1,"Invalid texture occlusion strength.");
-            const auto& textures=p.at("textures");require(textures.is_array() && textures.size()==4,"Invalid texture slots.");
-            for(std::size_t slot=0;slot<4;++slot) {
+            const auto& textures=p.at("textures");require(textures.is_array() && textures.size()==(tangent_format ? 5u : 4u),"Invalid texture slots.");
+            for(std::size_t slot=0;slot<textures.size();++slot) {
                 const auto& value=textures[slot];if(value.is_null())continue;
                 require(!result->images.empty(),"Missing texture images.");auto& map=mesh->textures[slot];map.image=result->images[count(value.at("image"),result->images.size()-1)];
                 map.wrap_s=value.at("wrap_s");map.wrap_t=value.at("wrap_t");map.min_filter=value.at("min_filter");map.mag_filter=value.at("mag_filter");
@@ -109,10 +130,22 @@ std::shared_ptr<const ModelAsset> decode_model(const std::string& bytes) {
             for(auto& x:v.position)x=reader.number();
             for(auto& x:v.normal)x=reader.number();
             for(auto& x:v.uv)x=reader.number();
+            if(tangent_format) {
+                for(auto& x:v.tangent)x=reader.number();
+                require(mesh->has_uv ? valid_tangent(v) : v.tangent[3]==0,"Invalid model tangent frame.");
+            }
             const double length=double(v.normal[0])*v.normal[0]+double(v.normal[1])*v.normal[1]+double(v.normal[2])*v.normal[2];
             require(std::abs(length-1)<1e-4,"Model normal is not normalized.");
         }
         for(auto& index:mesh->indices) { index=reader.integer();require(index<nv,"Model index is out of range."); }
+        if(tangent_format) {
+            for(const auto& map:mesh->textures)require(!map.image || mesh->has_uv,"Textured model lacks UVs.");
+        } else {
+            // Old formats cannot prove that UV0 was authored, but retained UV
+            // data remains usable for ordinary texture overrides after loading.
+            mesh->has_uv=textured;
+            if(!mesh->textures[3].image)mesh->occlusion_strength=1;
+        }
         result->primitives.push_back(mesh);
     }
     require(reader.offset==geometry_end,"Trailing model geometry bytes.");

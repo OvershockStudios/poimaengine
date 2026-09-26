@@ -98,6 +98,19 @@ void validate_component(const std::string& type, const Json& value) {
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
         require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");return;
     }
+    if(type=="PbrTextures") {
+        fields(value,{"base_color","metallic_roughness","emissive","occlusion","normal","occlusion_strength","normal_scale"});
+        for(const auto* key:{"base_color","metallic_roughness","emissive","occlusion","normal"})if(value.contains(key) && !value.at(key).is_null()) {
+            const auto& map=value.at(key);fields(map,{"asset","image","wrap_s","wrap_t","min_filter","mag_filter"},{"asset"});
+            require(map.at("asset").is_string() && valid_asset_id(map.at("asset").get<std::string>()),"Texture map requires an asset content hash.");
+            if(map.contains("image"))require(revision(map.at("image"))<256,"Model image index must be 0..255.");
+            for(const auto* field:{"wrap_s","wrap_t","min_filter","mag_filter"})if(map.contains(field))require(map.at(field).is_number_integer() && map.at(field)>=0 && map.at(field)<=33648,"Invalid sampler integer.");
+            TextureMap sampler;sampler.wrap_s=map.value("wrap_s",10497);sampler.wrap_t=map.value("wrap_t",10497);sampler.min_filter=map.value("min_filter",9987);sampler.mag_filter=map.value("mag_filter",9729);
+            require(valid_texture_sampler(sampler),"Unsupported texture sampler enum.");
+        }
+        for(const auto* key:{"occlusion_strength","normal_scale"})if(value.contains(key))require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()) && value.at(key)>=0 && value.at(key)<=(std::string_view(key)=="normal_scale" ? 16 : 1),"Texture strength/scale out of range.");
+        return;
+    }
     if(type=="PbrMaterial") {
         fields(value,{"base_color","emissive","metallic","roughness","double_sided"},{"base_color","emissive","metallic","roughness","double_sided"});
         for(const auto* key:{"base_color","emissive"}) {
@@ -163,7 +176,7 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures"}}};
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -178,7 +191,13 @@ Json describe() {
     const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}}}, {"asset","primitive","visible"});
     const Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}}}, {"base_color","emissive","metallic","roughness","double_sided"});
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr}};
+    const Json sampler_wrap={{"enum",{10497,33071,33648}}};
+    const Json map_ref=object_schema({{"asset",asset_id},{"image",{{"type","integer"},{"minimum",0},{"maximum",255}}},
+        {"wrap_s",sampler_wrap},{"wrap_t",sampler_wrap},{"min_filter",{{"enum",{9728,9729,9984,9985,9986,9987}}}},{"mag_filter",{{"enum",{9728,9729}}}}}, {"asset"});
+    const Json optional_map={{"anyOf",{map_ref,Json{{"type","null"}}}}};
+    const Json textures=object_schema({{"base_color",optional_map},{"metallic_roughness",optional_map},{"emissive",optional_map},{"occlusion",optional_map},{"normal",optional_map},
+        {"occlusion_strength",unit},{"normal_scale",{{"type","number"},{"minimum",0},{"maximum",16}}}});
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -191,8 +210,8 @@ Json describe() {
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 6}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures"}}}}}, {"type"});
+    Json result = {{"protocol_version", 1}, {"schema_revision", 7}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -243,6 +262,9 @@ Json describe() {
     for(const auto* key:{"path","width","height","gpu","samples"}) play["properties"][key]=capture["properties"][key];
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
+    methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});
+    methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
+    methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     result["runtime_available"]=Runtime::available();
@@ -288,7 +310,7 @@ void validate(const Json& doc) {
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}, {"Transform"});
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures"}, {"Transform"});
         require(!(entity.at("components").contains("MeshRenderer") && entity.at("components").contains("StaticMesh")),"An entity cannot combine MeshRenderer and StaticMesh.");
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
@@ -379,6 +401,7 @@ public:
                     {"entity_count", doc_.at("entities").size()}, {"persisted", exists_},
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
         }
+        if (method == "entity.material")return inspect_material(params);
         if (method == "entity.get") {
             fields(params, {"id", "revision", "component"}, {"id"}); current_revision(params);
             auto value = entity(doc_, params.at("id"));
@@ -390,7 +413,7 @@ public:
         }
         if (method == "entity.query") {
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
-            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial", "Unknown component type.");
+            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -443,9 +466,72 @@ public:
             m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
             m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");mesh.material=m;
         }
+        if(components.contains("PbrTextures")) {
+            const auto& value=components.at("PbrTextures");auto resolved=std::make_shared<MaterialTextures>();
+            if(mesh.mesh) { resolved->maps=mesh.mesh->textures;resolved->occlusion_strength=mesh.mesh->occlusion_strength;resolved->normal_scale=mesh.mesh->normal_scale; }
+            const char* names[]={"base_color","metallic_roughness","emissive","occlusion","normal"};
+            try {
+                for(std::size_t slot=0;slot<5;++slot)if(value.contains(names[slot])) {
+                    const auto& ref=value.at(names[slot]);auto& map=resolved->maps[slot];map={};if(ref.is_null())continue;
+                    if(ref.contains("image")) {
+                        const auto model=cache.get(asset_directory(),ref.at("asset"));const auto index=revision(ref.at("image"));
+                        require(index<model->images.size(),"Texture image index does not exist.",-32050);map.image=model->images[index];
+                    } else map.image=cache.image(asset_directory(),ref.at("asset"));
+                    require(map.image->srgb==(slot==0 || slot==2),"Texture color space does not match its material slot.",-32050);
+                    map.wrap_s=ref.value("wrap_s",10497);map.wrap_t=ref.value("wrap_t",10497);map.min_filter=ref.value("min_filter",9987);map.mag_filter=ref.value("mag_filter",9729);
+                }
+                if(value.contains("occlusion_strength"))resolved->occlusion_strength=value.at("occlusion_strength");
+                if(value.contains("normal_scale"))resolved->normal_scale=value.at("normal_scale");
+                if(mesh.mesh) {
+                    for(const auto& map:resolved->maps)require(!map.image || mesh.mesh->has_uv,"Material maps require mesh UV0.",-32050);
+                    if(resolved->maps[4].image)for(const auto& vertex:mesh.mesh->vertices)require(valid_tangent(vertex),"Normal mapping requires tangent frames; reimport this model with UV0.",-32050);
+                }
+            } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
+            mesh.textures=resolved;
+            if(!mesh.material) { PbrMaterial material;material.base_color=mesh.albedo;material.metallic=0;mesh.material=material; }
+        }
         return mesh;
     }
+    Json inspect_material(const Json& params) {
+        fields(params,{"id","revision"},{"id"});current_revision(params);const auto& value=entity(doc_,params.at("id"));ModelCache cache;
+        const auto mesh=mesh_component(value.at("components"),cache);require(mesh.has_value(),"Entity has no renderable mesh.",-32004);
+        MaterialTextures textures;
+        if(mesh->textures)textures=*mesh->textures;
+        else if(mesh->mesh) { textures.maps=mesh->mesh->textures;textures.normal_scale=mesh->mesh->normal_scale;textures.occlusion_strength=mesh->mesh->occlusion_strength; }
+        Json maps=Json::object();const char* names[]={"base_color","metallic_roughness","emissive","occlusion","normal"};
+        for(std::size_t slot=0;slot<5;++slot) {
+            const auto& map=textures.maps[slot];maps[names[slot]]=nullptr;if(!map.image)continue;
+            Json ref;
+            for(const auto& [id,image]:cache.images)if(image.image==map.image)ref={{"asset",id}};
+            if(ref.is_null())for(const auto& [id,model]:cache.models) {
+                const auto found=std::find(model.model->images.begin(),model.model->images.end(),map.image);
+                if(found!=model.model->images.end())ref={{"asset",id},{"image",std::size_t(found-model.model->images.begin())}};
+            }
+            ref["wrap_s"]=map.wrap_s;ref["wrap_t"]=map.wrap_t;ref["min_filter"]=map.min_filter;ref["mag_filter"]=map.mag_filter;
+            maps[names[slot]]=ref;
+        }
+        return {{"revision",doc_.at("revision")},{"id",params.at("id")},{"material",mesh->material ? material_json(*mesh->material) : Json(nullptr)},
+            {"legacy_albedo",mesh->albedo},{"textures",maps},{"normal_scale",textures.normal_scale},{"occlusion_strength",textures.occlusion_strength}};
+    }
+    Json image_dispatch(const std::string& method,const Json& params) const {
+        try {
+            LoadedImage loaded;
+            if(method=="asset.image.import") {
+                fields(params,{"source","color_space"},{"source","color_space"});require(params.at("source").is_string(),"Image source path must be a string.");
+                const auto text=params.at("source").get<std::string>();require(!text.empty() && text.find('\0')==std::string::npos,"Invalid image source path.");
+                require(params.at("color_space")=="srgb" || params.at("color_space")=="linear","Image color space must be srgb or linear.");
+                auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
+                loaded=store_image_asset(asset_directory(),source,params.at("color_space")=="srgb");
+            } else {
+                fields(params,{"asset"},{"asset"});require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid image asset ID.");
+                loaded=read_image_asset(asset_directory(),params.at("asset"));
+            }
+            Json mips=Json::array();for(const auto& mip:loaded.image->mips)mips.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}});
+            return {{"asset",loaded.id},{"format","poima.image.v1"},{"bytes",loaded.bytes},{"color_space",loaded.image->srgb ? "srgb" : "linear"},{"mips",mips}};
+        } catch(const Error&) { throw; }catch(const std::exception& error) { throw Error(-32050,error.what()); }
+    }
     Json asset_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
@@ -475,13 +561,13 @@ public:
                             for(const auto& mip:image.mips) { bytes+=mip.rgba.size();mips.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}}); }
                             result["items"].push_back({{"index",i},{"color_space",image.srgb ? "srgb" : "linear"},{"mips",mips},{"bytes",bytes}});
                         } else {
-                            const auto& mesh=*loaded.model->primitives[i];Json maps=Json::object();const char* names[]={"base_color","metallic_roughness","emissive","occlusion"};
-                            for(std::size_t slot=0;slot<4;++slot) {
+                            const auto& mesh=*loaded.model->primitives[i];Json maps=Json::object();const char* names[]={"base_color","metallic_roughness","emissive","occlusion","normal"};
+                            for(std::size_t slot=0;slot<5;++slot) {
                                 const auto& map=mesh.textures[slot];maps[names[slot]]=nullptr;if(!map.image)continue;
                                 maps[names[slot]]={{"image",std::size_t(std::find(loaded.model->images.begin(),loaded.model->images.end(),map.image)-loaded.model->images.begin())},
                                     {"wrap_s",map.wrap_s},{"wrap_t",map.wrap_t},{"min_filter",map.min_filter},{"mag_filter",map.mag_filter}};
                             }
-                            result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)},{"textures",maps},{"occlusion_strength",mesh.occlusion_strength}});
+                            result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)},{"textures",maps},{"occlusion_strength",mesh.occlusion_strength},{"normal_scale",mesh.normal_scale},{"has_uv",mesh.has_uv},{"tangent_frames",std::all_of(mesh.vertices.begin(),mesh.vertices.end(),valid_tangent)}});
                         }
                     }
                     result["next_offset"]=end<total ? Json(end) : Json(nullptr);
@@ -574,7 +660,7 @@ public:
             ModelCache cache;
             for(const auto& [id,e]:doc_.at("entities").items()) {
                 const auto mesh=mesh_component(e.at("components"),cache);
-                if(mesh && mesh->visible)snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material});
+                if(mesh && mesh->visible)snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures});
             }
             }
         } catch(const Error&) { throw; }
@@ -793,7 +879,7 @@ public:
                 entity(staged, id)["components"][type] = op.at("value");
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial", "Only optional built-in components can be removed.");
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures", "Only optional built-in components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {

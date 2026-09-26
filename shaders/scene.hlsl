@@ -18,16 +18,19 @@ Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
 Texture2D emissive_map : register(t2);
 Texture2D occlusion_map : register(t3);
+Texture2D normal_map : register(t4);
 SamplerState base_sampler : register(s0);
 SamplerState mr_sampler : register(s1);
 SamplerState emissive_sampler : register(s2);
 SamplerState occlusion_sampler : register(s3);
-struct VertexInput { float3 position : POSITION; float3 normal : NORMAL; float2 uv : TEXCOORD; };
+SamplerState normal_sampler : register(s4);
+struct VertexInput { float3 position : POSITION; float3 normal : NORMAL; float2 uv : TEXCOORD; float4 tangent : TANGENT; };
 struct VertexOutput {
     float4 position : SV_Position;
     float3 world_position : TEXCOORD0;
     float3 normal : TEXCOORD1;
     float2 uv : TEXCOORD2;
+    float4 tangent : TEXCOORD3;
 };
 VertexOutput vertex_main(VertexInput input) {
     VertexOutput output;
@@ -36,6 +39,7 @@ VertexOutput vertex_main(VertexInput input) {
     output.position=mul(view_projection,float4(output.world_position,1));
     output.normal=float3(dot(draw.normal_row0.xyz,input.normal),dot(draw.normal_row1.xyz,input.normal),dot(draw.normal_row2.xyz,input.normal));
     output.uv=input.uv;
+    output.tangent=float4(dot(draw.model_row0.xyz,input.tangent.xyz),dot(draw.model_row1.xyz,input.tangent.xyz),dot(draw.model_row2.xyz,input.tangent.xyz),input.tangent.w);
     return output;
 }
 float3 linear_to_srgb(float3 color) {
@@ -52,6 +56,15 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
         // Schlick Fresnel, Lambert diffuse. Lighting is an explicit initial
         // directional source plus a small ambient approximation, not GI/IBL.
         float3 v=normalize(camera.xyz-input.world_position);
+        if(draw.normal_row2.w>0.5) {
+            const float3 raw_t=input.tangent.xyz-n*dot(n,input.tangent.xyz);
+            const float3 t=raw_t*rsqrt(max(dot(raw_t,raw_t),1e-12));
+            const float3 b=(input.tangent.w<0 ? -1 : 1)*cross(n,t);
+            float3 sampled=normal_map.Sample(normal_sampler,input.uv).rgb*2-1;
+            sampled.xy*=draw.normal_row1.w;
+            const float3 mapped=t*sampled.x+b*sampled.y+n*sampled.z;
+            if(dot(mapped,mapped)>1e-12)n=normalize(mapped);
+        }
         if(!front)n=-n;
         const float3 halfway=v+l;
         const float3 h=halfway*rsqrt(max(dot(halfway,halfway),1e-8));

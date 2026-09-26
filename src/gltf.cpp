@@ -129,7 +129,6 @@ PbrMaterial material(const cgltf_material* source) {
     PbrMaterial result;
     if(!source)return result;
     require(source->alpha_mode==cgltf_alpha_mode_opaque,"Unsupported glTF material: alpha masking/blending is not implemented.");
-    require(!source->normal_texture.texture,"Normal maps require the forthcoming tangent-frame import path.");
     require(!source->has_pbr_specular_glossiness && !source->has_clearcoat && !source->has_transmission && !source->has_volume &&
         !source->has_ior && !source->has_specular && !source->has_sheen && !source->has_emissive_strength && !source->has_iridescence &&
         !source->has_diffuse_transmission && !source->has_anisotropy && !source->has_dispersion && !source->unlit,
@@ -172,31 +171,37 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
             require(result->primitives.size()<10000,"glTF primitive limit exceeded.");
             require(primitive.type==cgltf_primitive_type_triangles,"Only triangle-list glTF primitives are implemented.");
             require(!primitive.targets_count && !primitive.has_draco_mesh_compression,"Morph targets/compressed geometry are not implemented.");
-            const cgltf_accessor *positions=nullptr,*normals=nullptr,*uv=nullptr;
+            const cgltf_accessor *positions=nullptr,*normals=nullptr,*uv=nullptr,*tangents=nullptr;
             for(std::size_t a=0;a<primitive.attributes_count;++a) {
                 const auto& attribute=primitive.attributes[a];
                 if(attribute.type==cgltf_attribute_type_position) positions=attribute.data;
                 else if(attribute.type==cgltf_attribute_type_normal) normals=attribute.data;
                 else if(attribute.type==cgltf_attribute_type_texcoord && attribute.index==0)uv=attribute.data;
-                else require(attribute.type==cgltf_attribute_type_tangent,"Unsupported vertex attribute (including colors/joints/additional UV sets).");
+                else if(attribute.type==cgltf_attribute_type_tangent)tangents=attribute.data;
+                else require(false,"Unsupported vertex attribute (including colors/joints/additional UV sets).");
             }
             require(positions && positions->count>0 && positions->count<=max_vertices-total_vertices,"glTF vertex budget exceeded or POSITION missing.");
             const auto count=positions->count;
             const auto xyz=values(positions,cgltf_type_vec3,count);
             const auto n=normals ? values(normals,cgltf_type_vec3,count) : std::vector<float>{};
             const auto tex=uv ? values(uv,cgltf_type_vec2,count) : std::vector<float>{};
-            auto cooked=std::make_shared<MeshAsset>();cooked->material=material(primitive.material);cooked->vertices.resize(count);
+            require(!tangents || (normals && uv),"Authored tangents require NORMAL and TEXCOORD_0.");
+            const auto tangent_values=tangents ? values(tangents,cgltf_type_vec4,count) : std::vector<float>{};
+            auto cooked=std::make_shared<MeshAsset>();cooked->material=material(primitive.material);cooked->vertices.resize(count);cooked->has_uv=uv!=nullptr;
             if(const auto* source_material=primitive.material) {
                 cooked->textures={images.get(source_material->pbr_metallic_roughness.base_color_texture,true),images.get(source_material->pbr_metallic_roughness.metallic_roughness_texture,false),
-                    images.get(source_material->emissive_texture,true),images.get(source_material->occlusion_texture,false)};
+                    images.get(source_material->emissive_texture,true),images.get(source_material->occlusion_texture,false),images.get(source_material->normal_texture,false)};
                 for(const auto& texture:cooked->textures)require(!texture.image || uv,"Textured primitives must provide TEXCOORD_0.");
-                cooked->occlusion_strength=source_material->occlusion_texture.scale;
+                cooked->normal_scale=source_material->normal_texture.texture ? source_material->normal_texture.scale : 1.0f;
+                require(std::isfinite(cooked->normal_scale) && cooked->normal_scale>=0 && cooked->normal_scale<=16,"Normal scale must be in [0,16].");
+                cooked->occlusion_strength=source_material->occlusion_texture.texture ? source_material->occlusion_texture.scale : 1.0f;
                 require(std::isfinite(cooked->occlusion_strength) && cooked->occlusion_strength>=0 && cooked->occlusion_strength<=1,"Invalid occlusion strength.");
             }
             for(std::size_t v=0;v<count;++v) {
                 auto& vertex=cooked->vertices[v];std::copy_n(xyz.data()+v*3,3,vertex.position.begin());
                 if(normals) { std::copy_n(n.data()+v*3,3,vertex.normal.begin());normal(vertex.normal); }
                 if(uv)std::copy_n(tex.data()+v*2,2,vertex.uv.begin());
+                if(tangents) { std::copy_n(tangent_values.data()+v*4,4,vertex.tangent.begin());require(valid_tangent(vertex),"Authored tangent must be unit, perpendicular to the normal and have handedness +/-1."); }
             }
             const auto index_count=primitive.indices ? primitive.indices->count : count;
             require(index_count>0 && index_count%3==0 && index_count<=max_indices-total_indices,"Invalid/excessive triangle index count.");
@@ -218,6 +223,8 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
                 cooked->vertices=std::move(flat);std::iota(cooked->indices.begin(),cooked->indices.end(),0u);
                 result->diagnostics.push_back("Generated flat normals for primitive "+std::to_string(result->primitives.size())+".");
             }
+            if(uv && !tangents)generate_tangents(*cooked);
+            require(cooked->vertices.size()<=max_vertices-total_vertices,"Tangent expansion exceeds the model vertex budget.");
             total_vertices+=cooked->vertices.size();total_indices+=cooked->indices.size();
             meshes[&mesh].push_back(static_cast<std::uint32_t>(result->primitives.size()));result->primitives.push_back(cooked);
         }

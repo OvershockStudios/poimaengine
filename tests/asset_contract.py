@@ -48,7 +48,7 @@ class Assets(unittest.TestCase):
         responses=self.run_requests([rpc('asset.import',{'source':self.native(p)}) for p in [self.glb,self.gltf,embedded,self.glb]])
         results=[self.result(r) for r in responses];self.assertTrue(all(r==results[0] for r in results));imported=results[0]
         data=self.cache(imported['asset']).read_bytes();self.assertEqual(hashlib.sha256(data).hexdigest(),imported['asset'])
-        self.assertEqual(data[:8],b'POIMAM02');meta_len,blob_len=struct.unpack_from('<II',data,8);self.assertEqual(len(data),16+meta_len+blob_len)
+        self.assertEqual(data[:8],b'POIMAM03');meta_len,blob_len=struct.unpack_from('<II',data,8);self.assertEqual(len(data),16+meta_len+blob_len)
         metadata=json.loads(data[16:16+meta_len]);self.assertEqual(metadata['nodes'][1]['parent'],0)
         self.assertEqual(imported['vertices'],1225);self.assertEqual(imported['triangles'],2208)
         position_normal=struct.unpack_from('<6f',data,16+meta_len);self.assertEqual(position_normal,(0,1,0,0,1,0))
@@ -122,7 +122,7 @@ class Assets(unittest.TestCase):
         source,raw=quad([png(1,1,[255,255,255,255])]);variants=[]
         doc=copy.deepcopy(source);del doc['meshes'][0]['primitives'][0]['attributes']['TEXCOORD_0'];variants.append((doc,raw))
         doc=copy.deepcopy(source);doc['materials'][0]['pbrMetallicRoughness']['baseColorTexture']['texCoord']=1;variants.append((doc,raw))
-        doc=copy.deepcopy(source);doc['materials'][0]['normalTexture']={'index':0};variants.append((doc,raw))
+        doc=copy.deepcopy(source);doc['materials'][0]['normalTexture']={'index':0,'scale':17};variants.append((doc,raw))
         doc=copy.deepcopy(source);doc['samplers'][0]['wrapS']=1;variants.append((doc,raw))
         doc=copy.deepcopy(source);doc['images'][0]={'uri':'../escape.png'};variants.append((doc,raw));(self.root/'escape.png').write_bytes(png(1,1,[0,0,0,255]))
         doc=copy.deepcopy(source);doc['images'][0]={'uri':'data:image/png;base64,===='};variants.append((doc,raw))
@@ -139,12 +139,53 @@ class Assets(unittest.TestCase):
             if kind=='color':meta['images'][0]['srgb']=False
             if kind=='mip':meta['images'][0]['mips'].append(meta['images'][0]['mips'][0])
             if kind=='length':meta['images'][0]['mips'][0]['bytes']=2**32
-            header=json.dumps(meta).encode();bad=b'POIMAM02'+struct.pack('<II',len(header),len(binary))+header+binary;name=hashlib.sha256(bad).hexdigest();self.cache(name).write_bytes(bad)
+            header=json.dumps(meta).encode();bad=b'POIMAM03'+struct.pack('<II',len(header),len(binary))+header+binary;name=hashlib.sha256(bad).hexdigest();self.cache(name).write_bytes(bad)
             self.error(self.run_requests([rpc('asset.inspect',{'asset':name})])[0],-32050)
         doc,blob=sphere(4,8);self.glb.write_bytes(glb(doc,blob));asset=self.imported()['asset'];data=self.cache(asset).read_bytes();size=struct.unpack_from('<I',data,8)[0];meta=json.loads(data[16:16+size]);meta['version']=1;meta.pop('images');meta.pop('geometry_bytes')
         for p in meta['primitives']:p.pop('textures');p.pop('occlusion_strength')
-        header=json.dumps(meta).encode();binary=data[16+size:];legacy=b'POIMAM01'+struct.pack('<II',len(header),len(binary))+header+binary;name=hashlib.sha256(legacy).hexdigest();self.cache(name).write_bytes(legacy)
+        header=json.dumps(meta).encode();raw=data[16+size:];binary=b'';offset=0
+        for p in meta['primitives']:
+            nv=p['vertices'];ni=p['indices'];binary+=b''.join(raw[offset+i*48:offset+i*48+32] for i in range(nv));offset+=nv*48;binary+=raw[offset:offset+ni*4];offset+=ni*4
+        legacy=b'POIMAM01'+struct.pack('<II',len(header),len(binary))+header+binary;name=hashlib.sha256(legacy).hexdigest();self.cache(name).write_bytes(legacy)
         result=self.result(self.run_requests([rpc('asset.inspect',{'asset':name}),txn(0,[instance(name)])])[0]);self.assertEqual(result['format'],'poima.static-model.v1')
+    def test_independent_image_import_and_texture_authoring(self):
+        path=self.glb.parent/'paint.png';path.write_bytes(png(2,1,[0,0,0,255,255,255,255,255]))
+        r=self.run_requests([rpc('asset.image.import',{'source':self.native(path),'color_space':space}) for space in ['srgb','linear','srgb']])
+        color,data,repeat=[self.result(row) for row in r];self.assertEqual(color,repeat);self.assertNotEqual(color['asset'],data['asset']);self.assertEqual(color['format'],'poima.image.v1')
+        directory=Path(str(self.world)+'.assets');package=directory/(color['asset']+'.pimage');raw=package.read_bytes();self.assertEqual(hashlib.sha256(raw).hexdigest(),color['asset']);self.assertEqual(raw[:8],b'POIMAI01')
+        size=struct.unpack_from('<I',raw,8)[0];self.assertEqual(list(raw[16+size+8:16+size+12]),[188,188,188,255]);path.unlink()
+        self.assertEqual(self.result(self.run_requests([rpc('asset.image.inspect',{'asset':color['asset']})])[0]),color)
+        doc,blob=quad([png(1,1,[255,255,255,255])]);self.glb.write_bytes(glb(doc,blob));asset=self.imported()['asset'];mesh=derive(100,'node/0/primitive/0')
+        override={'base_color':{'asset':color['asset'],'wrap_s':33071,'min_filter':9728},'normal':{'asset':data['asset']},'emissive':None,'normal_scale':.5,'occlusion_strength':.25}
+        op={'op':'component.set','id':mesh,'type':'PbrTextures','value':override}
+        r=self.run_requests([txn(0,[instance(asset)]),txn(1,[op],preview=True),rpc('world.inspect',{}),txn(1,[op],request=uid(900)),txn(1,[op],request=uid(900)),rpc('entity.get',{'id':mesh,'component':'PbrTextures'})])
+        self.assertFalse(self.result(r[1])['committed']);self.assertEqual(self.result(r[2])['revision'],1);self.assertTrue(self.result(r[4])['replayed']);self.assertEqual(self.result(r[5])['value'],override)
+        bad=copy.deepcopy(op);bad['value']['base_color']['min_filter']=123
+        r=self.run_requests([txn(2,[{'op':'entity.rename','id':mesh,'name':'Should roll back'},bad]),rpc('entity.get',{'id':mesh}),txn(2,[{'op':'component.remove','id':mesh,'type':'PbrTextures'}])]);self.error(r[0],-32602);self.assertNotEqual(self.result(r[1])['value']['name'],'Should roll back');self.result(r[2])
+        self.assertEqual(package.read_bytes(),raw)
+        # Effective inspection resolves inherited maps and fails before a GPU is needed.
+        r=self.run_requests([rpc('entity.material',{'id':mesh,'revision':3}),txn(3,[{'op':'component.set','id':mesh,'type':'PbrTextures','value':{'base_color':{'asset':data['asset']}}}]),rpc('entity.material',{'id':mesh}),rpc('entity.material',{'id':mesh,'revision':3})])
+        self.assertEqual(self.result(r[0])['textures']['base_color']['asset'],asset);self.result(r[1]);self.error(r[2],-32050);self.error(r[3],-32009)
+
+        package.write_bytes(raw[:-1]);self.error(self.run_requests([rpc('asset.image.inspect',{'asset':color['asset']})])[0],-32050)
+        REPORTS.append({'image_srgb_asset':color['asset'],'image_linear_asset':data['asset'],'preview_retry_rollback':True})
+    def test_real_version_two_package_and_new_normal_default(self):
+        raw=(ROOT/'tests/fixtures/legacy-textured-v2.pmodel').read_bytes();asset=hashlib.sha256(raw).hexdigest();self.cache(asset).parent.mkdir(parents=True,exist_ok=True);self.cache(asset).write_bytes(raw)
+        r=self.run_requests([rpc('asset.inspect',{'asset':asset,'section':'primitives'}),txn(0,[instance(asset)]),rpc('entity.material',{'id':derive(100,'node/0/primitive/0')})])
+        self.assertEqual(self.result(r[0])['format'],'poima.static-model.v2');self.assertFalse(self.result(r[0])['items'][0]['tangent_frames']);self.assertEqual(self.result(r[2])['occlusion_strength'],1)
+        doc,blob=quad([png(1,1,[128,128,255,255])]);self.glb.write_bytes(glb(doc,blob));model=self.imported()['asset']
+        item=self.result(self.run_requests([rpc('asset.inspect',{'asset':model,'section':'primitives'})])[0])['items'][0];self.assertEqual(item['normal_scale'],1);self.assertEqual(item['occlusion_strength'],1)
+    def test_normal_maps_generated_and_authored_tangents(self):
+        image=png(1,1,[180,100,240,255]);material={'normalTexture':{'index':0,'scale':.8}}
+        doc,blob=quad([image],material);self.glb.write_bytes(glb(doc,blob));asset=self.imported()['asset']
+        inspected=self.result(self.run_requests([rpc('asset.inspect',{'asset':asset,'section':'primitives'})])[0])['items'][0]
+        self.assertTrue(inspected['tangent_frames']);self.assertEqual(inspected['textures']['normal']['image'],0);self.assertAlmostEqual(inspected['normal_scale'],.8)
+        raw=self.cache(asset).read_bytes();size=struct.unpack_from('<I',raw,8)[0];self.assertEqual(struct.unpack_from('<4f',raw,16+size+32),(1,0,0,-1))
+        # Tangents supplied by the source are retained rather than regenerated.
+        blob+=b'\0'*((-len(blob))%4);offset=len(blob);blob+=struct.pack('<16f',*([0,1,0,1]*4));doc['bufferViews'].append({'buffer':0,'byteOffset':offset,'byteLength':64});doc['accessors'].append({'bufferView':len(doc['bufferViews'])-1,'componentType':5126,'count':4,'type':'VEC4'});doc['meshes'][0]['primitives'][0]['attributes']['TANGENT']=len(doc['accessors'])-1;doc['buffers'][0]['byteLength']=len(blob)
+        self.glb.write_bytes(glb(doc,blob));authored=self.imported()['asset'];raw=self.cache(authored).read_bytes();size=struct.unpack_from('<I',raw,8)[0];self.assertEqual(struct.unpack_from('<4f',raw,16+size+32),(0,1,0,1))
+        broken=bytearray(blob);struct.pack_into('<4f',broken,offset,0,0,1,1);self.glb.write_bytes(glb(doc,broken));self.error(self.run_requests([rpc('asset.import',{'source':self.native(self.glb)})])[0],-32050)
+        REPORTS.append({'normal_model':asset,'authored_tangent_model':authored,'generated_and_authored_tangents_verified':True})
     def test_missing_normals_are_generated_flat(self):
         doc,blob=sphere(4,8);del doc['meshes'][0]['primitives'][0]['attributes']['NORMAL'];self.glb.write_bytes(glb(doc,blob))
         imported=self.imported();self.assertTrue(imported['diagnostics']);self.assertEqual(imported['vertices'],imported['triangles']*3)

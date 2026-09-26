@@ -76,6 +76,7 @@ std::vector<Vertex> box_vertices() {
             corners[k].position[(axis + 1) % 3] = u[k];
             corners[k].position[(axis + 2) % 3] = v[k];
             corners[k].normal[axis] = sign;
+            corners[k].uv={u[k]+0.5f, v[k]+0.5f};corners[k].tangent={0,0,0,sign};corners[k].tangent[(axis+1)%3]=1;
         }
         const std::array<unsigned,6> indices=sign>0 ? std::array<unsigned,6>{0,1,2,0,2,3} : std::array<unsigned,6>{0,2,1,0,3,2};
         for(auto k:indices)result.push_back(corners[k]);
@@ -120,7 +121,7 @@ struct Context {
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
     std::map<const MeshAsset*,Geometry> geometry_cache;
-    std::map<const MeshAsset*,nvrhi::BindingSetHandle> material_cache;
+    std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
     std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
     std::shared_ptr<const TextureImage> white_image;
@@ -281,12 +282,13 @@ struct Context {
             const nvrhi::VertexAttributeDesc attributes[] = {
                 nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)),
                 nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex)),
-                nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex))};
-            input_layout = checked->createInputLayout(attributes, 3, vertex_shader);
+                nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex)),
+                nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(32).setElementStride(sizeof(Vertex))};
+            input_layout = checked->createInputLayout(attributes, 4, vertex_shader);
             require(static_cast<bool>(input_layout), "Scene vertex layout creation failed.");
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
                 .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
-            for(std::uint32_t slot=0;slot<4;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
+            for(std::uint32_t slot=0;slot<5;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
             binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
@@ -311,7 +313,7 @@ struct Context {
 
     void prepare_scene() {
         auto white=std::make_shared<TextureImage>();white->mips.push_back({1,1,{255,255,255,255}});white_image=white;
-        bindings=mesh_bindings(nullptr);
+        bindings=mesh_bindings(nullptr,nullptr);
         const auto mesh = box_vertices();
         nvrhi::BufferDesc desc;
         desc.byteSize = mesh.size() * sizeof(Vertex); desc.isVertexBuffer = true;
@@ -352,11 +354,12 @@ struct Context {
         commands->close();checked->executeCommandList(commands);require(checked->waitForIdle(),"Texture upload failed.");
         texture_bytes+=bytes;texture_cache.emplace(image.get(),texture);return texture;
     }
-    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh) {
-        if(const auto found=material_cache.find(mesh);found!=material_cache.end())return found->second;
+    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override) {
+        const auto key_material=std::make_pair(mesh,override);
+        if(const auto found=material_cache.find(key_material);found!=material_cache.end())return found->second;
         auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawConstants))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer));
-        for(std::uint32_t slot=0;slot<4;++slot) {
-            const TextureMap map=mesh ? mesh->textures[slot] : TextureMap{};
+        for(std::uint32_t slot=0;slot<5;++slot) {
+            const TextureMap map=override ? override->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
             const auto texture=upload_texture(map.image ? map.image : white_image);
             const std::array<int,4> key{map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter};
             auto& sampler=sampler_cache[key];
@@ -369,7 +372,7 @@ struct Context {
             auto levels=nvrhi::AllSubresources;if(map.min_filter==9728 || map.min_filter==9729)levels.setMipLevels(0,1);
             desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,texture,nvrhi::Format::UNKNOWN,levels)).addItem(nvrhi::BindingSetItem::Sampler(slot,sampler));
         }
-        auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(mesh,result);return result;
+        auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
     }
     void update_scene() {
         draws.clear();
@@ -389,7 +392,10 @@ struct Context {
                 for(std::size_t k=0;k<3;++k) { draw.base_metallic[k]=m.base_color[k];draw.emissive_roughness[k]=m.emissive[k]; }
                 draw.base_metallic[3]=m.metallic;draw.emissive_roughness[3]=m.roughness;item.cull=!m.double_sided;
             } else { for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1; }
-            draw.normal[0][3]=object.mesh ? object.mesh->occlusion_strength : 1.0f;item.bindings=mesh_bindings(object.mesh.get());
+            draw.normal[0][3]=object.textures ? object.textures->occlusion_strength : object.mesh ? object.mesh->occlusion_strength : 1.0f;
+            draw.normal[1][3]=object.textures ? object.textures->normal_scale : object.mesh ? object.mesh->normal_scale : 1.0f;
+            draw.normal[2][3]=(object.textures ? bool(object.textures->maps[4].image) : object.mesh && object.mesh->textures[4].image) ? 1.0f : 0.0f;
+            item.bindings=mesh_bindings(object.mesh.get(),object.textures.get());
             item.geometry=mesh_geometry(object.mesh);draws.push_back(std::move(item));
         }
     }

@@ -1,0 +1,9 @@
+{
+  "repository": "https://github.com/mmikk/MikkTSpace",
+  "commit": "3e895b49d05ea07e4c2133156cfa94369e19e409",
+  "license": "zlib-style notice in each source header",
+  "files": {
+    "mikktspace.c": "de87e74107df766ce68108801262bd8d53899414236b59810509a8fc2a51e288",
+    "mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+  }
+}
