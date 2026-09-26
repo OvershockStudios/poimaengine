@@ -67,6 +67,8 @@ The optional Linux C# shipping experiment uses SDK **10.0.401** and runtime **10
 
 CMake verifies downloaded source archive hashes and installs dependency licenses beside the executable. Explicit `FETCHCONTENT_SOURCE_DIR_*` overrides use the supplied local source directories instead; callers are responsible for their provenance. The headless preset uses the bundled JSON header and fetches no third-party sources. Other planned engine libraries are not integrated yet.
 
+The optional main-engine integration (`POIMA_ENABLE_MANAGED_GAMEPLAY`) now uses caller-supplied `hostfxr.h` and `coreclr_delegates.h` as well. Both native builds were compiled with Linux SDK 10.0.401 host-pack headers 10.0.12, including their MIT source notices. Runtime tests load existing Windows CoreCLR 10.0.11 and Linux CoreCLR 10.0.12; the managed bridge/sample have no additional NuGet package dependencies. This integration still does not bundle a runtime. The [build guide](docs/MANAGED_GAMEPLAY.md) identifies the explicit paths and current development-only qualification.
+
 ## cgltf 1.15
 
 - Source: https://github.com/jkuhlmann/cgltf/tree/v1.15

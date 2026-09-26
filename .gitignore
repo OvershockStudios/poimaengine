@@ -5,3 +5,8 @@ __pycache__/
 *.pyc
 /experiments/managed_gameplay/**/bin/
 /experiments/managed_gameplay/**/obj/
+
+/managed/**/bin/
+/managed/**/obj/
+/examples/managed/**/bin/
+/examples/managed/**/obj/

@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdarg>
+#include <cstring>
 #include <cstdio>
 #include <map>
 #include <numbers>
@@ -112,6 +113,10 @@ struct Runtime::Impl {
     std::map<std::string,entt::entity> identities;
     std::vector<entt::entity> order, hierarchy, characters, kinematics;
     std::map<JPH::uint32,std::string> body_names;
+    Runtime* owner=nullptr;
+    std::unique_ptr<Gameplay> game;
+    std::uint64_t game_revision=0;
+    std::vector<KinematicTarget> game_commands;
     std::string world_id;
     std::uint64_t revision=0, tick=0;
     ~Impl() {
@@ -260,15 +265,7 @@ struct Runtime::Impl {
         for (auto e : characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
     }
-    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions) {
-        require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
-        std::map<entt::entity,const RuntimeInput*> controls;
-        for (const auto& input : inputs) {
-            const auto e=find(input.entity);
-            require(registry.all_of<Controller>(e) && controls.emplace(e,&input).second,"Input needs a unique CharacterController entity.");
-            for(float v:input.move) require(std::isfinite(v) && std::abs(v)<=1,"Move input must be in [-1,1].");
-            for(float v:input.look) require(std::isfinite(v) && std::abs(v)<=180,"Look input must be in [-180,180] degrees.");
-        }
+    std::map<entt::entity,Motion> prepare_motions(const std::vector<KinematicTarget>& motions) {
         require(motions.size()<=128,"At most 128 kinematic targets per batch.");
         std::map<entt::entity,Motion> prepared;
         for(const auto& target:motions) {
@@ -288,6 +285,44 @@ struct Runtime::Impl {
             require(angle/seconds<=20,"Motion exceeds 20 radians per second.");
             require(prepared.emplace(e,std::move(motion)).second,"Duplicate kinematic target entity.");
         }
+        return prepared;
+    }
+    template<class F> static int32_t callback(PoimaGameError* error,F&& f) noexcept {
+        try { f();return 0; }catch(const std::exception& e) { std::snprintf(error->text,sizeof(error->text),"%s",e.what());return -1; }catch(...) { std::snprintf(error->text,sizeof(error->text),"Native gameplay callback failed.");return -1; }
+    }
+    static int32_t POIMA_CALL get_entity(void* context,const PoimaEntityId* id,PoimaGameEntity* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            const auto state=static_cast<Impl*>(context)->owner->entity(gameplay_id(*id));
+            std::copy(state.world.begin(),state.world.end(),output->world);std::copy(state.velocity.begin(),state.velocity.end(),output->velocity);
+            output->motion=state.motion=="static" ? 1u : state.motion=="dynamic" ? 2u : state.motion=="kinematic" ? 3u : state.motion=="character" ? 4u : 0u;
+            output->remaining_ticks=state.motion_remaining_ticks;
+        });
+    }
+    static int32_t POIMA_CALL cast_ray(void* context,const PoimaGameRay* source,PoimaGameHit* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(source->ignore_count<=128,"At most 128 ignored gameplay ray entities.");RuntimeRay ray;
+            std::copy_n(source->origin,3,ray.origin.begin());std::copy_n(source->direction,3,ray.direction.begin());ray.distance=source->distance;
+            for(std::uint32_t i=0;i<source->ignore_count;++i)ray.ignore.push_back(gameplay_id(source->ignore[i]));
+            const auto hit=static_cast<Impl*>(context)->owner->raycast(ray);*output={};
+            if(hit) { output->hit=1;output->entity=gameplay_id(hit->entity);output->fraction=hit->fraction;output->distance=hit->distance;std::copy(hit->position.begin(),hit->position.end(),output->position);if(hit->normal) { output->normal_valid=1;std::copy(hit->normal->begin(),hit->normal->end(),output->normal); } }
+        });
+    }
+    static int32_t POIMA_CALL move_body(void* context,const PoimaGameMotion* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            auto& commands=static_cast<Impl*>(context)->game_commands;require(commands.size()<128,"Gameplay exceeded 128 motion commands in one tick.");
+            KinematicTarget target;target.entity=gameplay_id(source->entity);target.duration_ticks=source->duration_ticks;std::copy_n(source->position,3,target.position.begin());std::copy_n(source->rotation,4,target.rotation.begin());commands.push_back(std::move(target));
+        });
+    }
+    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions) {
+        require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
+        std::map<entt::entity,const RuntimeInput*> controls;
+        for (const auto& input : inputs) {
+            const auto e=find(input.entity);
+            require(registry.all_of<Controller>(e) && controls.emplace(e,&input).second,"Input needs a unique CharacterController entity.");
+            for(float v:input.move) require(std::isfinite(v) && std::abs(v)<=1,"Move input must be in [-1,1].");
+            for(float v:input.look) require(std::isfinite(v) && std::abs(v)<=180,"Look input must be in [-180,180] degrees.");
+        }
+        auto prepared=prepare_motions(motions);
         std::vector<std::optional<Motion>> previous_motions;previous_motions.reserve(kinematics.size());
         for(auto e:kinematics)previous_motions.push_back(registry.get<Body>(e).target);
         // Internal, trusted rollback snapshot; never deserialize caller-controlled
@@ -297,17 +332,10 @@ struct Runtime::Impl {
         for(auto e:characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({c.yaw,c.pitch}); }
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
+        auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         try {
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
-                for(auto e:kinematics) {
-                    auto& body=registry.get<Body>(e);
-                    if(!body.target)continue;
-                    const auto& m=*body.target;const double fraction=static_cast<double>(m.elapsed+1)/m.target.duration_ticks;
-                    const JPH::RVec3 target(m.target.position[0],m.target.position[1],m.target.position[2]);
-                    const auto rotation=m.start_rotation.SLERP(m.target_rotation,static_cast<float>(fraction));
-                    physics.GetBodyInterface().MoveKinematic(body.id,m.start_position+(target-m.start_position)*fraction,rotation,1.0f/60.0f);
-                }
                 for(auto e:characters) {
                     auto& c=registry.get<Controller>(e);
                     const RuntimeInput neutral;
@@ -327,6 +355,30 @@ struct Runtime::Impl {
                     if(frame==0 && input.jump && c.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround) y=c.settings.jump_speed;
                     c.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
                 }
+                if(game) {
+                    sync();game_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    for(const auto& [e,source]:controls) {
+                        (void)e;PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
+                        if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
+                        frame_inputs[input_count++]=input;
+                    }
+                    const PoimaGameServices services{1,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body};
+                    game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                    auto commands=prepare_motions(game_commands);
+                    for(auto& [e,motion]:commands) {
+                        require(frame!=0 || !prepared.contains(e),"Gameplay and caller targeted the same body in one tick.");
+                        registry.get<Body>(e).target=std::move(motion);
+                    }
+                    game_commands.clear();
+                }
+                for(auto e:kinematics) {
+                    auto& body=registry.get<Body>(e);
+                    if(!body.target)continue;
+                    const auto& m=*body.target;const double fraction=static_cast<double>(m.elapsed+1)/m.target.duration_ticks;
+                    const JPH::RVec3 target(m.target.position[0],m.target.position[1],m.target.position[2]);
+                    const auto rotation=m.start_rotation.SLERP(m.target_rotation,static_cast<float>(fraction));
+                    physics.GetBodyInterface().MoveKinematic(body.id,m.start_position+(target-m.start_position)*fraction,rotation,1.0f/60.0f);
+                }
                 const auto error=physics.Update(1.0f/60.0f,1,&allocator,&jobs);
                 require(error==JPH::EPhysicsUpdateError::None,"Jolt physics capacity/update error; batch rolled back.");
                 for(auto e:characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
@@ -340,6 +392,8 @@ struct Runtime::Impl {
             }
             sync();
         } catch(...) {
+            if(game)game->state().swap(game_checkpoint);
+            game_commands.clear();
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
             for(std::size_t k=0;k<characters.size();++k) {
@@ -354,7 +408,7 @@ struct Runtime::Impl {
 bool Runtime::available() { return true; }
 Runtime::Runtime(const RuntimeDefinition& definition) {
     static Library library;
-    impl_=std::make_unique<Impl>(); impl_->initialize(definition);
+    impl_=std::make_unique<Impl>();impl_->owner=this;impl_->initialize(definition);
 }
 Runtime::~Runtime()=default;
 RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->order.size(),impl_->physics.GetNumBodies(),impl_->characters.size()}; }
@@ -414,6 +468,16 @@ std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
         result.normal=std::array<double,3>{normal.GetX(),normal.GetY(),normal.GetZ()};
     }
     return result;
+}
+std::uint64_t Runtime::gameplay_revision() const { return impl_->game_revision; }
+std::string Runtime::gameplay_inspect() const { return impl_->game ? impl_->game->inspect() : "null"; }
+void Runtime::gameplay_load(const GameplayConfig& config,const std::string& values) {
+    require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
+    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);impl_->game.swap(candidate);++impl_->game_revision;
+}
+void Runtime::gameplay_edit(const std::string& values) {
+    require(impl_->game!=nullptr,"No gameplay module is loaded.");require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
+    impl_->game->edit(values);++impl_->game_revision;
 }
 SceneLighting Runtime::lighting() const {
     SceneLighting result;

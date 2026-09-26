@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
+#include "poima/gameplay.hpp"
 #include <memory>
 #include <optional>
 
@@ -46,6 +47,7 @@ struct RuntimeInput {
     std::string entity;
     std::array<float,2> move{0,0}; // right, forward; diagonal magnitude clamped to one
     std::array<float,2> look{0,0}; // yaw-left, pitch-up degrees; applied on first tick
+    bool use=false;
     bool jump=false;              // rising action on first tick only
 };
 struct KinematicTarget {
@@ -96,6 +98,10 @@ public:
     RuntimeEntityState entity(const std::string& id) const;
     void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={});
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    std::uint64_t gameplay_revision() const;
+    std::string gameplay_inspect() const;
+    void gameplay_load(const GameplayConfig& config,const std::string& values="{}");
+    void gameplay_edit(const std::string& values);
     SceneLighting lighting() const;
     SceneSnapshot snapshot(const std::string& camera) const;
 };

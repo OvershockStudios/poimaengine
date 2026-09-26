@@ -260,7 +260,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 11}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 12}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -295,8 +295,17 @@ Json describe() {
     methods["runtime.start"]=object_schema({{"session_id",id},{"revision",rev}},{"session_id","revision"});
     for(const auto* method:{"runtime.inspect","runtime.stop"}) methods[method]=object_schema({{"session_id",id}},{"session_id"});
     methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
+    methods["runtime.gameplay.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"include_schema",{{"type","boolean"},{"default",false}}},{"fields",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",{{"type","string"}}}}}},{"session_id"});
+    methods["runtime.gameplay.collect"]=object_schema({{"session_id",id}},{"session_id"});
+    auto game_edit=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_revision",rev},
+        {"values",{{"type","object"},{"maxProperties",128}}}}, {"session_id","request_id","expected_tick","expected_revision","values"});
+    methods["runtime.gameplay.edit"]=game_edit;
+    auto game_load=game_edit;
+    for(const auto* key:{"hostfxr","bridge","assembly","type"})game_load["properties"][key]={{"type","string"},{"minLength",1},{"maxLength",4096}};
+    game_load["required"]={"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"};
+    methods["runtime.gameplay.load"]=game_load;
     auto input=object_schema({{"entity",id},{"move",vector({{"type","number"},{"minimum",-1},{"maximum",1}},2)},
-        {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}}}, {"entity"});
+        {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}},{"use",{{"type","boolean"}}}}, {"entity"});
     const auto motion=object_schema({{"entity",id},{"position",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
         {"rotation",vector({{"type","number"},{"minimum",-1},{"maximum",1}},4)},
         {"duration_ticks",{{"type","integer"},{"minimum",1},{"maximum",36000}}}}, {"entity","position","rotation","duration_ticks"});
@@ -325,6 +334,7 @@ Json describe() {
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs, origin-inside hits have no surface normal.");
+    result["invariants"].push_back("Managed gameplay is optional trusted project code. One module per runtime; typed native state is inspected/edited separately from authoring. Load/edit use tick/revision guards and shared retry receipts. Use input is a first-tick edge. Gameplay updates and queued motion join physics batch rollback.");
     methods["world.lighting"]=object_schema({{"revision",rev}});
     methods["runtime.lighting"]=object_schema({{"session_id",id},{"tick",rev}}, {"session_id"});
     methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});
@@ -816,7 +826,7 @@ public:
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
     RuntimeInput parse_input(const Json& i) const {
-        fields(i,{"entity","move","look","jump"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
+        fields(i,{"entity","move","look","jump","use"},{"entity"}); RuntimeInput input; input.entity=identifier(i.at("entity"));
         for(const auto* key:{"move","look"}) if(i.contains(key)) {
             const auto& array=i.at(key); require(array.is_array() && array.size()==2,"Runtime input vector needs two numbers.");
             const double bound=std::string_view(key)=="move" ? 1 : 180;
@@ -824,6 +834,7 @@ public:
             if(std::string_view(key)=="move") input.move=array.get<std::array<float,2>>(); else input.look=array.get<std::array<float,2>>();
         }
         if(i.contains("jump")) { require(i.at("jump").is_boolean(),"Jump must be boolean."); input.jump=i.at("jump"); }
+        if(i.contains("use")) { require(i.at("use").is_boolean(),"Use must be boolean.");input.use=i.at("use"); }
         return input;
     }
     static Json motion_json(const KinematicTarget& m) {
@@ -874,7 +885,7 @@ public:
                 "Replay requires 1..256 input segments.");
             std::uint64_t total=0;
             for(auto segment:params.at("sequence")) {
-                fields(segment,{"ticks","move","look","jump","motions"},{"ticks"});
+                fields(segment,{"ticks","move","look","jump","use","motions"},{"ticks"});
                 const auto ticks=revision(segment.at("ticks")); require(ticks>=1 && ticks<=600,"Replay segment must be 1..600 ticks.");
                 total+=ticks; require(total<=36000 && expected+total<=max_revision,"Replay exceeds the tick limit.");
                 auto motions=parse_motions(segment.value("motions",Json::array()));segment.erase("motions");
@@ -904,7 +915,52 @@ public:
         receipts.back()["result"]=result; runtime_receipts_.swap(receipts);
         return result;
     }
+    Json gameplay_info() const {
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"revision",runtime_->gameplay_revision()},{"module",Json::parse(runtime_->gameplay_inspect())}};
+    }
+    Json gameplay_dispatch(const std::string& method,const Json& params) {
+        require(params.is_object() && params.contains("session_id"),"Gameplay requests require session_id.");runtime_guard(params);
+        if(method=="runtime.gameplay.inspect") {
+            fields(params,{"session_id","tick","include_schema","fields"},{"session_id"});
+            if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            require(!params.contains("include_schema") || params.at("include_schema").is_boolean(),"include_schema must be Boolean.");
+            auto result=gameplay_info();auto& module=result["module"];
+            if(params.contains("fields")) {
+                const auto& names=params.at("fields");require(!module.is_null() && names.is_array() && names.size()<=128,"fields needs a loaded module and at most 128 names.");Json values=Json::object();
+                for(const auto& name:names) { require(name.is_string(),"Field names must be strings.");const auto key=name.get<std::string>();require(module["values"].contains(key) && !values.contains(key),"Unknown or duplicate gameplay field.");values[key]=module["values"][key]; }module["values"]=std::move(values);
+            }
+            if(!module.is_null() && !params.value("include_schema",false))module={{"identity",module["schema"]["identity"]},{"assembly_sha256",module["assembly_sha256"]},{"values",module["values"]}};
+            return result;
+        }
+        if(method=="runtime.gameplay.collect") {
+            fields(params,{"session_id"},{"session_id"});require(Gameplay::available(),"Managed gameplay is not built.",-32003);
+            try { return Json::parse(Gameplay::collect()); }catch(const std::exception& e) { throw Error(-32060,e.what()); }
+        }
+        const bool load=method=="runtime.gameplay.load";require(load || method=="runtime.gameplay.edit","Unknown gameplay method.",-32601);
+        if(load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
+        else fields(params,{"session_id","request_id","expected_tick","expected_revision","values"},{"session_id","request_id","expected_tick","expected_revision","values"});
+        identifier(params.at("request_id"));auto normalized=params;normalized["method"]=method;
+        if(!normalized.contains("values"))normalized["values"]=Json::object();
+        require(normalized.at("values").is_object() && normalized.at("values").size()<=128,"Gameplay values must be a bounded field object.");
+        for(const auto& receipt:runtime_receipts_)if(receipt["params"]["request_id"]==params.at("request_id")) {
+            require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);auto result=receipt["result"];result["replayed"]=true;return result;
+        }
+        require(revision(params.at("expected_tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        require(revision(params.at("expected_revision"))==runtime_->gameplay_revision(),"Gameplay revision conflict.",-32009);
+        require(Gameplay::available(),"Managed gameplay is not built. Configure POIMA_ENABLE_MANAGED_GAMEPLAY=ON.",-32003);
+        GameplayConfig config;
+        if(load) {
+            for(const auto* key:{"hostfxr","bridge","assembly","type"})require(params.at(key).is_string() && !params.at(key).get_ref<const std::string&>().empty() && params.at(key).get_ref<const std::string&>().size()<=4096,"Gameplay paths/type must contain 1..4096 UTF-8 bytes.");
+            auto path=[&](const char* key) { const auto text=params.at(key).get<std::string>();auto value=fs::path(std::u8string(text.begin(),text.end()));if(value.is_relative())value=path_.parent_path()/value;const auto bytes=fs::absolute(value).lexically_normal().u8string();return std::string(bytes.begin(),bytes.end()); };
+            config={path("hostfxr"),path("bridge"),path("assembly"),params.at("type").get<std::string>()};
+        }
+        auto receipts=runtime_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",nullptr}});
+        try { if(load)runtime_->gameplay_load(config,normalized.at("values").dump());else runtime_->gameplay_edit(normalized.at("values").dump()); }
+        catch(const std::exception& e) { throw Error(-32060,e.what()); }
+        auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
+    }
     Json runtime_dispatch(const std::string& method,const Json& params) {
+        if(method.starts_with("runtime.gameplay."))return gameplay_dispatch(method,params);
         if(method=="runtime.capture") return capture(params,true);
         if(method=="runtime.play") return play(params);
         if(method=="runtime.start") {

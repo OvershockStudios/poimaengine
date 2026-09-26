@@ -838,6 +838,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                         case SDL_SCANCODE_S: input.button(PlayerAction::backward,down); break;
                         case SDL_SCANCODE_A: input.button(PlayerAction::left,down); break;
                         case SDL_SCANCODE_D: input.button(PlayerAction::right,down); break;
+                        case SDL_SCANCODE_E: input.button(PlayerAction::use,down); break;
                         case SDL_SCANCODE_SPACE: input.button(PlayerAction::jump,down); break;
                         default: break;
                     }
@@ -862,7 +863,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
             if(options.replay) {
                 if(segment==options.sequence.size()) { result.stop_reason="replay_complete"; break; }
                 auto control=options.sequence[segment].input;
-                if(offset!=0) { control.look={0,0}; control.jump=false; }
+                if(offset!=0) { control.look={0,0}; control.jump=false;control.use=false; }
                 runtime.step(1,{control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{});
                 if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
             } else {

@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles><RollForward>LatestPatch</RollForward></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../Poima.Gameplay/Poima.Gameplay.csproj" /></ItemGroup>
+</Project>

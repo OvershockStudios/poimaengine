@@ -3,13 +3,13 @@
 #include "poima/runtime.hpp"
 
 namespace poima {
-enum class PlayerAction { forward, backward, left, right, jump };
+enum class PlayerAction { forward, backward, left, right, jump, use };
 // Platform-independent pending input. Mouse/jump edges survive render frames
 // without a simulation tick and are consumed exactly once by the next tick.
 class PlayerInput {
-    std::array<bool,5> held_{};
+    std::array<bool,6> held_{};
     std::array<double,2> look_{};
-    bool jump_=false;
+    bool jump_=false,use_=false;
 public:
     void button(PlayerAction action, bool down);
     void look(double yaw, double pitch);

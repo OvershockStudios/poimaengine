@@ -9,6 +9,7 @@ void PlayerInput::button(PlayerAction action, bool down) {
     const auto index=static_cast<std::size_t>(action);
     if(index>=held_.size()) throw std::invalid_argument("Invalid player action.");
     if(action==PlayerAction::jump && down && !held_[index]) jump_=true;
+    if(action==PlayerAction::use && down && !held_[index])use_=true;
     held_[index]=down;
 }
 void PlayerInput::look(double yaw,double pitch) {
@@ -18,12 +19,12 @@ void PlayerInput::look(double yaw,double pitch) {
     look_[0]=std::clamp(look_[0]+yaw,-720.0,720.0);
     look_[1]=std::clamp(look_[1]+pitch,-720.0,720.0);
 }
-void PlayerInput::clear() { held_.fill(false); look_.fill(0); jump_=false; }
+void PlayerInput::clear() { held_.fill(false); look_.fill(0); jump_=false;use_=false; }
 RuntimeInput PlayerInput::consume(const std::string& entity) {
     RuntimeInput result; result.entity=entity;
     result.move={float(held_[3])-float(held_[2]),float(held_[0])-float(held_[1])};
     for(std::size_t k=0;k<2;++k) { const auto value=std::clamp(look_[k],-180.0,180.0); result.look[k]=static_cast<float>(value); look_[k]-=value; }
-    result.jump=jump_; jump_=false; return result;
+    result.jump=jump_;result.use=use_;jump_=false;use_=false;return result;
 }
 std::uint32_t PlayerClock::advance(double elapsed,bool active) {
     if(!std::isfinite(elapsed) || elapsed<0) throw std::invalid_argument("Invalid frame duration.");
