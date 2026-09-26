@@ -10,9 +10,10 @@ struct RuntimeTransform {
     std::array<double,4> rotation{0,0,0,1};
     std::array<double,3> scale{1,1,1};
 };
+enum class BodyMotion { Static, Dynamic, Kinematic };
 struct BoxCollider {
     std::array<float,3> half_extents{0.5f,0.5f,0.5f};
-    bool dynamic = false;
+    BodyMotion motion = BodyMotion::Static;
     float mass = 1, friction = 0.5f, restitution = 0;
 };
 struct CharacterController {
@@ -47,6 +48,23 @@ struct RuntimeInput {
     std::array<float,2> look{0,0}; // yaw-left, pitch-up degrees; applied on first tick
     bool jump=false;              // rising action on first tick only
 };
+struct KinematicTarget {
+    std::string entity;
+    std::array<double,3> position{}; // World-space root pose, fixed scale.
+    std::array<double,4> rotation{0,0,0,1};
+    std::uint32_t duration_ticks=1;
+};
+struct RuntimeRay {
+    std::array<double,3> origin{},direction{0,0,-1};
+    double distance=100;
+    std::vector<std::string> ignore;
+};
+struct RuntimeRayHit {
+    std::string entity;
+    double fraction=0,distance=0;
+    std::array<double,3> position{};
+    std::optional<std::array<double,3>> normal; // Absent for an origin-inside hit.
+};
 struct RuntimeEntityState {
     std::string id;
     Matrix4 world;
@@ -54,6 +72,9 @@ struct RuntimeEntityState {
     bool has_body=false, is_character=false;
     std::string ground;
     double yaw=0, pitch=0;
+    std::string motion="none";
+    std::optional<KinematicTarget> kinematic_target;
+    std::uint32_t motion_remaining_ticks=0;
 };
 struct RuntimeSummary {
     std::uint64_t tick=0;
@@ -73,7 +94,8 @@ public:
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
     RuntimeEntityState entity(const std::string& id) const;
-    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs);
+    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={});
+    std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
     SceneLighting lighting() const;
     SceneSnapshot snapshot(const std::string& camera) const;
 };

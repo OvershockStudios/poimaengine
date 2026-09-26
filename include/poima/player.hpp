@@ -22,7 +22,7 @@ public:
     std::uint32_t advance(double elapsed, bool active);
     double dropped_seconds() const { return dropped_; }
 };
-struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; };
+struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; std::vector<KinematicTarget> motions; };
 struct PlayerOptions {
     RenderOptions render;
     std::string camera, controller;

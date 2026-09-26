@@ -11,7 +11,7 @@ RuntimeDefinition fixture() {
     RuntimeDefinition d; d.world_id="fixture"; d.authored_revision=7;
     RuntimeEntityDefinition floor; floor.id="floor"; floor.transform.position={0,-0.5,0}; floor.transform.scale={20,1,20}; floor.collider=BoxCollider{};
     RuntimeEntityDefinition wall; wall.id="wall"; wall.transform.position={0,1.5,-3}; wall.transform.scale={8,3,0.5}; wall.collider=BoxCollider{};
-    RuntimeEntityDefinition box; box.id="box"; box.transform.position={2,3,0}; box.collider=BoxCollider{}; box.collider->dynamic=true;
+    RuntimeEntityDefinition box; box.id="box"; box.transform.position={2,3,0}; box.collider=BoxCollider{}; box.collider->motion=BodyMotion::Dynamic;
     RuntimeEntityDefinition player; player.id="player"; player.transform.position={0,1,2}; player.character=CharacterController{}; player.character->camera="camera";
     RuntimeEntityDefinition camera; camera.id="camera"; camera.parent="player"; camera.transform.position={0,1.6,0}; camera.camera=RuntimeCamera{};
     d.entities={player,box,camera,wall,floor}; return d;
@@ -54,7 +54,7 @@ int main() {
         // Exercise the rollback path after Jolt has started a real update:
         // overlapping bodies exceed the configured contact/pair capacities.
         RuntimeDefinition crowded; crowded.world_id="capacity-fixture";
-        for(int i=0;i<150;++i) { RuntimeEntityDefinition e; e.id="body-"+std::to_string(i); e.collider=BoxCollider{}; e.collider->dynamic=true; crowded.entities.push_back(e); }
+        for(int i=0;i<150;++i) { RuntimeEntityDefinition e; e.id="body-"+std::to_string(i); e.collider=BoxCollider{}; e.collider->motion=BodyMotion::Dynamic; crowded.entities.push_back(e); }
         Runtime overflow(crowded);
         std::vector<RuntimeEntityState> original;
         for(const auto& e:crowded.entities) original.push_back(overflow.entity(e.id));

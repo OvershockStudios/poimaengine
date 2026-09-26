@@ -158,7 +158,7 @@ void validate_component(const std::string& type, const Json& value) {
         const auto& extent=value.at("half_extents");
         require(extent.is_array() && extent.size()==3,"BoxCollider needs three half extents.");
         for(const auto& v:extent) require(v.is_number() && std::isfinite(v.get<double>()) && v>=0.001 && v<=10000,"Collider half extents must be 0.001..10000 meters.");
-        require(value.at("motion")=="static" || value.at("motion")=="dynamic","Collider motion must be static or dynamic.");
+        require(value.at("motion")=="static" || value.at("motion")=="dynamic" || value.at("motion")=="kinematic","Collider motion must be static, dynamic or kinematic.");
         for(const auto* key:{"mass","friction","restitution"}) require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid collider parameter.");
         require(value.at("mass")>0 && value.at("mass")<=1e6 && value.at("friction")>=0 && value.at("friction")<=2 && value.at("restitution")>=0 && value.at("restitution")<=1,"Collider material/mass out of range.");
         return;
@@ -215,7 +215,7 @@ Json describe() {
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
         {"visible", {{"type", "boolean"}}}}, {"primitive", "albedo", "visible"});
     const Json collider = object_schema({{"half_extents", vector({{"type","number"},{"minimum",0.001},{"maximum",10000}},3)},
-        {"motion",{{"enum",{"static","dynamic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
+        {"motion",{{"enum",{"static","dynamic","kinematic"}}}}, {"mass",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1e6}}},
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}}}, {"half_extents","motion","mass","friction","restitution"});
     const Json character = object_schema({{"radius",{{"type","number"},{"minimum",0.05},{"maximum",2}}},
         {"height",{{"type","number"},{"maximum",4}}}, {"speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30}}},
@@ -260,7 +260,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 10}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 11}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -289,7 +289,7 @@ Json describe() {
             "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",
             "No custom components, undo, prefab or keep_world transform support yet.",
             "Simulation is optional; runtime.start freezes authored state at a revision.",
-            "Dynamic bodies/controllers must be roots; colliders reject shear; controller camera must be a direct child.",
+            "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; controller camera must be a direct child.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
     methods["runtime.start"]=object_schema({{"session_id",id},{"revision",rev}},{"session_id","revision"});
@@ -297,9 +297,18 @@ Json describe() {
     methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
     auto input=object_schema({{"entity",id},{"move",vector({{"type","number"},{"minimum",-1},{"maximum",1}},2)},
         {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}}}, {"entity"});
+    const auto motion=object_schema({{"entity",id},{"position",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
+        {"rotation",vector({{"type","number"},{"minimum",-1},{"maximum",1}},4)},
+        {"duration_ticks",{{"type","integer"},{"minimum",1},{"maximum",36000}}}}, {"entity","position","rotation","duration_ticks"});
+    const Json motions={{"type","array"},{"maxItems",128},{"items",motion}};
+    methods["runtime.raycast"]=object_schema({{"session_id",id},{"tick",rev},
+        {"origin",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
+        {"direction",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
+        {"distance",{{"type","number"},{"minimum",.001},{"maximum",10000}}},
+        {"ignore",{{"type","array"},{"maxItems",128},{"items",id},{"uniqueItems",true}}}}, {"session_id","tick","origin","direction","distance"});
     methods["runtime.step"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},
         {"ticks",{{"type","integer"},{"minimum",1},{"maximum",600}}},
-        {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}}}, {"session_id","request_id","expected_tick","ticks"});
+        {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}},{"motions",motions}}, {"session_id","request_id","expected_tick","ticks"});
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
@@ -307,6 +316,7 @@ Json describe() {
         {"mode",{{"enum",{"interactive","replay"}}}}, {"max_frames",{{"type","integer"},{"minimum",0},{"maximum",36000}}}},
         {"session_id","request_id","expected_tick","controller","camera","mode"});
     auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
+    segment["properties"]["motions"]=motions;
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
     for(const auto* key:{"path","width","height","gpu","samples","culling","profile"}) play["properties"][key]=capture["properties"][key];
     methods["runtime.play"]=play;
@@ -314,6 +324,7 @@ Json describe() {
     result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
+    result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs, origin-inside hits have no surface normal.");
     methods["world.lighting"]=object_schema({{"revision",rev}});
     methods["runtime.lighting"]=object_schema({{"session_id",id},{"tick",rev}}, {"session_id"});
     methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});
@@ -791,7 +802,7 @@ public:
             value.mesh=mesh_component(components,cache);
             if(components.contains("Light"))value.light=light_value(components.at("Light"));
             if(components.contains("LightingEnvironment"))value.environment=environment_value(components.at("LightingEnvironment"));
-            if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic",c.at("mass"),c.at("friction"),c.at("restitution")}; }
+            if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")}; }
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
             result.entities.push_back(std::move(value));
         }
@@ -814,6 +825,28 @@ public:
         }
         if(i.contains("jump")) { require(i.at("jump").is_boolean(),"Jump must be boolean."); input.jump=i.at("jump"); }
         return input;
+    }
+    static Json motion_json(const KinematicTarget& m) {
+        return {{"entity",m.entity},{"position",m.position},{"rotation",m.rotation},{"duration_ticks",m.duration_ticks}};
+    }
+    static std::array<double,3> query_vector(const Json& v) {
+        require(v.is_array() && v.size()==3,"Expected a three-element query vector.");
+        for(const auto& x:v)require(x.is_number() && std::isfinite(x.get<double>()) && std::abs(x.get<double>())<=1e6,"Query vector must be finite and within 1e6.");
+        return v.get<std::array<double,3>>();
+    }
+    static std::vector<KinematicTarget> parse_motions(const Json& raw) {
+        require(raw.is_array() && raw.size()<=128,"Motions must be an array of at most 128 targets.");
+        std::vector<KinematicTarget> result;std::set<std::string> seen;
+        for(const auto& value:raw) {
+            fields(value,{"entity","position","rotation","duration_ticks"},{"entity","position","rotation","duration_ticks"});
+            KinematicTarget m;m.entity=identifier(value.at("entity"));require(seen.insert(m.entity).second,"Duplicate kinematic target entity.");
+            m.position=query_vector(value.at("position"));
+            validate_transform({{"position",m.position},{"rotation",value.at("rotation")},{"scale",{1,1,1}}});
+            m.rotation=value.at("rotation").get<std::array<double,4>>();
+            const auto ticks=revision(value.at("duration_ticks"));require(ticks>=1 && ticks<=36000,"Motion duration must be 1..36000 ticks.");m.duration_ticks=static_cast<std::uint32_t>(ticks);
+            result.push_back(std::move(m));
+        }
+        return result;
     }
     Json play(const Json& params) {
         fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile"},
@@ -841,11 +874,12 @@ public:
                 "Replay requires 1..256 input segments.");
             std::uint64_t total=0;
             for(auto segment:params.at("sequence")) {
-                fields(segment,{"ticks","move","look","jump"},{"ticks"});
+                fields(segment,{"ticks","move","look","jump","motions"},{"ticks"});
                 const auto ticks=revision(segment.at("ticks")); require(ticks>=1 && ticks<=600,"Replay segment must be 1..600 ticks.");
                 total+=ticks; require(total<=36000 && expected+total<=max_revision,"Replay exceeds the tick limit.");
+                auto motions=parse_motions(segment.value("motions",Json::array()));segment.erase("motions");
                 segment.erase("ticks"); segment["entity"]=options.controller;
-                options.sequence.push_back({static_cast<std::uint32_t>(ticks),parse_input(segment)});
+                options.sequence.push_back({static_cast<std::uint32_t>(ticks),parse_input(segment),std::move(motions)});
             }
         } else {
             require(!params.contains("sequence"),"Interactive play takes input from the window, not a replay sequence.");
@@ -905,6 +939,21 @@ public:
             try { auto result=lighting_json(runtime_->lighting());result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;return result; }
             catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
+        if(method=="runtime.raycast") {
+            fields(params,{"session_id","tick","origin","direction","distance","ignore"},{"session_id","tick","origin","direction","distance"});runtime_guard(params);
+            require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            RuntimeRay ray;ray.origin=query_vector(params.at("origin"));ray.direction=query_vector(params.at("direction"));
+            require(params.at("distance").is_number(),"Ray distance must be numeric.");ray.distance=params.at("distance").get<double>();
+            if(params.contains("ignore")) {
+                const auto& ids=params.at("ignore");require(ids.is_array() && ids.size()<=128,"Ignore must contain at most 128 entity IDs.");
+                for(const auto& id:ids)ray.ignore.push_back(identifier(id));
+            }
+            try {
+                const auto hit=runtime_->raycast(ray);Json value=nullptr;
+                if(hit)value={{"entity",hit->entity},{"fraction",hit->fraction},{"distance",hit->distance},{"position",hit->position},{"normal",hit->normal ? Json(*hit->normal) : Json(nullptr)}};
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"hit",value}};
+            }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        }
         if(method=="runtime.entity") {
             fields(params,{"session_id","id","tick"},{"session_id","id"}); runtime_guard(params);
             if(params.contains("tick")) require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -912,12 +961,13 @@ public:
             try { e=runtime_->entity(identifier(params.at("id"))); }
             catch(const std::runtime_error& error) { throw Error(-32004,error.what()); }
             return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"id",e.id},{"world_matrix",e.world},{"layout","column_major"},
+                {"motion",e.motion},{"kinematic_target",e.kinematic_target ? motion_json(*e.kinematic_target) : Json(nullptr)},{"motion_remaining_ticks",e.motion_remaining_ticks},
                 {"velocity",e.velocity},{"has_body",e.has_body},{"is_character",e.is_character},{"ground",e.ground},{"yaw",e.yaw},{"pitch",e.pitch}};
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions"},{"session_id","request_id","expected_tick","ticks"});
             runtime_guard(params); identifier(params.at("request_id"));
-            auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();
+            auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();
             for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
                 require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
                 auto result=receipt["result"]; result["replayed"]=true; return result;
@@ -930,10 +980,11 @@ public:
                 auto input=parse_input(i);
                 inputs.push_back(std::move(input));
             }
+            const auto motions=parse_motions(normalized.at("motions"));
             Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"tick",expected+ticks},{"stepped",ticks},{"replayed",false}};
             auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
             receipts.push_back({{"params",normalized},{"result",result}});
-            try { runtime_->step(static_cast<std::uint32_t>(ticks),inputs); }
+            try { runtime_->step(static_cast<std::uint32_t>(ticks),inputs,motions); }
             catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
             runtime_receipts_.swap(receipts); return result;
         }

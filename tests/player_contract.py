@@ -17,6 +17,7 @@ parser.add_argument('--gpu',type=int,default=0)
 parser.add_argument('--authored-lights',action='store_true')
 parser.add_argument('--shadows',action='store_true')
 parser.add_argument('--profile',action='store_true')
+parser.add_argument('--kinematic',action='store_true')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 if args.shadows and not args.authored_lights:parser.error('--shadows requires --authored-lights')
 run=args.output/uuid.uuid4().hex;run.mkdir()
@@ -41,8 +42,15 @@ if args.authored_lights:
             if op.get('type')=='Light':op['value']['shadow']={'enabled':True,'distance':20}
             if op.get('type')=='LightingEnvironment':op['value']['shadow_resolution']=512
 sequence=[{'ticks':120},{'ticks':60,'move':[0,1]},{'ticks':10,'jump':True},{'ticks':120},{'ticks':1,'look':[45,20]},{'ticks':60,'move':[.4,-.7]}]
+if args.kinematic:
+    for op in fixture['params']['ops']:
+        if op.get('type')=='BoxCollider' and op['id']==uid(2):op['value']['motion']='kinematic'
+    sequence[1]['motions']=[{'entity':uid(2),'position':[8,1.5,-3],'rotation':[0,0,0,1],'duration_ticks':120}]
 total=sum(s['ticks'] for s in sequence)
 request('world.transact',fixture['params']);request('runtime.start',{'session_id':uid(900),'revision':1})
+if args.kinematic:
+    query={'session_id':uid(900),'tick':0,'origin':[0,1.5,2],'direction':[0,0,-1],'distance':10,'ignore':[uid(100)]}
+    initial_ray=request('runtime.raycast',query)
 play={'session_id':uid(900),'request_id':uid(1000),'expected_tick':0,'controller':uid(100),'camera':uid(101),'mode':'replay',
       'sequence':sequence,'gpu':args.gpu,'path':native(run/'player.bmp'),'profile':args.profile}
 played=request('runtime.play',play)
@@ -50,13 +58,14 @@ retry=request('runtime.play',play)
 changed=request('runtime.play',{**play,'sequence':[{'ticks':1}]})
 conflict=request('runtime.step',{'session_id':uid(900),'request_id':uid(1000),'expected_tick':total,'ticks':1})
 stale=request('runtime.play',{**play,'request_id':uid(1001),'path':native(run/'stale.bmp')})
-first_states=[request('runtime.entity',{'session_id':uid(900),'id':uid(n),'tick':total}) for n in [100,101,3]]
+first_states=[request('runtime.entity',{'session_id':uid(900),'id':uid(n),'tick':total}) for n in ([100,101,3,2] if args.kinematic else [100,101,3])]
+if args.kinematic:final_ray=request('runtime.raycast',{**query,'tick':total})
 request('runtime.stop',{'session_id':uid(900)});request('runtime.start',{'session_id':uid(901),'revision':1})
 tick=0
 for segment in sequence:
-    control={k:v for k,v in segment.items() if k!='ticks'};control['entity']=uid(100)
-    request('runtime.step',{'session_id':uid(901),'request_id':uuid.uuid4().hex,'expected_tick':tick,'ticks':segment['ticks'],'inputs':[control]});tick+=segment['ticks']
-second_states=[request('runtime.entity',{'session_id':uid(901),'id':uid(n),'tick':total}) for n in [100,101,3]]
+    control={k:v for k,v in segment.items() if k not in ('ticks','motions')};control['entity']=uid(100)
+    request('runtime.step',{'session_id':uid(901),'request_id':uuid.uuid4().hex,'expected_tick':tick,'ticks':segment['ticks'],'inputs':[control],'motions':segment.get('motions',[])});tick+=segment['ticks']
+second_states=[request('runtime.entity',{'session_id':uid(901),'id':uid(n),'tick':total}) for n in ([100,101,3,2] if args.kinematic else [100,101,3])]
 baseline=request('runtime.capture',{'session_id':uid(901),'tick':total,'camera':uid(101),'gpu':args.gpu,'path':native(run/'baseline.bmp'),'profile':args.profile,'culling':not args.profile})
 # A graphics initialization failure must expose the current tick, be retryable
 # without relaunching, and allow a new request to recover in the same runtime.
@@ -66,7 +75,7 @@ recovered=request('runtime.play',{**bad,'request_id':uid(1003),'gpu':args.gpu,'p
 inspected=request('runtime.inspect',{'session_id':uid(901)})
 command=[str(args.binary.resolve()),'world',native(run/'world.json')]
 p=subprocess.run(command,input=''.join(json.dumps(r)+'\n' for r in requests),text=True,encoding='utf-8',capture_output=True,timeout=120)
-record={'command':command,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'authored_lights':args.authored_lights,'shadows':args.shadows,'exit_code':p.returncode,'stderr':p.stderr,'requests':requests}
+record={'command':command,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'authored_lights':args.authored_lights,'shadows':args.shadows,'kinematic':args.kinematic,'exit_code':p.returncode,'stderr':p.stderr,'requests':requests}
 try:
     assert p.returncode==0,p.stdout+p.stderr
     responses={r['id']:r for r in map(json.loads,p.stdout.splitlines())};record['responses']=responses
@@ -91,6 +100,10 @@ try:
         assert abs(lights[uid(201)]['position'][1]-5)>.5
         assert abs(lights[uid(202)]['direction'][0])>.1
         if args.shadows:assert report['lighting']['shadow_views']==7 and report['lighting']['shadow_bytes']==7*512*512*4
+    if args.kinematic:
+        assert responses[initial_ray]['result']['hit']['entity']==uid(2)
+        assert responses[final_ray]['result']['hit'] is None
+        door=responses[first_states[-1]]['result'];assert abs(door['world_matrix'][12]-8)<1e-5 and door['kinematic_target'] is None
     assert pixels(run/'player.bmp')==pixels(run/'baseline.bmp')
     diagnostics=report['render_diagnostics'];assert diagnostics['completed_submissions']==report['frames_presented']
     if args.profile:

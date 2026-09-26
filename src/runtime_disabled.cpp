@@ -8,7 +8,8 @@ Runtime::Runtime(const RuntimeDefinition&) { throw std::runtime_error("Simulatio
 Runtime::~Runtime()=default;
 RuntimeSummary Runtime::inspect() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeEntityState Runtime::entity(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
-void Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&) { throw std::runtime_error("Simulation is not built."); }
+void Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&, const std::vector<KinematicTarget>&) { throw std::runtime_error("Simulation is not built."); }
+std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
 SceneLighting Runtime::lighting() const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 }

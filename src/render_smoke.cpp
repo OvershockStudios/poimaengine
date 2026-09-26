@@ -863,7 +863,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                 if(segment==options.sequence.size()) { result.stop_reason="replay_complete"; break; }
                 auto control=options.sequence[segment].input;
                 if(offset!=0) { control.look={0,0}; control.jump=false; }
-                runtime.step(1,{control});
+                runtime.step(1,{control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{});
                 if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
             } else {
                 const auto ticks=clock.advance(elapsed,focused && captured);

@@ -137,6 +137,43 @@ class RuntimeContract(unittest.TestCase):
         self.error(r[14],-32004)
         self.assertFalse((Path(self.directory.name)/'never.bmp').exists())
 
+    def test_kinematic_motion_queries_receipts_and_frozen_authoring(self):
+        collider=next(op['value'] for op in FIXTURE['params']['ops'] if op.get('type')=='BoxCollider' and op['id']==uid(2))
+        make_kinematic=txn(1,[{'op':'component.set','id':uid(2),'type':'BoxCollider','value':{**collider,'motion':'kinematic'}}])
+        motion={'entity':uid(2),'position':[8,1.5,-3],'rotation':[0,0,0,1],'duration_ticks':120}
+        moving=step(0,60,request_id=uid(8000));moving['params']['motions']=[motion]
+        ray={'session_id':uid(900),'tick':0,'origin':[0,1.5,2],'direction':[0,0,-7],'distance':10,'ignore':[uid(100)]}
+        requests=[FIXTURE,make_kinematic,start(revision=2),rpc('world.describe',{}),rpc('runtime.raycast',ray),moving,moving,inspect_entity(2,tick=60),
+            rpc('runtime.raycast',{**ray,'tick':0}),rpc('runtime.raycast',{**ray,'tick':60,'ignore':[uid(100),uid(2)]}),
+            txn(2,[transform(2,[50,1.5,-3])]),step(60,60),inspect_entity(2,tick=120),step(120,120),inspect_entity(2,tick=240),
+            rpc('runtime.raycast',{**ray,'tick':240}),rpc('entity.get',{'id':uid(2),'component':'Transform'}),rpc('runtime.inspect',{'session_id':uid(900)}),
+            {**moving,'params':{**moving['params'],'motions':[{**motion,'duration_ticks':100}]}}]
+        r=self.run_requests(requests);self.assertGreaterEqual(self.result(r[3])['schema_revision'],11)
+        self.assertIn('runtime.raycast',self.result(r[3])['methods'])
+        hit=self.result(r[4])['hit'];self.assertEqual(hit['entity'],uid(2));self.assertAlmostEqual(hit['distance'],4.75,delta=1e-5);self.assertGreater(hit['normal'][2],.999)
+        self.assertTrue(self.result(r[6])['replayed']);middle=self.result(r[7]);self.assertAlmostEqual(middle['world_matrix'][12],4,delta=1e-5)
+        self.assertEqual(middle['kinematic_target'],motion);self.assertEqual(middle['motion_remaining_ticks'],60);self.error(r[8],-32009)
+        self.assertIsNone(self.result(r[9])['hit']);end=self.result(r[12]);held=self.result(r[14])
+        self.assertAlmostEqual(end['world_matrix'][12],8,delta=1e-5);self.assertIsNone(end['kinematic_target']);self.assertEqual(end['world_matrix'],held['world_matrix'])
+        self.assertEqual(end['velocity'],[0,0,0]);self.assertIsNone(self.result(r[15])['hit'])
+        self.assertEqual(self.result(r[16])['value']['position'][0],50);self.assertTrue(self.result(r[17])['source_stale']);self.error(r[18],-32010)
+        self.assertEqual(json.loads(self.path.read_text())['entities'][uid(2)]['components']['BoxCollider']['motion'],'kinematic')
+        REPLAY_TRACE.extend([middle,end,held])
+
+    def test_motion_and_query_invalid_requests_preserve_tick(self):
+        motion={'entity':uid(2),'position':[0,1.5,-3],'rotation':[0,0,0,1],'duration_ticks':60}
+        base=step(0,1)
+        invalid=[([{**motion,'duration_ticks':0}],-32602),([{**motion,'duration_ticks':True}],-32602),([{**motion,'rotation':[0,0,0,0]}],-32602),
+            ([motion,motion],-32602),([motion]*129,-32602),([{**motion,'position':[0,1]}],-32602),([motion],-32040)]
+        ray={'session_id':uid(900),'tick':0,'origin':[0,1.5,2],'direction':[0,0,-1],'distance':10}
+        bad_rays=[{**ray,'direction':[0,0,0]},{**ray,'distance':0},{**ray,'distance':True},{**ray,'origin':[0,1]},
+            {**ray,'ignore':[uid(999)]},{**ray,'ignore':[uid(2),uid(2)]},{**ray,'ignore':[uid(2)]*129},{**ray,'distance':10001},{**ray,'unknown':1}]
+        rows=[FIXTURE,start()]+[{**base,'params':{**base['params'],'motions':v}} for v,_ in invalid]+[rpc('runtime.raycast',v) for v in bad_rays]+[inspect_entity(tick=0)]
+        r=self.run_requests(rows)
+        for response,(_,code) in zip(r[2:],invalid):self.error(response,code)
+        for response in r[2+len(invalid):-1]:self.error(response,-32602)
+        self.assertEqual(self.result(r[-1])['tick'],0)
+
     def test_receipt_window_and_repeated_lifetimes(self):
         original=step(0,1,request_id=uid(10000))
         requests=[FIXTURE,start(),original]

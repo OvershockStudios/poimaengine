@@ -100,6 +100,8 @@ Reply capabilities() {
         ",\"features\":{\"native_cli\":true,\"host_inspection\":true,\"vulkan_device_inspection\":" +
         boolean(POIMA_VULKAN_PROBE != 0) +
         ",\"render_smoke\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"physics_queries\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"kinematic_motion\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"simulation\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"player_viewport\":" + boolean(POIMA_SIMULATION != 0 && POIMA_RENDER_SMOKE != 0) +
         ",\"scene_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +

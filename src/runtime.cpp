@@ -7,6 +7,11 @@
 #include <Jolt/Core/TempAllocator.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/StateRecorderImpl.h>
+#include <Jolt/Physics/Collision/RayCast.h>
+#include <Jolt/Physics/Collision/CastResult.h>
+#include <Jolt/Physics/Collision/CollisionCollectorImpl.h>
+#include <Jolt/Physics/Collision/NarrowPhaseQuery.h>
+#include <Jolt/Physics/Body/BodyLock.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Character/Character.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
@@ -48,7 +53,13 @@ struct Node {
     RuntimeTransform local, initial;
     Matrix4 world = identity_matrix();
 };
-struct Body { JPH::BodyID id; bool dynamic=false; };
+struct Motion {
+    KinematicTarget target;
+    JPH::RVec3 start_position;
+    JPH::Quat start_rotation,target_rotation;
+    std::uint32_t elapsed=0;
+};
+struct Body { JPH::BodyID id; BodyMotion motion=BodyMotion::Static; std::optional<Motion> target; };
 struct Controller {
     JPH::Ref<JPH::Character> character;
     CharacterController settings;
@@ -99,7 +110,8 @@ struct Runtime::Impl {
     JPH::JobSystemSingleThreaded jobs{JPH::cMaxPhysicsJobs};
     entt::registry registry;
     std::map<std::string,entt::entity> identities;
-    std::vector<entt::entity> order, hierarchy, characters;
+    std::vector<entt::entity> order, hierarchy, characters, kinematics;
+    std::map<JPH::uint32,std::string> body_names;
     std::string world_id;
     std::uint64_t revision=0, tick=0;
     ~Impl() {
@@ -126,7 +138,7 @@ struct Runtime::Impl {
     void sync() {
         for (auto e : order) {
             auto& node=registry.get<Node>(e);
-            if (auto* body=registry.try_get<Body>(e); body && body->dynamic) {
+            if (auto* body=registry.try_get<Body>(e); body && body->motion!=BodyMotion::Static) {
                 JPH::RVec3 position; JPH::Quat rotation;
                 physics.GetBodyInterface().GetPositionAndRotation(body->id,position,rotation); set_pose(node,position,rotation);
             }
@@ -178,7 +190,8 @@ struct Runtime::Impl {
             for (auto it=chain.rbegin();it!=chain.rend();++it) { hierarchy.push_back(*it); done.insert(*it); }
         }
         world_matrices();
-        std::set<std::string> controlled_cameras;
+        std::set<std::string> controlled_cameras,moving_roots;
+        for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
         for (const auto& d : definitions) {
             auto e=find(d.id); const auto& node=registry.get<Node>(e);
             if (d.collider) {
@@ -186,7 +199,10 @@ struct Runtime::Impl {
                 require(std::isfinite(collider.mass) && collider.mass>0 && collider.mass<=1e6f &&
                     std::isfinite(collider.friction) && collider.friction>=0 && collider.friction<=2 &&
                     std::isfinite(collider.restitution) && collider.restitution>=0 && collider.restitution<=1,"Invalid physics material or mass.");
-                require(!collider.dynamic || d.parent.empty(),"Dynamic bodies must be hierarchy roots in the initial runtime.");
+                require(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Invalid body motion kind.");
+                require(collider.motion==BodyMotion::Static || d.parent.empty(),"Dynamic and kinematic bodies must be hierarchy roots.");
+                for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
+                    require(!moving_roots.contains(parent),"Static colliders cannot inherit a moving body/controller; use a separate kinematic root.");
                 const auto p=pose(node.world);
                 float extent[3];
                 for(std::size_t k=0;k<3;++k) {
@@ -198,15 +214,17 @@ struct Runtime::Impl {
                 auto shape=JPH::BoxShapeSettings(JPH::Vec3(extent[0],extent[1],extent[2]),bevel).Create();
                 require(!shape.HasError(),"Jolt box shape creation failed.");
                 JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,
-                    collider.dynamic ? JPH::EMotionType::Dynamic : JPH::EMotionType::Static,collider.dynamic ? 1 : 0);
+                    collider.motion==BodyMotion::Dynamic ? JPH::EMotionType::Dynamic : collider.motion==BodyMotion::Kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,collider.motion==BodyMotion::Static ? 0 : 1);
                 settings.mFriction=collider.friction; settings.mRestitution=collider.restitution;
                 settings.mOverrideMassProperties=JPH::EOverrideMassProperties::CalculateInertia;
                 settings.mMassPropertiesOverride.mMass=collider.mass;
-                settings.mMotionQuality=collider.dynamic ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+                settings.mMotionQuality=collider.motion==BodyMotion::Dynamic ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
                 auto& body=registry.emplace<Body>(e);
-                body.dynamic=collider.dynamic;
-                body.id=physics.GetBodyInterface().CreateAndAddBody(settings,collider.dynamic ? JPH::EActivation::Activate : JPH::EActivation::DontActivate);
+                body.motion=collider.motion;
+                body.id=physics.GetBodyInterface().CreateAndAddBody(settings,collider.motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
                 require(!body.id.IsInvalid(),"Jolt body allocation failed.");
+                body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
+                if(body.motion==BodyMotion::Kinematic)kinematics.push_back(e);
             }
             if (d.character) {
                 require(d.parent.empty() && rigid_transform(node.world),"CharacterController requires an unscaled hierarchy root.");
@@ -235,13 +253,14 @@ struct Runtime::Impl {
                 controller.character->AddToPhysicsSystem();
                 physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
                 characters.push_back(e);
+                body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
             }
         }
         physics.OptimizeBroadPhase();
         for (auto e : characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
     }
-    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs) {
+    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions) {
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
         std::map<entt::entity,const RuntimeInput*> controls;
         for (const auto& input : inputs) {
@@ -250,6 +269,27 @@ struct Runtime::Impl {
             for(float v:input.move) require(std::isfinite(v) && std::abs(v)<=1,"Move input must be in [-1,1].");
             for(float v:input.look) require(std::isfinite(v) && std::abs(v)<=180,"Look input must be in [-180,180] degrees.");
         }
+        require(motions.size()<=128,"At most 128 kinematic targets per batch.");
+        std::map<entt::entity,Motion> prepared;
+        for(const auto& target:motions) {
+            const auto e=find(target.entity);const auto* body=registry.try_get<Body>(e);
+            require(body && body->motion==BodyMotion::Kinematic,"Motion target requires a kinematic BoxCollider.");
+            require(target.duration_ticks>=1 && target.duration_ticks<=36000,"Motion duration must be 1..36000 ticks.");
+            for(double x:target.position)require(std::isfinite(x) && std::abs(x)<=1e6,"Motion position must be finite and within 1000 km.");
+            double norm=0;for(double x:target.rotation) { require(std::isfinite(x),"Motion rotation must be finite.");norm+=x*x; }
+            require(std::abs(norm-1)<1e-5,"Motion rotation must be a normalized XYZW quaternion.");
+            Motion motion;motion.target=target;
+            physics.GetBodyInterface().GetPositionAndRotation(body->id,motion.start_position,motion.start_rotation);
+            motion.target_rotation=JPH::Quat(static_cast<float>(target.rotation[0]),static_cast<float>(target.rotation[1]),static_cast<float>(target.rotation[2]),static_cast<float>(target.rotation[3])).Normalized();
+            const JPH::RVec3 position(target.position[0],target.position[1],target.position[2]);
+            const double seconds=target.duration_ticks*Runtime::fixed_dt;
+            require((position-motion.start_position).Length()/seconds<=100,"Motion exceeds 100 meters per second.");
+            JPH::Vec3 axis;float angle; (motion.target_rotation*motion.start_rotation.Conjugated()).GetAxisAngle(axis,angle);
+            require(angle/seconds<=20,"Motion exceeds 20 radians per second.");
+            require(prepared.emplace(e,std::move(motion)).second,"Duplicate kinematic target entity.");
+        }
+        std::vector<std::optional<Motion>> previous_motions;previous_motions.reserve(kinematics.size());
+        for(auto e:kinematics)previous_motions.push_back(registry.get<Body>(e).target);
         // Internal, trusted rollback snapshot; never deserialize caller-controlled
         // bytes through Jolt. Persistent simulation save format remains future work.
         JPH::StateRecorderImpl checkpoint; physics.SaveState(checkpoint);
@@ -258,7 +298,16 @@ struct Runtime::Impl {
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
         try {
+            for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
+                for(auto e:kinematics) {
+                    auto& body=registry.get<Body>(e);
+                    if(!body.target)continue;
+                    const auto& m=*body.target;const double fraction=static_cast<double>(m.elapsed+1)/m.target.duration_ticks;
+                    const JPH::RVec3 target(m.target.position[0],m.target.position[1],m.target.position[2]);
+                    const auto rotation=m.start_rotation.SLERP(m.target_rotation,static_cast<float>(fraction));
+                    physics.GetBodyInterface().MoveKinematic(body.id,m.start_position+(target-m.start_position)*fraction,rotation,1.0f/60.0f);
+                }
                 for(auto e:characters) {
                     auto& c=registry.get<Controller>(e);
                     const RuntimeInput neutral;
@@ -281,6 +330,12 @@ struct Runtime::Impl {
                 const auto error=physics.Update(1.0f/60.0f,1,&allocator,&jobs);
                 require(error==JPH::EPhysicsUpdateError::None,"Jolt physics capacity/update error; batch rolled back.");
                 for(auto e:characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
+                for(auto e:kinematics) {
+                    auto& body=registry.get<Body>(e);
+                    if(body.target && ++body.target->elapsed==body.target->target.duration_ticks) {
+                        physics.GetBodyInterface().SetLinearAndAngularVelocity(body.id,JPH::Vec3::sZero(),JPH::Vec3::sZero());body.target.reset();
+                    }
+                }
                 ++tick;
             }
             sync();
@@ -290,6 +345,7 @@ struct Runtime::Impl {
             for(std::size_t k=0;k<characters.size();++k) {
                 auto& c=registry.get<Controller>(characters[k]); c.character->RestoreState(checkpoint); c.yaw=angles[k][0]; c.pitch=angles[k][1];
             }
+            for(std::size_t k=0;k<kinematics.size();++k)registry.get<Body>(kinematics[k]).target=std::move(previous_motions[k]);
             require(!checkpoint.IsFailed(),"Internal character rollback failed."); tick=previous_tick; sync(); throw;
         }
     }
@@ -306,14 +362,59 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     const auto e=impl_->find(id); const auto& node=impl_->registry.get<Node>(e);
     RuntimeEntityState result; result.id=id; result.world=node.world;
     JPH::Vec3 velocity=JPH::Vec3::sZero();
-    if(const auto* body=impl_->registry.try_get<Body>(e)) { result.has_body=true; velocity=impl_->physics.GetBodyInterface().GetLinearVelocity(body->id); }
+    if(const auto* body=impl_->registry.try_get<Body>(e)) {
+        result.has_body=true;velocity=impl_->physics.GetBodyInterface().GetLinearVelocity(body->id);
+        result.motion=body->motion==BodyMotion::Static ? "static" : body->motion==BodyMotion::Dynamic ? "dynamic" : "kinematic";
+        if(body->target) { result.kinematic_target=body->target->target;result.motion_remaining_ticks=body->target->target.duration_ticks-body->target->elapsed; }
+    }
     if(const auto* c=impl_->registry.try_get<Controller>(e)) {
-        result.has_body=true; result.is_character=true; velocity=c->character->GetLinearVelocity();
+        result.has_body=true; result.is_character=true;result.motion="character"; velocity=c->character->GetLinearVelocity();
         result.ground=ground_name(c->character->GetGroundState()); result.yaw=c->yaw; result.pitch=c->pitch;
     }
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }
-void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs) { impl_->step(ticks,inputs); }
+void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions) { impl_->step(ticks,inputs,motions); }
+std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
+    require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
+    double length=0;
+    for(double x:query.origin)require(std::isfinite(x) && std::abs(x)<=1e6,"Ray origin must be finite and within 1000 km.");
+    for(double x:query.direction) { require(std::isfinite(x) && std::abs(x)<=1e6,"Invalid ray direction.");length+=x*x; }
+    require(length>=1e-24,"Ray direction cannot be zero or near zero.");length=std::sqrt(length);
+    std::array<float,3> delta;
+    for(std::size_t k=0;k<3;++k) {
+        const auto x=query.direction[k]/length*query.distance;
+        require(std::abs(query.origin[k]+x)<=1e6,"Ray endpoint exceeds the 1000 km bound.");delta[k]=static_cast<float>(x);
+    }
+    require(query.ignore.size()<=128,"At most 128 ignored ray entities.");
+    JPH::IgnoreMultipleBodiesFilter filter;std::set<std::string> seen;
+    for(const auto& id:query.ignore) {
+        require(seen.insert(id).second,"Duplicate ignored ray entity.");const auto e=impl_->find(id);
+        if(const auto* b=impl_->registry.try_get<Body>(e))filter.IgnoreBody(b->id);
+        if(const auto* c=impl_->registry.try_get<Controller>(e))filter.IgnoreBody(c->character->GetBodyID());
+    }
+    // Keep one hit without early-out pruning so exact equal-distance ties use
+    // stable entity IDs rather than broad-phase visitation order.
+    struct Collector final : JPH::CastRayCollector {
+        const std::map<JPH::uint32,std::string>& names;std::optional<JPH::RayCastResult> hit;
+        explicit Collector(const std::map<JPH::uint32,std::string>& n):names(n) {}
+        void AddHit(const JPH::RayCastResult& value) override {
+            if(value.mFraction<0 || value.mFraction>1)return;
+            if(!hit || value.mFraction<hit->mFraction || (value.mFraction==hit->mFraction && names.at(value.mBodyID.GetIndexAndSequenceNumber())<names.at(hit->mBodyID.GetIndexAndSequenceNumber())))hit=value;
+        }
+    } collector(impl_->body_names);
+    const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
+    impl_->physics.GetNarrowPhaseQuery().CastRay(ray,JPH::RayCastSettings{},collector,{}, {},filter);
+    if(!collector.hit)return {};
+    const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
+    RuntimeRayHit result;result.entity=impl_->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
+    result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
+    if(hit.mFraction>0) {
+        JPH::BodyLockRead lock(impl_->physics.GetBodyLockInterface(),hit.mBodyID);require(lock.Succeeded(),"Ray hit body could not be inspected.");
+        const auto normal=lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2,point);
+        result.normal=std::array<double,3>{normal.GetX(),normal.GetY(),normal.GetZ()};
+    }
+    return result;
+}
 SceneLighting Runtime::lighting() const {
     SceneLighting result;
     for(auto e:impl_->order) {
