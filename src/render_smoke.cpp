@@ -2,6 +2,8 @@
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
 #include "poima/player.hpp"
+#include "poima/assets.hpp"
+#include <map>
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
 #include "poima/smoke_vs.hpp"
@@ -53,15 +55,19 @@ nvrhi::ShaderHandle create_embedded_shader(nvrhi::IDevice* device, const nvrhi::
 // A capture or player session owns one graphics lifetime. No concurrent
 // renderer access is supported yet; Vulkan dispatch is process-global.
 struct DrawConstants {
-    float mvp[16];
+    float model[3][4];
     float normal[3][4];
-    float albedo[4];
+    float base_metallic[4];
+    float emissive_roughness[4];
 };
-static_assert(sizeof(DrawConstants) == 128);
-struct Vertex { float position[3]; float normal[3]; };
+static_assert(sizeof(DrawConstants)==128);
+struct FrameConstants { float view_projection[16]; float camera[4]; };
+struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
+struct DrawItem { DrawConstants constants{};Geometry geometry;bool cull=false; };
+using Vertex=MeshVertex;
 std::vector<Vertex> box_vertices() {
     std::vector<Vertex> result;
-    for (int axis = 0; axis < 3; ++axis) for (float sign : {-1.0f, 1.0f}) {
+    for (std::size_t axis = 0; axis < 3; ++axis) for (float sign : {-1.0f, 1.0f}) {
         std::array<Vertex, 4> corners{};
         const float u[] = {-0.5f, 0.5f, 0.5f, -0.5f};
         const float v[] = {-0.5f, -0.5f, 0.5f, 0.5f};
@@ -71,7 +77,8 @@ std::vector<Vertex> box_vertices() {
             corners[k].position[(axis + 2) % 3] = v[k];
             corners[k].normal[axis] = sign;
         }
-        for (auto k : {0u, 1u, 2u, 0u, 2u, 3u}) result.push_back(corners[k]);
+        const std::array<unsigned,6> indices=sign>0 ? std::array<unsigned,6>{0,1,2,0,2,3} : std::array<unsigned,6>{0,2,1,0,3,2};
+        for(auto k:indices)result.push_back(corners[k]);
     }
     return result;
 }
@@ -98,7 +105,7 @@ struct Context {
     std::vector<nvrhi::FramebufferHandle> framebuffers;
     nvrhi::ShaderHandle vertex_shader;
     nvrhi::ShaderHandle pixel_shader;
-    nvrhi::GraphicsPipelineHandle pipeline;
+    nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline;
     nvrhi::CommandListHandle commands;
     nvrhi::StagingTextureHandle staging;
     const SceneSnapshot* scene = nullptr;
@@ -109,7 +116,10 @@ struct Context {
     nvrhi::InputLayoutHandle input_layout;
     nvrhi::BindingLayoutHandle binding_layout;
     nvrhi::BindingSetHandle bindings;
-    std::vector<DrawConstants> draws;
+    std::vector<DrawItem> draws;
+    FrameConstants frame_constants{};
+    nvrhi::BufferHandle frame_buffer;
+    std::map<const MeshAsset*,Geometry> geometry_cache;
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
@@ -119,14 +129,14 @@ struct Context {
             try { device.waitIdle(); } catch (...) { /* Preserve the original diagnostic. */ }
         }
         commands = nullptr;
-        pipeline = nullptr;
+        pipeline = nullptr; culled_pipeline=nullptr;
         vertex_shader = nullptr;
         pixel_shader = nullptr;
         staging = nullptr;
         bindings = nullptr;
         binding_layout = nullptr;
         input_layout = nullptr;
-        vertices = nullptr;
+        vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear();
         framebuffers.clear();
         images.clear();
         depth = nullptr;
@@ -268,17 +278,27 @@ struct Context {
                 nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex))};
             input_layout = checked->createInputLayout(attributes, 2, vertex_shader);
             require(static_cast<bool>(input_layout), "Scene vertex layout creation failed.");
-            binding_layout = checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Vertex)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))));
+            binding_layout = checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
-            bindings = checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(DrawConstants))), binding_layout);
+            nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
+            frame_desc.initialState=nvrhi::ResourceStates::ConstantBuffer;frame_desc.keepInitialState=true;frame_desc.debugName="Scene frame uniforms";
+            frame_buffer=checked->createBuffer(frame_desc);require(static_cast<bool>(frame_buffer),"Frame uniform buffer creation failed.");
+            bindings = checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(DrawConstants)))
+                .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)), binding_layout);
             require(static_cast<bool>(bindings), "Scene binding set creation failed.");
             pipeline_desc.inputLayout = input_layout;
             pipeline_desc.bindingLayouts.push_back(binding_layout);
         }
         pipeline_desc.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
+        pipeline_desc.renderState.rasterState.frontCounterClockwise=true;
         pipeline = checked->createGraphicsPipeline(pipeline_desc, framebuffers.front()->getFramebufferInfo());
         require(static_cast<bool>(pipeline), "NVRHI graphics pipeline creation failed.");
+        if(scene) {
+            pipeline_desc.renderState.rasterState.cullMode=nvrhi::RasterCullMode::Back;
+            culled_pipeline=checked->createGraphicsPipeline(pipeline_desc,framebuffers.front()->getFramebufferInfo());
+            require(static_cast<bool>(culled_pipeline),"Culled mesh pipeline creation failed.");
+        }
         commands = checked->createCommandList();
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
         if (scene) prepare_scene();
@@ -298,24 +318,39 @@ struct Context {
         update_scene();
     }
 
+    Geometry mesh_geometry(const std::shared_ptr<const MeshAsset>& mesh) {
+        if(!mesh)return {vertices,nullptr,36};
+        if(const auto found=geometry_cache.find(mesh.get());found!=geometry_cache.end())return found->second;
+        Geometry result;result.count=static_cast<std::uint32_t>(mesh->indices.size());
+        nvrhi::BufferDesc vertex_desc;vertex_desc.byteSize=mesh->vertices.size()*sizeof(Vertex);vertex_desc.isVertexBuffer=true;
+        vertex_desc.initialState=nvrhi::ResourceStates::VertexBuffer;vertex_desc.keepInitialState=true;
+        result.vertices=checked->createBuffer(vertex_desc);
+        auto index_desc=vertex_desc;index_desc.byteSize=mesh->indices.size()*sizeof(std::uint32_t);index_desc.isVertexBuffer=false;index_desc.isIndexBuffer=true;index_desc.initialState=nvrhi::ResourceStates::IndexBuffer;
+        result.indices=checked->createBuffer(index_desc);require(result.vertices && result.indices,"Imported geometry buffer creation failed.");
+        commands->open();commands->writeBuffer(result.vertices,mesh->vertices.data(),vertex_desc.byteSize);
+        commands->writeBuffer(result.indices,mesh->indices.data(),index_desc.byteSize);commands->close();checked->executeCommandList(commands);
+        require(checked->waitForIdle(),"Imported geometry upload failed.");
+        geometry_cache.emplace(mesh.get(),result);return result;
+    }
     void update_scene() {
         draws.clear();
-        const auto vp = multiply(perspective(scene->vertical_fov, static_cast<double>(extent.width) / extent.height,
-            scene->near_plane, scene->far_plane), inverse_affine(scene->camera_world));
-        auto number = [](double value) {
-            require(std::isfinite(value) && std::abs(value) <= std::numeric_limits<float>::max(), "Scene matrix exceeds GPU float range.");
-            return static_cast<float>(value);
-        };
-        for (const auto& object : scene->objects) {
-            DrawConstants draw{};
-            const auto mvp = multiply(vp, object.world);
-            const auto inverse = inverse_affine(object.world);
-            for (std::size_t k=0;k<16;++k) draw.mvp[k] = number(mvp[k]);
-            for (std::size_t row=0;row<3;++row) for (std::size_t col=0;col<3;++col)
-                draw.normal[row][col] = number(inverse[row*4+col]);
-            for (std::size_t k=0;k<3;++k) draw.albedo[k] = object.albedo[k];
-            draw.albedo[3] = (format == vk::Format::eB8G8R8A8Srgb || format == vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
-            draws.push_back(draw);
+        const auto vp=multiply(perspective(scene->vertical_fov,static_cast<double>(extent.width)/extent.height,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
+        auto number=[](double value) { require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"Scene matrix exceeds GPU float range.");return static_cast<float>(value); };
+        for(std::size_t k=0;k<16;++k)frame_constants.view_projection[k]=number(vp[k]);
+        for(std::size_t k=0;k<3;++k)frame_constants.camera[k]=number(scene->camera_world[12+k]);
+        frame_constants.camera[3]=(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
+        for(const auto& object:scene->objects) {
+            DrawItem item;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
+            for(std::size_t row=0;row<3;++row) {
+                for(std::size_t col=0;col<4;++col)draw.model[row][col]=number(object.world[col*4+row]);
+                for(std::size_t col=0;col<3;++col)draw.normal[row][col]=number(inverse[row*4+col]);
+            }
+            if(object.material) {
+                const auto& m=*object.material;
+                for(std::size_t k=0;k<3;++k) { draw.base_metallic[k]=m.base_color[k];draw.emissive_roughness[k]=m.emissive[k]; }
+                draw.base_metallic[3]=m.metallic;draw.emissive_roughness[3]=m.roughness;item.cull=!m.double_sided;
+            } else { for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1; }
+            item.geometry=mesh_geometry(object.mesh);draws.push_back(std::move(item));
         }
     }
 
@@ -464,6 +499,7 @@ struct Context {
         auto texture = images.at(index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
         commands->open();
+        if(scene)commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));
         commands->beginTrackingTextureState(texture, nvrhi::AllSubresources,
             initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
         commands->clearTextureFloat(multisample_color ? multisample_color.Get() : texture.Get(), nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));
@@ -479,8 +515,13 @@ struct Context {
         commands->setGraphicsState(state);
         if (scene) {
             for (const auto& draw : draws) {
-                commands->setPushConstants(&draw, sizeof(draw));
-                commands->draw(nvrhi::DrawArguments().setVertexCount(36));
+                state.pipeline=draw.cull ? culled_pipeline : pipeline;
+                state.vertexBuffers[0].buffer=draw.geometry.vertices;
+                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
+                commands->setGraphicsState(state);
+                commands->setPushConstants(&draw.constants,sizeof(draw.constants));
+                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
             }
             if (multisample_color) commands->resolveTexture(texture, nvrhi::AllSubresources, multisample_color, nvrhi::AllSubresources);
         } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));

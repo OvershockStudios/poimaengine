@@ -2,6 +2,8 @@
 #pragma once
 #include "poima/core.hpp"
 #include <array>
+#include <memory>
+#include <optional>
 
 namespace poima {
 // Column-major matrices multiplying column vectors. Right-handed, Y-up,
@@ -15,10 +17,18 @@ Matrix4 inverse_affine(const Matrix4& matrix);
 Matrix4 perspective(double vertical_fov_degrees, double aspect, double near_plane, double far_plane);
 bool rigid_transform(const Matrix4& matrix);
 
+struct PbrMaterial {
+    std::array<float,3> base_color{1,1,1}, emissive{0,0,0};
+    float metallic=1, roughness=1;
+    bool double_sided=false;
+};
+struct MeshAsset;
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
     std::array<float, 3> albedo;
+    std::shared_ptr<const MeshAsset> mesh;
+    std::optional<PbrMaterial> material;
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {

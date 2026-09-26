@@ -20,7 +20,11 @@ struct CharacterController {
     std::string camera;
 };
 struct RuntimeCamera { double vertical_fov=60, near_plane=0.1, far_plane=1000; };
-struct RuntimeMesh { std::array<float,3> albedo{}; bool visible=true; };
+struct RuntimeMesh {
+    std::array<float,3> albedo{}; bool visible=true;
+    std::shared_ptr<const MeshAsset> mesh;
+    std::optional<PbrMaterial> material;
+};
 struct RuntimeEntityDefinition {
     std::string id, parent;
     RuntimeTransform transform;

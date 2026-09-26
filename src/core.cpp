@@ -103,6 +103,7 @@ Reply capabilities() {
         ",\"simulation\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"player_viewport\":" + boolean(POIMA_SIMULATION != 0 && POIMA_RENDER_SMOKE != 0) +
         ",\"scene_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"static_gltf_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"vfx\":false,"
         "\"hot_reload\":false,\"mcp\":false,\"editor\":false},\"qualification\":\"bootstrap_with_authored_world\"}");
 }

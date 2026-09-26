@@ -66,3 +66,10 @@ The optional Linux C# shipping experiment uses SDK **10.0.401** and runtime **10
 | Microsoft DirectX Shader Compiler, Linux x64 host | `v1.8.2505.1`, asset `linux_dxc_2025_07_14.x86_64.tar.gz`; `f2213da1fc99dc8778c8823078e16ba97c7f80f86a1d4520ab1adf4b462bc48c` | Compiles Poima HLSL into embedded SPIR-V during the build. The downloaded distribution retains `LICENSE-MS.txt` and `LICENSE-LLVM.txt`; DXC is not linked into or redistributed with the engine executable. |
 
 CMake verifies downloaded source archive hashes and installs dependency licenses beside the executable. Explicit `FETCHCONTENT_SOURCE_DIR_*` overrides use the supplied local source directories instead; callers are responsible for their provenance. The headless preset uses the bundled JSON header and fetches no third-party sources. Other planned engine libraries are not integrated yet.
+
+## cgltf 1.15
+
+- Source: https://github.com/jkuhlmann/cgltf/tree/v1.15
+- Commit: `360db1a95480fe102ae9c69b27c5d101167ff5ba`.
+- License: MIT; retained in `third_party/cgltf/LICENSE` and installed in `share/poima/licenses/cgltf/LICENSE`.
+- The unmodified header is bundled for native static glTF import. Exact file hashes are recorded in `third_party/cgltf/PROVENANCE.json`.

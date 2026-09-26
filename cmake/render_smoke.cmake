@@ -52,6 +52,7 @@ foreach(stage vs ps)
         BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
         COMMAND "${POIMA_DXC}" -spirv -T "${stage}_6_0" -E "${entry}"
             -fspv-target-env=vulkan1.3 -fvk-use-dx-layout
+            -fvk-b-shift 256 0 -fvk-t-shift 0 0 -fvk-s-shift 128 0 -fvk-u-shift 384 0
             -Fo "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
             -Fh "${header}" -Vn "poima_${shader}_${stage}"
             "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl"

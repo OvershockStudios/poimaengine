@@ -5,6 +5,7 @@
 #include "poima/player.hpp"
 #include "poima/build_info.hpp"
 #include "world_storage.hpp"
+#include "asset_store.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -92,6 +93,20 @@ void validate_component(const std::string& type, const Json& value) {
         for (const auto& item : color) require(item.is_number() && std::isfinite(item.get<double>()) && item >= 0 && item <= 1, "Albedo must be in [0, 1].");
         return;
     }
+    if(type=="StaticMesh") {
+        fields(value,{"asset","primitive","visible"},{"asset","primitive","visible"});
+        require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"StaticMesh requires a 64-character lowercase content hash.");
+        require(revision(value.at("primitive"))<10000 && value.at("visible").is_boolean(),"Invalid StaticMesh primitive/visibility.");return;
+    }
+    if(type=="PbrMaterial") {
+        fields(value,{"base_color","emissive","metallic","roughness","double_sided"},{"base_color","emissive","metallic","roughness","double_sided"});
+        for(const auto* key:{"base_color","emissive"}) {
+            require(value.at(key).is_array() && value.at(key).size()==3,"Material needs three color components.");
+            for(const auto& x:value.at(key))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1,"Material colors must be in [0,1].");
+        }
+        for(const auto* key:{"metallic","roughness"})require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()) && value.at(key)>=0 && value.at(key)<=1,"Material factors must be in [0,1].");
+        require(value.at("double_sided").is_boolean(),"double_sided must be boolean.");return;
+    }
     if (type == "BoxCollider") {
         fields(value, {"half_extents", "motion", "mass", "friction", "restitution"}, {"half_extents", "motion", "mass", "friction", "restitution"});
         const auto& extent=value.at("half_extents");
@@ -148,7 +163,7 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}}};
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -159,20 +174,25 @@ Json describe() {
     const Json character = object_schema({{"radius",{{"type","number"},{"minimum",0.05},{"maximum",2}}},
         {"height",{{"type","number"},{"maximum",4}}}, {"speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30}}},
         {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",id}}, {"radius","height","speed","jump_speed","camera"});
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character}};
+    const Json asset_id={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
+    const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
+    const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}}}, {"asset","primitive","visible"});
+    const Json pbr=object_schema({{"base_color",vector(unit,3)},{"emissive",vector(unit,3)},{"metallic",unit},{"roughness",unit},{"double_sided",{{"type","boolean"}}}}, {"base_color","emissive","metallic","roughness","double_sided"});
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
         required.push_back("op"); required.push_back("id"); ops.push_back(object_schema(properties, required));
     };
     op("entity.create", {{"name", name}, {"parent", parent}}, {"name"});
+    op("asset.instantiate", {{"asset",asset_id},{"name",name},{"parent",parent}}, {"asset","name"});
     op("entity.rename", {{"name", name}}, {"name"});
     op("entity.reparent", {{"parent", parent}, {"mode", {{"const", "keep_local"}}}}, {"parent", "mode"});
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 4}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}}}}}, {"type"});
+    Json result = {{"protocol_version", 1}, {"schema_revision", 5}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -223,6 +243,8 @@ Json describe() {
     for(const auto* key:{"path","width","height","gpu","samples"}) play["properties"][key]=capture["properties"][key];
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
+    methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
+    methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -266,7 +288,8 @@ void validate(const Json& doc) {
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController"}, {"Transform"});
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}, {"Transform"});
+        require(!(entity.at("components").contains("MeshRenderer") && entity.at("components").contains("StaticMesh")),"An entity cannot combine MeshRenderer and StaticMesh.");
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
     std::map<std::string, int> colors;
@@ -367,7 +390,7 @@ public:
         }
         if (method == "entity.query") {
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
-            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController", "Unknown component type.");
+            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -391,11 +414,96 @@ public:
                     {"matrix", world_matrices(doc_.at("entities")).at(identifier(params.at("id")))}, {"layout", "column_major"}};
             } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
         }
+        if (method.starts_with("asset.")) return asset_dispatch(method,params);
         if (method == "world.capture") return capture(params);
         if (method.starts_with("runtime.")) return runtime_dispatch(method,params);
         if (method == "world.transact") return transact(params);
         if (method == "session.close") { fields(params, {}); return {{"closed", true}}; }
         throw Error(-32601, "Unknown world method.");
+    }
+    fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
+    static Json material_json(const PbrMaterial& m) {
+        return {{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}};
+    }
+    std::optional<RuntimeMesh> mesh_component(const Json& components,ModelCache& cache) const {
+        RuntimeMesh mesh;
+        if(components.contains("StaticMesh")) {
+            const auto& ref=components.at("StaticMesh");
+            std::shared_ptr<const ModelAsset> model;
+            try { model=cache.get(asset_directory(),ref.at("asset")); }
+            catch(const std::exception& error) { throw Error(-32050,error.what()); }
+            const auto primitive=revision(ref.at("primitive"));
+            require(primitive<model->primitives.size(),"StaticMesh primitive does not exist in its asset.",-32050);
+            mesh.mesh=model->primitives[primitive];mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
+        } else if(components.contains("MeshRenderer")) {
+            const auto& ref=components.at("MeshRenderer");mesh.albedo=ref.at("albedo").get<std::array<float,3>>();mesh.visible=ref.at("visible");
+        } else return std::nullopt;
+        if(components.contains("PbrMaterial")) {
+            const auto& value=components.at("PbrMaterial");PbrMaterial m;
+            m.base_color=value.at("base_color").get<std::array<float,3>>();m.emissive=value.at("emissive").get<std::array<float,3>>();
+            m.metallic=value.at("metallic");m.roughness=value.at("roughness");m.double_sided=value.at("double_sided");mesh.material=m;
+        }
+        return mesh;
+    }
+    Json asset_dispatch(const std::string& method,const Json& params) const {
+        try {
+            LoadedModel loaded;
+            if(method=="asset.import") {
+                fields(params,{"source"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
+                const auto text=params.at("source").get<std::string>();require(!text.empty() && text.find('\0')==std::string::npos,"Invalid source path.");
+                auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
+                loaded=store_model_asset(asset_directory(),source);
+            } else if(method=="asset.inspect") {
+                fields(params,{"asset","section","offset","limit"},{"asset"});
+                require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
+                loaded=read_model_asset(asset_directory(),params.at("asset"));
+            } else throw Error(-32601,"Unknown asset method.");
+            std::size_t vertices=0,indices=0;for(const auto& mesh:loaded.model->primitives) { vertices+=mesh->vertices.size();indices+=mesh->indices.size(); }
+            Json result={{"asset",loaded.id},{"bytes",loaded.bytes},{"nodes",loaded.model->nodes.size()},{"primitives",loaded.model->primitives.size()},
+                {"vertices",vertices},{"triangles",indices/3},{"roots",loaded.model->roots},{"diagnostics",loaded.model->diagnostics},{"format","poima.static-model.v1"}};
+            if(method=="asset.inspect") {
+                const auto section=params.value("section",std::string("summary"));require(section=="summary" || section=="nodes" || section=="primitives","Invalid asset section.");
+                const auto offset=params.contains("offset") ? revision(params.at("offset")) : 0;
+                const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;require(limit>=1 && limit<=64,"Asset page limit must be 1..64.");
+                if(section!="summary") {
+                    result["items"]=Json::array();const auto total=section=="nodes" ? loaded.model->nodes.size() : loaded.model->primitives.size();
+                    const auto end=std::min<std::uint64_t>(total,offset+limit);
+                    for(auto i=offset;i<end;++i) {
+                        if(section=="nodes") { const auto& node=loaded.model->nodes[i];result["items"].push_back({{"index",i},{"name",node.name},{"parent",node.parent},{"position",node.position},{"rotation",node.rotation},{"scale",node.scale},{"primitives",node.primitives}}); }
+                        else { const auto& mesh=*loaded.model->primitives[i];result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)}}); }
+                    }
+                    result["next_offset"]=end<total ? Json(end) : Json(nullptr);
+                }
+            }
+            return result;
+        } catch(const Error&) { throw; }
+        catch(const std::exception& error) { throw Error(-32050,error.what()); }
+    }
+    void instantiate_asset(Json& staged,const Json& op,std::set<std::string>& changed) const {
+        fields(op,{"op","id","asset","name","parent"},{"op","id","asset","name"});
+        require(op.at("asset").is_string() && valid_asset_id(op.at("asset").get<std::string>()),"Invalid asset ID.");validate_name(op.at("name"));
+        const auto root=identifier(op.at("id"));const auto model=read_model_asset(asset_directory(),op.at("asset")).model;
+        auto derived=[&](const std::string& value) { return content_hash("poima.instance.v1/"+root+"/"+value).substr(0,32); };
+        auto create=[&](const std::string& id,const std::string& name,const Json& parent,Json components) {
+            auto& entities=staged["entities"];
+            require(entities.size()<10000 && !entities.contains(id) && std::find(staged["retired_ids"].begin(),staged["retired_ids"].end(),id)==staged["retired_ids"].end(),"Instantiated ID collision/retirement or entity budget exceeded.");
+            entities[id]={{"name",name},{"parent",parent},{"components",std::move(components)}};changed.insert(id);
+        };
+        create(root,op.at("name"),op.value("parent",Json(nullptr)),{{"Transform",default_transform()}});
+        std::map<int,std::vector<std::uint32_t>> children;
+        for(std::size_t i=0;i<model->nodes.size();++i)children[model->nodes[i].parent].push_back(static_cast<std::uint32_t>(i));
+        auto selected=model->roots;
+        for(std::size_t i=0;i<selected.size();++i) {
+            const auto index=selected[i];const auto& node=model->nodes[index];const auto id=derived("node/"+std::to_string(index));
+            create(id,node.name,node.parent<0 ? root : derived("node/"+std::to_string(node.parent)),
+                {{"Transform",{{"position",node.position},{"rotation",node.rotation},{"scale",node.scale}}}});
+            for(std::size_t slot=0;slot<node.primitives.size();++slot) {
+                const auto primitive=node.primitives[slot];const auto mesh_id=derived("node/"+std::to_string(index)+"/primitive/"+std::to_string(slot));
+                create(mesh_id,"Primitive "+std::to_string(slot),id,{{"Transform",default_transform()},
+                    {"StaticMesh",{{"asset",op.at("asset")},{"primitive",primitive},{"visible",true}}},{"PbrMaterial",material_json(model->primitives[primitive]->material)}});
+            }
+            for(auto child:children[static_cast<int>(index)])selected.push_back(child);
+        }
     }
     RenderOptions render_options(const Json& params) const {
         RenderOptions options;
@@ -405,6 +513,8 @@ public:
             const auto text = params.at("path").get<std::string>();
             require(!text.empty() && text.find('\0') == std::string::npos, "Invalid capture path.");
             const auto output = fs::weakly_canonical(fs::absolute(fs::path(std::u8string(text.begin(), text.end()))));
+            const auto cache_relative=output.lexically_relative(fs::weakly_canonical(asset_directory()));
+            require(cache_relative.empty() || cache_relative.is_absolute() || *cache_relative.begin()=="..","Capture cannot write into the immutable asset store.");
             require(!fs::exists(output) && fs::is_directory(output.parent_path()), "Capture requires a new path in an existing directory.");
             for (const char* suffix : {"", ".lock", ".pending", ".previous", ".previous.pending"})
                 require(!same_path_name(output, fs::path(path_).concat(suffix)), "Capture path is reserved by the world service.");
@@ -449,14 +559,14 @@ public:
             const auto matrices = world_matrices(doc_.at("entities"));
             snapshot.camera_world = matrices.at(camera_id);
             require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
-            for (const auto& [id, e] : doc_.at("entities").items()) {
-                if (!e.at("components").contains("MeshRenderer")) continue;
-                const auto& mesh = e.at("components").at("MeshRenderer");
-                if (!mesh.at("visible").get<bool>()) continue;
-                snapshot.objects.push_back({id, matrices.at(id), mesh.at("albedo").get<std::array<float,3>>()});
+            ModelCache cache;
+            for(const auto& [id,e]:doc_.at("entities").items()) {
+                const auto mesh=mesh_component(e.at("components"),cache);
+                if(mesh && mesh->visible)snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material});
             }
             }
-        } catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
+        } catch(const Error&) { throw; }
+        catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
         const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
         const auto report = run_render_scene(options, snapshot);
         require(report.available, report.detail, -32003);
@@ -468,20 +578,21 @@ public:
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},
-            {"renderer", "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows"}};
+            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures"}};
     }
     void runtime_guard(const Json& params) const {
         const auto id=identifier(params.at("session_id"));
         require(runtime_ && id==runtime_id_,"Runtime session is absent or does not match.",-32030);
     }
     RuntimeDefinition runtime_definition() const {
+        ModelCache cache;
         RuntimeDefinition result; result.world_id=doc_.at("world_id"); result.authored_revision=revision(doc_.at("revision"));
         for(const auto& [id,e]:doc_.at("entities").items()) {
             RuntimeEntityDefinition value; value.id=id; if(!e.at("parent").is_null()) value.parent=e.at("parent");
             const auto& components=e.at("components"); const auto& t=components.at("Transform");
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
             if(components.contains("Camera")) { const auto& c=components.at("Camera"); value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")}; }
-            if(components.contains("MeshRenderer")) { const auto& c=components.at("MeshRenderer"); value.mesh=RuntimeMesh{c.at("albedo").get<std::array<float,3>>(),c.at("visible")}; }
+            value.mesh=mesh_component(components,cache);
             if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic",c.at("mass"),c.at("friction"),c.at("restitution")}; }
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
             result.entities.push_back(std::move(value));
@@ -646,7 +757,11 @@ public:
             const auto name = op.at("op").get<std::string>();
             const auto id = identifier(op.at("id"));
             changed.insert(id);
-            if (name == "entity.create") {
+            if(name=="asset.instantiate") {
+                try { instantiate_asset(staged,op,changed); }
+                catch(const Error&) { throw; }
+                catch(const std::exception& error) { throw Error(-32050,error.what()); }
+            } else if (name == "entity.create") {
                 fields(op, {"op", "id", "name", "parent"}, {"op", "id", "name"});
                 validate_name(op.at("name"));
                 require(!entities.contains(id) && std::find(staged["retired_ids"].begin(), staged["retired_ids"].end(), id) == staged["retired_ids"].end(), "Entity ID already exists or was retired.");
@@ -666,7 +781,7 @@ public:
                 entity(staged, id)["components"][type] = op.at("value");
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController", "Only optional built-in components can be removed.");
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial", "Only optional built-in components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {
