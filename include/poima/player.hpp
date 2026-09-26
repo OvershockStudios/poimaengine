@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/runtime.hpp"
+#include "poima/gamepad.hpp"
 
 namespace poima {
 enum class PlayerAction { forward, backward, left, right, jump, use };
@@ -26,6 +27,8 @@ struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; std::vector<Ki
 struct InputProfile;
 struct PlayerOptions {
     std::shared_ptr<const InputProfile> input_profile;
+    std::shared_ptr<GamepadHost> gamepad_host;
+    GamepadSelection gamepad_selection;
     RenderOptions render;
     std::string camera, controller;
     bool replay=false,audio=false;
@@ -40,6 +43,7 @@ struct PlayerAudioReport {
     AudioStreamStats stream;
 };
 struct PlayerReport {
+    std::string gamepad_json="{}";
     PlayerAudioReport audio;
     RenderReport render;
     std::uint64_t initial_tick=0, final_tick=0;

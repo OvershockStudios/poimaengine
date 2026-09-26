@@ -926,15 +926,20 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
-    BoundPlayerInput input(options.input_profile ? *options.input_profile : default_input_profile());
+    BoundPlayerInput input(options.input_profile ? *options.input_profile : default_gamepad_input_profile());
+    struct GamepadBinding { GamepadHost* host=nullptr; ~GamepadBinding() { if(host)try { host->stop(); }catch(...) {} } } gamepad_binding;
+    auto* gamepads=options.replay ? nullptr : options.gamepad_host.get();
+    result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
     std::unique_ptr<PlayerAudio> audio;
     try {
         snapshot=runtime.snapshot(options.camera);
         context.initialize(options.render,&snapshot,true);
-        SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab releases mouse, click resumes");
+        SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio)audio=std::make_unique<PlayerAudio>(runtime,options.camera);
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
         bool captured=!options.replay && focused;
+        bool active=captured;
+        if(gamepads) { gamepad_binding.host=gamepads;gamepads->start(input,options.gamepad_selection);gamepads->activate(active); }
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
         bool quit=false;
         std::size_t segment=0;
@@ -946,30 +951,44 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                 if(event.type==SDL_EVENT_QUIT || event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) { quit=true; result.stop_reason="window_closed"; }
                 if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_ESCAPE) { quit=true; result.stop_reason="escape"; }
                 if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
-                    focused=false; captured=false; input.clear();
+                    focused=false; captured=false; active=false; input.clear();if(gamepads)gamepads->activate(false);
                     if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
                 }
                 if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
                 if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) context.swapchain_dirty=true;
                 if(options.replay) continue;
+                if(gamepads) {
+                    if(event.type==SDL_EVENT_GAMEPAD_ADDED) { gamepads->added(event.gdevice.which);continue; }
+                    if(event.type==SDL_EVENT_GAMEPAD_REMOVED) { gamepads->removed(event.gdevice.which);continue; }
+                    if(event.type==SDL_EVENT_GAMEPAD_REMAPPED) { gamepads->remapped(event.gdevice.which);continue; }
+                    if(event.type==SDL_EVENT_GAMEPAD_AXIS_MOTION) { gamepads->axis(event.gaxis.which,event.gaxis.axis,event.gaxis.value);continue; }
+                    if(event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN || event.type==SDL_EVENT_GAMEPAD_BUTTON_UP) {
+                        if(gamepads->button(event.gbutton.which,event.gbutton.button,event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN) && focused) {
+                            active=!active;input.clear();gamepads->activate(active);
+                            if(!active) { captured=false;SDL_SetWindowRelativeMouseMode(context.window,false); }
+                        }
+                        continue;
+                    }
+                }
                 if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
-                    captured=false; input.clear(); SDL_SetWindowRelativeMouseMode(context.window,false);
+                    captured=false;active=false;input.clear();if(gamepads)gamepads->activate(false);SDL_SetWindowRelativeMouseMode(context.window,false);
                 }
                 if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured) {
-                    require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError()); captured=true; input.clear(); continue;
+                    const bool resuming=!active;require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());captured=true;active=true;
+                    if(resuming) { input.clear();if(gamepads)gamepads->activate(true); }continue;
                 }
-                if(!focused || !captured) continue;
-                if(event.type==SDL_EVENT_MOUSE_MOTION) input.motion(event.motion.xrel,event.motion.yrel);
+                if(!focused || !active) continue;
+                if(event.type==SDL_EVENT_MOUSE_MOTION && captured) input.motion(event.motion.xrel,event.motion.yrel);
                 if((event.type==SDL_EVENT_KEY_DOWN && !event.key.repeat) || event.type==SDL_EVENT_KEY_UP)
                     input.control(InputControlKind::keyboard,static_cast<std::uint16_t>(event.key.scancode),event.type==SDL_EVENT_KEY_DOWN);
-                if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP)
+                if(captured && (event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP))
                     input.control(InputControlKind::mouse,event.button.button,event.type==SDL_EVENT_MOUSE_BUTTON_DOWN);
             }
-            if(audio)audio->active(options.replay || (focused && captured));
+            if(audio)audio->active(options.replay || (focused && active));
             if(quit) break;
             // Occluded FIFO swapchains can return immediately. Keep an idle
             // editor/player from spinning at thousands of frames per second.
-            if(!options.replay && !(focused && captured)) SDL_Delay(16);
+            if(!options.replay && !(focused && active)) SDL_Delay(16);
             int width=0,height=0;
             require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
             const auto now=SDL_GetTicksNS();
@@ -990,7 +1009,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                 if(audio)audio->advance(runtime,options.camera);
                 if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
             } else {
-                const auto ticks=clock.advance(elapsed,focused && captured);
+                const auto ticks=clock.advance(elapsed,focused && active);
                 for(std::uint32_t tick=0;tick<ticks;++tick) { runtime.step(1,{input.peek(options.controller)});input.consume(options.controller);if(audio)audio->advance(runtime,options.camera); }
             }
             snapshot=runtime.snapshot(options.camera); context.update_scene();
@@ -1012,6 +1031,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     } catch(const std::exception& error) {
         report.detail=error.what(); result.stop_reason="error";
     }
+    if(gamepads)result.gamepad_json=gamepads->status_json();
     if(audio)result.audio=audio->report();
     result.final_tick=runtime.inspect().tick; result.dropped_seconds=clock.dropped_seconds();
     report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;

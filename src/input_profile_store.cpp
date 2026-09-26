@@ -30,8 +30,26 @@ std::string request_id(const Json& value) {
     require(value.is_string(),"Input request ID must be a string.");const auto result=value.get<std::string>();
     require(result.size()==32 && std::all_of(result.begin(),result.end(),[](char c) { return (c>='0' && c<='9') || (c>='a' && c<='f'); }),"Input request ID must contain 32 lowercase hexadecimal characters.");return result;
 }
+const char* profile_format(const Json& profile) { return profile.contains("gamepad") ? "poima.input.v2" : "poima.input.v1"; }
+StickProfile parse_stick(const Json& value) {
+    fields(value,{"stick","inner_deadzone","outer_deadzone","response","invert_x","invert_y"});
+    require(value.at("stick").is_string(),"Gamepad stick selector must be a string.");
+    const auto stick=value.at("stick").get<std::string>();
+    require(stick=="none" || stick=="left" || stick=="right","Gamepad stick selector must be none, left or right.");
+    StickProfile result;result.stick=stick=="none" ? GamepadStick::none : stick=="left" ? GamepadStick::left : GamepadStick::right;
+    for(const auto* name:{"inner_deadzone","outer_deadzone","response"})require(value.at(name).is_number(),"Gamepad deadzones and response must be numeric.");
+    for(const auto* name:{"invert_x","invert_y"})require(value.at(name).is_boolean(),"Gamepad axis inversion must be boolean.");
+    result.inner_deadzone=value.at("inner_deadzone").get<double>();result.outer_deadzone=value.at("outer_deadzone").get<double>();result.response=value.at("response").get<double>();
+    result.invert_x=value.at("invert_x").get<bool>();result.invert_y=value.at("invert_y").get<bool>();return result;
+}
+Json stick_json(const StickProfile& profile) {
+    return {{"stick",profile.stick==GamepadStick::none ? "none" : profile.stick==GamepadStick::left ? "left" : "right"},
+        {"inner_deadzone",profile.inner_deadzone},{"outer_deadzone",profile.outer_deadzone},{"response",profile.response},
+        {"invert_x",profile.invert_x},{"invert_y",profile.invert_y}};
+}
 InputProfile parse_profile(const Json& value) {
-    fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y"});
+    if(value.contains("gamepad"))fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y","gamepad"});
+    else fields(value,{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y"});
     const auto& bindings=value.at("bindings");fields(bindings,{"forward","backward","left","right","jump","use"});
     InputProfile result;
     for(std::size_t i=0;i<action_names.size();++i) {
@@ -42,6 +60,14 @@ InputProfile parse_profile(const Json& value) {
     for(const auto* name:{"invert_x","invert_y"})require(value.at(name).is_boolean(),"Mouse axis inversion must be boolean.");
     result.sensitivity_x=value.at("sensitivity_x").get<double>();result.sensitivity_y=value.at("sensitivity_y").get<double>();
     result.invert_x=value.at("invert_x").get<bool>();result.invert_y=value.at("invert_y").get<bool>();
+    if(value.contains("gamepad")) {
+        const auto& pad=value.at("gamepad");fields(pad,{"move","look","look_degrees_per_second","trigger_press","trigger_release"});
+        GamepadProfile settings;settings.move=parse_stick(pad.at("move"));settings.look=parse_stick(pad.at("look"));
+        const auto& rates=pad.at("look_degrees_per_second");require(rates.is_array() && rates.size()==2,"Gamepad look rates require [yaw,pitch].");
+        for(std::size_t i=0;i<2;++i) { require(rates[i].is_number(),"Gamepad look rates must be numeric.");settings.look_degrees_per_second[i]=rates[i].get<double>(); }
+        for(const auto* name:{"trigger_press","trigger_release"})require(pad.at(name).is_number(),"Gamepad trigger thresholds must be numeric.");
+        settings.trigger_press=pad.at("trigger_press").get<double>();settings.trigger_release=pad.at("trigger_release").get<double>();result.gamepad=settings;
+    }
     try { validate_input_profile(result); }catch(const std::exception& e) { throw ProfileError(-32602,e.what()); }
     return result;
 }
@@ -99,12 +125,14 @@ Json parse_document(const std::string& bytes) {
             return true;
         };
         auto doc=Json::parse(bytes,callback);fields(doc,{"format","revision","profile","receipts"});
-        require(doc.at("format")=="poima.input.v1","Unsupported input profile format; no automatic migration was performed.");
+        require(doc.at("format")=="poima.input.v1" || doc.at("format")=="poima.input.v2","Unsupported input profile format; no automatic migration was performed.");
         const auto current=revision(doc.at("revision"));doc["profile"]=profile_json(parse_profile(doc.at("profile")));
+        require(doc.at("format")==profile_format(doc.at("profile")),"Input profile fields do not match its format.");
         const auto& receipts=doc.at("receipts");require(receipts.is_array() && receipts.size()==std::min<std::uint64_t>(current,max_receipts),"Invalid input profile receipt history.");
         std::set<std::string> requests;auto expected=current-receipts.size();
         for(const auto& receipt:receipts) {
             fields(receipt,{"params","result"});const auto params=normalized_params(receipt.at("params"));
+            require(doc.at("format")==profile_format(params.at("profile")),"Input profile receipt history mixes formats.");
             require(params.at("preview")==false,"Preview requests cannot be persisted as receipts.");
             require(requests.insert(request_id(params.at("request_id"))).second,"Duplicate input profile receipt ID.");
             require(revision(params.at("expected_revision"))==expected,"Input profile receipt sequence is invalid.");
@@ -125,7 +153,7 @@ Document read_document(const fs::path& path) {
     return doc;
 }
 Json summary(const Document& doc) {
-    return {{"profile",doc.value.at("profile")},{"revision",doc.value.at("revision")},{"persisted",doc.persisted},{"content_hash",profile_hash(doc.value.at("profile"))},{"application","next_play"}};
+    return {{"format",doc.value.at("format")},{"profile",doc.value.at("profile")},{"revision",doc.value.at("revision")},{"persisted",doc.persisted},{"content_hash",profile_hash(doc.value.at("profile"))},{"application","next_play"}};
 }
 void unchanged(const fs::path& path,const Document& doc,bool owns_lock=false) {
     guard_paths(path,owns_lock);require(regular_or_missing(path)==doc.persisted && (!doc.persisted || read_bytes(path)==doc.bytes),"Input profile changed outside this transaction; inspect and retry.",-32009);
@@ -135,6 +163,7 @@ Json prepare_transaction(const Document& doc,const Json& params,bool& replayed) 
         require(receipt.at("params")==params,"Input request ID reused with different parameters.",-32010);
         auto result=receipt.at("result");result["profile"]=receipt.at("params").at("profile");result["replayed"]=true;replayed=true;return result;
     }
+    require(!doc.persisted || doc.value.at("format")==profile_format(params.at("profile")),"An existing input profile cannot change format through transact. Inspect the old profile and copy the explicitly converted full profile to a new destination path.");
     const auto current=revision(doc.value.at("revision"));require(revision(params.at("expected_revision"))==current,"Input profile revision conflict; inspect and retry.",-32009);
     require(current<max_revision,"Input profile revision limit reached.");const bool preview=params.at("preview").get<bool>();
     Json result={{"profile",params.at("profile")},{"revision",preview ? current : current+1},{"previous_revision",current},
@@ -150,25 +179,48 @@ template<class F> auto storage_errors(F&& work) -> decltype(work()) {
 
 Json profile_json(const InputProfile& profile) {
     Json bindings=Json::object();for(std::size_t i=0;i<action_names.size();++i)bindings[action_names[i]]=profile.bindings[i];
-    return {{"bindings",bindings},{"sensitivity_x",profile.sensitivity_x},{"sensitivity_y",profile.sensitivity_y},{"invert_x",profile.invert_x},{"invert_y",profile.invert_y}};
+    Json result={{"bindings",bindings},{"sensitivity_x",profile.sensitivity_x},{"sensitivity_y",profile.sensitivity_y},{"invert_x",profile.invert_x},{"invert_y",profile.invert_y}};
+    if(profile.gamepad) {
+        const auto& pad=*profile.gamepad;result["gamepad"]={{"move",stick_json(pad.move)},{"look",stick_json(pad.look)},
+            {"look_degrees_per_second",pad.look_degrees_per_second},{"trigger_press",pad.trigger_press},{"trigger_release",pad.trigger_release}};
+    }
+    return result;
 }
 Json profile_schema() {
     Json bindings=Json::object();for(const auto* name:action_names)bindings[name]={{"type","array"},{"maxItems",4},{"uniqueItems",true},{"items",{{"type","string"},{"maxLength",32},{"description","Physical ID from input.describe controls with reserved:false."}}}};
-    return {{"type","object"},{"additionalProperties",false},{"required",{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y"}},
+    Json v1={{"type","object"},{"additionalProperties",false},{"required",{"bindings","sensitivity_x","sensitivity_y","invert_x","invert_y"}},
         {"properties",{{"bindings",{{"type","object"},{"additionalProperties",false},{"required",action_names},{"properties",bindings}}},
             {"sensitivity_x",{{"type","number"},{"minimum",0},{"maximum",10}}},{"sensitivity_y",{{"type","number"},{"minimum",0},{"maximum",10}}},
             {"invert_x",{{"type","boolean"}}},{"invert_y",{{"type","boolean"}}}}}};
+    Json stick={{"type","object"},{"additionalProperties",false},{"required",{"stick","inner_deadzone","outer_deadzone","response","invert_x","invert_y"}},
+        {"properties",{{"stick",{{"enum",{"none","left","right"}}}},
+            {"inner_deadzone",{{"type","number"},{"minimum",0},{"exclusiveMaximum",1}}},{"outer_deadzone",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1}}},
+            {"response",{{"type","number"},{"minimum",.1},{"maximum",8}}},{"invert_x",{{"type","boolean"}}},{"invert_y",{{"type","boolean"}}}}},
+        {"description","Radial stick shaping; inner_deadzone must be less than outer_deadzone. Distinct non-none sticks must drive move and look."}};
+    Json gamepad={{"type","object"},{"additionalProperties",false},{"required",{"move","look","look_degrees_per_second","trigger_press","trigger_release"}},
+        {"properties",{{"move",stick},{"look",stick},
+            {"look_degrees_per_second",{{"type","array"},{"minItems",2},{"maxItems",2},{"items",{{"type","number"},{"minimum",0},{"maximum",1080}}}}},
+            {"trigger_press",{{"type","number"},{"exclusiveMinimum",0},{"maximum",1}}},{"trigger_release",{{"type","number"},{"minimum",0},{"exclusiveMaximum",1}}}}},
+        {"description","Gamepad enabled in v2 profiles. Trigger press must exceed trigger release to provide hysteresis."}};
+    auto v2=v1;v2["required"].push_back("gamepad");v2["properties"]["gamepad"]=gamepad;
+    for(const auto* name:action_names) {
+        v1["properties"]["bindings"]["properties"][name]["items"]["pattern"]="^(key|mouse)\\.";
+        v2["properties"]["bindings"]["properties"][name]["items"]["pattern"]="^(key|mouse|gamepad)\\.";
+    }
+    return {{"anyOf",{v1,v2}}};
 }
 Json describe() {
     Json controls=Json::array(),reserved=Json::array();for(const auto& control:input_controls()) {
-        controls.push_back({{"id",control.id},{"label",control.label},{"device",control.kind==InputControlKind::keyboard ? "keyboard" : "mouse"},{"reserved",control.reserved}});
+        controls.push_back({{"id",control.id},{"label",control.label},{"device",control.kind==InputControlKind::keyboard ? "keyboard" : control.kind==InputControlKind::mouse ? "mouse" : "gamepad"},{"reserved",control.reserved}});
         if(control.reserved)reserved.push_back(control.id);
     }
-    return {{"format","poima.input.v1"},{"profile_schema",profile_schema()},{"actions",action_names},{"controls",controls},{"reserved_controls",reserved},
-        {"defaults",profile_json(default_input_profile())},{"application","next_play"},{"sensitivity_units","degrees per relative mouse count"},
-        {"binding_policy","Zero to four alternatives per action; a control can belong to only one action. Keyboard IDs identify physical keys. Mouse buttons use SDL numbering (middle=2, right=3)."},
+    return {{"format","poima.input.v1"},{"supported_formats",{"poima.input.v1","poima.input.v2"}},{"profile_schema",profile_schema()},{"actions",action_names},{"controls",controls},{"reserved_controls",reserved},
+        {"defaults",profile_json(default_input_profile())},{"gamepad_defaults",profile_json(default_gamepad_input_profile())},{"application","next_play"},{"sensitivity_units","degrees per relative mouse count"},
+        {"gamepad_units",{{"look_degrees_per_second","[yaw,pitch] degrees per second at full stick deflection"},{"deadzones","normalized radial stick magnitude"},{"response","dimensionless exponent after deadzone rescaling"},{"trigger_thresholds","normalized trigger position from 0 to 1; press must exceed release"}}},
+        {"binding_policy","Zero to four alternatives per action; a control can belong to only one action. Keyboard IDs identify physical keys. Mouse buttons use SDL numbering (middle=2, right=3). Gamepad controls require a v2 profile; adding gamepad enables its settings."},
         {"revision_policy","Every accepted non-preview set increments the revision, including unchanged values. Preview does not write. The latest 32 successful request receipts survive restart."},
         {"content_hash_scope","SHA256 of canonical compact profile JSON; excludes revision and receipts."},
+        {"conversion_policy","Existing files cannot change format through transact. Inspect the old profile, explicitly construct a complete target-format profile and transact to a new destination path. The original file and receipts remain intact; there is no automatic migration."},
         {"persistence",{{"filename_suffix",".poima-input.json"},{"max_bytes",max_bytes},{"max_receipts",max_receipts},{"backup_suffix",".previous"},{"automatic_recovery",false}}}};
 }
 Json inspect(const fs::path& path) {
@@ -182,7 +234,7 @@ Loaded load(const fs::path& path) {
         guard_paths(path);require(regular_or_missing(path),"Requested input profile does not exist.",-32070);
         world_detail::WriterLock lock(sidecar(path,".lock"));guard_paths(path,true);const auto doc=read_document(path);
         require(doc.persisted,"Requested input profile disappeared.",-32070);
-        return {parse_profile(doc.value.at("profile")),revision(doc.value.at("revision")),profile_hash(doc.value.at("profile"))};
+        return {parse_profile(doc.value.at("profile")),revision(doc.value.at("revision")),profile_hash(doc.value.at("profile")),doc.value.at("format").get<std::string>()};
     });
 }
 Json transact(const fs::path& path,const Json& source) {
@@ -193,7 +245,7 @@ Json transact(const fs::path& path,const Json& source) {
         }
         world_detail::WriterLock lock(sidecar(path,".lock"));guard_paths(path,true);const auto doc=read_document(path);
         bool replayed=false;auto result=prepare_transaction(doc,params,replayed);if(replayed)return result;
-        auto candidate=doc.value;candidate["profile"]=params.at("profile");candidate["revision"]=result.at("revision");
+        auto candidate=doc.value;candidate["profile"]=params.at("profile");candidate["format"]=profile_format(params.at("profile"));candidate["revision"]=result.at("revision");
         auto saved_result=result;saved_result.erase("profile");auto& receipts=candidate["receipts"];
         if(receipts.size()==max_receipts)receipts.erase(receipts.begin());
         receipts.push_back({{"params",params},{"result",saved_result}});

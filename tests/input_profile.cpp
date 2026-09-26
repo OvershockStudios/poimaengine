@@ -89,17 +89,127 @@ int main() {
             invalid=defaults;invalid.sensitivity_y=bad;rejects(invalid);
         }
         auto maximum=defaults;maximum.sensitivity_x=10;maximum.sensitivity_y=0;validate_input_profile(maximum);
+
+        auto pad_profile=default_gamepad_input_profile();validate_input_profile(pad_profile);
+        BoundPlayerInput pad(pad_profile);
+        check(!pad.gamepad_connected() && !pad.gamepad_armed(),"New evaluator invented a gamepad connection.");
+        pad.gamepad_connect();check(pad.gamepad_connected() && pad.gamepad_armed(),"Neutral gamepad did not arm.");
+        pad.gamepad_axis(0,1000);pad.gamepad_axis(1,-1000);
+        check(pad.consume("player").move==std::array<float,2>{0,0},"Centered stick noise escaped the radial deadzone.");
+        pad.gamepad_axis(0,32767);pad.gamepad_axis(1,0);
+        check(pad.consume("player").move[0]==1,"Positive stick endpoint did not saturate.");
+        pad.gamepad_axis(0,-32768);
+        check(pad.consume("player").move[0]==-1,"Negative stick endpoint did not saturate symmetrically.");
+        pad.gamepad_axis(0,32767);pad.gamepad_axis(1,-32768);
+        const auto diagonal=pad.consume("player").move;
+        check(std::abs(std::hypot(diagonal[0],diagonal[1])-1)<1e-6 && diagonal[0]>0 && diagonal[1]>0,
+            "Radial stick processing lost diagonal direction or exceeded unit magnitude.");
+        key(pad,7);check(pad.consume("player").move[0]==1,"Mixed digital and analog movement escaped component limits.");
+        key(pad,7,false);pad.gamepad_axis(0,0);pad.gamepad_axis(1,0);
+        pad.gamepad_axis(2,32767);pad.gamepad_axis(3,-32768);
+        double yaw=0,pitch=0;
+        for(int i=0;i<60;++i) {
+            const auto preview=pad.peek("player");
+            check(equal(preview,pad.peek("player")),"Repeated gamepad peek accumulated look or consumed a tick.");
+            const auto frame=pad.consume("player");check(equal(preview,frame),"Gamepad peek and commit differ.");
+            yaw+=frame.look[0];pitch+=frame.look[1];
+        }
+        check(std::abs(yaw+180/std::sqrt(2.0))<1e-4 && std::abs(pitch-120/std::sqrt(2.0))<1e-4,
+            "One second of diagonal stick look did not use configured degrees per second.");
+        pad.gamepad_axis(3,0);yaw=0;
+        for(int i=0;i<60;++i)yaw+=pad.consume("player").look[0];
+        check(yaw==-180,"Sixty committed ticks did not turn exactly 180 degrees.");
+        pad.motion(2000,0);check(pad.consume("player").look[0]==-180,"Combined mouse/stick look escaped runtime bounds.");
+        pad.gamepad_disconnect();
+        check(pad.consume("player").look[0]==-20,"Gamepad rate contaminated mouse backlog across disconnect.");
+        pad.gamepad_connect();
+        pad.gamepad_axis(2,0);
+        key(pad,44);pad.gamepad_button(2,true);pad.motion(10,-20);pad.gamepad_disconnect();
+        const auto unplug=pad.consume("player");
+        check(unplug.jump && !unplug.use && unplug.look==std::array<float,2>{-1,2},
+            "Disconnect consumed keyboard/mouse input or retained a pending pad edge.");
+        key(pad,44,false);key(pad,8);pad.gamepad_connect();pad.gamepad_button(0,true);pad.gamepad_disconnect();
+        const auto reverse_unplug=pad.consume("player");
+        check(reverse_unplug.use && !reverse_unplug.jump,"Pad jump survived disconnect or keyboard use was discarded.");
+        key(pad,8,false);key(pad,44);key(pad,44,false);pad.gamepad_connect();
+        pad.gamepad_button(0,true);pad.gamepad_button(0,false);pad.gamepad_disconnect();
+        check(pad.consume("player").jump,"Disconnect discarded an independent same-action keyboard edge.");
+
+        auto alternatives_profile=pad_profile;alternatives_profile.bindings[4]={"key.space"};
+        alternatives_profile.bindings[0].push_back("gamepad.south");
+        BoundPlayerInput mixed(alternatives_profile);mixed.gamepad_connect();key(mixed,26);mixed.gamepad_button(0,true);
+        mixed.gamepad_disconnect();check(mixed.consume("player").move[1]==1,"Pad disconnect released a held keyboard alternative.");
+        key(mixed,26,false);check(mixed.consume("player").move[1]==0,"Keyboard release failed after pad disconnect.");
+
+        std::array<std::int16_t,6> displaced{};displaced[0]=20000;displaced[4]=32767;
+        pad.gamepad_connect(displaced,1u<<0);
+        check(!pad.gamepad_armed(),"Held-at-connect gamepad armed immediately.");
+        pad.gamepad_axis(0,0);pad.gamepad_axis(4,0);check(!pad.gamepad_armed(),"Neutral axes ignored a held button.");
+        pad.gamepad_button(0,false);check(pad.gamepad_armed() && !pad.consume("player").jump,"Release-to-arm fabricated a press.");
+        pad.gamepad_button(0,true);pad.gamepad_button(0,false);
+        check(pad.consume("player").jump,"Armed gamepad lost a sub-tick button press.");
+        pad.gamepad_axis(2,32767);pad.gamepad_clear();
+        check(!pad.gamepad_armed() && pad.peek("player").look==std::array<float,2>{0,0},"Focus reset retained stick look.");
+        pad.gamepad_axis(2,0);check(pad.gamepad_armed(),"Neutral state after focus reset did not re-arm.");
+        pad.gamepad_connect({},1u<<6);check(!pad.gamepad_armed(),"Held recovery button bypassed neutral gating.");
+        pad.gamepad_button(6,false);check(pad.gamepad_armed(),"Recovery button release failed to arm.");
+
+        auto trigger_profile=pad_profile;trigger_profile.bindings[4]={"key.space","gamepad.left_trigger"};
+        BoundPlayerInput trigger(trigger_profile);trigger.gamepad_connect();
+        trigger.gamepad_axis(4,18023);check(trigger.consume("player").jump,"Trigger threshold crossing did not press.");
+        trigger.gamepad_axis(4,16384);trigger.gamepad_axis(4,18023);
+        check(!trigger.consume("player").jump,"Trigger hysteresis retriggered inside the hold band.");
+        trigger.gamepad_axis(4,14000);trigger.gamepad_axis(4,18023);
+        check(trigger.consume("player").jump,"Trigger did not press after crossing its release threshold.");
+        trigger.gamepad_disconnect();trigger.gamepad_axis(4,32767);
+        check(!trigger.consume("player").jump,"Disconnected gamepad axis emitted an action.");
+        bool virtual_rejected=false;try { trigger.gamepad_button(32,true); }catch(const std::invalid_argument&) { virtual_rejected=true; }
+        check(virtual_rejected,"Direct trigger button bypassed hysteresis.");
+
+        auto precise_profile=pad_profile;auto& precise=*precise_profile.gamepad;
+        precise.move.inner_deadzone=0;precise.move.outer_deadzone=1;precise.move.response=2;precise.move.invert_y=true;
+        precise.look.invert_x=true;precise.look.invert_y=true;
+        BoundPlayerInput processed(precise_profile);processed.gamepad_connect();processed.gamepad_axis(0,16384);
+        const auto half=processed.consume("player").move[0];
+        check(std::abs(half-std::pow(16384.0/32767.0,2))<1e-6,"Stick response exponent was ignored.");
+        processed.gamepad_axis(0,0);processed.gamepad_axis(1,32767);
+        check(processed.consume("player").move[1]==1,"Move stick inversion was ignored.");
+        processed.gamepad_axis(2,32767);processed.gamepad_axis(3,0);
+        check(processed.consume("player").look[0]==3,"Stick look inversion reused mouse settings or wrong units.");
+        original.gamepad_connect();original.gamepad_axis(0,32767);original.gamepad_button(0,true);
+        check(!original.gamepad_armed(),"Legacy profile silently enabled a gamepad.");
+
+        invalid=defaults;invalid.bindings[4].push_back("gamepad.south");rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->look.stick=GamepadStick::left;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->move.stick=static_cast<GamepadStick>(99);rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->move.inner_deadzone=.95;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->look.outer_deadzone=1.01;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->move.response=.09;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->look.response=8.01;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->look_degrees_per_second[0]=1081;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->trigger_release=invalid.gamepad->trigger_press;rejects(invalid);
+        invalid=pad_profile;invalid.gamepad->trigger_press=std::numeric_limits<double>::quiet_NaN();rejects(invalid);
+        auto disabled_sticks=pad_profile;disabled_sticks.gamepad->move.stick=GamepadStick::none;
+        disabled_sticks.gamepad->look.stick=GamepadStick::none;validate_input_profile(disabled_sticks);
+        bool snapshot_rejected=false;try { pad.gamepad_connect({},1u<<31); }catch(const std::invalid_argument&) { snapshot_rejected=true; }
+        check(snapshot_rejected,"Unknown physical button bits were accepted.");
+        bool axis_rejected=false;try { pad.gamepad_axis(4,-1); }catch(const std::invalid_argument&) { axis_rejected=true; }
+        check(axis_rejected,"Negative SDL gamepad trigger was accepted.");
         // Catalog IDs must round-trip through validation and retain device identity.
         std::size_t reserved=0;
         for(const auto& control:input_controls()) {
             InputProfile single;single.bindings[0]={std::string(control.id)};
             if(control.reserved) { ++reserved;rejects(single);continue; }
-            BoundPlayerInput bound(single);bound.control(control.kind,control.code,true);
+            if(control.kind==InputControlKind::gamepad_button)single.gamepad.emplace();
+            BoundPlayerInput bound(single);bound.gamepad_connect();
+            if(control.kind==InputControlKind::gamepad_button && control.code>=32)bound.gamepad_axis(control.code-28,32767);
+            else bound.control(control.kind,control.code,true);
             check(bound.consume("player").move[1]==1,"Catalog control could not activate its binding.");
-            bound.control(control.kind,control.code,false);
+            if(control.kind==InputControlKind::gamepad_button && control.code>=32)bound.gamepad_axis(control.code-28,0);
+            else bound.control(control.kind,control.code,false);
             check(bound.consume("player").move[1]==0,"Catalog release failed.");
         }
-        check(reserved==2,"Recovery reservations changed unexpectedly.");
-        std::cout<<"Input profiles: defaults/remaps, independent alternatives, edges, peek/commit, mouse processing, focus reset and validation passed.\n";
+        check(reserved==4,"Recovery reservations changed unexpectedly.");
+        std::cout<<"Input profiles: legacy controls, native gamepad sticks/buttons/triggers, neutral gating, independent source edges, peek/commit and validation passed.\n";
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

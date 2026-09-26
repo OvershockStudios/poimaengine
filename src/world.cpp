@@ -283,7 +283,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 17}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 18}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -317,12 +317,17 @@ Json describe() {
     auto& methods=result["methods"];
     const Json input_path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Profile file ending .poima-input.json; relative paths resolve beside the world."}};
     methods["input.describe"]=object_schema(Json::object());
+    methods["input.devices"]=object_schema(Json::object());
     methods["input.inspect"]=object_schema({{"path",input_path}},{"path"});
-    const Json input_event={{"oneOf",Json::array({
+    Json input_event={{"oneOf",Json::array({
         object_schema({{"control",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"down",{{"type","boolean"}}}},{"control","down"}),
         object_schema({{"motion",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},2)}},{"motion"}),
         object_schema({{"consume",{{"const",true}}}},{"consume"}),object_schema({{"clear",{{"const",true}}}},{"clear"})})}};
-    methods["input.evaluate"]=object_schema({{"path",input_path},{"events",{{"type","array"},{"maxItems",256},{"items",input_event}}}},{"events"});
+    input_event["oneOf"].push_back(object_schema({{"gamepad_connect",object_schema({{"axes",vector({{"type","integer"},{"minimum",-32768},{"maximum",32767}},6)},{"buttons",{{"type","integer"},{"minimum",0},{"maximum",4294967295ULL}}}})}},{"gamepad_connect"}));
+    input_event["oneOf"].push_back(object_schema({{"gamepad_axis",object_schema({{"axis",{{"enum",{"left_x","left_y","right_x","right_y","left_trigger","right_trigger"}}}},{"value",{{"type","integer"},{"minimum",-32768},{"maximum",32767}}}},{"axis","value"})}},{"gamepad_axis"}));
+    input_event["oneOf"].push_back(object_schema({{"gamepad_disconnect",{{"const",true}}}},{"gamepad_disconnect"}));
+    input_event["oneOf"].push_back(object_schema({{"gamepad_button",object_schema({{"control",{{"type","string"},{"maxLength",32}}},{"down",{{"type","boolean"}}}},{"control","down"})}},{"gamepad_button"}));
+    methods["input.evaluate"]=object_schema({{"path",input_path},{"gamepad_defaults",{{"type","boolean"},{"default",false}}},{"events",{{"type","array"},{"maxItems",256},{"items",input_event}}}},{"events"});
     methods["input.transact"]=object_schema({{"path",input_path},{"request_id",id},{"expected_revision",rev},
         {"profile",input_profiles::profile_schema()},{"preview",{{"type","boolean"},{"default",false}}}},
         {"path","request_id","expected_revision","profile"});
@@ -369,6 +374,7 @@ Json describe() {
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
     play["properties"]["input_profile"]=input_path;
     play["properties"]["input_revision"]=rev;
+    play["properties"]["gamepad"]=object_schema({{"mode",{{"enum",{"disabled","only_connected","explicit"}}}},{"id",{{"type","integer"},{"minimum",1},{"maximum",4294967295ULL}}}},{"mode"});
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
     result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
@@ -508,6 +514,7 @@ class World {
     std::string disk_;
     bool exists_ = false;
     std::unique_ptr<Runtime> runtime_;
+    std::shared_ptr<GamepadHost> gamepad_host_;
     RuntimeDefinition runtime_definition_;
     std::string runtime_id_, stopped_runtime_id_;
     std::set<std::string> used_runtime_ids_;
@@ -896,22 +903,56 @@ public:
     }
     Json input_dispatch(const std::string& method,const Json& params) {
         if(method=="input.describe") { fields(params,{});return input_profiles::describe(); }
+        if(method=="input.devices") {
+            fields(params,{});
+            if(!GamepadHost::available())return {{"available",false},{"devices",Json::array()},{"detail","SDL gamepad device host is not built."}};
+            try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();auto result=Json::parse(gamepad_host_->devices_json());result["available"]=true;return result; }
+            catch(const std::exception& e) { throw Error(-32071,e.what()); }
+        }
         if(method=="input.evaluate") {
-            fields(params,{"path","events"},{"events"});
+            fields(params,{"path","events","gamepad_defaults"},{"events"});
+            require(!params.contains("gamepad_defaults") || params.at("gamepad_defaults").is_boolean(),"gamepad_defaults must be Boolean.");
+            require(!params.contains("path") || !params.contains("gamepad_defaults"),"path and gamepad_defaults are mutually exclusive.");
             const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input evaluation takes at most 256 events.");
-            auto profile=default_input_profile();Json info={{"source","defaults"},{"revision",0},{"content_hash",nullptr}};
+            auto profile=params.value("gamepad_defaults",false) ? default_gamepad_input_profile() : default_input_profile();Json info={{"source","defaults"},{"revision",0},{"content_hash",nullptr}};
             if(params.contains("path"))try {
                 auto loaded=input_profiles::load(input_profile_path(params.at("path")));profile=std::move(loaded.profile);
                 info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash}};
             }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
+            const bool has_gamepad=profile.gamepad.has_value();info["format"]=has_gamepad ? "poima.input.v2" : "poima.input.v1";
             BoundPlayerInput evaluator(std::move(profile));Json frames=Json::array();
             for(std::size_t i=0;i<events.size();++i) {
+                try {
                 const auto& event=events[i];require(event.is_object(),"Input event must be an object.");
+                if(event.contains("gamepad_connect")) {
+                    fields(event,{"gamepad_connect"},{"gamepad_connect"});require(has_gamepad,"Gamepad events require a v2 profile.");
+                    const auto& state=event.at("gamepad_connect");fields(state,{"axes","buttons"});std::array<std::int16_t,6> axes{};std::uint32_t buttons=0;
+                    if(state.contains("axes")) {
+                        const auto& values=state.at("axes");require(values.is_array() && values.size()==6,"Gamepad snapshot requires six axes.");
+                        for(std::size_t axis=0;axis<6;++axis) { const auto& v=values[axis];require(v.is_number_integer() && v>=(axis<4 ? -32768 : 0) && v<=32767,"Invalid gamepad snapshot axis.");axes[axis]=v.get<std::int16_t>(); }
+                    }
+                    if(state.contains("buttons")) { const auto value=revision(state.at("buttons"));require(value<=4294967295ULL,"Gamepad buttons must be a uint32 mask.");buttons=static_cast<std::uint32_t>(value); }
+                    evaluator.gamepad_connect(axes,buttons);
+                }else if(event.contains("gamepad_axis")) {
+                    fields(event,{"gamepad_axis"},{"gamepad_axis"});require(has_gamepad,"Gamepad events require a v2 profile.");const auto& state=event.at("gamepad_axis");fields(state,{"axis","value"},{"axis","value"});
+                    const std::array<const char*,6> names{"left_x","left_y","right_x","right_y","left_trigger","right_trigger"};
+                    const auto it=std::find_if(names.begin(),names.end(),[&](const auto* name) { return state.at("axis")==name; });require(it!=names.end(),"Unknown gamepad axis.");
+                    const auto axis=static_cast<std::uint16_t>(it-names.begin());const auto& value=state.at("value");require(value.is_number_integer() && value>=(axis<4 ? -32768 : 0) && value<=32767,"Invalid gamepad axis value.");
+                    evaluator.gamepad_axis(axis,value.get<std::int16_t>());
+                }else if(event.contains("gamepad_button")) {
+                    fields(event,{"gamepad_button"},{"gamepad_button"});require(has_gamepad,"Gamepad events require a v2 profile.");const auto& state=event.at("gamepad_button");fields(state,{"control","down"},{"control","down"});
+                    require(state.at("control").is_string() && state.at("down").is_boolean(),"Invalid raw gamepad button event.");const auto id=state.at("control").get<std::string>();const auto controls=input_controls();
+                    const auto it=std::find_if(controls.begin(),controls.end(),[&](const auto& c) { return c.id==id && c.kind==InputControlKind::gamepad_button && c.code<26; });
+                    require(it!=controls.end(),"Raw gamepad buttons require a physical gamepad control; use axis events for triggers.");evaluator.gamepad_button(it->code,state.at("down").get<bool>());
+                }else if(event.contains("gamepad_disconnect")) {
+                    fields(event,{"gamepad_disconnect"},{"gamepad_disconnect"});require(has_gamepad && event.at("gamepad_disconnect").is_boolean() && event.at("gamepad_disconnect")==true,"gamepad_disconnect requires true and a v2 profile.");evaluator.gamepad_disconnect();
+                }else
                 if(event.contains("control")) {
                     fields(event,{"control","down"},{"control","down"});require(event.at("control").is_string() && event.at("down").is_boolean(),"Invalid input control event.");
                     const auto id=event.at("control").get<std::string>();const auto controls=input_controls();
                     const auto found=std::find_if(controls.begin(),controls.end(),[&](const auto& c) { return c.id==id; });
                     require(found!=controls.end() && !found->reserved,"Unknown or reserved gameplay control.");
+                    require(found->kind!=InputControlKind::gamepad_button || has_gamepad,"Gamepad events require a v2 profile.");
                     evaluator.control(found->kind,found->code,event.at("down").get<bool>());
                 }else if(event.contains("motion")) {
                     fields(event,{"motion"},{"motion"});const auto& motion=event.at("motion");require(motion.is_array() && motion.size()==2,"Mouse motion needs two values.");
@@ -919,12 +960,13 @@ public:
                     evaluator.motion(motion[0].get<double>(),motion[1].get<double>());
                 }else if(event.contains("consume")) {
                     fields(event,{"consume"},{"consume"});require(event.at("consume").is_boolean() && event.at("consume")==Json(true),"consume must be true.");
-                    const auto frame=evaluator.consume("");frames.push_back({{"event",i},{"move",frame.move},{"look",frame.look},{"jump",frame.jump},{"use",frame.use}});
+                    const auto frame=evaluator.consume("");frames.push_back({{"event",i},{"move",frame.move},{"look",frame.look},{"jump",frame.jump},{"use",frame.use},{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}});
                 }else {
                     fields(event,{"clear"},{"clear"});require(event.at("clear").is_boolean() && event.at("clear")==Json(true),"clear must be true.");evaluator.clear();
                 }
+            }catch(const std::invalid_argument& e) { throw Error(-32602,e.what()); }
             }
-            return {{"input_profile",info},{"frames",frames}};
+            return {{"input_profile",info},{"frames",frames},{"gamepad",{{"connected",evaluator.gamepad_connected()},{"armed",evaluator.gamepad_armed()}}}};
         }
         require(method=="input.inspect" || method=="input.transact","Unknown input method.",-32601);
         if(method=="input.inspect")fields(params,{"path"},{"path"});
@@ -1232,7 +1274,7 @@ public:
         receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision","gamepad"},
             {"session_id","request_id","expected_tick","controller","camera","mode"});
         runtime_guard(params); identifier(params.at("request_id"));
         auto normalized=params; normalized["method"]="runtime.play";
@@ -1258,6 +1300,17 @@ public:
                 input_info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"applied",!options.replay}};
             }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
         }
+        if(!options.input_profile)options.input_profile=std::make_shared<const InputProfile>(default_gamepad_input_profile());
+        options.gamepad_selection.mode=options.input_profile->gamepad ? "only_connected" : "disabled";
+        if(params.contains("gamepad")) {
+            const auto& choice=params.at("gamepad");fields(choice,{"mode","id"},{"mode"});
+            require(choice.at("mode")=="disabled" || choice.at("mode")=="only_connected" || choice.at("mode")=="explicit","Invalid gamepad selection mode.");
+            options.gamepad_selection.mode=choice.at("mode").get<std::string>();
+            require(choice.contains("id")== (options.gamepad_selection.mode=="explicit"),"Only explicit gamepad selection requires an id.");
+            if(choice.contains("id")) { const auto id=revision(choice.at("id"));require(id>=1 && id<=4294967295ULL,"Gamepad id must be a nonzero uint32.");options.gamepad_selection.id=static_cast<std::uint32_t>(id); }
+        }
+        require(options.gamepad_selection.mode=="disabled" || options.input_profile->gamepad.has_value(),"Gamepad selection requires a v2 profile; copy a v1 profile to a new v2 destination first.");
+        input_info["format"]=options.input_profile->gamepad ? "poima.input.v2" : "poima.input.v1";
         const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
             [&](const auto& e){return e.id==options.controller && e.character.has_value();});
         require(controller!=runtime_definition_.entities.end(),"Player requires a CharacterController entity.",-32004);
@@ -1282,6 +1335,12 @@ public:
             if(params.contains("max_frames")) { const auto n=revision(params.at("max_frames")); require(n<=36000,"max_frames must be 0..36000."); options.max_frames=static_cast<std::uint32_t>(n); }
         }
         options.render=render_options(params);
+        if(!options.replay && options.gamepad_selection.mode!="disabled") {
+            require(GamepadHost::available(),"Gamepad device host is not built.",-32003);
+            try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();options.gamepad_host=gamepad_host_; }
+            catch(const std::exception& e) { throw Error(-32071,e.what()); }
+        }
+
         // Reserve the retry slot before entering an operation that may advance
         // state. A failed/closed player reports its actual tick and is cached too.
         auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
@@ -1297,7 +1356,7 @@ public:
             {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
             {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
             {"camera",options.camera},{"camera_world",camera.camera_world},{"lighting",lighting_json(camera.lighting)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",POIMA_VERSION}};
-        result["input_profile"]=input_info;
+        result["input_profile"]=input_info;result["gamepad"]=Json::parse(report.gamepad_json);
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
         receipts.back()["result"]=result; runtime_receipts_.swap(receipts);
         return result;
