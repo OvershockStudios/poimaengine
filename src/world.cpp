@@ -192,7 +192,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 5}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 6}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -244,7 +244,7 @@ Json describe() {
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
-    methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
+    methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -460,17 +460,29 @@ public:
             } else throw Error(-32601,"Unknown asset method.");
             std::size_t vertices=0,indices=0;for(const auto& mesh:loaded.model->primitives) { vertices+=mesh->vertices.size();indices+=mesh->indices.size(); }
             Json result={{"asset",loaded.id},{"bytes",loaded.bytes},{"nodes",loaded.model->nodes.size()},{"primitives",loaded.model->primitives.size()},
-                {"vertices",vertices},{"triangles",indices/3},{"roots",loaded.model->roots},{"diagnostics",loaded.model->diagnostics},{"format","poima.static-model.v1"}};
+                {"vertices",vertices},{"triangles",indices/3},{"roots",loaded.model->roots},{"diagnostics",loaded.model->diagnostics},{"images",loaded.model->images.size()},{"format","poima.static-model.v"+std::to_string(loaded.model->package_version)}};
             if(method=="asset.inspect") {
-                const auto section=params.value("section",std::string("summary"));require(section=="summary" || section=="nodes" || section=="primitives","Invalid asset section.");
+                const auto section=params.value("section",std::string("summary"));require(section=="summary" || section=="nodes" || section=="primitives" || section=="images","Invalid asset section.");
                 const auto offset=params.contains("offset") ? revision(params.at("offset")) : 0;
                 const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;require(limit>=1 && limit<=64,"Asset page limit must be 1..64.");
                 if(section!="summary") {
-                    result["items"]=Json::array();const auto total=section=="nodes" ? loaded.model->nodes.size() : loaded.model->primitives.size();
+                    result["items"]=Json::array();const auto total=section=="nodes" ? loaded.model->nodes.size() : section=="images" ? loaded.model->images.size() : loaded.model->primitives.size();
                     const auto end=std::min<std::uint64_t>(total,offset+limit);
                     for(auto i=offset;i<end;++i) {
                         if(section=="nodes") { const auto& node=loaded.model->nodes[i];result["items"].push_back({{"index",i},{"name",node.name},{"parent",node.parent},{"position",node.position},{"rotation",node.rotation},{"scale",node.scale},{"primitives",node.primitives}}); }
-                        else { const auto& mesh=*loaded.model->primitives[i];result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)}}); }
+                        else if(section=="images") {
+                            const auto& image=*loaded.model->images[i];Json mips=Json::array();std::size_t bytes=0;
+                            for(const auto& mip:image.mips) { bytes+=mip.rgba.size();mips.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}}); }
+                            result["items"].push_back({{"index",i},{"color_space",image.srgb ? "srgb" : "linear"},{"mips",mips},{"bytes",bytes}});
+                        } else {
+                            const auto& mesh=*loaded.model->primitives[i];Json maps=Json::object();const char* names[]={"base_color","metallic_roughness","emissive","occlusion"};
+                            for(std::size_t slot=0;slot<4;++slot) {
+                                const auto& map=mesh.textures[slot];maps[names[slot]]=nullptr;if(!map.image)continue;
+                                maps[names[slot]]={{"image",std::size_t(std::find(loaded.model->images.begin(),loaded.model->images.end(),map.image)-loaded.model->images.begin())},
+                                    {"wrap_s",map.wrap_s},{"wrap_t",map.wrap_t},{"min_filter",map.min_filter},{"mag_filter",map.mag_filter}};
+                            }
+                            result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)},{"textures",maps},{"occlusion_strength",mesh.occlusion_strength}});
+                        }
                     }
                     result["next_offset"]=end<total ? Json(end) : Json(nullptr);
                 }
@@ -578,7 +590,7 @@ public:
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},
-            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures"}};
+            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows"}};
     }
     void runtime_guard(const Json& params) const {
         const auto id=identifier(params.at("session_id"));

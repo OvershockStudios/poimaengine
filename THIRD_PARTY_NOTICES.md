@@ -73,3 +73,9 @@ CMake verifies downloaded source archive hashes and installs dependency licenses
 - Commit: `360db1a95480fe102ae9c69b27c5d101167ff5ba`.
 - License: MIT; retained in `third_party/cgltf/LICENSE` and installed in `share/poima/licenses/cgltf/LICENSE`.
 - The unmodified header is bundled for native static glTF import. Exact file hashes are recorded in `third_party/cgltf/PROVENANCE.json`.
+
+## stb_image 2.30
+
+- Source: https://github.com/nothings/stb/tree/2c980bb59875b0d32144a71867fbdebb2f77cd20
+- Selected license: MIT (the upstream distribution also offers the Unlicense alternative). The unmodified header and full upstream license are retained in `third_party/stb`; `LICENSE` is installed into `share/poima/licenses/stb`.
+- Native PNG/JPEG decoding only, memory input, no stdio, no SIMD-specific decoder path. Poima supplies bounded allocation callbacks and image limits. Exact hashes are in `third_party/stb/PROVENANCE.json`.

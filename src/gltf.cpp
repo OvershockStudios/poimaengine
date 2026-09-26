@@ -61,13 +61,75 @@ void normal(std::array<float,3>& n) {
     require(length>1e-12 && std::isfinite(length),"glTF contains a zero normal or degenerate triangle.");
     for(auto& v:n)v=static_cast<float>(v/length);
 }
+std::string image_bytes(const cgltf_image& image,const cgltf_options& options,Files& files) {
+    require(!image.mime_type || std::string(image.mime_type)=="image/png" || std::string(image.mime_type)=="image/jpeg","Unsupported glTF image MIME type.");
+    if(image.buffer_view) {
+        const auto& view=*image.buffer_view;
+        require(!image.uri && !view.has_meshopt_compression && view.size<=32*1024*1024,"Invalid/excessive embedded image.");
+        const auto* data=cgltf_buffer_view_data(&view);require(data!=nullptr,"Missing image buffer data.");
+        return {reinterpret_cast<const char*>(data),view.size};
+    }
+    require(image.uri!=nullptr,"glTF texture has no image source.");
+    std::string uri=image.uri;
+    if(uri.starts_with("data:")) {
+        const auto comma=uri.find(',');require(comma!=std::string::npos,"Invalid image data URI.");
+        const auto prefix=uri.substr(0,comma);
+        require(prefix=="data:image/png;base64" || prefix=="data:image/jpeg;base64","Only base64 PNG/JPEG image data URIs are supported.");
+        const auto text=std::string_view(uri).substr(comma+1);
+        require(text.size()%4==0 && text.size()/4*3<=32*1024*1024,"Invalid/excessive image base64.");
+        std::string result;result.reserve(text.size()/4*3);
+        constexpr std::string_view alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        for(std::size_t i=0;i<text.size();i+=4) {
+            unsigned value=0,padding=0;
+            for(std::size_t k=0;k<4;++k) {
+                value<<=6;
+                if(text[i+k]=='=') { require(i+4==text.size() && k>=2,"Invalid image base64 padding.");++padding; }
+                else { const auto digit=alphabet.find(text[i+k]);require(!padding && digit!=std::string_view::npos,"Invalid image base64 character.");value|=static_cast<unsigned>(digit); }
+            }
+            result+=static_cast<char>((value>>16)&255);if(padding<2)result+=static_cast<char>((value>>8)&255);if(!padding)result+=static_cast<char>(value&255);
+        }
+        return result;
+    }
+    require(uri.find(':')==std::string::npos && uri.find('?')==std::string::npos && uri.find('#')==std::string::npos,"Only local relative image URIs are supported.");
+    uri.resize(cgltf_decode_uri(uri.data()));require(uri.find('\0')==std::string::npos,"Invalid image URI.");
+    const auto relative=std::filesystem::path(std::u8string(reinterpret_cast<const char8_t*>(uri.c_str())));
+    require(!relative.is_absolute(),"Image URI must be relative.");
+    const auto path=(files.root/relative).u8string();cgltf_size size=0;void* data=nullptr;
+    require(read_file(&options.memory,&options.file,reinterpret_cast<const char*>(path.c_str()),&size,&data)==cgltf_result_success,"Image unavailable, outside source directory, or over budget.");
+    struct Cleanup { const cgltf_options& options;void* data;~Cleanup(){release_file(&options.memory,&options.file,data);} } cleanup{options,data};
+    require(size<=32*1024*1024,"Encoded image exceeds 32 MiB.");return {static_cast<const char*>(data),size};
+}
+struct Images {
+    const cgltf_options& options;Files& files;ModelAsset& model;
+    std::map<std::pair<const cgltf_image*,bool>,std::shared_ptr<const TextureImage>> cache;
+    std::size_t bytes=0;
+    TextureMap get(const cgltf_texture_view& view,bool srgb) {
+        TextureMap map;if(!view.texture)return map;
+        require(view.texcoord==0 && !view.has_transform,"Only TEXCOORD_0 without KHR_texture_transform is supported.");
+        const auto& texture=*view.texture;
+        require(texture.image && !texture.has_basisu && !texture.has_webp,"Compressed/WebP texture extensions are not implemented.");
+        const auto key=std::make_pair(texture.image,srgb);
+        if(const auto found=cache.find(key);found!=cache.end())map.image=found->second;
+        else {
+            require(model.images.size()<256,"Model image limit exceeded.");
+            const auto encoded=image_bytes(*texture.image,options,files);
+            map.image=decode_texture(std::as_bytes(std::span(encoded.data(),encoded.size())),srgb);
+            for(const auto& mip:map.image->mips) { require(mip.rgba.size()<=32*1024*1024-bytes,"Model texture mip bytes exceed 32 MiB.");bytes+=mip.rgba.size(); }
+            cache.emplace(key,map.image);model.images.push_back(map.image);
+        }
+        if(texture.sampler) {
+            const auto& sampler=*texture.sampler;map.wrap_s=sampler.wrap_s;map.wrap_t=sampler.wrap_t;
+            if(sampler.min_filter)map.min_filter=sampler.min_filter;
+            if(sampler.mag_filter)map.mag_filter=sampler.mag_filter;
+        }
+        require(valid_texture_sampler(map),"Invalid glTF sampler.");return map;
+    }
+};
 PbrMaterial material(const cgltf_material* source) {
     PbrMaterial result;
     if(!source)return result;
     require(source->alpha_mode==cgltf_alpha_mode_opaque,"Unsupported glTF material: alpha masking/blending is not implemented.");
-    require(!source->normal_texture.texture && !source->occlusion_texture.texture && !source->emissive_texture.texture &&
-        !source->pbr_metallic_roughness.base_color_texture.texture && !source->pbr_metallic_roughness.metallic_roughness_texture.texture,
-        "Unsupported glTF material: texture maps require the forthcoming texture import/render path.");
+    require(!source->normal_texture.texture,"Normal maps require the forthcoming tangent-frame import path.");
     require(!source->has_pbr_specular_glossiness && !source->has_clearcoat && !source->has_transmission && !source->has_volume &&
         !source->has_ior && !source->has_specular && !source->has_sheen && !source->has_emissive_strength && !source->has_iridescence &&
         !source->has_diffuse_transmission && !source->has_anisotropy && !source->has_dispersion && !source->unlit,
@@ -99,7 +161,7 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
     const auto utf8=path.u8string();
     require(cgltf_load_buffers(&options,data.get(),reinterpret_cast<const char*>(utf8.c_str()))==cgltf_result_success,"glTF buffers unavailable, outside source directory, or over budget.");
     require(cgltf_validate(data.get())==cgltf_result_success,"glTF accessor/hierarchy validation failed.");
-    auto result=std::make_shared<ModelAsset>();
+    auto result=std::make_shared<ModelAsset>();Images images{options,files,*result,{},0};
     if(data->cameras_count || data->lights_count) result->diagnostics.push_back("Cameras/lights are not imported; geometry nodes are retained.");
     std::map<const cgltf_mesh*,std::vector<std::uint32_t>> meshes;
     std::size_t total_vertices=0,total_indices=0;
@@ -124,6 +186,13 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
             const auto n=normals ? values(normals,cgltf_type_vec3,count) : std::vector<float>{};
             const auto tex=uv ? values(uv,cgltf_type_vec2,count) : std::vector<float>{};
             auto cooked=std::make_shared<MeshAsset>();cooked->material=material(primitive.material);cooked->vertices.resize(count);
+            if(const auto* source_material=primitive.material) {
+                cooked->textures={images.get(source_material->pbr_metallic_roughness.base_color_texture,true),images.get(source_material->pbr_metallic_roughness.metallic_roughness_texture,false),
+                    images.get(source_material->emissive_texture,true),images.get(source_material->occlusion_texture,false)};
+                for(const auto& texture:cooked->textures)require(!texture.image || uv,"Textured primitives must provide TEXCOORD_0.");
+                cooked->occlusion_strength=source_material->occlusion_texture.scale;
+                require(std::isfinite(cooked->occlusion_strength) && cooked->occlusion_strength>=0 && cooked->occlusion_strength<=1,"Invalid occlusion strength.");
+            }
             for(std::size_t v=0;v<count;++v) {
                 auto& vertex=cooked->vertices[v];std::copy_n(xyz.data()+v*3,3,vertex.position.begin());
                 if(normals) { std::copy_n(n.data()+v*3,3,vertex.normal.begin());normal(vertex.normal); }

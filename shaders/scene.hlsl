@@ -14,11 +14,20 @@ cbuffer Frame : register(b1) {
     column_major float4x4 view_projection;
     float4 camera; // .xyz: world position; .w: target performs sRGB encoding
 };
-struct VertexInput { float3 position : POSITION; float3 normal : NORMAL; };
+Texture2D base_map : register(t0);
+Texture2D mr_map : register(t1);
+Texture2D emissive_map : register(t2);
+Texture2D occlusion_map : register(t3);
+SamplerState base_sampler : register(s0);
+SamplerState mr_sampler : register(s1);
+SamplerState emissive_sampler : register(s2);
+SamplerState occlusion_sampler : register(s3);
+struct VertexInput { float3 position : POSITION; float3 normal : NORMAL; float2 uv : TEXCOORD; };
 struct VertexOutput {
     float4 position : SV_Position;
     float3 world_position : TEXCOORD0;
     float3 normal : TEXCOORD1;
+    float2 uv : TEXCOORD2;
 };
 VertexOutput vertex_main(VertexInput input) {
     VertexOutput output;
@@ -26,6 +35,7 @@ VertexOutput vertex_main(VertexInput input) {
     output.world_position=float3(dot(draw.model_row0,local_position),dot(draw.model_row1,local_position),dot(draw.model_row2,local_position));
     output.position=mul(view_projection,float4(output.world_position,1));
     output.normal=float3(dot(draw.normal_row0.xyz,input.normal),dot(draw.normal_row1.xyz,input.normal),dot(draw.normal_row2.xyz,input.normal));
+    output.uv=input.uv;
     return output;
 }
 float3 linear_to_srgb(float3 color) {
@@ -47,17 +57,21 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
         const float3 h=halfway*rsqrt(max(dot(halfway,halfway),1e-8));
         const float nl=saturate(dot(n,l)),nv=max(saturate(dot(n,v)),1e-5);
         const float nh=saturate(dot(n,h)),vh=saturate(dot(v,h));
-        const float metallic=draw.base_metallic.w;
-        const float roughness=max(draw.emissive_roughness.w,0.045);
+        const float3 base=draw.base_metallic.rgb*base_map.Sample(base_sampler,input.uv).rgb;
+        const float4 mr=mr_map.Sample(mr_sampler,input.uv);
+        const float metallic=draw.base_metallic.w*mr.b;
+        const float roughness=max(draw.emissive_roughness.w*mr.g,0.045);
+        const float3 emission=draw.emissive_roughness.rgb*emissive_map.Sample(emissive_sampler,input.uv).rgb;
+        const float occlusion=lerp(1,occlusion_map.Sample(occlusion_sampler,input.uv).r,draw.normal_row0.w);
         const float a=roughness*roughness,a2=a*a;
         const float d=nh*nh*(a2-1)+1;
         const float D=a2/max(3.14159265359*d*d,1e-8);
         const float visibility=0.5/max(nl*sqrt(nv*nv*(1-a2)+a2)+nv*sqrt(nl*nl*(1-a2)+a2),1e-6);
-        const float3 f0=lerp(float3(0.04,0.04,0.04),draw.base_metallic.rgb,metallic);
+        const float3 f0=lerp(float3(0.04,0.04,0.04),base,metallic);
         const float3 F=f0+(1-f0)*pow(1-vh,5);
-        const float3 diffuse=(1-F)*(1-metallic)*draw.base_metallic.rgb/3.14159265359;
+        const float3 diffuse=(1-F)*(1-metallic)*base/3.14159265359;
         const float3 radiance=(diffuse+D*visibility*F)*nl*3.14159265359;
-        color=radiance+draw.base_metallic.rgb*(1-metallic)*0.035+draw.emissive_roughness.rgb;
+        color=radiance+base*(1-metallic)*0.035*occlusion+emission;
         color=color/(1+color); // Simple Reinhard display mapping; exposure fixed at 1.
     }
     return float4(camera.w>0.5 ? color : linear_to_srgb(color),1);

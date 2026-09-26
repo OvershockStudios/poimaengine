@@ -12,6 +12,8 @@ import tempfile
 import unittest
 import uuid
 from gltf_fixture import write_fixture,sphere,glb
+from texture_fixture import quad,png
+import base64
 
 parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--evidence',type=Path)
 args=parser.parse_args();BINARY=str(args.binary.resolve());ROOT=Path(__file__).resolve().parents[1]
@@ -46,7 +48,7 @@ class Assets(unittest.TestCase):
         responses=self.run_requests([rpc('asset.import',{'source':self.native(p)}) for p in [self.glb,self.gltf,embedded,self.glb]])
         results=[self.result(r) for r in responses];self.assertTrue(all(r==results[0] for r in results));imported=results[0]
         data=self.cache(imported['asset']).read_bytes();self.assertEqual(hashlib.sha256(data).hexdigest(),imported['asset'])
-        self.assertEqual(data[:8],b'POIMAM01');meta_len,blob_len=struct.unpack_from('<II',data,8);self.assertEqual(len(data),16+meta_len+blob_len)
+        self.assertEqual(data[:8],b'POIMAM02');meta_len,blob_len=struct.unpack_from('<II',data,8);self.assertEqual(len(data),16+meta_len+blob_len)
         metadata=json.loads(data[16:16+meta_len]);self.assertEqual(metadata['nodes'][1]['parent'],0)
         self.assertEqual(imported['vertices'],1225);self.assertEqual(imported['triangles'],2208)
         position_normal=struct.unpack_from('<6f',data,16+meta_len);self.assertEqual(position_normal,(0,1,0,0,1,0))
@@ -92,6 +94,57 @@ class Assets(unittest.TestCase):
         self.cache(asset).write_bytes(data)
         invalid=txn(0,[instance(asset),{'op':'component.set','id':derive(100,'node/1/primitive/0'),'type':'PbrMaterial','value':material(2)}])
         r=self.run_requests([invalid,rpc('world.inspect',{})]);self.error(r[0],-32602);self.assertEqual(self.result(r[1])['revision'],0)
+    def test_textures_source_forms_channels_mips_and_inspection(self):
+        image=png(3,1,[0,0,0,255,0,0,0,255,255,255,255,255])
+        material={'pbrMetallicRoughness':{'baseColorTexture':{'index':0},'metallicRoughnessTexture':{'index':0}},'emissiveTexture':{'index':0},'occlusionTexture':{'index':0,'strength':.3}}
+        doc,blob=quad([image],material);paths=[]
+        path=self.glb.parent/'image.glb';path.write_bytes(glb(doc,blob));paths.append(path)
+        for form in ['external','data']:
+            copydoc=copy.deepcopy(doc);copydoc['images'][0]={'uri':'my%20image.png' if form=='external' else 'data:image/png;base64,'+base64.b64encode(image).decode()}
+            path=self.glb.parent/(form+'.glb');path.write_bytes(glb(copydoc,blob));paths.append(path)
+        (self.glb.parent/'my image.png').write_bytes(image)
+        results=[self.result(r) for r in self.run_requests([rpc('asset.import',{'source':self.native(p)}) for p in paths])]
+        self.assertTrue(all(r==results[0] for r in results));asset=results[0]['asset'];self.assertEqual(results[0]['images'],2)
+        inspected=self.run_requests([rpc('asset.inspect',{'asset':asset,'section':'images','limit':1}),rpc('asset.inspect',{'asset':asset,'section':'primitives'})])
+        self.assertEqual(self.result(inspected[0])['items'][0]['color_space'],'srgb');self.assertEqual(self.result(inspected[0])['next_offset'],1)
+        primitive=self.result(inspected[1])['items'][0];self.assertEqual(primitive['textures']['base_color']['image'],primitive['textures']['emissive']['image'])
+        self.assertNotEqual(primitive['textures']['base_color']['image'],primitive['textures']['metallic_roughness']['image'])
+        data=self.cache(asset).read_bytes();size=struct.unpack_from('<I',data,8)[0];meta=json.loads(data[16:16+size]);offset=16+size+meta['geometry_bytes']
+        self.assertEqual(list(data[offset+12:offset+16]),[156,156,156,255])
+        self.assertEqual(list(data[offset+28:offset+32]),[85,85,85,255])
+        for p in paths:p.unlink()
+        (self.glb.parent/'my image.png').unlink()
+        self.result(self.run_requests([txn(0,[instance(asset)])])[0])
+        REPORTS.append({'texture_asset':asset,'source_forms_identical':True,'srgb_and_linear_mips_verified':True})
+    def test_jpeg_and_invalid_texture_imports(self):
+        image=(ROOT/'tests/fixtures/solid.jpg').read_bytes();doc,blob=quad([image]);self.glb.write_bytes(glb(doc,blob));asset=self.imported()['asset']
+        result=self.result(self.run_requests([rpc('asset.inspect',{'asset':asset,'section':'images'})])[0]);self.assertEqual(result['items'][0]['mips'][0]['width'],3)
+        source,raw=quad([png(1,1,[255,255,255,255])]);variants=[]
+        doc=copy.deepcopy(source);del doc['meshes'][0]['primitives'][0]['attributes']['TEXCOORD_0'];variants.append((doc,raw))
+        doc=copy.deepcopy(source);doc['materials'][0]['pbrMetallicRoughness']['baseColorTexture']['texCoord']=1;variants.append((doc,raw))
+        doc=copy.deepcopy(source);doc['materials'][0]['normalTexture']={'index':0};variants.append((doc,raw))
+        doc=copy.deepcopy(source);doc['samplers'][0]['wrapS']=1;variants.append((doc,raw))
+        doc=copy.deepcopy(source);doc['images'][0]={'uri':'../escape.png'};variants.append((doc,raw));(self.root/'escape.png').write_bytes(png(1,1,[0,0,0,255]))
+        doc=copy.deepcopy(source);doc['images'][0]={'uri':'data:image/png;base64,===='};variants.append((doc,raw))
+        doc,bad=quad([b'broken PNG data']);variants.append((doc,bad))
+        for doc,blob in variants:
+            self.glb.write_bytes(glb(doc,blob));self.error(self.run_requests([rpc('asset.import',{'source':self.native(self.glb)})])[0],-32050)
+        self.assertEqual(len(list(self.cache(asset).parent.glob('*.pmodel'))),1)
+    def test_texture_package_validation_and_legacy_load(self):
+        doc,blob=quad([png(1,1,[64,128,255,255])]);self.glb.write_bytes(glb(doc,blob));asset=self.imported()['asset'];data=self.cache(asset).read_bytes()
+        size=struct.unpack_from('<I',data,8)[0];metadata=json.loads(data[16:16+size]);binary=data[16+size:]
+        for kind in ['sampler','color','mip','length']:
+            meta=copy.deepcopy(metadata)
+            if kind=='sampler':meta['primitives'][0]['textures'][0]['wrap_s']=0
+            if kind=='color':meta['images'][0]['srgb']=False
+            if kind=='mip':meta['images'][0]['mips'].append(meta['images'][0]['mips'][0])
+            if kind=='length':meta['images'][0]['mips'][0]['bytes']=2**32
+            header=json.dumps(meta).encode();bad=b'POIMAM02'+struct.pack('<II',len(header),len(binary))+header+binary;name=hashlib.sha256(bad).hexdigest();self.cache(name).write_bytes(bad)
+            self.error(self.run_requests([rpc('asset.inspect',{'asset':name})])[0],-32050)
+        doc,blob=sphere(4,8);self.glb.write_bytes(glb(doc,blob));asset=self.imported()['asset'];data=self.cache(asset).read_bytes();size=struct.unpack_from('<I',data,8)[0];meta=json.loads(data[16:16+size]);meta['version']=1;meta.pop('images');meta.pop('geometry_bytes')
+        for p in meta['primitives']:p.pop('textures');p.pop('occlusion_strength')
+        header=json.dumps(meta).encode();binary=data[16+size:];legacy=b'POIMAM01'+struct.pack('<II',len(header),len(binary))+header+binary;name=hashlib.sha256(legacy).hexdigest();self.cache(name).write_bytes(legacy)
+        result=self.result(self.run_requests([rpc('asset.inspect',{'asset':name}),txn(0,[instance(name)])])[0]);self.assertEqual(result['format'],'poima.static-model.v1')
     def test_missing_normals_are_generated_flat(self):
         doc,blob=sphere(4,8);del doc['meshes'][0]['primitives'][0]['attributes']['NORMAL'];self.glb.write_bytes(glb(doc,blob))
         imported=self.imported();self.assertTrue(imported['diagnostics']);self.assertEqual(imported['vertices'],imported['triangles']*3)

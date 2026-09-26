@@ -63,7 +63,7 @@ struct DrawConstants {
 static_assert(sizeof(DrawConstants)==128);
 struct FrameConstants { float view_projection[16]; float camera[4]; };
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
-struct DrawItem { DrawConstants constants{};Geometry geometry;bool cull=false; };
+struct DrawItem { DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false; };
 using Vertex=MeshVertex;
 std::vector<Vertex> box_vertices() {
     std::vector<Vertex> result;
@@ -120,6 +120,11 @@ struct Context {
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
     std::map<const MeshAsset*,Geometry> geometry_cache;
+    std::map<const MeshAsset*,nvrhi::BindingSetHandle> material_cache;
+    std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
+    std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
+    std::shared_ptr<const TextureImage> white_image;
+    std::size_t texture_bytes=0;
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
@@ -136,7 +141,7 @@ struct Context {
         bindings = nullptr;
         binding_layout = nullptr;
         input_layout = nullptr;
-        vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear();
+        vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear(); material_cache.clear();texture_cache.clear();sampler_cache.clear();
         framebuffers.clear();
         images.clear();
         depth = nullptr;
@@ -275,18 +280,18 @@ struct Context {
         if (scene) {
             const nvrhi::VertexAttributeDesc attributes[] = {
                 nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)),
-                nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex))};
-            input_layout = checked->createInputLayout(attributes, 2, vertex_shader);
+                nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex)),
+                nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex))};
+            input_layout = checked->createInputLayout(attributes, 3, vertex_shader);
             require(static_cast<bool>(input_layout), "Scene vertex layout creation failed.");
-            binding_layout = checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
+            auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
+            for(std::uint32_t slot=0;slot<4;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
+            binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
             frame_desc.initialState=nvrhi::ResourceStates::ConstantBuffer;frame_desc.keepInitialState=true;frame_desc.debugName="Scene frame uniforms";
             frame_buffer=checked->createBuffer(frame_desc);require(static_cast<bool>(frame_buffer),"Frame uniform buffer creation failed.");
-            bindings = checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0, sizeof(DrawConstants)))
-                .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)), binding_layout);
-            require(static_cast<bool>(bindings), "Scene binding set creation failed.");
             pipeline_desc.inputLayout = input_layout;
             pipeline_desc.bindingLayouts.push_back(binding_layout);
         }
@@ -305,6 +310,8 @@ struct Context {
     }
 
     void prepare_scene() {
+        auto white=std::make_shared<TextureImage>();white->mips.push_back({1,1,{255,255,255,255}});white_image=white;
+        bindings=mesh_bindings(nullptr);
         const auto mesh = box_vertices();
         nvrhi::BufferDesc desc;
         desc.byteSize = mesh.size() * sizeof(Vertex); desc.isVertexBuffer = true;
@@ -332,6 +339,38 @@ struct Context {
         require(checked->waitForIdle(),"Imported geometry upload failed.");
         geometry_cache.emplace(mesh.get(),result);return result;
     }
+    nvrhi::TextureHandle upload_texture(const std::shared_ptr<const TextureImage>& image) {
+        if(const auto found=texture_cache.find(image.get());found!=texture_cache.end())return found->second;
+        std::size_t bytes=0;for(const auto& mip:image->mips)bytes+=mip.rgba.size();
+        require(bytes<=256*1024*1024-texture_bytes,"GPU texture data exceeds the initial 256 MiB budget.");
+        nvrhi::TextureDesc desc;desc.width=image->mips.front().width;desc.height=image->mips.front().height;desc.mipLevels=static_cast<std::uint32_t>(image->mips.size());
+        desc.format=image->srgb ? nvrhi::Format::SRGBA8_UNORM : nvrhi::Format::RGBA8_UNORM;
+        desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Cooked material texture";
+        auto texture=checked->createTexture(desc);require(bool(texture),"Texture allocation failed.");
+        commands->open();
+        for(std::uint32_t level=0;level<image->mips.size();++level) { const auto& mip=image->mips[level];commands->writeTexture(texture,0,level,mip.rgba.data(),std::size_t(mip.width)*4); }
+        commands->close();checked->executeCommandList(commands);require(checked->waitForIdle(),"Texture upload failed.");
+        texture_bytes+=bytes;texture_cache.emplace(image.get(),texture);return texture;
+    }
+    nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh) {
+        if(const auto found=material_cache.find(mesh);found!=material_cache.end())return found->second;
+        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawConstants))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer));
+        for(std::uint32_t slot=0;slot<4;++slot) {
+            const TextureMap map=mesh ? mesh->textures[slot] : TextureMap{};
+            const auto texture=upload_texture(map.image ? map.image : white_image);
+            const std::array<int,4> key{map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter};
+            auto& sampler=sampler_cache[key];
+            if(!sampler) {
+                auto address=[](int v) { return v==33071 ? nvrhi::SamplerAddressMode::Clamp : v==33648 ? nvrhi::SamplerAddressMode::Mirror : nvrhi::SamplerAddressMode::Wrap; };
+                nvrhi::SamplerDesc sd;sd.addressU=address(map.wrap_s);sd.addressV=address(map.wrap_t);
+                sd.minFilter=map.min_filter==9729 || map.min_filter==9985 || map.min_filter==9987;sd.magFilter=map.mag_filter==9729;
+                sd.mipFilter=map.min_filter==9986 || map.min_filter==9987;sampler=checked->createSampler(sd);require(bool(sampler),"Texture sampler creation failed.");
+            }
+            auto levels=nvrhi::AllSubresources;if(map.min_filter==9728 || map.min_filter==9729)levels.setMipLevels(0,1);
+            desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,texture,nvrhi::Format::UNKNOWN,levels)).addItem(nvrhi::BindingSetItem::Sampler(slot,sampler));
+        }
+        auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(mesh,result);return result;
+    }
     void update_scene() {
         draws.clear();
         const auto vp=multiply(perspective(scene->vertical_fov,static_cast<double>(extent.width)/extent.height,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
@@ -350,6 +389,7 @@ struct Context {
                 for(std::size_t k=0;k<3;++k) { draw.base_metallic[k]=m.base_color[k];draw.emissive_roughness[k]=m.emissive[k]; }
                 draw.base_metallic[3]=m.metallic;draw.emissive_roughness[3]=m.roughness;item.cull=!m.double_sided;
             } else { for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1; }
+            draw.normal[0][3]=object.mesh ? object.mesh->occlusion_strength : 1.0f;item.bindings=mesh_bindings(object.mesh.get());
             item.geometry=mesh_geometry(object.mesh);draws.push_back(std::move(item));
         }
     }
@@ -515,7 +555,7 @@ struct Context {
         commands->setGraphicsState(state);
         if (scene) {
             for (const auto& draw : draws) {
-                state.pipeline=draw.cull ? culled_pipeline : pipeline;
+                state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
                 commands->setGraphicsState(state);
