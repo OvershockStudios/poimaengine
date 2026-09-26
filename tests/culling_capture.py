@@ -65,7 +65,7 @@ def audit(result,culling,profile):
     if profile:
         assert d['gpu']['available'] and d['gpu']['timestamp_valid_bits']>0 and d['gpu']['timestamp_period_ns']>0,d
         assert d['gpu']['samples_dropped']==0
-        for kind in ['shadows','opaque','post','total']:
+        for kind in ['skinning','shadows','opaque','post','total']:
             t=d['gpu'][kind];assert t['samples']==2 and 0<=t['min_ms']<=t['mean_ms']<=t['max_ms'] and math.isfinite(t['last_ms']),t
         assert d['gpu']['total']['max_ms']>0
         for kind in ['prepare','record','render_call']:assert d['cpu'][kind]['samples']>0

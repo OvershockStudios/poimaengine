@@ -3,6 +3,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <random>
 #include <stdexcept>
 using namespace poima;
 namespace {
@@ -83,6 +84,81 @@ void invalid() {
     mutation([](auto& m) { auto mesh=std::make_shared<MeshAsset>(*m.primitives[0]);mesh->influences[0].weights[0]=0;m.primitives[0]=mesh; });
     mutation([](auto& m) { auto mesh=std::make_shared<MeshAsset>(*m.primitives[0]);mesh->influences[0].joints[3]=9;m.primitives[0]=mesh; });
 }
+void conservative_skin_bounds() {
+    auto m=model();auto mesh=*m.primitives[0];std::mt19937 rng(472);
+    std::uniform_real_distribution<float> random(-10,10),weight(0,1);
+    mesh.vertices.resize(500);mesh.influences.resize(500);
+    for(std::size_t i=0;i<mesh.vertices.size();++i) {
+        mesh.vertices[i].position={random(rng),random(rng),random(rng)};
+        const float w=weight(rng);mesh.influences[i]={{0,1,0,0},{w,1-w,0,0}};
+    }
+    const auto source=skin_bounds(mesh);
+    for(int sample=0;sample<200;++sample) {
+        std::vector<Matrix4> palette(2,identity_matrix());
+        for(auto& matrix:palette)for(std::size_t col=0;col<4;++col)for(std::size_t row=0;row<3;++row)matrix[col*4+row]=random(rng);
+        const auto bounds=posed_bounds(source,palette);
+        for(std::size_t i=0;i<mesh.vertices.size();++i)for(std::size_t row=0;row<3;++row) {
+            float a[4]{};for(std::size_t k=0;k<4;++k)for(std::size_t col=0;col<4;++col)a[col]+=mesh.influences[i].weights[k]*float(palette[mesh.influences[i].joints[k]][col*4+row]);
+            float value=a[3];for(std::size_t col=0;col<3;++col)value+=a[col]*mesh.vertices[i].position[col];
+            check(value>=bounds.minimum[row] && value<=bounds.maximum[row],"GPU-like blended vertex escaped its joint bounds.");
+        }
+    }
+    rejects([&] { posed_bounds(source,std::vector<Matrix4>{identity_matrix()}); });
+    mesh.influences[0].weights={0,0,0,0};rejects([&] { skin_bounds(mesh); });
+}
+void cancellation_skin_bounds() {
+    MeshAsset mesh;mesh.vertices.resize(1);
+    mesh.vertices[0].position={100000000,0,0};
+    mesh.influences={SkinWeight{{0,0,0,0},{1,0,0,0}}};
+    auto matrix=identity_matrix();matrix[0]=1.00000001;matrix[12]=-100000000;
+    const auto bounds=posed_bounds(skin_bounds(mesh),std::vector<Matrix4>{matrix});
+    // The exact transformed x is 1, while conversion of the palette to float
+    // makes it 0. Bounds must cover arithmetic magnitude before cancellation.
+    near(matrix[0]*double(mesh.vertices[0].position[0])+matrix[12],1);
+    const float actual=float(matrix[0])*mesh.vertices[0].position[0]+float(matrix[12]);
+    check(actual==0 && bounds.minimum[0]<=actual && bounds.maximum[0]>=actual,
+          "Palette float conversion escaped cancellation bounds.");
+
+    std::mt19937 rng(98427);
+    std::uniform_real_distribution<double> unit(-1,1);
+    std::uniform_real_distribution<float> weight(.01f,1);
+    for(int sample=0;sample<1200;++sample) {
+        const double magnitude=std::pow(10.,sample%10);
+        const double coefficient=std::pow(10.,(sample/10)%7-3);
+        for(auto& p:mesh.vertices[0].position)p=float(unit(rng)*magnitude);
+        auto& influence=mesh.influences[0];influence.joints={0,1,2,3};
+        double sum=0;for(auto& w:influence.weights) { w=weight(rng);sum+=w; }
+        for(auto& w:influence.weights)w=float(double(w)/sum);
+        std::vector<Matrix4> palette(4,identity_matrix());
+        for(auto& joint:palette)for(std::size_t row=0;row<3;++row) {
+            double translation=unit(rng);
+            for(std::size_t col=0;col<3;++col) {
+                joint[col*4+row]=unit(rng)*coefficient;
+                translation-=joint[col*4+row]*double(mesh.vertices[0].position[col]);
+            }
+            joint[12+row]=translation;
+        }
+        const auto limit=posed_bounds(skin_bounds(mesh),palette);
+        // Cover both separate multiply/add and fused contraction in palette
+        // blending and the final dot product; production compilers may fuse.
+        for(bool fused:{false,true})for(std::size_t row=0;row<3;++row) {
+            float blended[4]{};
+            for(std::size_t k=0;k<4;++k)for(std::size_t col=0;col<4;++col) {
+                const float a=influence.weights[k],b=float(palette[k][col*4+row]);
+                const volatile float product=a*b;
+                blended[col]=fused ? std::fma(a,b,blended[col]) : blended[col]+product;
+            }
+            float value=blended[3];
+            for(std::size_t col=0;col<3;++col) {
+                const float p=mesh.vertices[0].position[col];
+                const volatile float product=blended[col]*p;
+                value=fused ? std::fma(blended[col],p,value) : value+product;
+            }
+            check(std::isfinite(value) && value>=limit.minimum[row] && value<=limit.maximum[row],
+                  "Extreme cancelling GPU-like blend escaped skin bounds.");
+        }
+    }
+}
 void tangent_weights() {
     MeshAsset mesh;mesh.has_uv=true;
     for(const auto& pos:std::vector<std::array<float,3>>{{0,0,0},{1,0,0},{0,1,0},{0,0,0},{1,0,0},{0,1,0}}) {
@@ -95,6 +171,6 @@ void tangent_weights() {
 }
 }
 int main() {
-    try { curves();skinning();packages();invalid();tangent_weights();std::cout<<"Animation analytic curves, hierarchy, CPU skinning, package round trips, invalid inputs and tangent weights passed.\n"; }
+    try { curves();skinning();packages();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation analytic curves, hierarchy, CPU skinning, package round trips, invalid inputs and tangent weights passed.\n"; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

@@ -282,7 +282,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 15}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 16}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -393,6 +393,7 @@ Json describe() {
     methods["asset.animation.skin"]=object_schema({{"asset",asset_id},{"skin",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","skin"});
     methods["asset.animation.sample"]=object_schema({{"asset",asset_id},{"clip",model_index},{"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}},{"section",{{"enum",{"nodes","vertices"}}}},{"node",model_index},{"primitive",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","time"});
     auto preview=methods["world.capture"];
+    preview["properties"]["skinning"]={{"enum",{"gpu","cpu"}},{"default","gpu"}};
     preview["properties"]["asset"]=asset_id;preview["properties"]["clip"]=model_index;
     preview["properties"]["time"]=methods["asset.animation.sample"]["properties"]["time"];
     preview["properties"]["loop"]=methods["asset.animation.sample"]["properties"]["loop"];
@@ -595,11 +596,11 @@ public:
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
         const auto& c=d.last_draws;
         return {{"culling",d.culling},{"profile_requested",d.profile_requested},{"completed_submissions",d.completed_submissions},
-            {"last_draws",{{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
+            {"last_draws",{{"skinned_instances",c.skinned_instances},{"skinned_vertices",c.skinned_vertices},{"objects",c.objects},{"camera_draws",c.camera_draws},{"camera_culled",c.camera_culled},{"camera_triangles",c.camera_triangles},
                 {"shadow_views",c.shadow_views},{"shadow_candidates",c.shadow_candidates},{"shadow_draws",c.shadow_draws},{"shadow_culled",c.shadow_culled},{"shadow_triangles",c.shadow_triangles}}},
             {"cpu",{{"prepare",timing(d.prepare_cpu)},{"record",timing(d.record_cpu)},{"render_call",timing(d.render_call_cpu)}}},
             {"gpu",{{"available",d.gpu_timestamps},{"timestamp_valid_bits",d.timestamp_valid_bits},{"timestamp_period_ns",d.timestamp_period_ns},{"samples_dropped",d.gpu_samples_dropped},{"detail",d.gpu_timing_detail},
-                {"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
+                {"skinning",timing(d.skinning_gpu)},{"shadows",timing(d.shadow_gpu)},{"opaque",timing(d.opaque_gpu)},{"post",timing(d.post_gpu)},{"total",timing(d.total_gpu)}}}};
     }
     static Json lighting_json(const SceneLighting& lighting) {
         Json lights=Json::array();std::size_t shadow_count=0;
@@ -894,7 +895,7 @@ public:
             fields(params, {"session_id","tick","camera","path","width","height","gpu","samples","culling","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","profile","asset","clip","time","loop"},{"revision","camera","path","asset","time"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
             else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
@@ -924,8 +925,9 @@ public:
                 require(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be within 0..1e9 seconds.");
                 require(!params.contains("loop") || params.at("loop").is_boolean(),"Loop must be boolean.");std::optional<std::uint32_t> clip;
                 if(params.contains("clip")) { const auto index=revision(params.at("clip"));require(index<model->animations.size(),"Clip index is out of range.");clip=static_cast<std::uint32_t>(index); }
+                const auto mode=params.value("skinning",std::string("gpu"));require(mode=="gpu" || mode=="cpu","Skinning must be gpu or cpu.");
                 const auto pose=sample_model(*model,clip,time,params.value("loop",false));
-                animation_info={{"asset",params.at("asset")},{"clip",clip ? Json(*clip) : Json(nullptr)},{"requested_time",time},{"sample_time",pose.time},{"skinning","CPU reference; not runtime playback"}};
+                animation_info={{"asset",params.at("asset")},{"clip",clip ? Json(*clip) : Json(nullptr)},{"requested_time",time},{"sample_time",pose.time},{"skinning",mode=="gpu" ? "gpu_compute" : "cpu_reference"}};
                 std::vector<std::vector<std::uint32_t>> children(model->nodes.size());
                 for(std::size_t i=0;i<model->nodes.size();++i)if(model->nodes[i].parent>=0)children[std::size_t(model->nodes[i].parent)].push_back(static_cast<std::uint32_t>(i));
                 auto selected=model->roots;std::size_t deformed_vertices=0,deformed_indices=0;
@@ -934,13 +936,14 @@ public:
                     if(source.skin>=0)palette=skin_palette(*model,pose,node);
                     for(auto primitive:source.primitives) {
                         require(snapshot.objects.size()<10000,"Asset preview exceeds 10000 drawable instances.");
-                        auto mesh=model->primitives[primitive];
+                        auto mesh=model->primitives[primitive];std::shared_ptr<const SkinPose> skin;
                         if(source.skin>=0) {
                             deformed_vertices+=mesh->vertices.size();deformed_indices+=mesh->indices.size();
                             require(deformed_vertices<=1000000 && deformed_indices<=3000000,"Reference preview exceeds its deformation budget.");
-                            mesh=deform_mesh(*mesh,palette);
+                            if(mode=="cpu")mesh=deform_mesh(*mesh,palette);
+                            else skin=std::make_shared<SkinPose>(SkinPose{palette});
                         }
-                        snapshot.objects.push_back({"asset/"+std::to_string(node)+"/"+std::to_string(primitive),pose.world[node],{1,1,1},mesh,mesh->material,{}});
+                        snapshot.objects.push_back({"asset/"+std::to_string(node)+"/"+std::to_string(primitive),pose.world[node],{1,1,1},mesh,mesh->material,{},skin});
                     }
                     selected.insert(selected.end(),children[node].begin(),children[node].end());
                 }
@@ -959,7 +962,7 @@ public:
         require(report.available, report.detail, -32003);
         require(report.success, report.detail, -32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
-            {"source",asset_preview ? "asset_animation_reference" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
+            {"source",asset_preview ? "asset_animation" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
             {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},

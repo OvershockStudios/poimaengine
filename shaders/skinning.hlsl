@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: Apache-2.0
+// Matches the existing 48-byte vertex ABI; all raster passes consume this output.
+struct Vertex { float3 position;float3 normal;float2 uv;float4 tangent; };
+struct Influence { uint4 joints;float4 weights; };
+struct Joint { float4 row0;float4 row1;float4 row2; };
+struct Parameters { uint vertices;uint joints;uint object;uint reserved; };
+[[vk::push_constant]] ConstantBuffer<Parameters> parameters;
+StructuredBuffer<Vertex> source_vertices : register(t0);
+StructuredBuffer<Influence> influences : register(t1);
+StructuredBuffer<Joint> palette : register(t2);
+RWStructuredBuffer<Vertex> destination : register(u0);
+RWByteAddressBuffer errors : register(u1);
+void fail(uint index,Vertex source) {
+    uint previous;errors.InterlockedCompareExchange(0,0,1,previous);
+    if(previous==0) { errors.Store(4,parameters.object);errors.Store(8,index); }
+    destination[index]=source; // Finite diagnostic frame; host rejects publication.
+}
+[numthreads(64,1,1)]
+void compute_main(uint3 id : SV_DispatchThreadID) {
+    const uint index=id.x;if(index>=parameters.vertices)return;
+    Vertex source=source_vertices[index];Influence influence=influences[index];
+    if(any(influence.joints>=parameters.joints)) { fail(index,source);return; }
+    float4 a=0,b=0,c=0;
+    [unroll] for(uint k=0;k<4;++k) {
+        Joint joint=palette[influence.joints[k]];float w=influence.weights[k];
+        a+=w*joint.row0;b+=w*joint.row1;c+=w*joint.row2;
+    }
+    float3 cof0=cross(b.xyz,c.xyz),cof1=cross(c.xyz,a.xyz),cof2=cross(a.xyz,b.xyz);
+    float determinant=dot(a.xyz,cof0);
+    if(!isfinite(determinant) || determinant==0) { fail(index,source);return; }
+    Vertex result=source;float4 position=float4(source.position,1);
+    result.position=float3(dot(a,position),dot(b,position),dot(c,position));
+    float3 normal=float3(dot(cof0,source.normal),dot(cof1,source.normal),dot(cof2,source.normal))/determinant;
+    float normal_length=dot(normal,normal);
+    if(any(!isfinite(result.position)) || any(abs(result.position)>1e9) || !isfinite(normal_length) || normal_length<=1e-24) { fail(index,source);return; }
+    result.normal=normal*rsqrt(normal_length);
+    if(source.tangent.w!=0) {
+        float3 tangent=float3(dot(a.xyz,source.tangent.xyz),dot(b.xyz,source.tangent.xyz),dot(c.xyz,source.tangent.xyz));
+        tangent-=result.normal*dot(tangent,result.normal);float length=dot(tangent,tangent);
+        if(!isfinite(length) || length<=1e-24) { fail(index,source);return; }
+        result.tangent=float4(tangent*rsqrt(length),source.tangent.w*(determinant<0 ? -1 : 1));
+    }
+    destination[index]=result;
+}

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <limits>
 #include <stdexcept>
 namespace poima {
 namespace {
@@ -176,4 +177,49 @@ std::shared_ptr<const MeshAsset> deform_mesh(const MeshAsset& mesh,std::span<con
     }
     return result;
 }
+SkinBounds skin_bounds(const MeshAsset& mesh) {
+    check(!mesh.vertices.empty() && mesh.influences.size()==mesh.vertices.size(),"Skin bounds require vertex influences.");
+    SkinBounds result;
+    for(std::size_t i=0;i<mesh.vertices.size();++i) {
+        const auto& influence=mesh.influences[i];double sum=0;
+        for(std::size_t k=0;k<4;++k) {
+            const auto joint=influence.joints[k];const double weight=influence.weights[k];
+            check(joint<max_skin_joints && std::isfinite(weight) && weight>=0 && weight<=1,"Invalid bounded skin influence.");
+            sum+=weight;if(result.joints.size()<=joint)result.joints.resize(std::size_t(joint)+1);
+            if(weight==0)continue;
+            auto& bound=result.joints[joint];const auto& p=mesh.vertices[i].position;
+            for(float value:p)check(std::isfinite(value) && std::abs(value)<=1e9f,"Invalid bounded skin vertex.");
+            if(!bound)bound=Bounds{{p[0],p[1],p[2]},{p[0],p[1],p[2]}};
+            else for(std::size_t axis=0;axis<3;++axis) {
+                bound->minimum[axis]=std::min(bound->minimum[axis],double(p[axis]));
+                bound->maximum[axis]=std::max(bound->maximum[axis],double(p[axis]));
+            }
+        }
+        check(std::abs(sum-1)<=1e-5,"Bounded skin weights must sum to one.");
+        result.weight_sum_error=std::max(result.weight_sum_error,std::abs(sum-1));
+    }
+    return result;
+}
+Bounds posed_bounds(const SkinBounds& source,std::span<const Matrix4> palette) {
+    check(!source.joints.empty() && source.joints.size()<=palette.size() && palette.size()<=max_skin_joints,"Skin bounds palette mismatch.");
+    std::optional<Bounds> result;
+    for(std::size_t i=0;i<source.joints.size();++i)if(source.joints[i]) {
+        const auto bound=transform_bounds(*source.joints[i],palette[i]);
+        if(!result)result=bound;
+        else for(std::size_t axis=0;axis<3;++axis) {
+            result->minimum[axis]=std::min(result->minimum[axis],bound.minimum[axis]);
+            result->maximum[axis]=std::max(result->maximum[axis],bound.maximum[axis]);
+        }
+    }
+    check(bool(result),"Skin bounds have no positive influences.");
+    // Nonnegative normalized blends lie inside the union of joint bounds.
+    // Account for accepted weight-sum error and rounded compute arithmetic.
+    for(std::size_t axis=0;axis<3;++axis) {
+        const double magnitude=std::max(std::abs(result->minimum[axis]),std::abs(result->maximum[axis]))+1;
+        const double margin=(source.weight_sum_error+256*std::numeric_limits<float>::epsilon())*magnitude;
+        result->minimum[axis]-=margin;result->maximum[axis]+=margin;
+    }
+    return *result;
+}
+
 }

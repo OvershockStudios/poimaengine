@@ -101,11 +101,11 @@ class Animation(unittest.TestCase):
         ops=[{'op':'entity.create','id':camera,'name':'Camera'},{'op':'component.set','id':camera,'type':'Camera','value':{'vertical_fov':60,'near':.1,'far':100}}]
         self.result(self.requests(rpc('world.transact',request_id='a'*32,base_revision=0,ops=ops))[0]);before=self.world.read_bytes();output=self.root/'capture.bmp'
         base=dict(asset=asset,time=1,revision=1,camera=camera,path=self.native(output))
-        for change,code in [({'asset':'0'*64},-32050),({'clip':99},-32602),({'time':-1},-32602),({'loop':1},-32602),({'revision':0},-32009)]:
+        for change,code in [({'asset':'0'*64},-32050),({'clip':99},-32602),({'time':-1},-32602),({'loop':1},-32602),({'skinning':'invalid'},-32602),({'revision':0},-32009)]:
             result=self.requests(rpc('asset.animation.capture',**dict(base,**change)))[0];self.assertEqual(result.get('error',{}).get('code'),code,result)
         self.assertFalse(output.exists());self.assertEqual(before,self.world.read_bytes())
     def test_schema_discovery(self):
-        schema=self.result(self.requests(rpc('world.describe'))[0]);self.assertGreaterEqual(schema['schema_revision'],15)
+        schema=self.result(self.requests(rpc('world.describe'))[0]);self.assertGreaterEqual(schema['schema_revision'],16)
         for method in ['asset.animation.sample','asset.animation.channel','asset.animation.skin','asset.animation.capture']:self.assertIn(method,schema['methods'])
 
 if __name__=='__main__':

@@ -55,6 +55,7 @@ Bounds transform_bounds(const Bounds& local,const Matrix4& world);
 Frustum make_frustum(const Matrix4& view_projection);
 bool intersects(const Bounds& world,const Frustum& frustum);
 struct MaterialTextures;
+struct SkinPose { std::vector<Matrix4> palette; };
 struct SceneObject {
     std::string entity_id;
     Matrix4 world;
@@ -62,6 +63,7 @@ struct SceneObject {
     std::shared_ptr<const MeshAsset> mesh;
     std::optional<PbrMaterial> material;
     std::shared_ptr<const MaterialTextures> textures;
+    std::shared_ptr<const SkinPose> skin{};
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
