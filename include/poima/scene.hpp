@@ -18,13 +18,15 @@ Matrix4 perspective(double vertical_fov_degrees, double aspect, double near_plan
 bool rigid_transform(const Matrix4& matrix);
 
 enum class LightKind : std::uint32_t { directional=0,point=1,spot=2 };
+struct ShadowSettings { bool enabled=false;float near_plane=.05f,distance=80,bias=.0005f,normal_bias=.01f; };
 struct Light {
     LightKind kind=LightKind::point;
     std::array<float,3> color{1,1,1};
     float intensity=1,range=0,inner_angle=0,outer_angle=45;
     bool enabled=true;
+    ShadowSettings shadow;
 };
-struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1; };
+struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024; };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {
     std::vector<SceneLight> lights;
@@ -32,6 +34,10 @@ struct SceneLighting {
     bool preview=true;
 };
 inline constexpr std::size_t max_scene_lights=64;
+inline constexpr std::size_t max_shadow_views=16;
+inline constexpr std::size_t max_shadow_bytes=128*1024*1024;
+std::size_t shadow_view_count(const Light& light);
+void validate_shadow_budget(std::size_t views,std::uint32_t resolution);
 void validate_light(const Light& light);
 void validate_environment(const LightingEnvironment& environment);
 void append_light(SceneLighting& state,const std::string& id,const Light& light,const Matrix4& world);
@@ -63,5 +69,7 @@ struct SceneSnapshot {
     std::vector<SceneObject> objects;
     SceneLighting lighting;
 };
+struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
+std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene);
 }

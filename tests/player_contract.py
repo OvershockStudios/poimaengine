@@ -15,7 +15,9 @@ parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--windows-interop',action='store_true')
 parser.add_argument('--gpu',type=int,default=0)
 parser.add_argument('--authored-lights',action='store_true')
+parser.add_argument('--shadows',action='store_true')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
+if args.shadows and not args.authored_lights:parser.error('--shadows requires --authored-lights')
 run=args.output/uuid.uuid4().hex;run.mkdir()
 def native(path):
     text=str(path.resolve())
@@ -33,6 +35,10 @@ if args.authored_lights:
             component(n,'Transform',{'position':position,'rotation':[0,0,0,1],'scale':[1,1,1]}),
             component(n,'Light',{'kind':kind,'color':color,'intensity':intensity,'range':20,'enabled':True})]
     fixture['params']['ops'].append(component(101,'LightingEnvironment',{'ambient':[.03,.03,.03],'exposure':1}))
+    if args.shadows:
+        for op in fixture['params']['ops']:
+            if op.get('type')=='Light':op['value']['shadow']={'enabled':True,'distance':20}
+            if op.get('type')=='LightingEnvironment':op['value']['shadow_resolution']=512
 sequence=[{'ticks':120},{'ticks':60,'move':[0,1]},{'ticks':10,'jump':True},{'ticks':120},{'ticks':1,'look':[45,20]},{'ticks':60,'move':[.4,-.7]}]
 total=sum(s['ticks'] for s in sequence)
 request('world.transact',fixture['params']);request('runtime.start',{'session_id':uid(900),'revision':1})
@@ -59,7 +65,7 @@ recovered=request('runtime.play',{**bad,'request_id':uid(1003),'gpu':args.gpu,'p
 inspected=request('runtime.inspect',{'session_id':uid(901)})
 command=[str(args.binary.resolve()),'world',native(run/'world.json')]
 p=subprocess.run(command,input=''.join(json.dumps(r)+'\n' for r in requests),text=True,encoding='utf-8',capture_output=True,timeout=120)
-record={'command':command,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'authored_lights':args.authored_lights,'exit_code':p.returncode,'stderr':p.stderr,'requests':requests}
+record={'command':command,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'authored_lights':args.authored_lights,'shadows':args.shadows,'exit_code':p.returncode,'stderr':p.stderr,'requests':requests}
 try:
     assert p.returncode==0,p.stdout+p.stderr
     responses={r['id']:r for r in map(json.loads,p.stdout.splitlines())};record['responses']=responses
@@ -83,6 +89,7 @@ try:
         lights={light['id']:light for light in report['lighting']['lights']}
         assert abs(lights[uid(201)]['position'][1]-5)>.5
         assert abs(lights[uid(202)]['direction'][0])>.1
+        if args.shadows:assert report['lighting']['shadow_views']==7 and report['lighting']['shadow_bytes']==7*512*512*4
     assert pixels(run/'player.bmp')==pixels(run/'baseline.bmp')
     assert not responses[failed]['result']['success'] and responses[failed]['result']['tick']==total
     assert responses[failed_retry]['result']=={**responses[failed]['result'],'replayed':True}

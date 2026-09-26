@@ -6,6 +6,7 @@
 #include <map>
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
+#include "poima/shadow_vs.hpp"
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
 
@@ -61,9 +62,10 @@ struct DrawConstants {
     float emissive_roughness[4];
 };
 static_assert(sizeof(DrawConstants)==128);
-struct GpuLight { float position_kind[4],direction_range[4],color_intensity[4],cone[4]; };
-struct FrameConstants { float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];GpuLight lights[max_scene_lights]; };
-static_assert(sizeof(GpuLight)==64 && sizeof(FrameConstants)==4208);
+struct GpuLight { float position_kind[4],direction_range[4],color_intensity[4],cone[4],shadow[4]; };
+struct GpuShadow { float view_projection[16],splits[4]; };
+struct FrameConstants { float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];GpuLight lights[max_scene_lights];GpuShadow shadows[max_shadow_views]; };
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==6528);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
 struct DrawItem { DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false; };
 using Vertex=MeshVertex;
@@ -122,6 +124,13 @@ struct Context {
     std::vector<DrawItem> draws;
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
+    nvrhi::TextureHandle shadow_texture;
+    std::vector<nvrhi::FramebufferHandle> shadow_framebuffers;
+    nvrhi::ShaderHandle shadow_shader;
+    nvrhi::BindingLayoutHandle shadow_layout;
+    nvrhi::BindingSetHandle shadow_bindings;
+    nvrhi::GraphicsPipelineHandle shadow_pipeline;
+    std::vector<ShadowView> shadow_plan;
     std::map<const MeshAsset*,Geometry> geometry_cache;
     std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
     std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
@@ -137,6 +146,7 @@ struct Context {
             try { device.waitIdle(); } catch (...) { /* Preserve the original diagnostic. */ }
         }
         commands = nullptr;
+        shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
         vertex_shader = nullptr;
         pixel_shader = nullptr;
@@ -291,6 +301,7 @@ struct Context {
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
                 .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
             for(std::uint32_t slot=0;slot<5;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
+            layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
             binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
@@ -310,7 +321,54 @@ struct Context {
         }
         commands = checked->createCommandList();
         require(static_cast<bool>(commands), "NVRHI command-list creation failed.");
-        if (scene) prepare_scene();
+        if (scene) { prepare_shadows();prepare_scene(); }
+    }
+
+    void prepare_shadows() {
+        auto lighting=scene->lighting;finalize_lighting(lighting);std::size_t count=0;
+        for(const auto& source:lighting.lights)count+=shadow_view_count(source.light);
+        validate_shadow_budget(count,lighting.environment.shadow_resolution);
+        const auto resolution=count ? lighting.environment.shadow_resolution : 1u;
+        const auto layers=static_cast<std::uint32_t>(std::max(count,std::size_t(1)));
+        const auto limits=physical.getProperties().limits;
+        require(resolution<=limits.maxImageDimension2D && layers<=limits.maxImageArrayLayers,"Shadow texture dimensions are unavailable on this GPU.");
+        const auto flags=physical.getFormatProperties(vk::Format::eD32Sfloat).optimalTilingFeatures;
+        require(bool(flags & vk::FormatFeatureFlagBits::eDepthStencilAttachment) && bool(flags & vk::FormatFeatureFlagBits::eSampledImage),"GPU cannot sample D32 shadow maps.");
+        nvrhi::TextureDesc td;td.width=resolution;td.height=resolution;td.arraySize=layers;td.dimension=nvrhi::TextureDimension::Texture2DArray;
+        td.format=nvrhi::Format::D32;td.isRenderTarget=true;td.isShaderResource=true;td.initialState=nvrhi::ResourceStates::ShaderResource;td.keepInitialState=true;td.debugName="Shadow depth array";
+        shadow_texture=checked->createTexture(td);require(bool(shadow_texture),"Shadow texture allocation failed.");
+        for(std::uint32_t i=0;i<layers;++i) {
+            auto fb=checked->createFramebuffer(nvrhi::FramebufferDesc().setDepthAttachment(shadow_texture,nvrhi::TextureSubresourceSet(0,1,i,1)));
+            require(bool(fb),"Shadow framebuffer creation failed.");shadow_framebuffers.push_back(fb);
+        }
+        shadow_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("shadow_vertex_main"),poima_shadow_vs);
+        shadow_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Vertex)
+            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
+        require(shadow_shader && shadow_layout,"Shadow shader/layout creation failed.");
+        shadow_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawConstants)))
+            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)),shadow_layout);
+        nvrhi::GraphicsPipelineDesc pd;pd.VS=shadow_shader;pd.inputLayout=input_layout;pd.bindingLayouts.push_back(shadow_layout);
+        pd.renderState.depthStencilState.depthTestEnable=true;pd.renderState.depthStencilState.depthWriteEnable=true;pd.renderState.depthStencilState.depthFunc=nvrhi::ComparisonFunc::LessOrEqual;
+        pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;pd.renderState.rasterState.frontCounterClockwise=true;
+        shadow_pipeline=checked->createGraphicsPipeline(pd,shadow_framebuffers.front()->getFramebufferInfo());
+        require(shadow_bindings && shadow_pipeline,"Shadow pipeline creation failed.");
+    }
+    void render_shadows() {
+        commands->clearDepthStencilTexture(shadow_texture,nvrhi::AllSubresources,true,1,false,0);
+        for(std::size_t layer=0;layer<shadow_plan.size();++layer) {
+            nvrhi::GraphicsState state;state.pipeline=shadow_pipeline;state.framebuffer=shadow_framebuffers.at(layer);state.bindings.push_back(shadow_bindings);
+            const auto size=static_cast<float>(shadow_texture->getDesc().width);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(size,size));
+            state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(0));
+            for(const auto& draw:draws) {
+                state.vertexBuffers[0].buffer=draw.geometry.vertices;
+                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
+                commands->setGraphicsState(state);auto constants=draw.constants;constants.normal[0][3]=static_cast<float>(layer);
+                commands->setPushConstants(&constants,sizeof(constants));
+                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+            }
+        }
+        commands->setTextureState(shadow_texture,nvrhi::AllSubresources,nvrhi::ResourceStates::ShaderResource);commands->commitBarriers();
     }
 
     void prepare_scene() {
@@ -374,6 +432,7 @@ struct Context {
             auto levels=nvrhi::AllSubresources;if(map.min_filter==9728 || map.min_filter==9729)levels.setMipLevels(0,1);
             desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,texture,nvrhi::Format::UNKNOWN,levels)).addItem(nvrhi::BindingSetItem::Sampler(slot,sampler));
         }
+        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture));
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
     }
     void update_scene() {
@@ -388,11 +447,23 @@ struct Context {
         for(std::size_t k=0;k<3;++k)frame_constants.ambient_exposure[k]=lighting.environment.ambient[k];
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
+        frame_constants.light_count[1]=lighting.environment.shadow_resolution;
+        for(std::size_t k=0;k<3;++k)frame_constants.camera_forward[k]=number(-scene->camera_world[8+k]);
+        shadow_plan=shadow_views(*scene,static_cast<double>(extent.width)/extent.height);
+        frame_constants.light_count[2]=static_cast<std::uint32_t>(shadow_plan.size());
         for(std::size_t i=0;i<lighting.lights.size();++i) {
             const auto& source=lighting.lights[i];validate_light(source.light);auto& light=frame_constants.lights[i];light={};
             for(std::size_t k=0;k<3;++k) { light.position_kind[k]=number(source.position[k]);light.direction_range[k]=number(source.direction[k]);light.color_intensity[k]=source.light.color[k]; }
             light.position_kind[3]=static_cast<float>(source.light.kind);light.direction_range[3]=source.light.range;light.color_intensity[3]=source.light.intensity;
             light.cone[0]=std::cos(source.light.inner_angle*0.017453292519943295f);light.cone[1]=std::cos(source.light.outer_angle*0.017453292519943295f);
+            light.cone[2]=source.light.shadow.distance;light.cone[3]=source.light.shadow.near_plane;
+            light.shadow[2]=source.light.shadow.bias;light.shadow[3]=source.light.shadow.normal_bias;
+        }
+        for(std::size_t i=0;i<shadow_plan.size();++i) {
+            const auto& source=shadow_plan[i];auto& view=frame_constants.shadows[i];auto& light=frame_constants.lights[source.light_index];
+            if(light.shadow[1]==0)light.shadow[0]=static_cast<float>(i);light.shadow[1]+=1;
+            for(std::size_t k=0;k<16;++k)view.view_projection[k]=number(source.view_projection[k]);
+            view.splits[0]=number(source.split_near);view.splits[1]=number(source.split_far);
         }
         for(const auto& object:scene->objects) {
             DrawItem item;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
@@ -558,7 +629,7 @@ struct Context {
         auto texture = images.at(index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
         commands->open();
-        if(scene)commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));
+        if(scene) { commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));render_shadows(); }
         commands->beginTrackingTextureState(texture, nvrhi::AllSubresources,
             initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
         commands->clearTextureFloat(multisample_color ? multisample_color.Get() : texture.Get(), nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));

@@ -40,12 +40,22 @@ find_program(POIMA_DXC NAMES dxc
     HINTS "${CMAKE_SOURCE_DIR}/.cache/toolchains/dxc-v1.8.2505.1/bin"
     DOC "Host DXC executable with SPIR-V support" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
-foreach(shader smoke scene)
+foreach(shader smoke scene shadow)
 foreach(stage vs ps)
+    if(shader STREQUAL "shadow" AND stage STREQUAL "ps")
+        continue()
+    endif()
     if(stage STREQUAL "vs")
         set(entry vertex_main)
     else()
         set(entry pixel_main)
+    endif()
+    if(shader STREQUAL "shadow")
+        set(entry shadow_vertex_main)
+    endif()
+    set(shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl")
+    if(shader STREQUAL "shadow")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
     endif()
     set(header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.hpp")
     add_custom_command(OUTPUT "${header}"
@@ -56,7 +66,7 @@ foreach(stage vs ps)
             -Fo "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
             -Fh "${header}" -Vn "poima_${shader}_${stage}"
             "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl"
-        DEPENDS "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl"
+        DEPENDS ${shader_dependencies}
         VERBATIM)
     target_sources(poima_core PRIVATE "${header}")
 endforeach()

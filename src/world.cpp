@@ -76,7 +76,7 @@ void validate_transform(const Json& value) {
     require(std::abs(norm - 1) <= 1e-6, "Rotation must be a normalized XYZW quaternion.");
 }
 Light light_value(const Json& value) {
-    fields(value,{"kind","color","intensity","enabled","range","inner_angle","outer_angle"},{"kind","color","intensity","enabled"});
+    fields(value,{"kind","color","intensity","enabled","range","inner_angle","outer_angle","shadow"},{"kind","color","intensity","enabled"});
     require(value.at("kind")=="directional" || value.at("kind")=="point" || value.at("kind")=="spot","Light kind must be directional, point or spot.");
     Light light;light.kind=value.at("kind")=="directional" ? LightKind::directional : value.at("kind")=="point" ? LightKind::point : LightKind::spot;
     require(light.kind!=LightKind::directional || !value.contains("range"),"Directional lights do not accept range.");
@@ -89,13 +89,22 @@ Light light_value(const Json& value) {
     require(value.at("enabled").is_boolean(),"Light enabled must be boolean.");
     light.color=value.at("color").get<std::array<float,3>>();light.intensity=value.at("intensity");light.enabled=value.at("enabled");
     light.range=value.value("range",0.0f);light.inner_angle=value.value("inner_angle",0.0f);light.outer_angle=value.value("outer_angle",45.0f);
+    if(value.contains("shadow")) {
+        const auto& v=value.at("shadow");fields(v,{"enabled","near","distance","bias","normal_bias"},{"enabled"});
+        require(v.at("enabled").is_boolean(),"Shadow enabled must be boolean.");light.shadow.enabled=v.at("enabled");
+        for(const auto* key:{"near","distance","bias","normal_bias"})if(v.contains(key))require(v.at(key).is_number() && std::isfinite(v.at(key).get<double>()),"Invalid shadow number.");
+        const double shadow_near=v.value("near",.05),distance=v.value("distance",80.0),bias=v.value("bias",.0005),normal=v.value("normal_bias",.01);
+        require(shadow_near>=.001 && shadow_near<=100 && distance>shadow_near && distance<=100000 && bias>=0 && bias<=.1 && normal>=0 && normal<=1,"Invalid shadow near/distance/bias/normal_bias bounds.");
+        light.shadow.near_plane=static_cast<float>(shadow_near);light.shadow.distance=static_cast<float>(distance);light.shadow.bias=static_cast<float>(bias);light.shadow.normal_bias=static_cast<float>(normal);
+    }
     try { validate_light(light); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }return light;
 }
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
-    return {value.at("ambient").get<std::array<float,3>>(),value.at("exposure").get<float>()};
+    if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
+    return {value.at("ambient").get<std::array<float,3>>(),value.at("exposure").get<float>(),value.value("shadow_resolution",1024u)};
 }
 void validate_component(const std::string& type, const Json& value) {
     if(type=="Light") { (void)light_value(value);return; }
@@ -221,9 +230,13 @@ Json describe() {
     const Json optional_map={{"anyOf",{map_ref,Json{{"type","null"}}}}};
     const Json textures=object_schema({{"base_color",optional_map},{"metallic_roughness",optional_map},{"emissive",optional_map},{"occlusion",optional_map},{"normal",optional_map},
         {"occlusion_strength",unit},{"normal_scale",{{"type","number"},{"minimum",0},{"maximum",16}}}});
+    const Json shadow=object_schema({{"enabled",{{"type","boolean"}}},{"near",{{"type","number"},{"minimum",.001},{"maximum",100},{"default",.05}}},
+        {"distance",{{"type","number"},{"exclusiveMinimum",.001},{"maximum",100000},{"default",80}}},
+        {"bias",{{"type","number"},{"minimum",0},{"maximum",.1},{"default",.0005}}},{"normal_bias",{{"type","number"},{"minimum",0},{"maximum",1},{"default",.01}}}}, {"enabled"});
     Json light_variants=Json::array();
     for(const auto* kind:{"directional","point","spot"}) {
         Json props={{"kind",{{"const",kind}}},{"color",vector(unit,3)},{"intensity",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"enabled",{{"type","boolean"}}}};
+        props["shadow"]=shadow;
         if(std::string_view(kind)!="directional")props["range"]={{"type","number"},{"minimum",0},{"maximum",1e9},{"default",0}};
         if(std::string_view(kind)=="spot") {
             props["inner_angle"]={{"type","number"},{"minimum",0},{"exclusiveMaximum",90},{"default",0}};
@@ -232,7 +245,7 @@ Json describe() {
         light_variants.push_back(object_schema(props,{"kind","color","intensity","enabled"}));
     }
     const Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
-        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}}}, {"ambient","exposure"});
+        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}}}, {"ambient","exposure"});
     const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
@@ -247,7 +260,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 8}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 9}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -266,7 +279,7 @@ Json describe() {
                 {"preview", {{"type", "boolean"}, {"default", false}}}}, {"request_id", "base_revision", "ops"})}}},
         {"components", components},
         {"limits", {{"entities", 10000}, {"request_bytes", 1048576}, {"document_bytes", max_document_bytes},
-            {"receipt_window", 128}, {"json_depth", 64},{"enabled_lights",max_scene_lights},{"lighting_environments",1}}},
+            {"receipt_window", 128}, {"json_depth", 64},{"enabled_lights",max_scene_lights},{"lighting_environments",1},{"shadow_views",max_shadow_views},{"shadow_bytes",max_shadow_bytes}}},
         {"invariants", {"Normalized XYZW quaternion; meters; local transforms; positive scale.",
             "Stable IDs are caller-supplied and cannot be reused after deletion.",
             "Pagination with after requires the returned revision.",
@@ -299,6 +312,7 @@ Json describe() {
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
     result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
+    result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     methods["world.lighting"]=object_schema({{"revision",rev}});
     methods["runtime.lighting"]=object_schema({{"session_id",id},{"tick",rev}}, {"session_id"});
     methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});
@@ -353,13 +367,15 @@ void validate(const Json& doc) {
         require(!(entity.at("components").contains("MeshRenderer") && entity.at("components").contains("StaticMesh")),"An entity cannot combine MeshRenderer and StaticMesh.");
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
-    std::size_t light_count=0,environment_count=0;
+    std::size_t light_count=0,environment_count=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
     for(const auto& e:entities) {
         const auto& components=e.at("components");
         if(components.contains("Light") && components.at("Light").at("enabled")==true)++light_count;
-        if(components.contains("LightingEnvironment"))++environment_count;
+        if(components.contains("Light"))shadow_count+=shadow_view_count(light_value(components.at("Light")));
+        if(components.contains("LightingEnvironment")) { ++environment_count;shadow_resolution=environment_value(components.at("LightingEnvironment")).shadow_resolution; }
     }
     require(light_count<=max_scene_lights && environment_count<=1,"World permits at most 64 enabled lights and one LightingEnvironment.");
+    try { validate_shadow_budget(shadow_count,shadow_resolution); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
     std::map<std::string, int> colors;
     for (const auto& [id, unused] : entities.items()) {
         (void)unused;
@@ -493,14 +509,14 @@ public:
     }
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
     static Json lighting_json(const SceneLighting& lighting) {
-        Json lights=Json::array();
+        Json lights=Json::array();std::size_t shadow_count=0;
         for(const auto& source:lighting.lights) {
-            const auto& l=source.light;
+            const auto& l=source.light;shadow_count+=shadow_view_count(l);
             lights.push_back({{"id",source.entity_id},{"kind",l.kind==LightKind::directional ? "directional" : l.kind==LightKind::point ? "point" : "spot"},
                 {"position",source.position},{"direction",source.direction},{"color",l.color},{"intensity",l.intensity},{"range",l.range},{"inner_angle",l.inner_angle},{"outer_angle",l.outer_angle},
-                {"intensity_unit",l.kind==LightKind::directional ? "lux" : "candela"}});
+                {"intensity_unit",l.kind==LightKind::directional ? "lux" : "candela"},{"shadow",{{"enabled",l.shadow.enabled},{"near",l.shadow.near_plane},{"distance",l.shadow.distance},{"bias",l.shadow.bias},{"normal_bias",l.shadow.normal_bias}}}});
         }
-        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure}};
+        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4}};
     }
     SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {
         SceneLighting result;
@@ -744,7 +760,7 @@ public:
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},
-            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored directional/point/spot lighting or explicit preview fallback; no shadows"}};
+            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
     }
     void runtime_guard(const Json& params) const {
         const auto id=identifier(params.at("session_id"));

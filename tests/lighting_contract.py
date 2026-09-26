@@ -68,6 +68,21 @@ class LightingContract(unittest.TestCase):
         c.txn(2,[create(65),light(65,enabled=False),environment(1)])
         c.txn(3,[environment(2)],error=-32602);c.txn(3,[light(65)],error=-32602)
         c.txn(3,[light(1,enabled=False),light(65)]);self.assertEqual(len(c.rpc('world.lighting')['lights']),64)
+    def test_shadow_defaults_validation_and_resource_limits(self):
+        c=self.open();d=c.rpc('world.describe');self.assertGreaterEqual(d['schema_revision'],9)
+        self.assertEqual(d['limits']['shadow_views'],16);self.assertEqual(d['limits']['shadow_bytes'],128*1024*1024)
+        c.txn(0,[create(1),light(1,'directional',shadow={'enabled':True}),create(2),light(2,'point',shadow={'enabled':True}),create(3),light(3,'spot',shadow={'enabled':True}),environment(1)])
+        state=c.rpc('world.lighting');self.assertEqual(state['shadow_views'],11);self.assertEqual(state['shadow_bytes'],11*1024*1024*4)
+        self.assertTrue(state['lights'][0]['shadow']['enabled'])
+        invalid=[light(1,'directional',shadow={'enabled':1}),light(1,'directional',shadow={'enabled':True,'near':0}),light(1,shadow={'enabled':True,'near':2,'distance':1}),light(1,shadow={'enabled':True,'bias':-.1}),light(1,shadow={'enabled':True,'normal_bias':2}),light(1,shadow={'enabled':True,'unknown':1}),light(1,'spot',outer_angle=90,shadow={'enabled':True}),light(1,range=.01,shadow={'enabled':True}),component(1,'LightingEnvironment',{'ambient':[0,0,0],'exposure':1,'shadow_resolution':1000})]
+        before=self.path.read_bytes()
+        for op in invalid:c.txn(1,[op],error=-32602);self.assertEqual(self.path.read_bytes(),before)
+        # Resolution alone would grow the current eleven depth layers beyond 128 MiB.
+        c.txn(1,[component(1,'LightingEnvironment',{'ambient':[0,0,0],'exposure':1,'shadow_resolution':2048})],error=-32602)
+        c.txn(1,[create(4),light(4,shadow={'enabled':True})],error=-32602)
+        c.txn(1,[light(2,enabled=False,shadow={'enabled':True}),component(1,'LightingEnvironment',{'ambient':[0,0,0],'exposure':1,'shadow_resolution':2048})])
+        state=c.rpc('world.lighting');self.assertEqual(state['shadow_views'],5);self.assertEqual(state['shadow_resolution'],2048)
+        c.close();c=self.open();self.assertEqual(c.rpc('world.lighting'),state)
     def test_runtime_freezes_settings_and_tracks_moving_parent(self):
         # Capability is queried from the built binary, so this test also runs in headless-only builds.
         cap=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))

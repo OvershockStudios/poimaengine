@@ -10,19 +10,23 @@ struct DrawConstants {
     float4 emissive_roughness;
 };
 [[vk::push_constant]] ConstantBuffer<DrawConstants> draw;
-struct SceneLight { float4 position_kind;float4 direction_range;float4 color_intensity;float4 cone; };
+struct SceneLight { float4 position_kind;float4 direction_range;float4 color_intensity;float4 cone;float4 shadow; };
+struct ShadowView { column_major float4x4 view_projection;float4 splits; };
 cbuffer Frame : register(b1) {
     column_major float4x4 view_projection;
     float4 camera; // .xyz: world position; .w: target performs sRGB encoding
     float4 ambient_exposure;
     uint4 light_count;
+    float4 camera_forward;
     SceneLight lights[64];
+    ShadowView shadows[16];
 };
 Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
 Texture2D emissive_map : register(t2);
 Texture2D occlusion_map : register(t3);
 Texture2D normal_map : register(t4);
+Texture2DArray<float> shadow_map : register(t5);
 SamplerState base_sampler : register(s0);
 SamplerState mr_sampler : register(s1);
 SamplerState emissive_sampler : register(s2);
@@ -46,6 +50,64 @@ VertexOutput vertex_main(VertexInput input) {
     output.tangent=float4(dot(draw.model_row0.xyz,input.tangent.xyz),dot(draw.model_row1.xyz,input.tangent.xyz),dot(draw.model_row2.xyz,input.tangent.xyz),input.tangent.w);
     return output;
 }
+float4 shadow_vertex_main(VertexInput input) : SV_Position {
+    const float4 p=float4(input.position,1);
+    const float3 world=float3(dot(draw.model_row0,p),dot(draw.model_row1,p),dot(draw.model_row2,p));
+    return mul(shadows[(uint)draw.normal_row0.w].view_projection,float4(world,1));
+}
+float shadow_compare(uint layer,float3 position,float3 normal,float bias) {
+    const float4 clip=mul(shadows[layer].view_projection,float4(position,1));
+    if(clip.w<=0)return 1;
+    const float3 ndc=clip.xyz/clip.w;
+    if(any(abs(ndc.xy)>1) || ndc.z<0 || ndc.z>1)return 1;
+    const float2 uv=float2(ndc.x*.5+.5,.5-ndc.y*.5);
+    // Analytic receiver-plane depth gradient avoids self-shadowing from PCF
+    // taps on sloped surfaces, without screen derivatives across cascade edges.
+    const float3 t=normalize(cross(abs(normal.y)>.99 ? float3(0,0,1) : float3(0,1,0),normal));
+    const float4 dt=mul(shadows[layer].view_projection,float4(t,0));
+    const float4 db=mul(shadows[layer].view_projection,float4(cross(normal,t),0));
+    const float3 plane=cross(dt.xyz-ndc*dt.w,db.xyz-ndc*db.w);
+    const float2 gradient=abs(plane.z)>1e-12 ? -plane.xy/plane.z : float2(0,0);
+    const int resolution=(int)light_count.y;
+    const int2 pixel=(int2)floor(uv*resolution);float visibility=0;
+    [unroll] for(int y=-1;y<=1;++y) [unroll] for(int x=-1;x<=1;++x) {
+        const int2 sample_pixel=clamp(pixel+int2(x,y),int2(0,0),int2(resolution-1,resolution-1));
+        const float2 tap_uv=(float2(sample_pixel)+.5)/resolution;
+        const float2 delta_ndc=(tap_uv-uv)*float2(2,-2);
+        const float receiver_depth=ndc.z+dot(gradient,delta_ndc)-bias;
+        visibility+=(receiver_depth<=shadow_map.Load(int4(sample_pixel,layer,0))) ? 1.0 : 0.0;
+    }
+    return visibility/9;
+}
+float light_visibility(SceneLight source,float3 position,float3 geometric_normal,float3 l) {
+    const uint count=(uint)source.shadow.y;if(count==0)return 1;
+    const uint first=(uint)source.shadow.x;
+    const float3 biased=position+geometric_normal*(source.shadow.w*(1-saturate(dot(geometric_normal,l))));
+    if(source.position_kind.w<.5) {
+        const float distance=dot(position-camera.xyz,camera_forward.xyz);
+        for(uint cascade=0;cascade<count;++cascade) {
+            const uint layer=first+cascade;const float2 splits=shadows[layer].splits.xy;
+            if(distance<=splits.y) {
+                const float visibility=shadow_compare(layer,biased,geometric_normal,source.shadow.z);
+                const float blend=saturate((distance-(splits.y-.1*(splits.y-splits.x)))/max(.1*(splits.y-splits.x),1e-6));
+                if(blend>0) return lerp(visibility,cascade+1<count ? shadow_compare(layer+1,biased,geometric_normal,source.shadow.z) : 1,blend);
+                return visibility;
+            }
+        }
+        return 1;
+    }
+    const float3 delta=position-source.position_kind.xyz;const float distance=length(delta);
+    const float far=shadows[first].splits.y;if(distance>=far)return 1;
+    uint face=0;
+    if(source.position_kind.w<1.5) {
+        const float3 magnitude=abs(delta);
+        if(magnitude.x>=magnitude.y && magnitude.x>=magnitude.z)face=delta.x>=0 ? 0 : 1;
+        else if(magnitude.y>=magnitude.z)face=delta.y>=0 ? 2 : 3;
+        else face=delta.z>=0 ? 4 : 5;
+    }
+    const float visibility=shadow_compare(first+face,biased,geometric_normal,source.shadow.z);
+    return lerp(visibility,1,saturate((distance-.9*far)/(.1*far)));
+}
 float3 linear_to_srgb(float3 color) {
     return select(color<=0.0031308,color*12.92,1.055*pow(color,1.0/2.4)-0.055);
 }
@@ -63,6 +125,13 @@ float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float r
 }
 float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 {
     float3 n=normalize(input.normal);
+    // Smooth vertex normals describe shading, not the rasterized triangle plane.
+    // Compute the plane before any divergent light/cascade branches.
+    const float3 facing_normal=front ? n : -n;
+    const float3 triangle_normal=cross(ddx(input.world_position),ddy(input.world_position));
+    const float triangle_length2=dot(triangle_normal,triangle_normal);
+    const float3 geometric_normal=triangle_length2>1e-20 ?
+        triangle_normal*((dot(triangle_normal,facing_normal)<0 ? -1 : 1)*rsqrt(triangle_length2)) : facing_normal;
 
     float3 color;
     if(draw.base_metallic.w<0) {
@@ -102,7 +171,7 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
                     attenuation*=cone*cone;
                 }
             }
-            color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation);
+            color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*light_visibility(source,input.world_position,geometric_normal,l));
         }
         color*=ambient_exposure.w;
         color=color/(1+color); // Reinhard display mapping with linear exposure.
