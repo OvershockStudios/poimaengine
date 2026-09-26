@@ -32,23 +32,30 @@ void generate_tangents(MeshAsset& mesh) {
     SMikkTSpaceContext context{&api,&state};
     if(!genTangSpaceDefault(&context))throw std::runtime_error("MikkTSpace tangent generation failed.");
     std::vector<MeshVertex> vertices;std::vector<std::uint32_t> indices;indices.reserve(mesh.indices.size());
-    std::map<std::array<std::uint32_t,12>,std::uint32_t> unique;
+    std::map<std::array<std::uint32_t,20>,std::uint32_t> unique;
+    std::vector<SkinWeight> influences;if(!mesh.influences.empty()) {
+        if(mesh.influences.size()!=mesh.vertices.size())throw std::runtime_error("Skin influence count mismatch.");
+        influences.reserve(mesh.indices.size());
+    }
     for(std::size_t corner=0;corner<mesh.indices.size();++corner) {
         auto v=mesh.vertices[mesh.indices[corner]];v.tangent=state.corners[corner];
         if(!valid_tangent(v))throw std::runtime_error("Generated tangent is invalid; check degenerate geometry/UVs.");
         // Reindex complete vertex attributes, including tangent handedness: a
         // mirrored UV seam must never average/overwrite the original index.
-        std::array<std::uint32_t,12> key{};std::size_t k=0;
+        std::array<std::uint32_t,20> key{};std::size_t k=0;
         for(auto x:v.position)key[k++]=std::bit_cast<std::uint32_t>(x==0 ? 0.0f : x);
         for(auto x:v.normal)key[k++]=std::bit_cast<std::uint32_t>(x==0 ? 0.0f : x);
         for(auto x:v.uv)key[k++]=std::bit_cast<std::uint32_t>(x==0 ? 0.0f : x);
         for(auto x:v.tangent)key[k++]=std::bit_cast<std::uint32_t>(x==0 ? 0.0f : x);
+        SkinWeight skin;if(!mesh.influences.empty()) {
+            skin=mesh.influences[mesh.indices[corner]];for(auto x:skin.joints)key[k++]=x;for(auto x:skin.weights)key[k++]=std::bit_cast<std::uint32_t>(x==0 ? 0.0f : x);
+        }
         if(const auto found=unique.find(key);found!=unique.end())indices.push_back(found->second);
         else {
             if(vertices.size()>=1000000)throw std::runtime_error("Tangent seam expansion exceeds the vertex budget.");
-            auto index=static_cast<std::uint32_t>(vertices.size());unique.emplace(key,index);vertices.push_back(v);indices.push_back(index);
+            auto index=static_cast<std::uint32_t>(vertices.size());unique.emplace(key,index);vertices.push_back(v);indices.push_back(index);if(!mesh.influences.empty())influences.push_back(skin);
         }
     }
-    mesh.vertices=std::move(vertices);mesh.indices=std::move(indices);
+    mesh.vertices=std::move(vertices);mesh.indices=std::move(indices);mesh.influences=std::move(influences);
 }
 }

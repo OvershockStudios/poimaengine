@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/world.hpp"
+#include "poima/animation.hpp"
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
 #include "poima/player.hpp"
@@ -281,7 +282,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 14}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 15}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -385,7 +386,17 @@ Json describe() {
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
-    methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
+    methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
+    const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
+    const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};
+    methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});
+    methods["asset.animation.skin"]=object_schema({{"asset",asset_id},{"skin",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","skin"});
+    methods["asset.animation.sample"]=object_schema({{"asset",asset_id},{"clip",model_index},{"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"loop",{{"type","boolean"},{"default",false}}},{"section",{{"enum",{"nodes","vertices"}}}},{"node",model_index},{"primitive",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","time"});
+    auto preview=methods["world.capture"];
+    preview["properties"]["asset"]=asset_id;preview["properties"]["clip"]=model_index;
+    preview["properties"]["time"]=methods["asset.animation.sample"]["properties"]["time"];
+    preview["properties"]["loop"]=methods["asset.animation.sample"]["properties"]["loop"];
+    preview["required"].push_back("asset");preview["required"].push_back("time");methods["asset.animation.capture"]=preview;
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -623,7 +634,7 @@ public:
             catch(const std::exception& error) { throw Error(-32050,error.what()); }
             const auto primitive=revision(ref.at("primitive"));
             require(primitive<model->primitives.size(),"StaticMesh primitive does not exist in its asset.",-32050);
-            mesh.mesh=model->primitives[primitive];mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
+            mesh.mesh=model->primitives[primitive];require(mesh.mesh->influences.empty(),"StaticMesh cannot render skin weights; use asset.animation.sample for reference inspection until runtime skinning is available.",-32050);mesh.material=mesh.mesh->material;mesh.visible=ref.at("visible");
         } else if(components.contains("MeshRenderer")) {
             const auto& ref=components.at("MeshRenderer");mesh.albedo=ref.at("albedo").get<std::array<float,3>>();mesh.visible=ref.at("visible");
         } else return std::nullopt;
@@ -707,7 +718,71 @@ public:
             return {{"asset",loaded.id},{"format","poima.audio.v1"},{"bytes",loaded.bytes},{"sample_rate",audio_rate},{"channels",1},{"frames",loaded.clip->samples.size()},{"duration_seconds",double(loaded.clip->samples.size())/audio_rate}};
         }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
     }
+    Json animation_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.animation.channel")fields(params,{"asset","clip","channel","offset","limit"},{"asset","clip","channel"});
+        else if(method=="asset.animation.skin")fields(params,{"asset","skin","offset","limit"},{"asset","skin"});
+        else if(method=="asset.animation.sample")fields(params,{"asset","clip","time","loop","section","node","primitive","offset","limit"},{"asset","time"});
+        else throw Error(-32601,"Unknown animation method.");
+        require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
+        const auto offset=params.contains("offset") ? revision(params.at("offset")) : 0;
+        const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;
+        require(limit>=1 && limit<=64,"Animation page limit must be 1..64.");
+        try {
+            const auto loaded=read_model_asset(asset_directory(),params.at("asset"));const auto& model=*loaded.model;
+            Json out={{"asset",loaded.id},{"items",Json::array()}};std::size_t total=0;
+            if(method=="asset.animation.channel") {
+                const auto clip=revision(params.at("clip")),channel=revision(params.at("channel"));
+                require(clip<model.animations.size() && channel<model.animations[clip].channels.size(),"Clip/channel index is out of range.");
+                const auto& c=model.animations[clip].channels[channel];total=c.times.size();
+                const bool cubic=c.interpolation==AnimationInterpolation::cubic;
+                const char* paths[]={"translation","rotation","scale"};const char* modes[]={"STEP","LINEAR","CUBICSPLINE"};
+                out["clip"]=clip;out["channel"]=channel;out["node"]=c.node;out["path"]=paths[std::size_t(c.path)];out["interpolation"]=modes[std::size_t(c.interpolation)];
+                for(auto i=offset;i<std::min<std::uint64_t>(total,offset+limit);++i) {
+                    Json item={{"index",i},{"time",c.times[i]},{"value",c.values[i*(cubic ? 3 : 1)+(cubic ? 1 : 0)]}};
+                    if(cubic) { item["in_tangent"]=c.values[i*3];item["out_tangent"]=c.values[i*3+2]; }
+                    out["items"].push_back(std::move(item));
+                }
+            } else if(method=="asset.animation.skin") {
+                const auto index=revision(params.at("skin"));require(index<model.skins.size(),"Skin index is out of range.");
+                const auto& skin=model.skins[index];total=skin.joints.size();out["skin"]=index;out["name"]=skin.name;out["skeleton"]=skin.skeleton;
+                for(auto i=offset;i<std::min<std::uint64_t>(total,offset+limit);++i)out["items"].push_back({{"index",i},{"node",skin.joints[i]},{"inverse_bind",skin.inverse_bind[i]}});
+            } else {
+                require(params.at("time").is_number(),"Sample time must be a number.");const double time=params.at("time");
+                require(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be within 0..1e9 seconds.");
+                require(!params.contains("loop") || params.at("loop").is_boolean(),"Loop must be boolean.");
+                std::optional<std::uint32_t> clip;
+                if(params.contains("clip")) { const auto index=revision(params.at("clip"));require(index<model.animations.size(),"Clip index is out of range.");clip=static_cast<std::uint32_t>(index); }
+                const auto section=params.value("section",std::string("nodes"));require(section=="nodes" || section=="vertices","Invalid pose section.");
+                require(section=="vertices" || (!params.contains("node") && !params.contains("primitive")),"Node/primitive selectors require the vertices section.");
+                const auto pose=sample_model(model,clip,time,params.value("loop",false));out["clip"]=clip ? Json(*clip) : Json(nullptr);out["requested_time"]=time;out["sample_time"]=pose.time;out["section"]=section;
+                if(section=="nodes") {
+                    total=model.nodes.size();
+                    for(auto i=offset;i<std::min<std::uint64_t>(total,offset+limit);++i)out["items"].push_back({{"index",i},{"parent",model.nodes[i].parent},{"position",pose.local[i].position},{"rotation",pose.local[i].rotation},{"scale",pose.local[i].scale},{"world",pose.world[i]}});
+                } else {
+                    require(params.contains("node") && params.contains("primitive"),"Vertex sampling requires node and primitive indices.");
+                    const auto node=revision(params.at("node")),primitive=revision(params.at("primitive"));require(node<model.nodes.size(),"Node index is out of range.");
+                    const auto& n=model.nodes[node];require(std::find(n.primitives.begin(),n.primitives.end(),primitive)!=n.primitives.end(),"Primitive is not bound to this node.");
+                    const auto& mesh=*model.primitives[primitive];total=mesh.vertices.size();out["node"]=node;out["primitive"]=primitive;out["mesh_world"]=pose.world[node];
+                    const auto end=std::min<std::uint64_t>(total,offset+limit);MeshAsset page;
+                    for(auto i=offset;i<end;++i) { page.vertices.push_back(mesh.vertices[i]);if(n.skin>=0)page.influences.push_back(mesh.influences[i]); }
+                    std::shared_ptr<const MeshAsset> deformed;
+                    if(n.skin>=0 && !page.vertices.empty())deformed=deform_mesh(page,skin_palette(model,pose,static_cast<std::uint32_t>(node)));
+                    const auto& vertices=deformed ? deformed->vertices : page.vertices;
+                    for(auto i=offset;i<end;++i) {
+                        const auto& v=vertices[i-offset];std::array<double,3> world{};
+                        for(std::size_t row=0;row<3;++row) { world[row]=pose.world[node][12+row];for(std::size_t k=0;k<3;++k)world[row]+=pose.world[node][k*4+row]*v.position[k]; }
+                        Json item={{"index",i},{"position",v.position},{"world_position",world},{"normal",v.normal},{"tangent",v.tangent},{"uv",v.uv}};
+                        if(n.skin>=0) { item["joints"]=mesh.influences[i].joints;item["weights"]=mesh.influences[i].weights; }
+                        out["items"].push_back(std::move(item));
+                    }
+                }
+            }
+            out["total"]=total;out["next_offset"]=offset+limit<total ? Json(offset+limit) : Json(nullptr);return out;
+        }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
+    }
     Json asset_dispatch(const std::string& method,const Json& params) const {
+        if(method=="asset.animation.capture")return capture(params,false,true);
+        if(method.starts_with("asset.animation."))return animation_dispatch(method,params);
         if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);
         if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
         try {
@@ -724,16 +799,18 @@ public:
             } else throw Error(-32601,"Unknown asset method.");
             std::size_t vertices=0,indices=0;for(const auto& mesh:loaded.model->primitives) { vertices+=mesh->vertices.size();indices+=mesh->indices.size(); }
             Json result={{"asset",loaded.id},{"bytes",loaded.bytes},{"nodes",loaded.model->nodes.size()},{"primitives",loaded.model->primitives.size()},
-                {"vertices",vertices},{"triangles",indices/3},{"roots",loaded.model->roots},{"diagnostics",loaded.model->diagnostics},{"images",loaded.model->images.size()},{"format","poima.static-model.v"+std::to_string(loaded.model->package_version)}};
+                {"vertices",vertices},{"triangles",indices/3},{"roots",loaded.model->roots},{"diagnostics",loaded.model->diagnostics},{"images",loaded.model->images.size()},{"skins",loaded.model->skins.size()},{"animations",loaded.model->animations.size()},{"format",std::string(loaded.model->package_version>=4 ? "poima.model.v" : "poima.static-model.v")+std::to_string(loaded.model->package_version)}};
             if(method=="asset.inspect") {
-                const auto section=params.value("section",std::string("summary"));require(section=="summary" || section=="nodes" || section=="primitives" || section=="images","Invalid asset section.");
+                const auto section=params.value("section",std::string("summary"));require(section=="summary" || section=="nodes" || section=="primitives" || section=="images" || section=="skins" || section=="animations","Invalid asset section.");
                 const auto offset=params.contains("offset") ? revision(params.at("offset")) : 0;
                 const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;require(limit>=1 && limit<=64,"Asset page limit must be 1..64.");
                 if(section!="summary") {
-                    result["items"]=Json::array();const auto total=section=="nodes" ? loaded.model->nodes.size() : section=="images" ? loaded.model->images.size() : loaded.model->primitives.size();
+                    result["items"]=Json::array();const auto total=section=="skins" ? loaded.model->skins.size() : section=="animations" ? loaded.model->animations.size() : section=="nodes" ? loaded.model->nodes.size() : section=="images" ? loaded.model->images.size() : loaded.model->primitives.size();
                     const auto end=std::min<std::uint64_t>(total,offset+limit);
                     for(auto i=offset;i<end;++i) {
-                        if(section=="nodes") { const auto& node=loaded.model->nodes[i];result["items"].push_back({{"index",i},{"name",node.name},{"parent",node.parent},{"position",node.position},{"rotation",node.rotation},{"scale",node.scale},{"primitives",node.primitives}}); }
+                        if(section=="skins") { const auto& skin=loaded.model->skins[i];result["items"].push_back({{"index",i},{"name",skin.name},{"skeleton",skin.skeleton},{"joints",skin.joints.size()}}); }
+                        else if(section=="animations") { const auto& clip=loaded.model->animations[i];result["items"].push_back({{"index",i},{"name",clip.name},{"duration",clip.duration},{"channels",clip.channels.size()}}); }
+                        else if(section=="nodes") { const auto& node=loaded.model->nodes[i];result["items"].push_back({{"index",i},{"name",node.name},{"parent",node.parent},{"position",node.position},{"rotation",node.rotation},{"scale",node.scale},{"primitives",node.primitives},{"skin",node.skin}}); }
                         else if(section=="images") {
                             const auto& image=*loaded.model->images[i];Json mips=Json::array();std::size_t bytes=0;
                             for(const auto& mip:image.mips) { bytes+=mip.rgba.size();mips.push_back({{"width",mip.width},{"height",mip.height},{"bytes",mip.rgba.size()}}); }
@@ -745,7 +822,7 @@ public:
                                 maps[names[slot]]={{"image",std::size_t(std::find(loaded.model->images.begin(),loaded.model->images.end(),map.image)-loaded.model->images.begin())},
                                     {"wrap_s",map.wrap_s},{"wrap_t",map.wrap_t},{"min_filter",map.min_filter},{"mag_filter",map.mag_filter}};
                             }
-                            result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)},{"textures",maps},{"occlusion_strength",mesh.occlusion_strength},{"normal_scale",mesh.normal_scale},{"has_uv",mesh.has_uv},{"tangent_frames",std::all_of(mesh.vertices.begin(),mesh.vertices.end(),valid_tangent)}});
+                            result["items"].push_back({{"index",i},{"vertices",mesh.vertices.size()},{"triangles",mesh.indices.size()/3},{"material",material_json(mesh.material)},{"textures",maps},{"occlusion_strength",mesh.occlusion_strength},{"normal_scale",mesh.normal_scale},{"has_uv",mesh.has_uv},{"skinned",!mesh.influences.empty()},{"tangent_frames",std::all_of(mesh.vertices.begin(),mesh.vertices.end(),valid_tangent)}});
                         }
                     }
                     result["next_offset"]=end<total ? Json(end) : Json(nullptr);
@@ -759,6 +836,7 @@ public:
         fields(op,{"op","id","asset","name","parent"},{"op","id","asset","name"});
         require(op.at("asset").is_string() && valid_asset_id(op.at("asset").get<std::string>()),"Invalid asset ID.");validate_name(op.at("name"));
         const auto root=identifier(op.at("id"));const auto model=read_model_asset(asset_directory(),op.at("asset")).model;
+        require(model->skins.empty() && model->animations.empty(),"Animated asset instantiation awaits runtime rig binding; use asset.animation.sample for reference inspection.");
         auto derived=[&](const std::string& value) { return content_hash("poima.instance.v1/"+root+"/"+value).substr(0,32); };
         auto create=[&](const std::string& id,const std::string& name,const Json& parent,Json components) {
             auto& entities=staged["entities"];
@@ -811,12 +889,13 @@ public:
         options.culling=params.value("culling",true);options.profile=params.value("profile",false);
         return options;
     }
-    Json capture(const Json& params, bool live=false) const {
+    Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         if(live) {
             fields(params, {"session_id","tick","camera","path","width","height","gpu","samples","culling","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         } else {
-            fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","profile","asset","clip","time","loop"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));
@@ -827,7 +906,7 @@ public:
         }
         if(!live) require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
         const auto options=render_options(params);
-        SceneSnapshot snapshot;
+        SceneSnapshot snapshot;Json animation_info=nullptr;
         snapshot.world_id = doc_.at("world_id"); snapshot.revision = revision(doc_.at("revision")); snapshot.camera_id = camera_id;
         try {
             if(live) snapshot=runtime_->snapshot(camera_id);
@@ -837,10 +916,40 @@ public:
             const auto matrices = world_matrices(doc_.at("entities"));
             snapshot.camera_world = matrices.at(camera_id);snapshot.lighting=authored_lighting(matrices);
             require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
-            ModelCache cache;
-            for(const auto& [id,e]:doc_.at("entities").items()) {
-                const auto mesh=mesh_component(e.at("components"),cache);
-                if(mesh && mesh->visible)snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures});
+            if(asset_preview) {
+                require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
+                std::shared_ptr<const ModelAsset> model;
+                try { model=read_model_asset(asset_directory(),params.at("asset")).model; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
+                require(params.at("time").is_number(),"Sample time must be a number.");const double time=params.at("time");
+                require(std::isfinite(time) && time>=0 && time<=1e9,"Sample time must be within 0..1e9 seconds.");
+                require(!params.contains("loop") || params.at("loop").is_boolean(),"Loop must be boolean.");std::optional<std::uint32_t> clip;
+                if(params.contains("clip")) { const auto index=revision(params.at("clip"));require(index<model->animations.size(),"Clip index is out of range.");clip=static_cast<std::uint32_t>(index); }
+                const auto pose=sample_model(*model,clip,time,params.value("loop",false));
+                animation_info={{"asset",params.at("asset")},{"clip",clip ? Json(*clip) : Json(nullptr)},{"requested_time",time},{"sample_time",pose.time},{"skinning","CPU reference; not runtime playback"}};
+                std::vector<std::vector<std::uint32_t>> children(model->nodes.size());
+                for(std::size_t i=0;i<model->nodes.size();++i)if(model->nodes[i].parent>=0)children[std::size_t(model->nodes[i].parent)].push_back(static_cast<std::uint32_t>(i));
+                auto selected=model->roots;std::size_t deformed_vertices=0,deformed_indices=0;
+                for(std::size_t i=0;i<selected.size();++i) {
+                    const auto node=selected[i];const auto& source=model->nodes[node];std::vector<Matrix4> palette;
+                    if(source.skin>=0)palette=skin_palette(*model,pose,node);
+                    for(auto primitive:source.primitives) {
+                        require(snapshot.objects.size()<10000,"Asset preview exceeds 10000 drawable instances.");
+                        auto mesh=model->primitives[primitive];
+                        if(source.skin>=0) {
+                            deformed_vertices+=mesh->vertices.size();deformed_indices+=mesh->indices.size();
+                            require(deformed_vertices<=1000000 && deformed_indices<=3000000,"Reference preview exceeds its deformation budget.");
+                            mesh=deform_mesh(*mesh,palette);
+                        }
+                        snapshot.objects.push_back({"asset/"+std::to_string(node)+"/"+std::to_string(primitive),pose.world[node],{1,1,1},mesh,mesh->material,{}});
+                    }
+                    selected.insert(selected.end(),children[node].begin(),children[node].end());
+                }
+            } else {
+                ModelCache cache;
+                for(const auto& [id,e]:doc_.at("entities").items()) {
+                    const auto mesh=mesh_component(e.at("components"),cache);
+                    if(mesh && mesh->visible)snapshot.objects.push_back({id,matrices.at(id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures});
+                }
             }
             }
         } catch(const Error&) { throw; }
@@ -850,7 +959,7 @@ public:
         require(report.available, report.detail, -32003);
         require(report.success, report.detail, -32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
-            {"source",live ? "runtime" : "authored"}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
+            {"source",asset_preview ? "asset_animation_reference" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
             {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},

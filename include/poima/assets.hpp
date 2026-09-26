@@ -18,7 +18,9 @@ struct MaterialTextures {
     std::array<TextureMap,5> maps;
     float occlusion_strength=1,normal_scale=1;
 };
+struct SkinWeight { std::array<std::uint16_t,4> joints{};std::array<float,4> weights{}; };
 struct MeshAsset {
+    std::vector<SkinWeight> influences; // Empty for static geometry; one per vertex otherwise.
     std::vector<MeshVertex> vertices;
     std::vector<std::uint32_t> indices;
     PbrMaterial material;
@@ -28,12 +30,25 @@ struct MeshAsset {
 };
 struct ModelNode {
     std::string name;
-    int parent=-1;
+    int parent=-1,skin=-1;
     std::array<double,3> position{0,0,0}, scale{1,1,1};
     std::array<double,4> rotation{0,0,0,1};
     std::vector<std::uint32_t> primitives;
 };
+enum class AnimationPath : std::uint32_t { translation=0,rotation=1,scale=2 };
+enum class AnimationInterpolation : std::uint32_t { step=0,linear=1,cubic=2 };
+struct AnimationChannel {
+    std::uint32_t node=0;AnimationPath path=AnimationPath::translation;
+    AnimationInterpolation interpolation=AnimationInterpolation::linear;
+    std::vector<float> times;
+    // xyz or xyzw; cubic stores in-tangent/value/out-tangent per key.
+    std::vector<std::array<float,4>> values;
+};
+struct AnimationClip { std::string name;double duration=0;std::vector<AnimationChannel> channels; };
+struct ModelSkin { std::string name;int skeleton=-1;std::vector<std::uint32_t> joints;std::vector<Matrix4> inverse_bind; };
 struct ModelAsset {
+    std::vector<ModelSkin> skins;
+    std::vector<AnimationClip> animations;
     unsigned package_version=3;
     std::vector<std::shared_ptr<const MeshAsset>> primitives;
     std::vector<std::shared_ptr<const TextureImage>> images;

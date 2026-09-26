@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-#include "poima/assets.hpp"
+#include "poima/animation.hpp"
 #define CGLTF_IMPLEMENTATION
 #include <cgltf/cgltf.h>
 #include <algorithm>
@@ -156,7 +156,7 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
     std::unique_ptr<cgltf_data,decltype(&cgltf_free)> data(raw,cgltf_free);
     require(data->nodes_count<=10000 && data->meshes_count<=10000 && data->accessors_count<=50000,"glTF metadata exceeds import limits.");
     require(data->extensions_required_count==0,"Required glTF extensions are not supported by the initial static importer.");
-    require(data->skins_count==0 && data->animations_count==0,"Animated/skinned glTF requires the forthcoming animation importer.");
+    require(data->skins_count<=max_model_skins && data->animations_count<=max_model_clips,"glTF skin/animation budget exceeded.");
     const auto utf8=path.u8string();
     require(cgltf_load_buffers(&options,data.get(),reinterpret_cast<const char*>(utf8.c_str()))==cgltf_result_success,"glTF buffers unavailable, outside source directory, or over budget.");
     require(cgltf_validate(data.get())==cgltf_result_success,"glTF accessor/hierarchy validation failed.");
@@ -171,14 +171,16 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
             require(result->primitives.size()<10000,"glTF primitive limit exceeded.");
             require(primitive.type==cgltf_primitive_type_triangles,"Only triangle-list glTF primitives are implemented.");
             require(!primitive.targets_count && !primitive.has_draco_mesh_compression,"Morph targets/compressed geometry are not implemented.");
-            const cgltf_accessor *positions=nullptr,*normals=nullptr,*uv=nullptr,*tangents=nullptr;
+            const cgltf_accessor *positions=nullptr,*normals=nullptr,*uv=nullptr,*tangents=nullptr,*joints=nullptr,*weights=nullptr;
             for(std::size_t a=0;a<primitive.attributes_count;++a) {
                 const auto& attribute=primitive.attributes[a];
                 if(attribute.type==cgltf_attribute_type_position) positions=attribute.data;
                 else if(attribute.type==cgltf_attribute_type_normal) normals=attribute.data;
                 else if(attribute.type==cgltf_attribute_type_texcoord && attribute.index==0)uv=attribute.data;
                 else if(attribute.type==cgltf_attribute_type_tangent)tangents=attribute.data;
-                else require(false,"Unsupported vertex attribute (including colors/joints/additional UV sets).");
+                else if(attribute.type==cgltf_attribute_type_joints && attribute.index==0)joints=attribute.data;
+                else if(attribute.type==cgltf_attribute_type_weights && attribute.index==0)weights=attribute.data;
+                else require(false,"Unsupported vertex attribute (including colors/additional joint or UV sets).");
             }
             require(positions && positions->count>0 && positions->count<=max_vertices-total_vertices,"glTF vertex budget exceeded or POSITION missing.");
             const auto count=positions->count;
@@ -188,6 +190,18 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
             require(!tangents || (normals && uv),"Authored tangents require NORMAL and TEXCOORD_0.");
             const auto tangent_values=tangents ? values(tangents,cgltf_type_vec4,count) : std::vector<float>{};
             auto cooked=std::make_shared<MeshAsset>();cooked->material=material(primitive.material);cooked->vertices.resize(count);cooked->has_uv=uv!=nullptr;
+            require(bool(joints)==bool(weights),"JOINTS_0 and WEIGHTS_0 must be supplied together.");
+            if(joints) {
+                require(!joints->normalized && (joints->component_type==cgltf_component_type_r_8u || joints->component_type==cgltf_component_type_r_16u),"JOINTS_0 must use unsigned byte/short integers.");
+                const bool integer_weights=weights->component_type==cgltf_component_type_r_8u || weights->component_type==cgltf_component_type_r_16u;
+                require((integer_weights && weights->normalized) || (weights->component_type==cgltf_component_type_r_32f && !weights->normalized),"WEIGHTS_0 must use floats or normalized unsigned byte/short values.");
+                const auto ji=values(joints,cgltf_type_vec4,count),we=values(weights,cgltf_type_vec4,count);cooked->influences.resize(count);
+                for(std::size_t v=0;v<count;++v) {
+                    double sum=0;for(std::size_t k=0;k<4;++k) { const auto j=ji[v*4+k],w=we[v*4+k];require(j>=0 && j<max_skin_joints && std::floor(j)==j && w>=0 && w<=1,"Invalid vertex joint/weight.");cooked->influences[v].joints[k]=static_cast<std::uint16_t>(j);sum+=w; }
+                    require(sum>0 && std::abs(sum-1)<=(integer_weights ? .02 : .0001),"Vertex weights must sum to one (within quantization tolerance).");
+                    for(std::size_t k=0;k<4;++k)cooked->influences[v].weights[k]=static_cast<float>(we[v*4+k]/sum);
+                }
+            }
             if(const auto* source_material=primitive.material) {
                 cooked->textures={images.get(source_material->pbr_metallic_roughness.base_color_texture,true),images.get(source_material->pbr_metallic_roughness.metallic_roughness_texture,false),
                     images.get(source_material->emissive_texture,true),images.get(source_material->occlusion_texture,false),images.get(source_material->normal_texture,false)};
@@ -220,6 +234,7 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
                     std::array<float,3> face{u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]};normal(face);
                     for(auto vertex:{a,b,c}) { vertex.normal=face;flat.push_back(vertex); }
                 }
+                if(!cooked->influences.empty()) { std::vector<SkinWeight> expanded;expanded.reserve(index_count);for(auto index:cooked->indices)expanded.push_back(cooked->influences[index]);cooked->influences=std::move(expanded); }
                 cooked->vertices=std::move(flat);std::iota(cooked->indices.begin(),cooked->indices.end(),0u);
                 result->diagnostics.push_back("Generated flat normals for primitive "+std::to_string(result->primitives.size())+".");
             }
@@ -242,12 +257,57 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
         double norm=0;for(auto x:node.rotation) { require(std::isfinite(x),"Invalid glTF rotation.");norm+=x*x; }
         require(std::abs(norm-1)<1e-4,"glTF quaternion is not normalized.");for(auto& x:node.rotation)x/=std::sqrt(norm);
         if(source_node.mesh)node.primitives=meshes.at(source_node.mesh);
+        if(source_node.skin)node.skin=static_cast<int>(source_node.skin-data->skins);
         result->nodes.push_back(std::move(node));
     }
     require(!result->nodes.empty(),"glTF has no scene nodes.");
     if(data->scene)for(std::size_t i=0;i<data->scene->nodes_count;++i)result->roots.push_back(static_cast<std::uint32_t>(data->scene->nodes[i]-data->nodes));
     else for(std::size_t i=0;i<result->nodes.size();++i)if(result->nodes[i].parent<0)result->roots.push_back(static_cast<std::uint32_t>(i));
     require(!result->roots.empty(),"glTF has no scene roots.");
+    for(std::size_t i=0;i<data->skins_count;++i) {
+        const auto& source_skin=data->skins[i];ModelSkin skin;skin.name=source_skin.name ? source_skin.name : "Skin "+std::to_string(i);
+        require(source_skin.joints_count>=1 && source_skin.joints_count<=max_skin_joints,"Skin must have 1..256 joints.");skin.skeleton=source_skin.skeleton ? static_cast<int>(source_skin.skeleton-data->nodes) : -1;
+        for(std::size_t j=0;j<source_skin.joints_count;++j)skin.joints.push_back(static_cast<std::uint32_t>(source_skin.joints[j]-data->nodes));
+        skin.inverse_bind.assign(source_skin.joints_count,identity_matrix());
+        if(source_skin.inverse_bind_matrices) {
+            require(source_skin.inverse_bind_matrices->component_type==cgltf_component_type_r_32f && !source_skin.inverse_bind_matrices->normalized,"Inverse bind matrices require float components.");
+            require(source_skin.inverse_bind_matrices->count>=source_skin.joints_count && source_skin.inverse_bind_matrices->count<=4096,"Inverse bind accessor count is outside the supported range.");
+            const auto matrices=values(source_skin.inverse_bind_matrices,cgltf_type_mat4,source_skin.inverse_bind_matrices->count);
+            for(std::size_t j=0;j<source_skin.joints_count;++j)std::copy_n(matrices.begin()+static_cast<std::ptrdiff_t>(j*16),16,skin.inverse_bind[j].begin());
+        }
+        result->skins.push_back(std::move(skin));
+    }
+    std::size_t channel_count=0,key_count=0;
+    for(std::size_t i=0;i<data->animations_count;++i) {
+        const auto& source_animation=data->animations[i];AnimationClip animation;animation.name=source_animation.name && *source_animation.name ? source_animation.name : "Animation "+std::to_string(i);
+        channel_count+=source_animation.channels_count;require(channel_count<=max_animation_channels,"Animation channel budget exceeded.");
+        for(std::size_t j=0;j<source_animation.channels_count;++j) {
+            const auto& source_channel=source_animation.channels[j];require(source_channel.target_node && source_channel.sampler,"Animation requires a target node and sampler.");const auto& sampler=*source_channel.sampler;AnimationChannel channel;channel.node=static_cast<std::uint32_t>(source_channel.target_node-data->nodes);
+            switch(source_channel.target_path) {
+                case cgltf_animation_path_type_translation:channel.path=AnimationPath::translation;break;
+                case cgltf_animation_path_type_rotation:channel.path=AnimationPath::rotation;break;
+                case cgltf_animation_path_type_scale:channel.path=AnimationPath::scale;break;
+                default:throw std::runtime_error("Morph/extension animation channels are not implemented.");
+            }
+            switch(sampler.interpolation) {
+                case cgltf_interpolation_type_step:channel.interpolation=AnimationInterpolation::step;break;
+                case cgltf_interpolation_type_linear:channel.interpolation=AnimationInterpolation::linear;break;
+                case cgltf_interpolation_type_cubic_spline:channel.interpolation=AnimationInterpolation::cubic;break;
+                default:throw std::runtime_error("Invalid animation interpolation mode.");
+            }
+            require(sampler.input && sampler.output && sampler.input->component_type==cgltf_component_type_r_32f && !sampler.input->normalized && sampler.output->component_type==cgltf_component_type_r_32f && !sampler.output->normalized,"Animation keys/values must be floats.");
+            key_count+=sampler.input->count;require(key_count<=max_animation_keys,"Animation key budget exceeded.");channel.times=values(sampler.input,cgltf_type_scalar,sampler.input->count);
+            const auto count=channel.times.size()*(channel.interpolation==AnimationInterpolation::cubic ? 3 : 1);const auto components=channel.path==AnimationPath::rotation ? 4u : 3u;
+            const auto samples=values(sampler.output,components==4 ? cgltf_type_vec4 : cgltf_type_vec3,count);channel.values.resize(count);
+            for(std::size_t k=0;k<count;++k)std::copy_n(samples.begin()+static_cast<std::ptrdiff_t>(k*components),components,channel.values[k].begin());
+            if(!channel.times.empty())animation.duration=std::max(animation.duration,double(channel.times.back()));
+            animation.channels.push_back(std::move(channel));
+        }
+        result->animations.push_back(std::move(animation));
+    }
+    if(!result->skins.empty() || !result->animations.empty() || std::any_of(result->primitives.begin(),result->primitives.end(),[](const auto& mesh) { return !mesh->influences.empty(); }))result->package_version=4;
+    validate_animation_data(*result);
+
     return result;
 }
 }

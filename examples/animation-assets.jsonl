@@ -1,0 +1,7 @@
+{"jsonrpc":"2.0","id":1,"method":"asset.import","params":{"source":"../examples/assets/animated-ribbon.glb"}}
+{"jsonrpc":"2.0","id":2,"method":"asset.inspect","params":{"asset":"d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be","section":"animations"}}
+{"jsonrpc":"2.0","id":3,"method":"asset.animation.skin","params":{"asset":"d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be","skin":0,"limit":8}}
+{"jsonrpc":"2.0","id":4,"method":"asset.animation.channel","params":{"asset":"d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be","clip":0,"channel":0,"limit":8}}
+{"jsonrpc":"2.0","id":5,"method":"asset.animation.sample","params":{"asset":"d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be","clip":0,"time":1,"limit":8}}
+{"jsonrpc":"2.0","id":6,"method":"asset.animation.sample","params":{"asset":"d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be","clip":0,"time":1,"section":"vertices","node":0,"primitive":0,"limit":8}}
+{"jsonrpc":"2.0","id":7,"method":"session.close","params":{}}

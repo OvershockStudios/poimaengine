@@ -115,8 +115,9 @@ Reply capabilities() {
         ",\"light_authoring\":true,\"punctual_lighting\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"material_texture_authoring\":true,\"normal_mapping\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"pbr_texture_maps\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"animation_asset_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"static_gltf_import\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
-        ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"vfx\":false,"
+        ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"animation_asset_sampling\":true,\"vfx\":false,"
         "\"hot_reload\":false,\"mcp\":false,\"editor\":false},\"qualification\":\"bootstrap_with_authored_world\"}");
 }
 

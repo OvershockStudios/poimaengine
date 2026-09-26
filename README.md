@@ -6,6 +6,7 @@ A planned native 3D engine for the user's own games, with agent-native authoring
 
 - [Build and run the bootstrap](docs/BUILD.md)
 - [Import static glTF assets and edit materials](docs/ASSETS.md)
+- [Inspect and preview animation assets](docs/ANIMATION_ASSETS.md)
 - [Inspect visibility and render timings](docs/RENDER_DIAGNOSTICS.md)
 - [Configure and verify shadow maps](docs/SHADOWS.md)
 - [Author and inspect scene lighting](docs/LIGHTING.md)
