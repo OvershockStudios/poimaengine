@@ -18,6 +18,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
 #include <SDL3/SDL_vulkan.h>
+#include "player_audio.hpp"
 
 #include <algorithm>
 #include <atomic>
@@ -800,10 +801,12 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     SceneSnapshot snapshot;
     PlayerClock clock;
     PlayerInput input;
+    std::unique_ptr<PlayerAudio> audio;
     try {
         snapshot=runtime.snapshot(options.camera);
         context.initialize(options.render,&snapshot,true);
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — WASD / mouse / Space — Esc exits, Tab releases mouse, click resumes");
+        if(options.audio)audio=std::make_unique<PlayerAudio>(runtime,options.camera);
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
         bool captured=!options.replay && focused;
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
@@ -844,6 +847,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                     }
                 }
             }
+            if(audio)audio->active(options.replay || (focused && captured));
             if(quit) break;
             // Occluded FIFO swapchains can return immediately. Keep an idle
             // editor/player from spinning at thousands of frames per second.
@@ -864,16 +868,18 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                 if(segment==options.sequence.size()) { result.stop_reason="replay_complete"; break; }
                 auto control=options.sequence[segment].input;
                 if(offset!=0) { control.look={0,0}; control.jump=false;control.use=false; }
-                runtime.step(1,{control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{});
+                runtime.step(1,{control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{},offset==0 ? options.sequence[segment].sounds : std::vector<SoundCommand>{});
+                if(audio)audio->advance(runtime,options.camera);
                 if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
             } else {
                 const auto ticks=clock.advance(elapsed,focused && captured);
-                for(std::uint32_t tick=0;tick<ticks;++tick) runtime.step(1,{input.consume(options.controller)});
+                for(std::uint32_t tick=0;tick<ticks;++tick) { runtime.step(1,{input.consume(options.controller)});if(audio)audio->advance(runtime,options.camera); }
             }
             snapshot=runtime.snapshot(options.camera); context.update_scene();
             if(context.frame(false)) ++report.frames_presented;
             if(options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
         }
+        if(audio)audio->finish(runtime,options.camera);
         if(!options.render.capture.empty()) {
             // Final artifact observes the exact final tick without simulating an
             // extra tick. Rebuild once if the surface changed during shutdown.
@@ -888,6 +894,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     } catch(const std::exception& error) {
         report.detail=error.what(); result.stop_reason="error";
     }
+    if(audio)result.audio=audio->report();
     result.final_tick=runtime.inspect().tick; result.dropped_seconds=clock.dropped_seconds();
     report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;
     report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;

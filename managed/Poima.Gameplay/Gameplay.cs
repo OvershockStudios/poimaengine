@@ -63,6 +63,7 @@ public abstract class Game<TState> : IGame where TState : unmanaged
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeRay { public Vector3d Origin,Direction;public double Distance;public EntityId* Ignore;public uint IgnoreCount,Reserved; }
 [StructLayout(LayoutKind.Sequential)] internal struct NativeHit { public EntityId Entity; public double Fraction,Distance;public Vector3d Position,Normal;public uint Hit,NormalValid; }
 [StructLayout(LayoutKind.Sequential)] internal struct NativeMotion { public EntityId Entity;public Vector3d Position;public double X,Y,Z,W;public uint Ticks,Reserved; }
+[StructLayout(LayoutKind.Sequential)] internal struct NativeSound { public EntityId Emitter;public ulong Voice;public float Gain;public uint Stop; }
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeError { public fixed byte Text[2048]; }
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeServices
 {
@@ -70,6 +71,7 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public delegate* unmanaged[Cdecl]<void*,EntityId*,EntitySnapshot*,NativeError*,int> Entity;
     public delegate* unmanaged[Cdecl]<void*,NativeRay*,NativeHit*,NativeError*,int> Raycast;
     public delegate* unmanaged[Cdecl]<void*,NativeMotion*,NativeError*,int> Move;
+    public delegate* unmanaged[Cdecl]<void*,NativeSound*,ulong*,NativeError*,int> Sound;
 }
 public readonly unsafe ref struct GameContext
 {
@@ -94,6 +96,17 @@ public readonly unsafe ref struct GameContext
             Check(services->Raycast(services->Context,&ray,&hit,&error),&error);
             return hit.Hit==0 ? null : new(hit.Entity,hit.Distance,hit.Position,hit.NormalValid!=0 ? hit.Normal : null);
         }
+    }
+    public long PlaySound(EntityId emitter,float gain=1)
+    {
+        NativeSound command=new(){Emitter=emitter,Gain=gain};ulong voice=0;NativeError error=default;
+        Check(services->Sound(services->Context,&command,&voice,&error),&error);return checked((long)voice);
+    }
+    public void StopSound(long voice)
+    {
+        if(voice<=0)throw new ArgumentOutOfRangeException(nameof(voice));
+        NativeSound command=new(){Voice=(ulong)voice,Stop=1};ulong result=0;NativeError error=default;
+        Check(services->Sound(services->Context,&command,&result,&error),&error);
     }
     public void MoveKinematic(EntityId entity,Vector3d position,System.Numerics.Quaternion rotation,uint ticks)
     {

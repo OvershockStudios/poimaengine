@@ -99,12 +99,14 @@ public:
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
     RuntimeEntityState entity(const std::string& id) const;
-    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={});
+    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={});
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
     std::uint64_t gameplay_revision() const;
     std::string gameplay_inspect() const;
     void gameplay_load(const GameplayConfig& config,const std::string& values="{}");
     void gameplay_edit(const std::string& values);
+    const SoundState& sound_state() const;
+    AudioSnapshot audio_snapshot(const std::string& listener) const;
     SceneLighting lighting() const;
     SceneSnapshot snapshot(const std::string& camera) const;
 };

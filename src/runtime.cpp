@@ -117,6 +117,9 @@ struct Runtime::Impl {
     std::unique_ptr<Gameplay> game;
     std::uint64_t game_revision=0;
     std::vector<KinematicTarget> game_commands;
+    SoundState sounds;
+    std::vector<AcousticGeometry> acoustic_geometry;
+    std::uint32_t game_sound_calls=0;
     std::string world_id;
     std::uint64_t revision=0, tick=0;
     ~Impl() {
@@ -174,6 +177,14 @@ struct Runtime::Impl {
             if (d.mesh) registry.emplace<RuntimeMesh>(e,*d.mesh);
             if(d.light) { validate_light(*d.light);registry.emplace<Light>(e,*d.light); }
             if(d.environment) { validate_environment(*d.environment);registry.emplace<LightingEnvironment>(e,*d.environment); }
+            if(d.emitter)registry.emplace<AudioEmitter>(e,*d.emitter);
+            if(d.acoustics && d.acoustics->enabled) {
+                AcousticGeometry g;g.entity=d.id;g.material=*d.acoustics;
+                if(d.collider)for(std::size_t k=0;k<3;++k)g.world[k*5]=2*d.collider->half_extents[k];
+                else if(d.mesh)g.mesh=d.mesh->mesh;
+                else throw std::runtime_error("Acoustic material needs runtime geometry.");
+                acoustic_geometry.push_back(std::move(g));
+            }
             if (d.collider || d.character) ++body_count;
             require(!(d.collider && d.character),"An entity cannot combine BoxCollider and CharacterController.");
         }
@@ -313,7 +324,18 @@ struct Runtime::Impl {
             KinematicTarget target;target.entity=gameplay_id(source->entity);target.duration_ticks=source->duration_ticks;std::copy_n(source->position,3,target.position.begin());std::copy_n(source->rotation,4,target.rotation.begin());commands.push_back(std::move(target));
         });
     }
-    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions) {
+    std::uint64_t play_sound(const std::string& emitter,float gain) {
+        auto e=find(emitter);require(registry.all_of<AudioEmitter>(e),"Sound target needs an AudioEmitter.");
+        return sounds.play(emitter,registry.get<AudioEmitter>(e),tick,gain);
+    }
+    static int32_t POIMA_CALL sound_event(void* context,const PoimaGameSound* command,std::uint64_t* voice,PoimaGameError* error) {
+        return callback(error,[&] {
+            auto& self=*static_cast<Impl*>(context);require(++self.game_sound_calls<=64,"Gameplay exceeded 64 sound commands in one tick.");
+            if(command->stop) { self.sounds.stop(command->voice,self.tick);*voice=command->voice; }
+            else *voice=self.play_sound(gameplay_id(command->emitter),command->gain);
+        });
+    }
+    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands) {
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
         std::map<entt::entity,const RuntimeInput*> controls;
         for (const auto& input : inputs) {
@@ -322,6 +344,7 @@ struct Runtime::Impl {
             for(float v:input.move) require(std::isfinite(v) && std::abs(v)<=1,"Move input must be in [-1,1].");
             for(float v:input.look) require(std::isfinite(v) && std::abs(v)<=180,"Look input must be in [-180,180] degrees.");
         }
+        require(sound_commands.size()<=64,"At most 64 sound commands per batch.");
         auto prepared=prepare_motions(motions);
         std::vector<std::optional<Motion>> previous_motions;previous_motions.reserve(kinematics.size());
         for(auto e:kinematics)previous_motions.push_back(registry.get<Body>(e).target);
@@ -333,6 +356,7 @@ struct Runtime::Impl {
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
+        auto sound_checkpoint=sounds;
         try {
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
@@ -355,14 +379,17 @@ struct Runtime::Impl {
                     if(frame==0 && input.jump && c.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround) y=c.settings.jump_speed;
                     c.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
                 }
+                if(frame==0)for(const auto& command:sound_commands) {
+                    if(command.stop)sounds.stop(command.voice,tick);else (void)play_sound(command.emitter,command.gain);
+                }
                 if(game) {
-                    sync();game_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    game_sound_calls=0;sync();game_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
                         (void)e;PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    const PoimaGameServices services{1,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body};
+                    const PoimaGameServices services{2,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event};
                     game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                     auto commands=prepare_motions(game_commands);
                     for(auto& [e,motion]:commands) {
@@ -392,6 +419,7 @@ struct Runtime::Impl {
             }
             sync();
         } catch(...) {
+            sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();
             checkpoint.Rewind();
@@ -427,7 +455,7 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     }
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }
-void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions) { impl_->step(ticks,inputs,motions); }
+void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds) { impl_->step(ticks,inputs,motions,sounds); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
     double length=0;
@@ -478,6 +506,17 @@ void Runtime::gameplay_load(const GameplayConfig& config,const std::string& valu
 void Runtime::gameplay_edit(const std::string& values) {
     require(impl_->game!=nullptr,"No gameplay module is loaded.");require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     impl_->game->edit(values);++impl_->game_revision;
+}
+const SoundState& Runtime::sound_state() const { return impl_->sounds; }
+AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
+    AudioSnapshot result;result.listener=impl_->registry.get<Node>(impl_->find(listener)).world;
+    for(const auto& source:impl_->acoustic_geometry) {
+        auto g=source;g.world=multiply(impl_->registry.get<Node>(impl_->find(g.entity)).world,g.world);result.geometry.push_back(std::move(g));
+    }
+    for(auto e:impl_->order)if(auto* emitter=impl_->registry.try_get<AudioEmitter>(e);emitter && emitter->enabled) {
+        const auto& n=impl_->registry.get<Node>(e);result.sources.push_back({n.id,*emitter,n.world});
+    }
+    return result;
 }
 SceneLighting Runtime::lighting() const {
     SceneLighting result;

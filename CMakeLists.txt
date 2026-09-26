@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.15 LANGUAGES C CXX)
+project(Poima VERSION 0.0.16 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -18,7 +18,7 @@ if(NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 configure_file(cmake/build_info.hpp.in generated/poima/build_info.hpp @ONLY)
-add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp src/scene.cpp src/player.cpp src/hash.cpp src/gltf.cpp src/model_codec.cpp src/texture.cpp src/tangents.cpp src/lighting.cpp src/shadows.cpp src/visibility.cpp src/gameplay.cpp src/audio_clip.cpp src/audio.cpp)
+add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp src/scene.cpp src/player.cpp src/hash.cpp src/gltf.cpp src/model_codec.cpp src/texture.cpp src/tangents.cpp src/lighting.cpp src/shadows.cpp src/visibility.cpp src/gameplay.cpp src/audio_clip.cpp src/audio.cpp src/audio_events.cpp src/audio_stream.cpp)
 add_library(poima_mikktspace STATIC third_party/mikktspace/mikktspace.c)
 set_target_properties(poima_mikktspace PROPERTIES C_STANDARD 99 C_EXTENSIONS OFF)
 target_link_libraries(poima_core PRIVATE poima_mikktspace)

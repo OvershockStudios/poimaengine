@@ -22,15 +22,23 @@ public:
     std::uint32_t advance(double elapsed, bool active);
     double dropped_seconds() const { return dropped_; }
 };
-struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; std::vector<KinematicTarget> motions; };
+struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; std::vector<KinematicTarget> motions; std::vector<SoundCommand> sounds; };
 struct PlayerOptions {
     RenderOptions render;
     std::string camera, controller;
-    bool replay=false;
+    bool replay=false,audio=false;
     std::uint32_t max_frames=0; // Interactive: zero runs until window close/Escape.
     std::vector<PlayerSegment> sequence;
 };
+struct PlayerAudioReport {
+    bool enabled=false,stream_drained=false;
+    std::string driver;
+    std::uint64_t submitted_frames=0,max_queued_frames=0,empty_queue_observations=0;
+    double backpressure_ms=0;
+    AudioStreamStats stream;
+};
 struct PlayerReport {
+    PlayerAudioReport audio;
     RenderReport render;
     std::uint64_t initial_tick=0, final_tick=0;
     std::uint32_t swapchain_rebuilds=0;

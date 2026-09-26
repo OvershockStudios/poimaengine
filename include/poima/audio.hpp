@@ -54,4 +54,44 @@ bool audio_available();
 // Synchronous frozen-snapshot observation. No device, simulation clock changes,
 // source cursor changes or background work. frames=0 requests paths only.
 AudioReport observe_audio(const AudioSnapshot& snapshot,std::uint32_t frames=0);
+inline constexpr std::uint64_t audio_tick_frames=audio_rate/60;
+struct SoundCommand { bool stop=false;std::string emitter;std::uint64_t voice=0;float gain=1; };
+struct SoundVoice {
+    std::uint64_t id=0,start_tick=0;
+    std::optional<std::uint64_t> stop_sample;
+    std::string emitter;
+    AudioEmitter sound;
+    float gain=1;
+    std::uint64_t end_sample() const;
+    bool emitting(std::uint64_t sample) const;
+};
+// Authoritative, copyable logical voice state. DSP handles never enter gameplay
+// rollback storage. Recent finished records permit presentation to observe
+// short events even when a whole simulation tick exceeds the clip duration.
+class SoundState {
+    std::uint64_t next_=1;
+    std::vector<SoundVoice> voices_;
+public:
+    std::uint64_t play(const std::string& emitter,const AudioEmitter& sound,std::uint64_t tick,float gain);
+    void stop(std::uint64_t voice,std::uint64_t tick);
+    const std::vector<SoundVoice>& voices() const { return voices_; }
+    std::uint64_t next_id() const { return next_; }
+};
+struct AudioStreamStats {
+    std::uint64_t frames=0,blocks=0,voices_started=0,path_updates=0;
+    double peak=0,dsp_ms=0;
+    std::uint64_t over_range_samples=0;
+};
+// Persistent native direct/HRTF DSP, fed only after committed simulation ticks.
+// Full 512-frame blocks are rendered up to (never beyond) committed time.
+// finish renders/trims the final partial block. No audio device is required.
+class AudioStream {
+    struct Impl;std::unique_ptr<Impl> impl_;
+public:
+    AudioStream(std::uint64_t start_tick,const AudioSnapshot& initial);
+    ~AudioStream();
+    AudioStream(const AudioStream&)=delete;AudioStream& operator=(const AudioStream&)=delete;
+    std::vector<float> advance(std::uint64_t tick,const AudioSnapshot& snapshot,const std::vector<SoundVoice>& voices,bool finish=false);
+    AudioStreamStats stats() const;
+};
 }

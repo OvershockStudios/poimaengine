@@ -12,7 +12,7 @@ import unittest
 import uuid
 
 parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--evidence',type=Path)
-parser.add_argument('--hostfxr',type=Path);parser.add_argument('--bridge',type=Path);parser.add_argument('--game',type=Path)
+parser.add_argument('--sound-game',type=Path);parser.add_argument('--hostfxr',type=Path);parser.add_argument('--bridge',type=Path);parser.add_argument('--game',type=Path)
 args=parser.parse_args();ROOT=Path(__file__).resolve().parents[1];BINARY=str(args.binary.resolve())
 SCRATCH=ROOT/'build/audio-contract'/uuid.uuid4().hex;SCRATCH.mkdir(parents=True)
 CAPS=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))['result']['features']
@@ -164,10 +164,98 @@ class AudioContract(unittest.TestCase):
         asset_path=next(self.directory.rglob(self.asset+'.paudio'));reserved=self.capture('bad',4);reserved['params']['path']=native(asset_path.parent/'new.wav')
         r=self.requests([bad,reserved]);self.error(r[0],-32602);self.error(r[1],-32602)
 
+    def start(self):return rpc('runtime.start',{'session_id':uid(900),'revision':1})
+    def voices(self,tick,**kwargs):return rpc('runtime.audio.voices',{'session_id':uid(900),'tick':tick,**kwargs})
+    def step_sound(self,tick,ticks=1,sounds=None):return rpc('runtime.step',{'session_id':uid(900),'request_id':uuid.uuid4().hex,'expected_tick':tick,'ticks':ticks,'sounds':sounds or []})
+    def replay_audio(self,name,tick,sequence):return rpc('runtime.audio.replay',{'session_id':uid(900),'request_id':uuid.uuid4().hex,'expected_tick':tick,'listener':uid(100),'path':native(self.directory/(name+'.wav')),'sequence':sequence})
+    @staticmethod
+    def play_sound(gain=1):return {'op':'play','emitter':uid(101),'gain':gain}
+
+    @unittest.skipUnless(CAPS['simulation'],'Native simulation not built')
+    def test_sound_transactions_receipts_history_and_validation(self):
+        self.import_clip();play=self.step_sound(0,sounds=[self.play_sound()])
+        failed=self.step_sound(1,sounds=[{'op':'stop','voice':1},self.play_sound(),{'op':'play','emitter':uid(999)}])
+        r=self.requests([self.room(False),self.start(),play,play,self.voices(1),failed,self.voices(1),self.step_sound(1,sounds=[self.play_sound(.5)]),self.voices(2),self.step_sound(2,sounds=[{'op':'stop','voice':1}]),self.voices(3,limit=1),self.voices(3,after=1),self.voices(2)])
+        for i in [0,1,2,3,4,6,7,8,9,10,11]:self.result(r[i])
+        self.assertTrue(self.result(r[3])['replayed']);self.assertEqual(self.result(r[2])['sound_events'],{'first_voice':1,'next_voice':2})
+        self.error(r[5],-32040);self.assertEqual(self.result(r[4]),self.result(r[6]));self.assertEqual(self.result(r[8])['next_voice'],3)
+        self.assertTrue(self.result(r[10])['has_more']);self.assertFalse(self.result(r[10])['voices'][0]['emitting']);self.assertEqual(self.result(r[11])['voices'][0]['voice'],2);self.error(r[12],-32009)
+        # Native events work without Steam Audio. Finished history is bounded;
+        # monotonic IDs cannot accidentally stop a new voice after eviction.
+        self.directory=self.directory/'history';self.directory.mkdir();self.world=self.directory/'world.json';self.import_clip([.1])
+        requests=[self.room(False,loop=False),self.start()]+[self.step_sound(i,sounds=[self.play_sound()]) for i in range(260)]+[self.voices(260,limit=256),self.step_sound(260,sounds=[{'op':'stop','voice':1}]),self.voices(260)]
+        r=self.requests(requests);state=self.result(r[-3]);self.assertEqual((state['retained'],state['emitting'],state['next_voice']),(256,0,261));self.assertEqual(state['voices'][0]['voice'],5);self.error(r[-2],-32040);self.assertEqual(self.result(r[-1])['next_voice'],261)
+
+    @unittest.skipUnless(CAPS['simulation'],'Native simulation not built')
+    def test_sound_voice_budget_and_invalid_commands(self):
+        self.import_clip();r=self.requests([self.room(False),self.start(),self.step_sound(0,sounds=[self.play_sound()]*64),self.step_sound(1,sounds=[self.play_sound()]),self.voices(1),self.step_sound(1,sounds=[{'op':'stop','voice':1},self.play_sound()]),self.voices(2),self.step_sound(2,sounds=[self.play_sound(5)]),self.step_sound(2,sounds=[{'op':'stop','voice':0}]),self.step_sound(2,sounds=[{'op':'play','emitter':uid(101),'voice':1}])])
+        self.result(r[2]);self.error(r[3],-32040);self.assertEqual(self.result(r[4])['emitting'],64);self.result(r[5]);self.assertEqual(self.result(r[6])['next_voice'],66)
+        for item in r[-3:]:self.error(item,-32602)
+
+    @unittest.skipUnless(CAPS['simulation'] and CAPS['audio_capture'],'Native audio/simulation not built')
+    def test_stream_short_event_onset_oneshot_and_retry(self):
+        # A 128-sample clip is shorter than one 800-sample simulation tick.
+        self.import_clip([.3*math.sin(2*math.pi*1000*i/48000) for i in range(128)])
+        record=self.replay_audio('short',0,[{'ticks':2},{'ticks':28,'sounds':[self.play_sound()]}])
+        r=self.requests([self.room(False,source=(0,1.5,1),loop=False),self.start(),record,record,self.voices(30)])
+        info=self.result(r[2]);self.assertTrue(info['success'],info);self.assertEqual(info['capture']['frames'],24000);self.assertEqual(info['stream']['voices_started'],1);self.assertEqual(info['stream']['path_updates'],1);self.assertTrue(self.result(r[3])['replayed']);self.assertEqual(self.result(r[4])['emitting'],0)
+        samples=pcm(self.directory/'short.wav');onset=1600+round(48000/343)
+        self.assertTrue(all(v==0 for v in samples[:onset*2]));self.assertGreater(rms(samples[onset*2:4000*2]),1e-4);self.assertLess(max(abs(v) for v in samples[8000*2:]),1e-7)
+
+    @unittest.skipUnless(CAPS['simulation'] and CAPS['audio_capture'],'Native audio/simulation not built')
+    def test_stream_delayed_finished_voice_survives_attachment(self):
+        self.import_clip([.3*math.sin(2*math.pi*1000*i/48000) for i in range(128)])
+        r=self.requests([self.room(False,source=(0,1.5,-341),loop=False),self.start(),self.step_sound(0,30,[self.play_sound()]),self.voices(30),self.replay_audio('arrival',30,[{'ticks':60}])])
+        for item in r:self.result(item)
+        self.assertEqual(self.result(r[3])['emitting'],0);self.assertTrue(self.result(r[4])['success'],r[4])
+        samples=pcm(self.directory/'arrival.wav');self.assertEqual(len(samples),96000)
+        self.assertTrue(all(v==0 for v in samples[:48000]));self.assertGreater(rms(samples[48000:52000]),1e-6);self.assertLess(max(abs(v) for v in samples[80000:]),1e-7)
+
+    @unittest.skipUnless(CAPS['simulation'] and CAPS['audio_capture'],'Native audio/simulation not built')
+    def test_stream_phase_gain_stop_and_midgame_attach(self):
+        self.import_clip([.2*math.sin(2*math.pi*733*i/48000) for i in range(48000)])
+        record=self.replay_audio('full',0,[{'ticks':60,'sounds':[self.play_sound()]}])
+        restart=rpc('runtime.stop',{'session_id':uid(900)})
+        requests=json.loads(json.dumps([self.room(False,source=(0,1.5,1)),self.start(),record,restart,self.start(),self.replay_audio('half',0,[{'ticks':60,'sounds':[self.play_sound(.5)]}]),restart,self.start(),self.step_sound(0,10,[self.play_sound()]),self.replay_audio('attach',10,[{'ticks':20},{'ticks':30,'sounds':[{'op':'stop','voice':1}]}])]))
+        session=899
+        for request in requests:
+            if request["method"]=="runtime.start":session+=1
+            if "session_id" in request["params"]:request["params"]["session_id"]=uid(session)
+        r=self.requests(requests)
+        for item in r:self.result(item)
+        full=pcm(self.directory/'full.wav');half=pcm(self.directory/'half.wav');attached=pcm(self.directory/'attach.wav')
+        self.assertLess(max(abs(a*.5-b) for a,b in zip(full,half)),1e-7)
+        # Compare a continuous reference well after new HRTF filter warm-up.
+        self.assertLess(max(abs(a-b) for a,b in zip(full[10000*2:20000*2],attached[2000*2:12000*2])),2e-5)
+        self.assertLess(max(abs(v) for v in attached[24000*2:]),1e-7)
+        self.assertEqual(len(attached),50*800*2)
+
+    @unittest.skipUnless(CAPS['simulation'] and CAPS['audio_capture'],'Native audio/simulation not built')
+    def test_stream_moving_acoustics_and_partial_failure(self):
+        self.import_clip();move={'entity':uid(2),'position':[3,1.5,-3],'rotation':[0,0,0,1],'duration_ticks':60}
+        good=self.replay_audio('moving',0,[{'ticks':30,'sounds':[self.play_sound()]},{'ticks':60,'motions':[move]},{'ticks':30}])
+        failed=self.replay_audio('failed',120,[{'ticks':2},{'ticks':2,'sounds':[{'op':'stop','voice':999}]}])
+        r=self.requests([self.room(),self.start(),good,failed,failed,self.voices(122)])
+        info=self.result(r[2]);self.assertTrue(info['success'],info);self.assertGreater(info['stream']['path_updates'],30)
+        samples=pcm(self.directory/'moving.wav');closed=rms(samples[10000:40000]);opened=rms(samples[-40000:]);self.assertGreater(opened,closed*2)
+        failure=self.result(r[3]);self.assertFalse(failure['success']);self.assertEqual(failure['tick'],122);self.assertIsNone(failure['capture']);self.assertFalse((self.directory/'failed.wav').exists());self.assertTrue(self.result(r[4])['replayed']);self.result(r[5])
+
+    @unittest.skipUnless(CAPS['simulation'] and CAPS['audio_capture'] and args.sound_game and args.hostfxr and args.bridge,'Sound C# fixture/host/bridge not supplied')
+    def test_csharp_sound_rollback_reload_stop_and_pcm(self):
+        self.import_clip()
+        def load(tick,revision,values):return rpc('runtime.gameplay.load',{'session_id':uid(900),'request_id':uuid.uuid4().hex,'expected_tick':tick,'expected_revision':revision,'hostfxr':native(args.hostfxr),'bridge':native(args.bridge),'assembly':native(args.sound_game),'type':'Poima.Tests.AudioProbe','values':values})
+        def edit(tick,revision,values):return rpc('runtime.gameplay.edit',{'session_id':uid(900),'request_id':uuid.uuid4().hex,'expected_tick':tick,'expected_revision':revision,'values':values})
+        r=self.requests([self.room(),self.start(),load(0,0,{'FailAt':3,'MoveDoor':1}),self.step_sound(0,5),rpc('runtime.entity',{'session_id':uid(900),'tick':0,'id':uid(2)}),self.voices(0),rpc('runtime.gameplay.inspect',{'session_id':uid(900)}),edit(0,1,{'FailAt':-1}),self.replay_audio('csharp',0,[{'ticks':10}]),load(10,2,{'StopAt':12,'FailAt':13}),self.step_sound(10,5),self.voices(10),edit(10,3,{'FailAt':-1}),self.replay_audio('stopped',10,[{'ticks':30}]),self.voices(40)])
+        for item in r[:3]:self.result(item)
+        self.error(r[3],-32040);self.assertEqual(self.result(r[4])['world_matrix'][12:15],[0,1.5,-3]);self.assertEqual(self.result(r[5])['next_voice'],1);self.assertEqual(self.result(r[6])['module']['values']['Voice'],'0')
+        info=self.result(r[8]);self.assertTrue(info['success'],info);self.assertGreater(rms(pcm(self.directory/'csharp.wav')),1e-4)
+        self.result(r[9]);self.error(r[10],-32040);state=self.result(r[11]);self.assertEqual((state['next_voice'],state['emitting']),(2,1));self.assertIsNone(state['voices'][0]['stop_sample'])
+        self.assertTrue(self.result(r[13])['success']);self.assertEqual(self.result(r[14])['emitting'],0);samples=pcm(self.directory/'stopped.wav');self.assertGreater(rms(samples[:6000]),1e-4);self.assertLess(max(abs(v) for v in samples[12000:]),1e-7)
+
 if __name__=='__main__':
     import sys
     result=unittest.main(argv=['audio_contract'],verbosity=2,exit=False).result
     if args.evidence:
         images={str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in SCRATCH.rglob('*.wav')}
-        args.evidence.parent.mkdir(parents=True,exist_ok=True);args.evidence.write_text(json.dumps({'binary':BINARY,'binary_sha256':hashlib.sha256(Path(BINARY).read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'passed':result.wasSuccessful(),'tests_run':result.testsRun,'skips':result.skipped,'run':str(SCRATCH),'calls':EVIDENCE,'wave_files':images},indent=2)+'\n')
+        args.evidence.parent.mkdir(parents=True,exist_ok=True);args.evidence.write_text(json.dumps({'binary':BINARY,'binary_sha256':hashlib.sha256(Path(BINARY).read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'passed':result.wasSuccessful(),'tests_run':result.testsRun,'skips':[(str(test),reason) for test,reason in result.skipped],'run':str(SCRATCH),'calls':EVIDENCE,'wave_files':images},indent=2)+'\n')
     sys.exit(0 if result.wasSuccessful() else 1)

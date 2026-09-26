@@ -41,7 +41,7 @@ public static unsafe class Entry
         call->Output[0]=0;
         try
         {
-            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=40 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80)
+            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=48 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80)
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -113,7 +113,7 @@ public static unsafe class Entry
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
-        if(call->Services==null || call->Services->Version!=1 || call->Services->Bytes!=40 || call->InputCount>32)throw new ArgumentException("Gameplay service ABI mismatch.");
+        if(call->Services==null || call->Services->Version!=2 || call->Services->Bytes!=48 || call->InputCount>32)throw new ArgumentException("Gameplay service ABI mismatch.");
         module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));
     }
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -10,3 +10,6 @@ __pycache__/
 /managed/**/obj/
 /examples/managed/**/bin/
 /examples/managed/**/obj/
+
+/tests/fixtures/**/bin/
+/tests/fixtures/**/obj/
