@@ -2,6 +2,14 @@
 
 Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 
+## JSON for Modern C++ (bundled)
+
+- Publisher: Niels Lohmann and contributors; [source](https://github.com/nlohmann/json/releases/tag/v3.12.0).
+- Release: `v3.12.0`, single header `third_party/nlohmann/json.hpp`.
+- Header SHA-256: `aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63`.
+- License: MIT; original `third_party/nlohmann/LICENSE.MIT` is retained and installed.
+- Use: authored-world JSON documents, schema descriptions and JSON-RPC transport. No runtime dependency download.
+
 ## Vulkan-Headers (optional inspection/render build)
 
 - Publisher: The Khronos Group Inc. and individual contributors.
@@ -41,4 +49,4 @@ The optional Linux C# shipping experiment uses SDK **10.0.401** and runtime **10
 | LLVM-MinGW, Linux x64 host/UCRT | `20260922`; `bb7bb7654b33d5aa8712acb837c963b2e0c56352560c76105270a3268c665c21` | Cross-compiles native Windows executables. The distribution's `LICENSE.TXT` and MinGW `COPYING*` texts are installed with builds using the supplied toolchain because compiler runtime code is linked statically. |
 | Microsoft DirectX Shader Compiler, Linux x64 host | `v1.8.2505.1`, asset `linux_dxc_2025_07_14.x86_64.tar.gz`; `f2213da1fc99dc8778c8823078e16ba97c7f80f86a1d4520ab1adf4b462bc48c` | Compiles Poima HLSL into embedded SPIR-V during the build. The downloaded distribution retains `LICENSE-MS.txt` and `LICENSE-LLVM.txt`; DXC is not linked into or redistributed with the engine executable. |
 
-CMake verifies downloaded source archive hashes and installs dependency licenses beside the executable. Explicit `FETCHCONTENT_SOURCE_DIR_*` overrides use the supplied local source directories instead; callers are responsible for their provenance. The dependency-free headless preset fetches no third-party sources. Other planned engine libraries are not integrated yet.
+CMake verifies downloaded source archive hashes and installs dependency licenses beside the executable. Explicit `FETCHCONTENT_SOURCE_DIR_*` overrides use the supplied local source directories instead; callers are responsible for their provenance. The headless preset uses the bundled JSON header and fetches no third-party sources. Other planned engine libraries are not integrated yet.

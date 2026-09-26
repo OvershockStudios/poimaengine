@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "poima/world.hpp"
 
 #include <exception>
 #include <charconv>
 #include <set>
 #include <iostream>
 #include <string_view>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
 namespace {
 poima::Reply run(int argc, char** argv) {
@@ -70,8 +77,9 @@ poima::Reply run(int argc, char** argv) {
 }
 } // namespace
 
-int main(int argc, char** argv) {
+int main_utf8(int argc, char** argv) {
     try {
+        if (argc == 3 && std::string_view(argv[1]) == "world") return poima::run_world_session(argv[2]);
         const auto reply = run(argc, argv);
         std::cout << reply.json << '\n';
         return reply.exit_code;
@@ -82,3 +90,20 @@ int main(int argc, char** argv) {
         return 4;
     }
 }
+#ifdef _WIN32
+int wmain(int argc, wchar_t** argv) {
+    std::vector<std::string> utf8;
+    std::vector<char*> pointers;
+    for (int i = 0; i < argc; ++i) {
+        const int bytes = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, argv[i], -1, nullptr, 0, nullptr, nullptr);
+        if (bytes <= 0) return 4;
+        std::string text(static_cast<std::size_t>(bytes), '\0');
+        WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, argv[i], -1, text.data(), bytes, nullptr, nullptr);
+        text.pop_back(); utf8.push_back(std::move(text));
+    }
+    for (auto& text : utf8) pointers.push_back(text.data());
+    return main_utf8(argc, pointers.data());
+}
+#else
+int main(int argc, char** argv) { return main_utf8(argc, argv); }
+#endif

@@ -59,8 +59,10 @@ constexpr std::array operations{
         "{}", "[]"},
     Operation{"doctor", "Inspect this host, optionally enumerating Vulkan devices.", "[--graphics] [--require-hardware]",
         R"({"graphics":{"type":"boolean","default":false},"require_hardware":{"type":"boolean","default":false,"description":"Implies graphics. Require an enumerated discrete/integrated Vulkan 1.3 device with a graphics queue; this is not renderer qualification."}})", "[]"},
+    Operation{"world", "Open a persistent authored-world session over newline-delimited JSON-RPC 2.0.", "<path.json>",
+        R"({"path":{"type":"string","minLength":1,"description":"World file; parent directory must exist. Reserves .lock/.pending/.previous sidecars. Use world.describe inside the session for method schemas."}})", "[\"path\"]"},
     Operation{"schema", "Discover an implemented command's request schema.", "<command>",
-        R"({"command":{"type":"string","enum":["help","version","capabilities","doctor","schema","render-smoke"]}})", "[\"command\"]"},
+        R"({"command":{"type":"string","enum":["help","version","capabilities","doctor","schema","render-smoke","world"]}})", "[\"command\"]"},
     Operation{"render-smoke", "Present a bounded Vulkan triangle test; optionally save the final GPU frame as BMP.",
         "[--frames N] [--width N] [--height N] [--gpu N] [--allow-software] [--capture path.bmp]",
         R"({"frames":{"type":"integer","minimum":1,"maximum":10000,"default":120},"width":{"type":"integer","minimum":128,"maximum":4096,"default":960},"height":{"type":"integer","minimum":128,"maximum":4096,"default":540},"gpu":{"type":"integer","minimum":0,"maximum":4095,"description":"Vulkan device enumeration index; omission prefers a discrete GPU."},"allow_software":{"type":"boolean","default":false},"capture":{"type":"string","minLength":1,"description":"Optional BMP output path; overwrites an existing file."}})", "[]"}
@@ -71,7 +73,7 @@ std::string operation_list() {
     for (const auto& operation : operations) {
         if (json.size() > 1) json += ',';
         json += "{\"name\":" + quote(operation.name) + ",\"summary\":" + quote(operation.summary) +
-            ",\"arguments\":" + quote(operation.arguments) + ",\"mutates_project\":false}";
+            ",\"arguments\":" + quote(operation.arguments) + ",\"mutates_project\":" + boolean(operation.name == "world") + "}";
     }
     return json + ']';
 }
@@ -98,8 +100,8 @@ Reply capabilities() {
         ",\"features\":{\"native_cli\":true,\"host_inspection\":true,\"vulkan_device_inspection\":" +
         boolean(POIMA_VULKAN_PROBE != 0) +
         ",\"render_smoke\":" + boolean(POIMA_RENDER_SMOKE != 0) +
-        ",\"renderer\":false,\"scene_editing\":false,\"animation\":false,\"vfx\":false,"
-        "\"hot_reload\":false,\"mcp\":false,\"editor\":false},\"qualification\":\"bootstrap_only\"}");
+        ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"vfx\":false,"
+        "\"hot_reload\":false,\"mcp\":false,\"editor\":false},\"qualification\":\"bootstrap_with_authored_world\"}");
 }
 
 Reply doctor(DoctorOptions options) {

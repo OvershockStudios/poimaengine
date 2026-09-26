@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.2 LANGUAGES CXX)
+project(Poima VERSION 0.0.3 LANGUAGES CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -14,10 +14,11 @@ if(NOT WIN32 AND NOT CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 configure_file(cmake/build_info.hpp.in generated/poima/build_info.hpp @ONLY)
-add_library(poima_core STATIC src/core.cpp src/host.cpp)
+add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp)
 target_compile_features(poima_core PUBLIC cxx_std_20)
 set_target_properties(poima_core PROPERTIES CXX_EXTENSIONS OFF)
 target_include_directories(poima_core PUBLIC include PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
+target_include_directories(poima_core SYSTEM PRIVATE third_party)
 
 if(POIMA_ENABLE_VULKAN_PROBE)
     include(FetchContent)
@@ -43,6 +44,9 @@ else()
 endif()
 
 add_executable(poima src/main.cpp)
+if(MINGW)
+    target_link_options(poima PRIVATE -municode)
+endif()
 target_link_libraries(poima PRIVATE poima_core)
 set_target_properties(poima PROPERTIES CXX_EXTENSIONS OFF)
 
@@ -77,6 +81,9 @@ if(POIMA_BUILD_TESTS)
         COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/cli_contract.py"
         "$<TARGET_FILE:poima>" "$<BOOL:${POIMA_ENABLE_VULKAN_PROBE}>" "$<BOOL:${POIMA_BUILD_RENDER_SMOKE}>")
     set_tests_properties(cli_contract PROPERTIES TIMEOUT 60)
+    add_test(NAME world_contract COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/world_contract.py" "$<TARGET_FILE:poima>")
+    set_tests_properties(world_contract PROPERTIES TIMEOUT 180)
     if(POIMA_BUILD_MODULE_LAB AND CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT CMAKE_CROSSCOMPILING)
         add_test(NAME native_module_contract
             COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/scripts/measure_native_module.py"
@@ -88,6 +95,7 @@ endif()
 
 install(TARGETS poima RUNTIME DESTINATION bin)
 install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION share/poima)
+install(FILES third_party/nlohmann/LICENSE.MIT DESTINATION share/poima/licenses/nlohmann-json)
 if(MINGW AND DEFINED POIMA_LLVM_MINGW)
     install(FILES "${POIMA_LLVM_MINGW}/LICENSE.TXT"
         DESTINATION share/poima/licenses/LLVM-MinGW)

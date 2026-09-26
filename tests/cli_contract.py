@@ -32,11 +32,12 @@ class CliContract(unittest.TestCase):
     def test_discovery_is_repeatable_and_has_no_fake_features(self):
         first = self.invoke("capabilities")
         self.assertEqual(first, self.invoke("capabilities"))
-        self.assertEqual(first["result"]["qualification"], "bootstrap_only")
+        self.assertEqual(first["result"]["qualification"], "bootstrap_with_authored_world")
         features = first["result"]["features"]
+        self.assertTrue(features["scene_editing"])
         self.assertEqual(features["vulkan_device_inspection"], PROBE_ENABLED)
         self.assertEqual(features["render_smoke"], RENDER_ENABLED)
-        for name in ["renderer", "scene_editing", "animation", "vfx", "hot_reload", "mcp", "editor"]:
+        for name in ["renderer", "animation", "vfx", "hot_reload", "mcp", "editor"]:
             self.assertFalse(features[name], name)
         for operation in first["result"]["commands"]:
             with self.subTest(command=operation["name"]):
