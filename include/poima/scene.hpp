@@ -17,6 +17,25 @@ Matrix4 inverse_affine(const Matrix4& matrix);
 Matrix4 perspective(double vertical_fov_degrees, double aspect, double near_plane, double far_plane);
 bool rigid_transform(const Matrix4& matrix);
 
+enum class LightKind : std::uint32_t { directional=0,point=1,spot=2 };
+struct Light {
+    LightKind kind=LightKind::point;
+    std::array<float,3> color{1,1,1};
+    float intensity=1,range=0,inner_angle=0,outer_angle=45;
+    bool enabled=true;
+};
+struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1; };
+struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
+struct SceneLighting {
+    std::vector<SceneLight> lights;
+    LightingEnvironment environment;
+    bool preview=true;
+};
+inline constexpr std::size_t max_scene_lights=64;
+void validate_light(const Light& light);
+void validate_environment(const LightingEnvironment& environment);
+void append_light(SceneLighting& state,const std::string& id,const Light& light,const Matrix4& world);
+void finalize_lighting(SceneLighting& state);
 struct PbrMaterial {
     std::array<float,3> base_color{1,1,1}, emissive{0,0,0};
     float metallic=1, roughness=1;
@@ -42,6 +61,7 @@ struct SceneSnapshot {
     double near_plane = 0.1;
     double far_plane = 1000;
     std::vector<SceneObject> objects;
+    SceneLighting lighting;
 };
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene);
 }

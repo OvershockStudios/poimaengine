@@ -155,9 +155,14 @@ struct Runtime::Impl {
             registry.emplace<Node>(e, d.id,d.parent,d.transform,d.transform);
             if (d.camera) registry.emplace<RuntimeCamera>(e,*d.camera);
             if (d.mesh) registry.emplace<RuntimeMesh>(e,*d.mesh);
+            if(d.light) { validate_light(*d.light);registry.emplace<Light>(e,*d.light); }
+            if(d.environment) { validate_environment(*d.environment);registry.emplace<LightingEnvironment>(e,*d.environment); }
             if (d.collider || d.character) ++body_count;
             require(!(d.collider && d.character),"An entity cannot combine BoxCollider and CharacterController.");
         }
+        std::size_t lights=0,environments=0;
+        for(const auto& d:definitions) { if(d.light && d.light->enabled)++lights;if(d.environment)++environments; }
+        require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
         require(body_count<=4096,"Runtime physics body limit exceeded.");
         std::set<entt::entity> done;
         for (auto e : order) {
@@ -308,11 +313,20 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }
 void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs) { impl_->step(ticks,inputs); }
+SceneLighting Runtime::lighting() const {
+    SceneLighting result;
+    for(auto e:impl_->order) {
+        const auto& node=impl_->registry.get<Node>(e);
+        if(const auto* light=impl_->registry.try_get<Light>(e))append_light(result,node.id,*light,node.world);
+        if(const auto* environment=impl_->registry.try_get<LightingEnvironment>(e)) { result.environment=*environment;result.preview=false; }
+    }
+    finalize_lighting(result);return result;
+}
 SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     const auto e=impl_->find(camera);
     require(impl_->registry.all_of<RuntimeCamera>(e),"Runtime entity has no Camera component.");
     const auto& lens=impl_->registry.get<RuntimeCamera>(e);
-    SceneSnapshot result; result.world_id=impl_->world_id; result.revision=impl_->revision; result.camera_id=camera;
+    SceneSnapshot result; result.lighting=lighting();result.world_id=impl_->world_id; result.revision=impl_->revision; result.camera_id=camera;
     result.camera_world=impl_->registry.get<Node>(e).world; result.vertical_fov=lens.vertical_fov; result.near_plane=lens.near_plane; result.far_plane=lens.far_plane;
     require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
     for(auto object:impl_->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {

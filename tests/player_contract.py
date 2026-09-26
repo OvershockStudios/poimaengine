@@ -14,6 +14,7 @@ parser.add_argument('binary',type=Path)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--windows-interop',action='store_true')
 parser.add_argument('--gpu',type=int,default=0)
+parser.add_argument('--authored-lights',action='store_true')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 run=args.output/uuid.uuid4().hex;run.mkdir()
 def native(path):
@@ -24,6 +25,14 @@ requests=[]
 def request(method,params):
     requests.append({'jsonrpc':'2.0','id':len(requests)+1,'method':method,'params':params});return len(requests)
 fixture=json.loads((Path(__file__).resolve().parents[1]/'examples/physics-room.jsonl').read_text())
+if args.authored_lights:
+    def component(n,kind,value):return {'op':'component.set','id':uid(n),'type':kind,'value':value}
+    for n,parent,kind,position,color,intensity in [(201,3,'point',[0,2,0],[1,.3,.1],80),(202,101,'spot',[.3,-.2,0],[.2,.5,1],120)]:
+        fixture['params']['ops'] += [
+            {'op':'entity.create','id':uid(n),'parent':uid(parent),'name':'Moving light'},
+            component(n,'Transform',{'position':position,'rotation':[0,0,0,1],'scale':[1,1,1]}),
+            component(n,'Light',{'kind':kind,'color':color,'intensity':intensity,'range':20,'enabled':True})]
+    fixture['params']['ops'].append(component(101,'LightingEnvironment',{'ambient':[.03,.03,.03],'exposure':1}))
 sequence=[{'ticks':120},{'ticks':60,'move':[0,1]},{'ticks':10,'jump':True},{'ticks':120},{'ticks':1,'look':[45,20]},{'ticks':60,'move':[.4,-.7]}]
 total=sum(s['ticks'] for s in sequence)
 request('world.transact',fixture['params']);request('runtime.start',{'session_id':uid(900),'revision':1})
@@ -50,7 +59,7 @@ recovered=request('runtime.play',{**bad,'request_id':uid(1003),'gpu':args.gpu,'p
 inspected=request('runtime.inspect',{'session_id':uid(901)})
 command=[str(args.binary.resolve()),'world',native(run/'world.json')]
 p=subprocess.run(command,input=''.join(json.dumps(r)+'\n' for r in requests),text=True,encoding='utf-8',capture_output=True,timeout=120)
-record={'command':command,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'exit_code':p.returncode,'stderr':p.stderr,'requests':requests}
+record={'command':command,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'authored_lights':args.authored_lights,'exit_code':p.returncode,'stderr':p.stderr,'requests':requests}
 try:
     assert p.returncode==0,p.stdout+p.stderr
     responses={r['id']:r for r in map(json.loads,p.stdout.splitlines())};record['responses']=responses
@@ -66,6 +75,14 @@ try:
     for first,second in zip(first_states,second_states):
         a=dict(responses[first]['result']);b=dict(responses[second]['result']);a.pop('session_id');b.pop('session_id');assert a==b,(a,b)
     assert report['camera_world']==responses[baseline]['result']['camera_world']
+    assert report['lighting']==responses[baseline]['result']['lighting']
+    if args.authored_lights:
+        assert not report['lighting']['preview_fallback'] and len(report['lighting']['lights'])==2
+        # The character has turned and the box has fallen: compare both attachments
+        # to the independently stepped runtime, not to authored spawn transforms.
+        lights={light['id']:light for light in report['lighting']['lights']}
+        assert abs(lights[uid(201)]['position'][1]-5)>.5
+        assert abs(lights[uid(202)]['direction'][0])>.1
     assert pixels(run/'player.bmp')==pixels(run/'baseline.bmp')
     assert not responses[failed]['result']['success'] and responses[failed]['result']['tick']==total
     assert responses[failed_retry]['result']=={**responses[failed]['result'],'replayed':True}

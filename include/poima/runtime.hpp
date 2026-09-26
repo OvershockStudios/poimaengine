@@ -33,6 +33,8 @@ struct RuntimeEntityDefinition {
     std::optional<CharacterController> character;
     std::optional<RuntimeCamera> camera;
     std::optional<RuntimeMesh> mesh;
+    std::optional<Light> light;
+    std::optional<LightingEnvironment> environment;
 };
 struct RuntimeDefinition {
     std::string world_id;
@@ -72,6 +74,7 @@ public:
     RuntimeSummary inspect() const;
     RuntimeEntityState entity(const std::string& id) const;
     void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs);
+    SceneLighting lighting() const;
     SceneSnapshot snapshot(const std::string& camera) const;
 };
 }

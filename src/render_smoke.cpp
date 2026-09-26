@@ -61,7 +61,9 @@ struct DrawConstants {
     float emissive_roughness[4];
 };
 static_assert(sizeof(DrawConstants)==128);
-struct FrameConstants { float view_projection[16]; float camera[4]; };
+struct GpuLight { float position_kind[4],direction_range[4],color_intensity[4],cone[4]; };
+struct FrameConstants { float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];GpuLight lights[max_scene_lights]; };
+static_assert(sizeof(GpuLight)==64 && sizeof(FrameConstants)==4208);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
 struct DrawItem { DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false; };
 using Vertex=MeshVertex;
@@ -376,19 +378,30 @@ struct Context {
     }
     void update_scene() {
         draws.clear();
+        auto lighting=scene->lighting;finalize_lighting(lighting);
+        require(lighting.lights.size()<=max_scene_lights,"Too many lights for the forward renderer.");
         const auto vp=multiply(perspective(scene->vertical_fov,static_cast<double>(extent.width)/extent.height,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
         auto number=[](double value) { require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"Scene matrix exceeds GPU float range.");return static_cast<float>(value); };
         for(std::size_t k=0;k<16;++k)frame_constants.view_projection[k]=number(vp[k]);
         for(std::size_t k=0;k<3;++k)frame_constants.camera[k]=number(scene->camera_world[12+k]);
         frame_constants.camera[3]=(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
+        for(std::size_t k=0;k<3;++k)frame_constants.ambient_exposure[k]=lighting.environment.ambient[k];
+        frame_constants.ambient_exposure[3]=lighting.environment.exposure;
+        frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
+        for(std::size_t i=0;i<lighting.lights.size();++i) {
+            const auto& source=lighting.lights[i];validate_light(source.light);auto& light=frame_constants.lights[i];light={};
+            for(std::size_t k=0;k<3;++k) { light.position_kind[k]=number(source.position[k]);light.direction_range[k]=number(source.direction[k]);light.color_intensity[k]=source.light.color[k]; }
+            light.position_kind[3]=static_cast<float>(source.light.kind);light.direction_range[3]=source.light.range;light.color_intensity[3]=source.light.intensity;
+            light.cone[0]=std::cos(source.light.inner_angle*0.017453292519943295f);light.cone[1]=std::cos(source.light.outer_angle*0.017453292519943295f);
+        }
         for(const auto& object:scene->objects) {
             DrawItem item;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
             for(std::size_t row=0;row<3;++row) {
                 for(std::size_t col=0;col<4;++col)draw.model[row][col]=number(object.world[col*4+row]);
                 for(std::size_t col=0;col<3;++col)draw.normal[row][col]=number(inverse[row*4+col]);
             }
-            if(object.material) {
-                const auto& m=*object.material;
+            if(object.material || !lighting.preview) {
+                PbrMaterial m;if(object.material)m=*object.material;else { m.base_color=object.albedo;m.metallic=0; }
                 for(std::size_t k=0;k<3;++k) { draw.base_metallic[k]=m.base_color[k];draw.emissive_roughness[k]=m.emissive[k]; }
                 draw.base_metallic[3]=m.metallic;draw.emissive_roughness[3]=m.roughness;item.cull=!m.double_sided;
             } else { for(std::size_t k=0;k<3;++k)draw.base_metallic[k]=object.albedo[k];draw.base_metallic[3]=-1; }

@@ -75,7 +75,31 @@ void validate_transform(const Json& value) {
     for (const auto& v : value.at("rotation")) norm += v.get<double>() * v.get<double>();
     require(std::abs(norm - 1) <= 1e-6, "Rotation must be a normalized XYZW quaternion.");
 }
+Light light_value(const Json& value) {
+    fields(value,{"kind","color","intensity","enabled","range","inner_angle","outer_angle"},{"kind","color","intensity","enabled"});
+    require(value.at("kind")=="directional" || value.at("kind")=="point" || value.at("kind")=="spot","Light kind must be directional, point or spot.");
+    Light light;light.kind=value.at("kind")=="directional" ? LightKind::directional : value.at("kind")=="point" ? LightKind::point : LightKind::spot;
+    require(light.kind!=LightKind::directional || !value.contains("range"),"Directional lights do not accept range.");
+    require(light.kind==LightKind::spot || (!value.contains("inner_angle") && !value.contains("outer_angle")),"Cone angles apply only to spot lights.");
+    require(value.at("color").is_array() && value.at("color").size()==3,"Light color needs three values.");
+    for(const auto& x:value.at("color"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1,"Light color must be in [0,1].");
+    for(const auto* key:{"intensity","range","inner_angle","outer_angle"})if(value.contains(key))require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid light number.");
+    for(const auto* key:{"intensity","range"})if(value.contains(key))require(value.at(key)>=0 && value.at(key)<=1e9,"Light intensity/range must be in [0,1e9].");
+    if(light.kind==LightKind::spot) { const auto inner=value.value("inner_angle",0.0),outer=value.value("outer_angle",45.0);require(inner>=0 && inner<outer && outer<=90,"Spot half-angles need 0 <= inner < outer <= 90 degrees."); }
+    require(value.at("enabled").is_boolean(),"Light enabled must be boolean.");
+    light.color=value.at("color").get<std::array<float,3>>();light.intensity=value.at("intensity");light.enabled=value.at("enabled");
+    light.range=value.value("range",0.0f);light.inner_angle=value.value("inner_angle",0.0f);light.outer_angle=value.value("outer_angle",45.0f);
+    try { validate_light(light); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }return light;
+}
+LightingEnvironment environment_value(const Json& value) {
+    fields(value,{"ambient","exposure"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
+    require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
+    return {value.at("ambient").get<std::array<float,3>>(),value.at("exposure").get<float>()};
+}
 void validate_component(const std::string& type, const Json& value) {
+    if(type=="Light") { (void)light_value(value);return; }
+    if(type=="LightingEnvironment") { (void)environment_value(value);return; }
     if (type == "Transform") { validate_transform(value); return; }
     if (type == "Camera") {
         fields(value, {"vertical_fov", "near", "far"}, {"vertical_fov", "near", "far"});
@@ -176,7 +200,7 @@ Json describe() {
     auto vector = [](Json item, int size) { return Json{{"type", "array"}, {"items", item}, {"minItems", size}, {"maxItems", size}}; };
     const Json transform = object_schema({{"position", vector(number, 3)}, {"rotation", vector(number, 4)},
         {"scale", vector({{"type", "number"}, {"exclusiveMinimum", 0}, {"maximum", 1e9}}, 3)}}, {"position", "rotation", "scale"});
-    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures"}}};
+    const Json component_type = {{"enum", {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}};
     const Json camera = object_schema({{"vertical_fov", {{"type", "number"}, {"minimum", 5}, {"maximum", 150}}},
         {"near", {{"type", "number"}, {"minimum", 0.001}}}, {"far", {{"type", "number"}, {"maximum", 1e7}}}}, {"vertical_fov", "near", "far"});
     const Json mesh = object_schema({{"primitive", {{"const", "box"}}}, {"albedo", vector({{"type", "number"}, {"minimum", 0}, {"maximum", 1}}, 3)},
@@ -197,7 +221,19 @@ Json describe() {
     const Json optional_map={{"anyOf",{map_ref,Json{{"type","null"}}}}};
     const Json textures=object_schema({{"base_color",optional_map},{"metallic_roughness",optional_map},{"emissive",optional_map},{"occlusion",optional_map},{"normal",optional_map},
         {"occlusion_strength",unit},{"normal_scale",{{"type","number"},{"minimum",0},{"maximum",16}}}});
-    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures}};
+    Json light_variants=Json::array();
+    for(const auto* kind:{"directional","point","spot"}) {
+        Json props={{"kind",{{"const",kind}}},{"color",vector(unit,3)},{"intensity",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"enabled",{{"type","boolean"}}}};
+        if(std::string_view(kind)!="directional")props["range"]={{"type","number"},{"minimum",0},{"maximum",1e9},{"default",0}};
+        if(std::string_view(kind)=="spot") {
+            props["inner_angle"]={{"type","number"},{"minimum",0},{"exclusiveMaximum",90},{"default",0}};
+            props["outer_angle"]={{"type","number"},{"exclusiveMinimum",0},{"maximum",90},{"default",45}};
+        }
+        light_variants.push_back(object_schema(props,{"kind","color","intensity","enabled"}));
+    }
+    const Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
+        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}}}, {"ambient","exposure"});
+    const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment}};
     Json ops = Json::array();
     auto op = [&](const char* kind, Json properties, Json required) {
         properties["op"] = {{"const", kind}}; properties["id"] = id;
@@ -210,8 +246,8 @@ Json describe() {
     op("entity.delete", {{"recursive", {{"type", "boolean"}}}}, {"recursive"});
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
-    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 7}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}}}}}, {"type"});
+    Json result = {{"protocol_version", 1}, {"schema_revision", 8}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -230,7 +266,7 @@ Json describe() {
                 {"preview", {{"type", "boolean"}, {"default", false}}}}, {"request_id", "base_revision", "ops"})}}},
         {"components", components},
         {"limits", {{"entities", 10000}, {"request_bytes", 1048576}, {"document_bytes", max_document_bytes},
-            {"receipt_window", 128}, {"json_depth", 64}}},
+            {"receipt_window", 128}, {"json_depth", 64},{"enabled_lights",max_scene_lights},{"lighting_environments",1}}},
         {"invariants", {"Normalized XYZW quaternion; meters; local transforms; positive scale.",
             "Stable IDs are caller-supplied and cannot be reused after deletion.",
             "Pagination with after requires the returned revision.",
@@ -262,6 +298,9 @@ Json describe() {
     for(const auto* key:{"path","width","height","gpu","samples"}) play["properties"][key]=capture["properties"][key];
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
+    result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
+    methods["world.lighting"]=object_schema({{"revision",rev}});
+    methods["runtime.lighting"]=object_schema({{"session_id",id},{"tick",rev}}, {"session_id"});
     methods["entity.material"]=object_schema({{"id",id},{"revision",rev}}, {"id"});
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
@@ -310,10 +349,17 @@ void validate(const Json& doc) {
         validate_name(entity.at("name"));
         if (!entity.at("parent").is_null())
             require(entities.contains(identifier(entity.at("parent"))), "Parent entity does not exist.");
-        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures"}, {"Transform"});
+        fields(entity.at("components"), {"Transform", "Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment"}, {"Transform"});
         require(!(entity.at("components").contains("MeshRenderer") && entity.at("components").contains("StaticMesh")),"An entity cannot combine MeshRenderer and StaticMesh.");
         for (const auto& [type, value] : entity.at("components").items()) validate_component(type, value);
     }
+    std::size_t light_count=0,environment_count=0;
+    for(const auto& e:entities) {
+        const auto& components=e.at("components");
+        if(components.contains("Light") && components.at("Light").at("enabled")==true)++light_count;
+        if(components.contains("LightingEnvironment"))++environment_count;
+    }
+    require(light_count<=max_scene_lights && environment_count<=1,"World permits at most 64 enabled lights and one LightingEnvironment.");
     std::map<std::string, int> colors;
     for (const auto& [id, unused] : entities.items()) {
         (void)unused;
@@ -401,6 +447,7 @@ public:
                     {"entity_count", doc_.at("entities").size()}, {"persisted", exists_},
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
         }
+        if(method=="world.lighting") { fields(params,{"revision"});current_revision(params);auto result=lighting_json(authored_lighting(world_matrices(doc_.at("entities"))));result["revision"]=doc_.at("revision");return result; }
         if (method == "entity.material")return inspect_material(params);
         if (method == "entity.get") {
             fields(params, {"id", "revision", "component"}, {"id"}); current_revision(params);
@@ -413,7 +460,7 @@ public:
         }
         if (method == "entity.query") {
             fields(params, {"revision", "parent", "after", "limit", "component"}); current_revision(params);
-            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures", "Unknown component type.");
+            if (params.contains("component")) require(params["component"] == "Transform" || params["component"] == "Camera" || params["component"] == "MeshRenderer" || params["component"] == "BoxCollider" || params["component"] == "CharacterController" || params["component"] == "StaticMesh" || params["component"] == "PbrMaterial" || params["component"] == "PbrTextures" || params["component"] == "Light" || params["component"] == "LightingEnvironment", "Unknown component type.");
             const auto after = params.contains("after") ? identifier(params.at("after")) : std::string{};
             if (params.contains("after")) require(params.contains("revision"), "Pagination requires a revision.");
             if (params.contains("parent") && !params.at("parent").is_null()) identifier(params.at("parent"));
@@ -445,6 +492,27 @@ public:
         throw Error(-32601, "Unknown world method.");
     }
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
+    static Json lighting_json(const SceneLighting& lighting) {
+        Json lights=Json::array();
+        for(const auto& source:lighting.lights) {
+            const auto& l=source.light;
+            lights.push_back({{"id",source.entity_id},{"kind",l.kind==LightKind::directional ? "directional" : l.kind==LightKind::point ? "point" : "spot"},
+                {"position",source.position},{"direction",source.direction},{"color",l.color},{"intensity",l.intensity},{"range",l.range},{"inner_angle",l.inner_angle},{"outer_angle",l.outer_angle},
+                {"intensity_unit",l.kind==LightKind::directional ? "lux" : "candela"}});
+        }
+        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure}};
+    }
+    SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {
+        SceneLighting result;
+        try {
+            for(const auto& [id,e]:doc_.at("entities").items()) {
+                const auto& components=e.at("components");
+                if(components.contains("Light"))append_light(result,id,light_value(components.at("Light")),matrices.at(id));
+                if(components.contains("LightingEnvironment")) { result.environment=environment_value(components.at("LightingEnvironment"));result.preview=false; }
+            }
+            finalize_lighting(result);return result;
+        } catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+    }
     static Json material_json(const PbrMaterial& m) {
         return {{"base_color",m.base_color},{"emissive",m.emissive},{"metallic",m.metallic},{"roughness",m.roughness},{"double_sided",m.double_sided}};
     }
@@ -655,7 +723,7 @@ public:
             const auto& lens = doc_.at("entities").at(camera_id).at("components").at("Camera");
             snapshot.vertical_fov = lens.at("vertical_fov"); snapshot.near_plane = lens.at("near"); snapshot.far_plane = lens.at("far");
             const auto matrices = world_matrices(doc_.at("entities"));
-            snapshot.camera_world = matrices.at(camera_id);
+            snapshot.camera_world = matrices.at(camera_id);snapshot.lighting=authored_lighting(matrices);
             require(rigid_transform(snapshot.camera_world), "Camera hierarchy must not scale or shear the camera.");
             ModelCache cache;
             for(const auto& [id,e]:doc_.at("entities").items()) {
@@ -671,12 +739,12 @@ public:
         require(report.success, report.detail, -32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
             {"source",live ? "runtime" : "authored"}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
-            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},
+            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},
-            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows"}};
+            {"renderer", "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored directional/point/spot lighting or explicit preview fallback; no shadows"}};
     }
     void runtime_guard(const Json& params) const {
         const auto id=identifier(params.at("session_id"));
@@ -691,6 +759,8 @@ public:
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
             if(components.contains("Camera")) { const auto& c=components.at("Camera"); value.camera=RuntimeCamera{c.at("vertical_fov"),c.at("near"),c.at("far")}; }
             value.mesh=mesh_component(components,cache);
+            if(components.contains("Light"))value.light=light_value(components.at("Light"));
+            if(components.contains("LightingEnvironment"))value.environment=environment_value(components.at("LightingEnvironment"));
             if(components.contains("BoxCollider")) { const auto& c=components.at("BoxCollider"); value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic",c.at("mass"),c.at("friction"),c.at("restitution")}; }
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
             result.entities.push_back(std::move(value));
@@ -766,7 +836,7 @@ public:
             {"dropped_wall_seconds",report.dropped_seconds},{"gpu",report.render.gpu_name},{"hardware",report.render.hardware},
             {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
             {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
-            {"camera",options.camera},{"camera_world",camera.camera_world},{"build_version",POIMA_VERSION}};
+            {"camera",options.camera},{"camera_world",camera.camera_world},{"lighting",lighting_json(camera.lighting)},{"build_version",POIMA_VERSION}};
         receipts.back()["result"]=result; runtime_receipts_.swap(receipts);
         return result;
     }
@@ -799,6 +869,12 @@ public:
             return {{"session_id",id},{"stopped",true},{"replayed",false}};
         }
         if(method=="runtime.inspect") { fields(params,{"session_id"},{"session_id"}); runtime_guard(params); return runtime_summary(); }
+        if(method=="runtime.lighting") {
+            fields(params,{"session_id","tick"},{"session_id"});runtime_guard(params);
+            if(params.contains("tick"))require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            try { auto result=lighting_json(runtime_->lighting());result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;return result; }
+            catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        }
         if(method=="runtime.entity") {
             fields(params,{"session_id","id","tick"},{"session_id","id"}); runtime_guard(params);
             if(params.contains("tick")) require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
@@ -879,7 +955,7 @@ public:
                 entity(staged, id)["components"][type] = op.at("value");
             } else if (name == "component.remove") {
                 fields(op, {"op", "id", "type"}, {"op", "id", "type"});
-                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures", "Only optional built-in components can be removed.");
+                require(op.at("type") == "Camera" || op.at("type") == "MeshRenderer" || op.at("type") == "BoxCollider" || op.at("type") == "CharacterController" || op.at("type") == "StaticMesh" || op.at("type") == "PbrMaterial" || op.at("type") == "PbrTextures" || op.at("type") == "Light" || op.at("type") == "LightingEnvironment", "Only optional built-in components can be removed.");
                 auto& components = entity(staged, id)["components"];
                 require(components.erase(op.at("type").get<std::string>()) == 1, "Component does not exist.", -32004);
             } else if (name == "entity.delete") {
