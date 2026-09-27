@@ -318,7 +318,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 20}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 21}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -371,6 +371,7 @@ Json describe() {
         {"profile",input_profiles::profile_schema()},{"preview",{{"type","boolean"},{"default",false}}}},
         {"path","request_id","expected_revision","profile"});
     methods["runtime.start"]=object_schema({{"session_id",id},{"revision",rev}},{"session_id","revision"});
+    methods["runtime.status"]=object_schema(Json::object());
     for(const auto* method:{"runtime.inspect","runtime.stop"}) methods[method]=object_schema({{"session_id",id}},{"session_id"});
     methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
     methods["runtime.gameplay.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"include_schema",{{"type","boolean"},{"default",false}}},{"fields",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",{{"type","string"}}}}}},{"session_id"});
@@ -624,6 +625,11 @@ public:
         if (exists_) { disk_ = read(path_); doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_); }
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
+    }
+    WorldRuntimeStatus runtime_status() const {
+        WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
+        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision; }
+        return status;
     }
     SceneSnapshot editor_snapshot(const EditorCamera& camera,bool live) const {
         for(double value:camera.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Invalid editor camera matrix.");
@@ -1599,6 +1605,11 @@ public:
         auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
     }
     Json runtime_dispatch(const std::string& method,const Json& params) {
+        if(method=="runtime.status") {
+            fields(params,{});const auto s=runtime_status();
+            return {{"available",s.available},{"active",s.active},{"session_id",s.active ? Json(s.session_id) : Json(nullptr)},
+                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
+        }
         if(method=="runtime.audio.voices")return sound_voices(params);
         if(method=="runtime.audio.replay")return audio_replay(params);
         if(method=="runtime.audio.inspect" || method=="runtime.audio.capture")return audio_dispatch(method,params,true);
@@ -1821,13 +1832,16 @@ struct WorldSession::Impl {
 WorldSession::WorldSession(const std::string& path):impl_(std::make_unique<Impl>(path)) {}
 WorldSession::~WorldSession()=default;
 bool WorldSession::closed() const { return impl_->closed; }
+WorldRuntimeStatus WorldSession::runtime_status() const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_status();
+}
 SceneSnapshot WorldSession::authored_snapshot(const EditorCamera& camera) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,false);
 }
 SceneSnapshot WorldSession::runtime_snapshot(const EditorCamera& camera) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,true);
 }
-std::string WorldSession::request(std::string_view line) {
+std::string WorldSession::request(std::string_view line,WorldRequestScope scope) {
     Json id=nullptr,response;bool notification=false;
     try {
         require(line.size()<=1024*1024,"Request exceeds 1 MiB.",-32700);
@@ -1840,9 +1854,25 @@ std::string WorldSession::request(std::string_view line) {
         }else notification=true;
         require(!closed(),"World session is closed.",-32001);
         const auto method=request["method"].get<std::string>();
-        const auto result=impl_->world.dispatch(method,request.value("params",Json::object()));
+        const bool shared=scope!=WorldRequestScope::standalone;
+        require(!shared || method!="session.close","Disconnect the client to detach; host.shutdown stops a headless shared host.",-32080);
+        if(scope==WorldRequestScope::shared_editor)
+            require(method!="world.capture" && method!="runtime.capture" && method!="asset.animation.capture" && method!="runtime.play",
+                    "This operation creates a graphics lifetime; use editor.capture or the editor's runtime controls in a shared editor.",-32080);
+        if(method=="host.shutdown")require(scope==WorldRequestScope::shared_headless,"Only a shared headless host supports host.shutdown.",-32080);
+        auto result=impl_->world.dispatch(method=="host.shutdown" ? "session.close" : method,request.value("params",Json::object()));
+        if(method=="world.describe" && shared) {
+            result["session_scope"]=scope==WorldRequestScope::shared_editor ? "shared_editor" : "shared_headless";
+            result["methods"].erase("session.close");
+            if(scope==WorldRequestScope::shared_headless)result["methods"]["host.shutdown"]=object_schema(Json::object());
+            else {
+                result["unavailable_methods"]={"world.capture","runtime.capture","asset.animation.capture","runtime.play"};
+                for(const auto& name:result["unavailable_methods"])result["methods"].erase(name.get<std::string>());
+                result["editor_discovery"]="editor.describe";
+            }
+        }
         response={{"jsonrpc","2.0"},{"id",id},{"result",result}};
-        if(method=="session.close")impl_->closed=true;
+        if(method=="session.close" || method=="host.shutdown")impl_->closed=true;
     }catch(const Error& error) {
         response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",error.code},{"message",error.what()}}}};
     }catch(const Json::exception&) {

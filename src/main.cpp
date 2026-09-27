@@ -2,8 +2,10 @@
 #include "poima/core.hpp"
 #include "poima/world.hpp"
 #include "poima/editor.hpp"
+#include "poima/shared_session.hpp"
 
 #include <exception>
+#include <algorithm>
 #include <charconv>
 #include <set>
 #include <iostream>
@@ -16,21 +18,45 @@
 #endif
 
 namespace {
+bool endpoint_name(std::string_view text) {
+    return !text.empty() && text.size()<=64 && std::all_of(text.begin(),text.end(),[](char c) {
+        return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_' || c=='-';
+    });
+}
 poima::Reply run(int argc, char** argv) {
     if (argc == 1) return poima::help();
     const std::string_view command = argv[1];
+    if(command=="serve") {
+        if(argc!=5 || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--") || std::string_view(argv[3])!="--endpoint" || !endpoint_name(argv[4]))
+            return poima::usage_error("Use: serve <world.json> --endpoint <name>; name is 1..64 ASCII letters/digits/_/-.");
+        return {poima::run_shared_world(argv[2],argv[4]),{}};
+    }
+    if(command=="connect") {
+        if((argc!=3 && argc!=5) || !endpoint_name(argv[2]))return poima::usage_error("Use: connect <endpoint> [--timeout-ms N].");
+        unsigned timeout=30000;
+        if(argc==5) {
+            const std::string_view value=argv[4];const auto parsed=std::from_chars(value.data(),value.data()+value.size(),timeout);
+            if(std::string_view(argv[3])!="--timeout-ms" || parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size() || timeout<100 || timeout>600000)
+                return poima::usage_error("Connection timeout must be 100..600000 milliseconds.");
+        }
+        return {poima::run_connected_session(argv[2],timeout),{}};
+    }
     if(command=="editor") {
         if(argc<3 || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--"))
-            return poima::usage_error("Use: editor <world.json> [--gpu N] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]");
+            return poima::usage_error("Use: editor <world.json> [--endpoint name] [--gpu N] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]");
         poima::EditorOptions options;options.world=argv[2];options.render.width=1440;options.render.height=900;
         std::set<std::string_view> seen;
         for(int index=3;index<argc;++index) {
             const std::string_view argument=argv[index];
             if(!seen.insert(argument).second)return poima::usage_error("Repeated editor argument.");
-            if(argument!="--gpu" && argument!="--frames" && argument!="--width" && argument!="--height" && argument!="--capture" && argument!="--script" && argument!="--report")
+            if(argument!="--gpu" && argument!="--frames" && argument!="--width" && argument!="--height" && argument!="--capture" && argument!="--script" && argument!="--report" && argument!="--endpoint")
                 return poima::usage_error("Unknown editor argument. Use: schema editor");
             if(++index>=argc)return poima::usage_error("Missing editor argument value.");
             const std::string_view value=argv[index];
+            if(argument=="--endpoint") {
+                if(!endpoint_name(value))return poima::usage_error("Endpoint name must be 1..64 ASCII letters/digits/_/-.");
+                options.endpoint=value;continue;
+            }
             if(argument=="--capture" || argument=="--script" || argument=="--report") {
                 if(value.empty() || value.starts_with("--"))return poima::usage_error("Editor file arguments require a nonempty path.");
                 if(argument=="--capture")options.render.capture=value;
@@ -109,7 +135,7 @@ int main_utf8(int argc, char** argv) {
     try {
         if (argc == 3 && std::string_view(argv[1]) == "world") return poima::run_world_session(argv[2]);
         const auto reply = run(argc, argv);
-        std::cout << reply.json << '\n';
+        if(!reply.json.empty())std::cout << reply.json << '\n';
         return reply.exit_code;
     } catch (const std::exception& error) {
         std::cerr << "Poima internal failure: " << error.what() << '\n';

@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include <memory>
+#include <string>
 
 struct ImDrawData;
 
@@ -17,6 +18,7 @@ struct EditorViewportResources {
 class EditorViewport {
     struct Impl;
     std::unique_ptr<Impl> impl_;
+    bool draw_frame(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,const std::string* capture_path);
 public:
     EditorViewport(const RenderOptions& options,const SceneSnapshot& scene);
     ~EditorViewport();
@@ -28,9 +30,18 @@ public:
     // False means minimized/out-of-date/temporarily unavailable presentation.
     // Draw data is borrowed only through this call. Errors throw, with details
     // retained in report(). GPU synchronization failures require recreation.
-    // Capture writes the full
-    // window to the nonempty path supplied in RenderOptions::capture.
+    // Capture writes the full window to RenderOptions::capture. Ordinary draws
+    // do not copy pixels to readback memory. Editor staging is bounded to
+    // 128 MiB of RGBA pixels and remains available without a startup path.
     bool draw(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,bool capture=false);
+    // Draw and exclusively create a BMP at this nonempty, NUL-free UTF-8 path.
+    // The frontend must preflight destination permissions and protected paths.
+    // False publishes nothing; retry with a fresh scene/UI frame. This does not
+    // change the configured final-capture path. Existing files are never replaced.
+    bool draw_capture(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,const std::string& capture_path);
+    // capture_written means at least one capture completed during this viewport
+    // lifetime; failures do not clear it. Dimensions and frames_presented refer
+    // to successful presentations, including those whose file publication fails.
     RenderReport report() const;
     EditorViewportResources resources() const;
 };

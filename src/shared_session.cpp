@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: Apache-2.0
+#include "poima/shared_session.hpp"
+#include "poima/local_session.hpp"
+#include "poima/world.hpp"
+#include <chrono>
+#include <csignal>
+#include <iostream>
+#include <thread>
+
+namespace poima {
+namespace {
+volatile std::sig_atomic_t stopping=0;
+void stop_signal(int) { stopping=1; }
+struct Signals {
+    using Handler=void (*)(int);
+    Handler interrupt,terminate;
+    Signals():interrupt(std::signal(SIGINT,stop_signal)),terminate(std::signal(SIGTERM,stop_signal)) { stopping=0; }
+    ~Signals() { if(interrupt!=SIG_ERR)std::signal(SIGINT,interrupt);if(terminate!=SIG_ERR)std::signal(SIGTERM,terminate); }
+};
+}
+int run_shared_world(const std::string& world,const std::string& endpoint) {
+    // Acquire the endpoint first; an unavailable endpoint must not create a
+    // world's writer sidecar. WorldSession never leaves its owning thread.
+    LocalSessionServer host(endpoint);WorldSession session(world);Signals signals;
+    std::cerr<<"Poima shared world ready: "<<endpoint<<'\n';
+    while(!stopping && !session.closed()) {
+        for(const auto& request:host.poll())
+            host.reply(request.token,session.request(request.payload,WorldRequestScope::shared_headless));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    if(!session.closed())session.request(R"({"jsonrpc":"2.0","method":"session.close"})");
+    // Deliver the shutdown receipt and already queued replies. This bounded
+    // grace period does not wait indefinitely for clients that keep stdin open.
+    const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(2);
+    while(host.clients() && std::chrono::steady_clock::now()<deadline) {
+        for(const auto& request:host.poll())host.reply(request.token,session.request(request.payload,WorldRequestScope::shared_headless));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    return 0;
+}
+int run_connected_session(const std::string& endpoint,std::uint32_t timeout_ms) {
+    LocalSessionClient client(endpoint,timeout_ms);
+    for(;;) {
+        std::string line;bool oversized=false;char c=0;
+        while(std::cin.get(c) && c!='\n') { if(line.size()<local_session_request_limit)line+=c;else oversized=true; }
+        if(line.empty() && !oversized && !std::cin)break;
+        if(oversized) {
+            std::cout<<"{\"jsonrpc\":\"2.0\",\"id\":null,\"error\":{\"code\":-32700,\"message\":\"Request exceeds 1 MiB.\"}}\n"<<std::flush;
+            continue;
+        }
+        if(line.empty())line=" "; // A blank NDJSON line remains a parse error.
+        const auto response=client.exchange(line,timeout_ms);
+        if(!response.empty())std::cout<<response<<'\n'<<std::flush;
+    }
+    return 0;
+}
+}

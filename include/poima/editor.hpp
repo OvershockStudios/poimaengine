@@ -10,6 +10,8 @@ struct EditorOptions {
     // Optional deterministic UI-action fixture and JSON evidence destination.
     // Uses the same action dispatcher as visible controls, not direct edits.
     std::string script,report;
+    // Optional same-user local session endpoint; an identifier, never a path.
+    std::string endpoint;
 };
 Reply run_editor(const EditorOptions& options);
 }

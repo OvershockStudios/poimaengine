@@ -22,6 +22,18 @@ int main() {
         fs::create_directory(directory);const auto path=directory/"world.json";const std::string entity(32,'a');
         {
             poima::WorldSession session(path.string());poima::EditorCamera camera;camera.world[14]=5;
+            const auto initial_status=session.runtime_status();
+            check(!initial_status.active && initial_status.available==poima::Runtime::available(),"Native runtime discovery differs from build.");
+            const auto status=call(session,"runtime.status");
+            check(status["active"]==false && status["session_id"].is_null(),"Inactive runtime status leaked stale identity.");
+            for(const auto* method:{"session.close","host.shutdown","world.capture","runtime.capture","asset.animation.capture","runtime.play"}) {
+                const Json request={{"jsonrpc","2.0"},{"id",7},{"method",method},{"params",Json::object()}};
+                check(Json::parse(session.request(request.dump(),poima::WorldRequestScope::shared_editor))["error"]["code"]==-32080,"Shared editor accepted an owner-only operation.");
+                auto notification=request;notification.erase("id");
+                check(session.request(notification.dump(),poima::WorldRequestScope::shared_editor).empty() && !session.closed(),"Rejected shared notification affected owner lifetime.");
+            }
+            const auto discovery=Json::parse(session.request(R"({"jsonrpc":"2.0","id":8,"method":"world.describe"})",poima::WorldRequestScope::shared_editor))["result"];
+            check(discovery["session_scope"]=="shared_editor" && !discovery["methods"].contains("session.close") && !discovery["methods"].contains("world.capture") && discovery["editor_discovery"]=="editor.describe","Shared editor discovery advertised unsupported operations.");
             const auto empty=session.authored_snapshot(camera);check(empty.objects.empty() && !fs::exists(path),"Empty snapshot persisted a world.");
             call(session,"world.transact",{{"request_id",std::string(32,'1')},{"base_revision",0},{"ops",Json::array({
                 {{"op","entity.create"},{"id",entity},{"name","Cube"}},
@@ -37,6 +49,8 @@ int main() {
             try { (void)session.authored_snapshot(bad); }catch(const std::exception&) { rejected=true; }check(rejected,"Scaled editor camera accepted.");
             if(poima::Runtime::available()) {
                 call(session,"runtime.start",{{"session_id",std::string(32,'b')},{"revision",1}});
+                const auto started=session.runtime_status();
+                check(started.active && started.tick==0 && started.authored_revision==1 && started.session_id==std::string(32,'b'),"Native active runtime discovery differs.");
                 const auto live=session.runtime_snapshot(camera);check(live.objects.size()==1 && live.revision==1,"Runtime external-camera snapshot failed.");
                 call(session,"world.undo",{{"request_id",std::string(32,'2')},{"base_revision",1}});
                 check(session.authored_snapshot(camera).objects.empty(),"Undo left authored snapshot cache stale.");

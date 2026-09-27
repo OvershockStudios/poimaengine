@@ -6,6 +6,12 @@
 #include <string_view>
 
 namespace poima {
+enum class WorldRequestScope { standalone, shared_headless, shared_editor };
+struct WorldRuntimeStatus {
+    bool available=false,active=false;
+    std::string session_id;
+    std::uint64_t tick=0,authored_revision=0;
+};
 struct EditorCamera {
     Matrix4 world=identity_matrix();
     double vertical_fov=60,near_plane=.1,far_plane=1000;
@@ -20,8 +26,9 @@ public:
     ~WorldSession();
     WorldSession(const WorldSession&)=delete;
     WorldSession& operator=(const WorldSession&)=delete;
-    std::string request(std::string_view json_rpc);
+    std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);
     bool closed() const;
+    WorldRuntimeStatus runtime_status() const;
     SceneSnapshot authored_snapshot(const EditorCamera& camera) const;
     SceneSnapshot runtime_snapshot(const EditorCamera& camera) const;
 };

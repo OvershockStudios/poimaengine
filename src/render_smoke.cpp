@@ -861,8 +861,12 @@ struct Context {
         }
         require(nvrhi_format != nvrhi::Format::UNKNOWN, "No supported 8-bit RGBA/BGRA surface format.");
         format = selected.format;
+        // Editor IPC may request its first screenshot long after startup. Keep
+        // transfer support and one staging image ready without requiring a
+        // configured final-capture path; ordinary frames still skip the copy.
+        const bool capture_enabled=editor || !options.capture.empty();
         const auto required_usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst |
-            (options.capture.empty() ? vk::ImageUsageFlags{} : vk::ImageUsageFlagBits::eTransferSrc);
+            (capture_enabled ? vk::ImageUsageFlagBits::eTransferSrc : vk::ImageUsageFlags{});
         require((caps.supportedUsageFlags & required_usage) == required_usage, "Surface lacks required render/capture image usage.");
         extent = caps.currentExtent;
         if (extent.width == std::numeric_limits<std::uint32_t>::max()) {
@@ -870,6 +874,8 @@ struct Context {
             extent.height = std::clamp(options.height, caps.minImageExtent.height, caps.maxImageExtent.height);
         }
         require(extent.width > 0 && extent.height > 0, "The window has an empty rendering extent.");
+        if(editor)require(std::uint64_t(extent.width)*extent.height<=128u*1024u*1024u/4u,
+            "Editor surface exceeds the 128 MiB RGBA staging budget.");
         std::uint32_t count = caps.minImageCount + 1;
         if (caps.maxImageCount > 0) count = std::min(count, caps.maxImageCount);
         vk::CompositeAlphaFlagBitsKHR alpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
@@ -932,7 +938,7 @@ struct Context {
         }
         initialized.resize(images.size(), false);
         acquired = device.createSemaphore({});
-        if (!options.capture.empty()) {
+        if (capture_enabled) {
             texture_desc.isRenderTarget = false;
             staging = checked->createStagingTexture(texture_desc, nvrhi::CpuAccessMode::Read);
             require(static_cast<bool>(staging), "NVRHI capture staging texture creation failed.");
@@ -1203,11 +1209,17 @@ void* EditorViewport::native_window() const { return impl_->context.window; }
 std::array<std::uint32_t,2> EditorViewport::extent() const { return {impl_->context.extent.width,impl_->context.extent.height}; }
 void EditorViewport::resize() { impl_->context.swapchain_dirty=true; }
 bool EditorViewport::draw(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,bool capture) {
+    return draw_frame(scene,viewport,ui,capture ? &impl_->options.capture : nullptr);
+}
+bool EditorViewport::draw_capture(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,const std::string& capture_path) {
+    return draw_frame(scene,viewport,ui,&capture_path);
+}
+bool EditorViewport::draw_frame(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,const std::string* capture_path) {
     auto& state=*impl_;auto& context=state.context;
     try {
         require(!context.renderer_fault && context.messages.errors==0,"Renderer fault; recreate the editor viewport before drawing again.");
         require(ImGui::GetCurrentContext()==context.ui_context,"The editor viewport's ImGui context must remain current until teardown.");
-        require(!capture || !state.options.capture.empty(),"Editor capture requires a configured output path.");
+        require(!capture_path || (!capture_path->empty() && capture_path->find('\0')==std::string::npos),"Editor capture requires a nonempty, NUL-free output path.");
         for(float value:{viewport.x,viewport.y,viewport.width,viewport.height})require(std::isfinite(value),"Editor viewport rectangle must be finite.");
         float scale_x=1,scale_y=1,origin_x=0,origin_y=0;
         if(ui) {
@@ -1232,9 +1244,9 @@ bool EditorViewport::draw(const SceneSnapshot& scene,EditorRect viewport,const I
         // this graphics lifetime rather than attempting an unsafe retry.
         try { context.update_scene();context.prepare_ui_frame(ui); }
         catch(...) { context.renderer_fault=true;throw; }
-        if(!context.frame(capture))return false;
+        if(!context.frame(capture_path!=nullptr))return false;
         ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
-        if(capture) { context.capture(state.options.capture);state.result.capture_written=true; }
+        if(capture_path) { context.capture(*capture_path);state.result.capture_written=true; }
         state.result.success=true;
         state.result.detail="Native editor viewport; serialized Vulkan presentation, no frame-time qualification.";
         return true;

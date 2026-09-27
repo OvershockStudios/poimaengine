@@ -61,6 +61,9 @@ class CliContract(unittest.TestCase):
         cases += [("editor",), ("editor","--frames"), ("editor","w.json","--frames","0"),
                   ("editor","w.json","--width","20"), ("editor","w.json","--frames","x"),
                   ("editor","w.json","--gpu","1","--gpu","0"), ("editor","w.json","--report")]
+        cases += [("serve",), ("serve","w.json"), ("serve","w.json","--endpoint","../bad"),
+                  ("connect",), ("connect","../bad"), ("connect","good","--timeout-ms","99"),
+                  ("connect","good","--timeout-ms","600001"), ("editor","w.json","--endpoint","bad.name")]
         for args in cases:
             with self.subTest(args=args):
                 self.assertTrue(self.invoke(*args, expected=2)["diagnostics"])

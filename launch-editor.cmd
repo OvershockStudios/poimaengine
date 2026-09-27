@@ -9,9 +9,9 @@ if not exist "build\windows-runtime\poima.exe" (
 )
 if "%~1"=="" (
   if not exist "projects\sandbox" mkdir "projects\sandbox"
-  "build\windows-runtime\poima.exe" editor "projects\sandbox\world.json" --width 1440 --height 900
+  "build\windows-runtime\poima.exe" editor "projects\sandbox\world.json" --endpoint sandbox --width 1440 --height 900
 ) else (
-  "build\windows-runtime\poima.exe" editor "%~1" --width 1440 --height 900
+  "build\windows-runtime\poima.exe" editor "%~1" --endpoint editor --width 1440 --height 900
 )
 if errorlevel 1 pause
 popd
