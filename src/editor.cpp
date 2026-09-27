@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/editor.hpp"
 #include "poima/editor_viewport.hpp"
+#include "poima/editor_style.hpp"
 #include "poima/world.hpp"
 #include "poima/local_session.hpp"
 #include "poima/runtime.hpp"
@@ -8,6 +9,7 @@
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <backends/imgui_impl_sdl3.h>
 #ifndef SDL_MAIN_HANDLED
 #define SDL_MAIN_HANDLED
@@ -17,6 +19,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cctype>
 #include <fstream>
 #include <functional>
 #include <deque>
@@ -32,6 +35,7 @@ namespace fs=std::filesystem;
 constexpr double pi=3.14159265358979323846;
 void require(bool value,const std::string& message) { if(!value)throw std::runtime_error(message); }
 fs::path path_of(const std::string& value) { return fs::path(std::u8string(value.begin(),value.end())); }
+std::string path_text(const fs::path& value) { const auto text=value.u8string();return std::string(text.begin(),text.end()); }
 std::string uid() { std::random_device r;std::string s(32,'0');for(auto& c:s)c="0123456789abcdef"[r()&15];return s; }
 bool inside(const fs::path& child,const fs::path& parent) {
     auto a=child.begin();for(auto b=parent.begin();b!=parent.end();++b,++a)if(a==child.end() || !world_detail::same_path_name(*a,*b))return false;return true;
@@ -120,7 +124,11 @@ public:
         if(op=="delete")return transact(Json::array({{{"op","entity.delete"},{"id",id},{"recursive",true}}}));
         if(op=="component")return transact(Json::array({{{"op","component.set"},{"id",id},{"type",a.at("type")},{"value",a.at("value")}}}));
         if(op=="undo" || op=="redo") { auto r=call(op=="undo" ? "world.undo" : "world.redo",{{"request_id",uid()},{"base_revision",revision}});refresh();return r; }
-        if(op=="import_asset") { auto r=call("asset.import",{{"source",a.at("path")}});assets.push_back(r);return r; }
+        if(op=="import_asset") {
+            auto r=call("asset.import",{{"source",a.at("path")}});r["display_name"]=path_text(path_of(a.at("path").get<std::string>()).filename());
+            const auto existing=std::find_if(assets.begin(),assets.end(),[&](const Json& value){return value.at("asset")==r.at("asset");});
+            if(existing==assets.end())assets.push_back(r);else *existing=r;return r;
+        }
         if(op=="instantiate_asset") { const auto created=a.value("id",uid());auto r=transact(Json::array({{{"op","asset.instantiate"},{"id",created},{"asset",a.at("asset")},{"name",a.value("name",std::string("Model"))}}}));selected=created;refresh();r["created"]=created;return r; }
         throw std::runtime_error("Unknown editor action: "+op);
     }
@@ -205,25 +213,159 @@ std::string pick(const SceneSnapshot& scene,const EditorRect& rect,ImVec2 mouse)
     for(const auto& object:scene.objects) { auto b=object_bounds(object);double lo=0,hi=1e30;for(std::size_t i=0;i<3;++i) { if(std::abs(ray[i])<1e-12) { if(origin[i]<b.minimum[i] || origin[i]>b.maximum[i])hi=-1; }else { auto a=(b.minimum[i]-origin[i])/ray[i],c=(b.maximum[i]-origin[i])/ray[i];if(a>c)std::swap(a,c);lo=std::max(lo,a);hi=std::min(hi,c); } }if(lo<=hi && lo<nearest) { nearest=lo;id=object.entity_id; } }
     return id;
 }
-void panel(const char* title,float x,float y,float w,float h,ImGuiWindowFlags extra=0) {
-    ImGui::SetNextWindowPos({x,y});ImGui::SetNextWindowSize({std::max(w,1.f),std::max(h,1.f)});
-    ImGui::Begin(title,nullptr,ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|extra);
+struct EditorLayout {
+    static constexpr std::size_t max_bytes=64*1024;
+    std::map<std::string,bool> open{{"Hierarchy",true},{"Inspector",true},{"Scene",true},{"Project",true},{"Console",true}};
+    Json windows=Json::object();
+    fs::path file;
+    bool reset=true,loaded=false,persistent=false;
+    struct Floating { ImVec2 position{300,180},size{480,360}; };
+    std::map<std::string,Floating> floating;
+    std::vector<std::pair<std::string,std::string>> docking;
+    EditorRect scene_rect{};
+    void configure(const EditorOptions& options) {
+        require(!options.no_layout || options.layout.empty(),"--layout and --no-layout cannot be combined.");
+        persistent=!options.no_layout && (options.script.empty() || !options.layout.empty());
+        if(!persistent)return;
+        if(options.layout.empty()) {
+            char* pref=SDL_GetPrefPath("Poima","Editor");require(pref!=nullptr,std::string("Editor preferences: ")+SDL_GetError());
+            file=path_of(pref)/"layout.ini";SDL_free(pref);
+        }else file=path_of(options.layout);
+        guard();
+        file=fs::weakly_canonical(fs::absolute(file));
+        const auto world=fs::weakly_canonical(fs::absolute(path_of(options.world)));
+        if(!options.layout.empty())require(!inside(file,world.parent_path()),"Explicit editor layout must be outside the world/project directory.");
+        for(const auto* suffix:{"",".lock",".pending",".previous",".previous.pending"})
+            require(!world_detail::same_path_name(file,fs::path(world).concat(suffix)),"Editor layout overlaps reserved world storage.");
+        require(!inside(file,fs::weakly_canonical(fs::path(world).concat(".assets"))),"Editor layout overlaps the immutable asset store.");
+        for(const auto* reserved:{&options.report,&options.render.capture,&options.script})if(!reserved->empty())
+            for(const auto& output:{file,fs::path(file).concat(".pending")})
+                require(!world_detail::same_path_name(output,fs::weakly_canonical(fs::absolute(path_of(*reserved)))),"Editor layout or its staging file overlaps a reserved output or script.");
+        require(fs::is_directory(file.parent_path()),"Editor layout parent directory does not exist.");
+        guard();
+        if(fs::exists(file)) {
+            require(fs::is_regular_file(file) && fs::file_size(file)<=max_bytes,"Editor layout must be a regular file of at most 64 KiB.");
+            std::ifstream input(file,std::ios::binary);std::string data((std::istreambuf_iterator<char>(input)),{});
+            require(input.good() || input.eof(),"Could not read editor layout.");require(data.size()<=max_bytes && data.find('\0')==std::string::npos,"Invalid editor layout bytes.");
+            ImGui::LoadIniSettingsFromMemory(data.data(),data.size());
+            if(const auto marker=data.find("[Poima][Panels]\n");marker!=std::string::npos)for(auto& [name,visible]:open)
+                visible=data.find("\n"+name+"=0\n",marker)==std::string::npos;
+            loaded=true;reset=false;
+        }
+    }
+    void guard() const {
+        for(const auto& path:{file,fs::path(file).concat(".pending")}) {
+            require(!fs::is_symlink(fs::symlink_status(path)),"Editor layout and staging paths cannot be symbolic links.");
+            if(fs::exists(path))require(fs::is_regular_file(path) && fs::hard_link_count(path)==1,"Editor layout must be a regular file without hard-link aliases.");
+        }
+    }
+    void save() {
+        if(!persistent)return;
+        std::size_t size=0;const char* data=ImGui::SaveIniSettingsToMemory(&size);std::string bytes(data,size);
+        bytes+="\n[Poima][Panels]\n";for(const auto& [name,visible]:open)bytes+=name+(visible ? "=1\n" : "=0\n");
+        require(bytes.size()<=max_bytes,"Editor layout exceeds its 64 KiB budget.");guard();
+        const auto pending=fs::path(file).concat(".pending");world_detail::write_flushed(pending,bytes);guard();world_detail::replace_file(pending,file);
+        ImGui::GetIO().WantSaveIniSettings=false;
+    }
+    void build(ImGuiID id,ImVec2 position,ImVec2 size) {
+        if(!reset && ImGui::DockBuilderGetNode(id))return;
+        reset=false;
+        ImGui::DockBuilderRemoveNode(id);ImGui::DockBuilderAddNode(id,static_cast<ImGuiDockNodeFlags>(ImGuiDockNodeFlags_DockSpace)|ImGuiDockNodeFlags_PassthruCentralNode);
+        ImGui::DockBuilderSetNodePos(id,position);ImGui::DockBuilderSetNodeSize(id,size);
+        auto center=id;ImGuiID right=0,left=0,bottom=0;
+        ImGui::DockBuilderSplitNode(center,ImGuiDir_Right,std::clamp(330.f/size.x,.18f,.32f),&right,&center);
+        ImGui::DockBuilderSplitNode(center,ImGuiDir_Left,std::clamp(250.f/(size.x-330.f),.18f,.35f),&left,&center);
+        ImGui::DockBuilderSplitNode(center,ImGuiDir_Down,std::clamp(220.f/size.y,.2f,.4f),&bottom,&center);
+        ImGui::DockBuilderDockWindow("Hierarchy",left);ImGui::DockBuilderDockWindow("Inspector",right);
+        ImGui::DockBuilderDockWindow("Scene",center);ImGui::DockBuilderDockWindow("Project",bottom);ImGui::DockBuilderDockWindow("Console",bottom);
+        ImGui::DockBuilderFinish(id);
+    }
+    void command(const Json& action) {
+        const auto op=action.at("op").get<std::string>();
+        if(op=="layout_reset") { reset=true;for(auto& [name,visible]:open)visible=true;floating.clear();docking.clear();return; }
+        const auto panel=action.at("panel").get<std::string>();require(open.contains(panel),"Unknown editor panel.");open[panel]=true;
+        if(op=="layout_show") { require(action.at("visible").is_boolean(),"Panel visibility must be boolean.");open[panel]=action.at("visible").get<bool>(); }
+        else if(op=="layout_float") {
+            Floating value;
+            if(action.contains("position")) { const auto a=action.at("position").get<std::array<float,2>>();value.position={a[0],a[1]}; }
+            if(action.contains("size")) { const auto a=action.at("size").get<std::array<float,2>>();value.size={a[0],a[1]}; }
+            for(float v:{value.position.x,value.position.y,value.size.x,value.size.y})require(std::isfinite(v) && std::abs(v)<=16384,"Invalid floating panel bounds.");
+            require(value.size.x>=160 && value.size.y>=100,"Floating panel must be at least 160 by 100.");floating[panel]=value;
+        }else {
+            require(op=="layout_dock","Unknown layout action.");const auto target=action.at("target").get<std::string>();
+            require(open.contains(target) && target!=panel,"Dock target must be another editor panel.");open[target]=true;docking.emplace_back(panel,target);
+        }
+    }
+    void prepare_docking() {
+        for(const auto& [panel,target]:docking) { const auto* window=ImGui::FindWindowByName(target.c_str());require(window && window->DockId,"Target panel must already be docked.");ImGui::DockBuilderDockWindow(panel.c_str(),window->DockId); }
+        docking.clear();
+    }
+    bool begin(const char* name,ImGuiWindowFlags flags=0) {
+        if(const auto it=floating.find(name);it!=floating.end()) {
+            ImGui::SetNextWindowDockID(0,ImGuiCond_Always);ImGui::SetNextWindowPos(it->second.position);ImGui::SetNextWindowSize(it->second.size);floating.erase(it);
+        }
+        const bool visible=ImGui::Begin(name,&open.at(name),flags);
+        const auto p=ImGui::GetWindowPos(),s=ImGui::GetWindowSize();windows[name]={{"open",open.at(name)},{"visible",visible},{"dock_id",ImGui::GetWindowDockID()},{"rect",{p.x,p.y,s.x,s.y}}};
+        return visible;
+    }
+    Json inspect() const {
+        auto snapshot=windows;for(const auto& [name,value]:open)if(!value)snapshot[name]={{"open",false},{"visible",false},{"dock_id",0}};
+        return {{"docking",true},{"native_multi_window",false},{"persistent",persistent},{"loaded",loaded},{"path",persistent ? Json(path_text(file)) : Json(nullptr)},
+            {"font","Source Sans 3"},{"windows",snapshot},{"scene_viewport",{scene_rect.x,scene_rect.y,scene_rect.width,scene_rect.height}}};
+    }
+};
+
+std::string lower(std::string value) { for(auto& c:value)c=static_cast<char>(std::tolower(static_cast<unsigned char>(c)));return value; }
+void field(const char* label) { ImGui::TableNextRow();ImGui::TableSetColumnIndex(0);ImGui::AlignTextToFramePadding();ImGui::TextUnformatted(label);ImGui::TableSetColumnIndex(1);ImGui::SetNextItemWidth(-1); }
+bool vector_field(const char* label,std::array<float,3>& value,float speed,float minimum=0,float maximum=0) {
+    field(label);bool changed=false;const float width=std::max(24.f,(ImGui::GetContentRegionAvail().x-34)/3);
+    for(std::size_t i=0;i<3;++i) { if(i)ImGui::SameLine(0,3);ImGui::PushID(static_cast<int>(i));ImGui::TextColored(i==0 ? ImVec4(.9f,.5f,.5f,1) : i==1 ? ImVec4(.5f,.8f,.55f,1) : ImVec4(.5f,.65f,.9f,1),"%c","XYZ"[i]);ImGui::SameLine(0,2);ImGui::SetNextItemWidth(width-6);changed|=ImGui::DragFloat("##value",&value[i],speed,minimum,maximum,"%.2f");ImGui::PopID(); }
+    return changed;
 }
-// Explicit Apply keeps drafts across frames and gives one useful undo entry per edit.
+std::array<float,3> euler_degrees(const std::array<double,4>& q) {
+    const auto [x,y,z,w]=q;return {static_cast<float>(std::atan2(2*(w*x+y*z),1-2*(x*x+y*y))*180/pi),
+        static_cast<float>(std::asin(std::clamp(2*(w*y-z*x),-1.0,1.0))*180/pi),static_cast<float>(std::atan2(2*(w*z+x*y),1-2*(y*y+z*z))*180/pi)};
+}
+std::array<double,4> euler_quaternion(const std::array<float,3>& angles) {
+    const double x=angles[0]*pi/360,y=angles[1]*pi/360,z=angles[2]*pi/360;
+    const double cx=std::cos(x),sx=std::sin(x),cy=std::cos(y),sy=std::sin(y),cz=std::cos(z),sz=std::sin(z);
+    return {sx*cy*cz-cx*sy*sz,cx*sy*cz+sx*cy*sz,cx*cy*sz-sx*sy*cz,cx*cy*cz+sx*sy*sz};
+}
+// Explicit Apply keeps drafts across frames and gives one undo entry per edit.
 void inspect_component(const std::string& type,Json& draft) {
+    if(!ImGui::BeginTable("Fields",2,ImGuiTableFlags_SizingStretchProp))return;
+    ImGui::TableSetupColumn("Label",ImGuiTableColumnFlags_WidthFixed,76);ImGui::TableSetupColumn("Value",ImGuiTableColumnFlags_WidthStretch);
     if(type=="Transform") {
-        auto p=draft["position"].get<std::array<float,3>>(),s=draft["scale"].get<std::array<float,3>>();auto q=draft["rotation"].get<std::array<float,4>>();
-        if(ImGui::DragFloat3("Position",p.data(),.05f))draft["position"]=p;
-        if(ImGui::DragFloat4("Rotation XYZW",q.data(),.01f)) { double n=0;for(auto v:q)n+=v*v;if(n>1e-12) { for(auto& v:q)v=static_cast<float>(v/std::sqrt(n));draft["rotation"]=q; } }
-        if(ImGui::DragFloat3("Scale",s.data(),.02f,.001f,100000.f))draft["scale"]=s;
+        auto position=draft["position"].get<std::array<float,3>>(),scale=draft["scale"].get<std::array<float,3>>();auto angles=euler_degrees(draft["rotation"].get<std::array<double,4>>());
+        if(vector_field("Position",position,.05f))draft["position"]=position;
+        if(vector_field("Rotation",angles,.3f))draft["rotation"]=euler_quaternion(angles);
+        if(vector_field("Scale",scale,.02f,.001f,100000.f))draft["scale"]=scale;
     }else if(type=="Camera") {
-        for(const auto* key:{"vertical_fov","near","far"}) { float x=draft.at(key);if(ImGui::DragFloat(key,&x,.1f))draft[key]=x; }
+        for(const auto& [key,label]:std::array<std::pair<const char*,const char*>,3>{{{"vertical_fov","Field of view"},{"near","Near clip"},{"far","Far clip"}}}) { field(label);float value=draft.at(key);if(ImGui::DragFloat((std::string("##")+key).c_str(),&value,.1f))draft[key]=value; }
     }else if(type=="MeshRenderer" || type=="PbrMaterial" || type=="Light") {
-        const auto key=type=="MeshRenderer" ? "albedo" : type=="Light" ? "color" : "base_color";auto c=draft.at(key).get<std::array<float,3>>();if(ImGui::ColorEdit3(key,c.data()))draft[key]=c;
-        if(type=="PbrMaterial") { auto e=draft["emissive"].get<std::array<float,3>>();if(ImGui::ColorEdit3("Emissive",e.data()))draft["emissive"]=e;for(const auto* k:{"metallic","roughness"}) { float x=draft[k];if(ImGui::SliderFloat(k,&x,0,1))draft[k]=x; }bool b=draft["double_sided"];if(ImGui::Checkbox("Double sided",&b))draft["double_sided"]=b; }
-        if(type=="Light") { ImGui::Text("Kind: %s",draft["kind"].get<std::string>().c_str());for(const auto* k:{"intensity","range","inner_angle","outer_angle"})if(draft.contains(k)) { float x=draft[k];if(ImGui::DragFloat(k,&x,.1f,0,1e9f))draft[k]=x; }bool shadow=draft.contains("shadow") && draft["shadow"].value("enabled",false);if(ImGui::Checkbox("Cast shadows",&shadow))draft["shadow"]["enabled"]=shadow; }
-        if(type!="PbrMaterial") { const auto k=type=="Light" ? "enabled" : "visible";bool b=draft[k];if(ImGui::Checkbox(k,&b))draft[k]=b; }
-    }else ImGui::TextWrapped("Present in this entity. Specialized controls are not implemented yet.");
+        const auto color_key=type=="MeshRenderer" ? "albedo" : type=="Light" ? "color" : "base_color";field("Color");auto color=draft.at(color_key).get<std::array<float,3>>();if(ImGui::ColorEdit3("##Color",color.data(),ImGuiColorEditFlags_NoInputs))draft[color_key]=color;
+        if(type=="PbrMaterial") {
+            field("Emission");auto emission=draft["emissive"].get<std::array<float,3>>();if(ImGui::ColorEdit3("##Emission",emission.data(),ImGuiColorEditFlags_NoInputs))draft["emissive"]=emission;
+            for(const auto* key:{"metallic","roughness"}) { field(key);float value=draft[key];if(ImGui::SliderFloat((std::string("##")+key).c_str(),&value,0,1))draft[key]=value; }
+            field("Two sided");bool value=draft["double_sided"];if(ImGui::Checkbox("##Two sided",&value))draft["double_sided"]=value;
+        }
+        if(type=="Light") {
+            field("Type");ImGui::TextUnformatted(draft["kind"].get<std::string>().c_str());
+            for(const auto* key:{"intensity","range","inner_angle","outer_angle"})if(draft.contains(key)) { field(key);float value=draft[key];if(ImGui::DragFloat((std::string("##")+key).c_str(),&value,.1f,0,1e9f))draft[key]=value; }
+            field("Shadows");bool shadow=draft.contains("shadow") && draft["shadow"].value("enabled",false);if(ImGui::Checkbox("##Cast shadows",&shadow))draft["shadow"]["enabled"]=shadow;
+        }
+        if(type!="PbrMaterial") { field(type=="Light" ? "Enabled" : "Visible");const auto key=type=="Light" ? "enabled" : "visible";bool value=draft[key];if(ImGui::Checkbox("##Enabled",&value))draft[key]=value; }
+    }else { field("Data");ImGui::TextWrapped("%s",draft.dump(1).c_str());ImGui::TextDisabled("Read-only in this inspector"); }
+    ImGui::EndTable();
+}
+bool playback_button(const char* id,int icon,bool selected=false) {
+    if(selected)ImGui::PushStyleColor(ImGuiCol_Button,ImVec4(.22f,.37f,.49f,1));const bool clicked=ImGui::Button(id,{32,24});if(selected)ImGui::PopStyleColor();
+    const auto a=ImGui::GetItemRectMin(),b=ImGui::GetItemRectMax();const ImVec2 c{(a.x+b.x)*.5f,(a.y+b.y)*.5f};auto* draw=ImGui::GetWindowDrawList();const auto color=ImGui::GetColorU32(ImGuiCol_Text);
+    if(icon==0)draw->AddTriangleFilled({c.x-4,c.y-6},{c.x-4,c.y+6},{c.x+6,c.y},color);
+    else if(icon==1) { draw->AddRectFilled({c.x-5,c.y-6},{c.x-1,c.y+6},color);draw->AddRectFilled({c.x+2,c.y-6},{c.x+6,c.y+6},color); }
+    else if(icon==2)draw->AddRectFilled({c.x-5,c.y-5},{c.x+5,c.y+5},color);
+    else { draw->AddTriangleFilled({c.x-6,c.y-6},{c.x-6,c.y+6},{c.x+3,c.y},color);draw->AddRectFilled({c.x+4,c.y-6},{c.x+6,c.y+6},color); }
+    return clicked;
 }
 } // namespace
 
@@ -232,7 +374,7 @@ Reply run_editor(const EditorOptions& options) {
     std::unique_ptr<EditorViewport> viewport;bool context=false,backend=false,outputs_validated=false;
     auto cleanup=[&] { if(backend) { ImGui_ImplSDL3_Shutdown();backend=false; }viewport.reset();if(context) { ImGui::DestroyContext();context=false; } };
     try {
-        for(const auto* p:{&options.world,&options.render.capture,&options.report,&options.script})require(p->find('\0')==std::string::npos,"Editor paths cannot contain NUL bytes.");
+        for(const auto* p:{&options.world,&options.render.capture,&options.report,&options.script,&options.layout})require(p->find('\0')==std::string::npos,"Editor paths cannot contain NUL bytes.");
         new_output(options.render.capture,options);new_output(options.report,options);
         if(!options.report.empty() && !options.render.capture.empty())require(!world_detail::same_path_name(fs::weakly_canonical(fs::absolute(path_of(options.report))),fs::weakly_canonical(fs::absolute(path_of(options.render.capture)))),"Capture and report must differ.");
         const auto actions=read_script(options);outputs_validated=true;std::uint32_t limit=options.max_frames;
@@ -247,16 +389,18 @@ Reply run_editor(const EditorOptions& options) {
         auto scene_current=[&] { const auto state=model.session.runtime_status();return has_snapshot && presentation_error.empty() && scene_runtime==model.playing && scene.revision==(model.playing ? state.authored_revision : model.revision) && (!model.playing || scene_tick==std::optional<std::uint64_t>(model.tick)); };
         auto presentation=[&] { return Json{{"current",scene_current()},{"error",presentation_error.empty() ? Json(nullptr) : Json(presentation_error)},{"has_snapshot",has_snapshot},{"scene_revision",has_snapshot ? Json(scene.revision) : Json(nullptr)},{"source",has_snapshot ? (scene_runtime ? "runtime" : "authored") : "empty"},{"tick",scene_tick ? Json(*scene_tick) : Json(nullptr)}}; };
         update_snapshot();
-        IMGUI_CHECKVERSION();ImGui::CreateContext();context=true;ImGui::GetIO().IniFilename=nullptr;ImGui::StyleColorsDark();
-        auto& style=ImGui::GetStyle();style.WindowRounding=0;style.FrameRounding=3;style.WindowBorderSize=1;style.Colors[ImGuiCol_WindowBg]={.075f,.085f,.105f,1};
+        IMGUI_CHECKVERSION();ImGui::CreateContext();context=true;ImGui::GetIO().IniFilename=nullptr;configure_editor_style();
         viewport=std::make_unique<EditorViewport>(options.render,scene);require(ImGui_ImplSDL3_InitForVulkan(static_cast<SDL_Window*>(viewport->native_window())),"ImGui SDL initialization failed.");backend=true;
+        EditorLayout layout;layout.configure(options);
         std::size_t action_index=0;std::uint32_t frame=0;bool quit=false;double accumulator=0;auto last=std::chrono::steady_clock::now();
-        InspectorDraft draft;draft.load(model);std::array<char,4096> import_path{};
+        InspectorDraft draft;draft.load(model);std::array<char,4096> import_path{};std::array<char,256> hierarchy_search{},asset_search{};
+        std::string selected_asset;bool focus_name=false,focus_import=false,show_help=false;
         std::function<Json(const Json&)> act=[&](const Json& a)->Json {
             const auto op=a.at("op").get<std::string>();draft.sync(model);Json result;
             if(op=="select" && a.at("id")!=model.selected)require(!draft.dirty(),"Inspector has an unfinished draft. Apply or Reload before changing selection.");
             if(op=="create" || op=="delete" || op=="undo" || op=="redo" || op=="instantiate_asset")require(!draft.dirty(),"Inspector has an unfinished draft. Apply or Reload before this action.");
-            if(op=="draft_component") { draft.edit(a,model);result=draft.inspect(model); }
+            if(op=="layout_reset" || op=="layout_float" || op=="layout_dock" || op=="layout_show") { layout.command(a);result=layout.inspect(); }
+            else if(op=="draft_component") { draft.edit(a,model);result=draft.inspect(model); }
             else if(op=="apply_draft")result=draft.apply(model,a);
             else if(op=="reload_draft") { model.refresh();draft.load(model);result=draft.inspect(model); }
             else if(op=="frame_selected") { auto s=model.playing ? model.session.runtime_snapshot(camera.camera()) : model.session.authored_snapshot(camera.camera());frame_selected(model,camera,s);result={{"position",camera.position}}; }
@@ -279,7 +423,7 @@ Reply run_editor(const EditorOptions& options) {
             const auto state=model.session.runtime_status();
             return Json{{"selected",model.selected.empty() ? Json(nullptr) : Json(model.selected)},{"revision",model.revision},{"draft",draft.inspect(model)},{"presentation",presentation()},
                 {"runtime",{{"available",state.available},{"active",state.active},{"session_id",state.active ? Json(state.session_id) : Json(nullptr)},{"tick",state.tick},{"authored_revision",state.active ? Json(state.authored_revision) : Json(nullptr)},{"paused",model.paused}}},
-                {"frame",frame},{"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)}};
+                {"frame",frame},{"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},{"layout",layout.inspect()}};
         };
         auto finish_capture=[&](int code,const std::string& detail,const Json& result=Json::object()) {
             if(!pending_capture)return;const auto& pending=*pending_capture;
@@ -351,43 +495,177 @@ Reply run_editor(const EditorOptions& options) {
                 require(!expected || failed,"Script action unexpectedly succeeded despite expected_error.");
             }
             if(model.playing && !model.paused && (options.script.empty() || host)) { accumulator+=dt;const auto ticks=static_cast<int>(accumulator*60);if(ticks) { try { model.action({{"op","step"},{"ticks",ticks}});accumulator-=ticks/60.0; }catch(const std::exception& e) { model.paused=true;accumulator=0;model.note(std::string("Play paused: ")+e.what()); } } }else accumulator=0;
-            ImGui_ImplSDL3_NewFrame();ImGui::NewFrame();auto& io=ImGui::GetIO();const float width=io.DisplaySize.x,height=io.DisplaySize.y,toolbar=43,left=std::min(240.f,width*.22f),right=std::min(340.f,width*.28f),bottom=std::min(190.f,height*.25f);
-            panel("Toolbar",0,0,width,toolbar,ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoScrollbar);
-            ImGui::TextUnformatted("POIMA");ImGui::SameLine();ImGui::BeginDisabled(model.playing);
+            ImGui_ImplSDL3_NewFrame();ImGui::NewFrame();auto& io=ImGui::GetIO();const auto* main_viewport=ImGui::GetMainViewport();
+            const auto origin=main_viewport->Pos;const float width=main_viewport->Size.x,height=main_viewport->Size.y;
+            float menu_height=ImGui::GetFrameHeight();
+            if(ImGui::BeginMainMenuBar()) {
+                menu_height=ImGui::GetWindowHeight();
+                if(ImGui::BeginMenu("File")) {
+                    if(ImGui::MenuItem("Import asset...")) { layout.open["Project"]=true;focus_import=true;ImGui::SetWindowFocus("Project"); }
+                    ImGui::Separator();ImGui::TextDisabled("Changes are saved on Apply");
+                    if(ImGui::MenuItem("Close editor"))quit=true;ImGui::EndMenu();
+                }
+                if(ImGui::BeginMenu("Edit")) {
+                    const bool editable=!model.playing && !draft.dirty();
+                    if(ImGui::MenuItem("Undo","Ctrl+Z",false,editable && model.history.value("undo_count",0)>0))ui_act({{"op","undo"}});
+                    if(ImGui::MenuItem("Redo","Ctrl+Y",false,editable && model.history.value("redo_count",0)>0))ui_act({{"op","redo"}});
+                    ImGui::Separator();if(ImGui::MenuItem("Frame selected","F",false,!model.selected.empty()))ui_act({{"op","frame_selected"}});
+                    if(ImGui::MenuItem("Delete selected","Delete",false,editable && !model.selected.empty()))ui_act({{"op","delete"}});ImGui::EndMenu();
+                }
+                if(ImGui::BeginMenu("GameObject")) {
+                    ImGui::BeginDisabled(model.playing || draft.dirty());
+                    if(ImGui::MenuItem("Create Empty"))ui_act({{"op","create"},{"kind","empty"}});
+                    if(ImGui::BeginMenu("3D Object")) { if(ImGui::MenuItem("Cube"))ui_act({{"op","create"},{"kind","cube"}});ImGui::EndMenu(); }
+                    if(ImGui::BeginMenu("Light")) { if(ImGui::MenuItem("Point"))ui_act({{"op","create"},{"kind","light"}});ImGui::EndMenu(); }
+                    if(ImGui::MenuItem("Camera"))ui_act({{"op","create"},{"kind","camera"}});
+                    ImGui::EndDisabled();ImGui::EndMenu();
+                }
+                if(ImGui::BeginMenu("Window")) {
+                    for(auto& [name,visible]:layout.open)ImGui::MenuItem(name.c_str(),nullptr,&visible);
+                    ImGui::Separator();if(ImGui::MenuItem("Reset layout"))ui_act({{"op","layout_reset"}});
+                    if(ImGui::MenuItem("Save layout",nullptr,false,layout.persistent)) { try { layout.save();model.note("Layout saved to user preferences."); }catch(const std::exception& e) { model.note(e.what()); } }
+                    ImGui::EndMenu();
+                }
+                if(ImGui::BeginMenu("Help")) { if(ImGui::MenuItem("Editor controls"))show_help=true;ImGui::EndMenu(); }
+                ImGui::EndMainMenuBar();
+            }
+            if(show_help) { ImGui::OpenPopup("Editor controls");show_help=false; }
+            if(ImGui::BeginPopupModal("Editor controls",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
+                ImGui::TextUnformatted("Scene: RMB + WASDQE to fly, Alt + LMB to orbit, MMB to pan.");
+                ImGui::TextUnformatted("Wheel to zoom. F frames the selection. Ctrl+Z / Ctrl+Y undo / redo.");
+                ImGui::Separator();ImGui::TextUnformatted("Drag panel tabs to move, dock or group panels in this window.");
+                ImGui::TextUnformatted("Resize dock dividers. Window > Reset layout restores the default.");
+                ImGui::TextUnformatted("Inspector edits remain drafts until Apply. Conflicts require Reload.");
+                ImGui::TextDisabled("Native multi-window docking is not available in this renderer.");
+                if(ImGui::Button("Close",{100,0}))ImGui::CloseCurrentPopup();ImGui::EndPopup();
+            }
+            const float toolbar_height=34,status_height=21;
+            const ImGuiWindowFlags fixed=ImGuiWindowFlags_NoDocking|ImGuiWindowFlags_NoTitleBar|ImGuiWindowFlags_NoMove|ImGuiWindowFlags_NoResize|ImGuiWindowFlags_NoCollapse|ImGuiWindowFlags_NoSavedSettings|ImGuiWindowFlags_NoScrollbar;
+            ImGui::SetNextWindowPos({origin.x,origin.y+menu_height});ImGui::SetNextWindowSize({width,toolbar_height});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize,{1,1});ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{8,5});
+            ImGui::Begin("##Main toolbar",nullptr,fixed);
+            ImGui::BeginDisabled(model.playing || draft.dirty());
             if(ImGui::Button("Create cube"))ui_act({{"op","create"},{"kind","cube"}});ImGui::SameLine();
-            if(ImGui::Button("Create..."))ImGui::OpenPopup("Create entity");if(ImGui::BeginPopup("Create entity")) { for(const auto* kind:{"empty","light","camera"})if(ImGui::MenuItem(kind))ui_act({{"op","create"},{"kind",kind}});ImGui::EndPopup(); }
-            ImGui::SameLine();ImGui::BeginDisabled(model.history.value("undo_count",0)==0);if(ImGui::Button("Undo"))ui_act({{"op","undo"}});ImGui::EndDisabled();ImGui::SameLine();ImGui::BeginDisabled(model.history.value("redo_count",0)==0);if(ImGui::Button("Redo"))ui_act({{"op","redo"}});ImGui::EndDisabled();ImGui::EndDisabled();
-            ImGui::SameLine();if(!model.playing) { ImGui::BeginDisabled(!Runtime::available());if(ImGui::Button("Play"))ui_act({{"op","play"}});ImGui::EndDisabled(); }else { if(ImGui::Button(model.paused ? "Resume" : "Pause"))ui_act({{"op","pause"}});ImGui::SameLine();if(ImGui::Button("Stop"))ui_act({{"op","stop"}});ImGui::SameLine();if(ImGui::Button("Step"))ui_act({{"op","step"},{"ticks",1}}); }
-            ImGui::SameLine();ImGui::Text("Rev %llu | %s",static_cast<unsigned long long>(model.revision),model.playing ? "PLAY" : "EDIT");ImGui::End();
-            if(!io.WantTextInput) { if(!model.playing && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z,false))ui_act({{"op",io.KeyShift ? "redo" : "undo"}});if(!model.playing && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y,false))ui_act({{"op","redo"}});if(!model.selected.empty() && ImGui::IsKeyPressed(ImGuiKey_F,false))ui_act({{"op","frame_selected"}});if(!model.playing && !model.selected.empty() && ImGui::IsKeyPressed(ImGuiKey_Delete,false))ui_act({{"op","delete"}}); }
-            panel("Hierarchy",0,toolbar,left,height-toolbar-bottom);
-            if(model.entities.empty())ImGui::TextWrapped("Create a cube or import a glTF model to begin.");
-            // Draw a stable copy; selecting refreshes service state while widgets iterate.
-            const auto hierarchy=model.entities;std::function<void(const Json&,int)> row=[&](const Json& e,int depth) {
-                const auto id=e.at("id").get<std::string>();bool child=std::any_of(hierarchy.begin(),hierarchy.end(),[&](const Json& x){return x.at("parent")==id;});
-                auto flags=ImGuiTreeNodeFlags_OpenOnArrow|ImGuiTreeNodeFlags_SpanAvailWidth;if(!child || depth>=64)flags|=ImGuiTreeNodeFlags_Leaf;if(model.selected==id)flags|=ImGuiTreeNodeFlags_Selected;
-                ImGui::PushID(id.c_str());const bool open=ImGui::TreeNodeEx("entity",flags,"%s",e.at("name").get<std::string>().c_str());if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())ui_act({{"op","select"},{"id",id}});
-                if(open) { if(depth<64)for(const auto& c:hierarchy)if(c.at("parent")==id)row(c,depth+1);ImGui::TreePop(); }ImGui::PopID();
-            };for(const auto& e:hierarchy)if(e.at("parent").is_null())row(e,0);ImGui::End();
-            panel("Inspector",width-right,toolbar,right,height-toolbar-bottom);
-            if(model.selected.empty())ImGui::TextWrapped("Select an entity in the hierarchy or scene.");else {
-                draft.sync(model);auto& name=draft.name;auto& drafts=draft.components;
-                ImGui::BeginDisabled(model.playing);ImGui::SetNextItemWidth(-1);const bool enter=ImGui::InputText("##Entity name",name.data(),name.size(),ImGuiInputTextFlags_EnterReturnsTrue);if(enter)ui_act({{"op","apply_draft"},{"type","name"}});
-                if(ImGui::Button("Rename"))ui_act({{"op","apply_draft"},{"type","name"}});ImGui::SameLine();if(ImGui::Button("Delete"))ui_act({{"op","delete"}});ImGui::EndDisabled();ImGui::SameLine();if(ImGui::Button("Frame"))ui_act({{"op","frame_selected"}});
-                ImGui::TextDisabled("%.12s...",model.selected.c_str());if(model.playing)ImGui::TextWrapped("Runtime is isolated. Stop to edit authored values.");
-                ImGui::BeginChild("Draft status",{0,86},false,ImGuiWindowFlags_NoScrollbar);
-                if(draft.conflict(model.revision))ImGui::TextColored({1,.55f,.2f,1},"Draft conflict - newer world revision");
-                if(draft.dirty()) { ImGui::TextDisabled("Draft base revision %llu",static_cast<unsigned long long>(draft.base_revision));if(ImGui::Button("Reload / discard draft"))ui_act({{"op","reload_draft"}}); }
-                else ImGui::TextDisabled("No unapplied changes.");ImGui::EndChild();
-                ImGui::BeginDisabled(model.playing);for(auto& [type,component_draft]:drafts.items()) { ImGui::PushID(type.c_str());if(ImGui::CollapsingHeader(type.c_str(),ImGuiTreeNodeFlags_DefaultOpen)) { inspect_component(type,component_draft);if(type=="Transform" || type=="Camera" || type=="Light" || type=="MeshRenderer" || type=="PbrMaterial")if(ImGui::Button("Apply"))ui_act({{"op","apply_draft"},{"type",type}}); }ImGui::PopID(); }
-                if(!drafts.contains("PbrMaterial") && ImGui::Button("Add material"))ui_act({{"op","component"},{"type","PbrMaterial"},{"value",{{"base_color",{.8,.8,.8}},{"emissive",{0,0,0}},{"metallic",0},{"roughness",.7},{"double_sided",false}}}});ImGui::EndDisabled();
-            }ImGui::End();
-            panel("Assets",0,height-bottom,width*.55f,bottom);ImGui::BeginDisabled(model.playing);ImGui::SetNextItemWidth(std::max(80.f,width*.55f-90));ImGui::InputText("##Import path",import_path.data(),import_path.size());ImGui::SameLine();if(ImGui::Button("Import"))ui_act({{"op","import_asset"},{"path",std::string(import_path.data())}});ImGui::TextDisabled("glTF / GLB path; importing can briefly block the UI.");
-            for(const auto& asset:model.assets) { const auto id=asset.at("asset").get<std::string>();ImGui::PushID(id.c_str());ImGui::Text("%.16s...",id.c_str());ImGui::SameLine();if(ImGui::Button("Instantiate"))ui_act({{"op","instantiate_asset"},{"asset",id}});ImGui::PopID(); }ImGui::EndDisabled();ImGui::End();
-            panel("Activity",width*.55f,height-bottom,width*.45f,bottom);for(const auto& line:model.log)ImGui::TextWrapped("%s",line.c_str());ImGui::End();
-            update_snapshot();
-            panel("Scene",left,toolbar,width-left-right,height-toolbar-bottom,ImGuiWindowFlags_NoBackground|ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse);
-            const auto top=ImGui::GetCursorScreenPos(),size=ImGui::GetContentRegionAvail();EditorRect rect{top.x,top.y,std::max(0.f,size.x),std::max(0.f,size.y)};ImGui::InvisibleButton("Scene input",{std::max(1.f,size.x),std::max(1.f,size.y)},ImGuiButtonFlags_MouseButtonLeft|ImGuiButtonFlags_MouseButtonRight|ImGuiButtonFlags_MouseButtonMiddle);const bool hovered=ImGui::IsItemHovered();
+            if(ImGui::Button("Create..."))ImGui::OpenPopup("Create root entity");
+            if(ImGui::BeginPopup("Create root entity")) { for(const auto* kind:{"empty","light","camera"})if(ImGui::MenuItem(kind))ui_act({{"op","create"},{"kind",kind}});ImGui::EndPopup(); }
+            ImGui::EndDisabled();
+            ImGui::SameLine();ImGui::SetCursorPosX(std::max(210.f,(width-104)*.5f));
+            ImGui::BeginDisabled(!Runtime::available());
+            if(playback_button("##Play",model.playing ? 2 : 0,model.playing))ui_act({{"op",model.playing ? "stop" : "play"}});
+            if(ImGui::IsItemHovered())ImGui::SetTooltip("%s",model.playing ? "Stop Play" : "Play");ImGui::SameLine(0,3);
+            ImGui::BeginDisabled(!model.playing);
+            if(playback_button("##Pause",1,model.paused))ui_act({{"op","pause"}});if(ImGui::IsItemHovered())ImGui::SetTooltip("Pause / resume");ImGui::SameLine(0,3);
+            if(playback_button("##Step",3)) { ui_act({{"op","pause"},{"paused",true}});ui_act({{"op","step"},{"ticks",1}}); }if(ImGui::IsItemHovered())ImGui::SetTooltip("Advance one fixed tick");
+            ImGui::EndDisabled();ImGui::EndDisabled();
+            ImGui::SameLine();ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(),width-220));ImGui::TextDisabled("%s  |  Revision %llu",model.playing ? (model.paused ? "Paused" : "Playing") : "Edit",static_cast<unsigned long long>(model.revision));ImGui::End();ImGui::PopStyleVar(2);
+            const ImVec2 dock_position{origin.x,origin.y+menu_height+toolbar_height},dock_size{width,std::max(1.f,height-menu_height-toolbar_height-status_height)};
+            ImGui::SetNextWindowPos(dock_position);ImGui::SetNextWindowSize(dock_size);ImGui::SetNextWindowViewport(main_viewport->ID);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{0,0});ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize,0);ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding,0);
+            ImGui::Begin("##Workspace",nullptr,fixed|ImGuiWindowFlags_NoBackground|ImGuiWindowFlags_NoBringToFrontOnFocus|ImGuiWindowFlags_NoNavFocus);
+            const auto dock_id=ImGui::GetID("PoimaWorkspaceDockspace");layout.build(dock_id,dock_position,dock_size);layout.prepare_docking();
+            ImGui::DockSpace(dock_id,{0,0},ImGuiDockNodeFlags_PassthruCentralNode);ImGui::End();ImGui::PopStyleVar(3);
+            if(!io.WantTextInput) {
+                if(!model.playing && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z,false))ui_act({{"op",io.KeyShift ? "redo" : "undo"}});
+                if(!model.playing && io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y,false))ui_act({{"op","redo"}});
+                if(!model.selected.empty() && ImGui::IsKeyPressed(ImGuiKey_F,false))ui_act({{"op","frame_selected"}});
+                if(!model.playing && !model.selected.empty() && ImGui::IsKeyPressed(ImGuiKey_Delete,false))ui_act({{"op","delete"}});
+            }
+            if(layout.open["Hierarchy"]) {
+                if(layout.begin("Hierarchy")) {
+                    ImGui::SetNextItemWidth(-1);ImGui::InputTextWithHint("##Hierarchy search","Search entities",hierarchy_search.data(),hierarchy_search.size());
+                    ImGui::Separator();const auto hierarchy=model.entities;const auto query=lower(hierarchy_search.data());
+                    if(hierarchy.empty())ImGui::TextDisabled("No entities in this world");
+                    auto context_menu=[&](const std::string& id) {
+                        if(ImGui::BeginPopupContextItem()) {
+                            if(model.selected!=id)ui_act({{"op","select"},{"id",id}});
+                            ImGui::BeginDisabled(model.selected!=id || model.playing);
+                            if(ImGui::MenuItem("Rename")) { layout.open["Inspector"]=true;focus_name=true;ImGui::SetWindowFocus("Inspector"); }
+                            if(ImGui::MenuItem("Delete",nullptr,false,!draft.dirty()))ui_act({{"op","delete"}});
+                            ImGui::EndDisabled();if(ImGui::MenuItem("Frame",nullptr,false,model.selected==id))ui_act({{"op","frame_selected"}});
+                            ImGui::Separator();ImGui::BeginDisabled(model.playing || draft.dirty());
+                            if(ImGui::MenuItem("Create root cube"))ui_act({{"op","create"},{"kind","cube"}});
+                            if(ImGui::MenuItem("Create root entity"))ui_act({{"op","create"},{"kind","empty"}});
+                            ImGui::EndDisabled();ImGui::EndPopup();
+                        }
+                    };
+                    std::function<void(const Json&,int)> row=[&](const Json& e,int depth) {
+                        const auto id=e.at("id").get<std::string>();const bool child=std::any_of(hierarchy.begin(),hierarchy.end(),[&](const Json& c){return c.at("parent")==id;});
+                        auto flags=ImGuiTreeNodeFlags_OpenOnArrow|ImGuiTreeNodeFlags_SpanAvailWidth;
+                        if(!child || depth>=64)flags|=ImGuiTreeNodeFlags_Leaf;if(model.selected==id)flags|=ImGuiTreeNodeFlags_Selected;
+                        ImGui::PushID(id.c_str());const bool opened=ImGui::TreeNodeEx("entity",flags,"%s",e.at("name").get<std::string>().c_str());
+                        if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())ui_act({{"op","select"},{"id",id}});context_menu(id);
+                        if(opened) { if(depth<64)for(const auto& c:hierarchy)if(c.at("parent")==id)row(c,depth+1);ImGui::TreePop(); }ImGui::PopID();
+                    };
+                    for(const auto& e:hierarchy) {
+                        if(query.empty()) { if(e.at("parent").is_null())row(e,0); }
+                        else if(lower(e.at("name").get<std::string>()).find(query)!=std::string::npos) {
+                            const auto id=e.at("id").get<std::string>();ImGui::PushID(id.c_str());if(ImGui::Selectable(e.at("name").get<std::string>().c_str(),model.selected==id))ui_act({{"op","select"},{"id",id}});context_menu(id);ImGui::PopID();
+                        }
+                    }
+                    if(ImGui::BeginPopupContextWindow("Hierarchy empty",ImGuiPopupFlags_MouseButtonRight|ImGuiPopupFlags_NoOpenOverItems)) {
+                        ImGui::BeginDisabled(model.playing || draft.dirty());if(ImGui::MenuItem("Create cube"))ui_act({{"op","create"},{"kind","cube"}});if(ImGui::MenuItem("Create empty"))ui_act({{"op","create"},{"kind","empty"}});ImGui::EndDisabled();ImGui::EndPopup();
+                    }
+                }ImGui::End();
+            }
+            if(layout.open["Inspector"]) {
+                if(layout.begin("Inspector")) {
+                    if(model.selected.empty())ImGui::TextDisabled("Select an entity to inspect.");else {
+                        draft.sync(model);auto& name=draft.name;auto& drafts=draft.components;
+                        ImGui::BeginDisabled(model.playing);ImGui::SetNextItemWidth(-1);if(focus_name) { ImGui::SetKeyboardFocusHere();focus_name=false; }
+                        if(ImGui::InputText("##Entity name",name.data(),name.size(),ImGuiInputTextFlags_EnterReturnsTrue))ui_act({{"op","apply_draft"},{"type","name"}});
+                        if(ImGui::Button("Rename"))ui_act({{"op","apply_draft"},{"type","name"}});ImGui::EndDisabled();ImGui::SameLine();if(ImGui::Button("Frame"))ui_act({{"op","frame_selected"}});
+                        if(model.playing)ImGui::TextDisabled("Runtime preview - authored fields are locked");
+                        if(draft.conflict(model.revision))ImGui::TextColored({1,.65f,.35f,1},"Draft conflicts with revision %llu",static_cast<unsigned long long>(model.revision));
+                        if(draft.dirty()) { ImGui::TextDisabled("Unapplied changes (base %llu)",static_cast<unsigned long long>(draft.base_revision));if(ImGui::Button("Reload / discard draft"))ui_act({{"op","reload_draft"}}); }
+                        ImGui::Separator();ImGui::BeginDisabled(model.playing);
+                        auto component_ui=[&](const std::string& type,Json& value) {
+                            ImGui::PushID(type.c_str());if(ImGui::CollapsingHeader(type.c_str(),ImGuiTreeNodeFlags_DefaultOpen)) {
+                                inspect_component(type,value);
+                                if(type=="Transform" || type=="Camera" || type=="Light" || type=="MeshRenderer" || type=="PbrMaterial") {
+                                    ImGui::BeginDisabled(value==draft.baseline.at(type));if(ImGui::SmallButton("Apply"))ui_act({{"op","apply_draft"},{"type",type}});ImGui::EndDisabled();
+                                }
+                            }ImGui::PopID();
+                        };
+                        if(drafts.contains("Transform"))component_ui("Transform",drafts.at("Transform"));
+                        for(auto& [type,value]:drafts.items())if(type!="Transform")component_ui(type,value);
+                        if(!drafts.contains("PbrMaterial") && ImGui::Button("Add material",{-1,0}))ui_act({{"op","component"},{"type","PbrMaterial"},{"value",{{"base_color",{.8,.8,.8}},{"emissive",{0,0,0}},{"metallic",0},{"roughness",.7},{"double_sided",false}}}});
+                        ImGui::EndDisabled();
+                    }
+                }ImGui::End();
+            }
+            if(layout.open["Project"]) {
+                if(layout.begin("Project")) {
+                    ImGui::BeginDisabled(model.playing);ImGui::SetNextItemWidth(std::max(100.f,ImGui::GetContentRegionAvail().x-67));if(focus_import) { ImGui::SetKeyboardFocusHere();focus_import=false; }
+                    const bool import_enter=ImGui::InputTextWithHint("##Import path","glTF or GLB file path",import_path.data(),import_path.size(),ImGuiInputTextFlags_EnterReturnsTrue);ImGui::SameLine();
+                    if(ImGui::Button("Import") || import_enter)ui_act({{"op","import_asset"},{"path",std::string(import_path.data())}});ImGui::EndDisabled();
+                    ImGui::SetNextItemWidth(-1);ImGui::InputTextWithHint("##Asset search","Search imported models",asset_search.data(),asset_search.size());
+                    if(model.assets.empty())ImGui::TextDisabled("Import a model to add it to this session's asset list.");
+                    if(ImGui::BeginTable("Imported models",3,ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp|ImGuiTableFlags_ScrollY,{0,std::max(40.f,ImGui::GetContentRegionAvail().y)})) {
+                        ImGui::TableSetupColumn("Name",ImGuiTableColumnFlags_WidthStretch);ImGui::TableSetupColumn("Type",ImGuiTableColumnFlags_WidthFixed,65);ImGui::TableSetupColumn("",ImGuiTableColumnFlags_WidthFixed,90);ImGui::TableHeadersRow();
+                        for(const auto& asset:model.assets) {
+                            const auto id=asset.at("asset").get<std::string>(),name=asset.value("display_name",std::string("Model"));if(lower(name).find(lower(asset_search.data()))==std::string::npos)continue;
+                            ImGui::PushID(id.c_str());ImGui::TableNextRow();ImGui::TableSetColumnIndex(0);if(ImGui::Selectable(name.c_str(),selected_asset==id))selected_asset=id;if(ImGui::IsItemHovered())ImGui::SetTooltip("Asset %s",id.c_str());
+                            ImGui::TableSetColumnIndex(1);ImGui::TextDisabled("Model");ImGui::TableSetColumnIndex(2);ImGui::BeginDisabled(model.playing || draft.dirty());if(ImGui::SmallButton("Instantiate"))ui_act({{"op","instantiate_asset"},{"asset",id},{"name",path_text(path_of(name).stem())}});ImGui::EndDisabled();ImGui::PopID();
+                        }ImGui::EndTable();
+                    }
+                }ImGui::End();
+            }
+            if(layout.open["Console"]) {
+                if(layout.begin("Console")) {
+                    if(ImGui::SmallButton("Clear"))model.log.clear();ImGui::SameLine();ImGui::TextDisabled("%zu messages",model.log.size());ImGui::Separator();
+                    ImGui::BeginChild("Console messages",{0,0});for(const auto& line:model.log)ImGui::TextWrapped("%s",line.c_str());ImGui::EndChild();
+                }ImGui::End();
+            }
+            update_snapshot();EditorRect rect{};
+            if(layout.open["Scene"]) {
+                if(layout.begin("Scene",ImGuiWindowFlags_NoBackground|ImGuiWindowFlags_NoScrollbar|ImGuiWindowFlags_NoScrollWithMouse)) {
+                    const auto top=ImGui::GetCursorScreenPos(),size=ImGui::GetContentRegionAvail();rect={top.x,top.y,std::max(0.f,size.x),std::max(0.f,size.y)};
+                    if(size.x>0 && size.y>0) {
+                        ImGui::Image(static_cast<ImTextureID>(2),size,{(rect.x-origin.x)/width,(rect.y-origin.y)/height},
+                            {(rect.x+rect.width-origin.x)/width,(rect.y+rect.height-origin.y)/height});
+                        ImGui::SetCursorScreenPos(top);ImGui::InvisibleButton("Scene input",size,ImGuiButtonFlags_MouseButtonLeft|ImGuiButtonFlags_MouseButtonRight|ImGuiButtonFlags_MouseButtonMiddle);
+                    }
+                    const bool hovered=size.x>0 && size.y>0 && ImGui::IsItemHovered();
             if(hovered && !io.WantTextInput) {
                 const auto before=camera.camera().world;const auto delta=io.MouseDelta;
                 if(ImGui::IsMouseDown(ImGuiMouseButton_Right) || (io.KeyAlt && ImGui::IsMouseDown(ImGuiMouseButton_Left))) { camera.yaw-=delta.x*.2;camera.pitch=std::clamp(camera.pitch-delta.y*.2,-89.0,89.0);if(io.KeyAlt)camera.orbit(); }
@@ -402,7 +680,16 @@ Reply run_editor(const EditorOptions& options) {
                 const auto diagnostic=std::string("SCENE UNAVAILABLE - ")+(has_snapshot ? std::string("showing last valid revision ")+std::to_string(scene.revision) : std::string("empty fallback"))+"\n"+presentation_error;
                 auto* draw=ImGui::GetWindowDrawList();draw->AddRectFilled({rect.x,rect.y+48},{rect.x+rect.width,rect.y+132},IM_COL32(45,22,20,240));draw->AddText(ImGui::GetFont(),ImGui::GetFontSize(),{rect.x+8,rect.y+54},IM_COL32(255,180,135,255),diagnostic.c_str(),nullptr,std::max(1.f,rect.width-16));
             }
-            ImGui::End();ImGui::Render();scene.camera_world=camera.camera().world;
+                }ImGui::End();
+            }
+            layout.scene_rect=rect;
+            ImGui::SetNextWindowPos({origin.x,origin.y+height-status_height});ImGui::SetNextWindowSize({width,status_height});
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,{8,2});ImGui::PushStyleVar(ImGuiStyleVar_WindowMinSize,{1,1});ImGui::Begin("##Status",nullptr,fixed);
+            if(!presentation_error.empty())ImGui::TextColored({1,.65f,.35f,1},"Scene unavailable - see Console / Scene diagnostic");
+            else ImGui::TextDisabled("%s%s",path_text(path_of(options.world).filename()).c_str(),draft.dirty() ? "  |  Inspector changes not applied" : "  |  All changes saved");
+            ImGui::End();ImGui::PopStyleVar(2);
+            ImGui::Render();scene.camera_world=camera.camera().world;
+            if(layout.persistent && io.WantSaveIniSettings) { try { layout.save(); }catch(const std::exception& e) { model.note(std::string("Layout save: ")+e.what());io.WantSaveIniSettings=false; } }
             const bool final=quit || (limit && frame+1>=limit);if(final && !options.render.capture.empty())new_output(options.render.capture,options);
             if(pending_capture && pending_capture->revision!=model.revision)finish_capture(-32009,"Authored revision changed before capture presentation.");
             if(pending_capture && !scene_current())finish_capture(-32003,"Current scene is unavailable: "+presentation_error);
@@ -427,6 +714,7 @@ Reply run_editor(const EditorOptions& options) {
             if(!quit && (options.script.empty() || host)) { const auto flags=SDL_GetWindowFlags(static_cast<SDL_Window*>(viewport->native_window()));const double budget=(flags&SDL_WINDOW_INPUT_FOCUS) && !(flags&SDL_WINDOW_MINIMIZED) ? 1.0/60 : 1.0/30;const auto elapsed=std::chrono::duration<double>(std::chrono::steady_clock::now()-frame_begin).count();if(elapsed<budget)SDL_Delay(static_cast<Uint32>(std::ceil((budget-elapsed)*1000))); }
         }
         flush_closing();
+        if(layout.persistent) { try { layout.save(); }catch(const std::exception& e) { model.note(std::string("Layout save: ")+e.what()); } }
         require(action_index==actions.size(),"Editor closed before all scripted actions ran.");const auto r=viewport->report();report["render"]={{"gpu",r.gpu_name},{"hardware",r.hardware},{"width",r.width},{"height",r.height},{"capture_written",options.render.capture.empty() ? r.capture_written : configured_capture_written},{"nvrhi_errors",r.validation_errors},{"frames_presented",r.frames_presented}};
         report["editor_state"]=editor_inspect();report["presentation_error"]=presentation_error.empty() ? Json(nullptr) : Json(presentation_error);report["presentation_current"]=scene_current();report["endpoint"]=options.endpoint;report["authored_revision"]=model.revision;report["selected"]=model.selected;report["playing"]=model.playing;report["paused"]=model.paused;report["runtime_tick"]=model.tick;
         require(r.validation_errors==0,"Renderer reported validation errors.");require(r.frames_presented>0,"No editor frame was presented.");require(options.render.capture.empty() || configured_capture_written,"Editor capture was not written.");report["success"]=true;cleanup();

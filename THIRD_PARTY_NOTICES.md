@@ -98,7 +98,13 @@ The optional main-engine integration (`POIMA_ENABLE_MANAGED_GAMEPLAY`) now uses 
 
 ## Dear ImGui (optional native editor)
 
-- Source: [Dear ImGui v1.91.9b](https://github.com/ocornut/imgui/releases/tag/v1.91.9b), pinned commit `f5befd2d29e66809cd1110a152e375a7f1981f06`.
-- Archive SHA-256: `85f4ce357df05bcc331b587f01976f47fb55f19fadf477a7907289686bc3f4c8`.
+- Source: [Dear ImGui v1.91.9b-docking](https://github.com/ocornut/imgui/releases/tag/v1.91.9b-docking), pinned commit `52fe0a05a7b1aa180a202bb24f0f2a049a9c1b7d`.
+- Archive SHA-256: `84196b24c66cd3be22cb0b313ef70941481238ec33e595401b07976baeb7c3db`.
 - License: MIT; upstream `LICENSE.txt` is installed in `share/poima/licenses/DearImGui`. Core/widgets/drawing/tables and the upstream SDL3 input backend are unmodified. Poima supplies its own NVRHI rendering integration.
 - Fetched only with `POIMA_BUILD_EDITOR=ON`. This pinned static-font API baseline is an explicit integration choice, not a claim to use the newest upstream release. It does not provide the shipped-game UI/accessibility framework.
+
+## Source Sans 3 (optional native editor)
+
+- Source: [Adobe Source Sans 3 release 3.052R](https://github.com/adobe-fonts/source-sans/releases/tag/3.052R), commit `ed1808970eb3c7301c9a523bee26473ba0bb62fa`.
+- License: SIL Open Font License 1.1; unmodified Regular and Semibold TTF files and the complete license are retained under `third_party/source_sans`. Provenance and hashes are in that directory's README. The license is installed in `share/poima/licenses/SourceSans3`.
+- Fonts are embedded only in editor-enabled builds. Rasterized at runtime through Dear ImGui's font atlas; no Inter font is included.

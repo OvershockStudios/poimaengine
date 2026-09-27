@@ -1,3 +1,5 @@
 * text=auto eol=lf
 *.png binary
 *.bmp binary
+# Preserve upstream license bytes, including its original line endings/spacing.
+third_party/source_sans/LICENSE.md -text -whitespace

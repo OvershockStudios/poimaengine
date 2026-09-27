@@ -2,11 +2,12 @@
 include(FetchContent)
 # Stable explicit API baseline; optional authoring dependency, never fetched by
 # headless/default builds. Original engine integration is separate from upstream.
-FetchContent_Declare(imgui
-    URL https://codeload.github.com/ocornut/imgui/tar.gz/f5befd2d29e66809cd1110a152e375a7f1981f06
-    URL_HASH SHA256=85f4ce357df05bcc331b587f01976f47fb55f19fadf477a7907289686bc3f4c8
+FetchContent_Declare(imgui_docking
+    URL https://codeload.github.com/ocornut/imgui/tar.gz/52fe0a05a7b1aa180a202bb24f0f2a049a9c1b7d
+    URL_HASH SHA256=84196b24c66cd3be22cb0b313ef70941481238ec33e595401b07976baeb7c3db
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
-FetchContent_MakeAvailable(imgui)
+FetchContent_MakeAvailable(imgui_docking)
+set(imgui_SOURCE_DIR "${imgui_docking_SOURCE_DIR}")
 add_library(poima_imgui STATIC
     "${imgui_SOURCE_DIR}/imgui.cpp" "${imgui_SOURCE_DIR}/imgui_draw.cpp"
     "${imgui_SOURCE_DIR}/imgui_tables.cpp" "${imgui_SOURCE_DIR}/imgui_widgets.cpp"
@@ -14,7 +15,16 @@ add_library(poima_imgui STATIC
 target_compile_features(poima_imgui PUBLIC cxx_std_20)
 target_include_directories(poima_imgui SYSTEM PUBLIC "${imgui_SOURCE_DIR}" "${imgui_SOURCE_DIR}/backends")
 target_link_libraries(poima_imgui PRIVATE SDL3::SDL3-static)
-target_sources(poima_core PRIVATE src/editor.cpp)
+target_sources(poima_core PRIVATE src/editor.cpp src/editor_style.cpp)
+set(font_header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/editor_fonts.hpp")
+file(WRITE "${font_header}" "// Generated from unmodified SIL OFL Source Sans 3 fonts.\n#pragma once\n")
+foreach(weight Regular Semibold)
+    set(font "${CMAKE_SOURCE_DIR}/third_party/source_sans/SourceSans3-${weight}.ttf")
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${font}")
+    file(READ "${font}" font_hex HEX)
+    string(REGEX REPLACE "([0-9a-f][0-9a-f])" "0x\\1," font_array "${font_hex}")
+    file(APPEND "${font_header}" "inline const unsigned char source_sans_${weight}[]={${font_array}};\n")
+endforeach()
 target_link_libraries(poima_core PRIVATE poima_imgui)
 foreach(stage vs ps)
     if(stage STREQUAL "vs")
@@ -35,3 +45,4 @@ foreach(stage vs ps)
     target_sources(poima_core PRIVATE "${header}")
 endforeach()
 install(FILES "${imgui_SOURCE_DIR}/LICENSE.txt" DESTINATION share/poima/licenses/DearImGui)
+install(FILES "${CMAKE_SOURCE_DIR}/third_party/source_sans/LICENSE.md" DESTINATION share/poima/licenses/SourceSans3)

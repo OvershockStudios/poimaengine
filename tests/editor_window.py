@@ -3,6 +3,9 @@
 
 Run with Windows Python. No global SendInput, cursor movement, semantic action
 script or direct world mutation is used. Physical devices remain unqualified.
+Use --lifecycle-only for resize/minimize/close qualification without UI input.
+Interaction-mode default hit points predate docking; supply current points
+before attempting interaction qualification against the docking editor.
 """
 # SPDX-License-Identifier: Apache-2.0
 import argparse
@@ -19,8 +22,10 @@ parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('binary', type=Path)
 parser.add_argument('--output', type=Path, required=True)
 parser.add_argument('--gpu', type=int, default=0)
-# Coordinates are initial 1440x900 client units; override when testing a
-# deliberately changed layout. Defaults track the built-in editor layout.
+parser.add_argument('--lifecycle-only', action='store_true',
+                    help='Skip all mouse/key actions; qualify window lifecycle and final capture only.')
+# Coordinates are initial 1440x900 client units. These legacy defaults predate
+# docking and must be overridden with current widget positions for UI testing.
 parser.add_argument('--create-point', type=int, nargs=2, default=[94, 18])
 parser.add_argument('--name-point', type=int, nargs=2, default=[1240, 79])
 parser.add_argument('--undo-point', type=int, nargs=2, default=[242, 18])
@@ -47,14 +52,16 @@ u.SetThreadDpiAwarenessContext.argtypes = [c.c_void_p]
 u.SetThreadDpiAwarenessContext.restype = c.c_void_p
 assert u.SetThreadDpiAwarenessContext(c.c_void_p(-4)), c.get_last_error()
 
-record = {'passed': False, 'binary_sha256': hashlib.sha256(args.binary.read_bytes()).hexdigest(),
+record = {'passed': False, 'lifecycle_only': args.lifecycle_only,
+          'binary_sha256': hashlib.sha256(args.binary.read_bytes()).hexdigest(),
           'input_source': 'Child HWND-targeted Win32 messages only; no physical input qualification.',
           'limitations': ['Synthetic input does not qualify physical mouse, keyboard, IME or gamepad.',
-                         'Widget hit points target the initial built-in layout.',
+                         'Interaction-mode default hit points predate docking; current widget positions must be supplied.',
                          'Synthetic middle-button hold prevents the SDL backend global-cursor fallback during clicks.'],
           'checks': {}, 'messages': []}
 command = [str(args.binary.resolve()), 'editor', str(world.resolve()), '--gpu', str(args.gpu),
-           '--width', '1440', '--height', '900', '--capture', str(capture.resolve()), '--report', str(report.resolve())]
+           '--no-layout', '--width', '1440', '--height', '900',
+           '--capture', str(capture.resolve()), '--report', str(report.resolve())]
 record['command'] = command
 # Files avoid pipe backpressure if graphics validation emits many diagnostics.
 stdout_file, stderr_file = run/'stdout.txt', run/'stderr.txt'
@@ -148,11 +155,13 @@ try:
     record['initial_foreground'] = u.GetForegroundWindow() == hwnd
     initial_size = client_size()
     record['initial_client_size'] = initial_size
-    click(args.create_point)
-    record['foreground_after_click'] = u.GetForegroundWindow() == hwnd
-    foreground_available = record['initial_foreground'] or record['foreground_after_click']
-    created = poll(lambda: has_revision(1), timeout=15 if foreground_available else 2,
-                   description='toolbar cube commit', required=foreground_available)
+    created = None
+    if not args.lifecycle_only:
+        click(args.create_point)
+        record['foreground_after_click'] = u.GetForegroundWindow() == hwnd
+        foreground_available = record['initial_foreground'] or record['foreground_after_click']
+        created = poll(lambda: has_revision(1), timeout=15 if foreground_available else 2,
+                       description='toolbar cube commit', required=foreground_available)
     entity = None
     if created:
         assert len(created['entities']) == 1, created
@@ -199,8 +208,12 @@ try:
         # Desktop focus restrictions must not turn unavailable input into a
         # passing interaction test. Still exercise this owned window's lifecycle.
         assert not world.exists(), 'Unexpected authored data appeared without the expected cube commit.'
-        reason = 'Foreground unavailable and targeted toolbar click produced no authored commit.'
-        record['qualification'] = 'Window lifecycle only; UI input unavailable'
+        reason = ('Explicit --lifecycle-only mode skips every mouse/key action and all UI interaction checks.'
+                  if args.lifecycle_only else
+                  'Foreground unavailable and targeted toolbar click produced no authored commit.')
+        record['qualification'] = ('Window lifecycle only; UI input intentionally skipped'
+                                   if args.lifecycle_only else
+                                   'Window lifecycle only; UI input unavailable')
         record['limitations'].append(reason)
         record['input_checks_skipped'] = {
             check: reason for check in ('visible_toolbar_creates_cube',

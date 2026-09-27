@@ -237,6 +237,18 @@ Loaded load(const fs::path& path) {
         return {parse_profile(doc.value.at("profile")),revision(doc.value.at("revision")),profile_hash(doc.value.at("profile")),doc.value.at("format").get<std::string>()};
     });
 }
+// Packaged settings are immutable inputs. Validate the same file and format
+// contracts without creating or opening any writer-lock sidecar.
+Loaded load_read_only(const fs::path& path) {
+    return storage_errors([&]() -> Loaded {
+        guard_paths(path);const auto doc=read_document(path);
+        require(doc.persisted,"Requested input profile does not exist.",-32070);
+        return {parse_profile(doc.value.at("profile")),revision(doc.value.at("revision")),profile_hash(doc.value.at("profile")),doc.value.at("format").get<std::string>()};
+    });
+}
+Json inspect_read_only(const fs::path& path) {
+    return storage_errors([&]() -> Json { guard_paths(path);return summary(read_document(path)); });
+}
 Json transact(const fs::path& path,const Json& source) {
     return storage_errors([&]() -> Json {
         const auto params=normalized_params(source);guard_paths(path);

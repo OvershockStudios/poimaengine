@@ -73,7 +73,7 @@ class Editor:
                 input=json.dumps(seed)+'\n', text=True, capture_output=True, timeout=30)
             assert seeded.returncode == 0 and 'result' in json.loads(seeded.stdout), seeded.stdout+seeded.stderr
         command = [binary, 'editor', str(self.world.resolve()), '--endpoint', self.endpoint,
-                   '--gpu', str(args.gpu), '--width', '1440', '--height', '900', '--report', str(self.report.resolve())]
+                   '--gpu', str(args.gpu), '--width', '1440', '--height', '900', '--no-layout', '--report', str(self.report.resolve())]
         if actions is not None:
             script = self.root/'actions.json'
             script.write_text(json.dumps({'actions': actions}), encoding='utf-8')
@@ -163,7 +163,9 @@ class Client:
         assert Path(result['path']).resolve() == path.resolve(), result
         image = pixels(path)
         assert [len(image[0]), len(image)] == [result['width'], result['height']], result
-        editor.entry.setdefault('captures', []).append({**result, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
+        layout = self.ok('editor.inspect')['layout']
+        CAPTURE_RECTS[id(image)] = layout['scene_viewport']
+        editor.entry.setdefault('captures', []).append({**result, 'layout': layout, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
         return path, image
 
     def close(self):
@@ -171,9 +173,14 @@ class Client:
             self.process.stdin.close()
             assert self.process.wait(timeout=10) == 0, 'CLI bridge failed during close.'
 
+CAPTURE_RECTS = {}
 def scene_pixels(image):
-    # Exclude Toolbar/Inspector/Activity and the viewport help/Play overlay.
-    return [pixel for row in image[150:650] for pixel in row[265:1080]]
+    # Use the actual docked Scene content area; omit help/diagnostic overlays.
+    x, y, width, height = CAPTURE_RECTS[id(image)]
+    left, right = max(0, int(x)+8), min(len(image[0]), int(x+width)-8)
+    top, bottom = max(0, int(y)+100), min(len(image), int(y+height)-8)
+    assert right > left and bottom > top, 'Scene viewport is unavailable for pixel comparison.'
+    return [pixel for row in image[top:bottom] for pixel in row[left:right]]
 
 try:
     editor = Editor('shared')

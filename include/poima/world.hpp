@@ -6,6 +6,14 @@
 #include <string_view>
 
 namespace poima {
+enum class WorldOpenMode { authoring, read_only_runtime };
+struct WorldPackageAsset { std::string filename,sha256;std::uint64_t bytes=0; };
+struct WorldPackageContent {
+    std::string document;
+    std::vector<WorldPackageAsset> assets;
+    std::uint64_t revision=0;
+    bool needs_audio=false;
+};
 enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {
     bool available=false,active=false;
@@ -22,13 +30,15 @@ class WorldSession {
     struct Impl;
     std::unique_ptr<Impl> impl_;
 public:
-    explicit WorldSession(const std::string& utf8_path);
+    explicit WorldSession(const std::string& utf8_path,WorldOpenMode mode=WorldOpenMode::authoring);
     ~WorldSession();
     WorldSession(const WorldSession&)=delete;
     WorldSession& operator=(const WorldSession&)=delete;
     std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);
     bool closed() const;
     WorldRuntimeStatus runtime_status() const;
+    // Validates the complete typed asset closure; no storage writes.
+    WorldPackageContent package_content() const;
     SceneSnapshot authored_snapshot(const EditorCamera& camera) const;
     SceneSnapshot runtime_snapshot(const EditorCamera& camera) const;
 };

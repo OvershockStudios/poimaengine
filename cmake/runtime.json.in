@@ -1,0 +1,15 @@
+{
+  "format": "poima.runtime",
+  "version": 1,
+  "engine_version": "@PROJECT_VERSION@",
+  "target_os": "@CMAKE_SYSTEM_NAME@",
+  "target_arch": "@POIMA_TARGET_ARCH@",
+  "executable": "bin/poima@CMAKE_EXECUTABLE_SUFFIX@",
+  "features": {
+    "simulation": @POIMA_RUNTIME_SIMULATION@,
+    "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
+    "audio": @POIMA_RUNTIME_AUDIO@,
+    "managed": @POIMA_RUNTIME_MANAGED_GAMEPLAY@,
+    "editor": @POIMA_RUNTIME_EDITOR@
+  }
+}

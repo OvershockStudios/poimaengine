@@ -12,6 +12,10 @@ struct EditorOptions {
     std::string script,report;
     // Optional same-user local session endpoint; an identifier, never a path.
     std::string endpoint;
+    // Optional external ImGui layout file. Default interactive layouts use the
+    // OS user-preferences directory; scripts start fresh unless explicitly set.
+    std::string layout;
+    bool no_layout=false;
 };
 Reply run_editor(const EditorOptions& options);
 }

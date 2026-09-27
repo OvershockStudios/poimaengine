@@ -9,10 +9,27 @@
 namespace poima {
 inline std::string content_hash(const std::string& value) { return sha256(std::as_bytes(std::span(value.data(),value.size()))); }
 inline bool valid_asset_id(const std::string& id) { return id.size()==64 && id.find_first_not_of("0123456789abcdef")==std::string::npos; }
+// Cooked packages are immutable regular files directly in the asset store.
+// Check before size queries as well as byte reads; model caches must not turn
+// a linked package into an accepted dependency during constructor validation.
+inline std::filesystem::path asset_package_path(const std::filesystem::path& directory,const std::string& id,const char* extension) {
+    namespace fs=std::filesystem;
+    if(!valid_asset_id(id))throw std::runtime_error("Invalid cooked asset ID.");
+    auto regular=[&](const fs::path& path,bool folder) {
+        std::error_code error;const auto status=fs::symlink_status(path,error);
+        if(error || fs::is_symlink(status) || (folder ? !fs::is_directory(status) : !fs::is_regular_file(status)))
+            throw std::runtime_error(folder ? "Asset store must be a regular directory, not a link." : "Asset package must be a regular file, not a link.");
+#ifdef _WIN32
+        const auto attributes=GetFileAttributesW(path.c_str());
+        if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset stores and packages cannot be reparse points or junctions.");
+#endif
+    };
+    regular(directory,true);const auto path=directory/(id+extension);regular(path,false);return path;
+}
 struct LoadedModel { std::string id; std::size_t bytes=0; std::shared_ptr<const ModelAsset> model; };
 inline LoadedModel read_model_asset(const std::filesystem::path& directory,const std::string& id) {
     if(!valid_asset_id(id))throw std::runtime_error("Invalid model asset ID.");
-    const auto path=directory/(id+".pmodel");
+    const auto path=asset_package_path(directory,id,".pmodel");
     const auto length=std::filesystem::file_size(path);
     if(length>64*1024*1024)throw std::runtime_error("Model asset exceeds 64 MiB.");
     std::string bytes(static_cast<std::size_t>(length),'\0');std::ifstream input(path,std::ios::binary);
@@ -32,7 +49,7 @@ struct LoadedImage { std::string id;std::size_t bytes=0;std::shared_ptr<const Te
 struct LoadedAudio { std::string id;std::size_t bytes=0;std::shared_ptr<const AudioClip> clip; };
 inline LoadedAudio read_audio_asset(const std::filesystem::path& directory,const std::string& id) {
     if(!valid_asset_id(id))throw std::runtime_error("Invalid audio asset ID.");
-    const auto path=directory/(id+".paudio");const auto length=std::filesystem::file_size(path);
+    const auto path=asset_package_path(directory,id,".paudio");const auto length=std::filesystem::file_size(path);
     if(length>12+std::size_t(max_audio_clip_frames)*4)throw std::runtime_error("Audio package exceeds size limit.");
     std::string bytes(static_cast<std::size_t>(length),'\0');std::ifstream input(path,std::ios::binary);
     if(!input.read(bytes.data(),static_cast<std::streamsize>(length)) || content_hash(bytes)!=id)throw std::runtime_error("Audio content hash mismatch or read failure.");
@@ -52,13 +69,13 @@ struct AudioCache {
     std::shared_ptr<const AudioClip> get(const std::filesystem::path& directory,const std::string& id) {
         if(const auto found=clips.find(id);found!=clips.end())return found->second.clip;
         if(!valid_asset_id(id))throw std::runtime_error("Invalid audio asset ID.");
-        const auto length=std::filesystem::file_size(directory/(id+".paudio"));if(length>64*1024*1024-bytes)throw std::runtime_error("Audio packages exceed the initial 64 MiB budget.");
+        const auto length=std::filesystem::file_size(asset_package_path(directory,id,".paudio"));if(length>64*1024*1024-bytes)throw std::runtime_error("Audio packages exceed the initial 64 MiB budget.");
         auto loaded=read_audio_asset(directory,id);bytes+=loaded.bytes;auto result=loaded.clip;clips.emplace(id,std::move(loaded));return result;
     }
 };
 inline LoadedImage read_image_asset(const std::filesystem::path& directory,const std::string& id) {
     if(!valid_asset_id(id))throw std::runtime_error("Invalid image asset ID.");
-    const auto path=directory/(id+".pimage");const auto length=std::filesystem::file_size(path);
+    const auto path=asset_package_path(directory,id,".pimage");const auto length=std::filesystem::file_size(path);
     if(length>32*1024*1024+65552)throw std::runtime_error("Image package exceeds size limit.");
     std::string bytes(static_cast<std::size_t>(length),'\0');std::ifstream input(path,std::ios::binary);
     if(!input.read(bytes.data(),static_cast<std::streamsize>(length)) || content_hash(bytes)!=id)throw std::runtime_error("Image content hash mismatch or read failure.");
@@ -81,13 +98,13 @@ struct ModelCache {
     std::shared_ptr<const TextureImage> image(const std::filesystem::path& directory,const std::string& id) {
         if(const auto found=images.find(id);found!=images.end())return found->second.image;
         if(!valid_asset_id(id))throw std::runtime_error("Invalid image asset ID.");
-        const auto length=std::filesystem::file_size(directory/(id+".pimage"));if(length>256*1024*1024-bytes)throw std::runtime_error("Scene asset packages exceed the initial 256 MiB budget.");
+        const auto length=std::filesystem::file_size(asset_package_path(directory,id,".pimage"));if(length>256*1024*1024-bytes)throw std::runtime_error("Scene asset packages exceed the initial 256 MiB budget.");
         auto loaded=read_image_asset(directory,id);bytes+=loaded.bytes;auto result=loaded.image;images.emplace(id,std::move(loaded));return result;
     }
     std::shared_ptr<const ModelAsset> get(const std::filesystem::path& directory,const std::string& id) {
         if(const auto found=models.find(id);found!=models.end())return found->second.model;
         if(!valid_asset_id(id))throw std::runtime_error("Invalid model asset ID.");
-        const auto length=std::filesystem::file_size(directory/(id+".pmodel"));
+        const auto length=std::filesystem::file_size(asset_package_path(directory,id,".pmodel"));
         if(length>256*1024*1024-bytes)throw std::runtime_error("Scene model packages exceed the initial 256 MiB budget.");
         auto loaded=read_model_asset(directory,id);bytes+=loaded.bytes;auto result=loaded.model;models.emplace(id,std::move(loaded));return result;
     }

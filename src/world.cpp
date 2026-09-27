@@ -318,9 +318,10 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 21}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 22}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
+            {"world.dependencies",object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
             {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", component_type}}, {"id"})},
             {"entity.world_transform", object_schema({{"id", id}, {"revision", rev}}, {"id"})},
@@ -552,9 +553,11 @@ void validate(const Json& doc) {
     }
 }
 
+constexpr std::array authoring_methods{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"};
 class World {
     fs::path path_;
-    WriterLock lock_;
+    bool read_only_=false;
+    std::unique_ptr<WriterLock> lock_;
     Json doc_;
     std::string disk_;
     bool exists_ = false;
@@ -598,6 +601,7 @@ class World {
         return doc["entities"][text];
     }
     void persist(Json&& candidate) {
+        require(!read_only_,"This packaged world is read-only.",-32081);
         auto bytes = candidate.dump(2) + '\n';
         require(bytes.size() <= max_document_bytes, "World document would exceed 16 MiB.");
         require(fs::exists(path_) == exists_ && (!exists_ || read(path_) == disk_),
@@ -618,13 +622,58 @@ class World {
         exists_ = true;
     }
 public:
-    explicit World(const std::string& utf8_path) :
+    explicit World(const std::string& utf8_path,WorldOpenMode mode) :
         path_(fs::weakly_canonical(fs::absolute(fs::path(std::u8string(utf8_path.begin(), utf8_path.end()))))),
-        lock_(fs::path(path_).concat(".lock")) {
+        read_only_(mode==WorldOpenMode::read_only_runtime) {
+        require(mode==WorldOpenMode::authoring || mode==WorldOpenMode::read_only_runtime,"Unknown world open mode.");
+        if(read_only_)require(fs::is_regular_file(path_),"A read-only runtime world must be an existing regular file.");
+        else lock_=std::make_unique<WriterLock>(fs::path(path_).concat(".lock"));
         exists_ = fs::exists(path_);
         if (exists_) { disk_ = read(path_); doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_); }
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
+    }
+    WorldPackageContent package_content() const {
+        WorldPackageContent result;result.revision=revision(doc_.at("revision"));
+        std::map<std::string,WorldPackageAsset> files;ModelCache assets;
+        auto add=[&](const std::string& id,const char* extension,std::size_t bytes) {
+            const auto filename=id+extension;files.emplace(filename,WorldPackageAsset{filename,id,static_cast<std::uint64_t>(bytes)});
+        };
+        auto model=[&](const std::string& id) {
+            const auto value=assets.get(asset_directory(),id);add(id,".pmodel",assets.models.at(id).bytes);return value;
+        };
+        auto image=[&](const std::string& id) {
+            const auto value=assets.image(asset_directory(),id);add(id,".pimage",assets.images.at(id).bytes);return value;
+        };
+        // Only active component references are dependencies. Receipt/history
+        // payloads may mention retired assets and are deliberately not scanned.
+        for(const auto& entity:doc_.at("entities")) {
+            const auto& components=entity.at("components");
+            for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig"})if(components.contains(type)) {
+                const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
+                if(ref.contains("primitive"))require(revision(ref.at("primitive"))<value->primitives.size(),"Package mesh primitive index does not exist.",-32050);
+                if(ref.contains("clip") && !ref.at("clip").is_null())require(revision(ref.at("clip"))<value->animations.size(),"Package animation clip index does not exist.",-32050);
+            }
+            if(components.contains("PbrTextures")) {
+                const auto& textures=components.at("PbrTextures");const std::array<const char*,5> names{"base_color","metallic_roughness","emissive","occlusion","normal"};
+                for(std::size_t slot=0;slot<names.size();++slot)if(textures.contains(names[slot]) && !textures.at(names[slot]).is_null()) {
+                    const auto& ref=textures.at(names[slot]);std::shared_ptr<const TextureImage> value;
+                    if(ref.contains("image")) { const auto source=model(ref.at("asset").get<std::string>());const auto index=revision(ref.at("image"));require(index<source->images.size(),"Package texture image index does not exist.",-32050);value=source->images[static_cast<std::size_t>(index)]; }
+                    else value=image(ref.at("asset").get<std::string>());
+                    require(value->srgb==(slot==0 || slot==2),"Package texture color space does not match its material slot.",-32050);
+                }
+            }
+            if(components.contains("AudioEmitter")) {
+                result.needs_audio=true;const auto id=components.at("AudioEmitter").at("asset").get<std::string>();
+                if(!files.contains(id+".paudio")) { const auto value=read_audio_asset(asset_directory(),id);add(id,".paudio",value.bytes); }
+            }
+        }
+        // Includes mesh/UV/material compatibility, complete rig ownership,
+        // weighted primitive bindings and enabled-audio aggregate limits.
+        (void)runtime_definition();
+        auto document=doc_;document["receipts"]=Json::array();document["retired_ids"]=Json::array();result.document=document.dump(2)+'\n';
+        for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
+        return result;
     }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
@@ -669,13 +718,19 @@ public:
         return result;
     }
     Json dispatch(const std::string& method, const Json& params) {
+        require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
         prune_model_cache();
         if(method.starts_with("input."))return input_dispatch(method,params);
-        if (method == "world.describe") { fields(params, {}); return describe(); }
+        if (method == "world.describe") {
+            fields(params, {});auto result=describe();result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
+            return result;
+        }
+        if(method=="world.dependencies") { fields(params,{});const auto content=package_content();Json assets=Json::array();for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});return {{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}}; }
         if (method == "world.inspect") {
             fields(params, {});
             return {{"world_id", doc_.at("world_id")}, {"revision", doc_.at("revision")},
-                    {"entity_count", doc_.at("entities").size()}, {"persisted", exists_},
+                    {"entity_count", doc_.at("entities").size()}, {"persisted", exists_},{"read_only",read_only_},{"mode",read_only_ ? "read_only_runtime" : "authoring"},
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
         }
         if(method=="world.history") {
@@ -1044,7 +1099,7 @@ public:
             const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input evaluation takes at most 256 events.");
             auto profile=params.value("gamepad_defaults",false) ? default_gamepad_input_profile() : default_input_profile();Json info={{"source","defaults"},{"revision",0},{"content_hash",nullptr}};
             if(params.contains("path"))try {
-                auto loaded=input_profiles::load(input_profile_path(params.at("path")));profile=std::move(loaded.profile);
+                auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("path"))) : input_profiles::load(input_profile_path(params.at("path"))));profile=std::move(loaded.profile);
                 info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash}};
             }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
             const bool has_gamepad=profile.gamepad.has_value();info["format"]=has_gamepad ? "poima.input.v2" : "poima.input.v1";
@@ -1101,7 +1156,7 @@ public:
         else fields(params,{"path","request_id","expected_revision","profile","preview"},{"path","request_id","expected_revision","profile"});
         const auto file=input_profile_path(params.at("path"));
         try {
-            if(method=="input.inspect")return input_profiles::inspect(file);
+            if(method=="input.inspect")return read_only_ ? input_profiles::inspect_read_only(file) : input_profiles::inspect(file);
             auto operation=params;operation.erase("path");return input_profiles::transact(file,operation);
         }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
     }
@@ -1493,7 +1548,7 @@ public:
         require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
         if(params.contains("input_profile")) {
             try {
-                const auto loaded=input_profiles::load(input_profile_path(params.at("input_profile")));
+                const auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("input_profile"))) : input_profiles::load(input_profile_path(params.at("input_profile"))));
                 if(params.contains("input_revision"))require(revision(params.at("input_revision"))==loaded.revision,"Input profile revision conflict.",-32009);
                 options.input_profile=std::make_shared<const InputProfile>(loaded.profile);
                 input_info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"applied",!options.replay}};
@@ -1533,7 +1588,7 @@ public:
             require(!params.contains("sequence"),"Interactive play takes input from the window, not a replay sequence.");
             if(params.contains("max_frames")) { const auto n=revision(params.at("max_frames")); require(n<=36000,"max_frames must be 0..36000."); options.max_frames=static_cast<std::uint32_t>(n); }
         }
-        options.render=render_options(params);
+        options.render=render_options(params);options.render.capture_exclusive=read_only_;
         if(!options.replay && options.gamepad_selection.mode!="disabled") {
             require(GamepadHost::available(),"Gamepad device host is not built.",-32003);
             try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();options.gamepad_host=gamepad_host_; }
@@ -1827,11 +1882,14 @@ public:
 struct WorldSession::Impl {
     World world;
     bool closed=false;
-    explicit Impl(const std::string& path):world(path) {}
+    explicit Impl(const std::string& path,WorldOpenMode mode):world(path,mode) {}
 };
-WorldSession::WorldSession(const std::string& path):impl_(std::make_unique<Impl>(path)) {}
+WorldSession::WorldSession(const std::string& path,WorldOpenMode mode):impl_(std::make_unique<Impl>(path,mode)) {}
 WorldSession::~WorldSession()=default;
 bool WorldSession::closed() const { return impl_->closed; }
+WorldPackageContent WorldSession::package_content() const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.package_content();
+}
 WorldRuntimeStatus WorldSession::runtime_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_status();
 }

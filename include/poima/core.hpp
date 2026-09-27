@@ -49,6 +49,7 @@ struct RenderOptions {
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
     bool profile = false;
+    bool capture_exclusive = false; // Native host policy; not a user-controlled RPC parameter.
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };

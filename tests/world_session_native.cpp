@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/world.hpp"
 #include "poima/runtime.hpp"
+#include "poima/assets.hpp"
+#include "poima/audio.hpp"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <map>
 
 namespace fs=std::filesystem;
 using Json=nlohmann::json;
@@ -16,6 +19,9 @@ Json call(poima::WorldSession& session,const char* method,Json params=Json::obje
     if(response.contains("error"))throw std::runtime_error(response.at("error").dump());return response.at("result");
 }
 std::string read(const fs::path& path) { std::ifstream f(path,std::ios::binary);return {std::istreambuf_iterator<char>(f),{}}; }
+void write(const fs::path& path,const std::string& bytes) { std::ofstream stream(path,std::ios::binary);stream.write(bytes.data(),static_cast<std::streamsize>(bytes.size()));check(bool(stream),"Fixture write failed."); }
+std::string hash(const std::string& bytes) { return poima::sha256(std::as_bytes(std::span(bytes.data(),bytes.size()))); }
+std::map<std::string,std::string> tree(const fs::path& root) { std::map<std::string,std::string> files;for(const auto& entry:fs::recursive_directory_iterator(root))if(entry.is_regular_file())files.emplace(entry.path().lexically_relative(root).generic_string(),read(entry.path()));return files; }
 int main() {
     const auto directory=fs::current_path()/("world-session-native-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     try {
@@ -68,6 +74,83 @@ int main() {
             check(history["undo_count"]==0 && history["redo_count"]==0 && history["revision"]==3,"History should be session-local while revision persists.");
             const auto replay=call(reopened,"world.redo",{{"request_id",std::string(32,'3')},{"base_revision",2}});
             check(replay["replayed"]==true && replay["revision"]==3,"Undo/redo receipt did not survive restart.");
+        }
+        {
+            // Constructor-level read-only enforcement cannot be bypassed by
+            // selecting a different RPC transport scope.
+            const auto frozen=directory/"readonly.json";write(frozen,read(path));const auto original=read(frozen);
+            const auto profile=frozen.parent_path()/"packaged.poima-input.json";
+            Json controls={{"bindings",{{"forward",{"key.up"}},{"backward",{"key.s"}},{"left",{"key.a"}},{"right",{"key.d"}},{"jump",{"key.space"}},{"use",{"key.e"}}}},{"sensitivity_x",.1},{"sensitivity_y",.1},{"invert_x",false},{"invert_y",false}};
+            // A persisted revision-1 profile must carry its first transaction
+            // receipt. Create the fixture through the public authoring API.
+            {
+                poima::WorldSession author(path.string());
+                call(author,"input.transact",{{"path",profile.string()},{"request_id",std::string(32,'b')},{"expected_revision",0},{"profile",controls}});
+            }
+            fs::remove(fs::path(profile).concat(".lock"));
+            const auto before=tree(directory);
+            poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
+            check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
+            const auto discovery=call(session,"world.describe");check(discovery["schema_revision"]==22 && discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
+            for(const auto* method:{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
+                const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",9},{"method",method},{"params",{{"source","missing"},{"path","forbidden.poima-input.json"}}}}.dump(),scope));
+                check(response["error"]["code"]==-32081,"Read-only operation reached validation or mutation.");
+            }
+            const auto inspected=call(session,"input.inspect",{{"path","packaged.poima-input.json"}});check(inspected["revision"]==1 && inspected["profile"]==controls,"Read-only input inspection differs.");
+            const auto evaluated=call(session,"input.evaluate",{{"path","packaged.poima-input.json"},{"events",Json::array({{{"control","key.up"},{"down",true}},{{"consume",true}}})}});
+            check(evaluated["frames"][0]["move"][1]==1,"Read-only profile did not reach native evaluator.");
+            if(poima::Runtime::available()) {
+                call(session,"runtime.start",{{"session_id",std::string(32,'c')},{"revision",3}});
+                check(call(session,"runtime.step",{{"session_id",std::string(32,'c')},{"request_id",std::string(32,'d')},{"expected_tick",0},{"ticks",2}})["tick"]==2,"Read-only world cannot simulate.");
+                call(session,"runtime.stop",{{"session_id",std::string(32,'c')}});
+            }
+            check(session.package_content().assets.empty(),"Built-in geometry acquired an external dependency.");
+            check(read(frozen)==original && tree(directory)==before,"Read-only observation or runtime created files/sidecars.");
+            bool failed=false;try { poima::WorldSession missing((directory/"absent.json").string(),poima::WorldOpenMode::read_only_runtime); }catch(const std::exception&) { failed=true; }
+            check(failed && tree(directory)==before,"Read-only missing world created storage.");
+        }
+        {
+            const auto package=directory/"package.json";const auto assets=fs::path(package).concat(".assets");fs::create_directory(assets);
+            auto embedded=std::make_shared<poima::TextureImage>();embedded->mips.push_back({1,1,{128,128,255,255}});
+            poima::TextureImage texture;texture.srgb=true;texture.mips.push_back({1,1,{220,170,100,255}});
+            auto mesh=std::make_shared<poima::MeshAsset>();mesh->vertices.resize(3);mesh->indices={0,1,2};mesh->has_uv=true;
+            mesh->vertices[1].position={1,0,0};mesh->vertices[2].position={0,1,0};mesh->vertices[1].uv={1,0};mesh->vertices[2].uv={0,1};
+            for(auto& vertex:mesh->vertices) { vertex.normal={0,0,1};vertex.tangent={1,0,0,1}; }
+            poima::ModelAsset model;model.primitives.push_back(mesh);model.images.push_back(embedded);poima::ModelNode node;node.name="Triangle";node.primitives={0};model.nodes.push_back(node);model.roots={0};
+            const auto model_bytes=poima::encode_model(model),image_bytes=poima::encode_image(texture),audio_bytes=poima::encode_audio(poima::AudioClip{{0,.1f,-.1f}});
+            const auto model_id=hash(model_bytes),image_id=hash(image_bytes),audio_id=hash(audio_bytes);
+            write(assets/(model_id+".pmodel"),model_bytes);write(assets/(image_id+".pimage"),image_bytes);write(assets/(audio_id+".paudio"),audio_bytes);
+            auto document=Json::parse(read(path));auto& components=document["entities"][entity]["components"];components.erase("MeshRenderer");
+            components["StaticMesh"]={{"asset",model_id},{"primitive",0},{"visible",false}};
+            components["PbrTextures"]={{"base_color",{{"asset",image_id}}},{"normal",{{"asset",model_id},{"image",0}}}};
+            components["AudioEmitter"]={{"asset",audio_id},{"gain",1},{"loop",false},{"enabled",false}};
+            document["retired_ids"]={std::string(32,'e')};document["receipts"].push_back({{"params",{{"request_id",std::string(32,'f')},{"asset",std::string(64,'0')}}},{"result",{{"revision",3}}}});write(package,document.dump());
+            const auto before=tree(directory);
+            poima::WorldSession session(package.string(),poima::WorldOpenMode::read_only_runtime);
+            const auto content=session.package_content();const auto clean=Json::parse(content.document);
+            check(content.revision==3 && content.needs_audio && content.assets.size()==3,"Hidden mesh/disabled audio/texture closure incomplete or duplicated.");
+            check(clean["entities"]==document["entities"] && clean["world_id"]==document["world_id"] && clean["revision"]==3 && clean["receipts"].empty() && clean["retired_ids"].empty(),"Package sanitation changed live content or retained authoring history.");
+            std::string previous;for(const auto& asset:content.assets) { check(previous.empty() || previous<asset.filename,"Package assets are not sorted and unique.");previous=asset.filename;const auto bytes=read(assets/asset.filename);check(asset.sha256==hash(bytes) && asset.bytes==bytes.size(),"Package metadata does not identify exact source bytes."); }
+            const auto dependencies=call(session,"world.dependencies");check(dependencies["assets"].size()==3 && !dependencies.contains("document"),"Dependencies exposes document bytes or lost assets.");
+            check(tree(directory)==before,"Dependency export mutated source files.");
+            // Fresh verification must not trust an earlier model/image cache.
+            write(assets/(image_id+".pimage"),"corrupted");bool failed=false;try { (void)session.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Package closure trusted cached corrupt bytes.");write(assets/(image_id+".pimage"),image_bytes);
+            fs::remove(assets/(audio_id+".paudio"));failed=false;try { (void)session.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Missing disabled audio package was ignored.");write(assets/(audio_id+".paudio"),audio_bytes);
+            const auto outside=directory/"linked-image.pimage";write(outside,image_bytes);fs::remove(assets/(image_id+".pimage"));std::error_code link_error;
+            fs::create_symlink(outside,assets/(image_id+".pimage"),link_error);
+            if(!link_error) { failed=false;try { (void)session.package_content(); }catch(const std::exception&) { failed=true; }check(failed && read(outside)==image_bytes,"Linked package was followed or changed.");fs::remove(assets/(image_id+".pimage")); }
+#ifndef _WIN32
+            else throw std::runtime_error("Native package symlink fixture failed: "+link_error.message());
+#endif
+            write(assets/(image_id+".pimage"),image_bytes);
+            const auto moved=directory/"actual-assets";fs::rename(assets,moved);link_error.clear();fs::create_directory_symlink(moved,assets,link_error);
+            if(!link_error) { failed=false;try { (void)session.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Linked asset directory was followed.");fs::remove(assets); }
+#ifndef _WIN32
+            else throw std::runtime_error("Native asset-directory symlink fixture failed: "+link_error.message());
+#endif
+            fs::rename(moved,assets);
+            document["entities"][entity]["components"]["PbrTextures"]["normal"]["image"]=1;write(package,document.dump());
+            poima::WorldSession invalid(package.string(),poima::WorldOpenMode::read_only_runtime);failed=false;try { (void)invalid.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Invalid embedded texture index was bundled.");
         }
         fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo and protocol adapter passed.\n";
     }catch(const std::exception& error) { fs::remove_all(directory);std::cerr<<error.what()<<'\n';return 1; }

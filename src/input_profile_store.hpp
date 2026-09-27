@@ -20,4 +20,6 @@ Json describe();
 Json inspect(const fs::path& path);
 Json transact(const fs::path& path,const Json& params);
 Loaded load(const fs::path& path);
+Loaded load_read_only(const fs::path& path);
+Json inspect_read_only(const fs::path& path);
 }
