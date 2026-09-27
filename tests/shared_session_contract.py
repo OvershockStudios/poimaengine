@@ -3,7 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 from concurrent.futures import ThreadPoolExecutor
 import json
+import os
 from pathlib import Path
+import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -93,5 +96,50 @@ class SharedWorld(unittest.TestCase):
         self.host=subprocess.Popen([BINARY,'serve',str(self.world),'--endpoint',self.endpoint],stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
         result=self.result('world.transact',params);self.assertTrue(result['replayed'])
         self.assertEqual(self.result('world.history')['undo_count'],0)
+
+    @unittest.skipUnless(sys.platform.startswith('linux'), 'Linux pathname socket publication contract')
+    def test_socket_interim_permissions_wait_without_connecting(self):
+        endpoint='test-'+uid()
+        path=Path('/tmp')/('poima-'+str(os.geteuid()))/(endpoint+'.sock')
+        listener=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM)
+        try:
+            listener.bind(str(path));path.chmod(0o700);listener.listen(1)
+            listener.settimeout(.15)
+            command=[BINARY,'connect',endpoint,'--timeout-ms','3000']
+            with ThreadPoolExecutor(max_workers=1) as workers:
+                pending=workers.submit(subprocess.run,command,input=json.dumps(request('world.inspect'))+'\n',
+                                       text=True,capture_output=True,timeout=5)
+                with self.assertRaises(socket.timeout):listener.accept()
+                self.assertFalse(pending.done(), 'Client rejected the temporary mode instead of waiting for publication.')
+                path.chmod(0o600);listener.settimeout(3)
+                connection,_=listener.accept()
+                with connection:
+                    connection.settimeout(3)
+                    def receive(size):
+                        data=b''
+                        while len(data)<size:
+                            part=connection.recv(size-len(data))
+                            self.assertTrue(part, 'Client disconnected before complete frame.')
+                            data+=part
+                        return data
+                    size=struct.unpack('<I',receive(4))[0]
+                    self.assertLessEqual(size,1048576)
+                    row=json.loads(receive(size))
+                    reply=json.dumps({'jsonrpc':'2.0','id':row['id'],'result':{'ready':True}}).encode()
+                    connection.sendall(struct.pack('<I',len(reply))+reply)
+                result=pending.result()
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertTrue(json.loads(result.stdout)['result']['ready'])
+            # A mode that never becomes safe remains unavailable; retrying it
+            # must not weaken the final mode check or the connection deadline.
+            path.chmod(0o700);listener.settimeout(.05)
+            result=subprocess.run([BINARY,'connect',endpoint,'--timeout-ms','100'],input='{}\n',
+                                  text=True,capture_output=True,timeout=3)
+            self.assertNotEqual(result.returncode,0)
+            self.assertIn('timed out',result.stderr)
+            with self.assertRaises(socket.timeout):listener.accept()
+        finally:
+            listener.close()
+            if path.exists():path.unlink()
 
 if __name__=='__main__':unittest.main(verbosity=2)

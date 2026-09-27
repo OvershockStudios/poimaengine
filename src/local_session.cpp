@@ -319,7 +319,11 @@ struct LocalSessionClient::Impl {
             if(::lstat(path.c_str(),&info)!=0) {
                 check(errno==ENOENT,"Cannot inspect local session endpoint.");await_endpoint();continue;
             }
-            check(S_ISSOCK(info.st_mode) && info.st_uid==geteuid() && (info.st_mode&07777)==0600,"Local endpoint must be a same-user socket with mode 0600.");
+            check(S_ISSOCK(info.st_mode) && info.st_uid==geteuid(),"Local endpoint must be a same-user socket.");
+            // bind() publishes the pathname before the server can chmod it.
+            // Never connect using interim permissions; wait within the same
+            // bounded startup deadline and recheck ownership/type each time.
+            if((info.st_mode&07777)!=0600) { await_endpoint();continue; }
             channel.fd=socket(AF_UNIX,SOCK_STREAM|SOCK_NONBLOCK|SOCK_CLOEXEC,0);check(channel.valid(),"Cannot create local client socket.");
             const auto result=connect(channel.fd,reinterpret_cast<const sockaddr*>(&address),sizeof(address));
             if(result==0)break;
