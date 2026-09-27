@@ -62,7 +62,10 @@ constexpr std::array operations{
     Operation{"world", "Open a persistent authored-world session over newline-delimited JSON-RPC 2.0.", "<path.json>",
         R"({"path":{"type":"string","minLength":1,"description":"World file; parent directory must exist. Reserves .lock/.pending/.previous sidecars. Use world.describe inside the session for method schemas."}})", "[\"path\"]"},
     Operation{"schema", "Discover an implemented command's request schema.", "<command>",
-        R"({"command":{"type":"string","enum":["help","version","capabilities","doctor","schema","render-smoke","world"]}})", "[\"command\"]"},
+        R"({"command":{"type":"string","enum":["help","version","capabilities","doctor","schema","render-smoke","world","editor"]}})", "[\"command\"]"},
+    Operation{"editor", "Open the optional native authoring editor over shared world operations.",
+        "<world.json> [--gpu N] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]",
+        R"({"world":{"type":"string","minLength":1},"gpu":{"type":"integer","minimum":0,"maximum":4095},"frames":{"type":"integer","minimum":1,"maximum":36000},"width":{"type":"integer","minimum":640,"maximum":4096,"default":1440},"height":{"type":"integer","minimum":640,"maximum":4096,"default":900},"capture":{"type":"string","minLength":1},"script":{"type":"string","minLength":1},"report":{"type":"string","minLength":1}})", "[\"world\"]"},
     Operation{"render-smoke", "Present a bounded Vulkan triangle test; optionally save the final GPU frame as BMP.",
         "[--frames N] [--width N] [--height N] [--gpu N] [--allow-software] [--capture path.bmp]",
         R"({"frames":{"type":"integer","minimum":1,"maximum":10000,"default":120},"width":{"type":"integer","minimum":128,"maximum":4096,"default":960},"height":{"type":"integer","minimum":128,"maximum":4096,"default":540},"gpu":{"type":"integer","minimum":0,"maximum":4095,"description":"Vulkan device enumeration index; omission prefers a discrete GPU."},"allow_software":{"type":"boolean","default":false},"capture":{"type":"string","minLength":1,"description":"Optional BMP output path; overwrites an existing file."}})", "[]"}
@@ -73,7 +76,7 @@ std::string operation_list() {
     for (const auto& operation : operations) {
         if (json.size() > 1) json += ',';
         json += "{\"name\":" + quote(operation.name) + ",\"summary\":" + quote(operation.summary) +
-            ",\"arguments\":" + quote(operation.arguments) + ",\"mutates_project\":" + boolean(operation.name == "world") + "}";
+            ",\"arguments\":" + quote(operation.arguments) + ",\"mutates_project\":" + boolean(operation.name == "world" || operation.name == "editor") + "}";
     }
     return json + ']';
 }
@@ -121,7 +124,7 @@ Reply capabilities() {
         ",\"animation_rig_authoring\":true,\"runtime_clip_playback\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"static_gltf_import\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"animation_asset_sampling\":true,\"vfx\":false,"
-        "\"hot_reload\":false,\"mcp\":false,\"editor\":false},\"qualification\":\"bootstrap_with_authored_world\"}");
+        "\"hot_reload\":false,\"mcp\":false,\"native_world_session\":true,\"world_undo\":true,\"editor\":" + boolean(POIMA_EDITOR != 0) + "},\"qualification\":\"bootstrap_with_authored_world\"}");
 }
 
 Reply doctor(DoctorOptions options) {

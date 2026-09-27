@@ -13,3 +13,6 @@ __pycache__/
 
 /tests/fixtures/**/bin/
 /tests/fixtures/**/obj/
+
+# Local editable project created by launch-editor.cmd, not engine source.
+/projects/sandbox/

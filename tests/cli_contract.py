@@ -11,6 +11,7 @@ import unittest
 BINARY = str(Path(sys.argv[1]).resolve())
 PROBE_ENABLED = sys.argv[2] == "1"
 RENDER_ENABLED = len(sys.argv) > 3 and sys.argv[3] == "1"
+EDITOR_ENABLED = len(sys.argv) > 4 and sys.argv[4] == "1"
 sys.argv = [sys.argv[0]]
 
 
@@ -38,7 +39,8 @@ class CliContract(unittest.TestCase):
         self.assertEqual(features["vulkan_device_inspection"], PROBE_ENABLED)
         self.assertEqual(features["render_smoke"], RENDER_ENABLED)
         self.assertEqual(features["scene_capture"], RENDER_ENABLED)
-        for name in ["renderer", "animation", "vfx", "hot_reload", "mcp", "editor"]:
+        self.assertEqual(features["editor"], EDITOR_ENABLED)
+        for name in ["renderer", "animation", "vfx", "hot_reload", "mcp"]:
             self.assertFalse(features[name], name)
         for operation in first["result"]["commands"]:
             with self.subTest(command=operation["name"]):
@@ -56,6 +58,9 @@ class CliContract(unittest.TestCase):
         cases = [("missing",), ("version", "extra"), ("schema",), ("schema", "x", "y"),
                  ("doctor", "--unknown"), ("doctor", "--graphics", "--graphics"),
                  ("doctor", "--require-hardware", "--require-hardware")]
+        cases += [("editor",), ("editor","--frames"), ("editor","w.json","--frames","0"),
+                  ("editor","w.json","--width","20"), ("editor","w.json","--frames","x"),
+                  ("editor","w.json","--gpu","1","--gpu","0"), ("editor","w.json","--report")]
         for args in cases:
             with self.subTest(args=args):
                 self.assertTrue(self.invoke(*args, expected=2)["diagnostics"])
@@ -79,6 +84,14 @@ class CliContract(unittest.TestCase):
         reply = self.invoke("render-smoke", "--frames", "1", expected=3)
         self.assertFalse(reply["result"]["available"])
         self.assertFalse(reply["result"]["capture_written"])
+
+    @unittest.skipIf(EDITOR_ENABLED, "Native editor execution is a separate integration test")
+    def test_editor_not_built_preserves_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            world = Path(directory) / "world.json"
+            reply = self.invoke("editor", str(world), "--frames", "1", expected=3)
+            self.assertEqual(reply["diagnostics"][0]["code"], "unavailable")
+            self.assertFalse(world.exists())
 
     def test_headless_inspection_from_unrelated_directory(self):
         with tempfile.TemporaryDirectory() as directory:

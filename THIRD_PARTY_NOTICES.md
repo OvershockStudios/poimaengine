@@ -95,3 +95,10 @@ The optional main-engine integration (`POIMA_ENABLE_MANAGED_GAMEPLAY`) now uses 
 - Valve source/header license: Apache-2.0, retained in `third_party/steam_audio/LICENSE.md`; original notices remain in SDK headers. The distributed binaries include additional dependencies covered by their bundled `THIRDPARTY.md`, including Intel IPP terms. This is not an assertion that all binary dependencies use Apache-2.0.
 - `POIMA_ENABLE_AUDIO` links the selected native Windows/Linux x64 library. Installation includes that library plus the full license and third-party notices under `share/poima/licenses/SteamAudio`. Other SDK platforms/tools are not included in the engine installation.
 - Use: native CPU direct-path propagation and HRTF output for synchronous authored/runtime audio snapshots. Device playback, reflections/pathing and console qualification remain unfinished. No proprietary Vercidium Audio code, binaries or implementation knowledge is incorporated.
+
+## Dear ImGui (optional native editor)
+
+- Source: [Dear ImGui v1.91.9b](https://github.com/ocornut/imgui/releases/tag/v1.91.9b), pinned commit `f5befd2d29e66809cd1110a152e375a7f1981f06`.
+- Archive SHA-256: `85f4ce357df05bcc331b587f01976f47fb55f19fadf477a7907289686bc3f4c8`.
+- License: MIT; upstream `LICENSE.txt` is installed in `share/poima/licenses/DearImGui`. Core/widgets/drawing/tables and the upstream SDL3 input backend are unmodified. Poima supplies its own NVRHI rendering integration.
+- Fetched only with `POIMA_BUILD_EDITOR=ON`. This pinned static-font API baseline is an explicit integration choice, not a claim to use the newest upstream release. It does not provide the shipped-game UI/accessibility framework.

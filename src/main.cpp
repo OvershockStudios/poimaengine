@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/world.hpp"
+#include "poima/editor.hpp"
 
 #include <exception>
 #include <charconv>
@@ -18,6 +19,33 @@ namespace {
 poima::Reply run(int argc, char** argv) {
     if (argc == 1) return poima::help();
     const std::string_view command = argv[1];
+    if(command=="editor") {
+        if(argc<3 || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--"))
+            return poima::usage_error("Use: editor <world.json> [--gpu N] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]");
+        poima::EditorOptions options;options.world=argv[2];options.render.width=1440;options.render.height=900;
+        std::set<std::string_view> seen;
+        for(int index=3;index<argc;++index) {
+            const std::string_view argument=argv[index];
+            if(!seen.insert(argument).second)return poima::usage_error("Repeated editor argument.");
+            if(argument!="--gpu" && argument!="--frames" && argument!="--width" && argument!="--height" && argument!="--capture" && argument!="--script" && argument!="--report")
+                return poima::usage_error("Unknown editor argument. Use: schema editor");
+            if(++index>=argc)return poima::usage_error("Missing editor argument value.");
+            const std::string_view value=argv[index];
+            if(argument=="--capture" || argument=="--script" || argument=="--report") {
+                if(value.empty() || value.starts_with("--"))return poima::usage_error("Editor file arguments require a nonempty path.");
+                if(argument=="--capture")options.render.capture=value;
+                else if(argument=="--script")options.script=value;
+                else options.report=value;
+                continue;
+            }
+            unsigned number=0;const auto parsed=std::from_chars(value.data(),value.data()+value.size(),number);
+            if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size())return poima::usage_error("Editor numeric arguments require an unsigned decimal integer.");
+            if(argument=="--gpu") { if(number>4095)return poima::usage_error("GPU index must be 0..4095.");options.render.gpu=static_cast<int>(number); }
+            else if(argument=="--frames") { if(number<1 || number>36000)return poima::usage_error("Editor frame limit must be 1..36000; omit for interactive use.");options.max_frames=number; }
+            else { if(number<640 || number>4096)return poima::usage_error("Editor dimensions must be 640..4096.");if(argument=="--width")options.render.width=number;else options.render.height=number; }
+        }
+        return poima::run_editor(options);
+    }
     if (command == "render-smoke") {
         poima::RenderOptions options;
         std::set<std::string_view> seen;

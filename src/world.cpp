@@ -17,6 +17,7 @@
 #include <map>
 #include <random>
 #include <set>
+#include <functional>
 
 namespace poima {
 namespace {
@@ -317,7 +318,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 19}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 20}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -349,6 +350,10 @@ Json describe() {
             "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; controller camera must be a direct child.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
+    methods["world.history"]=object_schema(Json::object());
+    for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
+    result["limits"]["history_entries"]=32;result["limits"]["history_bytes"]=max_document_bytes;
+    result["invariants"].push_back("Undo/redo is session-local core history, bounded to 32 edits and 16 MiB of entity snapshots. Restoration advances revision and preserves inactive ID retirement. Oversized edits commit but clear history; new edits invalidate redo.");
     const Json input_path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Profile file ending .poima-input.json; relative paths resolve beside the world."}};
     methods["input.describe"]=object_schema(Json::object());
     methods["input.devices"]=object_schema(Json::object());
@@ -559,6 +564,29 @@ class World {
     std::set<std::string> used_runtime_ids_;
     Json runtime_start_params_, runtime_start_result_;
     Json runtime_receipts_=Json::array();
+    mutable ModelCache model_cache_;
+    mutable std::optional<SceneSnapshot> authored_cache_;
+    struct Edit { Json before,after;std::size_t bytes;std::string request_id; };
+    using History=std::vector<std::shared_ptr<const Edit>>;
+    History undo_,redo_;
+    std::uint64_t skipped_large_edits_=0;
+    static std::size_t history_bytes(const History& first,const History& second) {
+        std::size_t bytes=0;for(const auto& e:first)bytes+=e->bytes;for(const auto& e:second)bytes+=e->bytes;return bytes;
+    }
+    void prune_model_cache() const {
+        std::set<std::string> referenced;
+        std::function<void(const Json&)> visit=[&](const Json& value) {
+            if(value.is_string()) { const auto& text=value.get_ref<const std::string&>();if(valid_asset_id(text))referenced.insert(text); }
+            else if(value.is_structured())for(const auto& item:value)visit(item);
+        };
+        visit(doc_.at("entities"));
+        for(auto it=model_cache_.models.begin();it!=model_cache_.models.end();) {
+            if(referenced.contains(it->first))++it;else { model_cache_.bytes-=it->second.bytes;it=model_cache_.models.erase(it); }
+        }
+        for(auto it=model_cache_.images.begin();it!=model_cache_.images.end();) {
+            if(referenced.contains(it->first))++it;else { model_cache_.bytes-=it->second.bytes;it=model_cache_.images.erase(it); }
+        }
+    }
     void current_revision(const Json& params) const {
         if (params.contains("revision")) require(revision(params.at("revision")) == revision(doc_.at("revision")),
             "Revision conflict; inspect the current world and retry.", -32009);
@@ -597,7 +625,45 @@ public:
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
     }
+    SceneSnapshot editor_snapshot(const EditorCamera& camera,bool live) const {
+        for(double value:camera.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Invalid editor camera matrix.");
+        require(camera.world[3]==0 && camera.world[7]==0 && camera.world[11]==0 && camera.world[15]==1 && rigid_transform(camera.world),"Editor camera must be a rigid affine transform.");
+        (void)perspective(camera.vertical_fov,1,camera.near_plane,camera.far_plane);
+        if(live)require(bool(runtime_),"No runtime is active for the editor snapshot.",-32030);
+        SceneSnapshot result;
+        if(!live && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
+        else {
+            prune_model_cache();RuntimeDefinition authored;
+            if(!live)authored=runtime_definition(false,nullptr,true);
+            const auto& definition=live ? runtime_definition_ : authored;
+            std::map<std::string,Matrix4> matrices;
+            if(live)for(const auto& e:definition.entities)matrices.emplace(e.id,runtime_->entity(e.id).world);
+            else matrices=world_matrices(doc_.at("entities"));
+            result.world_id=definition.world_id;result.revision=definition.authored_revision;
+            result.lighting=live ? runtime_->lighting() : authored_lighting(matrices);
+            std::map<std::string,const RuntimeEntityDefinition*> entities;
+            std::map<std::string,std::map<std::uint32_t,std::string>> nodes;
+            for(const auto& e:definition.entities) { entities[e.id]=&e;if(e.rig_node)nodes[e.rig_node->rig][e.rig_node->node]=e.id; }
+            for(const auto& e:definition.entities) {
+                const auto mesh=live ? e.mesh : mesh_component(doc_.at("entities").at(e.id).at("components"),model_cache_);
+                if(!mesh || !mesh->visible)continue;
+                std::shared_ptr<const SkinPose> skin;
+                if(e.skinned_mesh) {
+                    const auto& ref=*e.skinned_mesh;const auto& model=*entities.at(ref.rig)->animation_rig->model;
+                    const auto& binding=model.skins.at(std::size_t(model.nodes.at(ref.node).skin));auto pose=std::make_shared<SkinPose>();
+                    const auto inverse=inverse_affine(matrices.at(e.id));
+                    for(std::size_t i=0;i<binding.joints.size();++i)pose->palette.push_back(multiply(multiply(inverse,matrices.at(nodes.at(ref.rig).at(binding.joints[i]))),binding.inverse_bind[i]));
+                    skin=std::move(pose);
+                }
+                result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin});
+            }
+            if(!live)authored_cache_=result;
+        }
+        result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
+        return result;
+    }
     Json dispatch(const std::string& method, const Json& params) {
+        prune_model_cache();
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") { fields(params, {}); return describe(); }
         if (method == "world.inspect") {
@@ -606,6 +672,11 @@ public:
                     {"entity_count", doc_.at("entities").size()}, {"persisted", exists_},
                     {"coordinate_system", "right-handed Y-up; meters; local XYZW quaternion transforms"}};
         }
+        if(method=="world.history") {
+            fields(params,{});return {{"revision",doc_.at("revision")},{"undo_count",undo_.size()},{"redo_count",redo_.size()},
+                {"bytes",history_bytes(undo_,redo_)},{"max_entries",32},{"max_bytes",max_document_bytes},{"session_local",true},{"skipped_large_edits",skipped_large_edits_}};
+        }
+        if(method=="world.undo" || method=="world.redo")return restore_history(method,params);
         if(method=="world.lighting") { fields(params,{"revision"});current_revision(params);auto result=lighting_json(authored_lighting(world_matrices(doc_.at("entities"))));result["revision"]=doc_.at("revision");return result; }
         if (method == "entity.material")return inspect_material(params);
         if (method == "entity.get") {
@@ -735,7 +806,7 @@ public:
         return mesh;
     }
     Json inspect_material(const Json& params) {
-        fields(params,{"id","revision"},{"id"});current_revision(params);const auto& value=entity(doc_,params.at("id"));ModelCache cache;
+        fields(params,{"id","revision"},{"id"});current_revision(params);const auto& value=entity(doc_,params.at("id"));auto& cache=model_cache_;
         const auto mesh=mesh_component(value.at("components"),cache);require(mesh.has_value(),"Entity has no renderable mesh.",-32004);
         MaterialTextures textures;
         if(mesh->textures)textures=*mesh->textures;
@@ -1116,7 +1187,7 @@ public:
                     selected.insert(selected.end(),children[node].begin(),children[node].end());
                 }
             } else {
-                ModelCache cache;
+                auto& cache=model_cache_;
                 // Authoring displays editable baseline TRS, independent of the
                 // initial runtime clip/time. Build palettes from those bones.
                 const auto definition=runtime_definition(false,nullptr,true);
@@ -1223,7 +1294,7 @@ public:
     }
     RuntimeDefinition runtime_definition(bool audio_only=false,const Json* source=nullptr,bool animation_only=false) const {
         const auto& document=source ? *source : doc_;
-        ModelCache cache;AudioCache audio_cache;
+        auto& cache=model_cache_;AudioCache audio_cache;
         std::set<std::string> rig_assets;
         if(animation_only)for(const auto& e:document.at("entities"))
             if(e.at("components").contains("AnimationRig"))rig_assets.insert(e.at("components").at("AnimationRig").at("asset").get<std::string>());
@@ -1623,6 +1694,35 @@ public:
         }
         throw Error(-32601,"Unknown runtime method.");
     }
+    Json restore_history(const std::string& method,Json params) {
+        fields(params,{"request_id","base_revision"},{"request_id","base_revision"});identifier(params.at("request_id"));revision(params.at("base_revision"));
+        params["method"]=method;
+        for(const auto& receipt:doc_.at("receipts"))if(receipt.at("params").at("request_id")==params.at("request_id")) {
+            require(receipt.at("params")==params,"Transaction ID was already used by another operation.",-32010);
+            auto result=receipt.at("result");result["replayed"]=true;return result;
+        }
+        require(params.at("base_revision")==doc_.at("revision"),"Revision conflict; inspect the world before undo/redo.",-32009);
+        require(revision(doc_.at("revision"))<max_revision,"World revision limit reached.");
+        const bool undo=method=="world.undo";const auto& source=undo ? undo_ : redo_;
+        require(!source.empty(),"No matching history remains in this session.",-32004);
+        const auto& edit=*source.back();const auto& target=undo ? edit.before : edit.after;
+        require(doc_.at("entities")==(undo ? edit.after : edit.before),"History no longer matches the authored state.",-32009);
+        auto staged=doc_;staged["entities"]=target;staged["revision"]=revision(doc_.at("revision"))+1;
+        std::set<std::string> retired,changed;
+        for(const auto& id:doc_.at("retired_ids"))retired.insert(id.get<std::string>());
+        for(const auto& [id,value]:doc_.at("entities").items()) {
+            if(!target.contains(id)) { retired.insert(id);changed.insert(id); }
+            else if(target.at(id)!=value)changed.insert(id);
+        }
+        for(const auto& [id,value]:target.items()) { (void)value;retired.erase(id);if(!doc_.at("entities").contains(id))changed.insert(id); }
+        staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged);
+        Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
+        auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
+        auto next_undo=undo_,next_redo=redo_;
+        if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
+        else { next_undo.push_back(next_redo.back());next_redo.pop_back(); }
+        persist(std::move(staged));undo_.swap(next_undo);redo_.swap(next_redo);return result;
+    }
     Json transact(Json params) {
         fields(params, {"request_id", "base_revision", "ops", "preview"}, {"request_id", "base_revision", "ops"});
         identifier(params.at("request_id")); revision(params.at("base_revision"));
@@ -1693,49 +1793,75 @@ public:
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
         if (!params["preview"].get<bool>()) {
+            auto next_undo=undo_;History next_redo;
+            auto edit=std::make_shared<Edit>(Edit{doc_.at("entities"),staged.at("entities"),0,params.at("request_id").get<std::string>()});
+            edit->bytes=edit->before.dump().size()+edit->after.dump().size();
+            const bool recorded=edit->bytes<=max_document_bytes;
+            result["history_recorded"]=recorded;
+            if(recorded) {
+                next_undo.push_back(std::move(edit));
+                while(next_undo.size()>32 || history_bytes(next_undo,next_redo)>max_document_bytes)next_undo.erase(next_undo.begin());
+            }else { next_undo.clear();result["history_reason"]="Edit exceeds the 16 MiB history budget; prior history was cleared."; }
             auto& receipts = staged["receipts"];
             if (receipts.size() == 128) receipts.erase(receipts.begin());
             receipts.push_back({{"params", params}, {"result", result}});
             persist(std::move(staged));
+            undo_.swap(next_undo);redo_.swap(next_redo);if(!recorded)++skipped_large_edits_;
         }
         return result;
     }
 };
 }
 
+struct WorldSession::Impl {
+    World world;
+    bool closed=false;
+    explicit Impl(const std::string& path):world(path) {}
+};
+WorldSession::WorldSession(const std::string& path):impl_(std::make_unique<Impl>(path)) {}
+WorldSession::~WorldSession()=default;
+bool WorldSession::closed() const { return impl_->closed; }
+SceneSnapshot WorldSession::authored_snapshot(const EditorCamera& camera) const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,false);
+}
+SceneSnapshot WorldSession::runtime_snapshot(const EditorCamera& camera) const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,true);
+}
+std::string WorldSession::request(std::string_view line) {
+    Json id=nullptr,response;bool notification=false;
+    try {
+        require(line.size()<=1024*1024,"Request exceeds 1 MiB.",-32700);
+        Json request;
+        try { request=parse(std::string(line)); }
+        catch(const Json::exception&) { throw Error(-32700,"Invalid JSON."); }
+        require(request.is_object() && request.value("jsonrpc",Json{})=="2.0" && request.contains("method") && request.at("method").is_string(),"Invalid JSON-RPC request.",-32600);
+        if(request.contains("id")) {
+            require(request["id"].is_null() || request["id"].is_string() || request["id"].is_number_integer(),"Invalid request ID.",-32600);id=request["id"];
+        }else notification=true;
+        require(!closed(),"World session is closed.",-32001);
+        const auto method=request["method"].get<std::string>();
+        const auto result=impl_->world.dispatch(method,request.value("params",Json::object()));
+        response={{"jsonrpc","2.0"},{"id",id},{"result",result}};
+        if(method=="session.close")impl_->closed=true;
+    }catch(const Error& error) {
+        response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",error.code},{"message",error.what()}}}};
+    }catch(const Json::exception&) {
+        response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",-32602},{"message","Invalid operation parameters."}}}};
+    }catch(const std::exception& error) {
+        std::cerr<<"World operation failed: "<<error.what()<<'\n';
+        response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",-32000},{"message","World storage failure; inspect stderr."}}}};
+    }
+    return notification ? std::string{} : response.dump();
+}
 int run_world_session(const std::string& utf8_path) {
-    World world(utf8_path);
-    while (true) {
-        std::string line; bool oversized = false; char c = 0;
-        while (std::cin.get(c) && c != '\n') {
-            if (line.size() < 1024 * 1024) line += c; else oversized = true;
-        }
-        if (line.empty() && !oversized && !std::cin) break;
-        Json id = nullptr, response; bool notification = false, close = false;
-        try {
-            require(!oversized, "Request exceeds 1 MiB.", -32700);
-            Json request;
-            try { request = parse(line); }
-            catch (const Json::exception&) { throw Error(-32700, "Invalid JSON."); }
-            require(request.is_object() && request.value("jsonrpc", Json{}) == "2.0" && request.contains("method") && request.at("method").is_string(), "Invalid JSON-RPC request.", -32600);
-            if (request.contains("id")) {
-                require(request["id"].is_null() || request["id"].is_string() || request["id"].is_number_integer(), "Invalid request ID.", -32600);
-                id = request["id"];
-            } else notification = true;
-            const auto method = request["method"].get<std::string>();
-            const auto result = world.dispatch(method, request.value("params", Json::object()));
-            response = {{"jsonrpc", "2.0"}, {"id", id}, {"result", result}};
-            close = method == "session.close";
-        } catch (const Error& error) {
-            response = {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", error.code}, {"message", error.what()}}}};
-        } catch (const Json::exception&) {
-            response = {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32602}, {"message", "Invalid operation parameters."}}}};
-        } catch (const std::exception& error) {
-            std::cerr << "World operation failed: " << error.what() << '\n';
-            response = {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32000}, {"message", "World storage failure; inspect stderr."}}}};
-        }
-        if (!notification) std::cout << response.dump() << '\n' << std::flush;
-        if (close) break;
+    WorldSession session(utf8_path);
+    while(!session.closed()) {
+        std::string line;bool oversized=false;char c=0;
+        while(std::cin.get(c) && c!='\n') { if(line.size()<1024*1024)line+=c;else oversized=true; }
+        if(line.empty() && !oversized && !std::cin)break;
+        if(oversized)line.push_back(' '); // Preserve the original bounded framing error.
+        const auto response=session.request(line);
+        if(!response.empty())std::cout<<response<<'\n'<<std::flush;
     }
     return 0;
 }

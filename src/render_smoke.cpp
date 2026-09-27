@@ -5,6 +5,12 @@
 #include "poima/input_profile.hpp"
 #include "poima/assets.hpp"
 #include "poima/animation.hpp"
+#include "poima/editor_viewport.hpp"
+#if POIMA_EDITOR
+#include <imgui.h>
+#include "poima/editor_ui_vs.hpp"
+#include "poima/editor_ui_ps.hpp"
+#endif
 #include "poima/skinning_cs.hpp"
 #include <set>
 #include <map>
@@ -32,6 +38,16 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#if POIMA_EDITOR
+#include <filesystem>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <cerrno>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+#endif
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -48,6 +64,49 @@ struct Messages final : nvrhi::IMessageCallback {
 void require(bool condition, const std::string& detail) {
     if (!condition) throw std::runtime_error(detail);
 }
+
+#if POIMA_EDITOR
+void save_editor_bmp_exclusive(SDL_Surface* surface,const std::string& path) {
+    require(!path.empty() && path.find('\0')==std::string::npos,"Invalid editor capture path.");
+    std::unique_ptr<SDL_IOStream,decltype(&SDL_CloseIO)> memory(SDL_IOFromDynamicMem(),SDL_CloseIO);
+    require(bool(memory),std::string("BMP memory stream: ")+SDL_GetError());
+    require(SDL_SaveBMP_IO(surface,memory.get(),false),std::string("BMP serialization: ")+SDL_GetError());
+    const auto size=SDL_GetIOSize(memory.get());
+    require(size>0 && size<=512*1024*1024,"Editor BMP exceeds the 512 MiB capture budget.");
+    std::vector<unsigned char> bytes(static_cast<std::size_t>(size));
+    require(SDL_SeekIO(memory.get(),0,SDL_IO_SEEK_SET)==0 && SDL_ReadIO(memory.get(),bytes.data(),bytes.size())==bytes.size(),"Cannot read serialized editor BMP.");
+    const auto output=std::filesystem::path(std::u8string(path.begin(),path.end()));
+    // The filesystem performs the absence check and creation in one operation.
+    // A competing creator cannot have its file truncated between preflight and
+    // publication. Write failure can leave our own partial new file; report it.
+#ifdef _WIN32
+    HANDLE file=CreateFileW(output.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
+    require(file!=INVALID_HANDLE_VALUE,"Editor capture destination exists or cannot be exclusively created.");
+    try {
+        std::size_t offset=0;
+        while(offset<bytes.size()) {
+            const auto length=static_cast<DWORD>(std::min(bytes.size()-offset,std::size_t(1024*1024)));DWORD written=0;
+            require(WriteFile(file,bytes.data()+offset,length,&written,nullptr) && written>0,"Editor BMP write failed.");offset+=written;
+        }
+        require(FlushFileBuffers(file),"Editor BMP flush failed.");
+        const bool closed=CloseHandle(file)!=0;file=INVALID_HANDLE_VALUE;require(closed,"Editor BMP close failed.");
+    }catch(...) { if(file!=INVALID_HANDLE_VALUE)CloseHandle(file);throw; }
+#else
+    int file=::open(output.c_str(),O_WRONLY|O_CREAT|O_EXCL|O_CLOEXEC,0600);
+    require(file>=0,"Editor capture destination exists or cannot be exclusively created.");
+    try {
+        std::size_t offset=0;
+        while(offset<bytes.size()) {
+            const auto written=::write(file,bytes.data()+offset,bytes.size()-offset);
+            if(written<0 && errno==EINTR)continue;
+            require(written>0,"Editor BMP write failed.");offset+=static_cast<std::size_t>(written);
+        }
+        require(::fsync(file)==0,"Editor BMP flush failed.");
+        const bool closed=::close(file)==0;file=-1;require(closed,"Editor BMP close failed.");
+    }catch(...) { if(file>=0)::close(file);throw; }
+#endif
+}
+#endif
 
 template<std::size_t Size>
 nvrhi::ShaderHandle create_embedded_shader(nvrhi::IDevice* device, const nvrhi::ShaderDesc& desc,
@@ -156,6 +215,9 @@ struct Context {
     nvrhi::GraphicsPipelineHandle shadow_pipeline;
     std::vector<ShadowView> shadow_plan;
     std::map<const MeshAsset*,Geometry> geometry_cache;
+    std::map<const MeshAsset*,std::shared_ptr<const MeshAsset>> mesh_owners;
+    std::map<const MaterialTextures*,std::shared_ptr<const MaterialTextures>> material_owners;
+    std::map<const TextureImage*,std::shared_ptr<const TextureImage>> image_owners;
     std::map<const MeshAsset*,Bounds> bounds_cache;
     std::map<const MeshAsset*,SkinSource> skin_sources;
     std::map<std::string,SkinInstance> skin_instances;
@@ -175,12 +237,42 @@ struct Context {
     bool hardware = false;
     std::string gpu_name;
     bool swapchain_dirty=false;
+    bool shadow_ready=false,skin_pipeline_ready=false,renderer_fault=false;
+    bool editor=false,scene_visible=true;
+    std::optional<nvrhi::Viewport> scene_viewport;
+#if POIMA_EDITOR
+    nvrhi::ShaderHandle ui_vs,ui_ps;
+    nvrhi::InputLayoutHandle ui_input;
+    nvrhi::BindingLayoutHandle ui_layout;
+    nvrhi::BindingSetHandle ui_bindings;
+    nvrhi::GraphicsPipelineHandle ui_pipeline;
+    nvrhi::TextureHandle ui_font;
+    nvrhi::SamplerHandle ui_sampler;
+    nvrhi::BufferHandle ui_vertices,ui_indices;
+    std::vector<nvrhi::FramebufferHandle> ui_framebuffers;
+    std::vector<ImDrawVert> ui_vertex_data;
+    std::vector<ImDrawIdx> ui_index_data;
+    const ImDrawData* ui_data=nullptr;
+    ImGuiContext* ui_context=nullptr;
+    std::size_t ui_vertex_capacity=0,ui_index_capacity=0;
+#endif
 
     ~Context() {
         if (device) {
             try { device.waitIdle(); } catch (...) { /* Preserve the original diagnostic. */ }
         }
         commands = nullptr;
+#if POIMA_EDITOR
+        if(ui_context && ImGui::GetCurrentContext()==ui_context) {
+            auto& io=ImGui::GetIO();
+            if(io.BackendRendererName && std::strcmp(io.BackendRendererName,"poima_nvrhi")==0) {
+                if(io.Fonts->TexID==static_cast<ImTextureID>(1))io.Fonts->SetTexID(0);
+                io.BackendFlags&=~ImGuiBackendFlags_RendererHasVtxOffset;io.BackendRendererName=nullptr;
+            }
+        }
+        ui_framebuffers.clear();ui_pipeline=nullptr;ui_bindings=nullptr;ui_layout=nullptr;
+        ui_vertices=nullptr;ui_indices=nullptr;ui_font=nullptr;ui_sampler=nullptr;ui_input=nullptr;ui_vs=nullptr;ui_ps=nullptr;
+#endif
         skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
         shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
@@ -349,6 +441,7 @@ struct Context {
             pipeline_desc.bindingLayouts.push_back(binding_layout);
         }
         pipeline_desc.renderState.rasterState.cullMode = nvrhi::RasterCullMode::None;
+        pipeline_desc.renderState.rasterState.scissorEnable=editor;
         pipeline_desc.renderState.rasterState.frontCounterClockwise=true;
         pipeline = checked->createGraphicsPipeline(pipeline_desc, framebuffers.front()->getFramebufferInfo());
         require(static_cast<bool>(pipeline), "NVRHI graphics pipeline creation failed.");
@@ -401,6 +494,11 @@ struct Context {
         validate_shadow_budget(count,lighting.environment.shadow_resolution);
         const auto resolution=count ? lighting.environment.shadow_resolution : 1u;
         const auto layers=static_cast<std::uint32_t>(std::max(count,std::size_t(1)));
+        if(shadow_ready && shadow_texture && shadow_texture->getDesc().width==resolution && shadow_texture->getDesc().arraySize==layers)return;
+        // Frames are serialized. Retire bindings that reference the old array
+        // before replacing it after an authored light or quality edit.
+        shadow_ready=false;material_cache.clear();bindings=nullptr;
+        shadow_framebuffers.clear();shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_texture=nullptr;
         const auto limits=physical.getProperties().limits;
         require(resolution<=limits.maxImageDimension2D && layers<=limits.maxImageArrayLayers,"Shadow texture dimensions are unavailable on this GPU.");
         const auto flags=physical.getFormatProperties(vk::Format::eD32Sfloat).optimalTilingFeatures;
@@ -423,6 +521,7 @@ struct Context {
         pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;pd.renderState.rasterState.frontCounterClockwise=true;
         shadow_pipeline=checked->createGraphicsPipeline(pd,shadow_framebuffers.front()->getFramebufferInfo());
         require(shadow_bindings && shadow_pipeline,"Shadow pipeline creation failed.");
+        shadow_ready=true;
     }
     void render_shadows() {
         commands->clearDepthStencilTexture(shadow_texture,nvrhi::AllSubresources,true,1,false,0);
@@ -474,7 +573,7 @@ struct Context {
         geometry_cache.emplace(mesh.get(),result);return result;
     }
     void prepare_skin_pipeline() {
-        if(skin_pipeline)return;
+        if(skin_pipeline_ready)return;
         require(bool(physical.getQueueFamilyProperties().at(queue_family).queueFlags & vk::QueueFlagBits::eCompute),"Selected graphics queue cannot run skinning compute.");
         skin_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_skinning_cs);
         skin_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
@@ -491,6 +590,7 @@ struct Context {
         readback.initialState=nvrhi::ResourceStates::CopyDest;readback.keepInitialState=true;readback.debugName="Skinning error readback";
         skin_readback=checked->createBuffer(readback);
         require(skin_pipeline && skin_errors && skin_readback,"Skinning compute resources unavailable.");
+        skin_pipeline_ready=true;
     }
     SkinSource& skin_source(const std::shared_ptr<const MeshAsset>& mesh) {
         if(const auto found=skin_sources.find(mesh.get());found!=skin_sources.end())return found->second;
@@ -593,11 +693,51 @@ struct Context {
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture));
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
     }
+    void retain_scene_resources() {
+        std::set<const MeshAsset*> meshes;
+        std::set<const MaterialTextures*> materials;
+        std::set<const TextureImage*> images_used;
+        std::set<std::string> skin_ids;
+        std::set<std::pair<const MeshAsset*,const MaterialTextures*>> combinations{{nullptr,nullptr}};
+        std::set<std::array<int,4>> samplers;
+        auto retain_image=[&](const std::shared_ptr<const TextureImage>& image) {
+            if(image) { images_used.insert(image.get());image_owners[image.get()]=image; }
+        };
+        retain_image(white_image);
+        const TextureMap fallback;
+        samplers.insert({fallback.wrap_s,fallback.wrap_t,fallback.min_filter,fallback.mag_filter});
+        for(const auto& object:scene->objects) {
+            if(object.skin)skin_ids.insert(object.entity_id);
+            if(object.mesh) { meshes.insert(object.mesh.get());mesh_owners[object.mesh.get()]=object.mesh; }
+            if(object.textures) { materials.insert(object.textures.get());material_owners[object.textures.get()]=object.textures; }
+            combinations.emplace(object.mesh.get(),object.textures.get());
+            for(std::size_t slot=0;slot<5;++slot) {
+                const auto map=object.textures ? object.textures->maps[slot] : object.mesh ? object.mesh->textures[slot] : TextureMap{};
+                retain_image(map.image);samplers.insert({map.wrap_s,map.wrap_t,map.min_filter,map.mag_filter});
+            }
+        }
+        // Owner maps retain old pointer identities until the associated GPU
+        // cache entries are gone, preventing allocator-address reuse hits.
+        std::erase_if(material_cache,[&](const auto& item){return !combinations.contains(item.first);});
+        std::erase_if(geometry_cache,[&](const auto& item){return !meshes.contains(item.first);});
+        std::erase_if(bounds_cache,[&](const auto& item){return item.first && !meshes.contains(item.first);});
+        std::erase_if(skin_sources,[&](const auto& item){return !meshes.contains(item.first);});
+        std::erase_if(skin_instances,[&](const auto& item){if(skin_ids.contains(item.first))return false;skin_bytes-=item.second.bytes;return true;});
+        std::erase_if(texture_cache,[&](const auto& item){return !images_used.contains(item.first);});
+        std::erase_if(sampler_cache,[&](const auto& item){return !samplers.contains(item.first);});
+        std::erase_if(mesh_owners,[&](const auto& item){return !meshes.contains(item.first);});
+        std::erase_if(material_owners,[&](const auto& item){return !materials.contains(item.first);});
+        std::erase_if(image_owners,[&](const auto& item){return !images_used.contains(item.first);});
+        texture_bytes=0;
+        for(const auto& [image,unused]:texture_cache) { (void)unused;for(const auto& mip:image_owners.at(image)->mips)texture_bytes+=mip.rgba.size(); }
+    }
     void update_scene() {
         const auto started=SteadyClock::now();draws.clear();pending_draws={};
+        retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
         auto lighting=scene->lighting;finalize_lighting(lighting);
         require(lighting.lights.size()<=max_scene_lights,"Too many lights for the forward renderer.");
-        const auto vp=multiply(perspective(scene->vertical_fov,static_cast<double>(extent.width)/extent.height,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
+        const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
+        const auto vp=multiply(perspective(scene->vertical_fov,aspect,scene->near_plane,scene->far_plane),inverse_affine(scene->camera_world));
         auto number=[](double value) { require(std::isfinite(value) && std::abs(value)<=std::numeric_limits<float>::max(),"Scene matrix exceeds GPU float range.");return static_cast<float>(value); };
         for(std::size_t k=0;k<16;++k)frame_constants.view_projection[k]=number(vp[k]);
         for(std::size_t k=0;k<3;++k)frame_constants.camera[k]=number(scene->camera_world[12+k]);
@@ -607,7 +747,7 @@ struct Context {
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
         frame_constants.light_count[1]=lighting.environment.shadow_resolution;
         for(std::size_t k=0;k<3;++k)frame_constants.camera_forward[k]=number(-scene->camera_world[8+k]);
-        shadow_plan=shadow_views(*scene,static_cast<double>(extent.width)/extent.height);
+        shadow_plan=shadow_views(*scene,aspect);
         frame_constants.light_count[2]=static_cast<std::uint32_t>(shadow_plan.size());
         for(std::size_t i=0;i<lighting.lights.size();++i) {
             const auto& source=lighting.lights[i];validate_light(source.light);auto& light=frame_constants.lights[i];light={};
@@ -672,8 +812,12 @@ struct Context {
     }
 
     bool rebuild(const RenderOptions& options) {
+        swapchain_dirty=true;
         device.waitIdle();
         commands=nullptr;
+#if POIMA_EDITOR
+        ui_framebuffers.clear();
+#endif
         framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; staging=nullptr;
         checked->runGarbageCollection();
         for(auto semaphore:finished) device.destroySemaphore(semaphore);
@@ -682,7 +826,7 @@ struct Context {
         device.destroySwapchainKHR(swapchain); swapchain=nullptr;
         const auto previous_format=format;
         if(!create_swapchain(options)) { swapchain_dirty=true; return false; }
-        require(format==previous_format,"Surface format changed; restart this player session.");
+        if(format!=previous_format) { renderer_fault=true;throw std::runtime_error("Surface format changed; recreate the renderer session."); }
         commands=checked->createCommandList();
         require(static_cast<bool>(commands),"Player command-list recreation failed.");
         swapchain_dirty=false;
@@ -778,6 +922,12 @@ struct Context {
             auto framebuffer = checked->createFramebuffer(framebuffer_desc);
             require(static_cast<bool>(framebuffer), "NVRHI framebuffer creation failed.");
             framebuffers.push_back(framebuffer);
+#if POIMA_EDITOR
+            if(editor) {
+                auto ui_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(texture));
+                require(bool(ui_framebuffer),"Editor UI framebuffer creation failed.");ui_framebuffers.push_back(ui_framebuffer);
+            }
+#endif
             finished.push_back(device.createSemaphore({}));
         }
         initialized.resize(images.size(), false);
@@ -797,6 +947,13 @@ struct Context {
         const bool bgra = format == vk::Format::eB8G8R8A8Unorm || format == vk::Format::eB8G8R8A8Srgb;
         SDL_Surface* image = SDL_CreateSurfaceFrom(static_cast<int>(extent.width), static_cast<int>(extent.height),
             bgra ? SDL_PIXELFORMAT_BGRA32 : SDL_PIXELFORMAT_RGBA32, pixels, static_cast<int>(row_pitch));
+#if POIMA_EDITOR
+        if(editor) {
+            try { require(image!=nullptr,std::string("BMP capture surface: ")+SDL_GetError());save_editor_bmp_exclusive(image,path); }
+            catch(...) { if(image)SDL_DestroySurface(image);checked->unmapStagingTexture(staging);throw; }
+            SDL_DestroySurface(image);checked->unmapStagingTexture(staging);return;
+        }
+#endif
         const bool saved = image && SDL_SaveBMP(image, path.c_str());
         const std::string detail = saved ? "" : std::string("BMP capture: ") + SDL_GetError();
         if (image) SDL_DestroySurface(image);
@@ -804,15 +961,117 @@ struct Context {
         require(saved, detail);
     }
 
+#if POIMA_EDITOR
+    void prepare_ui() {
+        require(ImGui::GetCurrentContext()!=nullptr,"Create an ImGui context before the editor viewport.");
+        ui_context=ImGui::GetCurrentContext();
+        unsigned char* pixels=nullptr;int width=0,height=0;
+        auto& io=ImGui::GetIO();io.Fonts->GetTexDataAsRGBA32(&pixels,&width,&height);
+        require(pixels && width>0 && height>0,"Editor font atlas is empty.");
+        nvrhi::TextureDesc td;td.width=static_cast<std::uint32_t>(width);td.height=static_cast<std::uint32_t>(height);
+        td.format=nvrhi::Format::RGBA8_UNORM;td.initialState=nvrhi::ResourceStates::ShaderResource;td.keepInitialState=true;td.debugName="Editor font atlas";
+        ui_font=checked->createTexture(td);require(bool(ui_font),"Editor font texture creation failed.");
+        commands->open();commands->writeTexture(ui_font,0,0,pixels,static_cast<std::size_t>(width)*4);commands->close();checked->executeCommandList(commands);
+        require(checked->waitForIdle(),"Editor font upload failed.");
+        nvrhi::SamplerDesc sd;sd.addressU=sd.addressV=nvrhi::SamplerAddressMode::Clamp;sd.minFilter=sd.magFilter=true;
+        ui_sampler=checked->createSampler(sd);
+        ui_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_editor_ui_vs);
+        ui_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_editor_ui_ps);
+        const nvrhi::VertexAttributeDesc attrs[]={
+            nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(ImDrawVert,pos)).setElementStride(sizeof(ImDrawVert)),
+            nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(ImDrawVert,uv)).setElementStride(sizeof(ImDrawVert)),
+            nvrhi::VertexAttributeDesc().setName("COLOR").setFormat(nvrhi::Format::RGBA8_UNORM).setOffset(offsetof(ImDrawVert,col)).setElementStride(sizeof(ImDrawVert))};
+        ui_input=checked->createInputLayout(attrs,3,ui_vs);
+        ui_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
+        require(ui_vs && ui_ps && ui_input && ui_layout && ui_sampler,"Editor UI shader/layout creation failed.");
+        ui_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,ui_font)).addItem(nvrhi::BindingSetItem::Sampler(0,ui_sampler)),ui_layout);
+        nvrhi::GraphicsPipelineDesc pd;pd.VS=ui_vs;pd.PS=ui_ps;pd.inputLayout=ui_input;pd.bindingLayouts.push_back(ui_layout);
+        pd.renderState.depthStencilState.depthTestEnable=false;pd.renderState.depthStencilState.depthWriteEnable=false;
+        pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;
+        pd.renderState.rasterState.scissorEnable=true;
+        auto& blend=pd.renderState.blendState.targets[0];blend.blendEnable=true;blend.srcBlend=nvrhi::BlendFactor::SrcAlpha;blend.destBlend=nvrhi::BlendFactor::InvSrcAlpha;
+        blend.srcBlendAlpha=nvrhi::BlendFactor::One;blend.destBlendAlpha=nvrhi::BlendFactor::InvSrcAlpha;
+        ui_pipeline=checked->createGraphicsPipeline(pd,ui_framebuffers.front()->getFramebufferInfo());
+        require(ui_bindings && ui_pipeline,"Editor UI pipeline creation failed.");
+        io.Fonts->SetTexID(static_cast<ImTextureID>(1));io.BackendFlags|=ImGuiBackendFlags_RendererHasVtxOffset;
+        io.BackendRendererName="poima_nvrhi";
+    }
+    void prepare_ui_frame(const ImDrawData* data) {
+        ui_data=data;ui_vertex_data.clear();ui_index_data.clear();
+        if(!data || data->TotalVtxCount==0)return;
+        require(data->Valid && data->TotalVtxCount>=0 && data->TotalIdxCount>=0 && data->TotalVtxCount<=4000000 && data->TotalIdxCount<=12000000,"Invalid or oversized editor UI draw data.");
+        require(std::isfinite(data->DisplaySize.x) && std::isfinite(data->DisplaySize.y) && data->DisplaySize.x>0 && data->DisplaySize.y>0,"Invalid editor UI display size.");
+        ui_vertex_data.reserve(static_cast<std::size_t>(data->TotalVtxCount));ui_index_data.reserve(static_cast<std::size_t>(data->TotalIdxCount));
+        for(int list=0;list<data->CmdListsCount;++list) {
+            const auto* source=data->CmdLists[list];
+            ui_vertex_data.insert(ui_vertex_data.end(),source->VtxBuffer.begin(),source->VtxBuffer.end());
+            ui_index_data.insert(ui_index_data.end(),source->IdxBuffer.begin(),source->IdxBuffer.end());
+            for(const auto& command:source->CmdBuffer) {
+                require(!command.UserCallback || command.UserCallback==ImDrawCallback_ResetRenderState,"Custom editor UI draw callbacks are unavailable.");
+                if(command.UserCallback)continue;
+                require(command.GetTexID()==static_cast<ImTextureID>(1),"Editor UI currently accepts only the font atlas texture.");
+                require(std::isfinite(command.ClipRect.x) && std::isfinite(command.ClipRect.y) && std::isfinite(command.ClipRect.z) && std::isfinite(command.ClipRect.w),"Editor UI clip rectangle must be finite.");
+                require(std::uint64_t(command.IdxOffset)+command.ElemCount<=static_cast<std::uint64_t>(source->IdxBuffer.Size) && command.VtxOffset<=static_cast<unsigned>(source->VtxBuffer.Size),"Editor UI command exceeds its draw list.");
+            }
+        }
+        require(ui_vertex_data.size()==static_cast<std::size_t>(data->TotalVtxCount) && ui_index_data.size()==static_cast<std::size_t>(data->TotalIdxCount),"Editor UI totals do not match draw lists.");
+        auto allocate=[&](nvrhi::BufferHandle& buffer,std::size_t& capacity,std::size_t bytes,bool vertex) {
+            if(buffer && capacity>=bytes)return;
+            capacity=bytes+16384;nvrhi::BufferDesc desc;desc.byteSize=capacity;desc.isVertexBuffer=vertex;desc.isIndexBuffer=!vertex;
+            desc.initialState=vertex ? nvrhi::ResourceStates::VertexBuffer : nvrhi::ResourceStates::IndexBuffer;desc.keepInitialState=true;
+            buffer=checked->createBuffer(desc);require(bool(buffer),"Editor UI buffer allocation failed.");
+        };
+        allocate(ui_vertices,ui_vertex_capacity,ui_vertex_data.size()*sizeof(ImDrawVert),true);
+        allocate(ui_indices,ui_index_capacity,ui_index_data.size()*sizeof(ImDrawIdx),false);
+    }
+    void render_ui(std::uint32_t image_index) {
+        if(!ui_data || ui_vertex_data.empty())return;
+        commands->writeBuffer(ui_vertices,ui_vertex_data.data(),ui_vertex_data.size()*sizeof(ImDrawVert));
+        if(!ui_index_data.empty())commands->writeBuffer(ui_indices,ui_index_data.data(),ui_index_data.size()*sizeof(ImDrawIdx));
+        const float sx=2.0f/ui_data->DisplaySize.x,sy=-2.0f/ui_data->DisplaySize.y;
+        const float constants[8]={sx,sy,-1.0f-ui_data->DisplayPos.x*sx,1.0f-ui_data->DisplayPos.y*sy,
+            (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,0,0,0};
+        std::uint32_t vertex_offset=0,index_offset=0;
+        for(int list=0;list<ui_data->CmdListsCount;++list) {
+            const auto* source=ui_data->CmdLists[list];
+            for(const auto& draw:source->CmdBuffer) {
+                if(draw.UserCallback || draw.ElemCount==0)continue;
+                auto x=[&](float value){return std::clamp((value-ui_data->DisplayPos.x)*ui_data->FramebufferScale.x,0.0f,static_cast<float>(extent.width));};
+                auto y=[&](float value){return std::clamp((value-ui_data->DisplayPos.y)*ui_data->FramebufferScale.y,0.0f,static_cast<float>(extent.height));};
+                const int left=static_cast<int>(std::floor(x(draw.ClipRect.x))),right=static_cast<int>(std::ceil(x(draw.ClipRect.z)));
+                const int top=static_cast<int>(std::floor(y(draw.ClipRect.y))),bottom=static_cast<int>(std::ceil(y(draw.ClipRect.w)));
+                if(right<=left || bottom<=top)continue;
+                nvrhi::GraphicsState state;state.pipeline=ui_pipeline;state.framebuffer=ui_framebuffers.at(image_index);state.bindings.push_back(ui_bindings);
+                state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(ui_vertices));
+                state.indexBuffer=nvrhi::IndexBufferBinding(ui_indices,sizeof(ImDrawIdx)==2 ? nvrhi::Format::R16_UINT : nvrhi::Format::R32_UINT,0);
+                state.viewport.addViewport(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+                state.viewport.addScissorRect(nvrhi::Rect(left,right,top,bottom));commands->setGraphicsState(state);commands->setPushConstants(constants,sizeof(constants));
+                commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.ElemCount).setStartIndexLocation(index_offset+draw.IdxOffset).setStartVertexLocation(vertex_offset+draw.VtxOffset));
+            }
+            vertex_offset+=static_cast<std::uint32_t>(source->VtxBuffer.Size);index_offset+=static_cast<std::uint32_t>(source->IdxBuffer.Size);
+        }
+    }
+#endif
     bool frame(bool capture_frame) {
+        require(!renderer_fault,"Renderer synchronization failed; recreate the renderer session.");
         const auto frame_started=SteadyClock::now();
         if(!swapchain) { swapchain_dirty=true; return false; }
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { next=device.acquireNextImageKHR(swapchain, 5'000'000'000ULL, acquired, {}); }
+        try { next=device.acquireNextImageKHR(swapchain, editor ? 16'000'000ULL : 5'000'000'000ULL, acquired, {}); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
+        if(editor && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
             "Swapchain acquisition failed or timed out.");
+        // Once acquired, an exception may leave a signaled binary semaphore
+        // or an open/submitted command list. Recreating the session is the
+        // supported recovery; retrying the same resources is not safe.
+        struct FrameFailure {
+            bool& failed;bool complete=false;
+            ~FrameFailure() { if(!complete)failed=true; }
+        } failure{renderer_fault};
         const auto index = next.value;
         auto texture = images.at(index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
@@ -830,7 +1089,7 @@ struct Context {
         nvrhi::GraphicsState state;
         state.pipeline = pipeline;
         state.framebuffer = framebuffers[index];
-        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width), static_cast<float>(extent.height)));
+        state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width), static_cast<float>(extent.height))));
         if (scene) {
             state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));
             state.bindings.push_back(bindings);
@@ -838,7 +1097,7 @@ struct Context {
         commands->setGraphicsState(state);
         if (scene) {
             for (const auto& draw : draws) {
-                if(!draw.camera_visible)continue;
+                if(!scene_visible || !draw.camera_visible)continue;
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
@@ -850,6 +1109,9 @@ struct Context {
         } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
         timestamp(3);
         if(scene && multisample_color)commands->resolveTexture(texture,nvrhi::AllSubresources,multisample_color,nvrhi::AllSubresources);
+#if POIMA_EDITOR
+        if(editor)render_ui(index);
+#endif
         if (capture_frame) commands->copyTexture(staging, {}, texture, {});
         commands->setTextureState(texture, nvrhi::AllSubresources, nvrhi::ResourceStates::Present);
         commands->commitBarriers();timestamp(4);
@@ -879,6 +1141,7 @@ struct Context {
         if(diagnostics.profile_requested) {
             const auto frame_ms=elapsed_ms(frame_started);timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,frame_ms);collect_timestamps(frame_ms);
         }
+        failure.complete=true;
         return presented!=vk::Result::eErrorOutOfDateKHR;
     }
 };
@@ -918,6 +1181,73 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
 }
 RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene) { return render(options, &scene); }
+
+#if POIMA_EDITOR
+struct EditorViewport::Impl {
+    RenderOptions options;
+    SceneSnapshot snapshot;
+    Context context;
+    RenderReport result;
+    Impl(const RenderOptions& requested,const SceneSnapshot& scene):options(requested),snapshot(scene) {
+        require(ImGui::GetCurrentContext()!=nullptr,"Create an ImGui context before the editor viewport.");
+        context.editor=true;context.initialize(options,&snapshot,true);context.prepare_ui();
+        SDL_SetWindowTitle(context.window,"Poima Editor");
+        result.hardware=context.hardware;result.gpu_name=context.gpu_name;result.samples=context.samples;
+        result.width=context.extent.width;result.height=context.extent.height;
+        result.detail="Native editor viewport; serialized Vulkan presentation, no frame-time qualification.";
+    }
+};
+EditorViewport::EditorViewport(const RenderOptions& options,const SceneSnapshot& scene):impl_(std::make_unique<Impl>(options,scene)) {}
+EditorViewport::~EditorViewport()=default;
+void* EditorViewport::native_window() const { return impl_->context.window; }
+std::array<std::uint32_t,2> EditorViewport::extent() const { return {impl_->context.extent.width,impl_->context.extent.height}; }
+void EditorViewport::resize() { impl_->context.swapchain_dirty=true; }
+bool EditorViewport::draw(const SceneSnapshot& scene,EditorRect viewport,const ImDrawData* ui,bool capture) {
+    auto& state=*impl_;auto& context=state.context;
+    try {
+        require(!context.renderer_fault && context.messages.errors==0,"Renderer fault; recreate the editor viewport before drawing again.");
+        require(ImGui::GetCurrentContext()==context.ui_context,"The editor viewport's ImGui context must remain current until teardown.");
+        require(!capture || !state.options.capture.empty(),"Editor capture requires a configured output path.");
+        for(float value:{viewport.x,viewport.y,viewport.width,viewport.height})require(std::isfinite(value),"Editor viewport rectangle must be finite.");
+        float scale_x=1,scale_y=1,origin_x=0,origin_y=0;
+        if(ui) {
+            scale_x=ui->FramebufferScale.x;scale_y=ui->FramebufferScale.y;origin_x=ui->DisplayPos.x;origin_y=ui->DisplayPos.y;
+            require(std::isfinite(scale_x) && std::isfinite(scale_y) && scale_x>0 && scale_y>0 && std::isfinite(origin_x) && std::isfinite(origin_y),"Invalid editor UI scale/origin.");
+        }
+        int width=0,height=0;require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
+        if(width<=0 || height<=0 || (SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED))return false;
+        if(context.swapchain_dirty || static_cast<std::uint32_t>(width)!=context.extent.width || static_cast<std::uint32_t>(height)!=context.extent.height) {
+            auto resized=state.options;resized.width=static_cast<std::uint32_t>(width);resized.height=static_cast<std::uint32_t>(height);
+            if(!context.rebuild(resized))return false;
+        }
+        auto x=[&](double value){return static_cast<float>(std::clamp((value-origin_x)*scale_x,0.0,static_cast<double>(context.extent.width)));};
+        auto y=[&](double value){return static_cast<float>(std::clamp((value-origin_y)*scale_y,0.0,static_cast<double>(context.extent.height)));};
+        const float left=x(viewport.x),right=x(static_cast<double>(viewport.x)+std::max(viewport.width,0.0f));
+        const float top=y(viewport.y),bottom=y(static_cast<double>(viewport.y)+std::max(viewport.height,0.0f));
+        context.scene_visible=right>left && bottom>top;
+        context.scene_viewport=context.scene_visible ? std::optional<nvrhi::Viewport>(nvrhi::Viewport(left,right,top,bottom,0,1)) : std::nullopt;
+        state.snapshot=scene;context.scene=&state.snapshot;
+        // Preparation can upload resources using this command list. Its failure
+        // may occur after opening/submitting work, so conservatively invalidate
+        // this graphics lifetime rather than attempting an unsafe retry.
+        try { context.update_scene();context.prepare_ui_frame(ui); }
+        catch(...) { context.renderer_fault=true;throw; }
+        if(!context.frame(capture))return false;
+        ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
+        if(capture) { context.capture(state.options.capture);state.result.capture_written=true; }
+        state.result.success=true;
+        state.result.detail="Native editor viewport; serialized Vulkan presentation, no frame-time qualification.";
+        return true;
+    } catch(const std::exception& error) { state.result.success=false;state.result.detail=error.what();throw; }
+}
+RenderReport EditorViewport::report() const {
+    auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
+}
+EditorViewportResources EditorViewport::resources() const {
+    const auto& c=impl_->context;
+    return {c.geometry_cache.size(),c.material_cache.size(),c.texture_cache.size(),c.skin_instances.size(),c.texture_bytes,c.skin_bytes};
+}
+#endif
 
 PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     PlayerReport result;
