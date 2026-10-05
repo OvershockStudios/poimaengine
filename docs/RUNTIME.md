@@ -73,6 +73,8 @@ The last 32 successful step receipts support identical retries without advancing
 
 Parameter/reference failures occur before stepping. A physics batch also takes a trusted internal Jolt/character checkpoint. A reported update/capacity failure restores that checkpoint, controller angles, kinematic targets/progress, transforms and tick before reporting failure. The rollback path is tested with a real contact-capacity overflow. This internal checkpoint is not a persistent save format and never accepts caller-supplied binary bytes.
 
+The runtime inventories startup body identities in a checkpointable native allocator. Its generations cannot wrap into stale identities. Dedicated Linux and Windows tests verify rigid-body membership restoration and subsequent contact/motion equivalence using explicit IDs, including sleeping bodies. They also demonstrate why Jolt recorder restoration alone is insufficient for structural changes. Runtime entity/component membership remains fixed; this is internal preparation for lifecycle support. [Identity and topology test evidence](evidence/m2-runtime-body-ids.json).
+
 Native hosts can use `WorldSession::advance_tick(expected_session, expected_tick, inputs)` for one guarded tick and post-commit save/load servicing. It returns fixed-size `WorldTickAdvance` metadata without a JSON round trip or RPC receipt. A successful call is already committed: presentation failure must not replay it. If `replaced` is true, `current_tick` belongs to the new session; discard old input and reacquire its identity before continuing. Automatic editor playback uses this route independently for each catch-up tick. This does not change explicit `runtime.step` batch atomicity.
 
 ## Physics components

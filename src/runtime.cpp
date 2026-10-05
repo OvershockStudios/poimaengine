@@ -2,6 +2,7 @@
 #include "poima/runtime.hpp"
 #include "poima/runtime_animation.hpp"
 #include "runtime_components.hpp"
+#include "runtime_body_ids.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -119,6 +120,7 @@ struct Runtime::Impl {
     std::map<std::string,entt::entity> identities;
     std::vector<entt::entity> order, hierarchy, characters, kinematics;
     std::map<JPH::uint32,std::string> body_names;
+    RuntimeBodyIds body_ids;
     std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>> mesh_shapes;
     Runtime* owner=nullptr;
     std::unique_ptr<Gameplay> game;
@@ -185,7 +187,7 @@ struct Runtime::Impl {
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         animations=std::make_unique<RuntimeAnimations>(definition);
         validate_runtime_mesh_colliders(definition);
-        physics.Init(4096,0,8192,8192,broad_layers,broad_filter,object_layers);
+        physics.Init(RuntimeBodyIds::capacity,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
         auto definitions=definition.entities;
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){return a.id<b.id;});
@@ -227,7 +229,7 @@ struct Runtime::Impl {
         }
         require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
         validate_shadow_budget(shadow_count,shadow_resolution);
-        require(body_count<=4096,"Runtime physics body limit exceeded.");
+        require(body_count<=RuntimeBodyIds::capacity,"Runtime physics body limit exceeded.");
         std::set<entt::entity> done;
         for (auto e : order) {
             std::vector<entt::entity> chain; std::set<entt::entity> visiting;
@@ -340,6 +342,15 @@ struct Runtime::Impl {
                 body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
             }
         }
+        // Character constructors allocate their own Jolt IDs. Finish all bootstrap
+        // creation before inventorying slots; subsequent structural creation must
+        // use explicit IDs so a failed batch cannot consume Jolt sequence numbers.
+        for(const auto& [id,name]:body_names) {
+            (void)name;
+            body_ids.reserve(JPH::BodyID(id));
+        }
+        body_ids.seal();
+        require(body_ids.live()==physics.GetNumBodies(),"Runtime physics identity inventory is incomplete.");
         components=std::make_unique<RuntimeComponents>(registry,identities,definition);
         physics.OptimizeBroadPhase();
         for (auto e : characters) registry.get<Controller>(e).character->PostSimulation(0.05f);

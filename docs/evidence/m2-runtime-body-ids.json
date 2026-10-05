@@ -1,0 +1,102 @@
+{
+  "milestone": "Internal physics identity ownership and topology rollback foundation",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b888db67442d97972cb4d53ece7186aee681af7c",
+  "source_sha256": {
+    "CMakeLists.txt": "94f3c5036e45c4f39457ec2920aafbec10a2342be99bffad17382aa66b2349bf",
+    "src/runtime.cpp": "8b75a9c1aec60a3ca94724aa49c0324b96746bdb52262bee93bb20e96e0532ea",
+    "src/runtime_body_ids.hpp": "46c84801b20fcba146255775993ad46477f6a65a8a4d3ea5dae58f0ea83a9b80",
+    "tests/runtime_body_ids_native.cpp": "53419b5d748d0a49e32601645b37cefff7f9ef52e3dd92e92433c06b05f815ab",
+    "tests/runtime_topology_native.cpp": "2844a3c89c925aa9d7cb8eec5b489a6a33e5ba73fd21127a1cb6041b407196de"
+  },
+  "jolt_revision": "036ea7b1d717b3e713ac9d8cbd47118fb9cd5d60",
+  "implemented": [
+    "Runtime inventories and seals all startup physics body identities, including Character bodies.",
+    "Internal value-copy allocator uses lowest available slots, exact ownership checks and nonwrapping generations.",
+    "Committed generation 255 retirement exhausts that slot; there are 4096 physical slots. No unlimited lifetime allocation claim."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed": true,
+      "method": "CMake single-job build; three CTest invocations, two tests each.",
+      "tests": [
+        "runtime_body_ids_native",
+        "runtime_topology_native",
+        "runtime_native",
+        "runtime_mesh_native",
+        "runtime_save_native",
+        "runtime_save_fixture"
+      ]
+    },
+    "Windows": {
+      "passed": true,
+      "method": "CMake LLVM-MinGW single-job build; native Windows execution via Windows Python.",
+      "tests": [
+        {
+          "binary": "poima-runtime-body-ids-test.exe",
+          "arguments": [],
+          "exit_code": 0,
+          "binary_sha256": "154f4426488834b2fda893b7ae0e3017b5eef666ff1afc5ff83275a40628e573"
+        },
+        {
+          "binary": "poima-runtime-topology-test.exe",
+          "arguments": [],
+          "exit_code": 0,
+          "binary_sha256": "ca881c7fb8e3214d7c5506ab8b65def82d71cd49febe34f2ea1c09773a53d9b5"
+        },
+        {
+          "binary": "poima-runtime-test.exe",
+          "arguments": [],
+          "exit_code": 0,
+          "binary_sha256": "cdd7b3bc29fda81f0b195d5e2b658e4096b084a3fbfc4d6b7c886ba1b498c981"
+        },
+        {
+          "binary": "poima-runtime-mesh-test.exe",
+          "arguments": [],
+          "exit_code": 0,
+          "binary_sha256": "97e18430bbaf05b2b67133ead5ff8eb2b9cdcee93ac6998649b37611cd734b13"
+        },
+        {
+          "binary": "poima-runtime-save-test.exe",
+          "arguments": [],
+          "exit_code": 0,
+          "binary_sha256": "1765fd7ad1732ba1e602803c00ac15190dcbf8f3e99105f5740a87fde9fb3f6b"
+        },
+        {
+          "binary": "poima-runtime-save-test.exe",
+          "arguments": [
+            "--read-fixture",
+            "tests/fixtures/runtime_snapshot_v1.json"
+          ],
+          "exit_code": 0,
+          "binary_sha256": "1765fd7ad1732ba1e602803c00ac15190dcbf8f3e99105f5740a87fde9fb3f6b"
+        }
+      ]
+    },
+    "allocator_groups": 5,
+    "topology_groups": 4,
+    "topology_checks": [
+      "Automatic startup bodies are inventoried before exclusive explicit-ID allocation.",
+      "Active and sleeping cohorts each restore exact body state and serialized checkpoint bytes after three speculative remove/create/simulate batches.",
+      "Each positive cohort matches motion and sorted contact-event kinds/body pairs for 270 continuation ticks and 120 further ticks after a new committed creation.",
+      "Automatic-ID negative control confirms failed creation batches consume future identities.",
+      "Extra-body negative control confirms RestoreState success does not establish correct body membership."
+    ]
+  },
+  "linux_binary_sha256": {
+    "poima-runtime-body-ids-test": "fa8341f037c9af61ca50c8b84ab16d0a14ec08091479346e8d4c1846f1a876b7",
+    "poima-runtime-topology-test": "41e4bad15c76c3aa70864089cb12ccbbd39a86176bb6206cec84fdc295a4b126",
+    "poima-runtime-test": "32089f1b16aad96157c621e4a641a616f3038fead1ca43998b53330139dec3b6",
+    "poima-runtime-mesh-test": "f0659206313b828e5b30a6919a69a18a137c2b928a23555388a46b7ad72d51ef",
+    "poima-runtime-save-test": "5fc429cd44f20ed2267fac91f8c832dfe0e1befb5cdc6083fa3d1a32dde6f92c"
+  },
+  "limitations": [
+    "Runtime entity/component membership is still fixed; no public spawn/despawn API is implemented by this change.",
+    "The topology fixture exercises rigid boxes with contact and sleep state, not dynamic Characters, constraints, mesh creation or production ECS structural journals.",
+    "Continuation is compared within each OS/build; no arbitrary cross-platform bit-exact guarantee.",
+    "Allocator checkpoints must be restored together with actual physical membership. Retired body slots may be released only after Jolt allocation destruction.",
+    "Portable saves still reconstruct physics caches; this internal rollback test does not strengthen portable-save determinism guarantees.",
+    "These are functional tests on the development laptop, not throughput or battery-performance measurements. Existing desktop package was not republished."
+  ]
+}
