@@ -29,6 +29,10 @@ Keep the bridge's output directory together, including `Poima.Gameplay.dll`, its
 
 No runtime is installed or redistributed by the engine build. Hostfxr and the stable bridge remain loaded for the process lifetime. Changing their selected paths requires restarting the engine process; only game assemblies are replaced during gameplay reload.
 
+## Use the editor
+
+The [C# Gameplay window](EDITOR_GAMEPLAY.md) configures a compiled development assembly for Play, exposes typed live values, and reloads compatible builds while paused. The desktop package includes its development runtime and stable bridge. Source compilation remains an external IDE or `dotnet build` step.
+
 ## Write gameplay
 
 The [complete sliding-door sample](../examples/managed/DoorGame/DoorGame.cs) references only `Poima.Gameplay` and ordinary .NET types. It does not require C++, unsafe code, renderer internals or JSON inside its update. Its structure is:

@@ -177,18 +177,26 @@ def main():
         parser.error('Bootstrap the pinned .NET SDK with scripts/bootstrap_tools.py --only dotnet first.')
     environment = dict(os.environ)
     environment.update(DOTNET_CLI_HOME=str(ROOT/'.cache/dotnet-home'), NUGET_PACKAGES=str(ROOT/'.cache/nuget'),
-                       DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1')
+                       DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_SKIP_FIRST_TIME_EXPERIENCE='1',
+                       DOTNET_GENERATE_ASPNET_CERTIFICATE='false')
 
     def run(command):
         subprocess.run(list(map(str, command)), cwd=ROOT, env=environment, check=True)
 
     if not args.skip_native:
-        run(['cmake', '--preset', 'windows-runtime', '-DPOIMA_BUILD_DESKTOP_BRIDGE=ON'])
+        host_headers = sdk.parent/'packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native'
+        if not all((host_headers/name).is_file() for name in ('hostfxr.h', 'coreclr_delegates.h')):
+            parser.error('The pinned SDK host headers are missing; rerun the .NET bootstrap.')
+        run(['cmake', '--preset', 'windows-runtime', '-DPOIMA_BUILD_DESKTOP_BRIDGE=ON',
+             '-DPOIMA_ENABLE_MANAGED_GAMEPLAY=ON', '-DPOIMA_DOTNET_HOST_HEADERS='+str(host_headers)])
         run(['cmake', '--build', '--preset', 'windows-runtime', '--target', 'poima_desktop', 'poima'])
     native = ROOT/'build/windows-runtime'
     for name in ('poima_desktop.dll', 'poima.exe'):
         if not (native/name).is_file():
             parser.error('Missing native artifact: '+name)
+    native_features = json.loads((native/'runtime.json').read_text())['features']
+    if not native_features.get('managed') or not native_features.get('simulation'):
+        parser.error('The desktop C# gameplay workflow requires native managed gameplay and simulation; rebuild without --skip-native.')
     project = ROOT/'desktop/Poima.Editor/Poima.Editor.csproj'
     run([sdk, 'restore', project, '-r', 'win-x64', '-p:SelfContained=true', '--locked-mode'])
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -196,6 +204,20 @@ def main():
         stage = Path(temporary)/'payload'
         installed = Path(temporary)/'native-install'
         run([sdk, 'publish', project, '-c', 'Release', '-r', 'win-x64', '--self-contained', 'true', '--no-restore', '-o', stage])
+        # The reloadable game bridge is a framework-dependent component hosted
+        # by the editor's existing CoreCLR. Keep it outside the editor's own
+        # dependency graph so game contexts share its stable SDK identity.
+        bridge_output = Path(temporary)/'managed-bridge'
+        run([sdk, 'build', ROOT/'managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj',
+             '-c', 'Release', '--nologo', '-o', bridge_output])
+        gameplay = stage/'gameplay'
+        gameplay.mkdir()
+        for name in ('Poima.ManagedBridge.dll', 'Poima.ManagedBridge.deps.json',
+                     'Poima.ManagedBridge.runtimeconfig.json', 'Poima.Gameplay.dll'):
+            source = bridge_output/name
+            if not source.is_file():
+                raise RuntimeError('Missing managed gameplay bridge artifact: '+name)
+            shutil.copy2(source, gameplay/name)
         for name in ('poima_desktop.dll', 'poima.exe', 'phonon.dll'):
             if (native/name).is_file():
                 shutil.copy2(native/name, stage/name)
@@ -273,6 +295,7 @@ def main():
         manifest = {'format': 'poima.desktop-build', 'version': 1,
                     'native_version': json.loads((installed/'runtime.json').read_text())['engine_version'],
                     'runtime': rid+', self-contained CoreCLR', 'packages': package_rows, 'runtime_packs': runtime_rows,
+                    'gameplay_bridge': 'gameplay/Poima.ManagedBridge.dll',
                     'limitations': ['Prototype; complete source-level license audit and clean-machine distribution qualification remain required.',
                                     'Windows native viewport only; GUI and Scene request Vulkan. Explicit --software-ui affects chrome only.'],
                     'files': inventory(stage)}

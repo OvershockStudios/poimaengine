@@ -1,0 +1,350 @@
+{
+  "format": "poima.editor-gameplay-evidence",
+  "version": 1,
+  "checkpoint": "0.0.36",
+  "date": "2026-10-05",
+  "source_base": "64432b6369b27d859e0f91937ac27ced353cd1a2",
+  "source_sha256": {
+    "CMakeLists.txt": "e53180c56346dfd93d23fc661bf658cc0cf0552271db92b6dabcda9c0cd12636",
+    "include/poima/world.hpp": "b383f0b61b764cbdcef06ea73366079acebd03656f4f5415115cb47905b788f8",
+    "src/world.cpp": "61a2ae44f519861e8b07200369dbd34ae7b23fdf6e4882a52f08cd3e4fd25c05",
+    "src/desktop_bridge.cpp": "9d49b329c2a93b2f318dc8da84fcc2a11fc768b87bfc2a29b79da309d4a6b057",
+    "scripts/build_desktop.py": "a1a6ef5053ee56eb65dd0442f42e3e05751b2f810bc5d94f48e822816cf5f105",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "01d4ebe5df3e0a4417b868ccac90323203d6936dd2f13206799b183e54e9163f",
+    "desktop/Poima.Editor/App.cs": "34a4717d23faf7e636e6eb3823c6d01036b567e8652174887d218f1706f8a295",
+    "desktop/Poima.Editor/NativeHost.cs": "ef349950932c1c97af877d4b7cf8cd8948a20f1293c656e0a2180b31f4df7b65",
+    "desktop/Poima.Editor/EditorModel.cs": "36b54bf87e683f180723084e872c08cb78385ed5bd5f651cb42e847630b0a52b",
+    "desktop/Poima.Editor/MainWindow.cs": "a74fdfa1fa28cb8dd085b958d6986ff1de9b83186a6a470781ae88f95411b8f7",
+    "desktop/Poima.Editor/GameplayEditorModel.cs": "deb2be2990dad11db69b784f02319462d1b3b59428a5ee747cf5671ce8c9c4ee",
+    "desktop/Poima.Editor/GameplayWindow.cs": "8ce6a49b270796488ef50121aa1dab4ba96bf6a3b071911ebfc17e5852a499b6",
+    "desktop/Poima.Editor/DesktopScript.cs": "cb606061d2d2a067d02942522f12821e793864b9d8e6cb2572a854472342b5e2",
+    "tests/desktop_gameplay_contract.py": "b4971de6cbf0d8713c18f4e994aa5db3cc3b840dd89e6ffc582c90f6f53a408d",
+    "tests/desktop_gameplay_frontend.py": "fc5e931d28859aa93676160acba7d58c43e5a2ac7280a9da2c1aa5dfcca346bc",
+    "tests/desktop_playback_contract.py": "afa6139d7e455ffe6e411f997001ebdd115a01c0ab59fd57df45263f8293bfff",
+    "tests/desktop_frontend.py": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84"
+  },
+  "scope": "Session-local C# launch configuration, tick-zero editor Play loading, guarded typed fields, paused compatible assembly reload, and readable retained UI content.",
+  "package": {
+    "path": "build/desktop-gameplay-iteration-reviewable",
+    "manifest_sha256": "4119e0b0f425385fe11585c415db9a7a871d800760eb2315b370c9eb11162d5c",
+    "inventoried_payloads": 361,
+    "binaries": {
+      "Poima.Editor.dll": "d678f60177a84610771826152eb478eb8c7dfd676367b352a3bfdcf48e3f208b",
+      "poima.exe": "37024da0c8062e6be1b7d0357fcf02b4cd74885663cd67ebb5c6d7600ec2d09a",
+      "poima_desktop.dll": "96a58d1cfdb8502e576b57f26df34752e620be464f0d65de30621c228e35c4b2",
+      "hostfxr.dll": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+      "gameplay/Poima.ManagedBridge.dll": "272b6554efa6d51e3a528837c1f7803703424365dd3c07ec1f6cfd708582ab9f",
+      "gameplay/Poima.Gameplay.dll": "8c6c87bfa8bd2554a6f16fa99a6761f14eca428b6b918cf31d184191c4734f84"
+    }
+  },
+  "linux_ctest": {
+    "runtime": {
+      "passed": true,
+      "suites": 33,
+      "seconds": 118.0,
+      "raw_evidence": "build/runtime-headless/build/editor-gameplay-runtime-ctest.xml",
+      "raw_sha256": "5a6d4f5543c0ae82fd1d5d85abdf19a20f6a1806fb37c88d22179a04cd1fcc79",
+      "cases": [
+        "asset_hash",
+        "texture_native",
+        "tangents_native",
+        "animation_native",
+        "player_input",
+        "editor_gizmo",
+        "input_profile_native",
+        "world_session_native",
+        "local_session_native",
+        "scene_math",
+        "shadow_math",
+        "visibility_math",
+        "runtime_native",
+        "interaction_native",
+        "runtime_animation_native",
+        "runtime_mesh_native",
+        "project_contract",
+        "project_gameplay_contract",
+        "shared_session_contract",
+        "world_history_contract",
+        "input_profile_contract",
+        "gamepad_contract",
+        "lighting_contract",
+        "audio_contract",
+        "asset_contract",
+        "animation_contract",
+        "runtime_animation_contract",
+        "runtime_animation_blend_contract",
+        "mesh_collision_contract",
+        "runtime_contract",
+        "cli_contract",
+        "world_contract",
+        "native_module_contract"
+      ]
+    },
+    "authoring": {
+      "passed": true,
+      "suites": 28,
+      "seconds": 68.0,
+      "raw_evidence": "build/editor-gameplay-authoring-ctest.xml",
+      "raw_sha256": "0ce6bc15d20f10d7455e7c5728295b190649abfb520df401d438def225ab4fb7",
+      "cases": [
+        "asset_hash",
+        "texture_native",
+        "tangents_native",
+        "animation_native",
+        "player_input",
+        "editor_gizmo",
+        "input_profile_native",
+        "world_session_native",
+        "local_session_native",
+        "scene_math",
+        "shadow_math",
+        "visibility_math",
+        "project_contract",
+        "project_gameplay_contract",
+        "shared_session_contract",
+        "world_history_contract",
+        "input_profile_contract",
+        "gamepad_contract",
+        "lighting_contract",
+        "audio_contract",
+        "asset_contract",
+        "animation_contract",
+        "runtime_animation_contract",
+        "runtime_animation_blend_contract",
+        "mesh_collision_contract",
+        "cli_contract",
+        "world_contract",
+        "native_module_contract"
+      ]
+    }
+  },
+  "windows_native_gameplay": {
+    "passed": true,
+    "raw_evidence": "build/editor-gameplay-windows-contract-final/5cccbe7ed13f42069db2a0d62945a915/evidence.json",
+    "raw_sha256": "dc13bab3f4f08a7e403e432c20f930c0e57426ea5c34485706f19af59f39138f",
+    "checks": [
+      "Existing no-profile Play remains valid and does not load gameplay.",
+      "Configuration executes no module; paths canonicalize, omitted values normalize, receipt replay survives file removal.",
+      "Strict shape/size/value bounds and stale/missing launch generations reject atomically.",
+      "Failed type/initial-value loads stop the unticked runtime, retain configuration/diagnostics, consume the failed session ID, and preserve authored bytes/history.",
+      "Play loads actual DoorGame and typed overrides before tick zero; active retry neither reloads nor resumes; configuration remains stopped-only.",
+      "Actual Use/ray/kinematic gameplay runs; paused external edits and state-preserving reloads change compact revision, failed reload preserves the live module.",
+      "Automatic playback rejects both backend loads/edits; Stop retains configuration, explicit clear restores no-code Play.",
+      "Receipt retention is bounded to 32: latest retry survives, evicted stale generation cannot reapply."
+    ],
+    "rpc_count": 193,
+    "hashes": {
+      "bridge": "96a58d1cfdb8502e576b57f26df34752e620be464f0d65de30621c228e35c4b2",
+      "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+      "managed_bridge": "1251e72fd652f6a27c271d47d603b908fe03a7d2b45bfca5a8b3eec6a426ae58",
+      "assembly": "048dd729ea9326e9d1fbdaca60b4f2c7a50c28083620b1eb4b3c0c8df12f4583",
+      "test": "b4971de6cbf0d8713c18f4e994aa5db3cc3b840dd89e6ffc582c90f6f53a408d"
+    }
+  },
+  "windows_native_regressions": {
+    "playback": {
+      "passed": true,
+      "raw_evidence": "build/editor-gameplay-playback-windows/run-a79abd1a114c4b929cf402b3410ef957/result.json",
+      "raw_sha256": "2642fbe1a1c32e2efdcac89a828f5b9c60cc214dc2986a4cb8eaa85456da47c7",
+      "checks": [
+        "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+        "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+        "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+        "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+        "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+        "A genuine animation sampling failure rolls back the entire batch, pauses playback, exposes the error, and preserves authored bytes/history."
+      ],
+      "rpc_count": 113
+    },
+    "desktop_core": {
+      "passed": true,
+      "raw_evidence": "build/editor-gameplay-desktop-core/run-fa696b0469db460b9804aafe62dd4253/result.json",
+      "raw_sha256": "281223cb33c61fabf52fa670e71ea3da9ef05c688d9e57bc30bc1023b2aff523",
+      "checks": [
+        "No graphics at create; unchanged polling and unattached draw; duplicate/invalid handle rejection.",
+        "Discoverable JSON-RPC methods, malformed request/notification behavior, shared-owner/graphics restrictions.",
+        "Off-thread calls reject without transferring WorldSession ownership or mutating state.",
+        "Independent CLI process shares authoritative revision/entities and stale edits remain atomic.",
+        "Camera patches validate before mutation; unavailable captures/invalid HWND preserve authoring.",
+        "GPU-independent picking: nearest visible geometry, no-hit, top-left coordinates, true triangle/rotated-box intersections, clipping and strict atomic guards.",
+        "Framing combines visible descendants, respects aspect/clipping, preserves orientation, supports non-rendered entities and never edits world bytes.",
+        "Runtime picking/framing uses frozen geometry and hierarchy after authored deletion/reparenting without advancing ticks.",
+        "GPU-independent skin picking follows edited joint poses and excludes obsolete rest geometry.",
+        "Host destruction releases writer ownership and endpoint; frontend HWND survives; committed edits survive reopen."
+      ],
+      "rpc_count": 84
+    },
+    "dual_view": {
+      "passed": true,
+      "raw_evidence": "build/editor-gameplay-dual-headless/run-8e8fc125b72441b1b4f388d6884ee5ee/result.json",
+      "raw_sha256": "d2a21476c39a4a40ec1483196e6597a9e9669a7ed2dcee0230ac792ea6d4028a",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "rpc_count": 30
+    }
+  },
+  "windows_self_contained_editor": {
+    "passed": true,
+    "raw_evidence": "build/desktop-gameplay-reviewable-ui-gpu1/5126ad46681d47eea44896efa46380f8/evidence.json",
+    "raw_sha256": "0830ef9da75e0394726cb9a1d001b80511183ac3e06b76e4f8d30b3af2e9b61a",
+    "checks": [
+      "actual self-contained editor cohosts packaged CoreCLR bridge",
+      "human Play auto-loads configured gameplay before first tick",
+      "paused typed live edits and real C# door motion",
+      "state-preserving schema upgrade, exact int64, entity/finite validation and stale-draft protection",
+      "failed reload preserves module; 100 compatible GUI reloads release every retired context",
+      "external clean configuration adoption and dirty configuration conflict",
+      "Stop discards live state; failed startup leaves no runtime; authored world unchanged",
+      "structured report remains on original stdout after managed bridge loads"
+    ],
+    "actions": 192,
+    "gpu": 1,
+    "window_capture": {
+      "status": "unavailable",
+      "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+    },
+    "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+    "font": "Inter",
+    "scale": 1.25,
+    "compatible_reloads": 100
+  },
+  "windows_full_editor_regression": {
+    "passed": true,
+    "raw_evidence": "build/desktop-gameplay-reviewable-full-ui-gpu1/e4fa60fb4c204ff29bf64f8b13fd8c28/evidence.json",
+    "raw_sha256": "25ae10d9d66899231e5ce0c3631643bf6a1da47587784c7cf965af9ea358aef1",
+    "checks": [
+      "actual Avalonia Vulkan backend with native child Scene",
+      "shared CLI connection",
+      "dirty draft preserved; stale Apply rejects; Reload explicit",
+      "undo/redo and fixed-tick runtime",
+      "invalid raw field survives floating/reset; dirty close cancelled",
+      "missing-asset Scene error recovers after authoring repair without reattachment",
+      "actual Inspector and Scene floating windows; reset and continued presentation",
+      "native HWND look/fly/frame/click messages; input released cleanly",
+      "saved floating layout restores its panel structure and bounds, including a fresh process",
+      "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+      "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+      "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+      "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+      "independent Game HWND gestures preserve Scene camera; both panes render in one shared session",
+      "paused Game capture and Stop preserve authored transforms/revision/history",
+      "revision-guarded native viewport capture",
+      "bounded process exit",
+      "window screenshot unavailable; semantic GUI and native Scene capture qualified separately"
+    ],
+    "actions": 232,
+    "gpu": 1,
+    "window_capture": {
+      "status": "unavailable",
+      "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+    },
+    "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+    "font": "Inter",
+    "scale": 1.25
+  },
+  "ui_content_renders": {
+    "configuration_visual": {
+      "kind": "avalonia_visual_content",
+      "width": 825,
+      "height": 918,
+      "scale": 1.25,
+      "width_dip": 660,
+      "height_dip": 734.4,
+      "scroll_y": 0,
+      "qualification": "Attached Gameplay client visual only; not an OS screenshot, display/compositor or physical-input qualification.",
+      "sha256": "844f99d583cc9787f4762c01efab3920c49890e5a314b3111754eb6563821906",
+      "artifact": "docs/evidence/m2-editor-gameplay-configuration.png",
+      "review": "Inspected by implementation agent and/or root: readable dark-theme fields and controls; full observed counters and exact Int64 are visible. Not an OS screenshot."
+    },
+    "live_top_visual": {
+      "kind": "avalonia_visual_content",
+      "width": 825,
+      "height": 918,
+      "scale": 1.25,
+      "width_dip": 660,
+      "height_dip": 734.4,
+      "scroll_y": 0,
+      "qualification": "Attached Gameplay client visual only; not an OS screenshot, display/compositor or physical-input qualification.",
+      "sha256": "d4bc06efd131250203756f074179291ab47622cec9babadd2b591cf2c2474a0b",
+      "artifact": "docs/evidence/m2-editor-gameplay.png",
+      "review": "Inspected by implementation agent and/or root: readable dark-theme fields and controls; full observed counters and exact Int64 are visible. Not an OS screenshot."
+    },
+    "live_controls_visual": {
+      "kind": "avalonia_visual_content",
+      "width": 825,
+      "height": 918,
+      "scale": 1.25,
+      "width_dip": 660,
+      "height_dip": 734.4,
+      "scroll_y": 16,
+      "qualification": "Attached Gameplay client visual only; not an OS screenshot, display/compositor or physical-input qualification.",
+      "sha256": "7af51ad953ff9dd49bef925862fc3dd913bbfc52b1d0228e525bbc6501be4dc9",
+      "artifact": "docs/evidence/m2-editor-gameplay-controls.png",
+      "review": "Inspected by implementation agent and/or root: readable dark-theme fields and controls; full observed counters and exact Int64 are visible. Not an OS screenshot."
+    }
+  },
+  "linux_cohost_feasibility": {
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "cases": {
+      "fdd": {
+        "passed": true,
+        "framework": ".NET 10.0.12",
+        "call_count": 8,
+        "evidence": "build/editor-coreclr-cohost/fdd.json",
+        "evidence_sha256": "f593bf1d5bdb8345797a13bffea00034654cdb3c611684bd5dfb1291594dc377"
+      },
+      "scd-external-fxr": {
+        "passed": true,
+        "framework": ".NET 10.0.12",
+        "call_count": 8,
+        "evidence": "build/editor-coreclr-cohost/scd-external-fxr.json",
+        "evidence_sha256": "f593bf1d5bdb8345797a13bffea00034654cdb3c611684bd5dfb1291594dc377"
+      },
+      "scd-local-fxr": {
+        "passed": true,
+        "framework": ".NET 10.0.12",
+        "call_count": 8,
+        "evidence": "build/editor-coreclr-cohost/scd-local-fxr.json",
+        "evidence_sha256": "242b207e74e611c87f7f141fd0d086e499f322216a8dfefc9a5e2d93d60532f4"
+      }
+    },
+    "scope": "Existing native Gameplay hostfxr route called from an already-running managed process; native entity service is a small deterministic callback. No Avalonia, Windows, full runtime physics, or cross-version compatibility qualification.",
+    "raw_evidence": "build/editor-coreclr-cohost/provenance.json",
+    "raw_sha256": "4879ddfac9bd9432149a498bf0ef50a0357ab8d4e265680917fa18229e127683"
+  },
+  "failures_and_corrections": [
+    {
+      "kind": "native fixture configuration",
+      "raw_evidence": "build/editor-gameplay-windows-contract/5d63c3d5b290430cba9d44c629402922/evidence.json",
+      "detail": "An unmanaged Python host used hostfxr from the flat self-contained editor directory, which lacked an installed shared framework layout. The native harness was rerun with the installed matching hostfxr. The actual already-running editor separately passed with its bundled hostfxr.",
+      "raw_sha256": "bf1fceeadb2ce85b059359f5cd454ed47c3fa63fb3e97e4b266e2f72622ea3ee"
+    },
+    {
+      "kind": "GUI fixture setup",
+      "detail": "The first interpreter lacked Pillow; an existing interpreter with Pillow was used. The first fixture report was inside the project and correctly rejected; the test separated its project and report directories before rerunning."
+    },
+    {
+      "kind": "GUI defect",
+      "raw_evidence": "build/desktop-gameplay-ui-gpu1/c2bfa0768d564a92a880375e137628da/evidence.json",
+      "detail": "Opening the first Gameplay window attempted to attach advanced fields to two visual parents. Each control now belongs to one row. The corrected final package passed both GUI suites.",
+      "raw_sha256": "2f58f8d8b58de2a217859689f3ad4e37e7e6655255f94e514b6b726ddcb5161a"
+    },
+    {
+      "kind": "review correction",
+      "detail": "Applying live values could discard an independently edited reload path. Apply now preserves that draft; explicit Refresh or successful Reload resets it. The final GUI suite asserts preservation."
+    }
+  ],
+  "limitations": [
+    "The profile is session-local; no persistent project launch profile, source watcher or background compiler is supplied.",
+    "CoreCLR/bridge selection is process-lived. The supported Game<TState> SDK remains bounded; arbitrary per-entity scripts or whole-engine hot reload are not implemented.",
+    "All Windows GUI input was semantic/scripted, not physical keyboard/mouse/IME or broad accessibility qualification.",
+    "Windows was locked. Avalonia visual-content PNGs qualify this retained layout only, not an OS screenshot, native title bar, display/compositor, or physical interaction.",
+    "The native Game viewport BMP is distinct from UI-content rendering. No new graphics quality or performance benchmark is claimed.",
+    "Linux cohosting is a small native shim fixture, not a Linux editor. Console and clean-machine deployment remain unqualified.",
+    "No hosted CI ran. These are small local correctness and lifecycle fixtures, not production workload or sustained memory/frame-time measurements."
+  ]
+}

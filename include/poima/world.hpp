@@ -20,6 +20,11 @@ struct WorldRuntimeStatus {
     std::string session_id;
     std::uint64_t tick=0,authored_revision=0;
 };
+struct WorldGameplayStatus {
+    bool active=false;
+    std::string session_id;
+    std::uint64_t tick=0,revision=0;
+};
 struct EditorCamera {
     Matrix4 world=identity_matrix();
     double vertical_fov=60,near_plane=.1,far_plane=1000;
@@ -42,6 +47,8 @@ public:
     std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);
     bool closed() const;
     WorldRuntimeStatus runtime_status() const;
+    // Counters only: does not serialize gameplay schema or field values.
+    WorldGameplayStatus gameplay_status() const;
     // Validates the complete typed asset closure; no storage writes.
     WorldPackageContent package_content() const;
     SceneSnapshot authored_snapshot(const EditorCamera& camera) const;

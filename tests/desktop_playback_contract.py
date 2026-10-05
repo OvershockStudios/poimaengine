@@ -326,10 +326,18 @@ try:
     for method in ['desktop.play.step', 'runtime.step']:
         rpc(method, step_params(sid), expected_error=-32009)
     # These valid method names must be guarded before their mutating handlers.
-    for method in ['runtime.audio.replay', 'runtime.gameplay.load', 'runtime.gameplay.edit']:
+    guarded_gameplay = rpc('runtime.gameplay.inspect', {'session_id': sid, 'tick': tick, 'include_schema': True})
+    for method in ['runtime.audio.replay', 'runtime.gameplay.load', 'runtime.gameplay.load_native', 'runtime.gameplay.edit']:
         rpc(method, {}, expected_error=-32009)
+    check(rpc('runtime.gameplay.inspect', {'session_id': sid, 'tick': tick, 'include_schema': True}) == guarded_gameplay,
+          'Rejected gameplay load/edit changed module state or revision.')
     check(playback()['tick'] == tick, 'Rejected mutating command advanced the clock.')
     play('pause', {'session_id': sid})
+    # The load guard must release on Pause. Invalid parameters now reach core
+    # validation instead of retaining the desktop playback conflict.
+    rpc('runtime.gameplay.load_native', {}, expected_error=-32602)
+    check(rpc('runtime.gameplay.inspect', {'session_id': sid, 'tick': tick, 'include_schema': True}) == guarded_gameplay,
+          'Invalid paused native load changed module state or revision.')
     time.sleep(.18)
     poll()
     check(playback()['tick'] == tick, 'Paused time advanced simulation.')

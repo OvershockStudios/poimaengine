@@ -743,6 +743,11 @@ public:
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision; }
         return status;
     }
+    WorldGameplayStatus gameplay_status() const {
+        WorldGameplayStatus status;status.active=bool(runtime_);
+        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.revision=runtime_->gameplay_revision(); }
+        return status;
+    }
     SceneSnapshot editor_snapshot(const EditorCamera& camera,bool live,const Json* preview=nullptr) const {
         const auto& document=preview ? *preview : doc_;
         for(double value:camera.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Invalid editor camera matrix.");
@@ -2068,6 +2073,9 @@ WorldPackageContent WorldSession::package_content() const {
 }
 WorldRuntimeStatus WorldSession::runtime_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_status();
+}
+WorldGameplayStatus WorldSession::gameplay_status() const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.gameplay_status();
 }
 SceneSnapshot WorldSession::authored_snapshot(const EditorCamera& camera) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,false);

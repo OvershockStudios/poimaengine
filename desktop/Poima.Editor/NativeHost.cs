@@ -58,6 +58,7 @@ public sealed class NativeHost : IDisposable
             var selected = state["selected"]?.ToString();
             var changed = state["world_changed"]?.GetValue<bool>() == true || state["runtime_changed"]?.GetValue<bool>() == true || selected != lastSelected
                 || !JsonNode.DeepEquals(State["playback"], state["playback"])
+                || !JsonNode.DeepEquals(State["gameplay"], state["gameplay"])
                 || !JsonNode.DeepEquals(State["views"]?["game"]?["camera"], state["views"]?["game"]?["camera"])
                 || !JsonNode.DeepEquals(State["input"], state["input"])
                 || !JsonNode.DeepEquals(State["views"]?["game"]?["preparation_error"], state["views"]?["game"]?["preparation_error"]);

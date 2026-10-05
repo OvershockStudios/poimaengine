@@ -21,6 +21,7 @@ public sealed record AnimationClipChoice(int? Index, string Label)
 public sealed class EditorModel : IDisposable
 {
     public NativeHost Host { get; }
+    public GameplayEditorModel? Gameplay { get; set; }
     public event EventHandler? Changed;
     public event EventHandler? PlaybackChanged;
     public event Action? SceneChanging;
@@ -167,6 +168,7 @@ public sealed class EditorModel : IDisposable
     {
         if (Dirty) throw new InvalidOperationException("Apply or reload Inspector changes first.");
     }
+    public void RequireInspectorClean() => RequireClean();
     private void RequireStopped()
     {
         if (RuntimeId is not null) throw new InvalidOperationException("Stop the runtime before changing authored entities.");
@@ -284,9 +286,16 @@ public sealed class EditorModel : IDisposable
     }
     public void PlayStop()
     {
+        Gameplay?.RequireClean();
         SceneChanging?.Invoke();
         if (RuntimeId is not null) Host.Call("desktop.play.stop", new() { ["session_id"] = RuntimeId });
-        else { RequireClean(); Host.Call("desktop.play.start", new() { ["session_id"] = NewId(), ["revision"] = Revision }); }
+        else
+        {
+            RequireClean();
+            var parameters = new JsonObject { ["session_id"] = NewId(), ["revision"] = Revision };
+            if (Gameplay is not null) parameters["expected_gameplay_generation"] = Gameplay.Generation;
+            Host.Call("desktop.play.start", parameters);
+        }
         Host.RefreshState();
     }
     public void Pause()

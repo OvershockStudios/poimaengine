@@ -249,6 +249,10 @@ struct Bridge : ViewportState {
     bool input_focused=false;
     std::uint64_t input_batches=0;
     std::vector<Json> input_receipts;
+    std::uint64_t gameplay_generation=0,gameplay_cached_revision=0;
+    std::string gameplay_cached_session;
+    Json gameplay_profile=nullptr,gameplay_cached_module=nullptr;
+    std::vector<Json> gameplay_receipts;
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
@@ -360,9 +364,65 @@ struct Bridge : ViewportState {
         receipts.push_back({{"params",params},{"result",result}});
         game_input=std::move(staged);++input_batches;input_receipts.swap(receipts);return result;
     }
+    Json gameplay_runtime() {
+        const auto status=world->gameplay_status();
+        if(!status.active) { gameplay_cached_session.clear();gameplay_cached_module=nullptr;return nullptr; }
+        if(gameplay_cached_session!=status.session_id || gameplay_cached_revision!=status.revision) {
+            const auto state=world_call("runtime.gameplay.inspect",{{"session_id",status.session_id},{"tick",status.tick}});
+            const auto& module=state.at("module");
+            gameplay_cached_module=module.is_null() ? Json(nullptr) : Json{{"identity",module.at("identity")},{"assembly_sha256",module.at("assembly_sha256")}};
+            gameplay_cached_session=status.session_id;gameplay_cached_revision=status.revision;
+        }
+        return {{"session_id",status.session_id},{"tick",status.tick},{"revision",status.revision},{"module",gameplay_cached_module}};
+    }
+    Json gameplay_json(bool full) {
+        Json result={{"generation",gameplay_generation},{"runtime",gameplay_runtime()}};
+        if(full)result["profile"]=gameplay_profile;else result["configured"]=!gameplay_profile.is_null();
+        return result;
+    }
+    Json gameplay_command(const std::string& method,const Json& params) {
+        if(method=="desktop.gameplay.inspect") { fields(params,{});return gameplay_json(true); }
+        require(method=="desktop.gameplay.configure","Unknown desktop gameplay method.",-32601);
+        fields(params,{"request_id","expected_generation","profile"},{"request_id","expected_generation","profile"});
+        identifier(params.at("request_id"));const auto expected=integer(params.at("expected_generation"));
+        auto normalized=params;auto& profile=normalized.at("profile");
+        if(!profile.is_null()) {
+            fields(profile,{"hostfxr","bridge","assembly","type","values"},{"hostfxr","bridge","assembly","type"});
+            for(const auto* name:{"hostfxr","bridge","assembly","type"}) {
+                require(profile.at(name).is_string(),"Gameplay paths and type must be text.");const auto& text=profile.at(name).get_ref<const std::string&>();
+                require(!text.empty() && text.size()<=(std::string_view(name)=="type" ? 512U : 4096U) && text.find('\0')==std::string::npos,"Gameplay paths/type exceed limits or contain NUL.");
+            }
+            if(!profile.contains("values"))profile["values"]=Json::object();
+            const auto& values=profile.at("values");require(values.is_object() && values.size()<=128,"Gameplay values need at most 128 fields.");
+            for(const auto& [name,value]:values.items()) {
+                require(!name.empty() && name.size()<=64 && name.find('\0')==std::string::npos,"Invalid gameplay field name.");
+                require((value.is_number() && std::isfinite(value.get<double>())) || (value.is_string() && value.get_ref<const std::string&>().size()<=4096 && value.get_ref<const std::string&>().find('\0')==std::string::npos),"Gameplay field values must be finite numbers or bounded NUL-free strings.");
+            }
+            require(profile.dump().size()<=65536,"Gameplay profile exceeds 64 KiB.");
+        }
+        for(const auto& receipt:gameplay_receipts)if(receipt.at("params").at("request_id")==params.at("request_id")) {
+            require(receipt.at("params")==normalized,"Gameplay configuration request ID reused with different parameters.",-32010);
+            auto result=receipt.at("result");result["replayed"]=true;return result;
+        }
+        require(!world->runtime_status().active,"Stop runtime before changing the gameplay launch profile.",-32009);
+        require(expected==gameplay_generation,"Gameplay configuration generation conflict.",-32009);
+        require(gameplay_generation<max_integer,"Gameplay configuration generation exhausted.");
+        auto candidate=profile;
+        if(!candidate.is_null())for(const auto* name:{"hostfxr","bridge","assembly"}) {
+            auto path=path_of(candidate.at(name).get<std::string>());if(path.is_relative())path=world_path.parent_path()/path;
+            std::error_code error_code;path=fs::canonical(path,error_code);
+            require(!error_code && fs::is_regular_file(path,error_code) && !error_code,"Gameplay launch file does not exist or is not a regular file.");
+            const auto text=path_text(path);require(text.size()<=4096,"Resolved gameplay launch path exceeds 4096 bytes.");candidate[name]=text;
+        }
+        require(candidate.is_null() || candidate.dump().size()<=65536,"Resolved gameplay profile exceeds 64 KiB.");
+        const Json result={{"generation",gameplay_generation+1},{"profile",candidate},{"replayed",false}};
+        auto receipts=gameplay_receipts;if(receipts.size()==32)receipts.erase(receipts.begin());
+        receipts.push_back({{"params",std::move(normalized)},{"result",result}});
+        gameplay_profile=std::move(candidate);++gameplay_generation;gameplay_receipts.swap(receipts);return result;
+    }
     void sync_playback() {
         const auto state=world->runtime_status();
-        if(!state.active || state.session_id!=play_session) {
+        if((!state.active && !play_session.empty()) || (state.active && state.session_id!=play_session)) {
             release_input(true);
             playing=false;play_session=state.active ? state.session_id : std::string{};play_tick=state.active ? state.tick : 0;
             play_clock=PlayerClock{};play_last=Clock::now();capture_hold=false;play_error.clear();
@@ -382,10 +442,23 @@ struct Bridge : ViewportState {
         sync_playback();
         if(method=="desktop.play.inspect") { fields(params,{});return playback_json(); }
         if(method=="desktop.play.start") {
-            fields(params,{"revision","session_id","paused"},{"revision","session_id"});
+            fields(params,{"revision","session_id","paused","expected_gameplay_generation"},{"revision","session_id"});
             integer(params.at("revision"));identifier(params.at("session_id"));require(!params.contains("paused") || params.at("paused").is_boolean(),"Paused must be boolean.");
+            require(gameplay_profile.is_null() || params.contains("expected_gameplay_generation"),"Configured gameplay requires expected_gameplay_generation.");
+            if(params.contains("expected_gameplay_generation"))require(integer(params.at("expected_gameplay_generation"))==gameplay_generation,"Gameplay configuration generation conflict.",-32009);
             const bool fresh=!world->runtime_status().active;Parents hierarchy;if(fresh)hierarchy=parents();
             const auto started=world_call("runtime.start",{{"revision",params.at("revision")},{"session_id",params.at("session_id")}});
+            if(fresh && !gameplay_profile.is_null()) {
+                // A fresh runtime has no receipts. Its session ID is therefore
+                // a collision-free internal load receipt in this new table.
+                auto load=gameplay_profile;load["session_id"]=params.at("session_id");load["request_id"]=params.at("session_id");load["expected_tick"]=0;load["expected_revision"]=0;
+                try { (void)world_call("runtime.gameplay.load",load); }
+                catch(const std::exception& failure) {
+                    const std::string detail=failure.what();
+                    (void)world_call("runtime.stop",{{"session_id",params.at("session_id")}});
+                    sync_playback();play_error=detail;expire_gizmo();expire_capture();throw;
+                }
+            }
             if(fresh) { runtime_parents=std::move(hierarchy);runtime_parent_session=started.at("session_id"); }
             sync_playback();
             // Replaying start must not resume a runtime that was later paused.
@@ -636,7 +709,7 @@ struct Bridge : ViewportState {
         committed_gesture={{"drag_id",id},{"request_id",receipt},{"result",result}};cancel_gizmo();return result;
     }
     Json inspect() {
-        sync_playback();expire_gizmo();expire_capture();return {{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        sync_playback();expire_gizmo();expire_capture();return {{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
@@ -702,7 +775,12 @@ struct Bridge : ViewportState {
         const Json integer_schema={{"type","integer"},{"minimum",0},{"maximum",max_integer}};
         Json methods=Json::object();methods["desktop.describe"]=object(Json::object());methods["desktop.inspect"]=object(Json::object());
         const Json id_schema={{"type","string"},{"pattern","^[0-9a-f]{32}$"}};
-        methods["desktop.play.start"]=object({{"revision",integer_schema},{"session_id",id_schema},{"paused",{{"type","boolean"}}}},{"revision","session_id"});
+        methods["desktop.play.start"]=object({{"revision",integer_schema},{"session_id",id_schema},{"paused",{{"type","boolean"}}},{"expected_gameplay_generation",integer_schema}},{"revision","session_id"});
+        const Json gameplay_path={{"type","string"},{"minLength",1},{"maxLength",4096}};
+        const auto gameplay_launch=object({{"hostfxr",gameplay_path},{"bridge",gameplay_path},{"assembly",gameplay_path},
+            {"type",{{"type","string"},{"minLength",1},{"maxLength",512}}},{"values",{{"type","object"},{"maxProperties",128},{"additionalProperties",{{"type",{"number","string"}}}}}}},{"hostfxr","bridge","assembly","type"});
+        methods["desktop.gameplay.configure"]=object({{"request_id",id_schema},{"expected_generation",integer_schema},{"profile",{{"oneOf",Json::array({gameplay_launch,Json{{"type","null"}}})}}}},{"request_id","expected_generation","profile"});
+        methods["desktop.gameplay.inspect"]=object(Json::object());
         for(const auto* name:{"desktop.play.pause","desktop.play.resume","desktop.play.stop"})methods[name]=object({{"session_id",id_schema}},{"session_id"});
         methods["desktop.play.inspect"]=object(Json::object());
         methods["desktop.play.step"]=world_call("world.describe").at("methods").at("runtime.step");
@@ -738,6 +816,12 @@ struct Bridge : ViewportState {
                 {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits; Stop discards runtime without authored writes."},
                 {"capture","A queued capture holds automatic ticking until completion/error; resume discards the held wall-time interval."},
                 {"background","Playback continues while the owner polls, including hidden/detached viewports. Gameplay input has a separate explicit focus gate; editor audio playback is not connected."}}},
+            {"gameplay",{{"configuration","Session-local CoreCLR launch profile; configure only while stopped. Paths resolve relative to the world and must name existing regular files; validation executes no code. Semantic type/field checks occur when Play loads the module."},
+                {"limits","Profile at most 64 KiB; paths 4096 UTF-8 bytes, type 512 bytes; at most 128 scalar fields with names at most 64 bytes. No source build or file watcher."},
+                {"receipts","Every accepted configuration increments generation. Latest 32 normalized exact request receipts replay before runtime, generation and file checks; changed request ID payload conflicts. Receipts and configuration do not persist after host destruction."},
+                {"start","A configured profile requires expected_gameplay_generation on desktop.play.start. Module loads at tick zero before playing, with initial typed overrides. Active start retry never reloads or resumes. Failure stops the newly created runtime and retains configuration; that session ID is consumed, so retry with a fresh session ID."},
+                {"inspection","desktop.gameplay.inspect returns configuration and compact runtime metadata. desktop.inspect/poll omit profile and values; gameplay revision changes expose paused edits/reloads. Use runtime.gameplay.inspect for typed values/schema."},
+                {"reload","Pause, then runtime.gameplay.load with current session/tick/gameplay revision and a new request ID; existing state migration and rollback semantics apply. Trusted CoreCLR project code only; shipping Native AOT packages are separate."}}},
             {"input",{{"devices","Keyboard and mouse only; input.describe controls provide physical IDs, numeric SDL codes and reserved flags. V2 profiles retain keyboard/mouse bindings, but desktop gamepad events are not supported."},
                 {"configure","Active runtime controller and read-only frozen profile; missing profile means keyboard/mouse v1 defaults. input_revision requires input_profile. Successful reconfiguration releases old input; validation failure preserves it."},
                 {"focus","Explicit focus true requires playing Game view using the configured controller camera. Pause, Game camera change, Game detachment or focus false releases held controls and pending edges/look; Stop/session replacement drops configuration. Resume does not regain focus."},
@@ -762,7 +846,7 @@ struct Bridge : ViewportState {
             const auto method=message.at("method").get<std::string>();
             if(!method.starts_with("desktop.")) {
                 sync_playback();
-                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.edit"))
+                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit"))
                     throw Failure(-32009,"Pause desktop playback before manual runtime mutation.");
                 const bool starting=method=="runtime.start" && !world->runtime_status().active;
                 Parents starting_parents;if(starting)starting_parents=parents();
@@ -779,6 +863,7 @@ struct Bridge : ViewportState {
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
             else if(method.starts_with("desktop.play."))result=play_command(method,params);
+            else if(method.starts_with("desktop.gameplay."))result=gameplay_command(method,params);
             else if(method.starts_with("desktop.input."))result=input_command(method,params);
             else if(method=="desktop.view")result=set_view(params);
             else if(method=="desktop.game.camera")result=set_game_camera(params);

@@ -24,6 +24,8 @@ public sealed class MainWindow : Window
     public EditorModel Model { get; }
     public SceneNavigation Navigation { get; }
     public GameInput Game { get; }
+    public GameplayEditorModel Gameplay { get; }
+    private GameplayWindow? gameplayWindow;
     private readonly EditorLayoutStore layoutStore;
     public string? LayoutError { get; private set; }
     public string LayoutPath => layoutStore.FilePath;
@@ -55,6 +57,7 @@ public sealed class MainWindow : Window
         Application.Current!.Styles.Add(new EditorTheme());
         Application.Current.DataTemplates.Add(new EditorPanelTemplate());
         Model = new EditorModel(host);
+        Gameplay = new GameplayEditorModel(Model); Model.Gameplay = Gameplay;
         Navigation = new SceneNavigation(Model);
         Game = new GameInput(Model);
         Game.Error += text => status.Text = text;
@@ -106,16 +109,25 @@ public sealed class MainWindow : Window
         };
         Closing += (_, e) =>
         {
-            if (!qualificationClosing && Model.Dirty)
+            if (!qualificationClosing && (Model.Dirty || Gameplay.Dirty))
             {
                 e.Cancel = true;
-                const string message = "Apply or Reload the Inspector changes before closing.";
+                var message = Gameplay.Dirty ? "Apply or explicitly revert C# Gameplay drafts before closing." : "Apply or Reload the Inspector changes before closing.";
                 Model.Note(message); status.Text = message;
             }
-            if (!e.Cancel) { Navigation.Cancel(); Game.Release(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
+            if (!e.Cancel) { gameplayWindow?.CloseForOwner(); Navigation.Cancel(); Game.Release(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
         };
-        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Model.Dispose(); } };
+        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Gameplay.Dispose(); Model.Dispose(); } };
     }
+    public void ShowGameplay()
+    {
+        if (gameplayWindow is not null) { gameplayWindow.Activate(); return; }
+        gameplayWindow = new GameplayWindow(Model, Gameplay);
+        gameplayWindow.Closed += (_, _) => gameplayWindow = null;
+        gameplayWindow.Show(this);
+    }
+    public JsonObject RenderGameplay(string path) => (gameplayWindow ?? throw new InvalidOperationException("Open C# Gameplay first.")).RenderForQualification(path, projectRoot);
+    public void ScrollGameplay(string position) => (gameplayWindow ?? throw new InvalidOperationException("Open C# Gameplay first.")).ScrollForQualification(position);
     internal void CloseQualification() { qualificationClosing = true; Close(); }
     public JsonObject InspectDraft() => Model.InspectDraft();
     public JsonObject InspectPlaybackControls() => new() { ["pause_enabled"] = pause.IsEnabled,
@@ -229,7 +241,7 @@ public sealed class MainWindow : Window
             new MenuItem { Header = "_File", ItemsSource = new[] { Item("Import model…", () => _ = PickModel()), Item("Refresh", Model.Refresh), Item("Close", Close) } },
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")), Item("Environment and Sky", () => Model.Create("Environment")) } },
-            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Modified Tall layout", ResetLayout), Item("Modified Tall with Scene and Game", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
+            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("C# Gameplay", ShowGameplay), Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Modified Tall layout", ResetLayout), Item("Modified Tall with Scene and Game", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
             new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Click a player's Game view to control it; Escape or Tab releases input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
     }

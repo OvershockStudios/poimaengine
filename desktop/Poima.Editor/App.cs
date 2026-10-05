@@ -26,6 +26,9 @@ public sealed class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // The cohosted gameplay bridge routes game Console output to stderr.
+            // Preserve the editor's report channel before any game can load.
+            var reportOutput = Console.Out;
             var options = Program.Options;
             var script = new DesktopScript(options.Script, options.Frames);
             var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples);
@@ -71,7 +74,7 @@ public sealed class App : Application
                         using var stream = new FileStream(options.Report, FileMode.CreateNew, FileAccess.Write, FileShare.None);
                         using var writer = new StreamWriter(stream); writer.Write(report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
                     }
-                    Console.WriteLine(report.ToJsonString());
+                    reportOutput.WriteLine(report.ToJsonString()); reportOutput.Flush();
                 }
                 catch (Exception error)
                 {
