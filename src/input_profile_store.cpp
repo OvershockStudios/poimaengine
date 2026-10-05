@@ -211,7 +211,7 @@ Json profile_schema() {
 }
 Json describe() {
     Json controls=Json::array(),reserved=Json::array();for(const auto& control:input_controls()) {
-        controls.push_back({{"id",control.id},{"label",control.label},{"device",control.kind==InputControlKind::keyboard ? "keyboard" : control.kind==InputControlKind::mouse ? "mouse" : "gamepad"},{"reserved",control.reserved}});
+        controls.push_back({{"id",control.id},{"label",control.label},{"device",control.kind==InputControlKind::keyboard ? "keyboard" : control.kind==InputControlKind::mouse ? "mouse" : "gamepad"},{"code",control.code},{"reserved",control.reserved}});
         if(control.reserved)reserved.push_back(control.id);
     }
     return {{"format","poima.input.v1"},{"supported_formats",{"poima.input.v1","poima.input.v2"}},{"profile_schema",profile_schema()},{"actions",action_names},{"controls",controls},{"reserved_controls",reserved},

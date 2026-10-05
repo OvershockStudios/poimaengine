@@ -4,7 +4,7 @@ Poima is an experimental 3D game engine built around a native, headless authorin
 
 The core and player are C++20. The 3D renderer uses Vulkan. The optional Windows editor uses C#/Avalonia with a native Vulkan viewport, and an experimental C# gameplay integration supports development-time reloads.
 
-**Status: early development, version 0.0.28.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. The latest desktop package adds real-time Play/Pause/Step, Game-camera preview and vector action icons, with recorded integration tests on NVIDIA and AMD GPUs. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.29.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. The desktop now connects keyboard/mouse gameplay controls to its Game view, sharing native bindings and input inspection with agents. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor prototype](docs/evidence/m2-desktop-playback-editor.png)
 
@@ -26,10 +26,10 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Input and player | Native continuous player, keyboard/mouse bindings, gamepad profiles and deterministic scripted input replay. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events and native-player device output. |
-| Desktop | Dockable panels, hierarchy, typed Inspector fields, Project browser, native Scene navigation and transform gizmos; the 0.0.28 work adds clocked simulation and Game-camera preview. |
+| Desktop | Dockable panels, hierarchy, typed Inspector fields, Project browser, native Scene navigation and transform gizmos; clocked simulation and playable keyboard/mouse Game view. |
 | Packaging | Project manifests and native game bundles with validated content, runtime files, integrity checks and read-only game launch. |
 
-These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view currently previews physics and animation; gameplay device input and audio are provided by the separate native player, not that editor view. C# hot reload covers the documented gameplay module, not arbitrary engine-code replacement or a finished console/AOT deployment path.
+These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse control, while editor gamepad input and audio output remain unfinished; the separate native player supplies those paths. C# hot reload covers the documented gameplay module, not arbitrary engine-code replacement or a finished console/AOT deployment path.
 
 Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
 

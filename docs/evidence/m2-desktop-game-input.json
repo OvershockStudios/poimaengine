@@ -1,0 +1,306 @@
+{
+  "milestone": "M2 editor gameplay input",
+  "engine_version": "0.0.29",
+  "recorded_utc": "2026-10-05T02:19:22.844560+00:00",
+  "scope": "Native keyboard/mouse input, frozen profiles/controllers, retryable event batches, fixed-tick consumption and optional Windows Game-view controls.",
+  "source_sha256": {
+    "CMakeLists.txt": "c516fd316eef61cb17427877c7fcff08a97f2c18499ebc44bce3f1dbd8aa5d08",
+    "desktop/Poima.Editor/App.cs": "d4043ef489a3914afb4489d28d089d6f5a7e4eefc71518a0ecec0096788529c0",
+    "desktop/Poima.Editor/DesktopScript.cs": "22ea06f10147d2d79973108ae44d9cd984b0e5de94f170d5deee326a8b6c1494",
+    "desktop/Poima.Editor/GameInput.cs": "217161084f967097ead2ad648ddf75433ac094bc70e00677dd827d41a6792829",
+    "desktop/Poima.Editor/MainWindow.cs": "8122886d07f844e49eac3d3b821e5d253266dc19b84579cd201bf6e7e1e4baca",
+    "desktop/Poima.Editor/NativeHost.cs": "d2670dc517378a86dd8a8c9acaeab063e672307fe54498cd885f1516fea24bc2",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "3a06de7ef824a19a419864eb6a485e965987db7cab12d7c8e0031809ff682f72",
+    "desktop/Poima.Editor/SceneNavigation.cs": "37cb2750df682168b8bba6c5d51e3c177860c03d53a90404ee9327120e013a8c",
+    "desktop/Poima.Editor/ViewportInput.cs": "99c95ada3d714fc224f29dbb9a1ccd760c30dd5024232b759b2aeeb18375f40f",
+    "include/poima/world.hpp": "32b9ca517833acc39b99f39f72dcecfbbc141f8eb29e37f9efaa8f5751f0da38",
+    "src/desktop_bridge.cpp": "8d6f7acd1889f85709cf7015f6b060b776f169bd99b7e87940e0012479aaab32",
+    "src/input_profile_store.cpp": "4093d28a73991a752dbfc96190eb841ce9f2b9ff0eec864c868971fc43cb35e2",
+    "src/world.cpp": "f41f360b345bf3ccff0211d47c87b9fe6e78c27c446e4bd961d47ab6e4a096ca",
+    "tests/desktop_bridge_contract.py": "8571a1723112b0b7073f9617b9813a4f91a383653eedf9dae2739fb271ce5241",
+    "tests/desktop_bridge_gizmo.py": "62a16d7d1d46674155ed7ff33b15547f170d41a1b55e861def39291741a672fb",
+    "tests/desktop_frontend.py": "ce354d3ec2d953f738cf5d04416c1e8f91d48ca488886757c0a3bc369bc6a42e",
+    "tests/desktop_game_input.py": "98a2e26c7380d80777d43d7ce75805dfcef3370725a4d6304a57d6358fd3221c",
+    "tests/desktop_playback_contract.py": "7a5b8993b96691ce02f1aaedea7bda80fe3a1084ba449a85ef40f193f58abc27"
+  },
+  "binaries": {
+    "poima.exe": {
+      "path": "build/desktop-game-input/poima.exe",
+      "sha256": "222dbadc6c8b0007a7577eb6d4d31462c18481f49fa7b0a5d27364c4763fabb8"
+    },
+    "poima_desktop.dll": {
+      "path": "build/desktop-game-input/poima_desktop.dll",
+      "sha256": "72d41a2a92af68b9558a4931b9f737120b9d090e9ff10f1a4cdb86c41f68707b"
+    },
+    "Poima.Editor.dll": {
+      "path": "build/desktop-game-input/Poima.Editor.dll",
+      "sha256": "8370a16ad34ba1872cb4974064ee6d6d68d754446a0347d93739f5a11bbd98a5"
+    }
+  },
+  "native": [
+    {
+      "mode": "headless",
+      "artifact": {
+        "path": "build/desktop-game-input-native-headless/run-f115b4bf122e45ee9dc97020b006fb8b/result.json",
+        "sha256": "c8467ffb12234346b25cd5734e1b193968f95d7fda44336f01db0bf15301bb12"
+      },
+      "checks": [
+        "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+        "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+        "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+        "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+        "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+        "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+        "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+      ],
+      "semantic_replay_ticks": 231,
+      "bridge_sha256": "72d41a2a92af68b9558a4931b9f737120b9d090e9ff10f1a4cdb86c41f68707b",
+      "binary_sha256": "222dbadc6c8b0007a7577eb6d4d31462c18481f49fa7b0a5d27364c4763fabb8",
+      "test_sha256": "98a2e26c7380d80777d43d7ce75805dfcef3370725a4d6304a57d6358fd3221c",
+      "limitations": [
+        "Native ABI/HWND automation, not physical Avalonia widget qualification.",
+        "No GPU supplied: capture hold and native viewport detach checks were not run."
+      ]
+    },
+    {
+      "mode": "gpu0",
+      "artifact": {
+        "path": "build/desktop-game-input-native-gpu0/run-674dbc660c1a40da915d7902557ed101/result.json",
+        "sha256": "e423f2aa769f8e8b1734c0f78bf8d024aa5abfaf86d038d682b429eed3b28e30"
+      },
+      "checks": [
+        "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+        "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+        "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+        "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+        "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+        "Real Vulkan capture holds input and clock without consumption; the next simulated batch receives retained movement/look/use exactly once.",
+        "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+        "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+      ],
+      "semantic_replay_ticks": 241,
+      "bridge_sha256": "72d41a2a92af68b9558a4931b9f737120b9d090e9ff10f1a4cdb86c41f68707b",
+      "binary_sha256": "222dbadc6c8b0007a7577eb6d4d31462c18481f49fa7b0a5d27364c4763fabb8",
+      "test_sha256": "98a2e26c7380d80777d43d7ce75805dfcef3370725a4d6304a57d6358fd3221c",
+      "limitations": [
+        "Native ABI/HWND automation, not physical Avalonia widget qualification."
+      ]
+    },
+    {
+      "mode": "gpu1",
+      "artifact": {
+        "path": "build/desktop-game-input-native-gpu1/run-66586abe70bb4e1ca25e46fe06a2be09/result.json",
+        "sha256": "9bc3e47b6212bc5c1382204d08d983d013527c683386c33f55f9044aafa80cab"
+      },
+      "checks": [
+        "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+        "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+        "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+        "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+        "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+        "Real Vulkan capture holds input and clock without consumption; the next simulated batch receives retained movement/look/use exactly once.",
+        "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+        "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+      ],
+      "semantic_replay_ticks": 244,
+      "bridge_sha256": "72d41a2a92af68b9558a4931b9f737120b9d090e9ff10f1a4cdb86c41f68707b",
+      "binary_sha256": "222dbadc6c8b0007a7577eb6d4d31462c18481f49fa7b0a5d27364c4763fabb8",
+      "test_sha256": "98a2e26c7380d80777d43d7ce75805dfcef3370725a4d6304a57d6358fd3221c",
+      "limitations": [
+        "Native ABI/HWND automation, not physical Avalonia widget qualification."
+      ]
+    }
+  ],
+  "regressions": [
+    {
+      "test": "desktop_bridge_contract.py",
+      "artifact": {
+        "path": "build/desktop-game-input-bridge-headless/run-8bca15ba6dd2442f9447568a5fc39cca/result.json",
+        "sha256": "8c101c61632f29f309b25bdb2d4a2a4ab7a5ea9c5959d96ebcbd0cfb8352046e"
+      },
+      "checks": [
+        "No graphics at create; unchanged polling and unattached draw; duplicate/invalid handle rejection.",
+        "Discoverable JSON-RPC methods, malformed request/notification behavior, shared-owner/graphics restrictions.",
+        "Off-thread calls reject without transferring WorldSession ownership or mutating state.",
+        "Independent CLI process shares authoritative revision/entities and stale edits remain atomic.",
+        "Camera patches validate before mutation; unavailable captures/invalid HWND preserve authoring.",
+        "GPU-independent picking: nearest visible geometry, no-hit, top-left coordinates, true triangle/rotated-box intersections, clipping and strict atomic guards.",
+        "Framing combines visible descendants, respects aspect/clipping, preserves orientation, supports non-rendered entities and never edits world bytes.",
+        "Runtime picking/framing uses frozen geometry and hierarchy after authored deletion/reparenting without advancing ticks.",
+        "GPU-independent skin picking follows edited joint poses and excludes obsolete rest geometry.",
+        "Host destruction releases writer ownership and endpoint; frontend HWND survives; committed edits survive reopen."
+      ]
+    },
+    {
+      "test": "desktop_playback_contract.py",
+      "artifact": {
+        "path": "build/desktop-game-input-playback-headless/run-1a02b09838c54934994d81a8f6e4a6f8/result.json",
+        "sha256": "30cc57d13725a3a89ca573825c2246390becc3a3ccb93d1a0196de3de044b9eb"
+      },
+      "checks": [
+        "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+        "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+        "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+        "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+        "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+        "A genuine animation sampling failure rolls back the entire batch, pauses playback, exposes the error, and preserves authored bytes/history."
+      ]
+    },
+    {
+      "test": "desktop_bridge_gizmo.py",
+      "artifact": {
+        "path": "build/desktop-game-input-gizmo-headless/run-b1592f00253b447991d36f75b621e3b0/result.json",
+        "sha256": "d65860e890022da2ff161cd4e773fee3386a3a510af813f7f8966ff6a4765a4c"
+      },
+      "checks": [
+        "Strict schemas, stale begin and handle misses preserve authored state without graphics initialization.",
+        "No-movement commit creates no revision, history entry or storage write.",
+        "Preview/cancel leaves storage/history untouched; snapped commit produces one undo entry with idempotent retry, undo and redo.",
+        "A valid unparented world rotation produces a normalized preview without changing position/scale or authored storage.",
+        "Camera, selection, tool configuration, authored revision and runtime transitions invalidate pending gestures without committing previews.",
+        "Parent-affine world movement converts to local TRS; sheared world rotation rejects atomically; local axis scale preserves positive other axes."
+      ]
+    }
+  ],
+  "desktop": [
+    {
+      "gpu": 0,
+      "artifact": {
+        "path": "build/desktop-game-input-ui-gpu0/95af3347697b4dfc8e1071a114e6ee4c/evidence.json",
+        "sha256": "34e5bea17ef6f9b927c07aa83cf56e080de9a40f0ca09ba7f7cc5b8dd14e2f24"
+      },
+      "checks": [
+        "actual Avalonia Vulkan backend with native child Scene",
+        "shared CLI connection",
+        "dirty draft preserved; stale Apply rejects; Reload explicit",
+        "undo/redo and fixed-tick runtime",
+        "invalid raw field survives floating/reset; dirty close cancelled",
+        "missing-asset Scene error recovers after authoring repair without reattachment",
+        "actual Inspector and Scene floating windows; reset and continued presentation",
+        "native HWND look/fly/frame/click messages; input released cleanly",
+        "saved floating layout restores its panel structure and bounds, including a fresh process",
+        "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+        "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+        "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+        "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+        "Game camera preview blocks Scene gestures; switching back preserves inspection camera",
+        "paused Game capture and Stop preserve authored transforms/revision/history",
+        "revision-guarded native viewport capture",
+        "bounded process exit",
+        "owned desktop client-area screenshot"
+      ],
+      "actions": 227,
+      "restart_actions": 4,
+      "editor_sha256": "8370a16ad34ba1872cb4974064ee6d6d68d754446a0347d93739f5a11bbd98a5",
+      "test_sha256": "ce354d3ec2d953f738cf5d04416c1e8f91d48ca488886757c0a3bc369bc6a42e",
+      "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "nvrhi_errors": 0,
+      "font": "Inter",
+      "window_capture_status": "captured",
+      "game_input_qualification": {
+        "owned_hwnd_routing": true,
+        "relative_motion": "Explicit script injection; not raw hardware packets.",
+        "physical_input_qualified": false,
+        "actual_character_movement_and_jump": true,
+        "physical_scan_mapping": true,
+        "repeat_suppressed": true,
+        "profile_rebound": true,
+        "focus_escape_pause_scene_detach_stop_clear": true,
+        "acquisition_click_swallowed": true
+      }
+    },
+    {
+      "gpu": 1,
+      "artifact": {
+        "path": "build/desktop-game-input-ui-gpu1/21568dfe5e44405e9b80e429751dde59/evidence.json",
+        "sha256": "96be059076822df9dabb27040cc0993d91437e48a8f6fab96e27866489adf5b1"
+      },
+      "checks": [
+        "actual Avalonia Vulkan backend with native child Scene",
+        "shared CLI connection",
+        "dirty draft preserved; stale Apply rejects; Reload explicit",
+        "undo/redo and fixed-tick runtime",
+        "invalid raw field survives floating/reset; dirty close cancelled",
+        "missing-asset Scene error recovers after authoring repair without reattachment",
+        "actual Inspector and Scene floating windows; reset and continued presentation",
+        "native HWND look/fly/frame/click messages; input released cleanly",
+        "saved floating layout restores its panel structure and bounds, including a fresh process",
+        "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+        "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+        "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+        "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+        "Game camera preview blocks Scene gestures; switching back preserves inspection camera",
+        "paused Game capture and Stop preserve authored transforms/revision/history",
+        "revision-guarded native viewport capture",
+        "bounded process exit",
+        "owned desktop client-area screenshot"
+      ],
+      "actions": 227,
+      "restart_actions": 4,
+      "editor_sha256": "8370a16ad34ba1872cb4974064ee6d6d68d754446a0347d93739f5a11bbd98a5",
+      "test_sha256": "ce354d3ec2d953f738cf5d04416c1e8f91d48ca488886757c0a3bc369bc6a42e",
+      "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "nvrhi_errors": 0,
+      "font": "Inter",
+      "window_capture_status": "captured",
+      "game_input_qualification": {
+        "owned_hwnd_routing": true,
+        "relative_motion": "Explicit script injection; not raw hardware packets.",
+        "physical_input_qualified": false,
+        "actual_character_movement_and_jump": true,
+        "physical_scan_mapping": true,
+        "repeat_suppressed": true,
+        "profile_rebound": true,
+        "focus_escape_pause_scene_detach_stop_clear": true,
+        "acquisition_click_swallowed": true
+      }
+    }
+  ],
+  "linux_headless": {
+    "artifact": {
+      "path": "build/runtime-headless/build/game-input-headless-ctest.xml",
+      "sha256": "9fb64f385c0fcbbf49173e677d9119716398bc48b8a6f3cee4a5466047e78104"
+    },
+    "passed": 29,
+    "seconds": 85.0,
+    "tests": [
+      "asset_hash",
+      "texture_native",
+      "tangents_native",
+      "animation_native",
+      "player_input",
+      "editor_gizmo",
+      "input_profile_native",
+      "world_session_native",
+      "local_session_native",
+      "scene_math",
+      "shadow_math",
+      "visibility_math",
+      "runtime_native",
+      "interaction_native",
+      "runtime_animation_native",
+      "project_contract",
+      "shared_session_contract",
+      "world_history_contract",
+      "input_profile_contract",
+      "gamepad_contract",
+      "lighting_contract",
+      "audio_contract",
+      "asset_contract",
+      "animation_contract",
+      "runtime_animation_contract",
+      "runtime_contract",
+      "cli_contract",
+      "world_contract",
+      "native_module_contract"
+    ]
+  },
+  "limitations": [
+    "GUI input tests use targeted owned-HWND messages and synthetic relative motion. They do not qualify physical raw mouse hardware, clipping restoration, international keyboards, accessibility or input feel.",
+    "Script mode intentionally does not register raw devices, confine or hide the OS cursor. Production capture has separate foreground/ownership checks.",
+    "Editor gamepad input and audio output remain unfinished; standalone player support is unchanged.",
+    "Tablet/remote-desktop absolute raw mouse packets remain unsupported for Game-view look.",
+    "GPU coverage is one Windows laptop with NVIDIA and AMD devices; no broad hardware or shipping-performance qualification.",
+    "Only public test summaries and source/binary digests are included. Detailed local artifacts remain under the ignored build directory."
+  ]
+}

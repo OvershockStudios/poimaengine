@@ -28,18 +28,20 @@ public sealed class SceneNavigation
     public event EventHandler? Changed;
     public event Action<string>? Error;
     public long ErrorCount { get; private set; }
+    public GameInput Game { get; }
     public SceneNavigation(EditorModel model)
     {
-        this.model = model; model.SceneChanging += Cancel;
+        this.model = model; Game = new GameInput(model); model.SceneChanging += Cancel;
+        Game.Changed += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
     }
     public void Attach(ViewportInput value, IntPtr window)
     {
-        Cancel(); input = value; Window = window; reportedInputError = null;
+        Cancel(); input = value; Window = window; reportedInputError = null; Game.Attach(value);
     }
     public void Detach(ViewportInput value)
     {
         if (input != value) return;
-        Cancel(); input = null; Window = IntPtr.Zero;
+        Cancel(); Game.Detach(); input = null; Window = IntPtr.Zero;
     }
     public void Cancel() => CancelGesture(true);
     private void CancelGesture(bool releaseCapture)
@@ -48,6 +50,7 @@ public sealed class SceneNavigation
         cancelling = true;
         try
         {
+            Game.Release();
             var active = gizmoDrag; gizmoDrag = null;
             drag = ViewportMouseButton.None; keys.Clear(); orbit = false; moved = false;
             if (active is not null)
@@ -156,7 +159,7 @@ public sealed class SceneNavigation
     {
         lastInputModifiers = e.Modifiers;
         lastInputX = e.X; lastInputY = e.Y;
-        if (model.ViewMode != "scene") { Cancel(); return; }
+        if (model.ViewMode != "scene") { Game.Handle(e); return; }
         fast = e.Shift;
         switch (e.Kind)
         {
@@ -234,7 +237,13 @@ public sealed class SceneNavigation
     });
     public void Tick(double seconds) => Guard(() =>
     {
-        if (model.ViewMode != "scene") { Cancel(); return; }
+        Game.Tick();
+        if (input?.LastError is string error)
+        {
+            if (reportedInputError != error) { reportedInputError = error; throw new InvalidOperationException(error); }
+            return;
+        }
+        if (model.ViewMode != "scene") return;
         if (!ReferenceEquals(observedHostState, model.Host.State) && model.Host.State["gizmo"] is JsonObject gizmo)
         {
             observedHostState = model.Host.State;
@@ -245,11 +254,6 @@ public sealed class SceneNavigation
                 if (nativeId != id) { gizmoDrag = null; Cancel(); }
                 else if (model.Dirty || model.RuntimeId is not null) Cancel();
             }
-        }
-        if (input?.LastError is string error)
-        {
-            if (reportedInputError != error) { reportedInputError = error; throw new InvalidOperationException(error); }
-            return;
         }
         if (input is null || drag != ViewportMouseButton.Right || !double.IsFinite(seconds)) return;
         int Axis(uint positive,uint negative) => (keys.Contains(positive) ? 1 : 0)-(keys.Contains(negative) ? 1 : 0);
@@ -263,6 +267,8 @@ public sealed class SceneNavigation
         if(length>1e-8) for(int i=0;i<3;++i) position[i] += direction[i]/length*speed;
         SetCamera(position,yaw,pitch);
     });
+    // Check OS focus/capture before the owner advances any gameplay ticks.
+    public void ValidateInput() => Guard(Game.ValidateCapture);
     private void RequireSceneView()
     {
         if (model.ViewMode != "scene") throw new InvalidOperationException("Switch to Scene view to navigate or edit transforms.");
@@ -272,5 +278,6 @@ public sealed class SceneNavigation
         ["gizmo_mode"] = GizmoMode, ["gizmo_space"] = GizmoSpace, ["gizmo_drag_id"] = gizmoDrag,
         ["input_error"] = input?.LastError, ["error_count"] = ErrorCount, ["last_input_modifiers"] = (int)lastInputModifiers,
         ["last_input_x"] = lastInputX, ["last_input_y"] = lastInputY,
-        ["qualification_input"] = input?.QualificationInput ?? false, ["ignored_interactive_messages"] = input?.IgnoredInteractiveMessages ?? 0 };
+        ["qualification_input"] = input?.QualificationInput ?? false, ["ignored_interactive_messages"] = input?.IgnoredInteractiveMessages ?? 0,
+        ["game_input"] = Game.Inspect() };
 }

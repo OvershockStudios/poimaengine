@@ -47,6 +47,15 @@ for op in seed['params']['ops']:
 # The courtyard replaces the starter floor; keeping both coplanar surfaces
 # would turn this UI capture into an unrelated z-fighting fixture.
 seed['params']['ops'].insert(0, {'op': 'entity.delete', 'id': f'{1:032x}', 'recursive': True})
+# A hidden collider makes the existing visual-only courtyard a grounded player
+# fixture without adding coplanar rendered geometry or another world revision.
+collision_floor = f'{9000:032x}'
+seed['params']['ops'] += [
+    {'op': 'entity.create', 'id': collision_floor, 'name': 'Gameplay qualification floor'},
+    {'op': 'component.set', 'id': collision_floor, 'type': 'Transform', 'value':
+     {'position': [0, -.5, 0], 'rotation': [0, 0, 0, 1], 'scale': [100, 1, 100]}},
+    {'op': 'component.set', 'id': collision_floor, 'type': 'BoxCollider', 'value':
+     {'half_extents': [.5, .5, .5], 'motion': 'static', 'mass': 10, 'friction': .5, 'restitution': 0}}]
 seed_reply = cli(['world', world], json.dumps(seed)+'\n')[0]
 assert 'result' in seed_reply, seed_reply
 for folder in ('Assets/Materials', 'Assets/Models', 'Assets/Textures', 'Assets/Audio', 'Scripts'):
@@ -232,6 +241,77 @@ action(287, 'inspect', tag='playback_external_pause_stable')
 action(288, 'runtime_toggle')
 action(290, 'inspect', tag='playback_stopped')
 action(290, 'rpc', method='world.history', tag='playback_history_after')
+# Game-input qualification routes owned-HWND messages through the real managed
+# adapter. --script explicitly substitutes capture/raw-device acquisition; this
+# does not certify physical mouse hardware, foreground focus or cursor clipping.
+game_controller, game_camera = f'{2:032x}', f'{3:032x}'
+game_profile = run/'rebound.poima-input.json'
+profile = {'bindings': {'forward': ['key.up'], 'backward': ['key.down'], 'left': ['key.left'], 'right': ['key.right'],
+                        'jump': ['mouse.3'], 'use': ['mouse.1']},
+           'sensitivity_x': .5, 'sensitivity_y': .25, 'invert_x': True, 'invert_y': False}
+profile_reply = cli(['world', world], json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'input.transact', 'params':
+                    {'path': str(game_profile), 'expected_revision': 0, 'request_id': uuid.uuid4().hex, 'profile': profile}})+'\n')[0]
+assert 'result' in profile_reply, profile_reply
+
+def acquire_game(frame):
+    action(frame, 'scene_input', message='left_down')
+    action(frame, 'scene_input', message='left_up')
+
+action(300, 'runtime_toggle')
+action(301, 'view', mode='game', camera=game_camera)
+acquire_game(302)
+action(304, 'inspect', tag='input_acquired')
+action(310, 'runtime_entity', id=game_controller, tag='input_before')
+# Deliberately use logical A with physical W scan code: binding is physical.
+action(311, 'scene_input', message='key_down', key=65, scan=0x11, tag='input_key_down')
+action(312, 'scene_input', message='key_down', key=65, scan=0x11, repeat=True, tag='input_key_repeat')
+action(313, 'game_motion', dx=30, dy=-20)
+action(325, 'scene_input', message='key_up', key=65, scan=0x11)
+action(328, 'runtime_entity', id=game_controller, tag='input_moved')
+action(328, 'inspect', tag='input_key_released')
+action(330, 'scene_input', message='key_down', key=32, scan=0x39, tag='input_jump_press')
+action(330, 'scene_input', message='key_down', key=69, scan=0x12, tag='input_use_press')
+action(331, 'runtime_entity', id=game_controller, tag='input_jumped')
+action(332, 'scene_input', message='key_up', key=32, scan=0x39)
+action(332, 'scene_input', message='key_up', key=69, scan=0x12)
+action(335, 'scene_input', message='key_down', key=87, scan=0x11)
+action(335, 'scene_input', message='focus_lost')
+action(336, 'inspect', tag='input_focus_lost')
+action(337, 'runtime_entity', id=game_controller, tag='input_cleared_position')
+action(345, 'runtime_entity', id=game_controller, tag='input_still_position')
+acquire_game(346)
+action(347, 'scene_input', message='key_down', key=87, scan=0x11)
+action(348, 'scene_input', message='key_down', key=27, scan=0x01)
+action(349, 'inspect', tag='input_escape')
+acquire_game(350)
+action(351, 'scene_input', message='key_down', key=87, scan=0x11)
+action(352, 'runtime_pause')
+action(353, 'inspect', tag='input_paused')
+action(354, 'runtime_pause')
+acquire_game(355)
+action(356, 'scene_input', message='key_down', key=87, scan=0x11)
+action(357, 'view', mode='scene')
+action(358, 'inspect', tag='input_scene_release')
+action(359, 'view', mode='game', camera=game_camera)
+acquire_game(360)
+action(361, 'scene_input', message='key_down', key=87, scan=0x11)
+action(362, 'float', panel='Scene')
+action(370, 'inspect', tag='input_detached_release')
+action(372, 'game_profile', path=str(game_profile))
+acquire_game(374)
+action(375, 'inspect', tag='input_rebound_acquired')
+action(376, 'runtime_entity', id=game_controller, tag='input_rebound_before')
+action(377, 'scene_input', message='key_down', key=87, scan=0x11)
+action(383, 'scene_input', message='key_up', key=87, scan=0x11)
+action(384, 'runtime_entity', id=game_controller, tag='input_old_binding_inert')
+action(385, 'scene_input', message='key_down', key=38, scan=0x48, extended=True)
+action(386, 'game_motion', dx=4, dy=0)
+action(397, 'scene_input', message='key_up', key=38, scan=0x48, extended=True)
+action(400, 'runtime_entity', id=game_controller, tag='input_rebound_moved')
+action(401, 'scene_input', message='key_down', key=38, scan=0x48, extended=True)
+action(402, 'runtime_toggle')
+action(404, 'inspect', tag='input_stopped')
+action(406, 'view', mode='scene')
 script = run/'actions.json'; script.write_text(json.dumps({'actions': actions}, indent=2))
 report = run/'report.json'
 u = c.WinDLL('user32', use_last_error=True)
@@ -297,7 +377,7 @@ process = None; raised = None; was_topmost = False
 try:
     with (run/'stdout.txt').open('w', encoding='utf-8') as out, (run/'stderr.txt').open('w', encoding='utf-8') as err:
         command = [str(a.editor.resolve()), str(world), '--gpu', str(a.gpu), '--endpoint', endpoint,
-                   '--script', str(script), '--frames', '420', '--report', str(report), '--layout', str(run/'layout.json')]
+                   '--script', str(script), '--frames', '520', '--report', str(report), '--layout', str(run/'layout.json')]
         process = subprocess.Popen(command, stdout=out, stderr=err)
         start = time.monotonic(); captured = False; shared = False; next_status = 0; capture_ready = False
         while process.poll() is None and time.monotonic()-start < 70:
@@ -466,6 +546,41 @@ try:
         assert stopped['native']['revision'] == before_play['native']['revision']
         assert stopped['draft']['components'] == before_play['draft']['components'] and not stopped['draft']['dirty']
         assert stages['playback_history_after']['result'] == stages['playback_history_before']['result']
+        def game_state(name): return stages[name]['navigation']['game_input']
+        def game_entity(name): return stages[name]['result']
+        def xz(value): return [value['world_matrix'][12], value['world_matrix'][14]]
+        zero_input = {'move': [0, 0], 'look': [0, 0], 'jump': False, 'use': False}
+        acquired = game_state('input_acquired')
+        assert acquired['captured'] and acquired['native']['focused'] and acquired['native']['controller'] == game_controller, acquired
+        assert acquired['native']['pending'] == zero_input, acquired
+        pressed = game_state('input_key_down')['native']
+        repeated = game_state('input_key_repeat')['native']
+        assert pressed['pending']['move'] == [0, 1], pressed
+        assert repeated['accepted_batches'] == pressed['accepted_batches'], (pressed, repeated)
+        before_input, moved_input = game_entity('input_before'), game_entity('input_moved')
+        assert moved_input['world_matrix'][14] < before_input['world_matrix'][14]-.1, (before_input, moved_input)
+        assert abs(moved_input['yaw']-before_input['yaw']+3) < 1e-6 and abs(moved_input['pitch']-before_input['pitch']-2) < 1e-6, moved_input
+        assert game_state('input_key_released')['native']['pending'] == zero_input
+        assert game_state('input_jump_press')['native']['pending']['jump']
+        assert game_state('input_use_press')['native']['pending']['use']
+        assert game_entity('input_jumped')['world_matrix'][13] > moved_input['world_matrix'][13]+.02
+        for name in ['input_focus_lost', 'input_escape', 'input_paused', 'input_scene_release', 'input_detached_release', 'input_stopped']:
+            state = game_state(name)
+            assert not state['captured'] and not state['native']['focused'] and state['native']['pending'] == zero_input, (name, state)
+        assert xz(game_entity('input_cleared_position')) == xz(game_entity('input_still_position')), 'Focus loss left actual horizontal character motion.'
+        rebound_acquired = game_state('input_rebound_acquired')
+        assert rebound_acquired['captured'] and rebound_acquired['native']['profile']['source'] == 'profile', rebound_acquired
+        assert rebound_acquired['native']['profile']['content_hash'] == profile_reply['result']['content_hash']
+        assert rebound_acquired['native']['pending'] == zero_input, 'Acquisition click triggered the rebound left-mouse use action.'
+        rebound_before, old_inert, rebound_moved = (game_entity(name) for name in ('input_rebound_before', 'input_old_binding_inert', 'input_rebound_moved'))
+        assert xz(old_inert) == xz(rebound_before), 'Old W binding moved the character after profile replacement.'
+        assert rebound_moved['world_matrix'][14] < old_inert['world_matrix'][14]-.1, (old_inert, rebound_moved)
+        assert abs(rebound_moved['yaw']-old_inert['yaw']-2) < 1e-6, rebound_moved
+        assert not game_state('input_stopped')['native']['configured']
+        record['game_input_qualification'] = {'owned_hwnd_routing': True, 'relative_motion': 'Explicit script injection; not raw hardware packets.',
+            'physical_input_qualified': False, 'actual_character_movement_and_jump': True, 'physical_scan_mapping': True,
+            'repeat_suppressed': True, 'profile_rebound': True, 'focus_escape_pause_scene_detach_stop_clear': True,
+            'acquisition_click_swallowed': True}
         assert shared and capture_ready and captured and (run/'viewport.bmp').is_file() and (run/'gizmo-final.bmp').is_file()
         assert record['window_capture']['status'] in ('captured', 'unavailable'), record['window_capture']
         if record['window_capture']['status'] == 'captured':

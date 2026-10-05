@@ -40,6 +40,7 @@ public sealed class App : Application
             timer.Tick += (_, _) =>
             {
                 renderScaling = window.RenderScaling;
+                window.Navigation.ValidateInput();
                 host.Pump();
                 var now = watch.Elapsed.TotalSeconds; window.Navigation.Tick(now-previousTime); previousTime = now;
                 script.Tick(frames, window); ++frames;

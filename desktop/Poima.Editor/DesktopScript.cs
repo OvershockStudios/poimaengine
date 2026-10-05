@@ -98,7 +98,7 @@ internal sealed class DesktopScript
                         var point = (nint)((uint)(ushort)x | ((uint)(ushort)y << 16));
                         var code = message switch { "right_down" => 0x0204u, "right_up" => 0x0205u, "left_down" => 0x0201u, "left_up" => 0x0202u,
                             "middle_down" => 0x0207u, "middle_up" => 0x0208u, "move" => 0x0200u,
-                            "key_down" => 0x0100u, "key_up" => 0x0101u, "cancel" => 0x001Fu, "wheel" => 0x020Au,
+                            "key_down" => 0x0100u, "key_up" => 0x0101u, "cancel" => 0x001Fu, "focus_lost" => 0x0008u, "wheel" => 0x020Au,
                             _ => throw new ArgumentException("Unsupported local scene input message.") };
                         nuint parameter = action["key"]?.GetValue<uint>() ?? 0;
                         if (code == 0x020A)
@@ -136,7 +136,11 @@ internal sealed class DesktopScript
                                 | ((GetKeyState(0x12) & 0x8000) != 0 ? ViewportModifiers.Alt : 0);
                             result["thread_modifiers"] = (int)deliveredModifiers;
                             if (deliveredModifiers != requestedModifiers) throw new InvalidOperationException("Semantic modifier state was not applied to the UI thread.");
-                            ViewportInput.DispatchQualification(hwnd, () => SendMessage(hwnd,code,parameter,code is 0x0100u or 0x0101u ? 1 : point));
+                            var keyFlags = 1L | ((long)(action["scan"]?.GetValue<byte>() ?? 0) << 16)
+                                | (action["extended"]?.GetValue<bool>() == true ? 1L << 24 : 0)
+                                | (action["repeat"]?.GetValue<bool>() == true ? 1L << 30 : 0)
+                                | (code == 0x0101u ? 3L << 30 : 0);
+                            ViewportInput.DispatchQualification(hwnd, () => SendMessage(hwnd,code,parameter,code is 0x0100u or 0x0101u ? (nint)keyFlags : point));
                             var observedModifiers = window.Navigation.Inspect()["last_input_modifiers"]!.GetValue<int>();
                             result["delivered_modifiers"] = observedModifiers;
                             if (observedModifiers != (int)requestedModifiers) throw new InvalidOperationException("Viewport received different modifiers from the semantic action.");
@@ -148,6 +152,12 @@ internal sealed class DesktopScript
                         result["navigation"] = window.Navigation.Inspect(); result["camera"] = model.Host.Call("desktop.inspect")["camera"]!.DeepClone();
                         result["requested_pointer_x"] = x; result["requested_pointer_y"] = y;
                         break;
+                    case "game_motion":
+                        ViewportInput.DispatchQualificationRelative(window.Navigation.Window, action["dx"]!.GetValue<int>(), action["dy"]!.GetValue<int>());
+                        result["navigation"] = window.Navigation.Inspect(); break;
+                    case "game_profile":
+                        window.Navigation.Game.SelectProfile(action["path"]?.GetValue<string>());
+                        result["game_input"] = window.Navigation.Game.Inspect(); break;
                     case "select": window.SelectEntity(Text("id")); break;
                     case "create": result["id"] = model.Create(Text("kind")); break;
                     case "draft_name": model.SetName(Text("name")); break;
@@ -216,6 +226,9 @@ internal sealed class DesktopScript
                         // Bypass the model, as an external client does. The next
                         // native poll must synchronize the visible controls.
                         result["result"] = model.Host.Call("desktop.play." + Text("command"), new() { ["session_id"] = model.RuntimeId });
+                        break;
+                    case "runtime_entity":
+                        result["result"] = model.Host.Call("runtime.entity", new() { ["session_id"] = model.RuntimeId, ["id"] = Text("id") });
                         break;
                     case "view": model.SetView(Text("mode"), action["camera"]?.GetValue<string>()); break;
                     case "step": model.Step(action["ticks"]?.GetValue<int>() ?? 1); break;

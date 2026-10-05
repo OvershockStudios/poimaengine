@@ -27,6 +27,7 @@ parser.add_argument('--gpu', type=int, help='Enable actual HWND/Vulkan attach, c
 args = parser.parse_args()
 if os.name != 'nt':
     parser.error('Run this harness with native Windows Python; the bridge owns Windows HWNDs.')
+args.output = args.output.resolve()
 args.output.mkdir(parents=True, exist_ok=True)
 run = args.output/('run-'+uuid.uuid4().hex)
 run.mkdir()

@@ -54,7 +54,8 @@ public sealed class NativeHost : IDisposable
             var state = Read(Native.Poll(handle));
             var selected = state["selected"]?.ToString();
             var changed = state["world_changed"]?.GetValue<bool>() == true || state["runtime_changed"]?.GetValue<bool>() == true || selected != lastSelected
-                || !JsonNode.DeepEquals(State["playback"], state["playback"]) || !JsonNode.DeepEquals(State["view"], state["view"]);
+                || !JsonNode.DeepEquals(State["playback"], state["playback"]) || !JsonNode.DeepEquals(State["view"], state["view"])
+                || !JsonNode.DeepEquals(State["input"], state["input"]);
             State = state; lastSelected = selected;
             if (attached != IntPtr.Zero && !graphicsFailed)
             {
@@ -153,7 +154,19 @@ public sealed class VulkanView(NativeHost host, SceneNavigation navigation) : Na
     }
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
-        if (input is not null) { navigation.Detach(input); input.Dispose(); input = null; }
-        host.Detach(control.Handle); base.DestroyNativeControlCore(control);
+        try
+        {
+            if (input is not null)
+            {
+                var previous = input; input = null;
+                try { navigation.Detach(previous); }
+                finally { previous.Dispose(); }
+            }
+        }
+        finally
+        {
+            try { host.Detach(control.Handle); }
+            finally { base.DestroyNativeControlCore(control); }
+        }
     }
 }

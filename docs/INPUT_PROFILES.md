@@ -2,6 +2,8 @@
 
 Poima 0.0.19 adds native, persisted bindings for the current six player actions. The CLI, headless evaluator and SDL player share the same profile and evaluation code. Version 0.0.20 adds [gamepads and v2 profiles](GAMEPADS.md). General action maps/contexts, live rebinding UI and comprehensive graphics/audio preferences remain unfinished.
 
+Version 0.0.29 connects keyboard/mouse profiles to the [desktop Game view](DESKTOP_EDITOR.md). Its input-profile menu and `desktop.input.configure` select a frozen profile for the runtime controller. `input.describe.controls[].code` exposes the numeric SDL-compatible physical scancode/button identifier alongside the portable string ID. Editor gamepad input remains separate work; the standalone player's gamepad support is unchanged.
+
 ## Discover, preview and apply
 
 `world.describe` schema 18 exposes `input.describe`, `input.inspect`, `input.transact` and `input.evaluate`. These work in the headless build. `input.describe` returns v1 `defaults`, v2 `gamepad_defaults`, supported formats, complete profile schemas, physical control catalog, reserved controls, units and persistence/application rules. `input.inspect` takes a `path`; a missing profile reports v1 defaults, revision 0 and `persisted:false` without creating it. `input.devices` separately reports whether the SDL device host is available and its discovered gamepads.

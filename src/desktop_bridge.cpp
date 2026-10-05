@@ -6,6 +6,8 @@
 #include "poima/animation.hpp"
 #include "poima/editor_gizmo.hpp"
 #include "poima/player.hpp"
+#include "poima/input_profile.hpp"
+#include "input_profile_store.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -19,6 +21,7 @@
 #include <set>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 #include <windows.h>
 namespace {
 using namespace poima;
@@ -230,6 +233,12 @@ struct Bridge {
     std::string play_session,play_error,view_mode="scene",view_camera;
     std::uint64_t play_tick=0,view_revision=0;
     bool playing=false,capture_hold=false;
+    std::optional<BoundPlayerInput> game_input;
+    std::string input_controller,input_camera;
+    Json input_profile=nullptr,last_input_applied=nullptr;
+    bool input_focused=false;
+    std::uint64_t input_batches=0;
+    std::vector<Json> input_receipts;
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
@@ -256,13 +265,99 @@ struct Bridge {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
             {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
     }
+    void release_input(bool forget=false) {
+        input_focused=false;
+        if(game_input)game_input->clear();
+        if(forget) { game_input.reset();input_controller.clear();input_camera.clear();input_profile=nullptr;last_input_applied=nullptr;input_batches=0;input_receipts.clear(); }
+    }
+    static Json input_frame(const RuntimeInput& value,bool entity=false) {
+        Json result={{"move",value.move},{"look",value.look},{"jump",value.jump},{"use",value.use}};
+        if(entity)result["entity"]=value.entity;
+        return result;
+    }
+    Json input_json() const {
+        return {{"configured",bool(game_input)},{"session_id",game_input ? Json(play_session) : Json(nullptr)},
+            {"controller",game_input ? Json(input_controller) : Json(nullptr)},{"camera",game_input ? Json(input_camera) : Json(nullptr)},
+            {"focused",input_focused},{"profile",input_profile},{"accepted_batches",input_batches},
+            {"pending",input_frame(game_input ? game_input->peek(input_controller) : RuntimeInput{})},{"last_applied",last_input_applied}};
+    }
+    Json controllers_json() {
+        const auto runtime=world->runtime_status();Json values=Json::array();
+        for(const auto& value:world->controllers(runtime.active))values.push_back({{"id",value.id},{"camera",value.camera}});
+        return {{"source",runtime.active ? "runtime" : "authored"},{"revision",revision()},
+            {"session_id",runtime.active ? Json(runtime.session_id) : Json(nullptr)},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"controllers",values}};
+    }
+    Json input_command(const std::string& method,const Json& params) {
+        sync_playback();
+        if(method=="desktop.input.inspect") { fields(params,{});return input_json(); }
+        require(method=="desktop.input.configure" || method=="desktop.input.focus" || method=="desktop.input.events","Unknown desktop input method.",-32601);
+        if(method=="desktop.input.configure")fields(params,{"session_id","controller","input_profile","input_revision"},{"session_id","controller"});
+        else if(method=="desktop.input.focus")fields(params,{"session_id","focused"},{"session_id","focused"});
+        else fields(params,{"session_id","request_id","events"},{"session_id","request_id","events"});
+        const auto session=identifier(params.at("session_id"));
+        require(!play_session.empty() && session==play_session,"Runtime session conflict.",-32009);
+        if(method=="desktop.input.configure") {
+            const auto controller=identifier(params.at("controller"));const auto values=world->controllers(true);
+            const auto found=std::find_if(values.begin(),values.end(),[&](const auto& value){return value.id==controller;});
+            require(found!=values.end(),"Input requires a runtime CharacterController entity.",-32004);
+            require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
+            auto profile=default_input_profile();Json metadata={{"source","defaults"},{"path",nullptr},{"revision",0},{"content_hash",nullptr},{"format","poima.input.v1"}};
+            if(params.contains("input_profile")) {
+                require(params.at("input_profile").is_string(),"Input profile path must be text.");const auto text=params.at("input_profile").get<std::string>();
+                require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid input profile path.");
+                auto path=path_of(text);if(path.is_relative())path=world_path.parent_path()/path;
+                try {
+                    auto loaded=input_profiles::load_read_only(path);
+                    if(params.contains("input_revision"))require(integer(params.at("input_revision"))==loaded.revision,"Input profile revision conflict.",-32009);
+                    profile=std::move(loaded.profile);metadata={{"source","profile"},{"path",path_text(fs::absolute(path).lexically_normal())},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"format",loaded.format}};
+                }catch(const input_profiles::ProfileError& error_value) { throw Failure(error_value.code,error_value.what()); }
+            }
+            BoundPlayerInput candidate(std::move(profile));
+            game_input=std::move(candidate);input_controller=controller;input_camera=found->camera;input_profile=std::move(metadata);
+            input_focused=false;last_input_applied=nullptr;input_batches=0;return input_json();
+        }
+        if(method=="desktop.input.focus") {
+            require(params.at("focused").is_boolean(),"focused must be Boolean.");
+            if(!params.at("focused").get<bool>()) { release_input();return input_json(); }
+            require(game_input.has_value() && playing && view_mode=="game" && view_camera==input_camera,"Input focus requires configured playing Game view with its controller camera.",-32009);
+            input_focused=true;return input_json();
+        }
+        identifier(params.at("request_id"));
+        for(const auto& receipt:input_receipts)if(receipt.at("params").at("request_id")==params.at("request_id")) {
+            require(receipt.at("params")==params,"Input request ID reused with different parameters.",-32010);
+            auto result=receipt.at("result");result["replayed"]=true;return result;
+        }
+        require(game_input.has_value() && input_focused && playing && view_mode=="game" && view_camera==input_camera,"Gameplay input requires focused configured playing Game view.",-32009);
+        const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input accepts at most 256 events per batch.");
+        require(input_batches<max_integer,"Input batch counter exhausted.");
+        auto staged=*game_input;
+        for(const auto& event:events) {
+            require(event.is_object(),"Input event must be an object.");
+            if(event.contains("control")) {
+                fields(event,{"control","down"},{"control","down"});require(event.at("control").is_string() && event.at("down").is_boolean(),"Invalid input control event.");
+                const auto id=event.at("control").get<std::string>();const auto controls=input_controls();
+                const auto found=std::find_if(controls.begin(),controls.end(),[&](const auto& value){return value.id==id;});
+                require(found!=controls.end() && !found->reserved && found->kind!=InputControlKind::gamepad_button,"Unknown, reserved or unsupported gameplay control.");
+                staged.control(found->kind,found->code,event.at("down").get<bool>());
+            } else {
+                fields(event,{"motion"},{"motion"});const auto& motion=event.at("motion");require(motion.is_array() && motion.size()==2,"Mouse motion needs two values.");
+                for(const auto& value:motion)require(value.is_number() && std::isfinite(value.get<double>()) && std::abs(value.get<double>())<=1e6,"Mouse motion is out of bounds.");
+                staged.motion(motion[0].get<double>(),motion[1].get<double>());
+            }
+        }
+        auto result=input_json();result["pending"]=input_frame(staged.peek(input_controller));result["accepted_batches"]=input_batches+1;result["replayed"]=false;
+        auto receipts=input_receipts;if(receipts.size()==32)receipts.erase(receipts.begin());
+        receipts.push_back({{"params",params},{"result",result}});
+        game_input=std::move(staged);++input_batches;input_receipts.swap(receipts);return result;
+    }
     void sync_playback() {
         const auto state=world->runtime_status();
         if(!state.active || state.session_id!=play_session) {
+            release_input(true);
             playing=false;play_session=state.active ? state.session_id : std::string{};play_tick=state.active ? state.tick : 0;
             play_clock=PlayerClock{};play_last=Clock::now();capture_hold=false;play_error.clear();
         } else if(state.tick!=play_tick) {
-            if(playing) { playing=false;play_error="Runtime advanced outside the desktop playback clock; resume explicitly."; }
+            if(playing) { playing=false;release_input();play_error="Runtime advanced outside the desktop playback clock; resume explicitly."; }
             play_tick=state.tick;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false;
         }
     }
@@ -298,6 +393,7 @@ struct Bridge {
         fields(params,{"session_id"},{"session_id"});const auto id=identifier(params.at("session_id"));
         require(!play_session.empty() && id==play_session,"Runtime session conflict.",-32009);
         const bool next=method=="desktop.play.resume";
+        if(!next)release_input();
         if(next!=playing) { playing=next;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false; }
         if(next)play_error.clear();return playback_json();
     }
@@ -310,10 +406,18 @@ struct Bridge {
             const auto ticks=play_clock.advance(elapsed,true);if(!ticks)return;
             std::random_device random;std::string receipt(32,'0');constexpr char hex[]="0123456789abcdef";
             for(auto& digit:receipt)digit=hex[random()&15];
-            const auto result=world_call("runtime.step",{{"session_id",play_session},{"request_id",receipt},{"expected_tick",play_tick},{"ticks",ticks}});
+            Json parameters={{"session_id",play_session},{"request_id",receipt},{"expected_tick",play_tick},{"ticks",ticks}};
+            const bool apply=game_input && input_focused;
+            Json applied=nullptr;
+            if(apply) {
+                auto input=input_frame(game_input->peek(input_controller),true);parameters["inputs"]=Json::array({input});
+                applied={{"first_tick",play_tick+1},{"ticks",ticks},{"input",std::move(input)}};
+            }
+            const auto result=world_call("runtime.step",parameters);
             play_tick=result.at("tick");
+            if(apply) { game_input->consume(input_controller);last_input_applied=std::move(applied); }
         }catch(const std::exception& failure) {
-            playing=false;play_clock.advance(0,false);capture_hold=false;
+            playing=false;release_input();play_clock.advance(0,false);capture_hold=false;
             const auto state=world->runtime_status();play_tick=state.active ? state.tick : 0;
             play_error=failure.what();
         }
@@ -337,7 +441,7 @@ struct Bridge {
             (void)(runtime.active ? world->runtime_camera_snapshot(id) : world->authored_camera_snapshot(id));
         } else require(!params.contains("camera"),"Scene view uses the inspection camera; omit camera.");
         if(mode!=view_mode || id!=view_camera) {
-            require(view_revision<max_integer,"View revision exhausted.");cancel_gizmo();view_mode=mode;view_camera=std::move(id);++view_revision;
+            require(view_revision<max_integer,"View revision exhausted.");release_input();cancel_gizmo();view_mode=mode;view_camera=std::move(id);++view_revision;
             fail_capture(-32009,"Viewport camera changed before capture presentation.");
         }
         return view_json();
@@ -482,7 +586,7 @@ struct Bridge {
         committed_gesture={{"drag_id",id},{"request_id",receipt},{"result",result}};cancel_gizmo();return result;
     }
     Json inspect() {
-        sync_playback();expire_gizmo();expire_capture();return {{"playback",playback_json()},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        sync_playback();expire_gizmo();expire_capture();return {{"input",input_json()},{"playback",playback_json()},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
@@ -553,6 +657,14 @@ struct Bridge {
         methods["desktop.play.inspect"]=object(Json::object());
         methods["desktop.play.step"]=world_call("world.describe").at("methods").at("runtime.step");
         methods["desktop.cameras"]=object(Json::object());
+        methods["desktop.controllers"]=object(Json::object());
+        methods["desktop.input.inspect"]=object(Json::object());
+        methods["desktop.input.configure"]=object({{"session_id",id_schema},{"controller",id_schema},
+            {"input_profile",{{"type","string"},{"minLength",1},{"maxLength",4096}}},{"input_revision",integer_schema}},{"session_id","controller"});
+        methods["desktop.input.focus"]=object({{"session_id",id_schema},{"focused",{{"type","boolean"}}}},{"session_id","focused"});
+        const Json control_event=object({{"control",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"down",{{"type","boolean"}}}},{"control","down"});
+        const Json motion_event=object({{"motion",{{"type","array"},{"minItems",2},{"maxItems",2},{"items",{{"type","number"},{"minimum",-1e6},{"maximum",1e6}}}}}},{"motion"});
+        methods["desktop.input.events"]=object({{"session_id",id_schema},{"request_id",id_schema},{"events",{{"type","array"},{"maxItems",256},{"items",{{"oneOf",Json::array({control_event,motion_event})}}}}}},{"session_id","request_id","events"});
         methods["desktop.view"]={{"oneOf",Json::array({object({{"mode",{{"const","scene"}}}},{"mode"}),object({{"mode",{{"const","game"}}},{"camera",id_schema}},{"mode","camera"})})}};
         methods["desktop.select"]=object({{"id",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{32}$"}}}},{"id"});
         const Json aspect_schema={{"type","number"},{"minimum",.01},{"maximum",100}},unit_schema={{"type","number"},{"minimum",0},{"maximum",1}};
@@ -574,7 +686,13 @@ struct Bridge {
             {"playback",{{"clock","Owner poll only; fixed 60 Hz; at most 8 catch-up ticks/poll; excess wall time is dropped and reported. Inspect, draw and capture never step."},
                 {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits; Stop discards runtime without authored writes."},
                 {"capture","A queued capture holds automatic ticking until completion/error; resume discards the held wall-time interval."},
-                {"background","Playback continues while the owner polls, including hidden/detached viewports; no focus gate. Gameplay device input and editor audio playback are not connected in this slice."}}},
+                {"background","Playback continues while the owner polls, including hidden/detached viewports. Gameplay input has a separate explicit focus gate; editor audio playback is not connected."}}},
+            {"input",{{"devices","Keyboard and mouse only; input.describe controls provide physical IDs, numeric SDL codes and reserved flags. V2 profiles retain keyboard/mouse bindings, but desktop gamepad events are not supported."},
+                {"configure","Active runtime controller and read-only frozen profile; missing profile means keyboard/mouse v1 defaults. input_revision requires input_profile. Successful reconfiguration releases old input; validation failure preserves it."},
+                {"focus","Explicit focus true requires playing Game view using the configured controller camera. Pause, view/camera change, detachment or focus false releases held controls and pending edges/look; Stop/session replacement drops configuration. Resume does not regain focus."},
+                {"events","Ordered atomic batches with request_id and the latest 32 successful in-memory receipts per runtime session. Exact retries return the original accepted result with replayed:true without reinjection, even after focus loss, pause or reconfiguration; changed payload conflicts. Stop/session replacement discards receipts. Beyond retention, a forgotten ID is a new request; inspect before recovery. No authored or storage writes. Repeated control-down does not retrigger held actions. Capture hold retains pending input until a committed tick."},
+                {"commit","One atomic runtime.step batch applies look/jump/use on its first tick and movement throughout. Consume pending edges/look only after success. A failed batch pauses playback and clears focus/input; it never replays a partially applied batch."},
+                {"inspection","configured,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks and complete input including entity for the last committed controlled batch."}}},
             {"views",{{"scene","Free inspection camera; authored or runtime world."},{"game","Explicit Camera entity, authored when stopped, frozen runtime lens and live pose while active. No automatic camera replacement if a camera is absent after Stop; choose another camera or Scene."}}},
             {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
             {"gizmo",{{"coordinates","Physical client pixels, top-left; attached extent must match. begin hit-tests handles. World/local axes; default move/world."},
@@ -610,8 +728,10 @@ struct Bridge {
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
             else if(method.starts_with("desktop.play."))result=play_command(method,params);
+            else if(method.starts_with("desktop.input."))result=input_command(method,params);
             else if(method=="desktop.view")result=set_view(params);
             else if(method=="desktop.cameras") { fields(params,{});result=cameras_json(); }
+            else if(method=="desktop.controllers") { fields(params,{});result=controllers_json(); }
             else if(method=="desktop.gizmo.configure")result=gizmo_configure(params);
             else if(method=="desktop.gizmo.inspect")result=gizmo_inspect(params);
             else if(method=="desktop.gizmo.begin")result=gizmo_begin(params);
@@ -664,6 +784,7 @@ struct Bridge {
         const auto scene=snapshot();auto candidate=std::make_unique<HostedViewport>(render,scene,handle);viewport=std::move(candidate);faulted=false;graphics_error.clear();presented_revision.reset();presented_tick.reset();
     }
     void detach() {
+        release_input();
         cancel_gizmo();
         fail_capture(-32003,"Viewport detached before capture completed.");
         remember_render();

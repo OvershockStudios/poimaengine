@@ -220,7 +220,7 @@ public sealed class MainWindow : Window
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")) } },
             new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Reset layout", ResetLayout) } },
-            new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Game is a camera preview without gameplay input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
+            new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Click a player's Game view to control it; Escape or Tab releases input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
     }
     private Control BuildPanel(string name) => name switch
@@ -244,9 +244,17 @@ public sealed class MainWindow : Window
         var cameras = new ComboBox { MinWidth = 120, MaxWidth = 260, MinHeight = 22, Padding = new Thickness(5, 1),
             ItemTemplate = new FuncDataTemplate<CameraChoice>((choice, _) => Label(choice?.Label ?? "")) };
         AutomationProperties.SetName(cameras, "Game camera");
-        var previewLabel = Label("Preview · gameplay input unavailable", true);
-        ToolTip.SetTip(gameButton, "Preview a world Camera. Gameplay input is not connected in this editor view yet.");
-        views.Children.Add(sceneButton); views.Children.Add(gameButton); views.Children.Add(cameras); views.Children.Add(previewLabel);
+        var previewLabel = Label("Camera preview", true);
+        AutomationProperties.SetName(previewLabel, "Game input status");
+        ToolTip.SetTip(gameButton, "View a world Camera. During Play, click a player's view for keyboard/mouse control; Escape or Tab releases it.");
+        var bindings = ToolButton("Game input profile", () => {}, "settings");
+        var defaults = new MenuItem { Header = "Use default bindings" };
+        defaults.Click += (_, _) => Run(() => Navigation.Game.SelectProfile(null));
+        var load = new MenuItem { Header = "Load input profile…" };
+        load.Click += (_, _) => _ = PickInputProfile();
+        bindings.ContextMenu = new ContextMenu { ItemsSource = new[] { defaults, load } };
+        bindings.Click += (_, _) => bindings.ContextMenu.Open(bindings);
+        views.Children.Add(sceneButton); views.Children.Add(gameButton); views.Children.Add(cameras); views.Children.Add(bindings); views.Children.Add(previewLabel);
         grid.Children.Add(views);
         var syncingView = false;
         cameras.SelectionChanged += (_, _) =>
@@ -275,7 +283,9 @@ public sealed class MainWindow : Window
             {
                 if (!ReferenceEquals(cameras.ItemsSource, Model.Cameras)) cameras.ItemsSource = Model.Cameras;
                 cameras.SelectedItem = Model.Cameras.FirstOrDefault(camera => camera.Id == Model.GameCamera);
-                cameras.IsVisible = previewLabel.IsVisible = Model.ViewMode == "game";
+                cameras.IsVisible = bindings.IsVisible = previewLabel.IsVisible = Model.ViewMode == "game";
+                previewLabel.Text = Navigation.Game.Captured ? "Controls active · Esc to release" : Model.PlaybackState == "playing" ? "Click to control · Esc to release" : "Camera preview · press Play to control";
+                ToolTip.SetTip(bindings, Navigation.Game.ProfilePath is string profile ? "Input profile: " + System.IO.Path.GetFileName(profile) : "Input profile · default keyboard/mouse bindings");
                 controls.IsVisible = Model.ViewMode == "scene";
                 gameButton.IsEnabled = Model.Cameras.Count != 0;
                 sceneButton.Background = EditorTheme.Brush(Model.ViewMode == "scene" ? "#34547B" : "#28292D");
@@ -614,6 +624,19 @@ public sealed class MainWindow : Window
             }
         }
         Draw();
+    }
+    private async System.Threading.Tasks.Task PickInputProfile()
+    {
+        try
+        {
+            Navigation.Game.Release();
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Choose input profile", AllowMultiple = false,
+                FileTypeFilter = new[] { new FilePickerFileType("Poima input profile") { Patterns = new[] { "*.poima-input.json" } } } });
+            if (files.Count == 0) return;
+            var path = files[0].TryGetLocalPath() ?? throw new InvalidOperationException("Input profiles require a local file.");
+            Navigation.Game.SelectProfile(path);
+        }
+        catch (Exception error) { Model.Note(error.Message); }
     }
     private async System.Threading.Tasks.Task PickModel()
     {

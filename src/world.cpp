@@ -725,6 +725,17 @@ public:
         auto candidate=doc_;candidate["entities"][id]["components"]["Transform"]=transform;
         return editor_snapshot(camera,false,&candidate);
     }
+    std::vector<WorldControllerInfo> controllers(bool live) const {
+        std::vector<WorldControllerInfo> result;
+        if(live) {
+            require(bool(runtime_),"No runtime is active for controller enumeration.",-32030);
+            for(const auto& entity:runtime_definition_.entities)if(entity.character)result.push_back({entity.id,entity.character->camera});
+        } else {
+            for(const auto& [id,entity]:doc_.at("entities").items())if(entity.at("components").contains("CharacterController"))
+                result.push_back({id,entity.at("components").at("CharacterController").at("camera").get<std::string>()});
+        }
+        std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.id<b.id;});return result;
+    }
     std::vector<WorldCameraInfo> cameras(bool live) const {
         std::vector<WorldCameraInfo> result;
         if(live) {
@@ -1949,6 +1960,9 @@ SceneSnapshot WorldSession::runtime_snapshot(const EditorCamera& camera) const {
 }
 std::vector<WorldCameraInfo> WorldSession::cameras(bool live) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.cameras(live);
+}
+std::vector<WorldControllerInfo> WorldSession::controllers(bool live) const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.controllers(live);
 }
 SceneSnapshot WorldSession::authored_camera_snapshot(const std::string& id) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.camera_snapshot(id,false);

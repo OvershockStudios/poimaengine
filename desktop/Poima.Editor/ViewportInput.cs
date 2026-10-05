@@ -8,7 +8,7 @@ namespace Poima.Editor;
 public enum ViewportInputKind
 {
     PointerDown, PointerUp, PointerMove, PointerWheel,
-    KeyDown, KeyUp, FocusLost, CaptureLost, Resized
+    KeyDown, KeyUp, FocusLost, CaptureLost, Resized, RelativeMotion
 }
 
 public enum ViewportMouseButton { None, Left, Middle, Right, X1, X2 }
@@ -27,7 +27,9 @@ public readonly record struct ViewportInputEvent(
     int WheelDelta = 0, bool HorizontalWheel = false,
     uint VirtualKey = 0, bool Repeat = false, int ClickCount = 0,
     ViewportModifiers Modifiers = ViewportModifiers.None,
-    int Width = 0, int Height = 0)
+    int Width = 0, int Height = 0,
+    int DeltaX = 0, int DeltaY = 0, uint ScanCode = 0,
+    uint NativeScanCode = 0, bool ExtendedKey = false, bool Synthetic = false)
 {
     public bool Shift => (Modifiers & ViewportModifiers.Shift) != 0;
     public bool Control => (Modifiers & ViewportModifiers.Control) != 0;
@@ -59,6 +61,181 @@ public sealed class ViewportInput : IDisposable
     private int pointerY;
     private readonly bool qualificationInput;
     private int qualificationDispatchDepth;
+    private int pointerDownDepth;
+    private bool rawRegistered;
+    private Native.RawDevice? previousRawMouse;
+    private bool cursorClipped;
+    private Native.Rect previousClip, ownedClip, capturedScreenBounds;
+    private IntPtr previousCursor;
+    public bool GameCapture { get; private set; }
+    public long RelativePackets { get; private set; }
+    public long IgnoredAbsolutePackets { get; private set; }
+
+    /// <summary>Call synchronously from an explicit viewport PointerDown. Script
+    /// capture is modeled only: it never registers raw input, clips or hides the cursor.</summary>
+    public void BeginGameCapture()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        if (GameCapture) return;
+        if (window == IntPtr.Zero || pointerDownDepth == 0 || Width == 0 || Height == 0)
+            throw new InvalidOperationException("Game capture requires an explicit viewport click.");
+        if (qualificationInput)
+        {
+            if (qualificationDispatchDepth == 0) throw new InvalidOperationException("Script capture requires scoped input.");
+            GameCapture = true;
+            return;
+        }
+        if (Native.GetFocus() != window || Native.GetForegroundWindow() != Native.GetAncestor(window, 2))
+            throw new InvalidOperationException("Game capture requires the focused foreground viewport.");
+        try
+        {
+            previousRawMouse = RegisteredMouse();
+            RegisterMouse(new Native.RawDevice { UsagePage = 1, Usage = 2, Target = window });
+            rawRegistered = true;
+            if (!Native.GetClipCursor(out previousClip)) throw new Win32Exception(Marshal.GetLastWin32Error());
+            var top = new Native.Point(); var bottom = new Native.Point { X = Width, Y = Height };
+            if (!Native.ClientToScreen(window, ref top) || !Native.ClientToScreen(window, ref bottom))
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            // Respect any pre-existing restriction; never expand another owner's clip.
+            capturedScreenBounds = new Native.Rect { Left = top.X, Top = top.Y, Right = bottom.X, Bottom = bottom.Y };
+            ownedClip = new Native.Rect { Left = Math.Max(previousClip.Left, top.X), Top = Math.Max(previousClip.Top, top.Y),
+                Right = Math.Min(previousClip.Right, bottom.X), Bottom = Math.Min(previousClip.Bottom, bottom.Y) };
+            if (ownedClip.Right <= ownedClip.Left || ownedClip.Bottom <= ownedClip.Top)
+                throw new InvalidOperationException("The viewport is outside the available cursor region.");
+            if (!Native.ClipCursor(ref ownedClip)) throw new Win32Exception(Marshal.GetLastWin32Error());
+            cursorClipped = true;
+            Native.SetCapture(window);
+            if (Native.GetCapture() != window) throw new InvalidOperationException("Game pointer capture failed.");
+            previousCursor = Native.SetCursor(IntPtr.Zero);
+            GameCapture = true;
+        }
+        catch { CleanupGameCapture(); ReleaseOwnedCapture(); throw; }
+    }
+
+    /// <summary>Call each UI pump, including while the Game panel is hidden.
+    /// Parent/dock moves do not necessarily produce messages on the child HWND.</summary>
+    public void ValidateGameCapture()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        if (!GameCapture || qualificationInput) return;
+        var root = Native.GetAncestor(window, 2);
+        bool valid = window != IntPtr.Zero && Native.GetFocus() == window && Native.GetCapture() == window
+            && Native.GetForegroundWindow() == root && Native.IsWindowVisible(window) && !Native.IsIconic(root);
+        if (valid)
+        {
+            var top = new Native.Point(); var bottom = new Native.Point { X = Width, Y = Height };
+            valid = Native.ClientToScreen(window, ref top) && Native.ClientToScreen(window, ref bottom)
+                && capturedScreenBounds.Left == top.X && capturedScreenBounds.Top == top.Y
+                && capturedScreenBounds.Right == bottom.X && capturedScreenBounds.Bottom == bottom.Y;
+        }
+        if (!valid) Reset(ViewportInputKind.CaptureLost, true);
+    }
+
+    public void EndGameCapture()
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        if (GameCapture || rawRegistered || cursorClipped) Reset(ViewportInputKind.CaptureLost, true);
+    }
+
+    internal static void DispatchQualificationRelative(IntPtr hwnd, int dx, int dy)
+    {
+        if (Math.Abs((long)dx) > 32767 || Math.Abs((long)dy) > 32767)
+            throw new ArgumentOutOfRangeException(nameof(dx), "Script relative motion is bounded to 32767 units per axis.");
+        DispatchQualification(hwnd, () =>
+        {
+            var input = Active.Values.Single(value => value.window == hwnd);
+            if (!input.GameCapture) throw new InvalidOperationException("Script relative motion requires Game capture.");
+            ++input.RelativePackets;
+            input.Emit(new(ViewportInputKind.RelativeMotion, DeltaX: dx, DeltaY: dy));
+        });
+    }
+
+    private static Native.RawDevice? RegisteredMouse()
+    {
+        uint count = 0; uint size = (uint)Marshal.SizeOf<Native.RawDevice>();
+        if (Native.GetRegisteredRawInputDevices(null, ref count, size) == uint.MaxValue)
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        if (count > 128) throw new InvalidOperationException("Too many process raw input registrations.");
+        if (count == 0) return null;
+        var devices = new Native.RawDevice[count];
+        uint read = Native.GetRegisteredRawInputDevices(devices, ref count, size);
+        if (read == uint.MaxValue) throw new Win32Exception(Marshal.GetLastWin32Error());
+        for (int i = 0; i < read; ++i)
+            if (devices[i].UsagePage == 1 && devices[i].Usage == 2) return devices[i];
+        return null;
+    }
+
+    private static void RegisterMouse(Native.RawDevice device)
+    {
+        if (!Native.RegisterRawInputDevices([device], 1, (uint)Marshal.SizeOf<Native.RawDevice>()))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+    }
+
+    private void CleanupGameCapture()
+    {
+        GameCapture = false;
+        // Cleanup each resource independently; never strand clipping on a raw-input error.
+        if (rawRegistered)
+        {
+            rawRegistered = false;
+            try
+            {
+                var current = RegisteredMouse();
+                if (current is { } owned && owned.Target == window && owned.Flags == 0)
+                    RegisterMouse(previousRawMouse ?? new Native.RawDevice { UsagePage = 1, Usage = 2, Flags = 1 }); // RIDEV_REMOVE
+            }
+            catch (Exception error)
+            {
+                LastError = "Raw input restore: " + error.Message;
+                // A former SDL receiver may have been destroyed meanwhile. Remove
+                // only our still-current registration if restoring it failed.
+                try
+                {
+                    var current = RegisteredMouse();
+                    if (current is { } owned && owned.Target == window && owned.Flags == 0)
+                        RegisterMouse(new Native.RawDevice { UsagePage = 1, Usage = 2, Flags = 1 });
+                }
+                catch (Exception cleanup) { LastError += " Raw input removal: " + cleanup.Message; }
+            }
+            previousRawMouse = null;
+        }
+        if (cursorClipped)
+        {
+            cursorClipped = false;
+            if (Native.GetClipCursor(out var current) && current.Equals(ownedClip) && !Native.ClipCursor(ref previousClip))
+                LastError = "Cursor clipping restore failed.";
+        }
+        if (previousCursor != IntPtr.Zero)
+        {
+            if (Native.GetCursor() == IntPtr.Zero) Native.SetCursor(previousCursor);
+            previousCursor = IntPtr.Zero;
+        }
+    }
+
+    private void RawMotion(nuint wparam, nint lparam)
+    {
+        // RIM_INPUT=0 only; never process background INPUTSINK packets.
+        if (!GameCapture || qualificationInput || wparam != 0) return;
+        ValidateGameCapture();
+        if (!GameCapture) return;
+        uint size = 0; uint header = (uint)(8 + 2 * IntPtr.Size);
+        if (Native.GetRawInputData(lparam, 0x10000003, IntPtr.Zero, ref size, header) == uint.MaxValue)
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        if (size < header + 24 || size > 4096) return;
+        var memory = Marshal.AllocHGlobal((int)size);
+        try
+        {
+            uint read = Native.GetRawInputData(lparam, 0x10000003, memory, ref size, header);
+            if (read == uint.MaxValue) throw new Win32Exception(Marshal.GetLastWin32Error());
+            if (read < header + 24 || Marshal.ReadInt32(memory) != 0) return; // RIM_TYPEMOUSE
+            int offset = (int)header;
+            if ((Marshal.ReadInt16(memory, offset) & 1) != 0) { ++IgnoredAbsolutePackets; return; }
+            int dx = Marshal.ReadInt32(memory, offset + 12), dy = Marshal.ReadInt32(memory, offset + 16);
+            ++RelativePackets;
+            if (dx != 0 || dy != 0) Emit(new(ViewportInputKind.RelativeMotion, DeltaX: dx, DeltaY: dy));
+        }
+        finally { Marshal.FreeHGlobal(memory); }
+    }
 
     public int Width { get; private set; }
     public int Height { get; private set; }
@@ -141,14 +318,20 @@ public sealed class ViewportInput : IDisposable
                     input.window = IntPtr.Zero;
                     Active.Remove(subclassId);
                 }
-                else input.Process(message, wparam, lparam);
+                else
+                {
+                    input.Process(message, wparam, lparam);
+                    if (message == 0x0020 && input.GameCapture && !input.qualificationInput)
+                    { Native.SetCursor(IntPtr.Zero); return (IntPtr)1; }
+                }
             }
         }
         catch (Exception error)
         {
             if (Active.TryGetValue(subclassId, out var input)) input.Fail(error);
         }
-        // Always preserve SDL/default processing; this adapter does not consume keys.
+        // Preserve SDL/default processing, especially WM_INPUT foreground cleanup.
+        // Only the captured cursor image (WM_SETCURSOR above) is owned here.
         return Native.DefSubclassProc(hwnd, message, wparam, lparam);
     }
 
@@ -161,7 +344,7 @@ public sealed class ViewportInput : IDisposable
         // Real lifecycle events always pass: loss of capture/focus, resize and
         // destruction must still cancel a gesture or expose a failed test.
         if (qualificationInput && qualificationDispatchDepth == 0 &&
-            (message is >= 0x0200 and <= 0x020E || message is 0x0100 or 0x0101 or 0x0104 or 0x0105))
+            (message is >= 0x0200 and <= 0x020E || message is 0x0100 or 0x0101 or 0x0104 or 0x0105 or 0x00FF))
         {
             ++IgnoredInteractiveMessages;
             return;
@@ -179,8 +362,10 @@ public sealed class ViewportInput : IDisposable
                 Native.SetCapture(window);
                 if (window == IntPtr.Zero) return;
                 buttons |= Mask(button);
-                Emit(new(ViewportInputKind.PointerDown, Button: button,
-                    ClickCount: message is 0x0203 or 0x0206 or 0x0209 or 0x020D ? 2 : 1));
+                ++pointerDownDepth;
+                try { Emit(new(ViewportInputKind.PointerDown, Button: button,
+                    ClickCount: message is 0x0203 or 0x0206 or 0x0209 or 0x020D ? 2 : 1)); }
+                finally { --pointerDownDepth; }
                 break;
             }
             case 0x0202: case 0x0205: case 0x0208: case 0x020C:
@@ -190,7 +375,7 @@ public sealed class ViewportInput : IDisposable
                 if (button == ViewportMouseButton.None) return;
                 buttons &= ~Mask(button);
                 Emit(new(ViewportInputKind.PointerUp, Button: button));
-                if (buttons == ViewportMouseButtons.None) ReleaseOwnedCapture();
+                if (buttons == ViewportMouseButtons.None && !GameCapture) ReleaseOwnedCapture();
                 break;
             }
             case 0x0200:
@@ -207,11 +392,14 @@ public sealed class ViewportInput : IDisposable
                 break;
             }
             case 0x0100: case 0x0104:
-                Emit(new(ViewportInputKind.KeyDown, VirtualKey: (uint)wparam,
-                    Repeat: (((long)lparam >> 30) & 1) != 0));
+                if (GameCapture && wparam is 0x1B or 0x09) EndGameCapture();
+                Emit(KeyEvent(ViewportInputKind.KeyDown, wparam, lparam));
                 break;
             case 0x0101: case 0x0105:
-                Emit(new(ViewportInputKind.KeyUp, VirtualKey: (uint)wparam));
+                Emit(KeyEvent(ViewportInputKind.KeyUp, wparam, lparam));
+                break;
+            case 0x00FF: // WM_INPUT; always forwarded for foreground packet cleanup.
+                RawMotion(wparam, lparam);
                 break;
             case 0x0008: // WM_KILLFOCUS
                 Reset(ViewportInputKind.FocusLost, true);
@@ -222,7 +410,14 @@ public sealed class ViewportInput : IDisposable
             case 0x0215: // WM_CAPTURECHANGED, including voluntary ReleaseCapture.
                 if (!suppressCaptureNotification) Reset(ViewportInputKind.CaptureLost, false);
                 break;
+            case 0x0003: // WM_MOVE (parent moves additionally checked by ValidateGameCapture).
+                if (GameCapture) Reset(ViewportInputKind.CaptureLost, true);
+                break;
+            case 0x0018: // WM_SHOWWINDOW
+                if (GameCapture && wparam == 0) Reset(ViewportInputKind.CaptureLost, true);
+                break;
             case 0x0005: case 0x02E3: // WM_SIZE / WM_DPICHANGED_AFTERPARENT
+                if (GameCapture) Reset(ViewportInputKind.CaptureLost, true);
                 RefreshSize();
                 Emit(new(ViewportInputKind.Resized));
                 break;
@@ -236,6 +431,7 @@ public sealed class ViewportInput : IDisposable
         buttons = ViewportMouseButtons.None;
         try
         {
+            CleanupGameCapture();
             if (release)
             {
                 suppressCaptureNotification = true;
@@ -259,7 +455,8 @@ public sealed class ViewportInput : IDisposable
         try
         {
             onEvent(input with { X = pointerX, Y = pointerY, Buttons = buttons,
-                Modifiers = ReadModifiers(), Width = Width, Height = Height });
+                Modifiers = ReadModifiers(), Width = Width, Height = Height,
+                Synthetic = qualificationInput && qualificationDispatchDepth > 0 });
         }
         catch (Exception error) { Fail(error); }
     }
@@ -272,7 +469,7 @@ public sealed class ViewportInput : IDisposable
         // should surface LastError and cancel their own navigation state on error.
         var previous = suppressCaptureNotification;
         suppressCaptureNotification = true;
-        try { ReleaseOwnedCapture(); }
+        try { CleanupGameCapture(); ReleaseOwnedCapture(); }
         catch (Exception cleanupError) { LastError += "\nCapture cleanup: " + cleanupError.Message; }
         finally { suppressCaptureNotification = previous; }
     }
@@ -282,6 +479,52 @@ public sealed class ViewportInput : IDisposable
         if (!Native.GetClientRect(window, out var rect)) throw new Win32Exception(Marshal.GetLastWin32Error());
         Width = Math.Max(0, rect.Right - rect.Left);
         Height = Math.Max(0, rect.Bottom - rect.Top);
+    }
+
+    private static ViewportInputEvent KeyEvent(ViewportInputKind kind, nuint virtualKey, nint bits)
+    {
+        uint make = (uint)(((long)bits >> 16) & 255);
+        bool extended = (((long)bits >> 24) & 1) != 0;
+        uint scan = PhysicalScanCode(make, extended, (uint)virtualKey);
+        return new(kind, VirtualKey: (uint)virtualKey, Repeat: kind == ViewportInputKind.KeyDown && (((long)bits >> 30) & 1) != 0,
+            ScanCode: scan, NativeScanCode: make, ExtendedKey: extended);
+    }
+
+    // USB usages match SDL_Scancode / Poima input.describe. Unsupported OEM keys
+    // remain 0: guessing a layout-dependent VK would silently break physical binds.
+    private static uint PhysicalScanCode(uint code, bool extended, uint vk)
+    {
+        if (vk == 0x90) return 83; // Num Lock commonly sets the extended bit.
+        if (vk == 0x13) return 72; // Pause's E1 sequence is collapsed by WM_KEY*.
+        if (vk == 0x2C) return 70; // Print Screen can arrive with a synthetic make code.
+        if (code == 0) return 0;
+        if (extended) return code switch
+        {
+            0x1C => 88, 0x1D => 228, 0x35 => 84, 0x38 => 230,
+            0x47 => 74, 0x48 => 82, 0x49 => 75, 0x4B => 80, 0x4D => 79,
+            0x4F => 77, 0x50 => 81, 0x51 => 78, 0x52 => 73, 0x53 => 76,
+            0x5B => 227, 0x5C => 231, 0x5D => 101, _ => 0
+        };
+        return code switch
+        {
+            0x01 => 41, >= 0x02 and <= 0x0A => code + 28, 0x0B => 39,
+            0x0C => 45, 0x0D => 46, 0x0E => 42, 0x0F => 43,
+            0x10 => 20, 0x11 => 26, 0x12 => 8, 0x13 => 21, 0x14 => 23,
+            0x15 => 28, 0x16 => 24, 0x17 => 12, 0x18 => 18, 0x19 => 19,
+            0x1A => 47, 0x1B => 48, 0x1C => 40, 0x1D => 224,
+            0x1E => 4, 0x1F => 22, 0x20 => 7, 0x21 => 9, 0x22 => 10,
+            0x23 => 11, 0x24 => 13, 0x25 => 14, 0x26 => 15, 0x27 => 51,
+            0x28 => 52, 0x29 => 53, 0x2A => 225, 0x2B => 49,
+            0x2C => 29, 0x2D => 27, 0x2E => 6, 0x2F => 25, 0x30 => 5,
+            0x31 => 17, 0x32 => 16, 0x33 => 54, 0x34 => 55, 0x35 => 56,
+            0x36 => 229, 0x37 => 85, 0x38 => 226, 0x39 => 44, 0x3A => 57,
+            >= 0x3B and <= 0x44 => code - 1, 0x45 => 83, 0x46 => 71,
+            0x47 => 95, 0x48 => 96, 0x49 => 97, 0x4A => 86,
+            0x4B => 92, 0x4C => 93, 0x4D => 94, 0x4E => 87,
+            0x4F => 89, 0x50 => 90, 0x51 => 91, 0x52 => 98, 0x53 => 99,
+            0x56 => 100, 0x57 => 68, 0x58 => 69, 0x59 => 103,
+            >= 0x64 and <= 0x6E => code + 4, 0x76 => 115, _ => 0
+        };
     }
 
     private void ReadPoint(nint lparam) { pointerX = SignedLow(lparam); pointerY = SignedHigh(lparam); }
@@ -318,6 +561,36 @@ public sealed class ViewportInput : IDisposable
         internal delegate IntPtr SubclassProc(IntPtr hwnd, uint message, nuint wparam, nint lparam, nuint id, nuint data);
         [StructLayout(LayoutKind.Sequential)] internal struct Point { internal int X, Y; }
         [StructLayout(LayoutKind.Sequential)] internal struct Rect { internal int Left, Top, Right, Bottom; }
+
+        [StructLayout(LayoutKind.Sequential)] internal struct RawDevice
+        { internal ushort UsagePage, Usage; internal uint Flags; internal IntPtr Target; }
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool RegisterRawInputDevices([In] RawDevice[] devices, uint count, uint size);
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern uint GetRegisteredRawInputDevices([Out] RawDevice[]? devices, ref uint count, uint size);
+        [DllImport("user32.dll", SetLastError = true)]
+        internal static extern uint GetRawInputData(nint input, uint command, IntPtr data, ref uint size, uint headerSize);
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ClientToScreen(IntPtr hwnd, ref Point point);
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool ClipCursor(ref Rect rect);
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetClipCursor(out Rect rect);
+        [DllImport("user32.dll")] internal static extern IntPtr SetCursor(IntPtr cursor);
+        [DllImport("user32.dll")] internal static extern IntPtr GetCursor();
+        [DllImport("user32.dll")] internal static extern IntPtr GetFocus();
+        [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool IsWindowVisible(IntPtr hwnd);
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool IsIconic(IntPtr hwnd);
+        [DllImport("user32.dll")] internal static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
 
         [DllImport("comctl32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
