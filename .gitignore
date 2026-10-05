@@ -16,3 +16,6 @@ __pycache__/
 
 # Local editable project created by launch-editor.cmd, not engine source.
 /projects/sandbox/
+/projects/desktop-sandbox/
+/desktop/**/bin/
+/desktop/**/obj/

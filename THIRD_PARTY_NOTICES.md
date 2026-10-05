@@ -1,5 +1,9 @@
 # Third-party notices
 
+## Optional retained desktop frontend
+
+`desktop/Poima.Editor/packages.lock.json` pins the Avalonia 12.1.3 and Dock 12.1.0.6 dependency graph. The Windows desktop package uses a self-contained .NET runtime, Skia/HarfBuzz and Inter 4.1. The older ImGui frontend retains Source Sans 3. These dependencies belong to the optional frontend; native headless builds do not restore them. `scripts/build_desktop.py` collects resolved package licenses, runtime/apphost notices and the font license into the desktop payload. Packages that provide only an SPDX expression are supplemented by unchanged upstream license texts pinned to their package source commits in `third_party/desktop_notices/provenance.json`. The package manifest records payload and notice hashes; this inventory is not console or clean-machine distribution qualification.
+
 Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 
 ## JSON for Modern C++ (bundled)

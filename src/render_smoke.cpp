@@ -6,6 +6,7 @@
 #include "poima/assets.hpp"
 #include "poima/animation.hpp"
 #include "poima/editor_viewport.hpp"
+#include "poima/hosted_viewport.hpp"
 #if POIMA_EDITOR
 #include <imgui.h>
 #include "poima/editor_ui_vs.hpp"
@@ -38,6 +39,7 @@
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <thread>
 #include <filesystem>
 #ifdef _WIN32
 #include <windows.h>
@@ -234,7 +236,7 @@ struct Context {
     std::string gpu_name;
     bool swapchain_dirty=false;
     bool shadow_ready=false,skin_pipeline_ready=false,renderer_fault=false;
-    bool editor=false,scene_visible=true,capture_exclusive=false;
+    bool editor=false,hosted=false,scene_visible=true,capture_exclusive=false;
     std::optional<nvrhi::Viewport> scene_viewport;
 #if POIMA_EDITOR
     nvrhi::ShaderHandle ui_vs,ui_ps;
@@ -301,15 +303,27 @@ struct Context {
         if (sdl_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
 
-    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false) {
+    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false,void* external_window=nullptr) {
         scene = source;capture_exclusive=options.capture_exclusive;
+        hosted=external_window!=nullptr;
         diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
         samples = scene ? options.samples : 1;
         SDL_SetMainReady();
         const bool initialized_video = SDL_Init(SDL_INIT_VIDEO);
         require(initialized_video, std::string("SDL video initialization: ") + SDL_GetError());
         sdl_initialized = true;
-        window = SDL_CreateWindow(scene ? "Poima — authored scene preview" : "Poima — Vulkan/NVRHI foundation", static_cast<int>(options.width),
+        if(external_window) {
+#ifdef _WIN32
+            const auto properties=SDL_CreateProperties();require(properties!=0,SDL_GetError());
+            const bool configured=SDL_SetPointerProperty(properties,SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER,external_window)
+                && SDL_SetBooleanProperty(properties,SDL_PROP_WINDOW_CREATE_VULKAN_BOOLEAN,true);
+            if(configured)window=SDL_CreateWindowWithProperties(properties);
+            SDL_DestroyProperties(properties);
+            require(configured,std::string("SDL native window properties: ")+SDL_GetError());
+#else
+            throw std::runtime_error("Hosted viewport currently supports Windows child HWNDs only.");
+#endif
+        } else window = SDL_CreateWindow(scene ? "Poima — authored scene preview" : "Poima — Vulkan/NVRHI foundation", static_cast<int>(options.width),
             static_cast<int>(options.height), SDL_WINDOW_VULKAN | (player ? SDL_WINDOW_RESIZABLE : 0));
         require(window != nullptr, std::string("SDL window: ") + SDL_GetError());
         const auto get = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
@@ -866,7 +880,7 @@ struct Context {
         // Editor IPC may request its first screenshot long after startup. Keep
         // transfer support and one staging image ready without requiring a
         // configured final-capture path; ordinary frames still skip the copy.
-        const bool capture_enabled=editor || !options.capture.empty();
+        const bool capture_enabled=editor || hosted || !options.capture.empty();
         const auto required_usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst |
             (capture_enabled ? vk::ImageUsageFlagBits::eTransferSrc : vk::ImageUsageFlags{});
         require((caps.supportedUsageFlags & required_usage) == required_usage, "Surface lacks required render/capture image usage.");
@@ -876,8 +890,8 @@ struct Context {
             extent.height = std::clamp(options.height, caps.minImageExtent.height, caps.maxImageExtent.height);
         }
         require(extent.width > 0 && extent.height > 0, "The window has an empty rendering extent.");
-        if(editor)require(std::uint64_t(extent.width)*extent.height<=128u*1024u*1024u/4u,
-            "Editor surface exceeds the 128 MiB RGBA staging budget.");
+        if(editor || hosted)require(std::uint64_t(extent.width)*extent.height<=128u*1024u*1024u/4u,
+            "GUI surface exceeds the 128 MiB RGBA staging budget.");
         std::uint32_t count = caps.minImageCount + 1;
         if (caps.maxImageCount > 0) count = std::min(count, caps.maxImageCount);
         vk::CompositeAlphaFlagBitsKHR alpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
@@ -1094,9 +1108,9 @@ struct Context {
         if(!swapchain) { swapchain_dirty=true; return false; }
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { next=device.acquireNextImageKHR(swapchain, editor ? 16'000'000ULL : 5'000'000'000ULL, acquired, {}); }
+        try { next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL, acquired, {}); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
-        if(editor && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
+        if((editor || hosted) && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
             "Swapchain acquisition failed or timed out.");
         // Once acquired, an exception may leave a signaled binary semaphore
@@ -1224,6 +1238,81 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
 }
 RenderReport run_render_smoke(const RenderOptions& options) { return render(options, nullptr); }
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot& scene) { return render(options, &scene); }
+
+struct HostedViewport::Impl {
+    RenderOptions options;
+    SceneSnapshot snapshot;
+    Context context;
+    RenderReport result;
+    void* hwnd=nullptr;
+    std::thread::id owner=std::this_thread::get_id();
+    bool ready=false;
+    Impl(const RenderOptions& requested,const SceneSnapshot& scene,void* window):options(requested),snapshot(scene),hwnd(window) {
+#ifdef _WIN32
+        require(hwnd && IsWindow(static_cast<HWND>(hwnd)),"Hosted viewport requires a valid externally owned HWND.");
+        require(GetWindowThreadProcessId(static_cast<HWND>(hwnd),nullptr)==GetCurrentThreadId(),"Hosted viewport must be created on its HWND's owning thread.");
+        require((GetWindowLongPtrW(static_cast<HWND>(hwnd),GWL_STYLE)&WS_CHILD)!=0,"Hosted viewport requires a child HWND.");
+        require(options.samples==1 || options.samples==2 || options.samples==4 || options.samples==8,"Hosted viewport samples must be 1, 2, 4 or 8.");
+        options.capture_exclusive=true;result.samples=options.samples;
+        result.detail="Hosted Vulkan viewport awaits a visible, nonempty child window.";
+#else
+        throw std::runtime_error("Hosted viewport currently supports Windows child HWNDs only.");
+#endif
+    }
+    void check_thread() const { require(std::this_thread::get_id()==owner,"Hosted viewport calls require its creating thread."); }
+    std::array<std::uint32_t,2> drawable_extent() const {
+#ifdef _WIN32
+        const auto window=static_cast<HWND>(hwnd);require(IsWindow(window),"Hosted HWND was destroyed before its viewport.");
+        if(!IsWindowVisible(window) || IsIconic(GetAncestor(window,GA_ROOT)))return {};
+        RECT rectangle{};require(GetClientRect(window,&rectangle),"Cannot query hosted HWND client extent.");
+        if(rectangle.right<=rectangle.left || rectangle.bottom<=rectangle.top)return {};
+        const auto width=static_cast<std::uint32_t>(rectangle.right-rectangle.left),height=static_cast<std::uint32_t>(rectangle.bottom-rectangle.top);
+        require(std::uint64_t(width)*height<=128u*1024u*1024u/4u,"Hosted surface exceeds the 128 MiB RGBA staging budget.");
+        return {width,height};
+#else
+        return {};
+#endif
+    }
+};
+HostedViewport::HostedViewport(const RenderOptions& options,const SceneSnapshot& scene,void* hwnd):impl_(std::make_unique<Impl>(options,scene,hwnd)) {}
+HostedViewport::~HostedViewport()=default;
+std::array<std::uint32_t,2> HostedViewport::extent() const {
+    impl_->check_thread();return impl_->ready ? std::array<std::uint32_t,2>{impl_->context.extent.width,impl_->context.extent.height} : std::array<std::uint32_t,2>{};
+}
+void HostedViewport::resize() { impl_->check_thread();impl_->context.swapchain_dirty=true; }
+bool HostedViewport::draw(const SceneSnapshot& scene,bool capture) { return draw_frame(scene,capture ? &impl_->options.capture : nullptr); }
+bool HostedViewport::draw_capture(const SceneSnapshot& scene,const std::string& path) { return draw_frame(scene,&path); }
+bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* capture_path) {
+    auto& state=*impl_;auto& context=state.context;state.check_thread();
+    try {
+        require(!context.renderer_fault && context.messages.errors==0,"Hosted renderer fault; recreate the viewport before drawing again.");
+        require(!capture_path || (!capture_path->empty() && capture_path->find('\0')==std::string::npos),"Hosted capture requires a nonempty, NUL-free output path.");
+        // Avalonia dispatches native messages. Do not run SDL's message pump
+        // inside its dispatcher or consume events belonging to another window.
+        // Discard only this wrapper's queued SDL copies of native GUI events.
+        if(context.window)SDL_FilterEvents([](void* window,SDL_Event* event)->bool { return SDL_GetWindowFromEvent(event)!=window; },context.window);
+        const auto size=state.drawable_extent();if(size[0]==0 || size[1]==0)return false;
+        state.snapshot=scene;context.scene=&state.snapshot;
+        auto options=state.options;options.width=size[0];options.height=size[1];
+        try {
+            if(!state.ready) {
+                context.initialize(options,&state.snapshot,false,state.hwnd);state.ready=true;context.swapchain_dirty=false;
+            } else if(context.swapchain_dirty || context.extent.width!=size[0] || context.extent.height!=size[1]) {
+                if(!context.rebuild(options))return false;
+            }
+            context.update_scene();
+        } catch(...) { context.renderer_fault=true;throw; }
+        if(!context.frame(capture_path!=nullptr))return false;
+        ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
+        state.result.hardware=context.hardware;state.result.gpu_name=context.gpu_name;
+        if(capture_path) { context.capture(*capture_path);state.result.capture_written=true; }
+        state.result.success=true;state.result.detail="Native Vulkan child viewport; serialized presentation, no frame-time qualification.";
+        return true;
+    } catch(const std::exception& error) { state.result.success=false;state.result.detail=error.what();throw; }
+}
+RenderReport HostedViewport::report() const {
+    impl_->check_thread();auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
+}
 
 #if POIMA_EDITOR
 struct EditorViewport::Impl {

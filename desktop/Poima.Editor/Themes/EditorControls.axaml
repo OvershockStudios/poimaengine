@@ -1,0 +1,144 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        xmlns:dock="using:Dock.Avalonia.Controls"
+        x:CompileBindings="False">
+  <Styles.Resources>
+    <FontFamily x:Key="EditorFont">avares://Poima.Editor/Assets#Inter</FontFamily>
+    <FontFamily x:Key="DefaultFontFamily">avares://Poima.Editor/Assets#Inter</FontFamily>
+    <SolidColorBrush x:Key="ThemeForegroundBrush">#D6D6D9</SolidColorBrush>
+    <SolidColorBrush x:Key="ThemeForegroundLowBrush">#A0A0A5</SolidColorBrush>
+    <SolidColorBrush x:Key="ThemeBackgroundBrush">#303136</SolidColorBrush>
+    <SolidColorBrush x:Key="ThemeBorderLowBrush">#3B3C42</SolidColorBrush>
+    <SolidColorBrush x:Key="ThemeBorderMidBrush">#3B3C42</SolidColorBrush>
+    <SolidColorBrush x:Key="ThemeBorderHighBrush">#5B9CDF</SolidColorBrush>
+    <SolidColorBrush x:Key="HighlightBrush">#3B648C</SolidColorBrush>
+    <SolidColorBrush x:Key="HighlightForegroundBrush">#FFFFFF</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSurfacePanelBrush">#303136</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSurfaceEditorBrush">#303136</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSurfaceHeaderBrush">#222327</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSurfaceHeaderActiveBrush">#303136</SolidColorBrush>
+    <SolidColorBrush x:Key="DockDocumentTabStripBackgroundBrush">#222327</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabBackgroundBrush">#222327</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabHoverBackgroundBrush">#34353B</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabActiveBackgroundBrush">#303136</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabForegroundBrush">#A0A0A5</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabSelectedForegroundBrush">#D6D6D9</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabActiveForegroundBrush">#ECECEF</SolidColorBrush>
+    <SolidColorBrush x:Key="DockTabActiveIndicatorBrush">#52555E</SolidColorBrush>
+    <SolidColorBrush x:Key="DockBorderSubtleBrush">#222327</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSeparatorBrush">#222327</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSplitterIdleBrush">#222327</SolidColorBrush>
+    <SolidColorBrush x:Key="DockSplitterHoverBrush">#5B9CDF</SolidColorBrush>
+    <SolidColorBrush x:Key="DockDocumentContentBorderBrush">#222327</SolidColorBrush>
+    <sys:Double x:Key="DockFontSizeNormal">12</sys:Double>
+    <sys:Double x:Key="DockDocumentTabItemMinHeight">26</sys:Double>
+    <sys:Double x:Key="DockTabHeight">26</sys:Double>
+    <sys:Double x:Key="DockDocumentTabStripSeparatorSize">1</sys:Double>
+    <Thickness x:Key="DockDocumentContentBorderThickness">0</Thickness>
+    <Thickness x:Key="DockDocumentTabItemPadding">10,0</Thickness>
+    <Thickness x:Key="DockHeaderContentPadding">0</Thickness>
+    <ControlTheme x:Key="EditorScrollThumb" TargetType="Thumb">
+      <Setter Property="Background" Value="#62646B"/>
+      <Setter Property="Template"><ControlTemplate><Border Background="{TemplateBinding Background}" CornerRadius="2" Margin="3,2"/></ControlTemplate></Setter>
+      <Style Selector="^:pointerover"><Setter Property="Background" Value="#83858E"/></Style>
+      <Style Selector="^:pressed"><Setter Property="Background" Value="#A0A2AB"/></Style>
+    </ControlTheme>
+    <ControlTheme x:Key="EditorScrollPage" TargetType="RepeatButton">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template"><ControlTemplate><Border Background="Transparent"/></ControlTemplate></Setter>
+    </ControlTheme>
+    <ControlTheme x:Key="EditorScrollBar" TargetType="ScrollBar">
+      <Setter Property="Background" Value="#28292D"/>
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Background="{TemplateBinding Background}">
+            <Track Name="PART_Track" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}"
+                   Value="{TemplateBinding Value, Mode=TwoWay}" ViewportSize="{TemplateBinding ViewportSize}"
+                   Orientation="{TemplateBinding Orientation}">
+              <Track.DecreaseButton><RepeatButton Name="PART_PageUpButton" Theme="{StaticResource EditorScrollPage}"/></Track.DecreaseButton>
+              <Track.IncreaseButton><RepeatButton Name="PART_PageDownButton" Theme="{StaticResource EditorScrollPage}"/></Track.IncreaseButton>
+              <Thumb Name="PART_Thumb" Theme="{StaticResource EditorScrollThumb}" MinWidth="12" MinHeight="12"/>
+            </Track>
+          </Border>
+        </ControlTemplate>
+      </Setter>
+      <Style Selector="^:vertical"><Setter Property="Width" Value="12"/></Style>
+      <Style Selector="^:vertical /template/ Track"><Setter Property="IsDirectionReversed" Value="True"/></Style>
+      <Style Selector="^:horizontal"><Setter Property="Height" Value="12"/></Style>
+      <Style Selector="^:disabled"><Setter Property="Opacity" Value="0.35"/></Style>
+    </ControlTheme>
+  </Styles.Resources>
+
+  <Style Selector="Window">
+    <Setter Property="FontFamily" Value="{StaticResource EditorFont}"/><Setter Property="FontSize" Value="12"/>
+    <Setter Property="Background" Value="#28292D"/><Setter Property="Foreground" Value="#D6D6D9"/>
+  </Style>
+  <Style Selector=":is(TemplatedControl)"><Setter Property="FontFamily" Value="{StaticResource EditorFont}"/><Setter Property="FontSize" Value="12"/></Style>
+  <Style Selector="TextBlock"><Setter Property="FontFamily" Value="{StaticResource EditorFont}"/></Style>
+  <Style Selector="TextBlock.muted"><Setter Property="Foreground" Value="#A0A0A5"/></Style>
+
+  <Style Selector="Button.editor-button">
+    <Setter Property="MinHeight" Value="20"/><Setter Property="Padding" Value="7,1"/>
+    <Setter Property="Background" Value="#3A3B40"/><Setter Property="Foreground" Value="#D6D6D9"/>
+    <Setter Property="BorderBrush" Value="#484950"/><Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="2"/>
+    <Setter Property="Template">
+      <ControlTemplate>
+        <Border Name="FlatButton" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="{TemplateBinding CornerRadius}">
+          <ContentPresenter Name="PART_ContentPresenter" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" Padding="{TemplateBinding Padding}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" RecognizesAccessKey="True"/>
+        </Border>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+  <Style Selector="Button.editor-button:pointerover /template/ Border#FlatButton"><Setter Property="Background" Value="#474950"/></Style>
+  <Style Selector="Button.editor-button:pressed /template/ Border#FlatButton"><Setter Property="Background" Value="#25262B"/></Style>
+  <Style Selector="Button.editor-button:focus-visible /template/ Border#FlatButton"><Setter Property="BorderBrush" Value="#5B9CDF"/></Style>
+  <Style Selector="Button.editor-button:disabled"><Setter Property="Opacity" Value="0.4"/></Style>
+  <Style Selector="Button.toolbar-button"><Setter Property="MinHeight" Value="22"/><Setter Property="Padding" Value="4,1"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style Selector="Button.flat"><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/></Style>
+
+  <!-- Keep Avalonia's complete text/selection/IME presenter contract. -->
+  <Style Selector="TextBox">
+    <Setter Property="MinHeight" Value="18"/><Setter Property="Padding" Value="5,0"/>
+    <Setter Property="Background" Value="#202125"/><Setter Property="Foreground" Value="#D6D6D9"/>
+    <Setter Property="BorderBrush" Value="#3B3C42"/><Setter Property="BorderThickness" Value="1"/>
+    <Setter Property="CornerRadius" Value="2"/><Setter Property="VerticalContentAlignment" Value="Center"/>
+    <Setter Property="PlaceholderForeground" Value="#898B94"/><Setter Property="CaretBrush" Value="#D6D6D9"/>
+    <Setter Property="SelectionBrush" Value="#3B648C"/>
+  </Style>
+  <Style Selector="TextBox:pointerover /template/ Border#border"><Setter Property="BorderBrush" Value="#585A64"/></Style>
+  <Style Selector="TextBox:focus /template/ Border#border"><Setter Property="BorderBrush" Value="#5B9CDF"/></Style>
+  <Style Selector="TextBox:disabled"><Setter Property="Opacity" Value="0.45"/></Style>
+  <Style Selector="TextBox:error /template/ Border#border"><Setter Property="BorderBrush" Value="#C47870"/></Style>
+  <Style Selector="CheckBox">
+    <Setter Property="MinHeight" Value="18"/><Setter Property="Padding" Value="4,0"/>
+    <Setter Property="Background" Value="#202125"/><Setter Property="BorderBrush" Value="#565861"/>
+  </Style>
+  <Style Selector="CheckBox /template/ Border#border"><Setter Property="Width" Value="14"/><Setter Property="Height" Value="14"/><Setter Property="CornerRadius" Value="2"/></Style>
+  <Style Selector="CheckBox /template/ Path#checkMark"><Setter Property="Fill" Value="#A8CFF4"/><Setter Property="Width" Value="9"/><Setter Property="Height" Value="8"/></Style>
+  <Style Selector="CheckBox:pointerover /template/ Border#border"><Setter Property="BorderBrush" Value="#858994"/></Style>
+  <Style Selector="CheckBox:focus-visible /template/ Border#border"><Setter Property="BorderBrush" Value="#5B9CDF"/></Style>
+  <Style Selector="CheckBox:disabled"><Setter Property="Opacity" Value="0.4"/></Style>
+  <Style Selector="Expander"><Setter Property="Padding" Value="0"/><Setter Property="BorderThickness" Value="0,1,0,0"/><Setter Property="BorderBrush" Value="#242529"/><Setter Property="Background" Value="#333439"/></Style>
+  <Style Selector="Expander /template/ ToggleButton#PART_toggle"><Setter Property="MinHeight" Value="25"/><Setter Property="Padding" Value="6,2"/><Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style Selector="Expander /template/ ToggleButton#PART_toggle:pointerover"><Setter Property="Background" Value="#3C3D44"/></Style>
+  <Style Selector="Expander:disabled"><Setter Property="Opacity" Value="0.4"/></Style>
+  <Style Selector="ComboBox"><Setter Property="MinHeight" Value="20"/><Setter Property="Padding" Value="5,0"/><Setter Property="Background" Value="#292A2F"/><Setter Property="BorderBrush" Value="#494B53"/><Setter Property="BorderThickness" Value="1"/></Style>
+  <Style Selector="ScrollBar"><Setter Property="Theme" Value="{StaticResource EditorScrollBar}"/></Style>
+  <Style Selector="ListBox"><Setter Property="Background" Value="#303136"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style Selector="ListBoxItem"><Setter Property="Padding" Value="0"/><Setter Property="MinHeight" Value="20"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/></Style>
+  <Style Selector="ListBoxItem:pointerover"><Setter Property="Background" Value="#3A3C44"/></Style>
+  <Style Selector="ListBoxItem:selected"><Setter Property="Background" Value="#365875"/></Style>
+  <Style Selector="ListBoxItem:disabled"><Setter Property="Opacity" Value="0.4"/></Style>
+  <Style Selector="TreeView"><Setter Property="BorderThickness" Value="0"/><Setter Property="Background" Value="#2B2C30"/></Style>
+  <Style Selector="TreeViewItem"><Setter Property="MinHeight" Value="20"/><Setter Property="Padding" Value="2,0"/></Style>
+  <Style Selector="MenuItem"><Setter Property="Padding" Value="7,2"/><Setter Property="FontSize" Value="12"/></Style>
+  <Style Selector="dock|DocumentTabStripItem"><Setter Property="MinHeight" Value="26"/><Setter Property="Padding" Value="10,0"/><Setter Property="Background" Value="#222327"/><Setter Property="Foreground" Value="#A0A0A5"/></Style>
+  <Style Selector="dock|DocumentTabStripItem:selected"><Setter Property="Background" Value="#303136"/><Setter Property="Foreground" Value="#ECECEF"/></Style>
+  <Style Selector="dock|DocumentTabStripItem:pointerover"><Setter Property="Background" Value="#3B3D44"/></Style>
+  <Style Selector="dock|DocumentTabStripItem /template/ Border#PART_TabBody"><Setter Property="CornerRadius" Value="0"/><Setter Property="BorderThickness" Value="0"/></Style>
+  <Style Selector="dock|DocumentControl /template/ Panel#PART_DocumentSeperatorHost"><Setter Property="Height" Value="1"/></Style>
+  <Style Selector="dock|DocumentControl /template/ Border#PART_Border"><Setter Property="BorderThickness" Value="0"/></Style>
+</Styles>

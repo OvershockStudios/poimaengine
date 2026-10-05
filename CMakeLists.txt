@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.24 LANGUAGES C CXX)
+project(Poima VERSION 0.0.25 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
 option(POIMA_BUILD_RENDER_SMOKE "Build the SDL/NVRHI Vulkan rendering experiment" OFF)
 option(POIMA_BUILD_EDITOR "Build the optional native SDL/Vulkan authoring editor" OFF)
+option(POIMA_BUILD_DESKTOP_BRIDGE "Build the optional native desktop frontend bridge" OFF)
 option(POIMA_BUILD_MODULE_LAB "Build the isolated native reload experiment" ON)
 option(POIMA_ENABLE_SIMULATION "Build the Jolt/EnTT fixed-step runtime" OFF)
 option(POIMA_ENABLE_AUDIO "Build native Steam Audio observation and capture" OFF)
@@ -79,13 +80,17 @@ target_compile_definitions(poima_core PRIVATE POIMA_EDITOR=$<BOOL:${POIMA_BUILD_
 if(POIMA_BUILD_RENDER_SMOKE)
     include(cmake/render_smoke.cmake)
 else()
-    target_sources(poima_core PRIVATE src/render_smoke_disabled.cpp src/gamepad_disabled.cpp)
+    target_sources(poima_core PRIVATE src/render_smoke_disabled.cpp src/gamepad_disabled.cpp src/hosted_viewport_disabled.cpp)
 endif()
 
 if(POIMA_BUILD_EDITOR)
     include(cmake/editor.cmake)
 else()
     target_sources(poima_core PRIVATE src/editor_disabled.cpp src/editor_viewport_disabled.cpp)
+endif()
+
+if(POIMA_BUILD_DESKTOP_BRIDGE)
+    include(cmake/desktop_bridge.cmake)
 endif()
 
 add_executable(poima src/main.cpp)
