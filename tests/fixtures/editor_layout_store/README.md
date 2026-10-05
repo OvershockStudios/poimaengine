@@ -17,7 +17,7 @@ DOTNET_CLI_HOME="$PWD/.cache/dotnet-home" NUGET_PACKAGES="$PWD/.cache/nuget" \
 Each invocation creates a unique evidence directory containing JSON results and
 test-owned preference files. It never writes default user preferences or game
 projects. Cases cover custom paths, project identities, tree/tab/floating bounds
-round trips, replacing a valid file while an old reader retains its original
+round trips across six panels, Modified Tall presets, version-1 migration that inserts Game beside Scene without rewriting on load, replacing a valid file while an old reader retains its original
 bytes, rejected malformed/unsupported/duplicate/oversize/nonfinite data, and
 preservation of existing bytes after both load and save failures.
 

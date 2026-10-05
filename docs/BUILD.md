@@ -1,8 +1,8 @@
 # Build and use Poima
 
-Poima is an early engine prototype with a native CLI, persistent world editing, shared local sessions, asset import, project packaging and optional simulation, Vulkan rendering and desktop editing. Animation, materials, physics and audio each have a bounded implemented subset. These features are not a production-complete engine; consult [implementation status](IMPLEMENTATION_STATUS.md) for current behavior and limitations.
+Poima is an early game engine designed for humans and agents. Its desktop editor, CLI and external-agent interface share native world editing, asset import, simulation and project packaging services. Animation, materials, physics and audio each have a bounded implemented subset. These features are not a production-complete engine; consult [implementation status](IMPLEMENTATION_STATUS.md) for current behavior and limitations.
 
-Start with the dependency-free headless build below. Add the [fixed-step runtime](RUNTIME.md), [Vulkan scene renderer](SCENE_CAPTURE.md), [C# gameplay host](MANAGED_GAMEPLAY.md), [audio backend](AUDIO.md) or [desktop editor](DESKTOP_EDITOR.md) only when needed. [Native module](NATIVE_MODULE_LAB.md) and [C# gameplay](MANAGED_GAMEPLAY_LAB.md) experiments retain their separate measurements; they are not shipping performance guarantees.
+For the graphical authoring workspace, follow the [desktop editor build](DESKTOP_EDITOR.md#build-and-launch). The dependency-free headless build below is the smallest core-development loop. Build configurations also cover the [fixed-step runtime](RUNTIME.md), [Vulkan scene renderer](SCENE_CAPTURE.md), [C# gameplay host](MANAGED_GAMEPLAY.md) and [audio backend](AUDIO.md). [Native module](NATIVE_MODULE_LAB.md) and [C# gameplay](MANAGED_GAMEPLAY_LAB.md) experiments retain their separate measurements; they are not shipping performance guarantees.
 
 ## Requirements
 
@@ -86,7 +86,7 @@ The native Windows executable is tested through the cross-build route above. Com
 | `poima world <path>` | Persistent JSON-RPC authoring session; see [world service](WORLD_SERVICE.md). Parent directory must exist. |
 | `poima serve <path> --endpoint <name>` | Shared headless world host; see [local sessions](SHARED_SESSIONS.md). |
 | `poima connect <name> [--timeout-ms N]` | NDJSON client for a headless host or live editor. |
-| `poima editor <path> [--endpoint <name>] [options]` | Optional native editor, with local client attachment when an endpoint is supplied. |
+| `poima editor <path> [--endpoint <name>] [options]` | Legacy ImGui editor when built; the current desktop opens through `launch-editor.cmd`. |
 | `poima project ...` / `poima game ...` | Portable project validation/export and native game launch; see [projects and game bundles](PROJECTS.md). |
 | `poima render-smoke [options]` | Optional bounded Vulkan presentation/capture test. Discover limits and defaults with `schema render-smoke`. |
 
@@ -100,7 +100,7 @@ Host memory is the physical memory reported to the current OS/VM, not a process 
 
 ## Testing and local installation
 
-The optional [retained desktop editor](DESKTOP_EDITOR.md) is built with `python3 scripts/build_desktop.py` and opened through `launch-editor.cmd`. It uses C#/Avalonia for controls and a native Vulkan child window for Scene. The older [ImGui editor](EDITOR.md) can be built with `-DPOIMA_BUILD_EDITOR=ON` and opened through `launch-imgui-editor.cmd`. Both are optional and absent from dependency-free headless builds. For an ImGui-enabled executable, add a fourth feature flag to the CLI test: `python tests/cli_contract.py build/windows-runtime/poima.exe 1 1 1`. GUI/GPU integration tests are separate from CTest.
+The [desktop editor](DESKTOP_EDITOR.md) is built with `python3 scripts/build_desktop.py` and opened through `launch-editor.cmd`. It uses C#/Avalonia for controls and independent native Vulkan Scene and Game viewports, sharing one world and simulation. The older [ImGui editor](EDITOR.md) can be built with `-DPOIMA_BUILD_EDITOR=ON` and opened through `launch-imgui-editor.cmd`. Desktop dependencies are restored by the desktop packaging workflow; neither GUI is included in dependency-free headless builds. For an ImGui-enabled executable, add a fourth feature flag to the CLI test: `python tests/cli_contract.py build/windows-runtime/poima.exe 1 1 1`. GUI/GPU integration tests are separate from CTest.
 
 The contract suite runs the compiled executable from an unrelated directory, checks discovery/schemas, malformed requests and JSON escaping, and forces a missing Vulkan manifest through child-process-only environment overrides. It verifies that graphics failure does not break headless discovery. CTest never opens a rendering window. The Windows cross preset disables CTest: run the contract suite with Windows Python so temporary paths and driver environment overrides use Windows semantics:
 

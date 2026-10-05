@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Real Windows desktop + shared service/semantic model qualification.
+"""Historical 0.0.30 single-viewport desktop qualification.
+
+This harness targets the former Scene/Game mode switch. For 0.0.31 and
+later use desktop_dual_frontend.py and desktop_sky.py; independent viewports
+intentionally replace the mode restrictions asserted here.
+
+Real Windows desktop + shared service/semantic model qualification.
 
 Only the owned window is raised for its screenshot, then its topmost state is
 restored. No global input injection. Semantic actions do not qualify physical

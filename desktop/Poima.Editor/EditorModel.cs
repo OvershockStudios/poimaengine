@@ -20,6 +20,7 @@ public sealed class EditorModel : IDisposable
     public event EventHandler? Changed;
     public event EventHandler? PlaybackChanged;
     public event Action? SceneChanging;
+    public event Action? GameCameraChanging;
     public List<EntityRow> Entities { get; } = [];
     public List<string> Log { get; } = [];
     public long Revision { get; private set; }
@@ -38,10 +39,10 @@ public sealed class EditorModel : IDisposable
     public bool Paused => PlaybackState == "paused";
     public string? PlaybackError { get; private set; }
     public string? PlaybackSuspended { get; private set; }
-    public string ViewMode { get; private set; } = "scene";
     public string? GameCamera { get; private set; }
     public IReadOnlyList<CameraChoice> Cameras { get; private set; } = [];
     private string? cameraSource;
+    private bool gameCameraInitialized;
     private string baselineName = "";
     private JsonObject baseline = new();
     private bool refreshing;
@@ -75,8 +76,8 @@ public sealed class EditorModel : IDisposable
         PlaybackState = playback?["state"]?.GetValue<string>() ?? (RuntimeId is null ? "stopped" : "paused");
         PlaybackError = playback?["last_error"]?.GetValue<string>();
         PlaybackSuspended = playback?["suspended"]?.GetValue<string>();
-        ViewMode = Host.State["view"]?["mode"]?.GetValue<string>() ?? "scene";
-        GameCamera = Host.State["view"]?["camera"]?.GetValue<string>();
+        GameCamera = Host.State["views"]?["game"]?["camera"]?.GetValue<string>();
+        gameCameraInitialized |= GameCamera is not null;
     }
     private void RefreshCameras()
     {
@@ -90,6 +91,13 @@ public sealed class EditorModel : IDisposable
             return new CameraChoice(id, label);
         }).ToArray();
         cameraSource = source;
+        if (!gameCameraInitialized && Cameras.Count != 0)
+        {
+            // One initial real camera choice. Later deletions and explicit None
+            // remain visible choices, never silently jump to a different camera.
+            GameCamera = Cameras[0].Id; gameCameraInitialized = true;
+            Host.Call("desktop.game.camera", new() { ["camera"] = GameCamera });
+        }
     }
     public void Refresh()
     {
@@ -267,17 +275,15 @@ public sealed class EditorModel : IDisposable
         Host.Call("desktop.play.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["ticks"] = ticks });
         Host.RefreshState();
     }
-    public void SetView(string mode, string? camera = null)
+    public void SetGameCamera(string? camera)
     {
-        SceneChanging?.Invoke();
-        var parameters = new JsonObject { ["mode"] = mode };
-        if (mode == "game") parameters["camera"] = camera ?? GameCamera ?? Cameras.FirstOrDefault()?.Id
-            ?? throw new InvalidOperationException("Create a Camera before opening Game preview.");
-        Host.Call("desktop.view", parameters); Host.RefreshState();
+        GameCameraChanging?.Invoke();
+        Host.Call("desktop.game.camera", new() { ["camera"] = camera });
+        gameCameraInitialized = true; Host.RefreshState();
     }
     public JsonObject InspectPlayback() => new() { ["state"] = PlaybackState, ["session_id"] = RuntimeId, ["tick"] = Tick,
         ["paused"] = Paused, ["suspended"] = PlaybackSuspended, ["last_error"] = PlaybackError,
-        ["view"] = ViewMode, ["camera"] = GameCamera, ["draft_generation"] = DraftGeneration };
+        ["camera"] = GameCamera, ["draft_generation"] = DraftGeneration };
     public JsonObject InspectDraft() => new() { ["entity"] = Selected, ["name"] = DraftName, ["components"] = DraftComponents.DeepClone(), ["invalid_fields"] = new JsonArray(invalid.Order().Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()), ["dirty"] = Dirty, ["conflict"] = Conflict, ["base_revision"] = BaseRevision, ["revision"] = Revision };
-    public void Dispose() { Host.StateChanged -= HostChanged; SceneChanging = null; }
+    public void Dispose() { Host.StateChanged -= HostChanged; SceneChanging = null; GameCameraChanging = null; }
 }

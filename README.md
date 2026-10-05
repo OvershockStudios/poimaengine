@@ -1,14 +1,14 @@
 # Poima Engine
 
-Poima is an experimental 3D game engine built around a native, headless authoring service. Humans and development agents edit the same world through a documented API; an optional desktop editor provides visual inspection and direct manipulation.
+Poima is an experimental 3D game engine designed for humans and development agents. Its desktop editor and CLI are first-class interfaces to the same native core: both inspect, edit and run the same world through a documented API.
 
-The core and player are C++20. The 3D renderer uses Vulkan. The optional Windows editor uses C#/Avalonia with a native Vulkan viewport, and an experimental C# gameplay integration supports development-time reloads.
+The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and an experimental C# gameplay integration supports development-time reloads. Headless deployments can run without the editor or its managed runtime.
 
-**Status: early development, version 0.0.30.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. New projects now include an editable procedural sky and Sun; desktop Game-view controls and scene settings share the native API with agents. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.31.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
-![Poima desktop editor prototype](docs/evidence/m2-desktop-playback-editor.png)
+![Poima desktop editor with independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
-*The optional desktop prototype. Its native Scene/Game viewport shares world state with CLI clients; this is not a claim of Unity feature parity.*
+*The desktop editor shares world state with CLI clients. Scene and Game can be docked or floated independently; the editor remains an early implementation.*
 
 ## Why a headless core?
 
@@ -21,12 +21,12 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Area | Current implementation |
 | --- | --- |
 | Authoring | Persistent entity hierarchy, typed component operations, atomic transactions, revision guards, durable retry receipts, bounded undo/redo and shared local sessions. |
-| Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
+| Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, procedural sky, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
 | Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, raycasts, moving kinematic objects, editable rigs and animation playback. |
 | Input and player | Native continuous player, keyboard/mouse bindings, gamepad profiles and deterministic scripted input replay. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events and native-player device output. |
-| Desktop | Dockable panels, hierarchy, typed Inspector fields, Project browser, native Scene navigation and transform gizmos; clocked simulation and playable keyboard/mouse Game view. |
+| Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields, Project browser, native navigation and transform gizmos; one clocked simulation with keyboard/mouse Game controls. |
 | Packaging | Project manifests and native game bundles with validated content, runtime files, integrity checks and read-only game launch. |
 
 These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse control, while editor gamepad input and audio output remain unfinished; the separate native player supplies those paths. C# hot reload covers the documented gameplay module, not arbitrary engine-code replacement or a finished console/AOT deployment path.

@@ -31,6 +31,16 @@ POIMA_DESKTOP_API int poima_desktop_attach(void* host,void* hwnd);
 // preparation errors. Authoring stays available; draw never advances physics.
 POIMA_DESKTOP_API int poima_desktop_draw(void* host);
 POIMA_DESKTOP_API void poima_desktop_detach(void* host);
+// Independent panes, using exactly "scene" or "game". Both may be attached and
+// presented simultaneously on the creating thread. Each requires a distinct
+// frontend-owned child HWND; detach the named pane before destroying that HWND.
+// A host using named panes cannot mix the legacy attach/draw/detach ABI with them.
+// Attach is lazy and succeeds without a selected Game camera. Select it through
+// desktop.game.camera. Inspect desktop.inspect.views for each pane's graphics
+// and preparation errors. Draw never pumps IPC or advances the shared simulation.
+POIMA_DESKTOP_API int poima_desktop_attach_view(void* host,const char* view,void* hwnd);
+POIMA_DESKTOP_API int poima_desktop_draw_view(void* host,const char* view);
+POIMA_DESKTOP_API void poima_desktop_detach_view(void* host,const char* view);
 POIMA_DESKTOP_API void poima_desktop_destroy(void* host);
 // Error text is owned by host (or thread-local for NULL/invalid host), not freed
 // by the caller. Exceptions never cross this ABI. There is no cross-thread API.

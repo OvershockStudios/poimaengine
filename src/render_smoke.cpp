@@ -26,6 +26,8 @@
 #include "poima/smoke_ps.hpp"
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+// Compile-time enforcement: every Poima Vulkan-Hpp call supplies its dispatcher.
+#define VULKAN_HPP_NO_DEFAULT_DISPATCHER
 #include <vulkan/vulkan.hpp>
 #include <nvrhi/vulkan.h>
 #include <nvrhi/validation.h>
@@ -42,6 +44,7 @@
 #include <chrono>
 #include <iostream>
 #include <limits>
+#include <mutex>
 #include <stdexcept>
 #include <thread>
 #include <filesystem>
@@ -120,8 +123,51 @@ nvrhi::ShaderHandle create_embedded_shader(nvrhi::IDevice* device, const nvrhi::
     return device->createShader(desc, words.data(), Size);
 }
 
-// A capture or player session owns one graphics lifetime. No concurrent
-// renderer access is supported yet; Vulkan dispatch is process-global.
+// NVRHI's pinned static backend uses Vulkan-Hpp's global dispatcher. Keep it
+// loaded with INSTANCE-derived loader trampolines, never device-specific entry
+// points: these dispatch correctly for every device descended from this shared
+// instance. Poima itself uses an explicit per-Context device dispatcher below.
+// https://docs.vulkan.org/refpages/latest/refpages/source/vkGetInstanceProcAddr.html
+// All windows/renderers remain on one owning UI thread; this is lifetime
+// isolation for interleaved draws, not a cross-thread rendering API.
+struct SharedInstance {
+    vk::detail::DispatchLoaderDynamic dispatch;
+    vk::Instance instance;
+    PFN_vkGetInstanceProcAddr entry;
+    std::vector<std::string> extensions;
+    std::thread::id owner=std::this_thread::get_id();
+
+    SharedInstance(PFN_vkGetInstanceProcAddr get,const char* const* names,std::uint32_t count):entry(get) {
+        for(std::uint32_t i=0;i<count;++i)extensions.emplace_back(names[i]);
+        dispatch.init(get);
+        require(dispatch.vkEnumerateInstanceVersion && vk::enumerateInstanceVersion(dispatch)>=VK_API_VERSION_1_3,
+            "The renderer experiment needs a Vulkan 1.3 loader.");
+        const vk::ApplicationInfo app("Poima",1,"Poima",1,VK_API_VERSION_1_3);
+        vk::InstanceCreateInfo info;
+        info.pApplicationInfo=&app;info.enabledExtensionCount=count;info.ppEnabledExtensionNames=names;
+        instance=vk::createInstance(info,nullptr,dispatch);
+        dispatch.init(instance);
+        // NVRHI_BUILD_SHARED is forced OFF by render_smoke.cmake. Its static
+        // backend does not reinitialize this dispatcher when creating a device.
+        // Assignment occurs only when no previous Context/device remains alive.
+        VULKAN_HPP_DEFAULT_DISPATCHER=dispatch;
+    }
+    ~SharedInstance() { if(instance)instance.destroy(nullptr,dispatch); }
+};
+
+std::shared_ptr<SharedInstance> acquire_instance(PFN_vkGetInstanceProcAddr get,const char* const* names,std::uint32_t count) {
+    static std::mutex mutex;
+    static std::weak_ptr<SharedInstance> active;
+    std::lock_guard lock(mutex);
+    if(auto existing=active.lock()) {
+        require(existing->owner==std::this_thread::get_id(),"Live graphics contexts require their common UI thread.");
+        require(existing->entry==get && existing->extensions.size()==count,"Live graphics contexts require the same Vulkan loader/platform.");
+        for(std::uint32_t i=0;i<count;++i)
+            require(existing->extensions[i]==names[i],"Live graphics contexts require matching Vulkan instance extensions.");
+        return existing;
+    }
+    auto created=std::make_shared<SharedInstance>(get,names,count);active=created;return created;
+}
 struct DrawConstants {
     float model[3][4];
     float normal[3][4];
@@ -180,6 +226,8 @@ std::vector<Vertex> box_vertices() {
 
 struct Context {
     Messages messages;
+    std::shared_ptr<SharedInstance> shared_instance;
+    vk::detail::DispatchLoaderDynamic dispatch;
     bool sdl_initialized = false;
     SDL_Window* window = nullptr;
     vk::Instance instance;
@@ -280,7 +328,7 @@ struct Context {
 
     ~Context() {
         if (device) {
-            try { device.waitIdle(); } catch (...) { /* Preserve the original diagnostic. */ }
+            try { device.waitIdle(dispatch); } catch (...) { /* Preserve the original diagnostic. */ }
         }
         commands = nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;overlay_bindings=nullptr;overlay_layout=nullptr;
@@ -317,14 +365,15 @@ struct Context {
         checked = nullptr;
         native = nullptr;
         if (device) {
-            for (auto semaphore : finished) device.destroySemaphore(semaphore);
-            if (acquired) device.destroySemaphore(acquired);
-            if (timestamp_pool) device.destroyQueryPool(timestamp_pool);
-            if (swapchain) device.destroySwapchainKHR(swapchain);
-            device.destroy();
+            for (auto semaphore : finished) device.destroySemaphore(semaphore,nullptr,dispatch);
+            if (acquired) device.destroySemaphore(acquired,nullptr,dispatch);
+            if (timestamp_pool) device.destroyQueryPool(timestamp_pool,nullptr,dispatch);
+            if (swapchain) device.destroySwapchainKHR(swapchain,nullptr,dispatch);
+            device.destroy(nullptr,dispatch);
         }
-        if (surface) instance.destroySurfaceKHR(surface);
-        if (instance) instance.destroy();
+        if (surface) instance.destroySurfaceKHR(surface,nullptr,dispatch);
+        instance=nullptr;
+        shared_instance.reset(); // Last device/surface is gone before instance and SDL loader teardown.
         if (window) SDL_DestroyWindow(window);
         if (sdl_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
@@ -354,34 +403,28 @@ struct Context {
         require(window != nullptr, std::string("SDL window: ") + SDL_GetError());
         const auto get = reinterpret_cast<PFN_vkGetInstanceProcAddr>(SDL_Vulkan_GetVkGetInstanceProcAddr());
         require(get != nullptr, "SDL could not load the Vulkan entry point.");
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(get);
-        require(vk::enumerateInstanceVersion() >= VK_API_VERSION_1_3, "The renderer experiment needs a Vulkan 1.3 loader.");
         std::uint32_t extension_count = 0;
         const auto extension_names = SDL_Vulkan_GetInstanceExtensions(&extension_count);
         require(extension_names != nullptr, std::string("SDL Vulkan extensions: ") + SDL_GetError());
-        const vk::ApplicationInfo app("Poima", 1, "Poima", 1, VK_API_VERSION_1_3);
-        vk::InstanceCreateInfo instance_info;
-        instance_info.pApplicationInfo = &app;
-        instance_info.enabledExtensionCount = extension_count;
-        instance_info.ppEnabledExtensionNames = extension_names;
-        instance = vk::createInstance(instance_info);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(instance);
+        shared_instance=acquire_instance(get,extension_names,extension_count);
+        instance=shared_instance->instance;
+        dispatch=shared_instance->dispatch;
         VkSurfaceKHR raw_surface = VK_NULL_HANDLE;
         const bool created_surface = SDL_Vulkan_CreateSurface(window, static_cast<VkInstance>(instance), nullptr, &raw_surface);
         require(created_surface,
             std::string("SDL Vulkan surface: ") + SDL_GetError());
         surface = raw_surface;
 
-        const auto devices = instance.enumeratePhysicalDevices();
+        const auto devices = instance.enumeratePhysicalDevices(dispatch);
         int best_score = -1;
         for (std::size_t index = 0; index < devices.size(); ++index) {
             if (options.gpu >= 0 && index != static_cast<std::size_t>(options.gpu)) continue;
             const auto candidate = devices[index];
-            const auto props = candidate.getProperties();
+            const auto props = candidate.getProperties(dispatch);
             const bool is_hardware = props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ||
                 props.deviceType == vk::PhysicalDeviceType::eIntegratedGpu;
             if ((!is_hardware && !options.allow_software) || props.apiVersion < VK_API_VERSION_1_3) continue;
-            const auto extensions = candidate.enumerateDeviceExtensionProperties();
+            const auto extensions = candidate.enumerateDeviceExtensionProperties(nullptr,dispatch);
             const bool swapchain_supported = std::any_of(extensions.begin(), extensions.end(), [](const auto& item) {
                 return std::string_view(item.extensionName.data()) == VK_KHR_SWAPCHAIN_EXTENSION_NAME;
             });
@@ -391,11 +434,11 @@ struct Context {
             features12.pNext = &features13;
             vk::PhysicalDeviceFeatures2 features;
             features.pNext = &features12;
-            candidate.getFeatures2(&features);
+            candidate.getFeatures2(&features,dispatch);
             if (!features12.timelineSemaphore || !features13.synchronization2 || !features13.dynamicRendering) continue;
-            const auto queues = candidate.getQueueFamilyProperties();
+            const auto queues = candidate.getQueueFamilyProperties(dispatch);
             for (std::uint32_t family = 0; family < queues.size(); ++family) {
-                if (!(queues[family].queueFlags & vk::QueueFlagBits::eGraphics) || !candidate.getSurfaceSupportKHR(family, surface)) continue;
+                if (!(queues[family].queueFlags & vk::QueueFlagBits::eGraphics) || !candidate.getSurfaceSupportKHR(family,surface,dispatch)) continue;
                 const int score = props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 30 : (is_hardware ? 20 : 10);
                 if (score > best_score) {
                     best_score = score;
@@ -423,9 +466,9 @@ struct Context {
         device_info.pQueueCreateInfos = &queue_info;
         device_info.enabledExtensionCount = 1;
         device_info.ppEnabledExtensionNames = device_extensions;
-        device = physical.createDevice(device_info);
-        VULKAN_HPP_DEFAULT_DISPATCHER.init(device);
-        queue = device.getQueue(queue_family, 0);
+        device = physical.createDevice(device_info,nullptr,dispatch);
+        dispatch.init(device);
+        queue = device.getQueue(queue_family,0,dispatch);
 
         nvrhi::vulkan::DeviceDesc desc{};
         desc.errorCB = &messages;
@@ -443,7 +486,7 @@ struct Context {
         require(static_cast<bool>(native), "NVRHI device initialization failed.");
         checked = nvrhi::validation::createValidationLayer(native);
 
-        const auto limits = physical.getProperties().limits;
+        const auto limits = physical.getProperties(dispatch).limits;
         const auto requested_samples = samples == 4 ? vk::SampleCountFlagBits::e4 : vk::SampleCountFlagBits::e1;
         require((limits.framebufferColorSampleCounts & requested_samples) && (limits.framebufferDepthSampleCounts & requested_samples),
             "Requested scene MSAA sample count is unavailable on the selected GPU.");
@@ -496,13 +539,13 @@ struct Context {
     }
 
     void prepare_timestamps() {
-        const auto limits=physical.getProperties().limits;
+        const auto limits=physical.getProperties(dispatch).limits;
         diagnostics.timestamp_period_ns=limits.timestampPeriod;
-        diagnostics.timestamp_valid_bits=physical.getQueueFamilyProperties().at(queue_family).timestampValidBits;
+        diagnostics.timestamp_valid_bits=physical.getQueueFamilyProperties(dispatch).at(queue_family).timestampValidBits;
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        timestamp_pool=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,5));
+        timestamp_pool=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,5),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -512,12 +555,12 @@ struct Context {
         return vk::CommandBuffer(static_cast<VkCommandBuffer>(object.pointer));
     }
     void timestamp(std::uint32_t index) {
-        if(timestamp_pool)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index);
+        if(timestamp_pool)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index,dispatch);
     }
     void collect_timestamps(double cpu_interval_ms) {
         if(!timestamp_pool)return;
         std::array<std::uint64_t,5> values{};
-        const auto status=device.getQueryPoolResults(timestamp_pool,0,5,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64);
+        const auto status=device.getQueryPoolResults(timestamp_pool,0,5,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) { ++diagnostics.gpu_samples_dropped;return; }
@@ -538,9 +581,9 @@ struct Context {
         // before replacing it after an authored light or quality edit.
         shadow_ready=false;material_cache.clear();bindings=nullptr;
         shadow_framebuffers.clear();shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_texture=nullptr;
-        const auto limits=physical.getProperties().limits;
+        const auto limits=physical.getProperties(dispatch).limits;
         require(resolution<=limits.maxImageDimension2D && layers<=limits.maxImageArrayLayers,"Shadow texture dimensions are unavailable on this GPU.");
-        const auto flags=physical.getFormatProperties(vk::Format::eD32Sfloat).optimalTilingFeatures;
+        const auto flags=physical.getFormatProperties(vk::Format::eD32Sfloat,dispatch).optimalTilingFeatures;
         require(bool(flags & vk::FormatFeatureFlagBits::eDepthStencilAttachment) && bool(flags & vk::FormatFeatureFlagBits::eSampledImage),"GPU cannot sample D32 shadow maps.");
         nvrhi::TextureDesc td;td.width=resolution;td.height=resolution;td.arraySize=layers;td.dimension=nvrhi::TextureDimension::Texture2DArray;
         td.format=nvrhi::Format::D32;td.isRenderTarget=true;td.isShaderResource=true;td.initialState=nvrhi::ResourceStates::ShaderResource;td.keepInitialState=true;td.debugName="Shadow depth array";
@@ -613,7 +656,7 @@ struct Context {
     }
     void prepare_skin_pipeline() {
         if(skin_pipeline_ready)return;
-        require(bool(physical.getQueueFamilyProperties().at(queue_family).queueFlags & vk::QueueFlagBits::eCompute),"Selected graphics queue cannot run skinning compute.");
+        require(bool(physical.getQueueFamilyProperties(dispatch).at(queue_family).queueFlags & vk::QueueFlagBits::eCompute),"Selected graphics queue cannot run skinning compute.");
         skin_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_skinning_cs);
         skin_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
             .addItem(nvrhi::BindingLayoutItem::PushConstants(0,16))
@@ -902,7 +945,7 @@ struct Context {
 
     bool rebuild(const RenderOptions& options) {
         swapchain_dirty=true;
-        device.waitIdle();
+        device.waitIdle(dispatch);
         commands=nullptr;
         sky_pipeline=nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
@@ -914,10 +957,10 @@ struct Context {
         ui_scene=nullptr;
 #endif
         checked->runGarbageCollection();
-        for(auto semaphore:finished) device.destroySemaphore(semaphore);
+        for(auto semaphore:finished) device.destroySemaphore(semaphore,nullptr,dispatch);
         finished.clear(); initialized.clear();
-        device.destroySemaphore(acquired); acquired=nullptr;
-        device.destroySwapchainKHR(swapchain); swapchain=nullptr;
+        device.destroySemaphore(acquired,nullptr,dispatch); acquired=nullptr;
+        device.destroySwapchainKHR(swapchain,nullptr,dispatch); swapchain=nullptr;
         const auto previous_format=format;
         if(!create_swapchain(options)) { swapchain_dirty=true; return false; }
         if(format!=previous_format) { renderer_fault=true;throw std::runtime_error("Surface format changed; recreate the renderer session."); }
@@ -928,11 +971,11 @@ struct Context {
     }
 
     bool create_swapchain(const RenderOptions& options) {
-        const auto caps = physical.getSurfaceCapabilitiesKHR(surface);
+        const auto caps = physical.getSurfaceCapabilitiesKHR(surface,dispatch);
         // Native minimize/restore can race SDL's queued size notification.
         // Zero surface extent is a suspended window, not a device failure.
         if(caps.currentExtent.width==0 || caps.currentExtent.height==0) return false;
-        const auto formats = physical.getSurfaceFormatsKHR(surface);
+        const auto formats = physical.getSurfaceFormatsKHR(surface,dispatch);
         require(!formats.empty(), "No Vulkan surface formats are available.");
         vk::SurfaceFormatKHR selected;
         nvrhi::Format nvrhi_format = nvrhi::Format::UNKNOWN;
@@ -990,7 +1033,7 @@ struct Context {
         swapchain_info.compositeAlpha = alpha;
         swapchain_info.presentMode = vk::PresentModeKHR::eFifo;
         swapchain_info.clipped = true;
-        swapchain = device.createSwapchainKHR(swapchain_info);
+        swapchain = device.createSwapchainKHR(swapchain_info,nullptr,dispatch);
         nvrhi::TextureDesc texture_desc;
         texture_desc.width = extent.width;
         texture_desc.height = extent.height;
@@ -1027,7 +1070,7 @@ struct Context {
             depth = checked->createTexture(scene_desc);
             require(static_cast<bool>(depth), "Scene depth creation failed.");
         }
-        for (const auto image : device.getSwapchainImagesKHR(swapchain)) {
+        for (const auto image : device.getSwapchainImagesKHR(swapchain,dispatch)) {
             auto texture = checked->createHandleForNativeTexture(nvrhi::ObjectTypes::VK_Image,
                 nvrhi::Object(static_cast<VkImage>(image)), texture_desc);
             require(static_cast<bool>(texture), "NVRHI swapchain image wrapping failed.");
@@ -1051,10 +1094,10 @@ struct Context {
                 require(bool(ui_framebuffer),"Editor UI framebuffer creation failed.");ui_framebuffers.push_back(ui_framebuffer);
             }
 #endif
-            finished.push_back(device.createSemaphore({}));
+            finished.push_back(device.createSemaphore({},nullptr,dispatch));
         }
         initialized.resize(images.size(), false);
-        acquired = device.createSemaphore({});
+        acquired = device.createSemaphore({},nullptr,dispatch);
         if (capture_enabled) {
             texture_desc.isRenderTarget = false;
             staging = checked->createStagingTexture(texture_desc, nvrhi::CpuAccessMode::Read);
@@ -1229,7 +1272,7 @@ struct Context {
         if(!swapchain) { swapchain_dirty=true; return false; }
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL, acquired, {}); }
+        try { next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,acquired,{},dispatch); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
         if((editor || hosted) && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
@@ -1245,7 +1288,7 @@ struct Context {
         auto texture = images.at(index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
         const auto record_started=SteadyClock::now();commands->open();
-        if(timestamp_pool)native_commands().resetQueryPool(timestamp_pool,0,5);
+        if(timestamp_pool)native_commands().resetQueryPool(timestamp_pool,0,5,dispatch);
         timestamp(0);
         if(scene) { commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));dispatch_skinning(); }
         timestamp(1);
@@ -1308,7 +1351,7 @@ struct Context {
         present_info.pSwapchains = &swapchain;
         present_info.pImageIndices = &index;
         vk::Result presented;
-        try { presented=queue.presentKHR(present_info); }
+        try { presented=queue.presentKHR(present_info,dispatch); }
         catch(const vk::OutOfDateKHRError&) { presented=vk::Result::eErrorOutOfDateKHR; }
         swapchain_dirty = next.result==vk::Result::eSuboptimalKHR || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR;
         require(presented == vk::Result::eSuccess || presented == vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR,

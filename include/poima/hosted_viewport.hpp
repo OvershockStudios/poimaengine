@@ -11,7 +11,9 @@ namespace poima {
 // Windows-first native child-window surface, independent of ImGui. The caller
 // owns the HWND and must destroy this viewport before destroying that window.
 // Construct, draw, resize, inspect and destroy on the HWND's owning thread.
-// Only one graphics lifetime may be active: Vulkan dispatch is process-global.
+// Multiple viewports may coexist and interleave draws on the same UI thread.
+// They share an instance/loader lifetime but own separate Vulkan devices,
+// swapchains and resources; destroying one does not invalidate the others.
 class HostedViewport {
     struct Impl;
     std::unique_ptr<Impl> impl_;

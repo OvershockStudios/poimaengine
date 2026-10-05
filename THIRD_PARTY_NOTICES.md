@@ -1,8 +1,8 @@
 # Third-party notices
 
-## Optional retained desktop frontend
+## Desktop editor
 
-`desktop/Poima.Editor/packages.lock.json` pins the Avalonia 12.1.3 and Dock 12.1.0.6 dependency graph. The Windows desktop package uses a self-contained .NET runtime, Skia/HarfBuzz and Inter 4.1. The older ImGui frontend retains Source Sans 3. These dependencies belong to the optional frontend; native headless builds do not restore them. `scripts/build_desktop.py` collects resolved package licenses, runtime/apphost notices and the font license into the desktop payload. Packages that provide only an SPDX expression are supplemented by unchanged upstream license texts pinned to their package source commits in `third_party/desktop_notices/provenance.json`. The package manifest records payload and notice hashes; this inventory is not console or clean-machine distribution qualification.
+`desktop/Poima.Editor/packages.lock.json` pins the Avalonia 12.1.3 and Dock 12.1.0.6 dependency graph. The Windows desktop package uses a self-contained .NET runtime, Skia/HarfBuzz and Inter 4.1. The older ImGui frontend retains Source Sans 3. These dependencies support Poima’s first-class desktop editor. They are restored by the desktop build; native headless configurations do not require them. `scripts/build_desktop.py` collects resolved package licenses, runtime/apphost notices and the font license into the desktop payload. Packages that provide only an SPDX expression are supplemented by unchanged upstream license texts pinned to their package source commits in `third_party/desktop_notices/provenance.json`. The package manifest records payload and notice hashes; this inventory is not console or clean-machine distribution qualification.
 
 Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 
@@ -100,15 +100,15 @@ The optional main-engine integration (`POIMA_ENABLE_MANAGED_GAMEPLAY`) now uses 
 - `POIMA_ENABLE_AUDIO` links the selected native Windows/Linux x64 library. Installation includes that library plus the full license and third-party notices under `share/poima/licenses/SteamAudio`. Other SDK platforms/tools are not included in the engine installation.
 - Use: native CPU direct-path propagation and HRTF output for authored/runtime audio snapshots, with event mixing and optional native-player device output. Reflections/pathing and console qualification remain unfinished.
 
-## Dear ImGui (optional native editor)
+## Dear ImGui (legacy editor build)
 
 - Source: [Dear ImGui v1.91.9b-docking](https://github.com/ocornut/imgui/releases/tag/v1.91.9b-docking), pinned commit `52fe0a05a7b1aa180a202bb24f0f2a049a9c1b7d`.
 - Archive SHA-256: `84196b24c66cd3be22cb0b313ef70941481238ec33e595401b07976baeb7c3db`.
 - License: MIT; upstream `LICENSE.txt` is installed in `share/poima/licenses/DearImGui`. Core/widgets/drawing/tables and the upstream SDL3 input backend are unmodified. Poima supplies its own NVRHI rendering integration.
 - Fetched only with `POIMA_BUILD_EDITOR=ON`. This pinned static-font API baseline is an explicit integration choice, not a claim to use the newest upstream release. It does not provide the shipped-game UI/accessibility framework.
 
-## Source Sans 3 (optional native editor)
+## Source Sans 3 (legacy editor build)
 
 - Source: [Adobe Source Sans 3 release 3.052R](https://github.com/adobe-fonts/source-sans/releases/tag/3.052R), commit `ed1808970eb3c7301c9a523bee26473ba0bb62fa`.
 - License: SIL Open Font License 1.1; unmodified Regular and Semibold TTF files and the complete license are retained under `third_party/source_sans`. Provenance and hashes are in that directory's README. The license is installed in `share/poima/licenses/SourceSans3`.
-- Fonts are embedded only in editor-enabled builds. Rasterized at runtime through Dear ImGui's font atlas; no Inter font is included.
+- These fonts are embedded in ImGui-enabled builds and rasterized through Dear ImGui's font atlas. The Avalonia desktop editor uses the separately inventoried Inter fonts above.

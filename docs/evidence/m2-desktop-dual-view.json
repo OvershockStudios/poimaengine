@@ -1,0 +1,362 @@
+{
+  "milestone": "M2 independent Scene and Game editor views",
+  "version": "0.0.31",
+  "date": "2026-10-04",
+  "source_base": "e3b374e8b1f270a0866e0ef204c294d00cc43b11",
+  "sources": {
+    "CMakeLists.txt": "1b2d120359b2730092f5537f122f30140b227a6d4166ea2f34ccb4ed2bfe4405",
+    "desktop/Poima.Editor/App.cs": "45d84a2ec30480d31f2b1391541871b3d07517f47b22c906fc489e1280a1c3ed",
+    "desktop/Poima.Editor/DesktopScript.cs": "9cf2cbbdd97dcb8901eacec573019bcb601e0145e71276f829984ed6b70ba07d",
+    "desktop/Poima.Editor/EditorDockFactory.cs": "ec3d7d3ea881554d8f841b928fc99b3df77fc1ff7b05f3904b1bce2e3a830236",
+    "desktop/Poima.Editor/EditorLayoutStore.cs": "81ce6897b1b057d049ccfb574a734b0bd7a5000eb4edfaf99df0e9b82ea5d776",
+    "desktop/Poima.Editor/EditorModel.cs": "868756b6112c4bdf7f9d92d0f81edf5fa3ad108fb3e5260122bf8a7b8c08426b",
+    "desktop/Poima.Editor/GameInput.cs": "b13779c4568b479fcc2a8398c3efe38004aff8ee152722c96c2a696fe892d789",
+    "desktop/Poima.Editor/MainWindow.cs": "7eb13e2162560411c7baba65f704cf20f22401e2aeff54160a652e53179d661a",
+    "desktop/Poima.Editor/NativeHost.cs": "81b46518876150276053536e826acab38fcbe5ad4a48830e15b521d723584200",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "e7588c01110dcb9a279b631d3d71ecb5ca58752fe00bf55de7a564f9c3fcc06a",
+    "desktop/Poima.Editor/SceneNavigation.cs": "bcd0ea58d149d24b859321a39ef7c82c3a3b51c899e025af76d28150045e0783",
+    "include/poima/desktop_bridge.h": "3cb2ea21a1a71125ef5a9577257abb8cb3dc216c54dedc4c69978a3ee75d55a9",
+    "include/poima/hosted_viewport.hpp": "b052ef4037070862dd5c2dc5957aa3c602b37644c05fa1166dd1d901b72aa529",
+    "src/desktop_bridge.cpp": "46f9faee6b2580b93d5a504b0799e09c3456181df23c760cb44566477d85e00a",
+    "src/render_smoke.cpp": "88251aeb1124ed9f380227edbcf430d72817d29f87dc7d529ff4857a22ce31b2",
+    "tests/desktop_dual_frontend.py": "4004f5515192d5e8eb380e397402700d9cbf0e0c45c47f5aa1a4bb8eccebd325",
+    "tests/desktop_dual_view.py": "626281b14a82bad849abad1a46cc1cf07b7565fcb86a2c99a45ab6ab8e08ec8b",
+    "tests/desktop_sky.py": "87dc04165e43e16484697140496ff7784a6301dc5f5e83142fed6bbd97dd03b1",
+    "tests/fixtures/editor_layout_store/Program.cs": "bbc680307e45d4db453f9c6bc2e07dfa2d2d815c11f7ea5389db0bfd4ee1468c",
+    "tests/sky_capture.py": "075cfd13821e599bbbbfde5486bf6544bb72d243c7f1b435049d2319a358f4b2"
+  },
+  "binaries": {
+    "build/windows-runtime/poima.exe": "9b7f413a85d45379f2c6fd3f725df2b1c06d448930d703390da134adc55af28d",
+    "build/windows-runtime/poima_desktop.dll": "f5310d3731e1dccfae388765e3a865069e096bb791b6d3adfd2997897bb4073e",
+    "build/runtime-headless/poima": "e0adccedbd8d39fed543ddace0770f3b3879525fa4f8c565603438c38c4ac146",
+    "build/desktop-dual-view/Poima.Editor.dll": "9a7a7076c60e2fd961a5c2e7f4f0e923796545c33c10c0d674295aafffd2d147"
+  },
+  "native_headless": {
+    "artifact": "build/dual-view-headless/run-593e1f9917b44336988c4b82324c2a56/result.json",
+    "sha256": "50f080e73d829df01c83d06a71dc80c081c35432f76793df8cbad8e41e79b42a",
+    "checks": [
+      "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+      "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+      "deleted_game_camera_local_recoverable_scene_remains_available"
+    ],
+    "passed": true
+  },
+  "native_gpu": [
+    {
+      "artifact": "build/dual-view-gpu1-s1/run-92f3319f3ca84df7ab1e852de9a755d3/result.json",
+      "sha256": "59223f6067db7b63306c0784ebf020c91a5a0b8ff00f9dc509bcacd8682bbf10",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "simultaneous_alternating_device_presentation_distinct_camera_pixels",
+        "capture_capacity_and_target_only_completion_camera_selection_guards",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "device_and_shared_instance_teardown_recreation_in_both_orders",
+        "independent_resize_hide_restore",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "passed": true,
+      "gpu": 1,
+      "samples": 1,
+      "views": {
+        "game": {
+          "frames_presented": 14,
+          "nvrhi_errors": 0
+        },
+        "scene": {
+          "frames_presented": 16,
+          "nvrhi_errors": 0
+        }
+      }
+    },
+    {
+      "artifact": "build/dual-view-gpu1-s4/run-7e877af440e94221a757ba99d7982973/result.json",
+      "sha256": "51b43e4ae2b51f40b819daff27d9a6f80d3e7f7fd0685d4646f46881636bb7ff",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "simultaneous_alternating_device_presentation_distinct_camera_pixels",
+        "capture_capacity_and_target_only_completion_camera_selection_guards",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "device_and_shared_instance_teardown_recreation_in_both_orders",
+        "independent_resize_hide_restore",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "passed": true,
+      "gpu": 1,
+      "samples": 4,
+      "views": {
+        "game": {
+          "frames_presented": 14,
+          "nvrhi_errors": 0
+        },
+        "scene": {
+          "frames_presented": 16,
+          "nvrhi_errors": 0
+        }
+      }
+    },
+    {
+      "artifact": "build/dual-view-gpu0-s1/run-e8cd0d1415854cadb8154671be520501/result.json",
+      "sha256": "c291c35942a1839e00614c2cc1e77b0faafa0c3f8ddf2541f546fc16202a3f24",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "simultaneous_alternating_device_presentation_distinct_camera_pixels",
+        "capture_capacity_and_target_only_completion_camera_selection_guards",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "device_and_shared_instance_teardown_recreation_in_both_orders",
+        "independent_resize_hide_restore",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "passed": true,
+      "gpu": 0,
+      "samples": 1,
+      "views": {
+        "game": {
+          "frames_presented": 14,
+          "nvrhi_errors": 0
+        },
+        "scene": {
+          "frames_presented": 16,
+          "nvrhi_errors": 0
+        }
+      }
+    },
+    {
+      "artifact": "build/dual-view-gpu0-s4/run-f979593e73174828953ca13d78656863/result.json",
+      "sha256": "43587fadf0bd41224b46930938d9cc003a4ca45cebc4bc7e5f46ec7abad55964",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "simultaneous_alternating_device_presentation_distinct_camera_pixels",
+        "capture_capacity_and_target_only_completion_camera_selection_guards",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "device_and_shared_instance_teardown_recreation_in_both_orders",
+        "independent_resize_hide_restore",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "passed": true,
+      "gpu": 0,
+      "samples": 4,
+      "views": {
+        "game": {
+          "frames_presented": 14,
+          "nvrhi_errors": 0
+        },
+        "scene": {
+          "frames_presented": 16,
+          "nvrhi_errors": 0
+        }
+      }
+    }
+  ],
+  "layout_storage": [
+    {
+      "platform": "Linux",
+      "tests": 28,
+      "failures": 0,
+      "assembly_sha256": "250983ec0ded991d41b283d348f0c7ea95afb2749848e975098fbfd0153fdd79",
+      "artifact_sha256": "65f0f8a92e51168b369021534f8ef142a83bf0e09bad05373ca5688324eb7287"
+    },
+    {
+      "platform": "Windows",
+      "tests": 28,
+      "failures": 0,
+      "assembly_sha256": "c596563c3c82e70037539b2df0ba61c74eacdc194cf52bf2200060a97c60f6e2",
+      "artifact_sha256": "3c6e2cff4d460319dae941d2414c53df9972d210af3ee03335570456c924db30"
+    }
+  ],
+  "legacy_headless_regressions": [
+    {
+      "artifact": "build/dual-legacy-bridge/run-b3f2f43513db432ba7e517f6865ddd8f/result.json",
+      "sha256": "1c8c38e981250908bcf72069a2000452d75563a34f91813654d411ccf687f4c4",
+      "checks": [
+        "No graphics at create; unchanged polling and unattached draw; duplicate/invalid handle rejection.",
+        "Discoverable JSON-RPC methods, malformed request/notification behavior, shared-owner/graphics restrictions.",
+        "Off-thread calls reject without transferring WorldSession ownership or mutating state.",
+        "Independent CLI process shares authoritative revision/entities and stale edits remain atomic.",
+        "Camera patches validate before mutation; unavailable captures/invalid HWND preserve authoring.",
+        "GPU-independent picking: nearest visible geometry, no-hit, top-left coordinates, true triangle/rotated-box intersections, clipping and strict atomic guards.",
+        "Framing combines visible descendants, respects aspect/clipping, preserves orientation, supports non-rendered entities and never edits world bytes.",
+        "Runtime picking/framing uses frozen geometry and hierarchy after authored deletion/reparenting without advancing ticks.",
+        "GPU-independent skin picking follows edited joint poses and excludes obsolete rest geometry.",
+        "Host destruction releases writer ownership and endpoint; frontend HWND survives; committed edits survive reopen."
+      ],
+      "passed": true
+    },
+    {
+      "artifact": "build/dual-legacy-gizmo/run-27d861b031b64609b7832a2705f79ac5/result.json",
+      "sha256": "647547c0b7fa28e2edb63d7b8285ba760589bc255af584b125f3513e21bfe81d",
+      "checks": [
+        "Strict schemas, stale begin and handle misses preserve authored state without graphics initialization.",
+        "No-movement commit creates no revision, history entry or storage write.",
+        "Preview/cancel leaves storage/history untouched; snapped commit produces one undo entry with idempotent retry, undo and redo.",
+        "A valid unparented world rotation produces a normalized preview without changing position/scale or authored storage.",
+        "Camera, selection, tool configuration, authored revision and runtime transitions invalidate pending gestures without committing previews.",
+        "Parent-affine world movement converts to local TRS; sheared world rotation rejects atomically; local axis scale preserves positive other axes."
+      ],
+      "passed": true
+    },
+    {
+      "artifact": "build/dual-legacy-playback/run-ae0d450c8a36420689d1894f744e8fcd/result.json",
+      "sha256": "c3b4c29792cf605c4d2de958e62f9dfe6a864a8082f6a59125a63daf543d99ee",
+      "checks": [
+        "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+        "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+        "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+        "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+        "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+        "A genuine animation sampling failure rolls back the entire batch, pauses playback, exposes the error, and preserves authored bytes/history."
+      ],
+      "passed": true
+    },
+    {
+      "artifact": "build/dual-legacy-input/run-72866917433f41e6b5341f49c34f4f6f/result.json",
+      "sha256": "d42320652909b4d7360f334cf5d26717d27f3206487d62e7d84ba8c80a78b847",
+      "checks": [
+        "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+        "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+        "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+        "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+        "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+        "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+        "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+      ],
+      "passed": true
+    }
+  ],
+  "linux_ctest": {
+    "tests": 29,
+    "failures": 0,
+    "seconds": 97.0,
+    "artifact_sha256": "f85a02ecb974bcd2ec2509ce7e5907367b56e2e942b3e0249b3859c95b2b2494"
+  },
+  "sky_regression": [
+    {
+      "gpu": 1,
+      "passed": true,
+      "captures": 44,
+      "samples": [
+        1,
+        4
+      ],
+      "binary_sha256": "9b7f413a85d45379f2c6fd3f725df2b1c06d448930d703390da134adc55af28d",
+      "test_sha256": "075cfd13821e599bbbbfde5486bf6544bb72d243c7f1b435049d2319a358f4b2",
+      "artifact_sha256": "1fd0ec220a8c733cf0615e75cf7106c13566fa4eee8451e0693d95f94bcc1eaf"
+    },
+    {
+      "gpu": 0,
+      "passed": true,
+      "captures": 44,
+      "samples": [
+        1,
+        4
+      ],
+      "binary_sha256": "9b7f413a85d45379f2c6fd3f725df2b1c06d448930d703390da134adc55af28d",
+      "test_sha256": "075cfd13821e599bbbbfde5486bf6544bb72d243c7f1b435049d2319a358f4b2",
+      "artifact_sha256": "c45bb0e297cabe3e9118e01e9e18c22dc43ba48bb83df0e87d2e88419000d2f6"
+    }
+  ],
+  "desktop": [
+    {
+      "gpu": 1,
+      "passed": true,
+      "scripted_actions": 97,
+      "restart_actions": 3,
+      "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "font_resolved": "Inter",
+      "render_scaling": 1.25,
+      "editor_sha256": "9a7a7076c60e2fd961a5c2e7f4f0e923796545c33c10c0d674295aafffd2d147",
+      "test_sha256": "4004f5515192d5e8eb380e397402700d9cbf0e0c45c47f5aa1a4bb8eccebd325",
+      "artifact_sha256": "b206724ee723c41846142d0ce18139b45de18c87502881320e1661b923c78978",
+      "captures": {
+        "scene-final.bmp": "a1f22592d7b1e5ae486e2fba5e790fea66be95606abccd7bd6eedbf3180535ed",
+        "game-final.bmp": "96f6dc0ba799f7c7dd3803710c13bafc767b561bb096061b6e4ce5f3cd844791",
+        "window.png": "10e0c2fc09a81ade1f29bae2fa76bc55d54eb70950f024f3515948409afd9891"
+      },
+      "native_views": {
+        "game": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "frames_presented": 316,
+          "nvrhi_errors": 0
+        },
+        "scene": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "frames_presented": 343,
+          "nvrhi_errors": 0
+        }
+      }
+    },
+    {
+      "gpu": 0,
+      "passed": true,
+      "scripted_actions": 97,
+      "restart_actions": 3,
+      "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "font_resolved": "Inter",
+      "render_scaling": 1.25,
+      "editor_sha256": "9a7a7076c60e2fd961a5c2e7f4f0e923796545c33c10c0d674295aafffd2d147",
+      "test_sha256": "4004f5515192d5e8eb380e397402700d9cbf0e0c45c47f5aa1a4bb8eccebd325",
+      "artifact_sha256": "4a8917ff04fdd6cc3dc08ed38ebbbaf42f3703ad0baaa3e13ef6fbabce837769",
+      "captures": {
+        "scene-final.bmp": "1647302a0d2a2ceefaf4f27c44bc84a023a90dc866bc0389ec07eef434470fd2",
+        "game-final.bmp": "0fedb157dee29cebc3c97e00d5af5d8f0a56f0ccd2d388dd9ad148937636698e",
+        "window.png": "08add2a225816875cf440d6a40c9df00364fc02b1e89e43da79eb59f64695bb4"
+      },
+      "native_views": {
+        "game": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "frames_presented": 299,
+          "nvrhi_errors": 0
+        },
+        "scene": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "frames_presented": 326,
+          "nvrhi_errors": 0
+        }
+      }
+    }
+  ],
+  "sky_editor": [
+    {
+      "gpu": 1,
+      "passed": true,
+      "scripted_actions": 60,
+      "editor_sha256": "9a7a7076c60e2fd961a5c2e7f4f0e923796545c33c10c0d674295aafffd2d147",
+      "test_sha256": "87dc04165e43e16484697140496ff7784a6301dc5f5e83142fed6bbd97dd03b1",
+      "artifact_sha256": "103ee28742dc9c3ebf5fba31b177f541eeee615ada8bfecca84ab30c3449c3b5"
+    },
+    {
+      "gpu": 0,
+      "passed": true,
+      "scripted_actions": 60,
+      "editor_sha256": "9a7a7076c60e2fd961a5c2e7f4f0e923796545c33c10c0d674295aafffd2d147",
+      "test_sha256": "87dc04165e43e16484697140496ff7784a6301dc5f5e83142fed6bbd97dd03b1",
+      "artifact_sha256": "7ef4978f99762072c45e1ad8ae93ca00074f4c143a83583348ad0d71d5a3de6e"
+    }
+  ],
+  "desktop_checks": [
+    "Separate visible Scene and Game HWNDs render independently; navigating Scene preserves exact Game image bytes.",
+    "Real native character move/jump/look from semantic Game messages leaves the Scene camera unchanged.",
+    "Focus/Pause/resize/floating release held controls; shared stepping presents the same simulation tick in both panes.",
+    "Deleted or absent Game camera hides stale pixels; Scene continues presenting and repaired Game recovers.",
+    "Floating both panes, restoring layouts and a fresh-process restart preserve native state and authored content.",
+    "Narrow Inspector vector/color fields retain usable widths; existing sky editing verifies draft/Apply/Undo behavior."
+  ],
+  "screenshot": {
+    "path": "m2-desktop-dual-view.png",
+    "sha256": "10e0c2fc09a81ade1f29bae2fa76bc55d54eb70950f024f3515948409afd9891",
+    "source": "Final NVIDIA dual-view run, actual owned editor client area; visually inspected on both tested GPUs."
+  },
+  "limitations": [
+    "Correctness fixtures on one Windows laptop with NVIDIA RTX 4070 Laptop and AMD Radeon integrated graphics; not game-scale performance or broad hardware qualification.",
+    "GUI input is scoped synthetic HWND messages and relative-motion events; physical mouse capture, input feel, IME, accessibility and multi-display/DPI behavior require further qualification.",
+    "Both viewports own separate Vulkan devices/resources and render serially on the creating UI thread. One shared owner poll drives simulation; no concurrent-rendering or latency claim.",
+    "Full device-loss recovery and Khronos Vulkan validation are not qualified; recorded zero-error counts are NVRHI diagnostics.",
+    "The full profiler, Scene orientation widget, camera frustums and component visualization are planned; this milestone adds independent panels and layout behavior."
+  ],
+  "observations": [
+    "An earlier sky GUI run changed selection before its final capture; the cause was not established. Its local evidence was retained as failed on review. The strengthened harness asserts native and Inspector selection at both final capture stages; both final GPU reruns passed without a production binary change."
+  ]
+}

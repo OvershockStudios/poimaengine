@@ -1,10 +1,10 @@
-# Native editor
+# Legacy ImGui editor
 
-Poima currently has two optional frontends: the Dear ImGui editor documented here, and an [Avalonia/Dock desktop prototype](DESKTOP_EDITOR.md) evaluating a retained Unity-inspired workspace with native floating windows. Both share the native world service. Their controls, capture APIs and qualification results differ; this page describes only the ImGui frontend.
+Poima is designed for humans and agents, with a first-class [Avalonia/Dock desktop editor](DESKTOP_EDITOR.md) and a shared native authoring service. This page documents the older Dear ImGui frontend retained for development and regression qualification. Its controls, capture APIs and evidence differ from the current desktop editor.
 
-Poima provides an optional native authoring window over the same world service used by the CLI. The engine owns entities, validation, revision guards, persistence, undo and runtime state. The editor owns selection, panel layout and its inspection camera. It does not spawn a CLI process for edits.
+Both editors use the native world service directly. The engine owns entities, validation, revision guards, persistence, undo and runtime state; the frontend owns its workspace and unfinished Inspector drafts. Neither needs to spawn a CLI process for edits. Headless builds remain supported independently of either GUI.
 
-The current Dear ImGui interface is a functional prototype. Its visual design is not the production target; a retained desktop frontend is being evaluated for the Unity-like authoring experience.
+For current Scene/Game panels, Modified Tall layouts, transform gizmos and keyboard/mouse Game input, use the desktop guide. The limitations below describe this legacy frontend and must not be read as the current desktop feature list.
 
 ## Build and open
 
@@ -23,7 +23,7 @@ build\windows-runtime\poima.exe editor projects\sandbox\world.json
 
 The parent directory must exist. Successful authoring edits are persisted immediately; opening an empty project or navigating the viewport does not create authored entities. Use `--endpoint <name>` and `poima connect <name>` to attach agents while the editor remains open. The editor retains the cooperative world lock; clients share its revision/history state. See [shared local sessions](SHARED_SESSIONS.md).
 
-`POIMA_BUILD_EDITOR` defaults to `OFF` and requires the Vulkan renderer. Headless builds do not download Dear ImGui or acquire GUI dependencies. This is an optional build boundary; a general engine package manager is still planned.
+`POIMA_BUILD_EDITOR` defaults to `OFF` and requires the Vulkan renderer. Headless builds do not download Dear ImGui or acquire GUI dependencies. This flag selects the legacy frontend; the Avalonia desktop is built separately.
 
 ## First workflows
 

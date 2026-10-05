@@ -31,7 +31,7 @@ EditorLayoutDocument Fixture() => new(
     new EditorSplitLayout(1, "horizontal", new EditorLayoutNode[] {
         new EditorTabLayout(.3, new[] { "Hierarchy" }, "Hierarchy"),
         new EditorSplitLayout(.7, "vertical", new EditorLayoutNode[] {
-            new EditorTabLayout(.8, new[] { "Scene" }, "Scene"),
+            new EditorTabLayout(.8, new[] { "Scene", "Game" }, "Scene"),
             new EditorTabLayout(.2, new[] { "Inspector", "Project" }, "Project") }) }),
     new[] { new EditorFloatingLayout(new EditorTabLayout(1, new[] { "Console" }, "Console"), new(-1200, 120, 640, 480)) });
 JsonObject Encoded() => EditorLayoutStore.Encode(Fixture());
@@ -71,7 +71,7 @@ Case("round-trip-custom-path", folder => {
 });
 Case("replace-existing-valid-file", folder => {
     var store = Store(folder); Check(store.TrySave(Fixture(), out var firstError), firstError ?? "Initial save failed.");
-    var replacement = new EditorLayoutDocument(new EditorTabLayout(1, new[] { "Console", "Scene", "Hierarchy", "Project", "Inspector" }, "Scene"), Array.Empty<EditorFloatingLayout>());
+    var replacement = new EditorLayoutDocument(new EditorTabLayout(1, new[] { "Console", "Scene", "Game", "Hierarchy", "Project", "Inspector" }, "Scene"), Array.Empty<EditorFloatingLayout>());
     Check(store.TrySave(replacement, out var saveError), saveError ?? "Replacement failed.");
     Check(store.TryLoad(out var restored, out var loadError) && restored is not null, loadError ?? "Replacement could not be loaded.");
     Check(JsonNode.DeepEquals(EditorLayoutStore.Encode(replacement), EditorLayoutStore.Encode(restored!)), "Existing preference file was not replaced completely.");
@@ -81,7 +81,7 @@ Case("atomic-replace-open-reader", folder => {
     var store = Store(folder); Check(store.TrySave(Fixture(), out var firstError), firstError ?? "Initial save failed.");
     var original = File.ReadAllBytes(store.FilePath);
     using var reader = new FileStream(store.FilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-    var replacement = new EditorLayoutDocument(new EditorTabLayout(1, new[] { "Console", "Scene", "Hierarchy", "Project", "Inspector" }, "Scene"), Array.Empty<EditorFloatingLayout>());
+    var replacement = new EditorLayoutDocument(new EditorTabLayout(1, new[] { "Console", "Scene", "Game", "Hierarchy", "Project", "Inspector" }, "Scene"), Array.Empty<EditorFloatingLayout>());
     Check(store.TrySave(replacement, out var saveError), saveError ?? "Replacement failed.");
     Check(store.TryLoad(out var restored, out var loadError) && restored is not null, loadError ?? "Replacement could not be loaded.");
     Check(JsonNode.DeepEquals(EditorLayoutStore.Encode(replacement), EditorLayoutStore.Encode(restored!)), "Target path did not contain the complete replacement.");
@@ -93,8 +93,57 @@ Case("all-panels-floating", folder => {
     var store = Store(folder);
     var layout = new EditorLayoutDocument(null, EditorLayoutStore.PanelNames.Select((panel, i) => new EditorFloatingLayout(new EditorTabLayout(1, new[] { panel }, panel), new(i*20, i*30, 500, 300))).ToArray());
     Check(store.TrySave(layout, out var error), error ?? "All-floating save failed.");
-    Check(store.TryLoad(out var restored, out error) && restored is not null && restored.Main is null && restored.Floating.Count == 5, error ?? "All-floating layout was not restored.");
+    Check(store.TryLoad(out var restored, out error) && restored is not null && restored.Main is null && restored.Floating.Count == 6, error ?? "All-floating layout was not restored.");
 });
+Case("tall-presets-round-trip", folder => {
+    foreach (var split in new[] { false, true })
+    {
+        var layout = EditorLayoutStore.TallLayout(split);
+        EditorLayoutStore.Validate(layout);
+        var columns = (EditorSplitLayout)layout.Main!;
+        Check(columns.Orientation == "horizontal" && columns.Children.Count == 2, "Modified Tall needs views on the left and authoring panels on the right.");
+        var right = (EditorSplitLayout)columns.Children[1];
+        var upper = (EditorSplitLayout)right.Children[0];
+        Check(right.Orientation == "vertical" && upper.Orientation == "horizontal"
+            && ((EditorTabLayout)upper.Children[0]).Panels.SequenceEqual(new[] { "Hierarchy" })
+            && ((EditorTabLayout)upper.Children[1]).Panels.SequenceEqual(new[] { "Inspector" })
+            && ((EditorTabLayout)right.Children[1]).Panels.Contains("Project"), "Modified Tall must place Hierarchy and Inspector above a shared-width Project panel.");
+        if (split)
+        {
+            var views = (EditorSplitLayout)columns.Children[0];
+            Check(views.Orientation == "vertical" && ((EditorTabLayout)views.Children[0]).Active == "Scene"
+                && ((EditorTabLayout)views.Children[1]).Active == "Game", "Split Tall must display Scene and Game simultaneously.");
+        }
+        else Check(((EditorTabLayout)columns.Children[0]).Panels.SequenceEqual(new[] { "Scene", "Game" }), "Tall needs separate Scene and Game tabs on the left.");
+        var store = Store(Path.Combine(folder, split ? "split" : "tabs"));
+        Check(store.TrySave(layout, out var error) && store.TryLoad(out var restored, out error)
+            && JsonNode.DeepEquals(EditorLayoutStore.Encode(layout), EditorLayoutStore.Encode(restored!)), error ?? "Tall round trip failed.");
+    }
+});
+Case("legacy-layout-migration-without-load-write", folder => {
+    var legacy = Encoded(); legacy["version"] = 1;
+    legacy["main"]!["children"]![1]!["children"]![0]!["panels"]!.AsArray().RemoveAt(1);
+    var store = Store(folder); Directory.CreateDirectory(Path.GetDirectoryName(store.FilePath)!);
+    var bytes = Encoding.UTF8.GetBytes(legacy.ToJsonString()); File.WriteAllBytes(store.FilePath, bytes);
+    Check(store.TryLoad(out var migrated, out var error) && migrated is not null, error ?? "Legacy load failed.");
+    Check(File.ReadAllBytes(store.FilePath).AsSpan().SequenceEqual(bytes), "Migration wrote preferences while loading.");
+    Check(JsonNode.DeepEquals(EditorLayoutStore.Encode(Fixture()), EditorLayoutStore.Encode(migrated!)), "Migration changed existing layout topology, active tabs, proportions or bounds.");
+    Check(store.TrySave(migrated!, out error), error ?? "Migrated save failed.");
+    Check(JsonNode.Parse(File.ReadAllBytes(store.FilePath))!["version"]!.GetValue<int>() == 2, "Normal save did not promote the migrated layout to version 2.");
+});
+Case("legacy-floating-scene-migration", folder => {
+    var legacy = EditorLayoutStore.Encode(new EditorLayoutDocument(null,
+        EditorLayoutStore.PanelNames.Where(panel => panel != "Game").Select((panel, i) =>
+            new EditorFloatingLayout(new EditorTabLayout(1, new[] { panel }, panel), new(i*20, i*30, 500, 300))).ToArray()));
+    legacy["version"] = 1; var store = Store(folder); Directory.CreateDirectory(Path.GetDirectoryName(store.FilePath)!);
+    File.WriteAllText(store.FilePath, legacy.ToJsonString());
+    Check(store.TryLoad(out var migrated, out var error) && migrated is not null && migrated.Main is null
+        && migrated.Floating.Count == 5, error ?? "Floating legacy migration failed.");
+    var scene = migrated!.Floating.Single(window => ((EditorTabLayout)window.Content).Panels.Contains("Scene"));
+    Check(((EditorTabLayout)scene.Content).Panels.SequenceEqual(new[] { "Scene", "Game" })
+        && ((EditorTabLayout)scene.Content).Active == "Scene" && scene.Bounds == new EditorFloatBounds(20, 30, 500, 300), "Floating migration moved a window or changed its active tab.");
+});
+RejectedJson("legacy-version-rejects-six-panels", json => json["version"] = 1);
 Case("default-path-project-isolation", folder => {
     var first = new EditorLayoutStore(Path.Combine(folder, "project-a"));
     var same = new EditorLayoutStore(Path.Combine(folder, "project-a", "."));
@@ -104,7 +153,7 @@ Case("default-path-project-isolation", folder => {
     Check(first.FilePath.Contains(Path.Combine("Poima", "Editor", "Layouts"), StringComparison.Ordinal), "Default preference path is not user-local editor storage.");
 });
 Case("malformed-json", folder => RejectedFile(folder, Encoding.UTF8.GetBytes("{not json")));
-Case("duplicate-json-field", folder => RejectedFile(folder, Encoding.UTF8.GetBytes(Encoded().ToJsonString().Replace("\"version\":1", "\"version\":1,\"version\":1", StringComparison.Ordinal))));
+Case("duplicate-json-field", folder => RejectedFile(folder, Encoding.UTF8.GetBytes(Encoded().ToJsonString().Replace("\"version\":2", "\"version\":2,\"version\":2", StringComparison.Ordinal))));
 RejectedJson("unknown-version", json => json["version"] = 999);
 RejectedJson("boolean-version", json => json["version"] = true);
 RejectedJson("unknown-format", json => json["format"] = "another.layout");

@@ -63,6 +63,10 @@ internal sealed class DesktopScript
             {
                 switch (op)
                 {
+                    case "resize_window":
+                        var width = action["width"]!.GetValue<double>(); var height = action["height"]!.GetValue<double>();
+                        if (!double.IsFinite(width) || !double.IsFinite(height) || width < 960 || width > 2400 || height < 620 || height > 1600) throw new ArgumentException("Qualification window size is outside bounds.");
+                        window.Width = width; window.Height = height; break;
                     case "save_layout": window.SaveLayout(); result["layout"] = window.InspectLayout(); break;
                     case "load_layout": window.LoadLayout(); break;
                     case "scene_frame": window.Navigation.FrameSelection(); break;
@@ -80,10 +84,13 @@ internal sealed class DesktopScript
                     case "gizmo_commit": result["result"] = window.Navigation.CommitGizmo(); break;
                     case "gizmo_cancel": result["gizmo"] = window.Navigation.CancelGizmo(); break;
                     case "scene_input":
-                        var hwnd = window.Navigation.Window;
-                        if (hwnd == IntPtr.Zero) throw new InvalidOperationException("Scene HWND is unavailable.");
+                    case "game_input":
+                        var gameTarget = op == "game_input";
+                        JsonObject InputState() => gameTarget ? window.Game.Inspect() : window.Navigation.Inspect();
+                        var hwnd = gameTarget ? window.Game.Window : window.Navigation.Window;
+                        if (hwnd == IntPtr.Zero) throw new InvalidOperationException("Requested viewport HWND is unavailable.");
                         var message = Text("message"); result["message"] = message;
-                        var dimensions = window.Navigation.Inspect();
+                        var dimensions = InputState();
                         var x = (int)((action["x"]?.GetValue<double>() ?? .5)*dimensions["width"]!.GetValue<int>());
                         var y = (int)((action["y"]?.GetValue<double>() ?? .5)*dimensions["height"]!.GetValue<int>());
                         if (action["axis"] is not null)
@@ -141,7 +148,7 @@ internal sealed class DesktopScript
                                 | (action["repeat"]?.GetValue<bool>() == true ? 1L << 30 : 0)
                                 | (code == 0x0101u ? 3L << 30 : 0);
                             ViewportInput.DispatchQualification(hwnd, () => SendMessage(hwnd,code,parameter,code is 0x0100u or 0x0101u ? (nint)keyFlags : point));
-                            var observedModifiers = window.Navigation.Inspect()["last_input_modifiers"]!.GetValue<int>();
+                            var observedModifiers = InputState()["last_input_modifiers"]!.GetValue<int>();
                             result["delivered_modifiers"] = observedModifiers;
                             if (observedModifiers != (int)requestedModifiers) throw new InvalidOperationException("Viewport received different modifiers from the semantic action.");
                         }
@@ -149,15 +156,15 @@ internal sealed class DesktopScript
                         {
                             if (!SetKeyboardState(savedKeyboard)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Cannot restore the UI thread keyboard state.");
                         }
-                        result["navigation"] = window.Navigation.Inspect(); result["camera"] = model.Host.Call("desktop.inspect")["camera"]!.DeepClone();
+                        result["navigation"] = window.Navigation.Inspect(); result["game_input"] = window.Game.Inspect(); result["camera"] = model.Host.Call("desktop.inspect")["camera"]!.DeepClone();
                         result["requested_pointer_x"] = x; result["requested_pointer_y"] = y;
                         break;
                     case "game_motion":
-                        ViewportInput.DispatchQualificationRelative(window.Navigation.Window, action["dx"]!.GetValue<int>(), action["dy"]!.GetValue<int>());
-                        result["navigation"] = window.Navigation.Inspect(); break;
+                        ViewportInput.DispatchQualificationRelative(window.Game.Window, action["dx"]!.GetValue<int>(), action["dy"]!.GetValue<int>());
+                        result["game_input"] = window.Game.Inspect(); break;
                     case "game_profile":
-                        window.Navigation.Game.SelectProfile(action["path"]?.GetValue<string>());
-                        result["game_input"] = window.Navigation.Game.Inspect(); break;
+                        window.Game.SelectProfile(action["path"]?.GetValue<string>());
+                        result["game_input"] = window.Game.Inspect(); break;
                     case "select": window.SelectEntity(Text("id")); break;
                     case "create": result["id"] = model.Create(Text("kind")); break;
                     case "draft_name": model.SetName(Text("name")); break;
@@ -197,6 +204,7 @@ internal sealed class DesktopScript
                         }
                         if (edits.Length != 1) throw new InvalidOperationException($"Expected one visible {Text("control")} field; found {edits.Length}.");
                         var edit = edits[0];
+                        result["control_width"] = edit.Bounds.Width; result["control_text"] = edit.Text;
                         if (deferredAt is int started)
                         {
                             result["wait_pumps"] = frame-started;
@@ -212,24 +220,28 @@ internal sealed class DesktopScript
                     case "wait_scene_error":
                     case "assert_scene_error":
                         var errorExpected = action["expected"]!.GetValue<bool>();
-                        result["scene_error"] = model.Host.LastError;
+                        var errorView = action["view"]?.GetValue<string>() ?? "scene";
+                        if (errorView is not ("scene" or "game")) throw new ArgumentException("Unknown viewport.");
+                        var viewError = model.Host.ViewError(errorView);
+                        result["scene_error"] = viewError;
                         var sceneState = model.Host.Call("desktop.inspect");
                         result["native"] = sceneState;
-                        var sceneWindow = InspectSceneWindow(window.Navigation.Window);
+                        var details = sceneState["views"]![errorView]!;
+                        var sceneWindow = InspectSceneWindow(errorView == "scene" ? window.Navigation.Window : window.Game.Window);
                         result["scene_window"] = sceneWindow;
-                        if (sceneState["graphics_error"] is not null)
+                        if (details["graphics_error"] is not null)
                             throw new InvalidOperationException("Snapshot preparation poisoned the renderer.");
-                        var sceneErrorMatches = (model.Host.LastError != null) == errorExpected;
-                        var sceneReady = sceneErrorMatches && (errorExpected || JsonNode.DeepEquals(sceneState["presented_revision"], sceneState["revision"]));
+                        var sceneErrorMatches = (viewError != null) == errorExpected;
+                        var sceneReady = sceneErrorMatches && (errorExpected || JsonNode.DeepEquals(details["presented_revision"], sceneState["revision"]));
                         if (op == "wait_scene_error" && !sceneReady)
                         {
                             if (deferredAt is null) { deferredAt = frame; deferredStarted = System.Diagnostics.Stopwatch.GetTimestamp(); }
                             if (System.Diagnostics.Stopwatch.GetElapsedTime(deferredStarted).TotalSeconds < 3)
                             { --next; return; }
-                            throw new InvalidOperationException($"Scene recovery presentation timed out: error={model.Host.LastError}; revision={sceneState["revision"]}; presented_revision={sceneState["presented_revision"]}; frames_presented={sceneState["frames_presented"]}; window={sceneWindow.ToJsonString()}");
+                            throw new InvalidOperationException($"Scene recovery presentation timed out: view={errorView}; error={viewError}; revision={sceneState["revision"]}; presented_revision={details["presented_revision"]}; frames_presented={details["frames_presented"]}; window={sceneWindow.ToJsonString()}");
                         }
                         if (op == "assert_scene_error" && !sceneErrorMatches)
-                            throw new InvalidOperationException("Unexpected scene error state: " + model.Host.LastError);
+                            throw new InvalidOperationException("Unexpected view error state: " + viewError);
                         if (deferredAt is int sceneWaitStarted)
                         {
                             result["wait_pumps"] = frame-sceneWaitStarted;
@@ -251,13 +263,15 @@ internal sealed class DesktopScript
                     case "runtime_entity":
                         result["result"] = model.Host.Call("runtime.entity", new() { ["session_id"] = model.RuntimeId, ["id"] = Text("id") });
                         break;
-                    case "view": model.SetView(Text("mode"), action["camera"]?.GetValue<string>()); break;
+                    case "game_camera": model.SetGameCamera(action["camera"]?.GetValue<string>()); break;
+                    case "show_panel": window.ShowPanel(Text("panel")); break;
                     case "step": model.Step(action["ticks"]?.GetValue<int>() ?? 1); break;
                     case "float": window.FloatPanel(Text("panel")); break;
-                    case "reset_layout": window.ResetLayout(); break;
+                    case "reset_layout": window.SetTallLayout(action["split_views"]?.GetValue<bool>() ?? false); break;
                     case "rpc": result["result"] = model.Host.Call(Text("method"), action["params"]?.AsObject()); break;
                     case "inspect":
-                        result["layout"] = window.InspectLayout(); result["navigation"] = window.Navigation.Inspect();
+                        result["layout"] = window.InspectLayout(); result["navigation"] = window.Navigation.Inspect(); result["game_input"] = window.Game.Inspect();
+                        result["scene_window"] = InspectSceneWindow(window.Navigation.Window); result["game_window"] = InspectSceneWindow(window.Game.Window);
                         result["draft"] = window.InspectDraft(); result["native"] = model.Host.Call("desktop.inspect");
                         result["playback"] = model.InspectPlayback();
                         result["playback_controls"] = window.InspectPlaybackControls();

@@ -1,23 +1,23 @@
 # Shared local sessions
 
-Poima 0.0.23 lets multiple CLI clients use one authoritative world session, including a running native editor. Edits, revisions, undo and retry receipts belong to the host. Disconnecting a client leaves the host and other clients running. This is local authoring IPC, separate from future multiplayer networking.
+Poima’s desktop editor, CLI users and external agents can work through one authoritative world session. The editor is a first-class authoring workspace, and headless hosting is also supported. Edits, revisions, undo and retry receipts belong to the host. Disconnecting a client leaves the host and other clients running. This is local authoring IPC, separate from future multiplayer networking.
 
 ## Open an editor and attach
 
-From Windows, after building the optional editor:
+From Windows, after [building the desktop editor](DESKTOP_EDITOR.md#build-and-launch):
 
 ```text
-build\windows-runtime\poima.exe editor projects\sandbox\world.json --endpoint sandbox
-build\windows-runtime\poima.exe connect sandbox
+build\desktop-win-x64\Poima.Editor.exe projects\desktop-sandbox\world.json --endpoint poima-desktop
+build\windows-runtime\poima.exe connect poima-desktop
 ```
 
-The second command accepts UTF-8 JSON-RPC, one object per line, and flushes replies as they arrive. It can be kept open by an agent or supplied a file through stdin. The default launcher exposes `sandbox`; a custom world passed to the launcher uses `editor`. Choose distinct endpoint names for simultaneous editors. Parent project directories must exist.
+The second command accepts UTF-8 JSON-RPC, one object per line, and flushes replies as they arrive. It can be kept open by an agent or supplied a file through stdin. The desktop launcher exposes `poima-desktop` by default. Choose distinct endpoint names for simultaneous editors. Parent project directories must exist.
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"world.describe"}
-{"jsonrpc":"2.0","id":2,"method":"editor.describe"}
+{"jsonrpc":"2.0","id":2,"method":"desktop.describe"}
 {"jsonrpc":"2.0","id":3,"method":"world.inspect"}
-{"jsonrpc":"2.0","id":4,"method":"editor.inspect"}
+{"jsonrpc":"2.0","id":4,"method":"desktop.inspect"}
 ```
 
 Use the same `world.transact`, entity queries and history operations described in [the world service](WORLD_SERVICE.md). Read the current revision before editing. A second client submitting an outdated base revision gets a conflict. Both clients see the same undo history; undo is session-wide, not per-client.
@@ -33,7 +33,28 @@ For a headless host:
 
 Windows and Linux endpoints are separate OS facilities. From WSL, use the Windows `poima.exe connect` to reach a Windows editor, with Windows paths in operation parameters. Native Linux `poima connect` reaches a native Linux host.
 
-## Editor operations
+## Desktop operations
+
+The current [desktop editor](DESKTOP_EDITOR.md) exposes `desktop.*` methods over this transport:
+
+| Method | Parameters and behavior |
+| --- | --- |
+| `desktop.describe`, `desktop.inspect` | Discover methods and inspect shared state, including independent Scene/Game attachment, errors and presentation metadata. |
+| `desktop.camera` | Update the free Scene inspection camera. |
+| `desktop.game.camera` | Select a Game Camera entity, or `null` to clear it. Scene remains independent. |
+| `desktop.play.start` | `revision`, fresh `session_id`, optional `paused`; starts real-time playback unless `paused: true`. |
+| `desktop.play.pause`, `.resume`, `.stop` | Control the shared simulation using its `session_id`. |
+| `desktop.play.step` | Advance a paused runtime through the discovered runtime-step schema. |
+| `desktop.capture` | Guarded `revision`, new `path`, optional `view: "scene"` or `"game"`; queue a native viewport BMP. Named viewports default to Scene. |
+| `desktop.capture.status` | Inspect the asynchronous job by `capture_id`. |
+
+One host poll drives the fixed-step simulation. Drawing either viewport never advances it. Scene and Game can be docked, floated or shown together; they share authoring and runtime state but have independent cameras and presentation lifetimes. A queued capture holds automatic ticking until completion or error. There is one pending capture slot across both panes, and only the target pane completes its job. Scene camera changes do not invalidate a Game capture. Desktop captures contain the native viewport, not the full Avalonia interface.
+
+Direct `runtime.start` remains paused. During Play, Game uses the runtime’s frozen camera lens and live pose; stopping returns to the authored camera. Gameplay input is a separate explicit focus gate. Consult the desktop guide for input and capture details.
+
+## Legacy ImGui editor operations
+
+The older `poima editor` command exposes the following `editor.*` API. These methods and whole-window capture behavior belong to that frontend, not the Avalonia desktop:
 
 | Method | Parameters and behavior |
 | --- | --- |
@@ -52,18 +73,18 @@ A capture waits for a fresh presented frame, up to two seconds when presentation
 A missing asset or other snapshot-construction failure keeps the authoring session open for repair. The viewport shows the last valid scene with an error, and `editor.inspect.presentation` distinguishes its revision from current authoring. Capturing the unavailable current scene fails instead of returning stale pixels. Undo or a correcting transaction can restore presentation. GPU/device failures still require recreating the editor.
 
 ```json
-{"jsonrpc":"2.0","id":5,"method":"editor.capture","params":{"revision":0,"path":"D:/poimaengine/build/editor-view.bmp"}}
+{"jsonrpc":"2.0","id":5,"method":"editor.capture","params":{"revision":0,"path":"build/editor-view.bmp"}}
 ```
 
 Use an existing parent directory and a new output filename. Captures cannot overwrite existing files, the world, its sidecars, the script or reserved startup report/capture outputs. A failed disk write can leave its own incomplete new file. Captures are BMP, with one staging allocation capped at 128 MiB of RGBA texels; ordinary frames do not perform readback.
 
-A shared editor rejects `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play` with `-32080`, since those create a separate graphics lifetime. Discovery removes these methods and points to `editor.describe`. Use `editor.capture` and the editor's simulation controls instead.
+Both shared editors reject `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play` with `-32080`, since those bypass the editor-owned graphics lifetimes. Discovery points to `desktop.describe` for the current desktop or `editor.describe` for ImGui. Use that frontend’s capture and simulation controls instead.
 
 ## Human drafts and agent changes
 
 An unfinished Inspector draft retains its original values and base revision across incoming edits, including deletion of its entity. A changed world revision marks the draft conflicted; Apply refuses a stale draft. **Reload** explicitly discards it and reads the latest committed state. Even unrelated remote edits require Reload in this initial conservative policy; field-level merging is not implemented.
 
-Selection-changing local actions, delete and undo/redo refuse to discard dirty drafts silently. Applying one component preserves other unfinished Inspector fields. The agent can inspect the draft/conflict state but has no remote method that forcibly clears a human draft. Closing the editor still discards uncommitted drafts; they are not persistent project data.
+Selection-changing local actions, delete and undo/redo refuse to discard dirty drafts silently. Applying one component preserves other unfinished Inspector fields. The Avalonia desktop keeps unfinished Inspector drafts locally and refuses closing until Apply or Reload; its native selection can differ from a retained dirty Inspector selection after an external request. The legacy ImGui API exposes draft/conflict state through `editor.inspect`, but provides no remote method to forcibly clear it; closing that frontend discards uncommitted drafts. Neither frontend persists drafts as project data.
 
 ## Transport and limits
 
@@ -79,6 +100,8 @@ The native interfaces are `poima/local_session.hpp`, `poima/shared_session.hpp` 
 
 ## Qualification and current limits
 
+The following evidence describes the original ImGui shared-session checkpoint. Current Avalonia and independent Scene/Game qualification is documented in the [desktop guide](DESKTOP_EDITOR.md).
+
 [Recorded evidence](evidence/m2-shared-sessions.json) covers 23 headless and 27 runtime CTest suites, native Windows transport/session checks, seven Windows shared-host tests, and live shared-editor checks on both NVIDIA and AMD laptop GPUs. The [actual editor capture](evidence/m2-shared-sessions.png) shows an Inspector draft preserved across an external revision. `tests/shared_editor_capture.py` uses two real CLI connections and actual captures; its draft setup uses the GUI's semantic action dispatcher. It does not qualify physical mouse/keyboard input or autonomous agent policy.
 
-Imports, transactions and runtime calls remain synchronous and can stall every client and the GUI. Interactive/editor-endpoint loops have a 60 Hz CPU-side cap (30 Hz when unfocused or minimized), but the renderer still waits for the GPU each frame. No large-project responsiveness or game-performance claim follows from this fixture. Remote camera control, change subscriptions, MCP packaging, separate-process GUI attachment to a headless host, durable drafts and collaborative permissions remain future work.
+Imports, transactions and runtime calls remain synchronous and can stall every client and the GUI. The legacy ImGui editor loop has a 60 Hz CPU-side cap (30 Hz when unfocused or minimized). The Avalonia desktop uses a 33 ms dispatcher timer: it polls the shared host once, then draws its two viewports synchronously. Native simulation uses fixed 60 Hz ticks with bounded catch-up; the dispatcher interval is not a rendering frame-rate guarantee. Rendering still waits for the GPU each frame. No large-project responsiveness or game-performance claim follows from this fixture. The desktop now exposes remote Scene/Game camera controls. Change subscriptions, MCP packaging, separate-process GUI attachment to a headless host, durable drafts and collaborative permissions remain future work.

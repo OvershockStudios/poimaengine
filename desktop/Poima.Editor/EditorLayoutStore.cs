@@ -17,7 +17,21 @@ public sealed record EditorLayoutDocument(EditorLayoutNode? Main, IReadOnlyList<
 /// <summary>Bounded, explicitly typed preferences; never deserializes Dock objects or writes world storage.</summary>
 public sealed class EditorLayoutStore
 {
-    public static readonly IReadOnlyList<string> PanelNames = Array.AsReadOnly(new[] { "Hierarchy", "Scene", "Inspector", "Project", "Console" });
+    private static readonly IReadOnlyList<string> LegacyPanelNames = Array.AsReadOnly(new[] { "Hierarchy", "Scene", "Inspector", "Project", "Console" });
+    public static readonly IReadOnlyList<string> PanelNames = Array.AsReadOnly(new[] { "Hierarchy", "Scene", "Game", "Inspector", "Project", "Console" });
+
+    public static EditorLayoutDocument TallLayout(bool splitViews = false)
+    {
+        EditorTabLayout Tabs(double weight, params string[] panels) => new(weight, panels, panels[0]);
+        EditorLayoutNode views = splitViews
+            ? new EditorSplitLayout(.572, "vertical", new EditorLayoutNode[] { Tabs(.593, "Scene"), Tabs(.407, "Game") })
+            : Tabs(.572, "Scene", "Game");
+        return new(new EditorSplitLayout(1, "horizontal", new EditorLayoutNode[] {
+            views,
+            new EditorSplitLayout(.428, "vertical", new EditorLayoutNode[] {
+                new EditorSplitLayout(.641, "horizontal", new EditorLayoutNode[] { Tabs(.566, "Hierarchy"), Tabs(.434, "Inspector") }),
+                Tabs(.359, "Project", "Console") }) }), Array.Empty<EditorFloatingLayout>());
+    }
     private const int Limit = 65536;
     public string FilePath { get; }
 
@@ -116,11 +130,11 @@ public sealed class EditorLayoutStore
         var root = json.RootElement; Fields(root, "format", "version", "main", "floating");
         if (Text(root.GetProperty("format")) != "poima.editor-layout"
             || root.GetProperty("version").ValueKind != JsonValueKind.Number
-            || !root.GetProperty("version").TryGetInt32(out var version) || version != 1)
+            || !root.GetProperty("version").TryGetInt32(out var version) || version is not (1 or 2))
             throw new InvalidDataException("Unsupported layout preference format/version.");
         var floating = root.GetProperty("floating");
-        if (floating.ValueKind != JsonValueKind.Array || floating.GetArrayLength() > 5)
-            throw new InvalidDataException("Layout permits at most five floating windows.");
+        if (floating.ValueKind != JsonValueKind.Array || floating.GetArrayLength() > (version == 1 ? 5 : 6))
+            throw new InvalidDataException("Layout exceeds its version-specific floating window limit.");
         var windows = new List<EditorFloatingLayout>();
         foreach (var window in floating.EnumerateArray())
         {
@@ -131,6 +145,21 @@ public sealed class EditorLayoutStore
         }
         var main = root.GetProperty("main");
         var document = new EditorLayoutDocument(main.ValueKind == JsonValueKind.Null ? null : ReadNode(main, 0), windows);
+        if (version == 1)
+        {
+            Validate(document, LegacyPanelNames);
+            // Preserve custom groups, active tabs, proportions and floating bounds.
+            // The new Game panel joins the existing Scene group until moved by its user.
+            EditorLayoutNode AddGame(EditorLayoutNode node) => node switch
+            {
+                EditorTabLayout tabs when tabs.Panels.Contains("Scene", StringComparer.Ordinal) =>
+                    tabs with { Panels = tabs.Panels.SelectMany(panel => panel == "Scene" ? new[] { panel, "Game" } : new[] { panel }).ToArray() },
+                EditorSplitLayout split => split with { Children = split.Children.Select(AddGame).ToArray() },
+                _ => node
+            };
+            document = document with { Main = document.Main is null ? null : AddGame(document.Main),
+                Floating = document.Floating.Select(window => window with { Content = AddGame(window.Content) }).ToArray() };
+        }
         Validate(document); return document;
     }
     private static EditorLayoutNode ReadNode(JsonElement node, int depth)
@@ -140,22 +169,23 @@ public sealed class EditorLayoutStore
         if (Text(kind) == "tabs")
         {
             Fields(node, "kind", "proportion", "panels", "active"); var panels = node.GetProperty("panels");
-            if (panels.ValueKind != JsonValueKind.Array || panels.GetArrayLength() is < 1 or > 5)
-                throw new InvalidDataException("Tab group needs one to five panels.");
+            if (panels.ValueKind != JsonValueKind.Array || panels.GetArrayLength() is < 1 or > 6)
+                throw new InvalidDataException("Tab group needs one to six panels.");
             return new EditorTabLayout(Number(node.GetProperty("proportion")), panels.EnumerateArray().Select(Text).ToArray(), Text(node.GetProperty("active")));
         }
         if (Text(kind) == "split")
         {
             Fields(node, "kind", "proportion", "orientation", "children"); var children = node.GetProperty("children");
-            if (children.ValueKind != JsonValueKind.Array || children.GetArrayLength() is < 2 or > 5)
-                throw new InvalidDataException("Split group needs two to five children.");
+            if (children.ValueKind != JsonValueKind.Array || children.GetArrayLength() is < 2 or > 6)
+                throw new InvalidDataException("Split group needs two to six children.");
             return new EditorSplitLayout(Number(node.GetProperty("proportion")), Text(node.GetProperty("orientation")),
                 children.EnumerateArray().Select(child => ReadNode(child, depth+1)).ToArray());
         }
         throw new InvalidDataException("Unsupported layout node kind.");
     }
 
-    public static void Validate(EditorLayoutDocument document)
+    public static void Validate(EditorLayoutDocument document) => Validate(document, PanelNames);
+    private static void Validate(EditorLayoutDocument document, IReadOnlyList<string> names)
     {
         var panels = new HashSet<string>(StringComparer.Ordinal); var count = 0;
         void Visit(EditorLayoutNode node, int depth)
@@ -165,14 +195,14 @@ public sealed class EditorLayoutStore
             switch (node)
             {
                 case EditorTabLayout tabs:
-                    if (tabs.Panels.Count is < 1 or > 5 || !tabs.Panels.Contains(tabs.Active, StringComparer.Ordinal))
+                    if (tabs.Panels.Count is < 1 or > 6 || !tabs.Panels.Contains(tabs.Active, StringComparer.Ordinal))
                         throw new InvalidDataException("Active tab must belong to its nonempty group.");
                     foreach (var panel in tabs.Panels)
-                        if (!PanelNames.Contains(panel, StringComparer.Ordinal) || !panels.Add(panel))
+                        if (!names.Contains(panel, StringComparer.Ordinal) || !panels.Add(panel))
                             throw new InvalidDataException("Unknown or duplicate panel: "+panel);
                     break;
                 case EditorSplitLayout split:
-                    if (split.Orientation is not ("horizontal" or "vertical") || split.Children.Count is < 2 or > 5)
+                    if (split.Orientation is not ("horizontal" or "vertical") || split.Children.Count is < 2 or > 6)
                         throw new InvalidDataException("Invalid split orientation or child count.");
                     foreach (var child in split.Children) Visit(child, depth+1);
                     break;
@@ -180,9 +210,9 @@ public sealed class EditorLayoutStore
             }
         }
         if (document.Main is not null) Visit(document.Main, 0);
-        if (document.Floating.Count > 5) throw new InvalidDataException("Too many floating windows.");
+        if (document.Floating.Count > names.Count) throw new InvalidDataException("Too many floating windows.");
         foreach (var window in document.Floating) { ValidateBounds(window.Bounds); Visit(window.Content, 0); }
-        if (panels.Count != PanelNames.Count) throw new InvalidDataException("Layout must contain each of the five editor panels exactly once.");
+        if (panels.Count != names.Count) throw new InvalidDataException("Layout must contain every editor panel exactly once.");
     }
     public static void ValidateBounds(EditorFloatBounds value)
     {
@@ -200,7 +230,7 @@ public sealed class EditorLayoutStore
                 ["orientation"] = split.Orientation, ["children"] = new JsonArray(split.Children.Select(child => (JsonNode?)Node(child)).ToArray()) },
             _ => throw new InvalidDataException("Unsupported layout node.")
         };
-        return new() { ["format"] = "poima.editor-layout", ["version"] = 1,
+        return new() { ["format"] = "poima.editor-layout", ["version"] = 2,
             ["main"] = document.Main is null ? null : Node(document.Main),
             ["floating"] = new JsonArray(document.Floating.Select(window => (JsonNode?)new JsonObject {
                 ["content"] = Node(window.Content), ["bounds"] = new JsonObject { ["x"] = window.Bounds.X, ["y"] = window.Bounds.Y,

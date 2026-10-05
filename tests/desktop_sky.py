@@ -87,13 +87,14 @@ action('rpc',method='world.transact',params=transact(revision+10,[{'op':'entity.
 final_revision=revision+11
 # Freshly created default Environment + Sun, starter floor/camera: no artistic fixture overrides.
 action('wait_scene_error',expected=False)
-action('rpc',method='desktop.capture',params={'revision':final_revision,'path':str(run/'scene.bmp')})
+action('rpc',method='desktop.capture',params={'revision':final_revision,'path':str(run/'scene.bmp'),'view':'scene'})
 frame+=8; inspect('scene_capture')
 action('float',panel='Scene'); frame+=6; action('reset_layout'); frame+=6
 action('wait_scene_error',expected=False)
-action('view',mode='game',camera=camera)
-action('wait_scene_error',expected=False)
-action('rpc',method='desktop.capture',params={'revision':final_revision,'path':str(run/'game.bmp')})
+action('game_camera',camera=camera)
+action('show_panel',panel='Game')
+action('wait_scene_error',expected=False,view='game')
+action('rpc',method='desktop.capture',params={'revision':final_revision,'path':str(run/'game.bmp'),'view':'game'})
 frame+=8; inspect('game_capture')
 script=run/'actions.json'; script.write_text(json.dumps({'actions':actions},indent=2),encoding='utf-8')
 report=run/'report.json'
@@ -170,7 +171,7 @@ try:
                 reply=cli(['connect',endpoint],json.dumps(rpc('desktop.inspect'))+'\n',timeout=5)[0]
                 state=reply['result']; capture=state.get('capture') or {}
                 if capture.get('state')=='complete' and Path(capture['path']).name=='game.bmp':
-                    assert state['view']=={'mode':'game','camera':camera} and state['revision']==final_revision, state
+                    assert state['binding_mode']=='explicit' and state['views']['game']['camera']==camera and state['revision']==final_revision, state
                     handles=[]
                     @callback
                     def enum(hwnd,_):
@@ -226,9 +227,11 @@ try:
         assert draft('creation_undo')['entity'] is None and draft('creation_undo')['revision']==revision+9
         assert draft('creation_redo')['entity']==created and env('creation_redo')==env('created_environment')
         assert draft('creation_redo')['revision']==revision+10
+        for tag in ('scene_capture','game_capture'):
+            assert stages[tag]['draft']['entity']==created and stages[tag]['native']['selected']==created, (tag,stages[tag]['draft'])
         assert stages['scene_capture']['native']['capture']['state']=='complete'
         assert stages['game_capture']['native']['capture']['state']=='complete'
-        assert stages['game_capture']['native']['view']=={'mode':'game','camera':camera}
+        assert stages['game_capture']['native']['binding_mode']=='explicit' and stages['game_capture']['native']['views']['game']['camera']==camera
         assert (run/'scene.bmp').stat().st_size>10000 and (run/'game.bmp').stat().st_size>10000
         final=json.loads(world.read_text());assert final['revision']==final_revision
         # Authoritative inspection proves creation was one transaction with one linked sun.

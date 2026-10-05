@@ -1,6 +1,6 @@
 # Contributing to Poima
 
-Poima is an early engine with a working native authoring core and optional runtime, renderer and editor. Contributions are most useful when they improve a concrete workflow and include a way to verify the result. Start with the [README](README.md), [implementation status](docs/IMPLEMENTATION_STATUS.md) and the relevant subsystem's contract documentation.
+Poima is an early game engine designed for humans and agents. Its desktop editor and programmatic tools are first-class clients of the same native authoring core. Contributions are most useful when they improve a concrete workflow and include a way to verify the result. Start with the [README](README.md), [implementation status](docs/IMPLEMENTATION_STATUS.md) and the relevant subsystem's contract documentation.
 
 For substantial architecture changes or new dependencies, explain the intended behavior and tradeoffs in an issue or draft pull request before investing in a broad implementation. Research and roadmap entries are not promises that an interface is ready to extend.
 
@@ -20,12 +20,12 @@ CTest covers the configured native and CLI contracts. GPU captures, Windows wind
 
 ## Preserve the shared-service model
 
-Authoring behavior belongs in the native world service so the CLI, editor and external agents can use the same implementation. Keep UI state such as unfinished Inspector drafts separate from committed world state.
+Authoring behavior belongs in the native world service so people using the editor, people using the CLI and external agents share validation, persistence and undo behavior. Develop human workflows and agent workflows together when a change affects both. Keep UI state such as unfinished Inspector drafts separate from committed world state.
 
 - Validate complete changes before publication. Preserve state on invalid input, stale revisions and storage failure.
 - Keep schema discovery, error behavior, retry semantics and documentation consistent when changing an API.
 - Preserve stable entity identity, the distinction between authored and runtime state, and immutable presentation snapshots.
-- Keep optional GUI, graphics, audio and managed dependencies optional. Headless operations must not create a window or require a graphics driver.
+- Preserve build boundaries: headless configurations must not restore desktop dependencies, create a window or require a graphics driver. Keep audio and managed-gameplay integrations selectable. Keep desktop builds supported alongside headless configurations.
 - Bound resource use and expose useful diagnostics. Performance claims need a reproducible workload and a stated measurement environment.
 
 Follow the surrounding C++20 or C# style. Prefer a small, reviewable change over unrelated cleanup. Add regression tests for changed contracts or failure behavior; use an existing fixture where it meaningfully exercises the new behavior. Do not introduce tests that merely repeat implementation details.

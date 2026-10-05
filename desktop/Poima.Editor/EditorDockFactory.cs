@@ -30,35 +30,8 @@ public sealed class EditorDockFactory : Factory
         var panel = new EditorPanel { Id = name, Title = name, CanClose = false, CanPin = false, BuildView = () => build(name) };
         Panels[name] = panel; return panel;
     }
-    public override IRootDock CreateLayout()
-    {
-        Panels.Clear();
-        var hierarchy = Panel("Hierarchy"); var scene = Panel("Scene"); var inspector = Panel("Inspector");
-        var project = Panel("Project"); var console = Panel("Console");
-        DocumentDock Pane(double proportion, params EditorPanel[] panels) => new()
-        {
-            Proportion = proportion, CanCreateDocument = false, EnableWindowDrag = true,
-            VisibleDockables = CreateList<IDockable>(panels), ActiveDockable = panels[0]
-        };
-        var upper = new ProportionalDock
-        {
-            Orientation = Orientation.Horizontal, Proportion = .72,
-            VisibleDockables = CreateList<IDockable>(Pane(.23, hierarchy), new ProportionalDockSplitter(), Pane(.77, scene))
-        };
-        var left = new ProportionalDock
-        {
-            Orientation = Orientation.Vertical, Proportion = .75,
-            VisibleDockables = CreateList<IDockable>(upper, new ProportionalDockSplitter(), Pane(.28, project, console))
-        };
-        var main = new ProportionalDock
-        {
-            Orientation = Orientation.Horizontal,
-            VisibleDockables = CreateList<IDockable>(left, new ProportionalDockSplitter(), Pane(.25, inspector))
-        };
-        var root = CreateRootDock(); root.Id = "PoimaRoot"; root.Title = "Poima"; root.IsCollapsable = false;
-        root.VisibleDockables = CreateList<IDockable>(main); root.ActiveDockable = main; root.DefaultDockable = main;
-        return root;
-    }
+    public override IRootDock CreateLayout() => CreateTallLayout();
+    public IRootDock CreateTallLayout(bool splitViews = false) => RestoreLayout(EditorLayoutStore.TallLayout(splitViews));
     /// <summary>Builds the restored model only. InitLayout attaches owners and presents its floating windows.</summary>
     public IRootDock RestoreLayout(EditorLayoutDocument document, Func<EditorFloatBounds, EditorFloatBounds>? clamp = null)
     {
@@ -148,11 +121,11 @@ public sealed class EditorDockFactory : Factory
         var seenWindows = new HashSet<IDockWindow>(ReferenceEqualityComparer.Instance);
         void Floating(IRootDock parent, int depth)
         {
-            if (depth > 5) throw new InvalidDataException("Floating window nesting exceeds supported bounds.");
+            if (depth > EditorLayoutStore.PanelNames.Count) throw new InvalidDataException("Floating window nesting exceeds supported bounds.");
             if (parent.Windows is null) return;
             foreach (var window in parent.Windows)
             {
-                if (!seenWindows.Add(window) || seenWindows.Count > 5 || window.Layout is null)
+                if (!seenWindows.Add(window) || seenWindows.Count > EditorLayoutStore.PanelNames.Count || window.Layout is null)
                     throw new InvalidDataException("Invalid floating window collection.");
                 window.Save();
                 var node = Capture(window.Layout, 0) ?? throw new InvalidDataException("Cannot save an empty floating window.");

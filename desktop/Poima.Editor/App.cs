@@ -40,9 +40,9 @@ public sealed class App : Application
             timer.Tick += (_, _) =>
             {
                 renderScaling = window.RenderScaling;
-                window.Navigation.ValidateInput();
+                window.Game.ValidateCapture();
                 host.Pump();
-                var now = watch.Elapsed.TotalSeconds; window.Navigation.Tick(now-previousTime); previousTime = now;
+                var now = watch.Elapsed.TotalSeconds; window.Navigation.Tick(now-previousTime); window.Game.Tick(); previousTime = now;
                 script.Tick(frames, window); ++frames;
                 if (script.Error != null || (options.Frames > 0 && frames >= options.Frames)) window.CloseQualification();
             };
@@ -63,7 +63,7 @@ public sealed class App : Application
                         ["elapsed_ms"] = watch.Elapsed.TotalMilliseconds, ["pump_frames"] = frames,
                         ["private_bytes"] = Process.GetCurrentProcess().PrivateMemorySize64, ["state"] = state,
                         ["world"] = options.World, ["endpoint"] = options.Endpoint,
-                        ["navigation"] = window.Navigation.Inspect(), ["layout_file"] = window.LayoutPath, ["layout_error"] = window.LayoutError,
+                        ["navigation"] = window.Navigation.Inspect(), ["game_input"] = window.Game.Inspect(), ["layout_file"] = window.LayoutPath, ["layout_error"] = window.LayoutError,
                         ["actions"] = script.Results.DeepClone(), ["draft"] = window.InspectDraft(),
                         ["limitations"] = new JsonArray("Prototype: physical IME/accessibility and full Unity parity are not qualified.") };
                     if (options.Report != null)
