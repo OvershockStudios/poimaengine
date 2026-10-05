@@ -150,7 +150,7 @@ Input events do not tick simulation. Automatic playback evaluates input before e
 
 `last_applied` retains the most recent controlled poll’s successful prefix: `first_tick`, `ticks`, `input` (its first frame), and `frames` (the complete input for each committed tick, at most eight). Replay each `frames` entry as a one-tick request. Repeating only `input` as a multi-tick batch can lose additional mouse backlog consumed later in the poll. Runtime replacement clears this trace and the old input configuration before any remaining catch-up work.
 
-The desktop calls the native owner directly for automatic ticks, without serializing a JSON request or generating a retry receipt for every tick. Queued gameplay saves are serviced after their requesting tick commits. A load stops the current catch-up loop and exposes the fresh paused session. Synchronous storage time is excluded from subsequent catch-up accounting; asynchronous storage and editor audio output remain unfinished.
+The desktop calls the native owner directly for automatic ticks, without serializing a JSON request or generating a retry receipt for every tick. Queued gameplay saves are serviced after their requesting tick commits. A load stops the current catch-up loop and exposes the fresh paused session. Synchronous storage time is excluded from subsequent catch-up accounting; asynchronous storage remains unfinished. [Editor audio](EDITOR_AUDIO.md) consumes committed snapshots through a separate bounded DSP worker.
 
 ## Asynchronous viewport capture
 
