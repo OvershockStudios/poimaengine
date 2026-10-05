@@ -1,0 +1,412 @@
+{
+  "date": "2026-09-26",
+  "version": "0.0.22",
+  "schema_revision": 20,
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "scope": "First optional native editor, shared in-process WorldSession, bounded session-local undo/redo, immutable inspection snapshots and live Vulkan cache ownership. Early development tool; no completed engine, package manager or production editor claim.",
+  "source_sha256": {
+    ".gitignore": "95de69c693a9bb7a0fe99c611f65a354cc72ecf55f5527eb1b1f3b7cc5586ce1",
+    "CMakeLists.txt": "0768e4c385ac7b31611a142c12726c3419ad87c5ee4c917ee469d9563814282a",
+    "README.md": "f12078aa3bb17c8f02785a1f83e5e581d23c008d9e7c351f28f99ad51923b253",
+    "THIRD_PARTY_NOTICES.md": "efb35468e9913bdc2e0ec90f395fa3aa730941ecd7e9320444279ca33ccb5f8d",
+    "cmake/editor.cmake": "4f55cf9cdb2393eefdebd02bfa3e429e334c649b51298b0a4b7a5d347b12d82d",
+    "docs/BUILD.md": "2d3a291cb7c1f7a078b371a51835b7d087852ee32e272f077b881535b5e2f660",
+    "docs/EDITOR.md": "4d2ccf9daafb61baab8468d78c8c7452602fd7c4ad56aaf430411cdac55153a3",
+    "docs/IMPLEMENTATION_STATUS.md": "952ac993807491e85cb9662ba745edf0e5025de7af1cc138058aabfe1c8df93d",
+    "docs/WORLD_SERVICE.md": "4ed7e6bef2f3614d5ec0b033750dacaf05282d8365803e0ae60cf5f6d7bb7418",
+    "docs/evidence/m2-editor.png": "628c306f30caad64dd6daf7f97b7ddfcb0c158a30b7cb4e18411ff576ac1928d",
+    "include/poima/editor.hpp": "3688b5072bf16f36a3b8c78d3d076ac37f2985f8830c991846e0bdbcc0e383a0",
+    "include/poima/editor_viewport.hpp": "d59d2240ab01aa05bf3bbcfc4d9e123b73c5b87b7e41590111a0050edfc9db0f",
+    "include/poima/world.hpp": "b1c90d00b854cf01bce2f6a075ddd8783bea43a7ab516031fddd641c893dd97c",
+    "launch-editor.cmd": "432331fd5426aff50ae7373c9e6f2039692dbedcde4b162d1156ff1fc5acb601",
+    "shaders/editor_ui.hlsl": "c86bf7877029d236f4af635ed23e7991014f254f365049b18e08166bbbb5768e",
+    "src/core.cpp": "4e04ac2397687fa4e098a77115305b01fa8a56e5bcbc9c1c17fb3421f49cf6c5",
+    "src/editor.cpp": "6e003d463fe9584c92b4794f5040a86c0b71a88a4ce834cace7d0afad12e3fd2",
+    "src/editor_disabled.cpp": "75af1098caf35845a70189e6f6d331a549387413be7b798ed83639b0ff682b47",
+    "src/editor_viewport_disabled.cpp": "3c23a3914aab52a456cafac3d05e9c6ee81941358b7ed702898a900980be53c4",
+    "src/main.cpp": "e2de7c18a9c310841e2a921214f6706633fd252343214212dbb189a52a918ee4",
+    "src/render_smoke.cpp": "fa2bf6e454317ef1ccb6411308750889fe9c6960212d484bbd247e081ee0e79a",
+    "src/world.cpp": "4edb8bf9f63a746f0ec0b0a976a5c0bca30d97376bf24666fdb6d83e8ea1cd99",
+    "tests/cli_contract.py": "f0883e0dcab8888a556b47f57fc8c52e29065576dea4be27051a91c754da55f7",
+    "tests/editor_capture.py": "a9721e4f9909cea1d7f66f0c29fcea1a3cffd4104d6be3acb5ff2d859e172b98",
+    "tests/editor_failures.py": "1a0455c2354199b88262263443266775b0d9cc01b6cdc744bdee12ad7abb72d0",
+    "tests/editor_window.py": "47de28a9d6ef45b624e454496bb194fbe3e56fa3a47cbe35f963bc0075dcc038",
+    "tests/world_history_contract.py": "bf0c37a2d83d3d35514c64eabf585fef9eb15752f74175614251d5d423d2c5a9",
+    "tests/world_session_native.cpp": "347c82475131eb7b28b40e40e8dc74f9b61c0df07e874fdda350c8b3e5bccbc3"
+  },
+  "binaries": {
+    "headless": {
+      "path": "build/headless/poima",
+      "sha256": "2cfd9c99f84d62fbdbaa600c55fd19b8720144dcaae4b361764db3b93f8dfd8c"
+    },
+    "runtime_headless": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "46c72bfac06c72729fccbda35b3577b35b54d2eb51658a89d0ec9bab73e3b104"
+    },
+    "windows_editor": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "19c316277fe19a03404982ec63fa8bb3eba351b0453a814edbeec897be229acc"
+    },
+    "windows_session_test": {
+      "path": "build/windows-runtime/poima-world-session-test.exe",
+      "sha256": "11686a7a40102716589bf309fc3746db7480fe5518e893d8338fcd089776a65e"
+    }
+  },
+  "tests": {
+    "headless_ctest": {
+      "passed": 21,
+      "detail": "Initial run caught missing primitive fields in two new fixtures. Fixtures corrected; both failed suites rerun and passed. Remaining 19 passed initially."
+    },
+    "runtime_ctest": {
+      "passed": 25
+    },
+    "windows_cli": {
+      "passed": 7,
+      "skipped": 2
+    },
+    "windows_world_session_native": {
+      "passed": true
+    },
+    "windows_history_contract": {
+      "passed": 10
+    },
+    "editor_file_safety": {
+      "passed": true,
+      "cases": 13,
+      "evidence_path": "build/editor-failures/0e72bc37ce2b4fecb6a801e746b09a3d/evidence.json",
+      "evidence_sha256": "4539d50041a9f2e362eaddc5cae9f13afcb2e75e787497651cffefef79031870"
+    }
+  },
+  "editor_gpu_runs": [
+    {
+      "evidence_path": "build/editor-capture/1d4a962e8f0b4654805315ea780d54ea/evidence.json",
+      "evidence_sha256": "f6890850477c0a9654bceba01f60fa21301b018e803d73a53de27f7faba0dc83",
+      "binary_sha256": "19c316277fe19a03404982ec63fa8bb3eba351b0453a814edbeec897be229acc",
+      "render": {
+        "capture_written": true,
+        "frames_presented": 56,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "height": 900,
+        "nvrhi_errors": 0,
+        "width": 1440
+      },
+      "authored_revision": 66,
+      "actions": 75,
+      "checks": [
+        "create/import/instantiate/component edits",
+        "delete/undo/redo preserves entity identity",
+        "40 presented mesh/texture replacements",
+        "shadow toggle/resolution changes",
+        "play/pause/60-tick step/stop",
+        "bounded live cache entries"
+      ],
+      "resource_samples": 55,
+      "peak_resources": {
+        "meshes": 1,
+        "materials": 2,
+        "images": 2,
+        "skin_instances": 0,
+        "texture_bytes": 8,
+        "skin_bytes": 0
+      },
+      "image": {
+        "sha256": "793915a487e06fa6917d58478e63e831fa31f3c136687b3b49f7aa52b91e5ee2",
+        "path": "<checkout>/build/editor-capture/1d4a962e8f0b4654805315ea780d54ea/editor.bmp"
+      }
+    },
+    {
+      "evidence_path": "build/editor-capture/80453620c9ce41a9998691dde8c00fb9/evidence.json",
+      "evidence_sha256": "c57a68afbbfa342dc0647c2debdbcae3597c99203a6ba51918721a3eee77d4ef",
+      "binary_sha256": "19c316277fe19a03404982ec63fa8bb3eba351b0453a814edbeec897be229acc",
+      "render": {
+        "capture_written": true,
+        "frames_presented": 56,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "height": 900,
+        "nvrhi_errors": 0,
+        "width": 1440
+      },
+      "authored_revision": 66,
+      "actions": 75,
+      "checks": [
+        "create/import/instantiate/component edits",
+        "delete/undo/redo preserves entity identity",
+        "40 presented mesh/texture replacements",
+        "shadow toggle/resolution changes",
+        "play/pause/60-tick step/stop",
+        "bounded live cache entries"
+      ],
+      "resource_samples": 55,
+      "peak_resources": {
+        "meshes": 1,
+        "materials": 2,
+        "images": 2,
+        "skin_instances": 0,
+        "texture_bytes": 8,
+        "skin_bytes": 0
+      },
+      "image": {
+        "sha256": "34194cbaa6cc9e164d879e6784aeaa766159dd00fb749a3fa487aa258db71a19",
+        "path": "<checkout>/build/editor-capture/80453620c9ce41a9998691dde8c00fb9/editor.bmp"
+      }
+    }
+  ],
+  "cross_gpu_capture_observation": {
+    "maximum_channel_difference": 2,
+    "changed_pixel_count": 18265,
+    "detail": "Same synthetic scene and UI fixture; observation only, not cross-platform rendering/performance qualification."
+  },
+  "window_lifecycle": {
+    "passed": true,
+    "qualification": "Window lifecycle only; UI input unavailable",
+    "checks": {
+      "visible_toolbar_creates_cube": null,
+      "inspector_text_input_persists_rename": null,
+      "undo_redo_restores_same_entity": null,
+      "targeted_keyboard_undo": null,
+      "targeted_keyboard_redo": null,
+      "minimize_restore_survives": true,
+      "resize_capture_matches_client": true,
+      "close_preserves_authored_world": true,
+      "no_renderer_validation_errors": true
+    },
+    "input_checks_skipped": {
+      "visible_toolbar_creates_cube": "Foreground unavailable and targeted toolbar click produced no authored commit.",
+      "inspector_text_input_persists_rename": "Foreground unavailable and targeted toolbar click produced no authored commit.",
+      "undo_redo_restores_same_entity": "Foreground unavailable and targeted toolbar click produced no authored commit.",
+      "targeted_keyboard_undo": "Foreground unavailable and targeted toolbar click produced no authored commit.",
+      "targeted_keyboard_redo": "Foreground unavailable and targeted toolbar click produced no authored commit."
+    },
+    "initial_foreground": false,
+    "render": {
+      "capture_written": true,
+      "frames_presented": 3705,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "height": 713,
+      "nvrhi_errors": 0,
+      "width": 1102
+    },
+    "evidence_path": "build/editor-window/1fb287eb928a473e892ec9cc9c653dff/evidence.json",
+    "evidence_sha256": "489df91658cbb36b25f1b1f8ebefb29f72508a9fb51862168bd66ad812e5188b"
+  },
+  "regressions": {
+    "runtime_animation": {
+      "passed": true,
+      "comparisons": {
+        "continuous_vs_capture": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "live_vs_cpu_reference": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "authored_unchanged": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "motion": {
+          "maximum": 84,
+          "changed": 21424,
+          "over_two": 21424
+        }
+      },
+      "authored_bytes_unchanged": true,
+      "evidence_path": "build/editor-animation-regression/9ef2818c55894ab7b1158a4e1b448b37/evidence.json",
+      "evidence_sha256": "d120f758449082b94930b80bf09c3a48db37e7b583ffa2ab1a8ca3476de633de"
+    },
+    "material_renderer": {
+      "passed": true,
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      },
+      "samples": [
+        {
+          "name": "generated",
+          "actual": [
+            133,
+            87,
+            47
+          ],
+          "expected": [
+            133,
+            87,
+            47
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "zero-scale",
+          "actual": [
+            140,
+            94,
+            55
+          ],
+          "expected": [
+            140,
+            94,
+            55
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "mirrored",
+          "actual": [
+            162,
+            115,
+            73
+          ],
+          "expected": [
+            162,
+            115,
+            73
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored",
+          "actual": [
+            149,
+            100,
+            58
+          ],
+          "expected": [
+            149,
+            101,
+            58
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "nonuniform",
+          "actual": [
+            78,
+            46,
+            22
+          ],
+          "expected": [
+            78,
+            46,
+            22
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "green",
+          "actual": [
+            0,
+            188,
+            0
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "red",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "explicit-null",
+          "actual": [
+            188,
+            188,
+            188
+          ],
+          "expected": [
+            188,
+            188,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "inherited",
+          "actual": [
+            0,
+            0,
+            188
+          ],
+          "expected": [
+            0,
+            0,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "legacy-v2",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "box-normal",
+          "actual": [
+            39,
+            20,
+            6
+          ],
+          "expected": [
+            39,
+            20,
+            6
+          ],
+          "tolerance": 3
+        }
+      ],
+      "evidence_path": "build/editor-material-regression/gpu-0.json",
+      "evidence_sha256": "f9b21fb999c8de5e5de7e8c5d397931669c059d615f4b7c8be048d922a246285"
+    }
+  },
+  "limitations": [
+    "Physical mouse/keyboard widget interaction remains unqualified: the automated Windows desktop did not grant foreground focus. Semantic scripted actions passed; lifecycle passed separately.",
+    "Synchronous imports/transactions and serialized GPU waits; no representative project responsiveness, frame pacing or shipped-game performance qualification.",
+    "Initial fixed panel layout, approximate bounds picking and limited typed inspectors. No gizmos, docking, multiselection, prefab editor, general component UI, game UI, package manager or accessibility bridge.",
+    "History is session-local; serialized byte limit does not bound total heap usage. GPU cache counts exclude font atlas/driver memory.",
+    "Play is an isolated inspection simulation; this GUI does not yet attach C# modules, route first-person controls or expose player audio output.",
+    "GPU failure requires viewport recreation. Final capture can fail when minimized/unavailable; exclusive output writes can leave their own partial file after disk failure.",
+    "Only this laptop NVIDIA/AMD Windows path is GPU-tested. Native Linux GUI and consoles are unqualified."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive.",
+  "public_history_note": "Private document references and original private Git revision identifiers are omitted. Reported measurements and retained code/binary digests are unchanged."
+}

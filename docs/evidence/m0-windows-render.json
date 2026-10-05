@@ -1,0 +1,311 @@
+{
+  "recorded_utc": "2026-09-26T04:14:08.839697+00:00",
+  "qualification": "Vulkan/NVRHI triangle presentation and GPU readback only; M0 incomplete",
+  "build_route": "Linux/WSL host, pinned LLVM-MinGW cross compiler, native Windows x64 execution",
+  "tests": {
+    "cli_contract": {
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 2.962s\n\nOK (skipped=1)\n"
+    },
+    "render_failures": {
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_capture_to_missing_directory (__main__.RenderFailures.test_capture_to_missing_directory) ... ok\ntest_missing_driver (__main__.RenderFailures.test_missing_driver) ... ok\ntest_unavailable_selected_device (__main__.RenderFailures.test_unavailable_selected_device) ... ok\n\n----------------------------------------------------------------------\nRan 3 tests in 1.484s\n\nOK\n"
+    },
+    "linux_dev_ctest": {
+      "recorded_log": "Start testing: Sep 26 00:08 EDT\n----------------------------------------------------------\n1/1 Testing: cli_contract\n1/1 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/dev/poima\" \"1\" \"0\"\nDirectory: <checkout>/build/dev\n\"cli_contract\" start time: Sep 26 00:08 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.079s\n\nOK\n<end of output>\nTest time =   0.13 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 00:08 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\nEnd testing: Sep 26 00:08 EDT\n"
+    },
+    "linux_headless_ctest": {
+      "recorded_log": "Start testing: Sep 26 00:06 EDT\n----------------------------------------------------------\n1/1 Testing: cli_contract\n1/1 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/headless/poima\" \"0\" \"0\"\nDirectory: <checkout>/build/headless\n\"cli_contract\" start time: Sep 26 00:06 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.074s\n\nOK\n<end of output>\nTest time =   0.15 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 00:06 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\nEnd testing: Sep 26 00:06 EDT\n"
+    }
+  },
+  "limitations": [
+    "No game-performance qualification",
+    "No Khronos Vulkan validation layer enabled",
+    "Single laptop with NVIDIA discrete and AMD integrated GPUs",
+    "Windows-hosted MSVC build unverified",
+    "No resize/device-loss recovery or scene renderer"
+  ],
+  "captures": [
+    {
+      "command": [
+        "<checkout>/build/windows-render/poima.exe",
+        "render-smoke",
+        "--frames",
+        "12",
+        "--gpu",
+        "0",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--capture",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\render-evidence\\gpu-0.bmp"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "response": {
+        "protocol_version": 1,
+        "request_id": null,
+        "command": "render-smoke",
+        "status": "ok",
+        "result": {
+          "build": {
+            "version": "0.0.2",
+            "compiler": "Clang",
+            "compiler_version": "23.1.2",
+            "target_os": "Windows",
+            "target_arch": "AMD64"
+          },
+          "available": true,
+          "pattern": "rgb_triangle_v1",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "frames_presented": 12,
+          "width": 960,
+          "height": 540,
+          "capture_written": true,
+          "capture_path": "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\render-evidence\\gpu-0.bmp",
+          "nvrhi_errors": 0,
+          "renderer_qualified": false,
+          "detail": "Vulkan triangle drawn and presented through NVRHI. Serialized smoke test; no game-performance qualification."
+        },
+        "diagnostics": []
+      },
+      "image_check": {
+        "width": 960,
+        "height": 540,
+        "sample_fractions": {
+          "red": 0.06269097222222222,
+          "green": 0.06501736111111112,
+          "blue": 0.061371527777777775,
+          "foreground": 0.24727430555555555
+        },
+        "sha256": "1de63daf4e1533076561b3647f6e6e98e4627d4cab130bbe2e4b87ce51aab6bc",
+        "bytes": 2073738
+      },
+      "passed": true
+    },
+    {
+      "command": [
+        "<checkout>/build/windows-render/poima.exe",
+        "render-smoke",
+        "--frames",
+        "12",
+        "--gpu",
+        "1",
+        "--width",
+        "960",
+        "--height",
+        "540",
+        "--capture",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\render-evidence\\gpu-1.bmp"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "response": {
+        "protocol_version": 1,
+        "request_id": null,
+        "command": "render-smoke",
+        "status": "ok",
+        "result": {
+          "build": {
+            "version": "0.0.2",
+            "compiler": "Clang",
+            "compiler_version": "23.1.2",
+            "target_os": "Windows",
+            "target_arch": "AMD64"
+          },
+          "available": true,
+          "pattern": "rgb_triangle_v1",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "frames_presented": 12,
+          "width": 960,
+          "height": 540,
+          "capture_written": true,
+          "capture_path": "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\render-evidence\\gpu-1.bmp",
+          "nvrhi_errors": 0,
+          "renderer_qualified": false,
+          "detail": "Vulkan triangle drawn and presented through NVRHI. Serialized smoke test; no game-performance qualification."
+        },
+        "diagnostics": []
+      },
+      "image_check": {
+        "width": 960,
+        "height": 540,
+        "sample_fractions": {
+          "red": 0.06269097222222222,
+          "green": 0.06501736111111112,
+          "blue": 0.06135416666666667,
+          "foreground": 0.24727430555555555
+        },
+        "sha256": "e51519dd1fa9e9387918f7b1f037611b74ec817cfb5a1029ae97100f65aa9d5b",
+        "bytes": 2073738
+      },
+      "passed": true
+    }
+  ],
+  "windows_doctor": {
+    "protocol_version": 1,
+    "request_id": null,
+    "command": "doctor",
+    "status": "ok",
+    "result": {
+      "build": {
+        "version": "0.0.2",
+        "compiler": "Clang",
+        "compiler_version": "23.1.2",
+        "target_os": "Windows",
+        "target_arch": "AMD64"
+      },
+      "host": {
+        "os": "Windows",
+        "kernel": "",
+        "wsl": false,
+        "logical_cpus": 16,
+        "physical_memory_bytes": 16440479744
+      },
+      "graphics": {
+        "status": "ok",
+        "loader_api_version": "1.4.341",
+        "detail": "Enumeration only; device creation, rendering, presentation and performance are untested.",
+        "devices": [
+          {
+            "name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "type": "discrete_gpu",
+            "api_version": "1.4.351",
+            "vendor_id": 4318,
+            "device_id": 10272,
+            "hardware": true,
+            "api_at_least_1_3": true,
+            "graphics_queue": true
+          },
+          {
+            "name": "AMD Radeon(TM) Graphics",
+            "type": "integrated_gpu",
+            "api_version": "1.3.280",
+            "vendor_id": 4098,
+            "device_id": 6400,
+            "hardware": true,
+            "api_at_least_1_3": true,
+            "graphics_queue": true
+          }
+        ]
+      },
+      "hardware_vulkan13_found": true,
+      "renderer_qualified": false
+    },
+    "diagnostics": []
+  },
+  "linux_doctor": {
+    "protocol_version": 1,
+    "request_id": null,
+    "command": "doctor",
+    "status": "ok",
+    "result": {
+      "build": {
+        "version": "0.0.2",
+        "compiler": "GNU",
+        "compiler_version": "15.2.0",
+        "target_os": "Linux",
+        "target_arch": "x86_64"
+      },
+      "host": {
+        "os": "Linux",
+        "kernel": "6.6.87.2-microsoft-standard-WSL2",
+        "wsl": true,
+        "logical_cpus": 16,
+        "physical_memory_bytes": 7958884352
+      },
+      "graphics": {
+        "status": "ok",
+        "loader_api_version": "1.4.341",
+        "detail": "Enumeration only; device creation, rendering, presentation and performance are untested.",
+        "devices": [
+          {
+            "name": "llvmpipe (LLVM 21.1.8, 256 bits)",
+            "type": "cpu",
+            "api_version": "1.4.335",
+            "vendor_id": 65541,
+            "device_id": 0,
+            "hardware": false,
+            "api_at_least_1_3": true,
+            "graphics_queue": true
+          }
+        ]
+      },
+      "hardware_vulkan13_found": false,
+      "renderer_qualified": false
+    },
+    "diagnostics": []
+  },
+  "installation": {
+    "exit_code": 0,
+    "log": "-- Install configuration: \"RelWithDebInfo\"\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/NVRHI/LICENSE.txt\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/SDL3/LICENSE.txt\n-- Installing: <checkout>/build/windows-install/bin/poima.exe\n-- Up-to-date: <checkout>/build/windows-install/share/poima/LICENSE\n-- Up-to-date: <checkout>/build/windows-install/share/poima/THIRD_PARTY_NOTICES.md\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW/LICENSE.TXT\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW/COPYING\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/Vulkan-Headers/LICENSE.md\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/Vulkan-Headers\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/Vulkan-Headers/MIT.txt\n-- Up-to-date: <checkout>/build/windows-install/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt\n",
+    "licenses": [
+      "share/poima/LICENSE",
+      "share/poima/THIRD_PARTY_NOTICES.md",
+      "share/poima/licenses/LLVM-MinGW/COPYING",
+      "share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt",
+      "share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt",
+      "share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt",
+      "share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt",
+      "share/poima/licenses/LLVM-MinGW/LICENSE.TXT",
+      "share/poima/licenses/NVRHI/LICENSE.txt",
+      "share/poima/licenses/SDL3/LICENSE.txt",
+      "share/poima/licenses/Vulkan-Headers/Apache-2.0.txt",
+      "share/poima/licenses/Vulkan-Headers/LICENSE.md",
+      "share/poima/licenses/Vulkan-Headers/MIT.txt"
+    ]
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "e7b88b6fe70d3f0c4baaa3e1478870f19bd96f1bcff6a33b6d0a2c8080b247a8",
+    "CMakePresets.json": "4d55847c6c075d8bc5a7c1507e17968ae9ec1369be15b279444efec2f012a870",
+    "THIRD_PARTY_NOTICES.md": "dd3f53f14cab102e69461ff9a17cc6b3482873f4d00308b3afd161569547f10a",
+    "cmake/build_info.hpp.in": "0652d8e98aedf15147f2802aaf6689ace791797da86a4379a3f8166fe7c0138c",
+    "cmake/render_smoke.cmake": "bc08900937c56685752b8ee7bc01380fb212e20740fd4c0e517fec713c26d35d",
+    "cmake/windows-llvm-mingw.cmake": "8416d2f836578692c765abc7fd857ca390d8ea4833a57e97adf0590d76b102d2",
+    "include/poima/core.hpp": "05762278a76e34373766043ca73364384b66de7c30b5ef415268422abd7774ff",
+    "scripts/bootstrap_tools.py": "ddf1d70c63aed9b499bb5a19604c55f72ef438b7f5cfcff5ee077f2893f03972",
+    "shaders/smoke.hlsl": "5ac41014221c4b7ac34c9895d75aada0f4c80ac97a6e5a35588a8ef682b776de",
+    "src/core.cpp": "5efbdac414dafb033f1582dc8a3415ce887acb5e7213eff1db3a4fd0ae2a0828",
+    "src/host.cpp": "5db026cacb021855c75cfa5bde1cc68fe239276b1e4fc5175635446b62fca179",
+    "src/main.cpp": "2ad20bf94d290f2adc3e7e1cea263efda3cb60e94459542191da948f213bdfed",
+    "src/render_smoke.cpp": "e02b5b299f309f9d58ba2a5d73960ec8c7385cb2317198e5160c26c9144f932a",
+    "src/render_smoke_disabled.cpp": "2a5018ea5e4bf72d104c3c45b269c04ad70b9c490f8f793f635007672d8ffcd8",
+    "src/vulkan_probe.cpp": "0177c7893541c538fb961fd88e85524471319835b91de27e72c2f46dcbad6c76",
+    "src/vulkan_probe_disabled.cpp": "c252c4203683795ac15569ba2bb4a5256f7ba9b194895bd04d697d536aaa47db",
+    "tests/cli_contract.py": "c5a1194fde20ff02eb26843e67f5a78af13b5c751f19a3bb77790ee8a69000e1",
+    "tests/render_capture.py": "47d29efe0117dcc5878734da64edb4c917bc29e5a56d50e333f11ec0fda057cf",
+    "tests/render_failures.py": "498f79739250cec34639f4c4c908f48e5e4ac543c7a6ec8f4057e7e1da1f2f19"
+  },
+  "artifacts": {
+    "build/windows-render/poima.exe": {
+      "sha256": "d174bc7c20ed476a7174b1d32184d44c5d28039051d7495d70d7cc4a1cd93038",
+      "bytes": 34210816
+    },
+    "build/windows-install/bin/poima.exe": {
+      "sha256": "d174bc7c20ed476a7174b1d32184d44c5d28039051d7495d70d7cc4a1cd93038",
+      "bytes": 34210816
+    },
+    "build/dev/poima": {
+      "sha256": "2c35cab7a61fa0641d2dc2edf640a9c3f775229b8040009e567ed7f3d1384f59",
+      "bytes": 1822688
+    },
+    "build/headless/poima": {
+      "sha256": "273e058e6bb16be138b8e32484c573afa565e4a367cda844e5d33f35d79c5186",
+      "bytes": 1393688
+    },
+    "docs/evidence/m0-windows-triangle.png": {
+      "sha256": "fbe585983dc7e8bd81dc78ae384e583e5a770a253494c1078d21c95737aa6621",
+      "bytes": 31283
+    }
+  },
+  "dxc_version": "libdxcompiler.so: 1.9(dev;4950-b106a961); libdxil.so: 1.9",
+  "build_logs": {
+    "windows-render-rebuild.log": "[0/2] Re-checking globbed directories...\n[1/4] Building CXX object CMakeFiles/poima_core.dir/src/render_smoke.cpp.obj\n[2/4] Linking CXX static library libpoima_core.a\n[3/4] Linking CXX executable poima.exe\n"
+  },
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

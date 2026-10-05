@@ -1,0 +1,2269 @@
+{
+  "recorded_utc": "2026-09-26T04:45:11.414803+00:00",
+  "fixture": "managed_gameplay_v1",
+  "entities": 1000,
+  "warm_edits": [
+    {
+      "build_ms": 1670.3821529999914,
+      "reload_ms": 63.5825,
+      "observed_total_ms": 1739.1218060001847,
+      "diagnostic_collection_ms": 1.038
+    },
+    {
+      "build_ms": 1602.1216499993898,
+      "reload_ms": 13.0179,
+      "observed_total_ms": 1619.3515759996444,
+      "diagnostic_collection_ms": 0.9898
+    },
+    {
+      "build_ms": 1553.21419899974,
+      "reload_ms": 13.9619,
+      "observed_total_ms": 1571.9532339999205,
+      "diagnostic_collection_ms": 1.0261
+    },
+    {
+      "build_ms": 1571.4889410000978,
+      "reload_ms": 13.6197,
+      "observed_total_ms": 1589.4977379994089,
+      "diagnostic_collection_ms": 1.0331
+    },
+    {
+      "build_ms": 1857.7696870006548,
+      "reload_ms": 13.6773,
+      "observed_total_ms": 1876.209005000419,
+      "diagnostic_collection_ms": 0.8924
+    },
+    {
+      "build_ms": 1859.3564819993844,
+      "reload_ms": 13.9908,
+      "observed_total_ms": 1880.1192939999964,
+      "diagnostic_collection_ms": 0.9467
+    },
+    {
+      "build_ms": 1705.436386000656,
+      "reload_ms": 13.7791,
+      "observed_total_ms": 1724.132549999922,
+      "diagnostic_collection_ms": 1.044
+    },
+    {
+      "build_ms": 1642.50010700016,
+      "reload_ms": 15.1069,
+      "observed_total_ms": 1662.5276100003248,
+      "diagnostic_collection_ms": 0.8317
+    },
+    {
+      "build_ms": 1663.4596359999705,
+      "reload_ms": 15.0521,
+      "observed_total_ms": 1683.4237210005085,
+      "diagnostic_collection_ms": 0.7381
+    },
+    {
+      "build_ms": 1644.1843419997895,
+      "reload_ms": 16.44,
+      "observed_total_ms": 1665.633390000039,
+      "diagnostic_collection_ms": 0.9505
+    },
+    {
+      "build_ms": 1727.4247870000181,
+      "reload_ms": 17.7218,
+      "observed_total_ms": 1751.0543950002102,
+      "diagnostic_collection_ms": 1.0106
+    },
+    {
+      "build_ms": 1824.8943080006939,
+      "reload_ms": 15.6282,
+      "observed_total_ms": 1846.544742000333,
+      "diagnostic_collection_ms": 0.6879
+    },
+    {
+      "build_ms": 1782.1390640001482,
+      "reload_ms": 14.2271,
+      "observed_total_ms": 1801.2807289997,
+      "diagnostic_collection_ms": 0.8467
+    },
+    {
+      "build_ms": 1590.0302599993665,
+      "reload_ms": 13.3233,
+      "observed_total_ms": 1608.3054420005283,
+      "diagnostic_collection_ms": 1.094
+    },
+    {
+      "build_ms": 1681.4199899999949,
+      "reload_ms": 14.1904,
+      "observed_total_ms": 1700.676931000089,
+      "diagnostic_collection_ms": 0.9561
+    },
+    {
+      "build_ms": 2002.2145729999465,
+      "reload_ms": 14.033,
+      "observed_total_ms": 2020.6654129997332,
+      "diagnostic_collection_ms": 0.9733
+    },
+    {
+      "build_ms": 1693.5552450004252,
+      "reload_ms": 15.1697,
+      "observed_total_ms": 1713.473335999879,
+      "diagnostic_collection_ms": 0.7112
+    },
+    {
+      "build_ms": 1788.5129819997019,
+      "reload_ms": 15.0442,
+      "observed_total_ms": 1808.7091799998234,
+      "diagnostic_collection_ms": 0.9742
+    },
+    {
+      "build_ms": 1689.582189000248,
+      "reload_ms": 15.8895,
+      "observed_total_ms": 1710.9221760001674,
+      "diagnostic_collection_ms": 1.7443
+    },
+    {
+      "build_ms": 1754.729442000098,
+      "reload_ms": 15.4791,
+      "observed_total_ms": 1776.3181250002162,
+      "diagnostic_collection_ms": 1.2247
+    },
+    {
+      "build_ms": 1697.5633330002893,
+      "reload_ms": 12.9547,
+      "observed_total_ms": 1715.453931000411,
+      "diagnostic_collection_ms": 1.4333
+    },
+    {
+      "build_ms": 1633.5739399992235,
+      "reload_ms": 16.7688,
+      "observed_total_ms": 1657.6923600005102,
+      "diagnostic_collection_ms": 0.7006
+    },
+    {
+      "build_ms": 1726.2084280000636,
+      "reload_ms": 13.5528,
+      "observed_total_ms": 1745.4178329999195,
+      "diagnostic_collection_ms": 0.7268
+    },
+    {
+      "build_ms": 1620.510566000121,
+      "reload_ms": 15.7548,
+      "observed_total_ms": 1641.0245189999841,
+      "diagnostic_collection_ms": 0.5877
+    },
+    {
+      "build_ms": 1555.654067999967,
+      "reload_ms": 16.4159,
+      "observed_total_ms": 1577.0000130005428,
+      "diagnostic_collection_ms": 1.1459
+    },
+    {
+      "build_ms": 1646.3162629997896,
+      "reload_ms": 14.9631,
+      "observed_total_ms": 1666.511647000334,
+      "diagnostic_collection_ms": 0.6015
+    },
+    {
+      "build_ms": 1641.6047140000956,
+      "reload_ms": 14.6198,
+      "observed_total_ms": 1661.8569920001391,
+      "diagnostic_collection_ms": 0.7689
+    },
+    {
+      "build_ms": 1533.802826000283,
+      "reload_ms": 14.047,
+      "observed_total_ms": 1552.8958260001673,
+      "diagnostic_collection_ms": 0.8776
+    },
+    {
+      "build_ms": 1665.8962630008318,
+      "reload_ms": 14.4012,
+      "observed_total_ms": 1685.4097519999414,
+      "diagnostic_collection_ms": 1.2039
+    },
+    {
+      "build_ms": 1603.4229590004543,
+      "reload_ms": 15.1447,
+      "observed_total_ms": 1623.559509000188,
+      "diagnostic_collection_ms": 0.9169
+    },
+    {
+      "build_ms": 1559.7730670006058,
+      "reload_ms": 16.1739,
+      "observed_total_ms": 1580.8368420002807,
+      "diagnostic_collection_ms": 1.1997
+    },
+    {
+      "build_ms": 1591.7258400004357,
+      "reload_ms": 15.1942,
+      "observed_total_ms": 1611.9955249996565,
+      "diagnostic_collection_ms": 0.6763
+    },
+    {
+      "build_ms": 1613.9547809998476,
+      "reload_ms": 13.5816,
+      "observed_total_ms": 1632.1826880002845,
+      "diagnostic_collection_ms": 0.9205
+    },
+    {
+      "build_ms": 1568.9932939994833,
+      "reload_ms": 13.5341,
+      "observed_total_ms": 1587.6837510004407,
+      "diagnostic_collection_ms": 1.0493
+    },
+    {
+      "build_ms": 1712.9703139999037,
+      "reload_ms": 15.172,
+      "observed_total_ms": 1733.269778000249,
+      "diagnostic_collection_ms": 0.8341
+    },
+    {
+      "build_ms": 1727.2668450004858,
+      "reload_ms": 14.3293,
+      "observed_total_ms": 1746.8423600003007,
+      "diagnostic_collection_ms": 0.8345
+    },
+    {
+      "build_ms": 1712.5620229999186,
+      "reload_ms": 17.0348,
+      "observed_total_ms": 1734.7929219995422,
+      "diagnostic_collection_ms": 0.8084
+    },
+    {
+      "build_ms": 1624.5864140000776,
+      "reload_ms": 13.5457,
+      "observed_total_ms": 1642.7700000003824,
+      "diagnostic_collection_ms": 0.613
+    },
+    {
+      "build_ms": 1665.3864219997558,
+      "reload_ms": 13.5276,
+      "observed_total_ms": 1684.4643399999768,
+      "diagnostic_collection_ms": 1.1222
+    },
+    {
+      "build_ms": 1597.126427999683,
+      "reload_ms": 12.5229,
+      "observed_total_ms": 1614.2919869998877,
+      "diagnostic_collection_ms": 0.7731
+    }
+  ],
+  "builds": [
+    {
+      "name": "initial",
+      "build_ms": 2966.4791280001737,
+      "ticks_during_build": 0,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo"
+      ],
+      "log": "  Determining projects to restore...\n  Restored \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\Poima.Lab.Contracts.csproj (in 65 ms).\n  Restored \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj (in 67 ms).\n  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.66\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-0",
+      "build_ms": 1670.3821529999914,
+      "ticks_during_build": 151,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.34\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-1",
+      "build_ms": 1602.1216499993898,
+      "ticks_during_build": 148,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.29\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-2",
+      "build_ms": 1553.21419899974,
+      "ticks_during_build": 144,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.26\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-3",
+      "build_ms": 1571.4889410000978,
+      "ticks_during_build": 146,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.26\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-4",
+      "build_ms": 1857.7696870006548,
+      "ticks_during_build": 168,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.56\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-5",
+      "build_ms": 1859.3564819993844,
+      "ticks_during_build": 171,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.49\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-6",
+      "build_ms": 1705.436386000656,
+      "ticks_during_build": 158,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.37\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-7",
+      "build_ms": 1642.50010700016,
+      "ticks_during_build": 152,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.31\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-8",
+      "build_ms": 1663.4596359999705,
+      "ticks_during_build": 154,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.35\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-9",
+      "build_ms": 1644.1843419997895,
+      "ticks_during_build": 152,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.32\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-10",
+      "build_ms": 1727.4247870000181,
+      "ticks_during_build": 159,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.39\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-11",
+      "build_ms": 1824.8943080006939,
+      "ticks_during_build": 167,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.44\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-12",
+      "build_ms": 1782.1390640001482,
+      "ticks_during_build": 164,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.46\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-13",
+      "build_ms": 1590.0302599993665,
+      "ticks_during_build": 147,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.28\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-14",
+      "build_ms": 1681.4199899999949,
+      "ticks_during_build": 155,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.36\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-15",
+      "build_ms": 2002.2145729999465,
+      "ticks_during_build": 180,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.67\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-16",
+      "build_ms": 1693.5552450004252,
+      "ticks_during_build": 156,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.35\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-17",
+      "build_ms": 1788.5129819997019,
+      "ticks_during_build": 164,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.43\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-18",
+      "build_ms": 1689.582189000248,
+      "ticks_during_build": 156,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.36\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-19",
+      "build_ms": 1754.729442000098,
+      "ticks_during_build": 162,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.40\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-20",
+      "build_ms": 1697.5633330002893,
+      "ticks_during_build": 156,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.37\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-21",
+      "build_ms": 1633.5739399992235,
+      "ticks_during_build": 151,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.32\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-22",
+      "build_ms": 1726.2084280000636,
+      "ticks_during_build": 159,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.43\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-23",
+      "build_ms": 1620.510566000121,
+      "ticks_during_build": 150,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.31\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-24",
+      "build_ms": 1555.654067999967,
+      "ticks_during_build": 144,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.25\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-25",
+      "build_ms": 1646.3162629997896,
+      "ticks_during_build": 152,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.33\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-26",
+      "build_ms": 1641.6047140000956,
+      "ticks_during_build": 151,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.34\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-27",
+      "build_ms": 1533.802826000283,
+      "ticks_during_build": 142,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.26\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-28",
+      "build_ms": 1665.8962630008318,
+      "ticks_during_build": 154,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.38\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-29",
+      "build_ms": 1603.4229590004543,
+      "ticks_during_build": 148,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.33\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-30",
+      "build_ms": 1559.7730670006058,
+      "ticks_during_build": 144,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.26\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-31",
+      "build_ms": 1591.7258400004357,
+      "ticks_during_build": 147,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.30\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-32",
+      "build_ms": 1613.9547809998476,
+      "ticks_during_build": 149,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.32\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-33",
+      "build_ms": 1568.9932939994833,
+      "ticks_during_build": 145,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.27\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-34",
+      "build_ms": 1712.9703139999037,
+      "ticks_during_build": 158,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.43\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-35",
+      "build_ms": 1727.2668450004858,
+      "ticks_during_build": 159,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.41\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-36",
+      "build_ms": 1712.5620229999186,
+      "ticks_during_build": 158,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.41\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-37",
+      "build_ms": 1624.5864140000776,
+      "ticks_during_build": 150,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.30\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "edit-38",
+      "build_ms": 1665.3864219997558,
+      "ticks_during_build": 154,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.36\n",
+      "bytes": 6656,
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c"
+    },
+    {
+      "name": "edit-39",
+      "build_ms": 1597.126427999683,
+      "ticks_during_build": 148,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.30\n",
+      "bytes": 6656,
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1"
+    },
+    {
+      "name": "broken",
+      "build_ms": 1487.795770000048,
+      "ticks_during_build": 138,
+      "exit_code": 1,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Game.cs(88,8): error CS1029: #error: 'Intentional compilation failure' [\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj]\n\nBuild FAILED.\n\n\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Game.cs(88,8): error CS1029: #error: 'Intentional compilation failure' [\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj]\n    0 Warning(s)\n    1 Error(s)\n\nTime Elapsed 00:00:01.20\n"
+    },
+    {
+      "name": "bad-abi",
+      "build_ms": 1667.4431220008046,
+      "ticks_during_build": 154,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.37\n",
+      "bytes": 6656,
+      "sha256": "07e7f869d0cc0dec2ae4c725f8fd200630af94a13a348f5b7bb76be917afe160"
+    },
+    {
+      "name": "rejected-migration",
+      "build_ms": 1648.4772820003855,
+      "ticks_during_build": 152,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.34\n",
+      "bytes": 6656,
+      "sha256": "6fd688e1512daaf3770f797ebf38665744229211b3b4171856a3edf32df3f409"
+    },
+    {
+      "name": "failing-update",
+      "build_ms": 1673.8007929998275,
+      "ticks_during_build": 155,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.38\n",
+      "bytes": 6656,
+      "sha256": "3bf3b1e07484166d833c252b0914db3e6e7221c1f8be736cc575433f4dd30dc7"
+    },
+    {
+      "name": "retained-root",
+      "build_ms": 1927.9172769993238,
+      "ticks_during_build": 177,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.57\n",
+      "bytes": 6656,
+      "sha256": "2cf7b4802f888aee0245e3268b5c50e2dab2f788b1f8fcc0ad9aefa19e2274ce"
+    },
+    {
+      "name": "schema-2",
+      "build_ms": 1605.9213469998213,
+      "ticks_during_build": 148,
+      "exit_code": 0,
+      "command": [
+        "/mnt/c/Program Files/dotnet/dotnet.exe",
+        "build",
+        "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\Poima.Lab.Game.csproj",
+        "-c",
+        "Release",
+        "--nologo",
+        "--no-restore"
+      ],
+      "log": "  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-evidence-windows\\run-1790397911402581691\\source\\Game\\bin\\Release\\net10.0\\Poima.Lab.Game.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.30\n",
+      "bytes": 6656,
+      "sha256": "e36f6b35dc320f4fce181b0a37ac9172c1c79d39fe7921fa4735331e729c32b9"
+    }
+  ],
+  "reloads": [
+    {
+      "reload_ms": 14.6819,
+      "diagnostic_collection_ms": 0.7321,
+      "resident_bytes": 47165440,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.3336,
+      "diagnostic_collection_ms": 1.0309,
+      "resident_bytes": 47099904,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.9034,
+      "diagnostic_collection_ms": 1.3862,
+      "resident_bytes": 47124480,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.7295,
+      "diagnostic_collection_ms": 0.8256,
+      "resident_bytes": 47161344,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.3546,
+      "diagnostic_collection_ms": 0.7814,
+      "resident_bytes": 47099904,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.2888,
+      "diagnostic_collection_ms": 0.8578,
+      "resident_bytes": 47161344,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.7542,
+      "diagnostic_collection_ms": 0.9119,
+      "resident_bytes": 47120384,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.1743,
+      "diagnostic_collection_ms": 0.7425,
+      "resident_bytes": 47177728,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.2949,
+      "diagnostic_collection_ms": 0.9988,
+      "resident_bytes": 47120384,
+      "managed_heap_bytes": 616592,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.975,
+      "diagnostic_collection_ms": 1.4077,
+      "resident_bytes": 47169536,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.7928,
+      "diagnostic_collection_ms": 1.3086,
+      "resident_bytes": 42926080,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.0841,
+      "diagnostic_collection_ms": 0.9137,
+      "resident_bytes": 42967040,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.2737,
+      "diagnostic_collection_ms": 1.0199,
+      "resident_bytes": 45420544,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.185,
+      "diagnostic_collection_ms": 0.9042,
+      "resident_bytes": 45449216,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.0157,
+      "diagnostic_collection_ms": 0.8716,
+      "resident_bytes": 45629440,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.5384,
+      "diagnostic_collection_ms": 9.4604,
+      "resident_bytes": 45727744,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.7175,
+      "diagnostic_collection_ms": 0.8715,
+      "resident_bytes": 45694976,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.2841,
+      "diagnostic_collection_ms": 0.9589,
+      "resident_bytes": 45649920,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.9258,
+      "diagnostic_collection_ms": 0.825,
+      "resident_bytes": 45649920,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 17.0514,
+      "diagnostic_collection_ms": 1.0083,
+      "resident_bytes": 45711360,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.3112,
+      "diagnostic_collection_ms": 1.0654,
+      "resident_bytes": 45674496,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.1343,
+      "diagnostic_collection_ms": 0.9537,
+      "resident_bytes": 45682688,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.9824,
+      "diagnostic_collection_ms": 0.8823,
+      "resident_bytes": 45649920,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.2094,
+      "diagnostic_collection_ms": 0.8811,
+      "resident_bytes": 45703168,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.7556,
+      "diagnostic_collection_ms": 0.7626,
+      "resident_bytes": 45703168,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.0634,
+      "diagnostic_collection_ms": 1.1963,
+      "resident_bytes": 45740032,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.7902,
+      "diagnostic_collection_ms": 0.7841,
+      "resident_bytes": 45707264,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.4255,
+      "diagnostic_collection_ms": 0.9351,
+      "resident_bytes": 45674496,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.3028,
+      "diagnostic_collection_ms": 0.7461,
+      "resident_bytes": 45707264,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.6493,
+      "diagnostic_collection_ms": 1.0761,
+      "resident_bytes": 45649920,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.1669,
+      "diagnostic_collection_ms": 0.8988,
+      "resident_bytes": 45711360,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.6871,
+      "diagnostic_collection_ms": 1.2149,
+      "resident_bytes": 45740032,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.1995,
+      "diagnostic_collection_ms": 0.6,
+      "resident_bytes": 45670400,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.193,
+      "diagnostic_collection_ms": 0.7237,
+      "resident_bytes": 45711360,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.9315,
+      "diagnostic_collection_ms": 0.7414,
+      "resident_bytes": 45649920,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 11.3387,
+      "diagnostic_collection_ms": 0.7672,
+      "resident_bytes": 45649920,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.0277,
+      "diagnostic_collection_ms": 0.7156,
+      "resident_bytes": 45715456,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.8622,
+      "diagnostic_collection_ms": 0.8914,
+      "resident_bytes": 45670400,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.6734,
+      "diagnostic_collection_ms": 1.0499,
+      "resident_bytes": 45690880,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.82,
+      "diagnostic_collection_ms": 0.8494,
+      "resident_bytes": 45715456,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.2618,
+      "diagnostic_collection_ms": 1.1215,
+      "resident_bytes": 45674496,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.7825,
+      "diagnostic_collection_ms": 0.898,
+      "resident_bytes": 45686784,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 11.7835,
+      "diagnostic_collection_ms": 1.0521,
+      "resident_bytes": 45748224,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.9941,
+      "diagnostic_collection_ms": 1.0413,
+      "resident_bytes": 45658112,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.6243,
+      "diagnostic_collection_ms": 1.151,
+      "resident_bytes": 45731840,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 18.6276,
+      "diagnostic_collection_ms": 0.9826,
+      "resident_bytes": 45686784,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.2536,
+      "diagnostic_collection_ms": 0.7281,
+      "resident_bytes": 45707264,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.4355,
+      "diagnostic_collection_ms": 0.8315,
+      "resident_bytes": 45662208,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.8134,
+      "diagnostic_collection_ms": 0.7391,
+      "resident_bytes": 45694976,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.8501,
+      "diagnostic_collection_ms": 1.0695,
+      "resident_bytes": 45682688,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.7183,
+      "diagnostic_collection_ms": 1.1332,
+      "resident_bytes": 45662208,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.7427,
+      "diagnostic_collection_ms": 0.8653,
+      "resident_bytes": 45707264,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 17.2577,
+      "diagnostic_collection_ms": 0.8638,
+      "resident_bytes": 45686784,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.9298,
+      "diagnostic_collection_ms": 0.6916,
+      "resident_bytes": 45686784,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.099,
+      "diagnostic_collection_ms": 0.6997,
+      "resident_bytes": 45715456,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.5909,
+      "diagnostic_collection_ms": 0.7562,
+      "resident_bytes": 45727744,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.3937,
+      "diagnostic_collection_ms": 0.7241,
+      "resident_bytes": 45764608,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.9877,
+      "diagnostic_collection_ms": 0.64,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 11.471,
+      "diagnostic_collection_ms": 0.8216,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.5089,
+      "diagnostic_collection_ms": 0.9712,
+      "resident_bytes": 45772800,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.8645,
+      "diagnostic_collection_ms": 0.8515,
+      "resident_bytes": 45727744,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.178,
+      "diagnostic_collection_ms": 0.7296,
+      "resident_bytes": 45727744,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.5937,
+      "diagnostic_collection_ms": 0.7592,
+      "resident_bytes": 45772800,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.3247,
+      "diagnostic_collection_ms": 0.7336,
+      "resident_bytes": 45756416,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.1604,
+      "diagnostic_collection_ms": 0.7374,
+      "resident_bytes": 45780992,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.9861,
+      "diagnostic_collection_ms": 0.9012,
+      "resident_bytes": 45748224,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.7644,
+      "diagnostic_collection_ms": 0.9223,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.3706,
+      "diagnostic_collection_ms": 0.8347,
+      "resident_bytes": 45752320,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.6999,
+      "diagnostic_collection_ms": 0.7647,
+      "resident_bytes": 45760512,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.5393,
+      "diagnostic_collection_ms": 0.861,
+      "resident_bytes": 45809664,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.7192,
+      "diagnostic_collection_ms": 0.6289,
+      "resident_bytes": 45764608,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.6639,
+      "diagnostic_collection_ms": 1.4086,
+      "resident_bytes": 45813760,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 11.7316,
+      "diagnostic_collection_ms": 1.0255,
+      "resident_bytes": 45817856,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.4215,
+      "diagnostic_collection_ms": 1.1186,
+      "resident_bytes": 45731840,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.5479,
+      "diagnostic_collection_ms": 0.9841,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.2421,
+      "diagnostic_collection_ms": 0.8884,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.5205,
+      "diagnostic_collection_ms": 0.7756,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.1023,
+      "diagnostic_collection_ms": 0.656,
+      "resident_bytes": 45727744,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.6878,
+      "diagnostic_collection_ms": 1.3756,
+      "resident_bytes": 45752320,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.9441,
+      "diagnostic_collection_ms": 0.8175,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.6286,
+      "diagnostic_collection_ms": 0.8535,
+      "resident_bytes": 45748224,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.8958,
+      "diagnostic_collection_ms": 0.8205,
+      "resident_bytes": 45785088,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.3511,
+      "diagnostic_collection_ms": 1.1272,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.7109,
+      "diagnostic_collection_ms": 1.0441,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.8889,
+      "diagnostic_collection_ms": 0.786,
+      "resident_bytes": 45801472,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.1746,
+      "diagnostic_collection_ms": 0.6833,
+      "resident_bytes": 45756416,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.474,
+      "diagnostic_collection_ms": 0.8332,
+      "resident_bytes": 45727744,
+      "managed_heap_bytes": 616568,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 17.2921,
+      "diagnostic_collection_ms": 0.9978,
+      "resident_bytes": 45756416,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.9622,
+      "diagnostic_collection_ms": 0.7463,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 13.9312,
+      "diagnostic_collection_ms": 0.7546,
+      "resident_bytes": 45748224,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.7665,
+      "diagnostic_collection_ms": 0.8531,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.8382,
+      "diagnostic_collection_ms": 1.001,
+      "resident_bytes": 45817856,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 17.249,
+      "diagnostic_collection_ms": 1.0384,
+      "resident_bytes": 45805568,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.4892,
+      "diagnostic_collection_ms": 0.8016,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 12.3594,
+      "diagnostic_collection_ms": 0.7408,
+      "resident_bytes": 45793280,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.7475,
+      "diagnostic_collection_ms": 0.8638,
+      "resident_bytes": 45776896,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 16.4411,
+      "diagnostic_collection_ms": 0.7705,
+      "resident_bytes": 45772800,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 15.246,
+      "diagnostic_collection_ms": 0.7559,
+      "resident_bytes": 45772800,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.7114,
+      "diagnostic_collection_ms": 1.2588,
+      "resident_bytes": 45772800,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    },
+    {
+      "reload_ms": 14.1738,
+      "diagnostic_collection_ms": 0.8231,
+      "resident_bytes": 45789184,
+      "managed_heap_bytes": 608368,
+      "native_live_bytes": 32000,
+      "retired_alive": 0
+    }
+  ],
+  "checks": {
+    "native_updates": true,
+    "canonical_checkpoint_equals_cpp_windows_and_linux": true,
+    "corrupt_checkpoint_rejected": true,
+    "real_source_edits_preserve_state": true,
+    "compile_failure_old_game_keeps_running": true,
+    "bad-abi_retains_state_and_unloads": true,
+    "rejected-migration_retains_state_and_unloads": true,
+    "failed_update_discards_partial_writes": true,
+    "unload_probe_detects_real_retained_reference": true,
+    "100_reloads_collect_old_assemblies": true,
+    "layout_upgrade_downgrade_rejection_and_checkpoint_migration": true
+  },
+  "launch": [
+    "<checkout>/build/managed-native-windows/poima-managed-lab.exe",
+    "C:\\Program Files\\dotnet\\host\\fxr\\10.0.11\\hostfxr.dll",
+    "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\experiments\\managed_gameplay\\Bridge\\bin\\Release\\net10.0\\Poima.ManagedLab.dll",
+    "\\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\build\\managed-native-windows\\libpoima_managed_kernel.dll"
+  ],
+  "compiler_version": "10.0.204",
+  "hot_loop": {
+    "ticks": 1000,
+    "elapsed_ms": 2.3863,
+    "allocated_bytes": 0,
+    "gen0": 0,
+    "gen1": 0,
+    "gen2": 0
+  },
+  "final_state": {
+    "entities": 1000,
+    "tick": 100,
+    "revision": 7393,
+    "loaded": true,
+    "schema": 2,
+    "entity_bytes": 40,
+    "state_hash": "9b7280df5c85b83f",
+    "first": {
+      "id": 0,
+      "position_mm": 100,
+      "velocity_mm_per_tick": 1,
+      "updates": 100,
+      "energy": 100
+    },
+    "last": {
+      "id": 999,
+      "position_mm": 3597,
+      "velocity_mm_per_tick": 6,
+      "updates": 100,
+      "energy": 100
+    },
+    "native_calls": 9355000,
+    "native_live_bytes": 40000,
+    "contexts_created": 149,
+    "contexts_collected": 148,
+    "retired_contexts_alive": 0,
+    "managed_heap_bytes": 1024488,
+    "resident_bytes": 50167808,
+    "runtime": "10.0.11",
+    "last_hot_loop": {
+      "ticks": 1,
+      "elapsed_ms": 0.4686,
+      "allocated_bytes": 0,
+      "gen0": 0,
+      "gen1": 0,
+      "gen2": 0
+    }
+  },
+  "shutdown": {
+    "entities": 1000,
+    "tick": 100,
+    "revision": 7393,
+    "loaded": false,
+    "schema": null,
+    "entity_bytes": null,
+    "state_hash": null,
+    "first": null,
+    "last": null,
+    "native_calls": 9355000,
+    "native_live_bytes": 0,
+    "contexts_created": 149,
+    "contexts_collected": 149,
+    "retired_contexts_alive": 0,
+    "managed_heap_bytes": 462088,
+    "resident_bytes": 50167808,
+    "runtime": "10.0.11",
+    "last_hot_loop": {
+      "ticks": 1,
+      "elapsed_ms": 0.4686,
+      "allocated_bytes": 0,
+      "gen0": 0,
+      "gen1": 0,
+      "gen2": 0
+    }
+  },
+  "summary": {
+    "build_ms": {
+      "samples": 40,
+      "median_ms": 1664.4230289998632,
+      "p95_ms": 1857.7696870006548,
+      "max_ms": 2002.2145729999465
+    },
+    "reload_ms": {
+      "samples": 40,
+      "median_ms": 14.5105,
+      "p95_ms": 17.0348,
+      "max_ms": 63.5825
+    },
+    "observed_total_ms": {
+      "samples": 40,
+      "median_ms": 1683.9440305002427,
+      "p95_ms": 1876.209005000419,
+      "max_ms": 2020.6654129997332
+    },
+    "diagnostic_collection_ms": {
+      "samples": 40,
+      "median_ms": 0.9336,
+      "p95_ms": 1.2247,
+      "max_ms": 1.7443
+    }
+  },
+  "passed": true,
+  "source_sha256": {
+    "experiments/managed_gameplay/Directory.Build.props": "12b4ce7615058ab0788c6aa6acaddbd7404b1f05ea5161fad30f57ba8f400696",
+    "experiments/managed_gameplay/CMakeLists.txt": "acbd9bd2bf6c9ad95e4670148f5790dc71be233ca701a0cfa6efa158c36ff6b2",
+    "experiments/managed_gameplay/launcher.cpp": "8e15a51712839ccf2fbddc2de393b239ce40505adb2a80f677976a042fe8d144",
+    "experiments/managed_gameplay/kernel.cpp": "5cbab4b45e8caf641cee2a2b3428c27321ac3b3c7dabb79798a07e823ea4ed1a",
+    "experiments/managed_gameplay/Bridge/NativeKernel.cs": "5a5095c765f0d24072d684eeaf1a3aff203b0b957c62da48b0d61432b0e9b118",
+    "experiments/managed_gameplay/Bridge/Poima.ManagedLab.csproj": "a16e98707bf4f52418330ea9ee909fde940cfa6186a666f61d9bfd8e3ff3a7fb",
+    "experiments/managed_gameplay/Bridge/StateCodec.cs": "d0d8e53028518256d45385fbaec4b9c5a2c4426a6ff75374fb5b741e71ad7b96",
+    "experiments/managed_gameplay/Bridge/Entry.cs": "84dcb0b74d948b1825f948bc876460b5dc578dd11eb1d965533b30b8c0af3154",
+    "experiments/managed_gameplay/Bridge/Host.cs": "1b409fe90f4bd47dc15d2a94edd5d4c07074fb7fd57d762d9360abfed3421da4",
+    "experiments/managed_gameplay/Contracts/Poima.Lab.Contracts.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "experiments/managed_gameplay/Contracts/Contracts.cs": "8089b658f58e1088a47dd98673cc83fd2be3cfa861e45a2e9ae5fd066efab1d1",
+    "experiments/managed_gameplay/Game/Poima.Lab.Game.csproj": "ac6be67fb2954ff06f7318153a801f45151307dfd98c5472cdeddefee15c9766",
+    "experiments/managed_gameplay/Game/Game.cs": "bd1a0221c3e7fe0c8d01981852b1ff07be6129a4d4845061d344461e0e0c002f",
+    "scripts/measure_managed_gameplay.py": "35793b5be1ad1acb9dabefd24c1da88765b02b5aaab2791d9f896f724dadad78",
+    "scripts/measure_native_module.py": "5f89927079215859d19e11751e03718908b053ddfaeb92f36307f2321b09e58c"
+  },
+  "artifacts": {
+    "<checkout>/build/managed-native-windows/poima-managed-lab.exe": {
+      "sha256": "50f21631868be82c9bfd70a91c60b073414bdce5497da4e95eef8d7e8cc6a0d6",
+      "bytes": 1841664
+    },
+    "<checkout>/experiments/managed_gameplay/Bridge/bin/Release/net10.0/Poima.ManagedLab.dll": {
+      "sha256": "b3dc5de9d39c157b124524b5be750cf5764b66af2d089bc5f319caef6cc23c13",
+      "bytes": 32256
+    },
+    "<checkout>/build/managed-native-windows/libpoima_managed_kernel.dll": {
+      "sha256": "8fbc4cf021da171f40d57567ad801256f21b4c0dd6d657a282a7012cdcfcd868",
+      "bytes": 62976
+    },
+    "/mnt/c/Program Files/dotnet/host/fxr/10.0.11/hostfxr.dll": {
+      "sha256": "44f97e946b36415176dbc56a4426565a5e9b3e722c0ad579e20a749e3c0c7bcd",
+      "bytes": 379728
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/initial.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-0.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-1.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-2.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-3.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-4.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-5.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-6.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-7.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-8.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-9.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-10.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-11.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-12.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-13.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-14.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-15.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-16.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-17.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-18.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-19.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-20.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-21.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-22.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-23.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-24.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-25.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-26.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-27.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-28.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-29.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-30.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-31.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-32.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-33.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-34.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-35.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-36.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-37.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-38.dll": {
+      "sha256": "384efbd85bf1fc5e8dd60565d1eefa3f10052f735a6a9bbe59adcf268096cb3c",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/edit-39.dll": {
+      "sha256": "584116313bc17e69586ad2f7d4f0c14a7a856a5bb8133f3adf9230083fabe1d1",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/bad-abi.dll": {
+      "sha256": "07e7f869d0cc0dec2ae4c725f8fd200630af94a13a348f5b7bb76be917afe160",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/rejected-migration.dll": {
+      "sha256": "6fd688e1512daaf3770f797ebf38665744229211b3b4171856a3edf32df3f409",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/failing-update.dll": {
+      "sha256": "3bf3b1e07484166d833c252b0914db3e6e7221c1f8be736cc575433f4dd30dc7",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/retained-root.dll": {
+      "sha256": "2cf7b4802f888aee0245e3268b5c50e2dab2f788b1f8fcc0ad9aefa19e2274ce",
+      "bytes": 6656
+    },
+    "<checkout>/build/managed-evidence-windows/run-1790397911402581691/schema-2.dll": {
+      "sha256": "e36f6b35dc320f4fce181b0a37ac9172c1c79d39fe7921fa4735331e729c32b9",
+      "bytes": 6656
+    }
+  },
+  "memory_observation_after_first_10_reloads": {
+    "resident_bytes": {
+      "first": 42926080,
+      "last": 45789184,
+      "min": 42926080,
+      "max": 45817856
+    },
+    "managed_heap_bytes": {
+      "first": 608368,
+      "last": 608368,
+      "min": 608368,
+      "max": 616568
+    },
+    "native_live_bytes": {
+      "first": 32000,
+      "last": 32000,
+      "min": 32000,
+      "max": 32000
+    }
+  },
+  "qualification": "Native Windows host + CoreCLR C# development fixture; not shipping AOT, gameplay SDK or game-performance qualification",
+  "limitations": [
+    "One Windows laptop; SDK/source accessed across WSL UNC filesystem",
+    "Single-threaded 1000-entity integer fixture; no real game/rendered observation",
+    "Diagnostic collection is forced explicitly and timed separately; not a gameplay GC policy",
+    "Hot-loop allocations exclude staging, migration, snapshots and JSON transport",
+    "No jobs or persistent callbacks beyond the deliberate retained-root diagnostic",
+    "AOT shipping, Linux CoreCLR and consoles unqualified"
+  ],
+  "build_logs": {
+    "managed-native-configure.log": "-- The CXX compiler identification is Clang 23.1.2\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: <checkout>/.cache/toolchains/llvm-mingw-20260922-ucrt-ubuntu-22.04-x86_64/bin/x86_64-w64-mingw32-clang++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (7.4s)\n-- Generating done (0.0s)\n-- Build files have been written to: <checkout>/build/managed-native-windows\n",
+    "managed-native-build.log": "[1/4] Building CXX object CMakeFiles/poima_managed_kernel.dir/kernel.cpp.obj\n[2/4] Linking CXX shared library libpoima_managed_kernel.dll\n[3/4] Building CXX object CMakeFiles/poima-managed-lab.dir/launcher.cpp.obj\n[4/4] Linking CXX executable poima-managed-lab.exe\n",
+    "managed-bridge-build.log": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  Poima.Lab.Contracts -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\experiments\\managed_gameplay\\Contracts\\bin\\Release\\net10.0\\Poima.Lab.Contracts.dll\n  Poima.ManagedLab -> \\\\wsl.localhost\\kali-linux\\home\\legendile7\\poimaengine\\experiments\\managed_gameplay\\Bridge\\bin\\Release\\net10.0\\Poima.ManagedLab.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.05\n"
+  },
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

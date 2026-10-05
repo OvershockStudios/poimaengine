@@ -1,0 +1,88 @@
+# Implementation status
+
+Updated 2026-10-04. **Poima is an engine prototype.** Capability discovery reports what is available in each build. Native authoring, a Vulkan forward renderer, an optional physics runtime and a continuous native player are functional. The gameplay SDK and broader production qualification remain incomplete.
+
+## Current limits
+
+[Keyboard/mouse profiles](INPUT_PROFILES.md), [gamepad profiles](GAMEPADS.md), configurable bindings and device discovery are implemented. General settings and public game-save serialization are not implemented; authored document recovery and internal runtime rollback are not game-save APIs.
+
+Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Direct FBX import and Mixamo character workflows are not qualified; the supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
+
+## Implemented
+
+- Optional [C#/Avalonia desktop frontend](DESKTOP_EDITOR.md) over a native C ABI and the shared world service: Vulkan GUI composition, directly hosted native Vulkan Scene, floating dock panels, typed Transform/Camera/mesh/material/light inspectors, folder browser, hierarchy stripes and component icons. This is the new human-editor prototype, not complete Unity 6.7 parity. Scene fly/orbit/pan/frame controls, CPU geometry picking, guarded transform gizmos and saved dock layouts are implemented. Native real-time Play/Pause/Resume/Step and Scene/Game camera preview share agent-accessible commands; editor gameplay input/audio are not yet connected. Physical input and multi-display qualification remain distinct from HWND message tests. Headless engine builds retain no GUI dependency. [Desktop foundation evidence](evidence/m2-desktop-editor.json) and [navigation/layout evidence](evidence/m2-desktop-navigation.json), [gizmo evidence](evidence/m2-desktop-gizmos.json) and [playback evidence](evidence/m2-desktop-playback.json).
+
+- [Shared local authoring sessions](SHARED_SESSIONS.md): `serve`/`connect`, Windows same-user named pipes and Linux Unix sockets, multiple clients over one writer/revision/history, and live native-editor attachment. Inspector drafts retain their original revision across external edits; stale Apply is rejected. Fresh viewport captures report authored/runtime revision and tick separately. This is local authoring transport, not multiplayer or a finished MCP integration.
+
+- Shared native `WorldSession` API, immutable external-camera snapshots and bounded session-local undo/redo, with revision guards, durable retry receipts and identity-preserving restoration. An optional [native editor](EDITOR.md) provides the first human authoring surface over these operations. The full editor, package management, production accessibility and large-project responsiveness remain unfinished.
+
+- Native keyboard/mouse and gamepad profiles with alternate bindings, sensitivity/inversion, radial stick deadzones/response, trigger hysteresis, atomic profile edits, persistent retry receipts and isolated event evaluation. SDL gamepad discovery, single-player device assignment and attachment/focus/disconnect handling feed the same evaluator as headless traces; semantic replay remains independent of bindings. General actions, live editing, haptics and settings menus remain unfinished. [Input profile contract](INPUT_PROFILES.md), [gamepad contract](GAMEPADS.md).
+
+- glTF skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings now connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, pose/physics rollback and immutable live palettes. Blending, retargeting, IK, root motion and C# playback controls remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md).
+
+- Native mono WAV import and content-addressed audio packages, editable acoustic materials/emitters, and optional Steam Audio direct-path/HRTF capture from authored or live poses. Linux/Windows tests measure actual PCM, dynamic-door obstruction, delayed arrival, directional cues and mixing; the C# use action changes the observed acoustic path. Native logical voices, rollback-safe C# play/stop, persistent direct/HRTF streams, temporal replay recording and optional SDL3 player output are now implemented; reflections, production scheduling and the full environmental system remain unfinished. [Event/output contract](AUDIO_EVENTS.md). [Native audio contract and evidence](AUDIO.md).
+
+- Optional C# gameplay integrated with the native runtime: one `Game<TState>`, typed native-owned fields, compact agent inspection/editing, same-tick use/raycast/kinematic interaction, compatible-field reload and joint gameplay/physics batch rollback. Linux and Windows pass 100 reloads plus real failure and retained-context checks; both laptop GPUs pass the scripted door replay. Full component/event APIs and production AOT remain unfinished. [C# API and evidence](MANAGED_GAMEPLAY.md).
+
+- Native collider raycasts with stable entity hits and ignore filters, timed kinematic targets that persist across input batches, live progress inspection and replay. Door collision, child poses, dynamic-body pushing and real failure rollback are checked; The optional C# module now uses this surface for scripted use-button behavior. [Physics interactions and evidence](PHYSICS_INTERACTIONS.md).
+
+- Conservative object frustum culling for the camera and each shadow view, draw counters and optional CPU/64-bit GPU timestamps on capture/play. Exact pixel comparisons retain offscreen casters and moving runtime shadows on both laptop GPUs. Timings describe these small fixtures, not qualified game performance. [Visibility and render diagnostics](RENDER_DIAGNOSTICS.md).
+
+- Optional cascaded directional, six-face point and spot shadow maps, bounded resolution/storage, receiver-plane filtering and moving runtime casters. GPU occlusion and continuous shadowed replay are checked against independent observations. Caching, occlusion culling, ray-traced/virtual shadows and performance qualification remain outstanding. [Shadow contract and evidence](SHADOWS.md).
+
+- Authored directional/point/spot lights, ambient fill and exposure, resolved headless inspection, and frozen runtime settings with moving hierarchical light poses. The initial direct-light path has a 64-enabled-light limit; GI and clustered light assignment remain unfinished. [Lighting contract and evidence](LIGHTING.md).
+
+- Static glTF/GLB import and content-addressed cooked models, editable hierarchy instances, StaticMesh/PbrMaterial components, indexed geometry and a direct-light GGX path with PNG/JPEG base-color, metallic/roughness, emissive and occlusion textures, cooked mip chains and glTF samplers. Normal maps use authored or MikkTSpace-generated tangents. Independent image imports, PbrTextures overrides and effective material inspection are available; broader glTF features remain excluded explicitly. [Asset contract](ASSETS.md), [material authoring and evidence](MATERIAL_AUTHORING.md), [texture evidence](evidence/m2-textures.json) and [captured material example](evidence/m2-textured-grid.png).
+
+- Continuous native player: fixed-step human input, deterministic visual replay, a persistent Vulkan context, resize/minimize handling, retry receipts and final-state capture. Actual Windows replay/lifecycle checks pass; the automated desktop could not grant foreground input, so physical controls remain unqualified. [Player contract](PLAYER.md).
+
+- Optional EnTT/Jolt fixed-step runtime: frozen authored revisions, stable identities, static/dynamic/kinematic box collision, capsule locomotion/jumping/look, guarded input batches, live inspection/capture and internal failure rollback. [Runtime contract](RUNTIME.md).
+
+- Initial M2 observation path: Vulkan depth-tested box rendering from an immutable authored snapshot, camera/hierarchy evaluation, preview or authored lighting, 1×/4× MSAA and revision-tagged BMP capture. Actual image checks pass on NVIDIA and AMD. [Scene capture](SCENE_CAPTURE.md).
+
+- Persistent authored-world service: stable entity IDs, hierarchy queries, Transform/Camera/MeshRenderer inspection/editing, previewable atomic transactions, revision guards, persisted retry receipts and prior-snapshot recovery. [Protocol and limitations](WORLD_SERVICE.md).
+
+- C++20 core library and native CLI, with bounded CMake/Ninja build presets.
+- Machine-readable command discovery, request schemas, version information and errors.
+- Native host inspection, plus optional Vulkan loader/device enumeration using pinned headers.
+- A separate headless build with no downloaded dependencies or graphics requirement.
+- Black-box CLI contract tests and local installation with license notices.
+- Optional SDL3/NVRHI Vulkan window, bounded presentation, explicit GPU selection and final-frame BMP readback.
+- DXC compilation of embedded HLSL vertex/pixel shaders to SPIR-V; no runtime shader-file dependency.
+- Pinned workspace-local Linux-host LLVM-MinGW toolchain producing a native Windows executable.
+- Isolated native-module lab: host-owned state, a versioned C ABI, staged replacement/migration, canonical checkpointing and machine-readable interactive commands. This is an extension/iteration experiment; the production `hot_reload` capability remains false.
+- Native Windows launcher hosting CoreCLR, with collectible C# game assemblies, native entity buffers, staged updates/migration, checkpoint parity and unload/allocation diagnostics. This remains a separate development experiment, not the production C# gameplay SDK.
+- Linux x64 CoreCLR/Native AOT shipping experiment using the same C# game, with independently verified full-state equality, cross-runtime checkpoint resume/migration, error handling and runtime/native-allocation diagnostics.
+
+See the [build instructions](BUILD.md). The authoring-only headless build now passes 21 CTest suites; the optional runtime build passes 25. Windows passes the native shared-session test, ten history cases and seven applicable CLI cases; unbuilt-editor/renderer tests are skipped in that configuration. Earlier bootstrap evidence also covers the Linux Vulkan-inspection variant. Three explicit Windows renderer failure tests cover a missing driver, an unavailable selected GPU and an unwritable capture path. These are bootstrap checks, not the planned game workload or agent-task qualification suite.
+
+## Findings
+
+The inspected host exposes 16 logical CPUs and about 7.4 GiB of RAM to WSL. Its Vulkan loader enumerates llvmpipe (a CPU software device), not the laptop's discrete GPU. Enumeration success therefore does not qualify hardware rendering. The strict hardware check exits with the documented unavailable result.
+
+The cross-compiled Windows x64 executable runs on Windows through WSL interoperability, using Windows Vulkan drivers. Both the RTX 4070 Laptop GPU and AMD Radeon integrated GPU presented 12 frames and produced a verified 960×540 BMP. The automated image check observes approximately 24.7% triangle coverage and all three vertex colors. The NVIDIA image was also visually inspected. No NVRHI errors were reported. This is one laptop with two GPU vendors, not broad hardware qualification.
+
+The renderer uses a serialized FIFO loop and NVRHI's validation layer. The player now handles resize and minimize/restore. Khronos Vulkan validation layers, device-loss recovery, production scene rendering, end-to-end frame-time qualification and advanced graphics features remain unimplemented. The bounded box preview adds depth/MSAA and authored-scene captures without qualifying those remaining systems. The test cannot establish game performance. A Windows-hosted MSVC build also remains unverified. No global toolchain installation or agent configuration changes were made.
+
+The [Windows rendering evidence](evidence/m0-windows-render.json) records binary/source hashes, GPU reports, capture checks and test output; [the captured frame](evidence/m0-windows-triangle.png) is available for inspection. The [earlier WSL evidence](evidence/m0-wsl-bootstrap.json) remains a historical record of the 0.0.1 bootstrap.
+
+The [native-module lab](NATIVE_MODULE_LAB.md) preserves 1,000 entities across behavior changes and 100 reloads on Linux and native Windows. It verifies rejected ABI/migration replacements, failed compilation while old code keeps running, rollback of a partially written update, canonical checkpoint round trips, corruption rejection and a 32→40-byte entity layout migration. The [baseline evidence](evidence/m0-native-module.json) records 40 actual source-edit timings per platform and resident-memory samples. These are small C++ fixture results, not C# results or full-game iteration qualification; jobs, callbacks and GPU/audio resource retirement remain untested.
+
+The [managed gameplay lab](MANAGED_GAMEPLAY_LAB.md) tests C# development inside a native C++ Windows host using SDK 10.0.204 and CoreCLR 10.0.11. Its 40 real source edits reached the first verified logical update at p95 **1.876 seconds**, including build, reload and protocol/interop overhead; diagnostic GC was measured separately. All 100 repeated reloads collected their retired contexts. An intentionally retained game object was detected, then successfully released. Native buffers reached zero bytes on shutdown. Checkpoint bytes match the C++ Windows/Linux fixture. [Recorded C# evidence](evidence/m0-managed-gameplay.json)
+
+These results describe one small 1,000-entity development fixture, not a game performance target or a complete C# SDK. The measured hot loop allocated zero managed bytes, but staging/snapshots/JSON transport allocate outside that interval. The separate [Linux shipping experiment](MANAGED_SHIPPING_LAB.md) now passes full-state CoreCLR/Native AOT equality, save/resume and schema migration, malformed-input rejection and twenty process restarts per runtime. The native executable reports no JIT support. [Shipping evidence](evidence/m0-managed-shipping.json)
+
+The integrated module qualifies Linux collectible reload for its small fixture. Complex jobs, general event lifetimes, Windows AOT and console C# support remain unqualified. Native AOT libraries must not use the unloadable native DLL lab; see the [shipping experiment and native-library limitations](MANAGED_SHIPPING_LAB.md).
+
+## Qualification boundaries
+
+| Area | Current support and limits |
+| --- | --- |
+| Build/resource inventory | Linux and cross-compiled Windows executables tested. Workspace tools pinned. Representative build/reload/resource measurements and Windows-hosted compilation are not qualified. |
+| Vulkan rendering | Presentation and readback passed on NVIDIA/AMD Windows GPUs. Full API validation, device-loss recovery and representative game workloads are not qualified. |
+| Gameplay-language iteration | C++ and C# CoreCLR Windows/Linux reload fixtures tested; Linux CoreCLR/Native AOT lab parity passes. C# runtime integration also passes on both OSes. Production AOT, Windows AOT and console C# deployment are not qualified. |
+| Shader compilation | Pinned DXC compiles embedded HLSL to SPIR-V. Representative shader workloads and incremental compilation performance are not qualified. |
+| Upscaling/frame generation | No vendor upscaler or frame-generation SDK is integrated. |
+| Acoustics | Native direct-path/HRTF and dynamic-door fixtures pass, including C# use. Optional player output exists; reflections/pathing and production resource/listening qualification are incomplete. |
+
+The initial world suite contains nine cases, with one Windows-interop skip: abrupt Windows process termination remains unqualified by that WSL harness. See [initial world evidence](evidence/m1-world-service.json) and [expanded scene evidence](evidence/m2-scene-capture.json). The authored document is a bounded JSON model. The separate EnTT/Jolt runtime provides fixed ticks and live render snapshots; general custom components, persistent simulation saves and broader content/shader reload remain unfinished. [Native project creation/export](PROJECTS.md) is implemented; managed-game deployment and incremental packaging are not. Integrated C# supports compatible-field reload. Game UI and production audio scheduling remain incomplete.

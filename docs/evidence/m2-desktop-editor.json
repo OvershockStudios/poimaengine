@@ -1,0 +1,2545 @@
+{
+  "milestone": "0.0.25 \u2014 retained desktop frontend over native world service",
+  "recorded_utc": "2026-10-05T00:21:56.067231+00:00",
+  "base_commit": "pre-publication baseline (record retained privately)",
+  "scope": "Windows laptop qualification; optional GUI, shared native authoring and direct Vulkan child viewport. M0/M1/M2 remain incomplete.",
+  "source_files": [
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "772b4c4f845dab6ea0abb557748a0d87c0b8765c5cd425b850fc5ae486e0b4c6"
+    },
+    {
+      "path": "cmake/desktop_bridge.cmake",
+      "sha256": "02da80d6888c89d0a8c56450d7360c29a3a2564e335f1225796ddbff08073fc1"
+    },
+    {
+      "path": "desktop/Poima.Editor/App.cs",
+      "sha256": "58c862b8c095b2cf5179d35d8261ac4e8843001a0490d83104e52170a221f0c1"
+    },
+    {
+      "path": "desktop/Poima.Editor/DesktopScript.cs",
+      "sha256": "a411a3907beb39d7e250f6959499c229ed21c891f2694f65611a3fe58d5d75d5"
+    },
+    {
+      "path": "desktop/Poima.Editor/EditorDockFactory.cs",
+      "sha256": "c2e48bab8022c567427d0aaf3fd2beadd817dbca50a544c071f2d16549b0a158"
+    },
+    {
+      "path": "desktop/Poima.Editor/EditorModel.cs",
+      "sha256": "af072650cdc5a8418a09c1a1fba078d617341d70d37fd5fab1ab201ad53b5c3b"
+    },
+    {
+      "path": "desktop/Poima.Editor/EditorTheme.cs",
+      "sha256": "31e5eabde884256c1c3af0bb5d4d0a7c37dcc003eb4d9179c398e2ef1c2626cc"
+    },
+    {
+      "path": "desktop/Poima.Editor/MainWindow.cs",
+      "sha256": "80b6bc0dedb88df0053fb1e43d387a3e8eda9da26f7ef154901c389aeb7d2649"
+    },
+    {
+      "path": "desktop/Poima.Editor/NativeHost.cs",
+      "sha256": "f8804537f86b49dc137d5cecfbececbee570d600d831dc5d8467aae32a53658d"
+    },
+    {
+      "path": "desktop/Poima.Editor/Poima.Editor.csproj",
+      "sha256": "e10afc9af887ae03b0bd6795a176c07374ad692b93c4f2f4c36d461cfeb98645"
+    },
+    {
+      "path": "desktop/Poima.Editor/Program.cs",
+      "sha256": "aea2ae81f67884a743aaa40864ba02574ddabc73f2396e8b9405489a05420bbf"
+    },
+    {
+      "path": "desktop/Poima.Editor/Themes/EditorControls.axaml",
+      "sha256": "ca0c2f5a1f331282766b7ef2a9d088871338ea7ae0b285b44a43e6a8895c04ef"
+    },
+    {
+      "path": "desktop/Poima.Editor/packages.lock.json",
+      "sha256": "5a2c6f203adb02a72db759fcb2b559672bcc31220decd606be165d1c4911450b"
+    },
+    {
+      "path": "include/poima/desktop_bridge.h",
+      "sha256": "e17e2aba42db765a3773e5eab1b545f2f48d8ea46c589ef22c312ea4d5005ace"
+    },
+    {
+      "path": "include/poima/hosted_viewport.hpp",
+      "sha256": "530114a86dceb636c2928f0f3a4200fbeed0e06daef0beb09484228161beadeb"
+    },
+    {
+      "path": "launch-desktop.cmd",
+      "sha256": "8c88d99a1c45d8f606b2d99b80615ff9c1833229eeaad5b0ff08c17f4d7020e5"
+    },
+    {
+      "path": "launch-editor.cmd",
+      "sha256": "1d75e0ce7f9e0711cbddd773509068a812d60f0a0e819c3564225e9738396133"
+    },
+    {
+      "path": "launch-imgui-editor.cmd",
+      "sha256": "7a5104a14647a7889bd5ad80d22ffd046088d6db164f867c54abe3c2f100dca3"
+    },
+    {
+      "path": "scripts/build_desktop.py",
+      "sha256": "c34e711c5970790483df0c78ff87474dc063a74d06293508f5b810ee7f60b87d"
+    },
+    {
+      "path": "src/desktop_bridge.cpp",
+      "sha256": "ca7bd2aa673be70718b23d67eedbfa949d18f3fee35fc2a8fc3c5140f5279784"
+    },
+    {
+      "path": "src/hosted_viewport_disabled.cpp",
+      "sha256": "0926ed00618fa3bd8dc25491c60a86103ecc1d2eb9cfa546016295d9c18f368b"
+    },
+    {
+      "path": "src/render_smoke.cpp",
+      "sha256": "688169c4f60627c1a53d89d73a20731b462a74ba5a5a674627ecba880fe37f78"
+    },
+    {
+      "path": "tests/desktop_bridge_contract.py",
+      "sha256": "488e2175c465ddc812970bfcb775f9f5ed9385bb66c0f6b24ecc8d5a20713e99"
+    },
+    {
+      "path": "tests/desktop_frontend.py",
+      "sha256": "ba49c38273f7c8e1969aa4c64484bed898e1e87b5485764e48bce4734beb4f52"
+    }
+  ],
+  "package": {
+    "manifest": {
+      "path": "build/desktop-modern/poima-desktop-build.json",
+      "sha256": "cc1d648df0f31db6b801ea4664ccdca2eb4c412366d0ca7a62b22198ae49015e"
+    },
+    "engine_version": "0.0.25",
+    "runtime": "win-x64, self-contained CoreCLR",
+    "package_count": 36,
+    "payload_files": 357,
+    "payload_bytes": 488433780,
+    "binaries": [
+      {
+        "path": "build/desktop-modern/Poima.Editor.dll",
+        "sha256": "67c836119696d28b63e2e2a0fa85b91d5967b905eea2fc22eab8b7f7daa75f54"
+      },
+      {
+        "path": "build/desktop-modern/poima_desktop.dll",
+        "sha256": "ccdfe8a39303f69754e833ce13e5b7ea3a45b7cbd843eef189a49479eb5d42f2"
+      },
+      {
+        "path": "build/desktop-modern/poima.exe",
+        "sha256": "bde36e65ec2bd4abddffe07e29a848bc1464dae8f1abc643c3e36b5fd5357fe6"
+      }
+    ]
+  },
+  "gui_runs": [
+    {
+      "raw_artifact": {
+        "path": "build/desktop-modern-final-gpu0/3f90ebcb11da4ab0abd35496d3979319/evidence.json",
+        "sha256": "9420e3c540b72ea4e223b79db3da7f022170916ca706e8e80549e917e20b2c0b"
+      },
+      "passed": true,
+      "gpu": 0,
+      "input": "Semantic C# editor actions and shared CLI commands; no physical input.",
+      "source_sha256": "ba49c38273f7c8e1969aa4c64484bed898e1e87b5485764e48bce4734beb4f52",
+      "editor_sha256": "67c836119696d28b63e2e2a0fa85b91d5967b905eea2fc22eab8b7f7daa75f54",
+      "shared_cli": {
+        "attached": false,
+        "camera": {
+          "far": 1000.0,
+          "near": 0.1,
+          "pitch": -22.0,
+          "position": [
+            6.0,
+            4.0,
+            8.0
+          ],
+          "vertical_fov": 60.0,
+          "yaw": 37.0
+        },
+        "capture": null,
+        "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+        "frames_presented": 0,
+        "graphics_error": null,
+        "presented_revision": null,
+        "presented_tick": null,
+        "render": null,
+        "revision": 2,
+        "runtime": {
+          "active": false,
+          "authored_revision": null,
+          "available": true,
+          "session_id": null,
+          "tick": null
+        },
+        "selected": null
+      },
+      "exit_code": 0,
+      "desktop": {
+        "success": true,
+        "error": null,
+        "frontend": "Avalonia 12.1.3 / Dock 12.1.0.6",
+        "ui_backend_requested": "Vulkan only",
+        "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+        "font_resolved": "Inter",
+        "render_scaling": 1.25,
+        "base_font_dip": 12,
+        "elapsed_ms": 13666.2474,
+        "pump_frames": 220,
+        "private_bytes": 332017664,
+        "state": {
+          "attached": true,
+          "camera": {
+            "far": 1000.0,
+            "near": 0.1,
+            "pitch": -22.0,
+            "position": [
+              6.0,
+              4.0,
+              8.0
+            ],
+            "vertical_fov": 60.0,
+            "yaw": 37.0
+          },
+          "capture": {
+            "capture_id": 1,
+            "path": "<checkout>\\build\\desktop-modern-final-gpu0\\3f90ebcb11da4ab0abd35496d3979319\\viewport.bmp",
+            "result": {
+              "frame": 70,
+              "height": 528,
+              "path": "<checkout>\\build\\desktop-modern-final-gpu0\\3f90ebcb11da4ab0abd35496d3979319\\viewport.bmp",
+              "render": {
+                "available": true,
+                "capture_written": true,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 26,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 8,
+              "scene_revision": 8,
+              "source": "authored",
+              "tick": null,
+              "width": 1034
+            },
+            "revision": 8,
+            "state": "complete"
+          },
+          "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+          "frames_presented": 207,
+          "graphics_error": null,
+          "presented_revision": 8,
+          "presented_tick": null,
+          "render": {
+            "available": true,
+            "capture_written": true,
+            "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+            "frames_presented": 163,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 495,
+            "nvrhi_errors": 0,
+            "samples": 4,
+            "success": true,
+            "width": 815
+          },
+          "revision": 8,
+          "runtime": {
+            "active": false,
+            "authored_revision": null,
+            "available": true,
+            "session_id": null,
+            "tick": null
+          },
+          "selected": "00000000000000000000000000000069"
+        },
+        "world": "<checkout>\\build\\desktop-modern-final-gpu0\\3f90ebcb11da4ab0abd35496d3979319\\Courtyard\\world.json",
+        "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+        "actions": [
+          {
+            "frame": 3,
+            "op": "select"
+          },
+          {
+            "frame": 5,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Rear colonnade pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 2,
+              "revision": 2
+            }
+          },
+          {
+            "frame": 6,
+            "op": "set_text"
+          },
+          {
+            "frame": 8,
+            "op": "rpc",
+            "result": {
+              "changed_ids": [
+                "00000000000000000000000000000069"
+              ],
+              "committed": true,
+              "history_recorded": true,
+              "replayed": false,
+              "revision": 3
+            }
+          },
+          {
+            "frame": 11,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Preserved human draft",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": true,
+              "conflict": true,
+              "base_revision": 2,
+              "revision": 3
+            }
+          },
+          {
+            "frame": 12,
+            "op": "apply",
+            "error": "Revision conflict; inspect the current world and retry. (-32009)",
+            "expected_error": true
+          },
+          {
+            "frame": 13,
+            "op": "reload"
+          },
+          {
+            "frame": 14,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "External edit",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 3,
+              "revision": 3
+            }
+          },
+          {
+            "frame": 15,
+            "op": "set_text"
+          },
+          {
+            "frame": 16,
+            "op": "apply"
+          },
+          {
+            "frame": 18,
+            "op": "undo"
+          },
+          {
+            "frame": 19,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "External edit",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 5,
+              "revision": 5
+            }
+          },
+          {
+            "frame": 20,
+            "op": "redo"
+          },
+          {
+            "frame": 22,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            }
+          },
+          {
+            "frame": 23,
+            "op": "set_text"
+          },
+          {
+            "frame": 24,
+            "op": "apply",
+            "error": "Fix invalid Inspector fields before applying.",
+            "expected_error": true
+          },
+          {
+            "frame": 25,
+            "op": "close_guard"
+          },
+          {
+            "frame": 26,
+            "op": "float"
+          },
+          {
+            "frame": 28,
+            "op": "assert_text"
+          },
+          {
+            "frame": 30,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [
+                "position0"
+              ],
+              "dirty": true,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+              "frames_presented": 29,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 29,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1383
+              },
+              "revision": 6,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              },
+              {
+                "title": "Inspector",
+                "visible": true,
+                "width": 359.2,
+                "height": 634.4
+              }
+            ]
+          },
+          {
+            "frame": 33,
+            "op": "reset_layout"
+          },
+          {
+            "frame": 36,
+            "op": "wait_text",
+            "wait_pumps": 1
+          },
+          {
+            "frame": 37,
+            "op": "apply",
+            "error": "Fix invalid Inspector fields before applying.",
+            "expected_error": true
+          },
+          {
+            "frame": 38,
+            "op": "reload"
+          },
+          {
+            "frame": 39,
+            "op": "float"
+          },
+          {
+            "frame": 45,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+              "frames_presented": 41,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 5,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 493,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 6,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              },
+              {
+                "title": "Scene",
+                "visible": true,
+                "width": 827.2,
+                "height": 446.4
+              }
+            ]
+          },
+          {
+            "frame": 48,
+            "op": "reset_layout"
+          },
+          {
+            "frame": 54,
+            "op": "runtime_toggle"
+          },
+          {
+            "frame": 57,
+            "op": "step"
+          },
+          {
+            "frame": 59,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+              "frames_presented": 53,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": 2,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 9,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 6,
+              "runtime": {
+                "active": true,
+                "authored_revision": 6,
+                "available": true,
+                "session_id": "7db98cf59b1445f9842204661a57b484",
+                "tick": 2
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              }
+            ]
+          },
+          {
+            "frame": 61,
+            "op": "runtime_toggle"
+          },
+          {
+            "frame": 65,
+            "op": "rpc",
+            "result": {
+              "changed_ids": [
+                "00000000000000000000000000000069"
+              ],
+              "committed": true,
+              "history_recorded": true,
+              "replayed": false,
+              "revision": 7
+            }
+          },
+          {
+            "frame": 69,
+            "op": "assert_scene_error",
+            "scene_error": "Asset store must be a regular directory, not a link.",
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+              "frames_presented": 59,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 15,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 7,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            }
+          },
+          {
+            "frame": 71,
+            "op": "rpc",
+            "result": {
+              "changed_ids": [
+                "00000000000000000000000000000069"
+              ],
+              "committed": true,
+              "history_recorded": true,
+              "replayed": false,
+              "revision": 8
+            }
+          },
+          {
+            "frame": 76,
+            "op": "assert_scene_error",
+            "scene_error": null,
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+              "frames_presented": 64,
+              "graphics_error": null,
+              "presented_revision": 8,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 20,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 8,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            }
+          },
+          {
+            "frame": 81,
+            "op": "rpc",
+            "result": {
+              "capture_id": 1,
+              "path": "<checkout>\\build\\desktop-modern-final-gpu0\\3f90ebcb11da4ab0abd35496d3979319\\viewport.bmp",
+              "revision": 8,
+              "state": "queued"
+            }
+          },
+          {
+            "frame": 86,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 8,
+              "revision": 8
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": {
+                "capture_id": 1,
+                "path": "<checkout>\\build\\desktop-modern-final-gpu0\\3f90ebcb11da4ab0abd35496d3979319\\viewport.bmp",
+                "result": {
+                  "frame": 70,
+                  "height": 528,
+                  "path": "<checkout>\\build\\desktop-modern-final-gpu0\\3f90ebcb11da4ab0abd35496d3979319\\viewport.bmp",
+                  "render": {
+                    "available": true,
+                    "capture_written": true,
+                    "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                    "frames_presented": 26,
+                    "gpu": "AMD Radeon(TM) Graphics",
+                    "hardware": true,
+                    "height": 528,
+                    "nvrhi_errors": 0,
+                    "samples": 4,
+                    "success": true,
+                    "width": 1034
+                  },
+                  "revision": 8,
+                  "scene_revision": 8,
+                  "source": "authored",
+                  "tick": null,
+                  "width": 1034
+                },
+                "revision": 8,
+                "state": "complete"
+              },
+              "endpoint": "desktop-ui-f32214b493514f5d9c9d3b20b1801ce7",
+              "frames_presented": 74,
+              "graphics_error": null,
+              "presented_revision": 8,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": true,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 30,
+                "gpu": "AMD Radeon(TM) Graphics",
+                "hardware": true,
+                "height": 495,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 815
+              },
+              "revision": 8,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1137.6,
+                "height": 698.4
+              }
+            ]
+          }
+        ],
+        "draft": {
+          "entity": "00000000000000000000000000000069",
+          "name": "Courtyard pillar",
+          "components": {
+            "MeshRenderer": {
+              "albedo": [
+                0.32,
+                0.38,
+                0.42
+              ],
+              "primitive": "box",
+              "visible": true
+            },
+            "Transform": {
+              "position": [
+                -4,
+                1.7,
+                -3.8
+              ],
+              "rotation": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "scale": [
+                0.4,
+                3.4,
+                0.4
+              ]
+            }
+          },
+          "invalid_fields": [],
+          "dirty": false,
+          "conflict": false,
+          "base_revision": 8,
+          "revision": 8
+        },
+        "limitations": [
+          "Prototype: physical IME/accessibility and full Unity parity are not qualified."
+        ]
+      },
+      "screenshot_sha256": "3ac172ce3e147c8a85c0abc4e0554d6260cd675136b914094815aec14fe5fba0",
+      "checks": [
+        "actual Avalonia Vulkan backend with native child Scene",
+        "shared CLI connection",
+        "dirty draft preserved; stale Apply rejects; Reload explicit",
+        "undo/redo and fixed-tick runtime",
+        "invalid raw field survives floating/reset; dirty close cancelled",
+        "missing-asset Scene error recovers after authoring repair without reattachment",
+        "actual Inspector and Scene floating windows; reset and continued presentation",
+        "revision-guarded viewport capture",
+        "bounded process exit and actual desktop client-area screenshot"
+      ]
+    },
+    {
+      "raw_artifact": {
+        "path": "build/desktop-modern-final-gpu1/f9e73c110bae469789f9575ba9d9ec90/evidence.json",
+        "sha256": "2b56cabba93574df87da7ae2be54fafecb3ae5e493885378b38675d33462eb19"
+      },
+      "passed": true,
+      "gpu": 1,
+      "input": "Semantic C# editor actions and shared CLI commands; no physical input.",
+      "source_sha256": "ba49c38273f7c8e1969aa4c64484bed898e1e87b5485764e48bce4734beb4f52",
+      "editor_sha256": "67c836119696d28b63e2e2a0fa85b91d5967b905eea2fc22eab8b7f7daa75f54",
+      "shared_cli": {
+        "attached": false,
+        "camera": {
+          "far": 1000.0,
+          "near": 0.1,
+          "pitch": -22.0,
+          "position": [
+            6.0,
+            4.0,
+            8.0
+          ],
+          "vertical_fov": 60.0,
+          "yaw": 37.0
+        },
+        "capture": null,
+        "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+        "frames_presented": 0,
+        "graphics_error": null,
+        "presented_revision": null,
+        "presented_tick": null,
+        "render": null,
+        "revision": 2,
+        "runtime": {
+          "active": false,
+          "authored_revision": null,
+          "available": true,
+          "session_id": null,
+          "tick": null
+        },
+        "selected": null
+      },
+      "exit_code": 0,
+      "desktop": {
+        "success": true,
+        "error": null,
+        "frontend": "Avalonia 12.1.3 / Dock 12.1.0.6",
+        "ui_backend_requested": "Vulkan only",
+        "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+        "font_resolved": "Inter",
+        "render_scaling": 1.25,
+        "base_font_dip": 12,
+        "elapsed_ms": 15639.3741,
+        "pump_frames": 220,
+        "private_bytes": 509743104,
+        "state": {
+          "attached": true,
+          "camera": {
+            "far": 1000.0,
+            "near": 0.1,
+            "pitch": -22.0,
+            "position": [
+              6.0,
+              4.0,
+              8.0
+            ],
+            "vertical_fov": 60.0,
+            "yaw": 37.0
+          },
+          "capture": {
+            "capture_id": 1,
+            "path": "<checkout>\\build\\desktop-modern-final-gpu1\\f9e73c110bae469789f9575ba9d9ec90\\viewport.bmp",
+            "result": {
+              "frame": 70,
+              "height": 528,
+              "path": "<checkout>\\build\\desktop-modern-final-gpu1\\f9e73c110bae469789f9575ba9d9ec90\\viewport.bmp",
+              "render": {
+                "available": true,
+                "capture_written": true,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 26,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 8,
+              "scene_revision": 8,
+              "source": "authored",
+              "tick": null,
+              "width": 1034
+            },
+            "revision": 8,
+            "state": "complete"
+          },
+          "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+          "frames_presented": 207,
+          "graphics_error": null,
+          "presented_revision": 8,
+          "presented_tick": null,
+          "render": {
+            "available": true,
+            "capture_written": true,
+            "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+            "frames_presented": 163,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 495,
+            "nvrhi_errors": 0,
+            "samples": 4,
+            "success": true,
+            "width": 815
+          },
+          "revision": 8,
+          "runtime": {
+            "active": false,
+            "authored_revision": null,
+            "available": true,
+            "session_id": null,
+            "tick": null
+          },
+          "selected": "00000000000000000000000000000069"
+        },
+        "world": "<checkout>\\build\\desktop-modern-final-gpu1\\f9e73c110bae469789f9575ba9d9ec90\\Courtyard\\world.json",
+        "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+        "actions": [
+          {
+            "frame": 3,
+            "op": "select"
+          },
+          {
+            "frame": 5,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Rear colonnade pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 2,
+              "revision": 2
+            }
+          },
+          {
+            "frame": 6,
+            "op": "set_text"
+          },
+          {
+            "frame": 8,
+            "op": "rpc",
+            "result": {
+              "changed_ids": [
+                "00000000000000000000000000000069"
+              ],
+              "committed": true,
+              "history_recorded": true,
+              "replayed": false,
+              "revision": 3
+            }
+          },
+          {
+            "frame": 11,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Preserved human draft",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": true,
+              "conflict": true,
+              "base_revision": 2,
+              "revision": 3
+            }
+          },
+          {
+            "frame": 12,
+            "op": "apply",
+            "error": "Revision conflict; inspect the current world and retry. (-32009)",
+            "expected_error": true
+          },
+          {
+            "frame": 13,
+            "op": "reload"
+          },
+          {
+            "frame": 14,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "External edit",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 3,
+              "revision": 3
+            }
+          },
+          {
+            "frame": 15,
+            "op": "set_text"
+          },
+          {
+            "frame": 16,
+            "op": "apply"
+          },
+          {
+            "frame": 18,
+            "op": "undo"
+          },
+          {
+            "frame": 19,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "External edit",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 5,
+              "revision": 5
+            }
+          },
+          {
+            "frame": 20,
+            "op": "redo"
+          },
+          {
+            "frame": 22,
+            "op": "assert_draft",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            }
+          },
+          {
+            "frame": 23,
+            "op": "set_text"
+          },
+          {
+            "frame": 24,
+            "op": "apply",
+            "error": "Fix invalid Inspector fields before applying.",
+            "expected_error": true
+          },
+          {
+            "frame": 25,
+            "op": "close_guard"
+          },
+          {
+            "frame": 26,
+            "op": "float"
+          },
+          {
+            "frame": 28,
+            "op": "assert_text"
+          },
+          {
+            "frame": 30,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [
+                "position0"
+              ],
+              "dirty": true,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+              "frames_presented": 29,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 29,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1383
+              },
+              "revision": 6,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              },
+              {
+                "title": "Inspector",
+                "visible": true,
+                "width": 359.2,
+                "height": 634.4
+              }
+            ]
+          },
+          {
+            "frame": 33,
+            "op": "reset_layout"
+          },
+          {
+            "frame": 36,
+            "op": "wait_text",
+            "wait_pumps": 1
+          },
+          {
+            "frame": 37,
+            "op": "apply",
+            "error": "Fix invalid Inspector fields before applying.",
+            "expected_error": true
+          },
+          {
+            "frame": 38,
+            "op": "reload"
+          },
+          {
+            "frame": 39,
+            "op": "float"
+          },
+          {
+            "frame": 45,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+              "frames_presented": 41,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 5,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 493,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 6,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              },
+              {
+                "title": "Scene",
+                "visible": true,
+                "width": 827.2,
+                "height": 446.4
+              }
+            ]
+          },
+          {
+            "frame": 48,
+            "op": "reset_layout"
+          },
+          {
+            "frame": 54,
+            "op": "runtime_toggle"
+          },
+          {
+            "frame": 57,
+            "op": "step"
+          },
+          {
+            "frame": 59,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 6,
+              "revision": 6
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+              "frames_presented": 53,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": 2,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 9,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 6,
+              "runtime": {
+                "active": true,
+                "authored_revision": 6,
+                "available": true,
+                "session_id": "ccbf3f9ae7f846caa7143c6a7d0f8784",
+                "tick": 2
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              }
+            ]
+          },
+          {
+            "frame": 61,
+            "op": "runtime_toggle"
+          },
+          {
+            "frame": 65,
+            "op": "rpc",
+            "result": {
+              "changed_ids": [
+                "00000000000000000000000000000069"
+              ],
+              "committed": true,
+              "history_recorded": true,
+              "replayed": false,
+              "revision": 7
+            }
+          },
+          {
+            "frame": 69,
+            "op": "assert_scene_error",
+            "scene_error": "Asset store must be a regular directory, not a link.",
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+              "frames_presented": 59,
+              "graphics_error": null,
+              "presented_revision": 6,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 15,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 7,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            }
+          },
+          {
+            "frame": 71,
+            "op": "rpc",
+            "result": {
+              "changed_ids": [
+                "00000000000000000000000000000069"
+              ],
+              "committed": true,
+              "history_recorded": true,
+              "replayed": false,
+              "revision": 8
+            }
+          },
+          {
+            "frame": 76,
+            "op": "assert_scene_error",
+            "scene_error": null,
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": null,
+              "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+              "frames_presented": 64,
+              "graphics_error": null,
+              "presented_revision": 8,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": false,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 20,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 8,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            }
+          },
+          {
+            "frame": 81,
+            "op": "rpc",
+            "result": {
+              "capture_id": 1,
+              "path": "<checkout>\\build\\desktop-modern-final-gpu1\\f9e73c110bae469789f9575ba9d9ec90\\viewport.bmp",
+              "revision": 8,
+              "state": "queued"
+            }
+          },
+          {
+            "frame": 86,
+            "op": "inspect",
+            "draft": {
+              "entity": "00000000000000000000000000000069",
+              "name": "Courtyard pillar",
+              "components": {
+                "MeshRenderer": {
+                  "albedo": [
+                    0.32,
+                    0.38,
+                    0.42
+                  ],
+                  "primitive": "box",
+                  "visible": true
+                },
+                "Transform": {
+                  "position": [
+                    -4,
+                    1.7,
+                    -3.8
+                  ],
+                  "rotation": [
+                    0,
+                    0,
+                    0,
+                    1
+                  ],
+                  "scale": [
+                    0.4,
+                    3.4,
+                    0.4
+                  ]
+                }
+              },
+              "invalid_fields": [],
+              "dirty": false,
+              "conflict": false,
+              "base_revision": 8,
+              "revision": 8
+            },
+            "native": {
+              "attached": true,
+              "camera": {
+                "far": 1000.0,
+                "near": 0.1,
+                "pitch": -22.0,
+                "position": [
+                  6.0,
+                  4.0,
+                  8.0
+                ],
+                "vertical_fov": 60.0,
+                "yaw": 37.0
+              },
+              "capture": {
+                "capture_id": 1,
+                "path": "<checkout>\\build\\desktop-modern-final-gpu1\\f9e73c110bae469789f9575ba9d9ec90\\viewport.bmp",
+                "result": {
+                  "frame": 70,
+                  "height": 528,
+                  "path": "<checkout>\\build\\desktop-modern-final-gpu1\\f9e73c110bae469789f9575ba9d9ec90\\viewport.bmp",
+                  "render": {
+                    "available": true,
+                    "capture_written": true,
+                    "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                    "frames_presented": 26,
+                    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                    "hardware": true,
+                    "height": 528,
+                    "nvrhi_errors": 0,
+                    "samples": 4,
+                    "success": true,
+                    "width": 1034
+                  },
+                  "revision": 8,
+                  "scene_revision": 8,
+                  "source": "authored",
+                  "tick": null,
+                  "width": 1034
+                },
+                "revision": 8,
+                "state": "complete"
+              },
+              "endpoint": "desktop-ui-d6acf49ca8694676b577e49abfa40f22",
+              "frames_presented": 74,
+              "graphics_error": null,
+              "presented_revision": 8,
+              "presented_tick": null,
+              "render": {
+                "available": true,
+                "capture_written": true,
+                "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+                "frames_presented": 30,
+                "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+                "hardware": true,
+                "height": 528,
+                "nvrhi_errors": 0,
+                "samples": 4,
+                "success": true,
+                "width": 1034
+              },
+              "revision": 8,
+              "runtime": {
+                "active": false,
+                "authored_revision": null,
+                "available": true,
+                "session_id": null,
+                "tick": null
+              },
+              "selected": "00000000000000000000000000000069"
+            },
+            "windows": [
+              {
+                "title": "world \u2014 Poima",
+                "visible": true,
+                "width": 1440,
+                "height": 734.4
+              }
+            ]
+          }
+        ],
+        "draft": {
+          "entity": "00000000000000000000000000000069",
+          "name": "Courtyard pillar",
+          "components": {
+            "MeshRenderer": {
+              "albedo": [
+                0.32,
+                0.38,
+                0.42
+              ],
+              "primitive": "box",
+              "visible": true
+            },
+            "Transform": {
+              "position": [
+                -4,
+                1.7,
+                -3.8
+              ],
+              "rotation": [
+                0,
+                0,
+                0,
+                1
+              ],
+              "scale": [
+                0.4,
+                3.4,
+                0.4
+              ]
+            }
+          },
+          "invalid_fields": [],
+          "dirty": false,
+          "conflict": false,
+          "base_revision": 8,
+          "revision": 8
+        },
+        "limitations": [
+          "Prototype: physical IME/accessibility and full Unity parity are not qualified."
+        ]
+      },
+      "screenshot_sha256": "511f173cbca9c8335b85f51d6d5ecc7ee526efacc284fbc7c5063d5df7aff57a",
+      "checks": [
+        "actual Avalonia Vulkan backend with native child Scene",
+        "shared CLI connection",
+        "dirty draft preserved; stale Apply rejects; Reload explicit",
+        "undo/redo and fixed-tick runtime",
+        "invalid raw field survives floating/reset; dirty close cancelled",
+        "missing-asset Scene error recovers after authoring repair without reattachment",
+        "actual Inspector and Scene floating windows; reset and continued presentation",
+        "revision-guarded viewport capture",
+        "bounded process exit and actual desktop client-area screenshot"
+      ]
+    }
+  ],
+  "native_bridge_runs": [
+    {
+      "raw_artifact": {
+        "path": "build/desktop-modern-bridge-gpu0/run-4f0726af967c42ea856844222888fb49/result.json",
+        "sha256": "51c12515d762e15f4d3464ff900fb274d4d9b164d2fc04e5fa72297b18f7d22b"
+      },
+      "success": true,
+      "checks": [
+        "No graphics at create; unchanged polling and unattached draw; duplicate/invalid handle rejection.",
+        "Discoverable JSON-RPC methods, malformed request/notification behavior, shared-owner/graphics restrictions.",
+        "Off-thread calls reject without transferring WorldSession ownership or mutating state.",
+        "Independent CLI process shares authoritative revision/entities and stale edits remain atomic.",
+        "Camera patches validate before mutation; unavailable captures/invalid HWND preserve authoring.",
+        "Capture preflight failures preserve late files and continue drawing without viewport reattachment.",
+        "Real child-HWND Vulkan draws; capture remains queued until presentation; exclusive destinations and bounded pending job.",
+        "Runtime snapshots are captured at explicit ticks; unchanged draws do not advance physics; stale-tick capture produces no file.",
+        "Hidden viewport capture times out; resize observes actual client extent; detach/recreate preserves world/runtime and frontend HWND.",
+        "Host destruction releases writer ownership and endpoint; frontend HWND survives; committed edits survive reopen."
+      ],
+      "gpu": 0,
+      "bridge_sha256": "ccdfe8a39303f69754e833ce13e5b7ea3a45b7cbd843eef189a49479eb5d42f2",
+      "binary_sha256": "bde36e65ec2bd4abddffe07e29a848bc1464dae8f1abc643c3e36b5fd5357fe6",
+      "test_sha256": "488e2175c465ddc812970bfcb775f9f5ed9385bb66c0f6b24ecc8d5a20713e99",
+      "limitations": [
+        "Native ABI/HWND automation, not physical Avalonia widget qualification."
+      ],
+      "capture_preflight_failures": [
+        {
+          "case": "destination appeared",
+          "job": {
+            "capture_id": 1,
+            "error": {
+              "code": -32602,
+              "message": "Capture requires a previously absent file."
+            },
+            "path": "<checkout>\\build\\desktop-modern-bridge-gpu0\\run-4f0726af967c42ea856844222888fb49\\Capture destination appeared\\Capture.bmp",
+            "revision": 2,
+            "state": "error"
+          },
+          "frames_before": 3,
+          "frames_after": 4
+        },
+        {
+          "case": "parent disappeared",
+          "job": {
+            "capture_id": 2,
+            "error": {
+              "code": -32602,
+              "message": "Capture parent directory does not exist."
+            },
+            "path": "<checkout>\\build\\desktop-modern-bridge-gpu0\\run-4f0726af967c42ea856844222888fb49\\Capture parent disappeared\\Capture.bmp",
+            "revision": 2,
+            "state": "error"
+          },
+          "frames_before": 5,
+          "frames_after": 6
+        }
+      ],
+      "authored_capture": {
+        "sha256": "80c0dacdd2b4e1028d0d56bb230a4f19adcf34e328cd304f484aec421ebd386a",
+        "bytes": 1580938,
+        "width": 760,
+        "height": 520
+      },
+      "runtime_capture": {
+        "sha256": "80c0dacdd2b4e1028d0d56bb230a4f19adcf34e328cd304f484aec421ebd386a",
+        "bytes": 1580938,
+        "width": 760,
+        "height": 520
+      },
+      "final_render": {
+        "available": true,
+        "capture_written": false,
+        "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+        "frames_presented": 2,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "height": 360,
+        "nvrhi_errors": 0,
+        "samples": 4,
+        "success": true,
+        "width": 640
+      },
+      "final_state": {
+        "attached": true,
+        "camera": {
+          "far": 1000.0,
+          "near": 0.1,
+          "pitch": -22.0,
+          "position": [
+            6.0,
+            4.0,
+            8.0
+          ],
+          "vertical_fov": 60.0,
+          "yaw": 37.0
+        },
+        "capture": {
+          "capture_id": 7,
+          "error": {
+            "code": -32003,
+            "message": "Viewport detached before capture completed."
+          },
+          "path": "<checkout>\\build\\desktop-modern-bridge-gpu0\\run-4f0726af967c42ea856844222888fb49\\Detached.bmp",
+          "revision": 2,
+          "state": "error"
+        },
+        "endpoint": "desktop-test-b7d6ba8f46f7454385de52da328bae23",
+        "frames_presented": 20,
+        "graphics_error": null,
+        "presented_revision": 2,
+        "presented_tick": 1,
+        "render": {
+          "available": true,
+          "capture_written": false,
+          "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 360,
+          "nvrhi_errors": 0,
+          "samples": 4,
+          "success": true,
+          "width": 640
+        },
+        "revision": 2,
+        "runtime": {
+          "active": true,
+          "authored_revision": 2,
+          "available": true,
+          "session_id": "7242d506ed1541ee8e1bc16b04aeb377",
+          "tick": 1
+        },
+        "selected": "ffda1d4152db45ebb4447fe7354d8c2e"
+      },
+      "child_hwnd_survived_before_destroy": true
+    },
+    {
+      "raw_artifact": {
+        "path": "build/desktop-modern-bridge-gpu1/run-f49c2c7a03134db387cfd75fbb242845/result.json",
+        "sha256": "92f461aedee0db355e0b63192c961b129edd4849e583149cce556bf6b64c1129"
+      },
+      "success": true,
+      "checks": [
+        "No graphics at create; unchanged polling and unattached draw; duplicate/invalid handle rejection.",
+        "Discoverable JSON-RPC methods, malformed request/notification behavior, shared-owner/graphics restrictions.",
+        "Off-thread calls reject without transferring WorldSession ownership or mutating state.",
+        "Independent CLI process shares authoritative revision/entities and stale edits remain atomic.",
+        "Camera patches validate before mutation; unavailable captures/invalid HWND preserve authoring.",
+        "Capture preflight failures preserve late files and continue drawing without viewport reattachment.",
+        "Real child-HWND Vulkan draws; capture remains queued until presentation; exclusive destinations and bounded pending job.",
+        "Runtime snapshots are captured at explicit ticks; unchanged draws do not advance physics; stale-tick capture produces no file.",
+        "Hidden viewport capture times out; resize observes actual client extent; detach/recreate preserves world/runtime and frontend HWND.",
+        "Host destruction releases writer ownership and endpoint; frontend HWND survives; committed edits survive reopen."
+      ],
+      "gpu": 1,
+      "bridge_sha256": "ccdfe8a39303f69754e833ce13e5b7ea3a45b7cbd843eef189a49479eb5d42f2",
+      "binary_sha256": "bde36e65ec2bd4abddffe07e29a848bc1464dae8f1abc643c3e36b5fd5357fe6",
+      "test_sha256": "488e2175c465ddc812970bfcb775f9f5ed9385bb66c0f6b24ecc8d5a20713e99",
+      "limitations": [
+        "Native ABI/HWND automation, not physical Avalonia widget qualification."
+      ],
+      "capture_preflight_failures": [
+        {
+          "case": "destination appeared",
+          "job": {
+            "capture_id": 1,
+            "error": {
+              "code": -32602,
+              "message": "Capture requires a previously absent file."
+            },
+            "path": "<checkout>\\build\\desktop-modern-bridge-gpu1\\run-f49c2c7a03134db387cfd75fbb242845\\Capture destination appeared\\Capture.bmp",
+            "revision": 2,
+            "state": "error"
+          },
+          "frames_before": 3,
+          "frames_after": 4
+        },
+        {
+          "case": "parent disappeared",
+          "job": {
+            "capture_id": 2,
+            "error": {
+              "code": -32602,
+              "message": "Capture parent directory does not exist."
+            },
+            "path": "<checkout>\\build\\desktop-modern-bridge-gpu1\\run-f49c2c7a03134db387cfd75fbb242845\\Capture parent disappeared\\Capture.bmp",
+            "revision": 2,
+            "state": "error"
+          },
+          "frames_before": 5,
+          "frames_after": 6
+        }
+      ],
+      "authored_capture": {
+        "sha256": "f7c8a3abacb16a58fe15bf8ee5e483e43fb2dde57cae2e10115817f1a9fa8b79",
+        "bytes": 1580938,
+        "width": 760,
+        "height": 520
+      },
+      "runtime_capture": {
+        "sha256": "f7c8a3abacb16a58fe15bf8ee5e483e43fb2dde57cae2e10115817f1a9fa8b79",
+        "bytes": 1580938,
+        "width": 760,
+        "height": 520
+      },
+      "final_render": {
+        "available": true,
+        "capture_written": false,
+        "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+        "frames_presented": 2,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "height": 360,
+        "nvrhi_errors": 0,
+        "samples": 4,
+        "success": true,
+        "width": 640
+      },
+      "final_state": {
+        "attached": true,
+        "camera": {
+          "far": 1000.0,
+          "near": 0.1,
+          "pitch": -22.0,
+          "position": [
+            6.0,
+            4.0,
+            8.0
+          ],
+          "vertical_fov": 60.0,
+          "yaw": 37.0
+        },
+        "capture": {
+          "capture_id": 7,
+          "error": {
+            "code": -32003,
+            "message": "Viewport detached before capture completed."
+          },
+          "path": "<checkout>\\build\\desktop-modern-bridge-gpu1\\run-f49c2c7a03134db387cfd75fbb242845\\Detached.bmp",
+          "revision": 2,
+          "state": "error"
+        },
+        "endpoint": "desktop-test-01b463c4f35242259e463e95c4c07dd4",
+        "frames_presented": 20,
+        "graphics_error": null,
+        "presented_revision": 2,
+        "presented_tick": 1,
+        "render": {
+          "available": true,
+          "capture_written": false,
+          "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 360,
+          "nvrhi_errors": 0,
+          "samples": 4,
+          "success": true,
+          "width": 640
+        },
+        "revision": 2,
+        "runtime": {
+          "active": true,
+          "authored_revision": 2,
+          "available": true,
+          "session_id": "ccc1985b312f46ddbe5be968b2ada0f5",
+          "tick": 1
+        },
+        "selected": "e5a4c52429b442369a9f5bd0a3459e56"
+      },
+      "child_hwnd_survived_before_destroy": true
+    }
+  ],
+  "build_and_regression_logs": [
+    {
+      "path": "build/desktop-modern-native-build.log",
+      "sha256": "834dae23898e5acef71dcfc30654dffacb9b912d7cd67723f5a7b416084360d8",
+      "output": "[0/2] Re-checking globbed directories...\n[1/3] Building CXX object CMakeFiles/poima_desktop.dir/src/desktop_bridge.cpp.obj\n[2/3] Linking CXX shared library poima_desktop.dll\n"
+    },
+    {
+      "path": "build/desktop-modern-publish.log",
+      "sha256": "799c893d524822bff71593919a3fcd0d814b452f1c490dc03140f5895917da9f",
+      "output": "  Determining projects to restore...\n  All projects are up-to-date for restore.\n  Poima.Editor -> <checkout>/desktop/Poima.Editor/bin/Release/net10.0/win-x64/Poima.Editor.dll\n  Poima.Editor -> <checkout>/build/.desktop-publish-zwsemcdu/payload/\n-- Install configuration: \"RelWithDebInfo\"\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/bin/phonon.dll\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/SteamAudio/THIRDPARTY.md\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/SteamAudio/LICENSE.md\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/Jolt/LICENSE\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/EnTT/LICENSE\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/NVRHI/LICENSE.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/SDL3/LICENSE.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/DearImGui/LICENSE.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/SourceSans3/LICENSE.md\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/bin/poima_desktop.dll\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/include/poima/desktop_bridge.h\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/bin/poima.exe\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/./runtime.json\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/LICENSE\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/THIRD_PARTY_NOTICES.md\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/mikktspace/mikktspace.h\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/stb/LICENSE\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/cgltf/LICENSE\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/nlohmann-json/LICENSE.MIT\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW/LICENSE.TXT\n-- Up-to-date: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW/COPYING\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/Vulkan-Headers/LICENSE.md\n-- Up-to-date: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/Vulkan-Headers\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt\n-- Installing: <checkout>/build/.desktop-publish-zwsemcdu/native-install/share/poima/licenses/Vulkan-Headers/MIT.txt\n<checkout>/build/desktop-modern/Poima.Editor.exe\n"
+    },
+    {
+      "path": "build/desktop-regression-headless-race-test.log",
+      "sha256": "63978de398ed9a70d7b6b4ef184bf3e5f27f0cad2c51b9bc421085e1988bc072",
+      "output": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/24 Test  #1: asset_hash .......................   Passed    0.02 sec\n      Start  2: texture_native\n 2/24 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/24 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: animation_native\n 4/24 Test  #4: animation_native .................   Passed    0.03 sec\n      Start  5: player_input\n 5/24 Test  #5: player_input .....................   Passed    0.01 sec\n      Start  6: input_profile_native\n 6/24 Test  #6: input_profile_native .............   Passed    0.01 sec\n      Start  7: world_session_native\n 7/24 Test  #7: world_session_native .............   Passed    0.71 sec\n      Start  8: local_session_native\n 8/24 Test  #8: local_session_native .............   Passed    0.25 sec\n      Start  9: scene_math\n 9/24 Test  #9: scene_math .......................   Passed    0.01 sec\n      Start 10: shadow_math\n10/24 Test #10: shadow_math ......................   Passed    0.01 sec\n      Start 11: visibility_math\n11/24 Test #11: visibility_math ..................   Passed    0.01 sec\n      Start 12: project_contract\n12/24 Test #12: project_contract .................   Passed    8.65 sec\n      Start 13: shared_session_contract\n13/24 Test #13: shared_session_contract ..........   Passed    1.28 sec\n      Start 14: world_history_contract\n14/24 Test #14: world_history_contract ...........   Passed    4.56 sec\n      Start 15: input_profile_contract\n15/24 Test #15: input_profile_contract ...........   Passed   13.15 sec\n      Start 16: gamepad_contract\n16/24 Test #16: gamepad_contract .................   Passed    7.61 sec\n      Start 17: lighting_contract\n17/24 Test #17: lighting_contract ................   Passed    0.71 sec\n      Start 18: audio_contract\n18/24 Test #18: audio_contract ...................   Passed    0.87 sec\n      Start 19: asset_contract\n19/24 Test #19: asset_contract ...................   Passed    4.12 sec\n      Start 20: animation_contract\n20/24 Test #20: animation_contract ...............   Passed    2.48 sec\n      Start 21: runtime_animation_contract\n21/24 Test #21: runtime_animation_contract .......   Passed    1.62 sec\n      Start 22: cli_contract\n22/24 Test #22: cli_contract .....................   Passed    0.90 sec\n      Start 23: world_contract\n23/24 Test #23: world_contract ...................   Passed    3.16 sec\n      Start 24: native_module_contract\n24/24 Test #24: native_module_contract ...........   Passed   10.47 sec\n\n100% tests passed, 0 tests failed out of 24\n\nTotal Test time (real) =  60.80 sec\n"
+    },
+    {
+      "path": "build/desktop-regression-runtime-headless-race-test.log",
+      "sha256": "c66058031bba1a523636a472416d6699a3e18899c893790c093102860c2ff79c",
+      "output": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/28 Test  #1: asset_hash .......................   Passed    0.05 sec\n      Start  2: texture_native\n 2/28 Test  #2: texture_native ...................   Passed    0.05 sec\n      Start  3: tangents_native\n 3/28 Test  #3: tangents_native ..................   Passed    0.05 sec\n      Start  4: animation_native\n 4/28 Test  #4: animation_native .................   Passed    0.06 sec\n      Start  5: player_input\n 5/28 Test  #5: player_input .....................   Passed    0.05 sec\n      Start  6: input_profile_native\n 6/28 Test  #6: input_profile_native .............   Passed    0.05 sec\n      Start  7: world_session_native\n 7/28 Test  #7: world_session_native .............   Passed    0.76 sec\n      Start  8: local_session_native\n 8/28 Test  #8: local_session_native .............   Passed    0.29 sec\n      Start  9: scene_math\n 9/28 Test  #9: scene_math .......................   Passed    0.05 sec\n      Start 10: shadow_math\n10/28 Test #10: shadow_math ......................   Passed    0.05 sec\n      Start 11: visibility_math\n11/28 Test #11: visibility_math ..................   Passed    0.05 sec\n      Start 12: runtime_native\n12/28 Test #12: runtime_native ...................   Passed    0.14 sec\n      Start 13: interaction_native\n13/28 Test #13: interaction_native ...............   Passed    0.15 sec\n      Start 14: runtime_animation_native\n14/28 Test #14: runtime_animation_native .........   Passed    0.08 sec\n      Start 15: project_contract\n15/28 Test #15: project_contract .................   Passed   10.58 sec\n      Start 16: shared_session_contract\n16/28 Test #16: shared_session_contract ..........   Passed    2.02 sec\n      Start 17: world_history_contract\n17/28 Test #17: world_history_contract ...........   Passed    5.50 sec\n      Start 18: input_profile_contract\n18/28 Test #18: input_profile_contract ...........   Passed   23.44 sec\n      Start 19: gamepad_contract\n19/28 Test #19: gamepad_contract .................   Passed   15.09 sec\n      Start 20: lighting_contract\n20/28 Test #20: lighting_contract ................   Passed    1.25 sec\n      Start 21: audio_contract\n21/28 Test #21: audio_contract ...................   Passed    6.83 sec\n      Start 22: asset_contract\n22/28 Test #22: asset_contract ...................   Passed    7.60 sec\n      Start 23: animation_contract\n23/28 Test #23: animation_contract ...............   Passed    5.15 sec\n      Start 24: runtime_animation_contract\n24/28 Test #24: runtime_animation_contract .......   Passed    6.14 sec\n      Start 25: runtime_contract\n25/28 Test #25: runtime_contract .................   Passed    1.43 sec\n      Start 26: cli_contract\n26/28 Test #26: cli_contract .....................   Passed    4.78 sec\n      Start 27: world_contract\n27/28 Test #27: world_contract ...................   Passed    5.02 sec\n      Start 28: native_module_contract\n28/28 Test #28: native_module_contract ...........   Passed   13.54 sec\n\n100% tests passed, 0 tests failed out of 28\n\nTotal Test time (real) = 110.44 sec\n"
+    }
+  ],
+  "image": {
+    "path": "docs/evidence/m2-desktop-editor.png",
+    "sha256": "511f173cbca9c8335b85f51d6d5ecc7ee526efacc284fbc7c5063d5df7aff57a"
+  },
+  "observations": [
+    "Actual Inter 12 DIP, Vulkan UI backend and native Vulkan Scene recorded by the application.",
+    "Semantic actions execute real text-widget handlers, native transactions, floating OS windows and reset; no physical input injection.",
+    "Malformed raw field text survives floating/reset; stale edits and dirty close are guarded.",
+    "Repairing an unresolved asset reference resumes drawing without viewport reattachment.",
+    "Changed capture destinations fail only the capture job and preserve ordinary presentation.",
+    "An early fixed-two-pump reset assertion failed; pinned Dock defers content at Background priority. Final script waits up to three seconds for actual field readiness.",
+    "Linux 24/24 and 28/28 regression logs are retained from the earlier native integration; final changes after those runs affect Windows bridge/frontend/package paths."
+  ],
+  "limitations": [
+    "This is not visual acceptance by the user, Unity feature/pixel parity, or a production performance benchmark.",
+    "Physical keyboard/mouse, IME, accessibility and multi-monitor/DPI edge cases remain unqualified.",
+    "GUI camera navigation, transform gizmos, automatic Play and persisted layouts remain unfinished.",
+    "Resource samples describe this small fixture and do not qualify shipped-game memory or frame time.",
+    "Clean-machine distribution and a complete source-level dependency license audit remain pending."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive.",
+  "public_history_note": "References to the original private Git history are omitted. Source and binary file digests remain unchanged."
+}

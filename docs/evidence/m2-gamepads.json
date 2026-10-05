@@ -1,0 +1,397 @@
+{
+  "date": "2026-09-26",
+  "engine_version": "0.0.20",
+  "schema_revision": 18,
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "status": "Native gamepad profiles, evaluation, SDL discovery/assignment and player integration verified with virtual devices; physical controllers unqualified.",
+  "source_sha256": {
+    "CMakeLists.txt": "acf329a881286a97f59990f08e071564e1bec8e45335b9c613efa89afbf6e855",
+    "README.md": "56a3c9df3e6227487f8d999c5980d12510f9f41f22098d74136bc7b2a2df2aad",
+    "cmake/render_smoke.cmake": "50a77beff0ba99864f050becfcd49da44392cf5980d035e5234972cc79ecabfc",
+    "docs/GAMEPADS.md": "665149f00c3f580cbc56eb6ece807766f11ea5a7893d8713a771460199b805ae",
+    "docs/IMPLEMENTATION_STATUS.md": "f06fd444f0d9bff4fb2a1451350b86e1c9745f60733cfcdaf4ddf5acfb700c59",
+    "docs/INPUT_PROFILES.md": "0dec6938e20fe2642b6af1df03315fbd57ca6f4842c894bbd09897c11ec29d05",
+    "docs/PLAYER.md": "538082251da2dda0e6b7fcad3839e34ba79ba75f28ca1af6eaff432d6de9fb5c",
+    "include/poima/gamepad.hpp": "6a5a5bd489f439eb6bc0879a67a3271997feee58285bfb4e2ff80da12e4ca8ec",
+    "include/poima/input_profile.hpp": "c1d27b2b47c689e49137fcc169f9847b5e28c96af478a9eb1d44e092d2e0bde7",
+    "include/poima/player.hpp": "e1f866a10c4d7b0cb9c47f5668038ce315e2645e07b64fd7de16c50c08e2082e",
+    "src/core.cpp": "d1a3a889358af6c0ba150caff77fc4d55c4310dc7333780e7e395db82448e169",
+    "src/gamepad_disabled.cpp": "941c3a40dea5b86b36358b9dc5febc7644fdd8353ee0631641d8bd34998ced3b",
+    "src/gamepad_sdl.cpp": "22f42d6bc2b62000383519333c79cb0b1a62daa3ac43aa48350912dab948b013",
+    "src/input_profile.cpp": "db630490c07aa8074703c3a7311d11f88c1b0b87a96a4fe75c51e4b795885d92",
+    "src/input_profile_store.cpp": "a8c5e2931f97180e678009a0eea5f8c259e300e7fbf53aac923bec620545bcd5",
+    "src/input_profile_store.hpp": "bb8a7d5ba432b5118b32e65868605cc8d589ac86a9b8c1adc6790927629cfc7e",
+    "src/render_smoke.cpp": "5c5ad6f172a2542fe8c3c46c98a6842f05ac17ab4bbce1776fac069f5e31b001",
+    "src/world.cpp": "9f787f7bca4fae2b37511b58d4db50fa32d274d5a2ea50ea34ba50dff914a230",
+    "tests/gamepad_contract.py": "8bd6c716b9c4d6c7c762618eef1654b89390c5ad2a3c5bd1fe4f0c7add9f228d",
+    "tests/gamepad_sdl.cpp": "2d231afc8c6d645af802bf861f57080d252487263feeaa605141221f4528b630",
+    "tests/input_profile.cpp": "3ec172c05a4ad76db8005883318e79e3dfe4583611c5a639a78216c7d6568584"
+  },
+  "binary_sha256": {
+    "headless": "9481f038179707a60ef5037e9a168f1c8053435e6618d12bfb58b4d3f10e7d3e",
+    "runtime-headless": "811668ee1866d33d3297277786ab8cbeb4fc6ec4a77d6d5c592f583322477a9d",
+    "windows-runtime": "9db86112bb10d95ef271036103f7b31d18f1823edb0e8740aa5f45c0bad5485d"
+  },
+  "headless_runs": [
+    {
+      "label": "ctest-headless",
+      "returncode": 0,
+      "seconds": 40.462,
+      "log": ".cache/gamepad-validation/ctest-headless.log",
+      "binary_sha256": "9481f038179707a60ef5037e9a168f1c8053435e6618d12bfb58b4d3f10e7d3e"
+    },
+    {
+      "label": "gamepad-headless",
+      "returncode": 0,
+      "seconds": 6.894,
+      "log": ".cache/gamepad-validation/gamepad-headless.log",
+      "binary_sha256": "9481f038179707a60ef5037e9a168f1c8053435e6618d12bfb58b4d3f10e7d3e"
+    },
+    {
+      "label": "input-v1-headless",
+      "returncode": 0,
+      "seconds": 12.294,
+      "log": ".cache/gamepad-validation/input-v1-headless.log",
+      "binary_sha256": "9481f038179707a60ef5037e9a168f1c8053435e6618d12bfb58b4d3f10e7d3e"
+    },
+    {
+      "label": "ctest-runtime-headless",
+      "returncode": 0,
+      "seconds": 61.274,
+      "log": ".cache/gamepad-validation/ctest-runtime-headless.log",
+      "binary_sha256": "811668ee1866d33d3297277786ab8cbeb4fc6ec4a77d6d5c592f583322477a9d"
+    },
+    {
+      "label": "gamepad-runtime-headless",
+      "returncode": 0,
+      "seconds": 13.5,
+      "log": ".cache/gamepad-validation/gamepad-runtime-headless.log",
+      "binary_sha256": "811668ee1866d33d3297277786ab8cbeb4fc6ec4a77d6d5c592f583322477a9d"
+    },
+    {
+      "label": "input-v1-runtime-headless",
+      "returncode": 0,
+      "seconds": 18.381,
+      "log": ".cache/gamepad-validation/input-v1-runtime-headless.log",
+      "binary_sha256": "811668ee1866d33d3297277786ab8cbeb4fc6ec4a77d6d5c592f583322477a9d"
+    }
+  ],
+  "ctest": {
+    "headless": {
+      "passed": true,
+      "suites": 18,
+      "record": ".cache/gamepad-validation/ctest-headless.log",
+      "record_sha256": "bc85718cc9ea8884f6d8dbe1dd2354c05c5c20c3b2ee6a07de040eb97a560569"
+    },
+    "runtime-headless": {
+      "passed": true,
+      "suites": 21,
+      "record": ".cache/gamepad-validation/ctest-runtime-headless.log",
+      "record_sha256": "6c01f08dec39372fe2d62334dffa3c52b60927b18e576d760f292cbff8fdcab1"
+    }
+  },
+  "gamepad_contract": {
+    "headless": {
+      "tests": 13,
+      "passed": true,
+      "binary_sha256": "9481f038179707a60ef5037e9a168f1c8053435e6618d12bfb58b4d3f10e7d3e",
+      "test_sha256": "8bd6c716b9c4d6c7c762618eef1654b89390c5ad2a3c5bd1fe4f0c7add9f228d",
+      "reports": [
+        {
+          "fixed_ticks": 60,
+          "full_right_stick_total_yaw": -180
+        },
+        {
+          "device_host_available": false,
+          "reported_devices": 0
+        },
+        {
+          "v1_default_hash": "bdbb5f6d3b0ceb20692c2dedfa200633ab8c56e82ecd37ecbe11114c475b8690",
+          "v1_gamepad_opt_in_required": true
+        },
+        {
+          "v2_roundtrip_hash": "2130044c8dd0fbfd2d7e92831d1909fee83cdc955e463c960cce92937abd20bb",
+          "all_gamepad_parameters_roundtrip": true
+        }
+      ],
+      "record": ".cache/gamepad-validation/gamepad-headless.json",
+      "record_sha256": "4ba15080b4f09793e166b9da5fc5e7b9462408685b49f2487948bd3340f44622"
+    },
+    "runtime-headless": {
+      "tests": 13,
+      "passed": true,
+      "binary_sha256": "811668ee1866d33d3297277786ab8cbeb4fc6ec4a77d6d5c592f583322477a9d",
+      "test_sha256": "8bd6c716b9c4d6c7c762618eef1654b89390c5ad2a3c5bd1fe4f0c7add9f228d",
+      "reports": [
+        {
+          "fixed_ticks": 60,
+          "full_right_stick_total_yaw": -180
+        },
+        {
+          "device_host_available": false,
+          "reported_devices": 0
+        },
+        {
+          "v1_default_hash": "bdbb5f6d3b0ceb20692c2dedfa200633ab8c56e82ecd37ecbe11114c475b8690",
+          "v1_gamepad_opt_in_required": true
+        },
+        {
+          "v2_roundtrip_hash": "2130044c8dd0fbfd2d7e92831d1909fee83cdc955e463c960cce92937abd20bb",
+          "all_gamepad_parameters_roundtrip": true
+        }
+      ],
+      "record": ".cache/gamepad-validation/gamepad-runtime-headless.json",
+      "record_sha256": "f01418c2d5e6d472fdeb3f76863aa188d80ed2ffddc13d61610c641826b1b29d"
+    },
+    "windows": {
+      "tests": 13,
+      "passed": true,
+      "binary_sha256": "9db86112bb10d95ef271036103f7b31d18f1823edb0e8740aa5f45c0bad5485d",
+      "test_sha256": "8bd6c716b9c4d6c7c762618eef1654b89390c5ad2a3c5bd1fe4f0c7add9f228d",
+      "reports": [
+        {
+          "fixed_ticks": 60,
+          "full_right_stick_total_yaw": -180
+        },
+        {
+          "device_host_available": true,
+          "reported_devices": 0
+        },
+        {
+          "v1_default_hash": "bdbb5f6d3b0ceb20692c2dedfa200633ab8c56e82ecd37ecbe11114c475b8690",
+          "v1_gamepad_opt_in_required": true
+        },
+        {
+          "v2_roundtrip_hash": "2130044c8dd0fbfd2d7e92831d1909fee83cdc955e463c960cce92937abd20bb",
+          "all_gamepad_parameters_roundtrip": true
+        }
+      ],
+      "record": ".cache/gamepad-validation/gamepad-contract-windows.json",
+      "record_sha256": "6b5464f03e175285cb1f932d737167bfc8bbe9fd362f20921d153b9315c87a0f"
+    }
+  },
+  "v1_contract": {
+    "headless": {
+      "tests": 14,
+      "passed": true,
+      "binary_sha256": "9481f038179707a60ef5037e9a168f1c8053435e6618d12bfb58b4d3f10e7d3e",
+      "test_sha256": "0fbf9e0a69564cdd55aa57baf35d91916b296e282137303eee77a532c00b7b16",
+      "reports": [
+        {
+          "shared_between_worlds": true,
+          "content_hash": "9b8755b7985701aff0f46acd5a0e19ab75f3a783c9c0c64416c2c33366a8c113",
+          "application": "next_play"
+        },
+        {
+          "receipt_window": 32,
+          "commits": 35,
+          "evicted_receipts_rejected": true,
+          "previous_revision": 34
+        }
+      ],
+      "record": ".cache/gamepad-validation/input-v1-headless.json",
+      "record_sha256": "3ffdb3f262d23d123ce68e126dbe695964e7165b05c0e0f4bd345c4dddb99187"
+    },
+    "runtime-headless": {
+      "tests": 14,
+      "passed": true,
+      "binary_sha256": "811668ee1866d33d3297277786ab8cbeb4fc6ec4a77d6d5c592f583322477a9d",
+      "test_sha256": "0fbf9e0a69564cdd55aa57baf35d91916b296e282137303eee77a532c00b7b16",
+      "reports": [
+        {
+          "shared_between_worlds": true,
+          "content_hash": "9b8755b7985701aff0f46acd5a0e19ab75f3a783c9c0c64416c2c33366a8c113",
+          "application": "next_play"
+        },
+        {
+          "receipt_window": 32,
+          "commits": 35,
+          "evicted_receipts_rejected": true,
+          "previous_revision": 34
+        }
+      ],
+      "record": ".cache/gamepad-validation/input-v1-runtime-headless.json",
+      "record_sha256": "2fe2a3fb75e0d1a8d8207a57bc7a3ed62de5ededc9acd0361711ee238c1b4ff5"
+    },
+    "windows": {
+      "tests": 14,
+      "passed": true,
+      "binary_sha256": "9db86112bb10d95ef271036103f7b31d18f1823edb0e8740aa5f45c0bad5485d",
+      "test_sha256": "0fbf9e0a69564cdd55aa57baf35d91916b296e282137303eee77a532c00b7b16",
+      "reports": [
+        {
+          "shared_between_worlds": true,
+          "content_hash": "9b8755b7985701aff0f46acd5a0e19ab75f3a783c9c0c64416c2c33366a8c113",
+          "application": "next_play"
+        },
+        {
+          "receipt_window": 32,
+          "commits": 35,
+          "evicted_receipts_rejected": true,
+          "previous_revision": 34
+        }
+      ],
+      "record": ".cache/gamepad-validation/input-v1-contract-windows.json",
+      "record_sha256": "0084192a3f4c2d0fa56637dde6c2f98ec580f41581f195594adb3ceadb09f3d5"
+    }
+  },
+  "native_windows": {
+    "passed": true,
+    "binary_sha256": "9d0a3e486b11e7b711398711a0ea37477c5975ecace75d8d6f360752b69f737c",
+    "record": ".cache/gamepad-validation/native-windows.log",
+    "record_sha256": "b95dd8d48e0d6c88712989d37edb37ab28fea7a89569ec4136ed054a72d96813"
+  },
+  "sdl_windows": {
+    "auto_selection_qualified": true,
+    "checks": [
+      "discovery_labels",
+      "initial_event_deduplication",
+      "neutral_attachment",
+      "binding_edges",
+      "analog_axes",
+      "second_pad_filtering",
+      "focus_gating",
+      "start_rising_edges",
+      "mapping_changes",
+      "explicit_disconnect_ids",
+      "stop_cleanup"
+    ],
+    "passed": true,
+    "preexisting_devices": 0,
+    "source": "SDL virtual joysticks and real SDL event queue; not physical devices",
+    "record": ".cache/gamepad-validation/sdl-windows.json",
+    "record_sha256": "03a1ae6996c0dafe8f98ebcc02bb66d64bbc5c2380c4dd0eb62a7c9c172e67d2",
+    "binary_sha256": "d6465b2e53fab196c96e24f6e36c3838fa207b40d3214c0237b4fa598d13159a"
+  },
+  "gpu_replay": [
+    {
+      "passed": true,
+      "binary_sha256": "9db86112bb10d95ef271036103f7b31d18f1823edb0e8740aa5f45c0bad5485d",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true,
+        "saved_profile_validated_but_replay_semantics_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/.cache/gamepad-validation/player-windows-amd/57844d8afc46488b936e1f2237e4ca92/player.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/.cache/gamepad-validation/player-windows-amd/57844d8afc46488b936e1f2237e4ca92/baseline.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/.cache/gamepad-validation/player-windows-amd/57844d8afc46488b936e1f2237e4ca92/recovered.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        }
+      },
+      "record": ".cache/gamepad-validation/player-windows-amd/gpu-0.json",
+      "record_sha256": "1bd1038e9bbbe737d1010b2ff257585d5c9407678813cd07044cdf15d5daee2f",
+      "gpu": "AMD Radeon(TM) Graphics",
+      "tick": 371,
+      "frames_presented": 372,
+      "nvrhi_errors": 0,
+      "input_profile": {
+        "applied": false,
+        "content_hash": "bb90dcb59b5ff520e38eb62671ce7f22073b70d5b3e750e94d87d712a7ebf298",
+        "format": "poima.input.v1",
+        "revision": 1,
+        "source": "profile"
+      },
+      "gamepad": {
+        "assigned": null,
+        "mode": "replay"
+      }
+    },
+    {
+      "passed": true,
+      "binary_sha256": "9db86112bb10d95ef271036103f7b31d18f1823edb0e8740aa5f45c0bad5485d",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true,
+        "saved_profile_validated_but_replay_semantics_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/.cache/gamepad-validation/player-windows-nvidia/e17cf54d2ae3444180f66bb589bc8086/player.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/.cache/gamepad-validation/player-windows-nvidia/e17cf54d2ae3444180f66bb589bc8086/baseline.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/.cache/gamepad-validation/player-windows-nvidia/e17cf54d2ae3444180f66bb589bc8086/recovered.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        }
+      },
+      "record": ".cache/gamepad-validation/player-windows-nvidia/gpu-1.json",
+      "record_sha256": "e0568b27de0042886a274216d83ff9a5ca98dc56682bf8754cc2be41814ee842",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "tick": 371,
+      "frames_presented": 372,
+      "nvrhi_errors": 0,
+      "input_profile": {
+        "applied": false,
+        "content_hash": "bb90dcb59b5ff520e38eb62671ce7f22073b70d5b3e750e94d87d712a7ebf298",
+        "format": "poima.input.v1",
+        "revision": 1,
+        "source": "profile"
+      },
+      "gamepad": {
+        "assigned": null,
+        "mode": "replay"
+      }
+    }
+  ],
+  "window": {
+    "passed": true,
+    "binary_sha256": "9db86112bb10d95ef271036103f7b31d18f1823edb0e8740aa5f45c0bad5485d",
+    "input_source": "Targeted Win32 window messages; not physical keyboard/mouse qualification.",
+    "initial_foreground": true,
+    "input_qualification": "Targeted synthetic key message moved the focused player; physical devices remain unqualified.",
+    "checks": {
+      "targeted_keyboard_moves_character": true,
+      "focus_loss_clears_held_input": true,
+      "minimize_restore_survives": true,
+      "paused_time_bound": true,
+      "resize_rebuilds_swapchain_and_capture": true,
+      "window_close_preserves_runtime": true,
+      "saved_remapping_moves_character_with_synthetic_up_key": true
+    },
+    "expected_size": [
+      802,
+      473
+    ],
+    "image": {
+      "path": "<checkout>\\.cache\\gamepad-validation\\window-windows\\fe0db9f8de914750a4d06191756df983\\window.bmp",
+      "sha256": "94158b85a83feeb896becda3d049b2f0ad42d22c6d6bfa2a34359a4d9f726581"
+    },
+    "record": ".cache/gamepad-validation/window-windows/window.json",
+    "record_sha256": "ae02ed4917a85591f7034d4101dcaef119fdb666e97a86b144d46ae62fe5dc3b"
+  },
+  "limits": [
+    "One assigned local controller and six gameplay actions; no general action maps, local multiplayer routing, rumble, gyro or controller menu navigation yet.",
+    "SDL host qualified with virtual joysticks and actual SDL event queues on Windows; physical controllers, Bluetooth, latency and controller feel remain unqualified.",
+    "Windows player lifecycle uses targeted synthetic Win32 input. Replays use semantic input and do not qualify physical gamepad control in a rendered session.",
+    "Existing v1 profile serialization/hash/receipts preserved. v2 conversion requires a new file; in-place format conversion is rejected.",
+    "Profiles apply before play; world-service transport still blocks during runtime.play.",
+    "Neutral gate uses the smaller inner deadzone for both physical sticks, including unused sticks. Zero deadzone requires exact centering.",
+    "Triggers map to digital actions with hysteresis; arbitrary analog gameplay actions are not yet exposed.",
+    "Native Linux graphics and console SDK integrations remain unqualified.",
+    "Full settings and public game-save serialization are separate unfinished milestones."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive.",
+  "public_history_note": "Private document references and original private Git revision identifiers are omitted. Reported measurements and retained code/binary digests are unchanged."
+}

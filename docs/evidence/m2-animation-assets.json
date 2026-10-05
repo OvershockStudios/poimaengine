@@ -1,0 +1,236 @@
+{
+  "date": "2026-09-26",
+  "engine_version": "0.0.17",
+  "schema_revision": 15,
+  "status": "Verified animation asset import, reference sampling and isolated Vulkan pose capture; runtime character animation remains unfinished.",
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "source_sha256": {
+    "CMakeLists.txt": "aaad8d166dff5c04b2cceede3b2b1d3e214b82c9265a3bca2b4a7c71d400a1ba",
+    "README.md": "872eab1a2eb2abe7343da07ec73e659be4f6af01df2dfdf5d01e341bb6e7c894",
+    "docs/ANIMATION_ASSETS.md": "27da0f5ec099881f52434540fce168e97212b5e40df4ed6e82901d71790cb0e7",
+    "docs/ASSETS.md": "575ed60551abf932256f54b91a15e5510164c876b10c1941065425e8dfc482bc",
+    "docs/IMPLEMENTATION_STATUS.md": "9ecde80d096f9cdde813ec8e158254d042e4356a06423cd96230da9bbe7c3de9",
+    "docs/evidence/m2-animation-reference.png": "c637d290df6e842fdf981482278bcfb1fb3b26380fca5cf21fd18ac942570ff4",
+    "examples/animation-assets.jsonl": "97ec63e8c350751d31c88b9d6cac4831dae7097d44be4792fb64f4ee1c51231b",
+    "examples/assets/animated-ribbon.glb": "d8e150e26529c3f3f39df2226d3bc929cd6d6d0465bcf6bde45deddffb860d7d",
+    "include/poima/animation.hpp": "3ea64fd5bc35fb94acf5f1072410804c55865d5d6c4f6d2ba45573c0b52ac5ae",
+    "include/poima/assets.hpp": "19a3cfafd7018c9c35fe52121bcd5997d68735cd8be3d1d19d72d7a22e046680",
+    "src/animation.cpp": "815370c47d0339484a1a867a4bcccba90b0477f32aea95bf50873d6ba32e0e32",
+    "src/core.cpp": "bbbb806961f35c06bb1601f1b11e0d22924378b5e60a279e897b4a33c5a96851",
+    "src/gltf.cpp": "b8ca182f549445370ae1ac9928cb4df4559a54d5817d88cd1ad9231dcb0eb0e9",
+    "src/model_codec.cpp": "97628dbf7fcf89ad19665c55970c2c2fd650d75ec19bf24af2e94652174d6e3b",
+    "src/tangents.cpp": "c311f8637debca004ceb577230382533a1ab080ef62717e61f83ea4ef712f354",
+    "src/world.cpp": "e69bda64bbd20e15bdc21ec668cb351385bcf4a1068b4996998d2e4ce0b177f6",
+    "tests/animation_capture.py": "6569010acbdfd81800bf3b8b5747c4753ccd27a04785e2e58d91bfe4b098b45a",
+    "tests/animation_contract.py": "2f27a080c5e0af40d20fee6b46b7803e57777406da24548d23ffe713fd44793e",
+    "tests/animation_fixture.py": "0df2099292f669ddd75762c7093eb667b6af8811d590617b61c9ae5490a1a9fe",
+    "tests/animation_native.cpp": "69a6164fa6d3a5bf75886e92d19316b8309bc720483862ada6efcd45bd9d5b7c"
+  },
+  "build_configuration": {
+    "headless": {
+      "POIMA_ENABLE_SIMULATION": "OFF",
+      "POIMA_ENABLE_AUDIO": "OFF",
+      "POIMA_ENABLE_MANAGED_GAMEPLAY": "OFF"
+    },
+    "runtime-headless": {
+      "POIMA_ENABLE_SIMULATION": "ON",
+      "POIMA_ENABLE_AUDIO": "ON",
+      "POIMA_ENABLE_MANAGED_GAMEPLAY": "ON"
+    },
+    "windows-runtime": {
+      "POIMA_ENABLE_SIMULATION": "ON",
+      "POIMA_ENABLE_AUDIO": "ON",
+      "POIMA_ENABLE_MANAGED_GAMEPLAY": "ON"
+    }
+  },
+  "animation_contract": {
+    "linux": {
+      "tests": 11,
+      "passed": true,
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "source_independent": true,
+          "format": "poima.model.v4"
+        }
+      ],
+      "binary_sha256": "53373e12369335555917626ccc4e33c885faa8f83009c19213c13095c1bcb542",
+      "record": "build/animation-linux.json",
+      "record_sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740"
+    },
+    "windows": {
+      "tests": 11,
+      "passed": true,
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "source_independent": true,
+          "format": "poima.model.v4"
+        }
+      ],
+      "binary_sha256": "3bb6e34deca755f849d778fe0be3e618dd6c7df5864590496d6d3cf21f4202d3",
+      "record": "build/animation-windows.json",
+      "record_sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740"
+    }
+  },
+  "headless_ctest": {
+    "passed": true,
+    "tests": 15,
+    "record": "build/animation-regression.log",
+    "record_sha256": "f712bb082ace07c0898195da25ac028a3db18dc2928bf83aa8d8830052ee7951"
+  },
+  "runtime_ctest": {
+    "passed": true,
+    "tests": 18,
+    "record": "build/animation-runtime-regression.log",
+    "record_sha256": "1d1cae689b7d73f61fd9e4c4fe0732761b37416860930f482ea0316793c4824c",
+    "binary_sha256": "1cdd7c758e3d63f4f7803a45d4784898ec1fcd549077638accf6c92a421d163d"
+  },
+  "windows_static_assets": {
+    "binary": "<checkout>/build/windows-runtime/poima.exe",
+    "binary_sha256": "3bb6e34deca755f849d778fe0be3e618dd6c7df5864590496d6d3cf21f4202d3",
+    "passed": true,
+    "tests": 11,
+    "reports": [
+      {
+        "asset": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+        "bytes": 85992,
+        "vertices": 1225,
+        "triangles": 2208,
+        "source_forms_identical": true
+      },
+      {
+        "image_srgb_asset": "167ca65009d412446e130cd8aad8e80bb6a5bb09f787a23dc024417b5091d8b5",
+        "image_linear_asset": "e32905c1bbe3662c7631313059f5b28f7c197fc0a9dfe22bfe3cb1898221ef73",
+        "preview_retry_rollback": true
+      },
+      {
+        "normal_model": "6c92377122ccdf3be1b573483c2f90e14a50acd087af1e456f347c41f069f277",
+        "authored_tangent_model": "4e564ab59ce29a30ff1fa8aee44ff42d21b783230e5bebd5c1a7adaaa85c1341",
+        "generated_and_authored_tangents_verified": true
+      },
+      {
+        "texture_asset": "3a91a9a21063f12538a5d9886e2e513c37677a2f83c85db2e9863d9a755fbe3d",
+        "source_forms_identical": true,
+        "srgb_and_linear_mips_verified": true
+      }
+    ],
+    "record": "build/animation-static-windows.json",
+    "record_sha256": "c448b1b3a582ea6756848ffe2ea27397593a0e8a65e2b6b00d58472c32612a55"
+  },
+  "windows_cli": {
+    "tests": 8,
+    "passed": 7,
+    "skipped": 1,
+    "record": "build/animation-windows-cli.log",
+    "record_sha256": "cd56f3ad031524752841f6359086e2a9466a9c2d1b3502c5a16d657dd2658346"
+  },
+  "gpu_reference_captures": [
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "binary_sha256": "3bb6e34deca755f849d778fe0be3e618dd6c7df5864590496d6d3cf21f4202d3",
+      "passed": true,
+      "width": 640,
+      "height": 480,
+      "samples": 4,
+      "analytic_comparison": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "culling_comparison": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "motion": {
+        "maximum_channel_error": 84,
+        "pixels_over_2": 21424,
+        "changed_pixels": 21424,
+        "mean_max_channel_error": 5.648268229166667
+      },
+      "source_independent": true,
+      "world_unchanged": true,
+      "validation_errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "record": "build/animation-capture-amd/1e7113289dc246de815ba95162323763/evidence.json",
+      "record_sha256": "a10c7e0acb5d98cd028f3bb80a1f4065476cbba3c968220de7619d5fc4265c2d",
+      "captures": {
+        "rest": "808cfe4bb027ac5394583f87add2b86f61df26a40d0e0d4dd78e6c74e1242e2d",
+        "posed": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+        "unculled": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+        "analytic": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286"
+      }
+    },
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "binary_sha256": "3bb6e34deca755f849d778fe0be3e618dd6c7df5864590496d6d3cf21f4202d3",
+      "passed": true,
+      "width": 640,
+      "height": 480,
+      "samples": 4,
+      "analytic_comparison": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "culling_comparison": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "motion": {
+        "maximum_channel_error": 84,
+        "pixels_over_2": 21424,
+        "changed_pixels": 21424,
+        "mean_max_channel_error": 5.647932942708334
+      },
+      "source_independent": true,
+      "world_unchanged": true,
+      "validation_errors": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "record": "build/animation-capture-nvidia/afe4fca039b6492e9b9976f3b2ec060d/evidence.json",
+      "record_sha256": "8840fb4143a5cf4b4017a8a9f267de245a02244d174a3a52a5c09823b25e8daf",
+      "captures": {
+        "rest": "b85c902305f2c216708f43771ab85bf5e5a871f1aad74c5e973b120be711d053",
+        "posed": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+        "unculled": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+        "analytic": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb"
+      }
+    }
+  ],
+  "example": {
+    "requests": 7,
+    "passed": true,
+    "analytic_halfway_vertex": [
+      0,
+      1,
+      0
+    ],
+    "record": "build/animation-example-results.jsonl",
+    "record_sha256": "42935603251718dbf6383a0c40ef7a8673977595db5849b30207f3a67dfc13c0"
+  },
+  "limits": [
+    "CPU reference deformation only; no runtime rig binding, playback, blending, retargeting, IK or GPU skinning.",
+    "Synthetic original rigs; arbitrary third-party character assets remain unqualified.",
+    "Four influences per vertex; no morphs, matrix-authored nodes or nonpositive node scales.",
+    "Both GPU observations use native Windows Vulkan; Linux graphics and consoles remain unqualified.",
+    "No crowd throughput, memory scalability or game performance claim."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive.",
+  "public_history_note": "Private document references and original private Git revision identifiers are omitted. Reported measurements and retained code/binary digests are unchanged."
+}

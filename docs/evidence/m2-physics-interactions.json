@@ -1,0 +1,1277 @@
+{
+  "recorded_at_utc": "2026-09-26T10:08:54.071776+00:00",
+  "engine_version": "0.0.13",
+  "schema_revision": 11,
+  "scope": "Native collider raycasts and persistent timed kinematic targets through step/replay, live progress, child poses and motion rollback. C# gameplay integration and the full engine roadmap remain incomplete.",
+  "builds": {
+    "windows_runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "30e13abc07d1a66bbeb7c2ace211e35476616769298793ce5fa5eb7e0ff52f76"
+    },
+    "linux_runtime": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "2045e0e26684ef35b86d9c807be16aa74c2df13c12b65dafa32f2a27766c13fa"
+    },
+    "linux_headless": {
+      "path": "build/headless/poima",
+      "sha256": "aa8849ea8d0bcb5450734bfe2a78eaa09f8220ecb06ed76c16b81650df51455c"
+    }
+  },
+  "sources": {
+    "src/runtime.cpp": "3dda9c85820cf475a3f42c46a0e76870ed55512a6a964762c9cfd3e15274f16a",
+    "src/runtime_disabled.cpp": "d96b5260ecece368802e3cc739f99468f9a2df03f302a3bb95c8fd4a61ff6a2d",
+    "src/world.cpp": "7f9f6ded9a0301865d0927a19b6b65356adc9edc71896bfabe9efae4ab053e19",
+    "src/render_smoke.cpp": "031500edf828a5e0428ea1781f7e46681084c4388ed4e8e7c46121dfd27196ce",
+    "include/poima/runtime.hpp": "51e2d9d96667e0bf98b2f4906650bbb7df4347cf508ce6a5e724617f5dbe7b42",
+    "include/poima/player.hpp": "bdf0414995244cc7043689b123a7d8971d4c7b1805a88171b52a3cc1b0738c70",
+    "tests/interaction_native.cpp": "0f4bcabc7a6160b49dbd7a82e0d70ed596f23049f108c58286ff2e1995fdc61a",
+    "tests/runtime_native.cpp": "c79cb6125db745ab6e13229aa6635824e1c72dce779e0d5436da5ccb74b0e299",
+    "tests/runtime_contract.py": "7656eb1060ef4f4ffe528fbfc27ca6d5ead62b348af038a8122ca7244fe7542f",
+    "tests/interaction_capture.py": "5054c4ad296289944eedd175865ffd69963bed1b23a78ac5bfb18cffc890834a",
+    "tests/player_contract.py": "147d6b9a587223357f570d6708bf0f4b1cf770e408de290e9311bbd4cfc7a1c7",
+    "examples/interaction-room.jsonl": "a61171423528047d97f853ea19ce25dd725e05d351b44701aa7c7232e0052500",
+    "examples/play-interaction.jsonl": "d05bee3ffcaa4265910b08a47168b99d816dfe82ebe97dba4a38d6c3929c87ba"
+  },
+  "ctest": {
+    "headless": {
+      "passed": 12,
+      "failed": 0,
+      "path": "build/interaction-headless-tests.log",
+      "sha256": "1e3d4ec906ae4cbc4560f8dad81aba1d27a9545d12ec40b0b802a9b24ad84458",
+      "text": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/12 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/12 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/12 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/12 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/12 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/12 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/12 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: lighting_contract\n 8/12 Test  #8: lighting_contract ................   Passed    0.60 sec\n      Start  9: asset_contract\n 9/12 Test  #9: asset_contract ...................   Passed    3.48 sec\n      Start 10: cli_contract\n10/12 Test #10: cli_contract .....................   Passed    0.55 sec\n      Start 11: world_contract\n11/12 Test #11: world_contract ...................   Passed    2.92 sec\n      Start 12: native_module_contract\n12/12 Test #12: native_module_contract ...........   Passed    9.94 sec\n\n100% tests passed, 0 tests failed out of 12\n\nTotal Test time (real) =  17.65 sec\n"
+    },
+    "runtime_headless": {
+      "passed": 15,
+      "failed": 0,
+      "path": "build/interaction-runtime-tests.log",
+      "sha256": "4c1b1b8d945efcd06183338585a89c77556b75fef421f75765b6d318abfbeba5",
+      "text": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/15 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/15 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/15 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/15 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/15 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/15 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/15 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: runtime_native\n 8/15 Test  #8: runtime_native ...................   Passed    0.09 sec\n      Start  9: interaction_native\n 9/15 Test  #9: interaction_native ...............   Passed    0.09 sec\n      Start 10: lighting_contract\n10/15 Test #10: lighting_contract ................   Passed    0.75 sec\n      Start 11: asset_contract\n11/15 Test #11: asset_contract ...................   Passed    3.97 sec\n      Start 12: runtime_contract\n12/15 Test #12: runtime_contract .................   Passed    0.79 sec\n      Start 13: cli_contract\n13/15 Test #13: cli_contract .....................   Passed    0.68 sec\n      Start 14: world_contract\n14/15 Test #14: world_contract ...................   Passed    2.97 sec\n      Start 15: native_module_contract\n15/15 Test #15: native_module_contract ...........   Passed   10.25 sec\n\n100% tests passed, 0 tests failed out of 15\n\nTotal Test time (real) =  19.79 sec\n"
+    }
+  },
+  "native_tests": {
+    "interactions_linux": {
+      "path": "build/interaction-native-linux.log",
+      "sha256": "32ada837724049d395d12c263a1fcf3c66af674df898d8a9e0cc467f5eea1a30",
+      "text": "Ray faces/inside/ignore/ties/endpoints, closed/open door collision, chunked motion, rotation/retarget, child poses, dynamic pushing and real update rollback passed.\n"
+    },
+    "interactions_windows": {
+      "path": "build/interaction-native-windows.log",
+      "sha256": "34089bae437911563e37a7d22196667993184311c7ff6d0cafdaca602bafe936",
+      "text": "Ray faces/inside/ignore/ties/endpoints, closed/open door collision, chunked motion, rotation/retarget, child poses, dynamic pushing and real update rollback passed.\n"
+    },
+    "runtime_windows": {
+      "path": "build/interaction-runtime-native-windows.log",
+      "sha256": "96a410c726b17569b31c70c415e22c42f00f36f8c796d16a154d65a061068938",
+      "text": "Physics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed.\n"
+    }
+  },
+  "protocol_tests": {
+    "linux": {
+      "log": {
+        "path": "build/interaction-contract-linux.log",
+        "sha256": "d2a67551f7a11c0f6a40ee276b08372028cef64d7c68576ec309f8ec0929254c",
+        "text": "test_collision_jump_retries_and_live_authoring_separation (__main__.RuntimeContract.test_collision_jump_retries_and_live_authoring_separation) ... ok\ntest_kinematic_motion_queries_receipts_and_frozen_authoring (__main__.RuntimeContract.test_kinematic_motion_queries_receipts_and_frozen_authoring) ... ok\ntest_motion_and_query_invalid_requests_preserve_tick (__main__.RuntimeContract.test_motion_and_query_invalid_requests_preserve_tick) ... ok\ntest_player_validation_does_not_advance_runtime (__main__.RuntimeContract.test_player_validation_does_not_advance_runtime) ... ok\ntest_receipt_window_and_repeated_lifetimes (__main__.RuntimeContract.test_receipt_window_and_repeated_lifetimes) ... ok\ntest_repeatable_replay_and_chunk_equivalence (__main__.RuntimeContract.test_repeatable_replay_and_chunk_equivalence) ... ok\ntest_validation_failed_start_recovery_and_stale_observation (__main__.RuntimeContract.test_validation_failed_start_recovery_and_stale_observation) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.613s\n\nOK\n"
+      },
+      "record": {
+        "path": "build/interaction-contract-linux.json",
+        "sha256": "9027addd75e2439818fefddc05e2aaa80d7d556fae276451f4aa01e4dc537b58"
+      },
+      "passed": true,
+      "tests_run": 7
+    },
+    "windows": {
+      "log": {
+        "path": "build/interaction-contract-windows.log",
+        "sha256": "b6d4d062ec83655dbf11a5b22e21c5d603af2d65085a17d78be6014bfeb1b5b4",
+        "text": "test_collision_jump_retries_and_live_authoring_separation (__main__.RuntimeContract.test_collision_jump_retries_and_live_authoring_separation) ... ok\ntest_kinematic_motion_queries_receipts_and_frozen_authoring (__main__.RuntimeContract.test_kinematic_motion_queries_receipts_and_frozen_authoring) ... ok\ntest_motion_and_query_invalid_requests_preserve_tick (__main__.RuntimeContract.test_motion_and_query_invalid_requests_preserve_tick) ... ok\ntest_player_validation_does_not_advance_runtime (__main__.RuntimeContract.test_player_validation_does_not_advance_runtime) ... ok\ntest_receipt_window_and_repeated_lifetimes (__main__.RuntimeContract.test_receipt_window_and_repeated_lifetimes) ... ok\ntest_repeatable_replay_and_chunk_equivalence (__main__.RuntimeContract.test_repeatable_replay_and_chunk_equivalence) ... ok\ntest_validation_failed_start_recovery_and_stale_observation (__main__.RuntimeContract.test_validation_failed_start_recovery_and_stale_observation) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 0.778s\n\nOK\n"
+      },
+      "record": {
+        "path": "build/interaction-contract-windows.json",
+        "sha256": "6e0e2e48d7caa50f3a71ba07c71a804a3ae3048244d8684f5b8cda3733cf9ad4"
+      },
+      "passed": true,
+      "tests_run": 7
+    },
+    "windows_cli": {
+      "path": "build/interaction-windows-cli.log",
+      "sha256": "b427aa724e25e4d6e80c91597ef92e2c26115a03158e0c246a68c792788ae508",
+      "text": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.674s\n\nOK (skipped=1)\n"
+    }
+  },
+  "cross_platform_state_comparison": {
+    "equal": true,
+    "states": 11,
+    "scope": "Parsed numeric entity/camera observations, including three door motion states, from this fixed Linux/GNU and Windows/Clang fixture. Not arbitrary-world or binary-save determinism.",
+    "trace": [
+      {
+        "ground": "",
+        "has_body": true,
+        "id": "00000000000000000000000000000002",
+        "is_character": false,
+        "kinematic_target": {
+          "duration_ticks": 120,
+          "entity": "00000000000000000000000000000002",
+          "position": [
+            8.0,
+            1.5,
+            -3.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        },
+        "layout": "column_major",
+        "motion": "kinematic",
+        "motion_remaining_ticks": 60,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 60,
+        "velocity": [
+          4.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          8.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          3.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.0,
+          4.0,
+          1.5,
+          -3.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "",
+        "has_body": true,
+        "id": "00000000000000000000000000000002",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "kinematic",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 120,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          8.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          3.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.0,
+          8.0,
+          1.5,
+          -3.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "",
+        "has_body": true,
+        "id": "00000000000000000000000000000002",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "kinematic",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 240,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          8.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          3.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.5,
+          0.0,
+          8.0,
+          1.5,
+          -3.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "on_ground",
+        "has_body": true,
+        "id": "00000000000000000000000000000064",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 120,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -0.019999942632981993,
+          2.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "",
+        "has_body": true,
+        "id": "00000000000000000000000000000003",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "dynamic",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 120,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          0.9999999837727862,
+          -1.4983771574797117e-08,
+          0.0001801511229067166,
+          0.0,
+          1.1986444339153861e-08,
+          0.7999999999999999,
+          3.181302348703112e-09,
+          0.0,
+          -0.00018015112290677618,
+          -3.973928657090102e-09,
+          0.9999999837727863,
+          0.0,
+          2.000017092890889,
+          0.3799998874860768,
+          -2.9428472816775564e-06,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "on_ground",
+        "has_body": true,
+        "id": "00000000000000000000000000000064",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 300,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -0.01999991990871086,
+          -2.462944447994232,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "not_supported",
+        "has_body": true,
+        "id": "00000000000000000000000000000064",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 310,
+        "velocity": [
+          0.0,
+          3.3309648036956787,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.660147277188829,
+          -2.462944447994232,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "on_ground",
+        "has_body": true,
+        "id": "00000000000000000000000000000064",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 20.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 431,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          0.7071067350592308,
+          0.0,
+          -0.7071068273138611,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.7071068273138611,
+          0.0,
+          0.7071067350592308,
+          0.0,
+          0.0,
+          -0.020000040481648496,
+          -2.462944447994232,
+          1.0
+        ],
+        "yaw": 45.0
+      },
+      {
+        "ground": "",
+        "has_body": false,
+        "id": "00000000000000000000000000000065",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "none",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 431,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          0.7071067350592308,
+          0.0,
+          -0.7071068273138611,
+          0.0,
+          0.24184478499083475,
+          0.9396926174059803,
+          0.24184475343789202,
+          0.0,
+          0.6644630653442006,
+          -0.34202015261194463,
+          0.6644629786532057,
+          0.0,
+          0.0,
+          1.5799999595183516,
+          -2.462944447994232,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      {
+        "ground": "on_ground",
+        "has_body": true,
+        "id": "00000000000000000000000000000064",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 20.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 491,
+        "velocity": [
+          3.1086771488189697,
+          0.0,
+          0.8478208184242249
+        ],
+        "world_matrix": [
+          0.7071067350592308,
+          0.0,
+          -0.7071068273138611,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.7071068273138611,
+          0.0,
+          0.7071067350592308,
+          0.0,
+          3.1086773425340652,
+          -0.019999916056949507,
+          -1.6151236034929752,
+          1.0
+        ],
+        "yaw": 45.0
+      },
+      {
+        "ground": "",
+        "has_body": false,
+        "id": "00000000000000000000000000000065",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "motion": "none",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 491,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          0.7071067350592308,
+          0.0,
+          -0.7071068273138611,
+          0.0,
+          0.24184478499083475,
+          0.9396926174059803,
+          0.24184475343789202,
+          0.0,
+          0.6644630653442006,
+          -0.34202015261194463,
+          0.6644629786532057,
+          0.0,
+          3.1086773425340652,
+          1.5800000839430506,
+          -1.6151236034929752,
+          1.0
+        ],
+        "yaw": 0.0
+      }
+    ]
+  },
+  "capture_gpus": [
+    {
+      "raw_evidence": {
+        "path": "build/interaction-capture/gpu-0.json",
+        "sha256": "b843c89dba3d45cbfcb648a365e955f1535823032bc09a5921b3e70be6524b8c"
+      },
+      "test_source": {
+        "path": "tests/interaction_capture.py",
+        "sha256": "5054c4ad296289944eedd175865ffd69963bed1b23a78ac5bfb18cffc890834a"
+      },
+      "binary_sha256": "30e13abc07d1a66bbeb7c2ace211e35476616769298793ce5fa5eb7e0ff52f76",
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "gpu_index": 0,
+      "checks": {
+        "collider_query_changes_with_door": true,
+        "child_follows_door": true,
+        "character_passes_open_door": true,
+        "authored_spawn_unchanged": true,
+        "fixed_camera_images_change": true
+      },
+      "pixels": {
+        "closed_center": [
+          153,
+          91,
+          49
+        ],
+        "open_center": [
+          44,
+          53,
+          66
+        ],
+        "changed_pixels": 80420
+      },
+      "images": {
+        "closed.bmp": {
+          "path": "<checkout>/build/interaction-capture/16ad1eed88df4defb1c801bc9cc566e6/closed.bmp",
+          "sha256": "855308a780310fac891dc49899c5317316e578b602b465b18a420e21545e0b19"
+        },
+        "open.bmp": {
+          "path": "<checkout>/build/interaction-capture/16ad1eed88df4defb1c801bc9cc566e6/open.bmp",
+          "sha256": "f2dbd0ac2fb2489419f6c2191c11c617aca0878fa9f6671be0145fb4d437c99a"
+        }
+      },
+      "fixture_sha256": "a61171423528047d97f853ea19ce25dd725e05d351b44701aa7c7232e0052500"
+    },
+    {
+      "raw_evidence": {
+        "path": "build/interaction-capture/gpu-1.json",
+        "sha256": "fb3b43dc3e1c57ab0dc2c110624a88d88055ebd90af1b5a3916e9d2e76657c60"
+      },
+      "test_source": {
+        "path": "tests/interaction_capture.py",
+        "sha256": "5054c4ad296289944eedd175865ffd69963bed1b23a78ac5bfb18cffc890834a"
+      },
+      "binary_sha256": "30e13abc07d1a66bbeb7c2ace211e35476616769298793ce5fa5eb7e0ff52f76",
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "gpu_index": 1,
+      "checks": {
+        "collider_query_changes_with_door": true,
+        "child_follows_door": true,
+        "character_passes_open_door": true,
+        "authored_spawn_unchanged": true,
+        "fixed_camera_images_change": true
+      },
+      "pixels": {
+        "closed_center": [
+          153,
+          91,
+          49
+        ],
+        "open_center": [
+          44,
+          53,
+          66
+        ],
+        "changed_pixels": 80421
+      },
+      "images": {
+        "closed.bmp": {
+          "path": "<checkout>/build/interaction-capture/323fc6a60ff24fada168cd3ffa9e7495/closed.bmp",
+          "sha256": "67fda62d561df345581ac5321dbfc52e54b939e1c94151558add8c43cd088991"
+        },
+        "open.bmp": {
+          "path": "<checkout>/build/interaction-capture/323fc6a60ff24fada168cd3ffa9e7495/open.bmp",
+          "sha256": "5e3454c6dfc421e7681b159c51efbacd96ea01de03d27a04e109dd906a4181a2"
+        }
+      },
+      "fixture_sha256": "a61171423528047d97f853ea19ce25dd725e05d351b44701aa7c7232e0052500"
+    }
+  ],
+  "continuous_player_gpus": [
+    {
+      "raw_evidence": {
+        "path": "build/interaction-player/gpu-0.json",
+        "sha256": "84e36b59c718e624218efc691f44b5a2e5d3604f58805513e593dcac480035bf"
+      },
+      "test_source": {
+        "path": "tests/player_contract.py",
+        "sha256": "147d6b9a587223357f570d6708bf0f4b1cf770e408de290e9311bbd4cfc7a1c7"
+      },
+      "binary_sha256": "30e13abc07d1a66bbeb7c2ace211e35476616769298793ce5fa5eb7e0ff52f76",
+      "gpu_names": [
+        "",
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/interaction-player/34561ad22b8a442d98c4782398c4ea83/player.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/interaction-player/34561ad22b8a442d98c4782398c4ea83/baseline.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/interaction-player/34561ad22b8a442d98c4782398c4ea83/recovered.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        }
+      },
+      "profile_comparison": {
+        "culled_player": {
+          "completed_submissions": 372,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0097,
+              "max_ms": 0.0362,
+              "mean_ms": 0.011938337801608582,
+              "min_ms": 0.0085,
+              "samples": 373
+            },
+            "record": {
+              "last_ms": 0.056,
+              "max_ms": 0.2711,
+              "mean_ms": 0.06238440860215054,
+              "min_ms": 0.0384,
+              "samples": 372
+            },
+            "render_call": {
+              "last_ms": 0.4753,
+              "max_ms": 4.7223,
+              "mean_ms": 0.5865822580645157,
+              "min_ms": 0.2152,
+              "samples": 372
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.014336,
+              "max_ms": 0.08294399999999999,
+              "mean_ms": 0.04382279569892482,
+              "min_ms": 0.011264,
+              "samples": 372
+            },
+            "post": {
+              "last_ms": 0.17827199999999999,
+              "max_ms": 0.17827199999999999,
+              "mean_ms": 0.013206623655913942,
+              "min_ms": 0.010239999999999999,
+              "samples": 372
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.022848,
+              "max_ms": 0.035359999999999996,
+              "mean_ms": 0.028491526881720432,
+              "min_ms": 0.021792,
+              "samples": 372
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.21545599999999998,
+              "max_ms": 0.21545599999999998,
+              "mean_ms": 0.0855209462365591,
+              "min_ms": 0.044864,
+              "samples": 372
+            }
+          },
+          "last_draws": {
+            "camera_culled": 2,
+            "camera_draws": 1,
+            "camera_triangles": 12,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 12,
+            "shadow_draws": 9,
+            "shadow_triangles": 108,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        },
+        "unculled_capture": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0219,
+              "max_ms": 0.0219,
+              "mean_ms": 0.0219,
+              "min_ms": 0.0219,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.3112,
+              "max_ms": 0.3112,
+              "mean_ms": 0.22865,
+              "min_ms": 0.1461,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 0.728,
+              "max_ms": 0.728,
+              "mean_ms": 0.57005,
+              "min_ms": 0.4121,
+              "samples": 2
+            }
+          },
+          "culling": false,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.014336,
+              "max_ms": 0.015359999999999999,
+              "mean_ms": 0.014848,
+              "min_ms": 0.014336,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.18636799999999998,
+              "max_ms": 0.18636799999999998,
+              "mean_ms": 0.09884799999999999,
+              "min_ms": 0.011328,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.025183999999999998,
+              "max_ms": 0.028416,
+              "mean_ms": 0.026799999999999997,
+              "min_ms": 0.025183999999999998,
+              "samples": 2
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.22588799999999998,
+              "max_ms": 0.22588799999999998,
+              "mean_ms": 0.14049599999999998,
+              "min_ms": 0.055104,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 3,
+            "camera_triangles": 36,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 0,
+            "shadow_draws": 21,
+            "shadow_triangles": 252,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        }
+      }
+    },
+    {
+      "raw_evidence": {
+        "path": "build/interaction-player/gpu-1.json",
+        "sha256": "887890d6df0014dddeb6be8dc84fd182f6a5388b741e93091e3efcb00df628ff"
+      },
+      "test_source": {
+        "path": "tests/player_contract.py",
+        "sha256": "147d6b9a587223357f570d6708bf0f4b1cf770e408de290e9311bbd4cfc7a1c7"
+      },
+      "binary_sha256": "30e13abc07d1a66bbeb7c2ace211e35476616769298793ce5fa5eb7e0ff52f76",
+      "gpu_names": [
+        "",
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/interaction-player/10bfe0fe3c47474da1bdac98313fe794/player.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/interaction-player/10bfe0fe3c47474da1bdac98313fe794/baseline.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/interaction-player/10bfe0fe3c47474da1bdac98313fe794/recovered.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        }
+      },
+      "profile_comparison": {
+        "culled_player": {
+          "completed_submissions": 372,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0114,
+              "max_ms": 0.0419,
+              "mean_ms": 0.015095174262734583,
+              "min_ms": 0.0093,
+              "samples": 373
+            },
+            "record": {
+              "last_ms": 0.1211,
+              "max_ms": 0.2571,
+              "mean_ms": 0.11652499999999989,
+              "min_ms": 0.0791,
+              "samples": 372
+            },
+            "render_call": {
+              "last_ms": 0.987,
+              "max_ms": 5.9014,
+              "mean_ms": 1.3078779569892465,
+              "min_ms": 0.7488,
+              "samples": 372
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.15195999999999998,
+              "max_ms": 0.68152,
+              "mean_ms": 0.3455437634408604,
+              "min_ms": 0.11624,
+              "samples": 372
+            },
+            "post": {
+              "last_ms": 0.17964,
+              "max_ms": 0.17964,
+              "mean_ms": 0.10632838709677409,
+              "min_ms": 0.08316,
+              "samples": 372
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.35503999999999997,
+              "max_ms": 0.44295999999999996,
+              "mean_ms": 0.35864795698924745,
+              "min_ms": 0.28487999999999997,
+              "samples": 372
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.6866399999999999,
+              "max_ms": 1.1737199999999999,
+              "mean_ms": 0.8105201075268818,
+              "min_ms": 0.5109199999999999,
+              "samples": 372
+            }
+          },
+          "last_draws": {
+            "camera_culled": 2,
+            "camera_draws": 1,
+            "camera_triangles": 12,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 12,
+            "shadow_draws": 9,
+            "shadow_triangles": 108,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        },
+        "unculled_capture": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0264,
+              "max_ms": 0.0264,
+              "mean_ms": 0.0264,
+              "min_ms": 0.0264,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.1743,
+              "max_ms": 0.7024,
+              "mean_ms": 0.43835,
+              "min_ms": 0.1743,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 1.4666,
+              "max_ms": 7.0774,
+              "mean_ms": 4.272,
+              "min_ms": 1.4666,
+              "samples": 2
+            }
+          },
+          "culling": false,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.17551999999999998,
+              "max_ms": 0.18567999999999998,
+              "mean_ms": 0.18059999999999998,
+              "min_ms": 0.17551999999999998,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.18556,
+              "max_ms": 0.18556,
+              "mean_ms": 0.14788,
+              "min_ms": 0.11019999999999999,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.34731999999999996,
+              "max_ms": 0.34731999999999996,
+              "mean_ms": 0.31901999999999997,
+              "min_ms": 0.29072,
+              "samples": 2
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.7083999999999999,
+              "max_ms": 0.7083999999999999,
+              "mean_ms": 0.6475,
+              "min_ms": 0.5866,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 3,
+            "camera_triangles": 36,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 0,
+            "shadow_draws": 21,
+            "shadow_triangles": 252,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        }
+      }
+    }
+  ],
+  "documented_example": {
+    "raw": {
+      "path": "build/interaction-example.json",
+      "sha256": "f70d9329b8f59535d3f06fef229b9dc2a55965687b1c7b51e67cc4bbeaeb2667"
+    },
+    "passed": true,
+    "ticks": 480,
+    "result": {
+      "build_version": "0.0.13",
+      "camera": "00000000000000000000000000000065",
+      "camera_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.5800001035606188,
+        -8.514999990733836,
+        1.0
+      ],
+      "capture_written": true,
+      "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+      "dropped_wall_seconds": 0.0,
+      "frames_presented": 481,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "height": 540,
+      "lighting": {
+        "ambient": [
+          0.05000000074505806,
+          0.05999999865889549,
+          0.07999999821186066
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.8799999952316284,
+              0.699999988079071
+            ],
+            "direction": [
+              -0.0,
+              -0.7071067811865476,
+              -0.7071067811865475
+            ],
+            "id": "000000000000000000000000000000c9",
+            "inner_angle": 0.0,
+            "intensity": 4.0,
+            "intensity_unit": "lux",
+            "kind": "directional",
+            "outer_angle": 45.0,
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "range": 0.0,
+            "shadow": {
+              "bias": 0.0005000000237487257,
+              "distance": 40.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.009999999776482582
+            }
+          }
+        ],
+        "preview_fallback": false,
+        "shadow_bytes": 4194304,
+        "shadow_resolution": 512,
+        "shadow_views": 4
+      },
+      "mode": "replay",
+      "nvrhi_errors": 0,
+      "path": "<checkout>\\build\\interaction-example-010ec813fe874478816841b24863d799\\replay.bmp",
+      "previous_tick": 0,
+      "render_diagnostics": {
+        "completed_submissions": 481,
+        "cpu": {
+          "prepare": {
+            "last_ms": 0.0092,
+            "max_ms": 0.0345,
+            "mean_ms": 0.010678215767634855,
+            "min_ms": 0.0083,
+            "samples": 482
+          },
+          "record": {
+            "last_ms": 0.0551,
+            "max_ms": 0.2912,
+            "mean_ms": 0.05155550935550932,
+            "min_ms": 0.0347,
+            "samples": 481
+          },
+          "render_call": {
+            "last_ms": 0.5699,
+            "max_ms": 4.8618,
+            "mean_ms": 0.5638455301455304,
+            "min_ms": 0.1732,
+            "samples": 481
+          }
+        },
+        "culling": true,
+        "gpu": {
+          "available": true,
+          "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+          "opaque": {
+            "last_ms": 0.008192,
+            "max_ms": 0.061439999999999995,
+            "mean_ms": 0.04118779209979207,
+            "min_ms": 0.007168,
+            "samples": 481
+          },
+          "post": {
+            "last_ms": 0.17865599999999998,
+            "max_ms": 0.17865599999999998,
+            "mean_ms": 0.013480914760914772,
+            "min_ms": 0.012288,
+            "samples": 481
+          },
+          "samples_dropped": 0,
+          "shadows": {
+            "last_ms": 0.019455999999999998,
+            "max_ms": 0.036224,
+            "mean_ms": 0.020109771309771325,
+            "min_ms": 0.0184,
+            "samples": 481
+          },
+          "timestamp_period_ns": 1.0,
+          "timestamp_valid_bits": 64,
+          "total": {
+            "last_ms": 0.206304,
+            "max_ms": 0.206304,
+            "mean_ms": 0.07477847817047815,
+            "min_ms": 0.03888,
+            "samples": 481
+          }
+        },
+        "last_draws": {
+          "camera_culled": 6,
+          "camera_draws": 0,
+          "camera_triangles": 0,
+          "objects": 6,
+          "shadow_candidates": 24,
+          "shadow_culled": 1,
+          "shadow_draws": 23,
+          "shadow_triangles": 276,
+          "shadow_views": 4
+        },
+        "profile_requested": true
+      },
+      "replayed": false,
+      "revision": 1,
+      "samples": 4,
+      "session_id": "00000000000000000000000000000384",
+      "stop_reason": "replay_complete",
+      "success": true,
+      "swapchain_rebuilds": 1,
+      "tick": 480,
+      "width": 960,
+      "world_id": "b7c5180ef24bbb5d56e751e1e58c6744"
+    },
+    "player_final": {
+      "ground": "on_ground",
+      "has_body": true,
+      "id": "00000000000000000000000000000064",
+      "is_character": true,
+      "kinematic_target": null,
+      "layout": "column_major",
+      "motion": "character",
+      "motion_remaining_ticks": 0,
+      "pitch": 0.0,
+      "session_id": "00000000000000000000000000000384",
+      "tick": 480,
+      "velocity": [
+        0.0,
+        0.0,
+        -3.996666669845581
+      ],
+      "world_matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -0.01999989643938127,
+        -8.514999990733836,
+        1.0
+      ],
+      "yaw": 0.0
+    },
+    "door_final": {
+      "ground": "",
+      "has_body": true,
+      "id": "00000000000000000000000000000002",
+      "is_character": false,
+      "kinematic_target": null,
+      "layout": "column_major",
+      "motion": "kinematic",
+      "motion_remaining_ticks": 0,
+      "pitch": 0.0,
+      "session_id": "00000000000000000000000000000384",
+      "tick": 480,
+      "velocity": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "world_matrix": [
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        3.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.4,
+        0.0,
+        2.199999999254942,
+        1.5,
+        -3.0,
+        1.0
+      ],
+      "yaw": 0.0
+    }
+  },
+  "visible_evidence": {
+    "closed": {
+      "path": "docs/evidence/m2-interaction-closed.png",
+      "sha256": "673ba2bd7741f3ec9a9f3ab3578c8e881fff91fe5dfc7eb9be30b72e15b218e2"
+    },
+    "open": {
+      "path": "docs/evidence/m2-interaction-open.png",
+      "sha256": "b45c5d788563a7131e0635d1e0b3f59146afb9133afaf2dd83d7667cdfb94d9c"
+    },
+    "source": "NVIDIA captures decoded from BMP into PNG without image synthesis. Both images visually inspected."
+  },
+  "findings": [
+    "Closed door blocks the character; open doorway permits traversal. A moving kinematic box pushes a dynamic crate.",
+    "A target started once produces identical state through whole or split step requests. Motion stops without drift, retargets from the current pose and updates child transforms.",
+    "Ray tests cover surface normals, origin-inside zero hits, ignored bodies, endpoint inclusion and exact-distance stable-ID ties.",
+    "Real Jolt contact-capacity failure restores motion targets, pose, velocity and tick. Invalid commands preserve active motion.",
+    "Static colliders below moving bodies/controllers are rejected to prevent render/collider pose disagreement.",
+    "Both GPUs pass a 371-tick moving-collider replay versus independent headless stepping and unculled final pixels; native window failure/recovery and retry cases remain covered.",
+    "The documented 480-tick room replay completes with the character beyond the opened door and the authored spawn unchanged."
+  ],
+  "limits": [
+    "Kinematic motion is prescribed and can penetrate static geometry; obstruction/crushing policy is a gameplay concern not implemented here.",
+    "No moving-platform-relative character locomotion, kinematic continuous sweep qualification, compound/triangle collider authoring, shape casts, trigger/contact events or joints are introduced.",
+    "The C# SDK, use-button interaction behavior, audio/UI and packaging are unfinished. The example uses native replay commands.",
+    "Internal rollback is not a durable runtime save. Live structural edits and concurrent player/authoring transport are still unavailable.",
+    "GPU evidence is Windows Vulkan on one laptop with NVIDIA and AMD adapters, using NVRHI validation. It does not qualify game performance, full Vulkan validation, other hardware, native Linux graphics, MSVC or consoles."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

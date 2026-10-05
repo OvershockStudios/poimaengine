@@ -1,0 +1,232 @@
+{
+  "date": "2026-09-26",
+  "engine_version": "0.0.19",
+  "schema_revision": 17,
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "status": "Native persisted keyboard/mouse profiles, isolated evaluation and player integration verified; gamepads and full settings framework remain unfinished.",
+  "source_sha256": {
+    "CMakeLists.txt": "571cba9c5b67084efbe52e979515cd9672c2001ebaccfc031672c3dbca0ac353",
+    "README.md": "08d088b6c8ac6911f94efe35024df6f95d62e559f632d93ac10d15c20e367c84",
+    "include/poima/player.hpp": "04bfce4827035a98027c6f4e66dbeb9a16445678328c935d6c76c5eb95a86188",
+    "include/poima/input_profile.hpp": "3df57cd9b4793044d315f0449fb36dca2363237b159ea7785bddb0334a6b682a",
+    "src/input_profile.cpp": "9f689dddd8e2aad4e79921340ee951d69ea83b13fcbd4ade8a5e499443befeb3",
+    "src/input_profile_store.hpp": "8025dc12ecd741b3ec20d6f3aab662c2d16b4d8b7343b8e89cd60774e9e8e572",
+    "src/input_profile_store.cpp": "9803f9c065f200a165e4859ee03661849b444c46d00258f3c7b3ee18da8cbd16",
+    "src/world.cpp": "cb31181c7ab044bc351b16c3699bbc6c42b5ddd35035c31e507952792a718a9d",
+    "src/player.cpp": "5a6fb110f1b7299accc293e54393102a934c3c18e3bae5e8043663a098af6097",
+    "src/render_smoke.cpp": "693ee9c4e68e90af744f66fb7898be9d1427b56e739d252a1f6a9b4aa934103f",
+    "src/core.cpp": "07aa5c76b7881f2c41357d6508fbfdd43789cdde18cf694434b714b0e722a6aa",
+    "tests/input_profile.cpp": "e6e678ed7a49e1f011204b17704ea04ab948760112197700923eeacb7ae50518",
+    "tests/input_profile_contract.py": "0fbf9e0a69564cdd55aa57baf35d91916b296e282137303eee77a532c00b7b16",
+    "tests/player_contract.py": "1e1ecf3ba727cb4ece44e86ff2536d721530055e6549798226630a66d9993326",
+    "tests/player_window.py": "3a46a488bfb42ae86bed9ec2e5d1bf54e5d4d10a77d62eefd8438eabc45c1504",
+    "docs/INPUT_PROFILES.md": "511bd60f07baa2df8790f2607fe82c11fd6810f7d07ec0106d03a5ead399f0c3",
+    "docs/PLAYER.md": "93eb1fe280338f12cc97fc0dd66d1d2add404b8eb92e93aec7fc918956000c89",
+    "docs/IMPLEMENTATION_STATUS.md": "61d62e8326bf21f319f01ed97faac364ee563c2c5ed50fd70b64f4200f3cb77b",
+    "examples/input-profile.jsonl": "cfd42ab5c02cafed029bd3c17a5c6806e695871978ebb348e2bfa8084f24d39f"
+  },
+  "binary_sha256": {
+    "headless": "e7c415916e72a91477c12908d0d9c494a0f7bfe2427f598e29612e9022177c98",
+    "runtime-headless": "6e657aa47ee6ef0c90584f388690e410c026a5d9aa0a17b447e9de87837c94f4",
+    "windows-runtime": "a3e946984c0b6c8437f61f20de1fdb4aacbd5055a687344cf5ec06e31de1dbec"
+  },
+  "ctest": {
+    "headless": {
+      "passed": true,
+      "suites": 17,
+      "record": "build/input-headless-tests.log",
+      "record_sha256": "35b430e0f6fda0f1707076164e2777487a802987e9a5634f82865e3a9edc2980"
+    },
+    "runtime": {
+      "passed": true,
+      "suites": 20,
+      "record": "build/input-runtime-tests.log",
+      "record_sha256": "2dad23ff4aabc5e77ab25ef427363cf4b3fcd2ba15bd0680bf64e15abf3c7706"
+    }
+  },
+  "profile_contract": {
+    "headless": {
+      "tests": 14,
+      "passed": true,
+      "binary_sha256": "e7c415916e72a91477c12908d0d9c494a0f7bfe2427f598e29612e9022177c98",
+      "test_sha256": "0fbf9e0a69564cdd55aa57baf35d91916b296e282137303eee77a532c00b7b16",
+      "reports": [
+        {
+          "shared_between_worlds": true,
+          "content_hash": "9b8755b7985701aff0f46acd5a0e19ab75f3a783c9c0c64416c2c33366a8c113",
+          "application": "next_play"
+        },
+        {
+          "receipt_window": 32,
+          "commits": 35,
+          "evicted_receipts_rejected": true,
+          "previous_revision": 34
+        }
+      ],
+      "executed": 14,
+      "skipped": 0,
+      "record": "build/input-headless-contract.json",
+      "record_sha256": "cfc7fb0b822f21aa9276ff65de01e69a0b5206a00ce36201ff30d3ff1f87a7a2"
+    },
+    "windows": {
+      "tests": 14,
+      "passed": true,
+      "binary_sha256": "a3e946984c0b6c8437f61f20de1fdb4aacbd5055a687344cf5ec06e31de1dbec",
+      "test_sha256": "0fbf9e0a69564cdd55aa57baf35d91916b296e282137303eee77a532c00b7b16",
+      "reports": [
+        {
+          "shared_between_worlds": true,
+          "content_hash": "9b8755b7985701aff0f46acd5a0e19ab75f3a783c9c0c64416c2c33366a8c113",
+          "application": "next_play"
+        },
+        {
+          "receipt_window": 32,
+          "commits": 35,
+          "evicted_receipts_rejected": true,
+          "previous_revision": 34
+        }
+      ],
+      "executed": 12,
+      "skipped": 2,
+      "record": "build/input-windows-contract.json",
+      "record_sha256": "1adbf4ad7f2718aebf1b1ed6290b8d3369ebc8802fa2d1689fe3184ccfb0ff4a"
+    }
+  },
+  "native_windows": {
+    "passed": true,
+    "binary_sha256": "a01b9f6c35ed27cb8588eeaa51788b80ad8bb8be92ab6cb4bbacf6d9871ee0ea",
+    "record": "build/input-windows-native.log",
+    "record_sha256": "a216eee56e5cd1c4ee857878e44e6162771db777c1fb46a92d51f5b2d36b1d8f"
+  },
+  "gpu_replay": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "ticks": 371,
+      "frames_presented": 372,
+      "nvrhi_errors": 0,
+      "input_profile": {
+        "applied": false,
+        "content_hash": "bb90dcb59b5ff520e38eb62671ce7f22073b70d5b3e750e94d87d712a7ebf298",
+        "revision": 1,
+        "source": "profile"
+      },
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true,
+        "saved_profile_validated_but_replay_semantics_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/input-player-amd/c00f1dade42c490cbebee75b16d6e562/player.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/input-player-amd/c00f1dade42c490cbebee75b16d6e562/baseline.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/input-player-amd/c00f1dade42c490cbebee75b16d6e562/recovered.bmp",
+          "sha256": "1fd17c3451dab0269be046d62bb9c56eef1d1c3aed80673fbe06f299e988c9bf"
+        }
+      },
+      "record": "build/input-player-amd/gpu-0.json",
+      "record_sha256": "5d06066b85081099685ad314a0d0af18d68f20d4798ecf46f25846f2c2fe6df7"
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "ticks": 371,
+      "frames_presented": 372,
+      "nvrhi_errors": 0,
+      "input_profile": {
+        "applied": false,
+        "content_hash": "bb90dcb59b5ff520e38eb62671ce7f22073b70d5b3e750e94d87d712a7ebf298",
+        "revision": 1,
+        "source": "profile"
+      },
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true,
+        "saved_profile_validated_but_replay_semantics_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/input-player-nvidia/4b38dd6c1bc7447b849540695be7ff40/player.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/input-player-nvidia/4b38dd6c1bc7447b849540695be7ff40/baseline.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/input-player-nvidia/4b38dd6c1bc7447b849540695be7ff40/recovered.bmp",
+          "sha256": "bbda29de38112f098781599fc115338411c20031cf963ff0fc4527f7b0346739"
+        }
+      },
+      "record": "build/input-player-nvidia/gpu-1.json",
+      "record_sha256": "8fb9ee67b9b5d8373c40cbc6026191ab85cc0355522c15f87e60e6d44240a651"
+    }
+  ],
+  "window": {
+    "passed": true,
+    "input_source": "Targeted Win32 window messages; not physical keyboard/mouse qualification.",
+    "initial_foreground": true,
+    "input_qualification": "Targeted synthetic key message moved the focused player; physical devices remain unqualified.",
+    "checks": {
+      "targeted_keyboard_moves_character": true,
+      "focus_loss_clears_held_input": true,
+      "minimize_restore_survives": true,
+      "paused_time_bound": true,
+      "resize_rebuilds_swapchain_and_capture": true,
+      "window_close_preserves_runtime": true,
+      "saved_remapping_moves_character_with_synthetic_up_key": true
+    },
+    "expected_size": [
+      802,
+      473
+    ],
+    "image": {
+      "path": "<checkout>\\build\\input-window\\08fee20200b34356b92970b9c27949e0\\window.bmp",
+      "sha256": "32a2fb674e537795e50677eb303f3ebbc2391e51840e138be0217d97e9b0d0c8"
+    },
+    "tick": 177,
+    "frames_presented": 1353,
+    "swapchain_rebuilds": 3,
+    "input_profile": {
+      "applied": true,
+      "content_hash": "9b8755b7985701aff0f46acd5a0e19ab75f3a783c9c0c64416c2c33366a8c113",
+      "revision": 1,
+      "source": "profile"
+    },
+    "record": "build/input-window/window.json",
+    "record_sha256": "0ebc3f6b314910969da626810a45e7484a5f8380cc876db203dfc7617e1349a7"
+  },
+  "example": {
+    "passed": true,
+    "requests": 4,
+    "record": "build/input-example-results.json",
+    "record_sha256": "52aec2135a30addd49698806f12ce462ebe8ee22816928fc97dcf4e92432e1b4"
+  },
+  "limits": [
+    "One six-action keyboard/mouse profile, zero to four alternatives per action; no gamepads, general action maps, contexts, chords, wheel or hold/toggle interactions yet.",
+    "Input profile loads before play; blocked world-service transport does not support live rebinding. C# consumes the unchanged semantic input ABI; no new C# settings editing API.",
+    "Foreground window tests use targeted synthetic Win32 events, not physical hardware/feel qualification.",
+    "Linux tested both symlink/hardlink protections; these two filesystem-link tests explicitly skipped in Windows harness.",
+    "Atomic profile replacement with previous snapshot and cooperative locking is tested. Automatic recovery/migration and power-loss durability are not qualified.",
+    "First window run exposed DPI virtualization in the test harness; final run uses per-monitor DPI awareness. Preserved earlier failure is not engine qualification evidence.",
+    "Native Linux graphics and consoles remain unqualified."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive.",
+  "public_history_note": "Private document references and original private Git revision identifiers are omitted. Reported measurements and retained code/binary digests are unchanged."
+}

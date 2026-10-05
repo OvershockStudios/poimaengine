@@ -1,0 +1,756 @@
+{
+  "date": "2026-09-26",
+  "engine_version": "0.0.18",
+  "schema_revision": 16,
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "status": "Verified Vulkan compute skinning for isolated asset pose captures; runtime rig binding and playback remain unfinished.",
+  "source_sha256": {
+    "CMakeLists.txt": "5dfb39fdbaf524f869221c1d4c1d954473a062fdddac146efe722b0040eaea94",
+    "cmake/render_smoke.cmake": "971db58bfc257004d7ae9f27449d2eb557bc0ff0e89f4b910e75f1bfac1f859b",
+    "docs/ANIMATION_ASSETS.md": "3333f954508c017027531587039e8cbe18975af047e8b3faa586f013cb920df3",
+    "docs/ASSETS.md": "c27ffc35ca35a25af79f64007965e17fa6c997bfe14fb1f04ad8275b02a62856",
+    "docs/GPU_SKINNING.md": "490ebbacb73f1c96c84f8e2fcfcb2ad30cd4aa15554b1869da72c0d2b574d498",
+    "include/poima/animation.hpp": "acf6abb4441cbaa58da1990af59e87880de0fde359a5700eace5c47c792c9389",
+    "include/poima/core.hpp": "2cd9bab954f392aa6e3f02a02069553774a59fd684c6ab36dd048a2286e71056",
+    "include/poima/scene.hpp": "80deeef135e7f4c9be680f02b1fca9a4c0dda0d422692494787d3a99cd6d62cb",
+    "src/animation.cpp": "96efddb6913e284212e9fdaa64c0ea783ce462f8fd65e3f2fab7ec5e7eead0df",
+    "src/core.cpp": "672c7ec952fd95ae5f76370a82fe3409eaf0ee437854bf7ad37fde6e6d7deaaa",
+    "src/render_smoke.cpp": "39a072c0169b810249da56cf3eff80383b95a3150b779a959aba04a3890a705d",
+    "src/world.cpp": "d3186f800741495ab1471ba5083bc2300626db7cfe45667abdd3fcad884abd8e",
+    "shaders/skinning.hlsl": "fac32b74668dc8923a20215aafd4074488ae5eb080dc3da39a377d32c786966e",
+    "tests/animation_contract.py": "ed25f706516d0b1f9bc793e77c818a82127fa7ed352349a16eff380dbf700421",
+    "tests/animation_native.cpp": "73510e373f01d39873312c4300bf0d6615919537761d564fe9a3fba78ed15967",
+    "tests/culling_capture.py": "c274d2babbffd6c1432b38cc095137dc8b6544a2a179e190abcb6c69b187d444",
+    "tests/gpu_skinning_capture.py": "6587cc05af5105df03c4faf754c5ad789582cf30f319aea683e3618b30f15b05",
+    "tests/animation_capture.py": "6569010acbdfd81800bf3b8b5747c4753ccd27a04785e2e58d91bfe4b098b45a",
+    "src/visibility.cpp": "69bd7374e82e7a407937e3cc675dca8fd488fac81adc39515dadeb504982481a"
+  },
+  "binary_sha256": {
+    "headless": "291d03db13d2d0614269c6ab0405f17435d622386d0c0cd4b60f54d899bb1040",
+    "runtime-headless": "1031daf7c67831934f9f31b25b55d989707c3fb5f6e81212b2610308577eac70",
+    "windows-runtime": "e5099507025ae408fc9268e1fa51cb982ad2f273a70cdab611d962a5ddb2b142"
+  },
+  "checks": {
+    "headless_ctest": {
+      "passed": true,
+      "tests": 15,
+      "record": "build/skinning-headless-tests.log",
+      "record_sha256": "0dde7b01933b610f27ff4666f99400070eca1f07344b04d776b59bbb1fe640be"
+    },
+    "runtime_ctest": {
+      "passed": true,
+      "tests": 18,
+      "record": "build/skinning-runtime-tests.log",
+      "record_sha256": "12ed89c5a55abca0de12f9342787cdb564493090ff7d2d837741650040c7d631"
+    },
+    "additional_bounds_regressions": {
+      "passed": true,
+      "cases": "100000 moderate float blends, one exact cancellation, 1200 four-joint large-magnitude cases with fused and separate arithmetic",
+      "headless_test_binary_sha256": "693ad26be70912b775a7a5cbdde7f474ab457c45a4da5a7c7aa36384314a37b8",
+      "record": "build/skinning-bounds-tests.log",
+      "record_sha256": "150c4b7c7b9321a11da54c3e4abc81744befc29c742788741b8fc175ed489b41"
+    },
+    "animation_contract_headless": {
+      "tests": 11,
+      "passed": true,
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "source_independent": true,
+          "format": "poima.model.v4"
+        }
+      ],
+      "record": "build/skinning-animation-headless.json",
+      "record_sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740"
+    },
+    "animation_contract_windows": {
+      "tests": 11,
+      "passed": true,
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "source_independent": true,
+          "format": "poima.model.v4"
+        }
+      ],
+      "record": "build/skinning-animation-windows.json",
+      "record_sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740"
+    }
+  },
+  "gpu_skinning": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "width": 640,
+      "height": 480,
+      "samples": 4,
+      "comparisons": {
+        "base_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "base_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "normal_frames": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "independent_instances": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "after_failure": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_present": {
+          "maximum_channel_error": 58,
+          "pixels_over_2": 18531,
+          "changed_pixels": 18531,
+          "mean_max_channel_error": 2.6000358072916665
+        }
+      },
+      "source_independent": true,
+      "world_unchanged_by_capture": true,
+      "captures": [
+        {
+          "name": "base-gpu.bmp",
+          "image_sha256": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "base-cpu.bmp",
+          "image_sha256": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "base-unculled.bmp",
+          "image_sha256": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "normal-gpu.bmp",
+          "image_sha256": "0467a7b8b304638cc9ba634932eba0c81f51bdf3be00a13e7a8b094bc98d3e6b",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "normal-cpu.bmp",
+          "image_sha256": "0467a7b8b304638cc9ba634932eba0c81f51bdf3be00a13e7a8b094bc98d3e6b",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "instances-gpu.bmp",
+          "image_sha256": "afb017f6cd4b3145cf3c13fef0d0e1c55bf57ce790d5af412cdb1c38d0144ea9",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 8,
+            "objects": 2,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 2,
+            "skinned_vertices": 12
+          }
+        },
+        {
+          "name": "instances-cpu.bmp",
+          "image_sha256": "afb017f6cd4b3145cf3c13fef0d0e1c55bf57ce790d5af412cdb1c38d0144ea9",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 8,
+            "objects": 2,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "recovered.bmp",
+          "image_sha256": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "shadow-gpu.bmp",
+          "image_sha256": "0fe834758abdf15ea862c17705561f94b275b35ccc6139f651cc1a5fcb8ec0dd",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 1,
+            "camera_triangles": 2,
+            "objects": 2,
+            "shadow_candidates": 8,
+            "shadow_culled": 0,
+            "shadow_draws": 8,
+            "shadow_triangles": 24,
+            "shadow_views": 4,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "shadow-cpu.bmp",
+          "image_sha256": "0fe834758abdf15ea862c17705561f94b275b35ccc6139f651cc1a5fcb8ec0dd",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 1,
+            "camera_triangles": 2,
+            "objects": 2,
+            "shadow_candidates": 8,
+            "shadow_culled": 0,
+            "shadow_draws": 8,
+            "shadow_triangles": 24,
+            "shadow_views": 4,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "shadow-unculled.bmp",
+          "image_sha256": "0fe834758abdf15ea862c17705561f94b275b35ccc6139f651cc1a5fcb8ec0dd",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 6,
+            "objects": 2,
+            "shadow_candidates": 8,
+            "shadow_culled": 0,
+            "shadow_draws": 8,
+            "shadow_triangles": 24,
+            "shadow_views": 4,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "shadow-off.bmp",
+          "image_sha256": "70784b91b781f673e1f668a0e22e10223d7c7029eedf490816f96e68c6a010ab",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 1,
+            "camera_triangles": 2,
+            "objects": 2,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        }
+      ],
+      "record": "build/gpu-skinning-final-amd/6e222b61169d4e2792bf5b746c4bdf70/evidence.json",
+      "record_sha256": "15fcb3d4241f7d7b9d5fe8a20f19577ca5704b60b1c8ba3192bbbffef0f5eade"
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "width": 640,
+      "height": 480,
+      "samples": 4,
+      "comparisons": {
+        "base_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "base_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "normal_frames": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "independent_instances": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "after_failure": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_cpu_gpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "shadow_present": {
+          "maximum_channel_error": 58,
+          "pixels_over_2": 18531,
+          "changed_pixels": 18531,
+          "mean_max_channel_error": 2.6000358072916665
+        }
+      },
+      "source_independent": true,
+      "world_unchanged_by_capture": true,
+      "captures": [
+        {
+          "name": "base-gpu.bmp",
+          "image_sha256": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "base-cpu.bmp",
+          "image_sha256": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "base-unculled.bmp",
+          "image_sha256": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "normal-gpu.bmp",
+          "image_sha256": "0467a7b8b304638cc9ba634932eba0c81f51bdf3be00a13e7a8b094bc98d3e6b",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "normal-cpu.bmp",
+          "image_sha256": "0467a7b8b304638cc9ba634932eba0c81f51bdf3be00a13e7a8b094bc98d3e6b",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "instances-gpu.bmp",
+          "image_sha256": "3b1675caab45aa50575e34e4088306f7cc3c29b4749934e5105de26aa6956a1d",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 8,
+            "objects": 2,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 2,
+            "skinned_vertices": 12
+          }
+        },
+        {
+          "name": "instances-cpu.bmp",
+          "image_sha256": "3b1675caab45aa50575e34e4088306f7cc3c29b4749934e5105de26aa6956a1d",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 8,
+            "objects": 2,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "recovered.bmp",
+          "image_sha256": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "shadow-gpu.bmp",
+          "image_sha256": "0fe834758abdf15ea862c17705561f94b275b35ccc6139f651cc1a5fcb8ec0dd",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 1,
+            "camera_triangles": 2,
+            "objects": 2,
+            "shadow_candidates": 8,
+            "shadow_culled": 0,
+            "shadow_draws": 8,
+            "shadow_triangles": 24,
+            "shadow_views": 4,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "shadow-cpu.bmp",
+          "image_sha256": "0fe834758abdf15ea862c17705561f94b275b35ccc6139f651cc1a5fcb8ec0dd",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 1,
+            "camera_triangles": 2,
+            "objects": 2,
+            "shadow_candidates": 8,
+            "shadow_culled": 0,
+            "shadow_draws": 8,
+            "shadow_triangles": 24,
+            "shadow_views": 4,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        },
+        {
+          "name": "shadow-unculled.bmp",
+          "image_sha256": "0fe834758abdf15ea862c17705561f94b275b35ccc6139f651cc1a5fcb8ec0dd",
+          "skinning": "gpu_compute",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 2,
+            "camera_triangles": 6,
+            "objects": 2,
+            "shadow_candidates": 8,
+            "shadow_culled": 0,
+            "shadow_draws": 8,
+            "shadow_triangles": 24,
+            "shadow_views": 4,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          }
+        },
+        {
+          "name": "shadow-off.bmp",
+          "image_sha256": "70784b91b781f673e1f668a0e22e10223d7c7029eedf490816f96e68c6a010ab",
+          "skinning": "cpu_reference",
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 1,
+            "camera_triangles": 2,
+            "objects": 2,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 0,
+            "skinned_vertices": 0
+          }
+        }
+      ],
+      "record": "build/gpu-skinning-final-nvidia/66bc72d4cbea478a93a34bd185cf1bea/evidence.json",
+      "record_sha256": "f4754e4bac838d53ed49e2be90a1c6905d6e45320e9770521a134d320f96bf88"
+    }
+  ],
+  "independent_baked_reference": {
+    "passed": true,
+    "analytic_comparison": {
+      "maximum_channel_error": 0,
+      "pixels_over_2": 0,
+      "changed_pixels": 0,
+      "mean_max_channel_error": 0.0
+    },
+    "culling_comparison": {
+      "maximum_channel_error": 0,
+      "pixels_over_2": 0,
+      "changed_pixels": 0,
+      "mean_max_channel_error": 0.0
+    },
+    "motion": {
+      "maximum_channel_error": 84,
+      "pixels_over_2": 21424,
+      "changed_pixels": 21424,
+      "mean_max_channel_error": 5.648268229166667
+    },
+    "source_independent": true,
+    "world_unchanged": true,
+    "record": "build/skinning-animation-final-nvidia/711e122d7d24454891b683aeece5abda/evidence.json",
+    "record_sha256": "17cfac5b41999a53943ea38b0c9a26288d7868447196303e5c64817db8c23477",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU"
+  },
+  "culling_regression": [
+    {
+      "gpu_index": 0,
+      "passed": true,
+      "checks": {
+        "profiled_and_unprofiled_pixel_parity": true,
+        "offscreen_shadow_caster_retained": true,
+        "240_distant_objects_rejected": true,
+        "near_plane_and_sheared_hierarchy": true,
+        "runtime_motion_parity": true,
+        "actual_gpu_timestamp_intervals": true
+      },
+      "draws": {
+        "camera_culled": 241,
+        "camera_draws": 4,
+        "camera_triangles": 38,
+        "objects": 245,
+        "shadow_candidates": 1470,
+        "shadow_culled": 1462,
+        "shadow_draws": 8,
+        "shadow_triangles": 76,
+        "shadow_views": 6,
+        "skinned_instances": 0,
+        "skinned_vertices": 0
+      },
+      "record": "build/skinning-culling-final-amd/gpu-0.json",
+      "record_sha256": "73dcb344d0510db28aa98ed0f03cb157fdbcc4fee3dd48b7caa2586edad47a12"
+    },
+    {
+      "gpu_index": 1,
+      "passed": true,
+      "checks": {
+        "profiled_and_unprofiled_pixel_parity": true,
+        "offscreen_shadow_caster_retained": true,
+        "240_distant_objects_rejected": true,
+        "near_plane_and_sheared_hierarchy": true,
+        "runtime_motion_parity": true,
+        "actual_gpu_timestamp_intervals": true
+      },
+      "draws": {
+        "camera_culled": 241,
+        "camera_draws": 4,
+        "camera_triangles": 38,
+        "objects": 245,
+        "shadow_candidates": 1470,
+        "shadow_culled": 1462,
+        "shadow_draws": 8,
+        "shadow_triangles": 76,
+        "shadow_views": 6,
+        "skinned_instances": 0,
+        "skinned_vertices": 0
+      },
+      "record": "build/skinning-culling-final-nvidia/gpu-1.json",
+      "record_sha256": "017e56ad74a1cceebbf5d52c1733c9122a54856e84e8f4cd7b96d913d9daf509"
+    }
+  ],
+  "limits": [
+    "Synthetic original rigs; no arbitrary character corpus or crowd performance qualification.",
+    "Isolated asset capture only; ordinary rig entities, live playback, blending, root motion, IK and retargeting remain unfinished.",
+    "Serialized renderer with GPU completion wait and status readback; timings are not production frame latency.",
+    "Windows Vulkan on one laptop with AMD integrated and NVIDIA discrete GPU; native Linux graphics and consoles remain unqualified.",
+    "Renderer description still includes historical static-geometry wording; animation.skinning and gpu_skinning capability describe the actual path."
+  ],
+  "public_history_note": "References to the original private Git history are omitted. Source and binary file digests remain unchanged."
+}

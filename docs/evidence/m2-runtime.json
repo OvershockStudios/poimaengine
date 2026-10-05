@@ -1,0 +1,1248 @@
+{
+  "recorded_at_utc": "2026-09-26T06:48:30.966560+00:00",
+  "engine_version": "0.0.5",
+  "scope": "Initial optional fixed-step ECS/physics runtime and live capture; M0, M1 and M2 remain incomplete.",
+  "builds": {
+    "linux": {
+      "preset": "runtime-headless",
+      "compiler": "GNU 15.2.0",
+      "binary_sha256": "d58ac7217c00f6996ff685def423ecef628222a275664a531f1a28d3fb2e2c06"
+    },
+    "windows": {
+      "preset": "windows-runtime",
+      "compiler": "LLVM-MinGW Clang 23.1.2",
+      "binary_sha256": "6f9620de4736f4ad6010e4d4fa1dc0342a225aea430e41ab698a8d75846d1c02",
+      "native_execution": true,
+      "msvc_qualified": false
+    }
+  },
+  "dependencies": [
+    {
+      "name": "Jolt",
+      "version": "5.4.0",
+      "commit": "036ea7b1d717b3e713ac9d8cbd47118fb9cd5d60",
+      "archive_sha256": "4427d6ce190e049b186bb88dbfb8692c2373a7fc042c984b5f15396194aac958",
+      "license": "MIT"
+    },
+    {
+      "name": "EnTT",
+      "version": "3.16.0",
+      "commit": "b4e58bdd364ad72246c123a0c28538eab3252672",
+      "archive_sha256": "3e996cf255b09527faf995c7c36e3daf92cefa0fb37540a4b9c359af557e19cd",
+      "license": "MIT"
+    }
+  ],
+  "physics_settings": {
+    "fixed_hz": 60,
+    "double_positions": true,
+    "cross_platform_deterministic_flag": true,
+    "optional_cpu_extensions": false,
+    "cpu_baseline": "SSE2",
+    "scheduler": "Jolt JobSystemSingleThreaded",
+    "max_bodies": 4096,
+    "max_pairs": 8192,
+    "max_contacts": 8192,
+    "temporary_allocator_initial_bytes": 16777216,
+    "temporary_allocator_malloc_fallback": true
+  },
+  "linux_ctest": {
+    "command": [
+      "ctest",
+      "--preset",
+      "runtime-headless"
+    ],
+    "passed_suites": 6,
+    "failed_suites": 0,
+    "log": "Start testing: Sep 26 02:40 EDT\n----------------------------------------------------------\n1/6 Testing: scene_math\n1/6 Test: scene_math\nCommand: \"<checkout>/build/runtime-headless/poima-scene-math-test\"\nDirectory: <checkout>/build/runtime-headless\n\"scene_math\" start time: Sep 26 02:40 EDT\nOutput:\n----------------------------------------------------------\nHierarchy, affine inverse, camera rigidity and [0,1] perspective depth passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"scene_math\" end time: Sep 26 02:40 EDT\n\"scene_math\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n2/6 Testing: runtime_native\n2/6 Test: runtime_native\nCommand: \"<checkout>/build/runtime-headless/poima-runtime-test\"\nDirectory: <checkout>/build/runtime-headless\n\"runtime_native\" start time: Sep 26 02:40 EDT\nOutput:\n----------------------------------------------------------\nPhysics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed.\n<end of output>\nTest time =   0.09 sec\n----------------------------------------------------------\nTest Passed.\n\"runtime_native\" end time: Sep 26 02:40 EDT\n\"runtime_native\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n3/6 Testing: runtime_contract\n3/6 Test: runtime_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/runtime_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"runtime_contract\" start time: Sep 26 02:40 EDT\nOutput:\n----------------------------------------------------------\ntest_collision_jump_retries_and_live_authoring_separation (__main__.RuntimeContract.test_collision_jump_retries_and_live_authoring_separation) ... ok\ntest_receipt_window_and_repeated_lifetimes (__main__.RuntimeContract.test_receipt_window_and_repeated_lifetimes) ... ok\ntest_repeatable_replay_and_chunk_equivalence (__main__.RuntimeContract.test_repeatable_replay_and_chunk_equivalence) ... ok\ntest_validation_failed_start_recovery_and_stale_observation (__main__.RuntimeContract.test_validation_failed_start_recovery_and_stale_observation) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 0.400s\n\nOK\n<end of output>\nTest time =   0.56 sec\n----------------------------------------------------------\nTest Passed.\n\"runtime_contract\" end time: Sep 26 02:40 EDT\n\"runtime_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n4/6 Testing: cli_contract\n4/6 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/runtime-headless/poima\" \"0\" \"0\"\nDirectory: <checkout>/build/runtime-headless\n\"cli_contract\" start time: Sep 26 02:40 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.504s\n\nOK\n<end of output>\nTest time =   0.64 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 02:40 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n5/6 Testing: world_contract\n5/6 Test: world_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/world_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"world_contract\" start time: Sep 26 02:40 EDT\nOutput:\n----------------------------------------------------------\ntest_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_components_hierarchy_matrices_and_capture_validation (__main__.WorldContract.test_components_hierarchy_matrices_and_capture_validation) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... ok\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_runtime_discovery_and_optional_build (__main__.WorldContract.test_runtime_discovery_and_optional_build) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.875s\n\nOK\n<end of output>\nTest time =   3.02 sec\n----------------------------------------------------------\nTest Passed.\n\"world_contract\" end time: Sep 26 02:41 EDT\n\"world_contract\" time elapsed: 00:00:03\n----------------------------------------------------------\n\n6/6 Testing: native_module_contract\n6/6 Test: native_module_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/scripts/measure_native_module.py\" \"--host\" \"<checkout>/build/runtime-headless/poima-module-lab\" \"--output\" \"<checkout>/build/runtime-headless/module-contract\" \"--warm-edits\" \"2\"\nDirectory: <checkout>/build/runtime-headless\n\"native_module_contract\" start time: Sep 26 02:41 EDT\nOutput:\n----------------------------------------------------------\n{\n  \"build_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 739.547019499696,\n    \"p95_ms\": 748.0209290006314,\n    \"max_ms\": 748.0209290006314\n  },\n  \"reload_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 5.661955000000001,\n    \"p95_ms\": 5.68838,\n    \"max_ms\": 5.68838\n  },\n  \"observed_total_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 791.0113774996717,\n    \"p95_ms\": 798.5608290000528,\n    \"max_ms\": 798.5608290000528\n  },\n  \"repeated_reload_ms\": {\n    \"samples\": 100,\n    \"median_ms\": 5.171415,\n    \"p95_ms\": 5.88574,\n    \"max_ms\": 6.99735\n  }\n}\n<end of output>\nTest time =  10.63 sec\n----------------------------------------------------------\nTest Passed.\n\"native_module_contract\" end time: Sep 26 02:41 EDT\n\"native_module_contract\" time elapsed: 00:00:10\n----------------------------------------------------------\n\nEnd testing: Sep 26 02:41 EDT\n"
+  },
+  "runtime_contract": {
+    "linux": {
+      "binary": "<checkout>/build/runtime-headless/poima",
+      "binary_sha256": "d58ac7217c00f6996ff685def423ecef628222a275664a531f1a28d3fb2e2c06",
+      "tests_run": 4,
+      "passed": true,
+      "skips": [],
+      "replay_trace": [
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.019999942632981993,
+            2.0,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 300,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.01999991990871086,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "not_supported",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 310,
+          "velocity": [
+            0.0,
+            3.3309648036956787,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.660147277188829,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            0.0,
+            -0.020000040481648496,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            0.0,
+            1.5799999595183516,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999916056949507,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000839430506,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      ]
+    },
+    "windows": {
+      "binary": "<checkout>/build/windows-runtime/poima.exe",
+      "binary_sha256": "6f9620de4736f4ad6010e4d4fa1dc0342a225aea430e41ab698a8d75846d1c02",
+      "tests_run": 4,
+      "passed": true,
+      "skips": [],
+      "replay_trace": [
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.019999942632981993,
+            2.0,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 300,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.01999991990871086,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "not_supported",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 310,
+          "velocity": [
+            0.0,
+            3.3309648036956787,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.660147277188829,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            0.0,
+            -0.020000040481648496,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            0.0,
+            1.5799999595183516,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999916056949507,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000839430506,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      ]
+    }
+  },
+  "cross_platform_replay": {
+    "states": 8,
+    "exact_numeric_equality": true,
+    "differing_scalars": 0,
+    "max_absolute_error": 0,
+    "differences": [],
+    "final_tick": 491,
+    "comparison": "Parsed numeric equality of eight inspected entity/camera states; not binary internal state equality or arbitrary-content qualification."
+  },
+  "native_runtime_tests": {
+    "linux": {
+      "passed": true
+    },
+    "windows": {
+      "command": [
+        "./build/windows-runtime/poima-runtime-test.exe"
+      ],
+      "exit_code": 0,
+      "stdout": "Physics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed."
+    },
+    "capacity_failure_fixture": {
+      "overlapping_dynamic_boxes": 150,
+      "checks": "All public body states and tick unchanged after a real Jolt pair/contact capacity error."
+    }
+  },
+  "windows_regressions": {
+    "world_contract": {
+      "run": 9,
+      "passed": 8,
+      "skipped": 1,
+      "skip_reason": "Abrupt Windows process termination is not qualified by the WSL harness."
+    },
+    "cli_contract": {
+      "run": 8,
+      "passed": 7,
+      "skipped": 1,
+      "skip_reason": "Render-not-built case does not apply to graphics build."
+    }
+  },
+  "gpu_capture": [
+    {
+      "command": [
+        "<checkout>/build/windows-runtime/poima.exe",
+        "world",
+        "<checkout>\\build\\runtime-capture-evidence\\674edb330ad140eb834e5c2c478c6d1a\\world.json"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "captures": {
+        "spawn": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\674edb330ad140eb834e5c2c478c6d1a\\spawn.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 0,
+            "width": 960,
+            "world_id": "b5b4c6e4803022ea3c110a296c807f95"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/674edb330ad140eb834e5c2c478c6d1a/spawn.bmp",
+          "sha256": "f8c676f2952109fa3bb0043347ab1b5618cfb3d8858eede07a490b289482f41e"
+        },
+        "settled": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\674edb330ad140eb834e5c2c478c6d1a\\settled.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 120,
+            "width": 960,
+            "world_id": "b5b4c6e4803022ea3c110a296c807f95"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/674edb330ad140eb834e5c2c478c6d1a/settled.bmp",
+          "sha256": "5a3212a458ee82809a7243d22796d04933371154b8502507221b86d9bb05467c"
+        },
+        "first-person": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.580000057367018,
+              2.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 70.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\674edb330ad140eb834e5c2c478c6d1a\\first-person.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 120,
+            "width": 960,
+            "world_id": "b5b4c6e4803022ea3c110a296c807f95"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/674edb330ad140eb834e5c2c478c6d1a/first-person.bmp",
+          "sha256": "c31b348b5de268d839a5e0844b43291975513a61a9d55536d1093f2decf26b16"
+        },
+        "runtime-after-author-edit": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\674edb330ad140eb834e5c2c478c6d1a\\runtime-after-author-edit.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 120,
+            "width": 960,
+            "world_id": "b5b4c6e4803022ea3c110a296c807f95"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/674edb330ad140eb834e5c2c478c6d1a/runtime-after-author-edit.bmp",
+          "sha256": "5a3212a458ee82809a7243d22796d04933371154b8502507221b86d9bb05467c"
+        },
+        "authored-after-edit": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\674edb330ad140eb834e5c2c478c6d1a\\authored-after-edit.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 2,
+            "samples": 4,
+            "session_id": null,
+            "source": "authored",
+            "tick": null,
+            "width": 960,
+            "world_id": "b5b4c6e4803022ea3c110a296c807f95"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/674edb330ad140eb834e5c2c478c6d1a/authored-after-edit.bmp",
+          "sha256": "3f6122d16c80222937086cdeb011018461ab4c63793bb45b56ddb6d2ffcf2ccf"
+        }
+      },
+      "checks": {
+        "falling_body_pixel_motion": true,
+        "crate_pixel_y_before": 205.34092606422703,
+        "crate_pixel_y_after": 311.9367457344985,
+        "live_capture_unchanged_by_authored_edit": true,
+        "authored_capture_reflects_edit": true,
+        "first_person_camera_follows_controller": true,
+        "source_revision_tick_metadata": true
+      },
+      "passed": true,
+      "gpu_index": 0
+    },
+    {
+      "command": [
+        "<checkout>/build/windows-runtime/poima.exe",
+        "world",
+        "<checkout>\\build\\runtime-capture-evidence\\97872be4e71f4c6793d0d897f255a2e1\\world.json"
+      ],
+      "exit_code": 0,
+      "stderr": "",
+      "captures": {
+        "spawn": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\97872be4e71f4c6793d0d897f255a2e1\\spawn.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 0,
+            "width": 960,
+            "world_id": "0277373ac39d7007f24c8634b59f83c2"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/97872be4e71f4c6793d0d897f255a2e1/spawn.bmp",
+          "sha256": "af7725199128f66438f76c958c7b306a9c4e681a46d2c0a57ab291a8fa8b0f37"
+        },
+        "settled": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\97872be4e71f4c6793d0d897f255a2e1\\settled.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 120,
+            "width": 960,
+            "world_id": "0277373ac39d7007f24c8634b59f83c2"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/97872be4e71f4c6793d0d897f255a2e1/settled.bmp",
+          "sha256": "94951f4c0792898f803938cfa2e6e654016aa1227720de7399e56321804ea80d"
+        },
+        "first-person": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              1.580000057367018,
+              2.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 70.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\97872be4e71f4c6793d0d897f255a2e1\\first-person.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 120,
+            "width": 960,
+            "world_id": "0277373ac39d7007f24c8634b59f83c2"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/97872be4e71f4c6793d0d897f255a2e1/first-person.bmp",
+          "sha256": "73c1ddb3710ee266575abf0a9860c808d2f90eec040e5d226dd29284063dab00"
+        },
+        "runtime-after-author-edit": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\97872be4e71f4c6793d0d897f255a2e1\\runtime-after-author-edit.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "source": "runtime",
+            "tick": 120,
+            "width": 960,
+            "world_id": "0277373ac39d7007f24c8634b59f83c2"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/97872be4e71f4c6793d0d897f255a2e1/runtime-after-author-edit.bmp",
+          "sha256": "94951f4c0792898f803938cfa2e6e654016aa1227720de7399e56321804ea80d"
+        },
+        "authored-after-edit": {
+          "report": {
+            "build_version": "0.0.5",
+            "camera": "000000000000000000000000000000c8",
+            "camera_world": [
+              0.8192319205190405,
+              0.0,
+              -0.5734623443633283,
+              0.0,
+              -0.2173703406640053,
+              0.9253765931124797,
+              -0.3105290580914361,
+              0.0,
+              0.5306686305052323,
+              0.3790490217894517,
+              0.7580980435789034,
+              0.0,
+              7.0,
+              6.0,
+              10.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 200.0,
+              "near": 0.1,
+              "vertical_fov": 55.0
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\runtime-capture-evidence\\97872be4e71f4c6793d0d897f255a2e1\\authored-after-edit.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 2,
+            "samples": 4,
+            "session_id": null,
+            "source": "authored",
+            "tick": null,
+            "width": 960,
+            "world_id": "0277373ac39d7007f24c8634b59f83c2"
+          },
+          "path": "<checkout>/build/runtime-capture-evidence/97872be4e71f4c6793d0d897f255a2e1/authored-after-edit.bmp",
+          "sha256": "421affe3bf04825517edb2a7736908981bac9f3a8129bd31605999e5a66f4ae8"
+        }
+      },
+      "checks": {
+        "falling_body_pixel_motion": true,
+        "crate_pixel_y_before": 205.34092606422703,
+        "crate_pixel_y_after": 311.9367457344985,
+        "live_capture_unchanged_by_authored_edit": true,
+        "authored_capture_reflects_edit": true,
+        "first_person_camera_follows_controller": true,
+        "source_revision_tick_metadata": true
+      },
+      "passed": true,
+      "gpu_index": 1
+    }
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "1fbffa1170ac9aff83c9fcce6be15b3c119b195a996658fb1ccbb0bd513366e4",
+    "CMakePresets.json": "226408d525c03c9d916aa7ce0bf3e9ccaf1f8a66771ae49d5145920fe5be13f5",
+    "cmake/simulation.cmake": "634cf99b917e9d959ed909f9469ef4b464bc34c87aad035833ead37ff1a594cc",
+    "src/runtime.cpp": "8644f92f7176d394afa1197f2e46e74d6de4f067a7d27348b56d99e3132edb04",
+    "src/runtime_disabled.cpp": "1d5a38169d39206cea5eadef68753b118bbe92f562a56340671a0604f5dda01c",
+    "include/poima/runtime.hpp": "605da05d264fb37f6a9c22592056dd72d0e2656263fde9b4809ba518c704425b",
+    "src/world.cpp": "2d1fb138a70a638e91c8996ffb86cb17a727244a4bac5cdff3fe8d98682138bc",
+    "src/core.cpp": "2b9f8b2143da85ce30a81c463ad116b39dcc739cd68466de9b40e28c140bee8b",
+    "src/scene.cpp": "d5cee2bcb72131a655481fecf7f5c9a25ce402633ea9fe5880a95bf3441a3d54",
+    "src/render_smoke.cpp": "f00115d4688923ec7a8f097144580c2c66217fd438032b1048750777420b282e",
+    "tests/runtime_native.cpp": "98e34a64297188f8d9fe6dd49de95c08e988567b835d982ff4993e7953d0c4e2",
+    "tests/runtime_contract.py": "ebd8dcd3f0272665ad57b06915ffa728898629b3d629af6c371d9a421f17e1f8",
+    "tests/runtime_capture.py": "f8041e25052e693563f55b378f9b254e7111c639d064845c09c7c963ba10ba15",
+    "tests/world_contract.py": "76007a2c416141521f1b2f07e7212379326247c800bdb9b3d65700d1264fdbf8",
+    "examples/physics-room.jsonl": "ada2e3cf02013bc43a3de14a9cae80ab914740b449e3ed323ba311af8f3e5ddf"
+  },
+  "images": {
+    "docs/evidence/m2-runtime-spawn.png": {
+      "sha256": "0cfa245c5a651b11d86703b18e57f7f0ef1a2871c6acd0a3bdea0b19d45f6d95",
+      "conversion": "Lossless BMP-to-PNG conversion using Pillow; no image synthesis."
+    },
+    "docs/evidence/m2-runtime-settled.png": {
+      "sha256": "ae684b626b1db628bb4b909d521565be5b6daf542c7bc8eaff19c848ed73c9ca",
+      "conversion": "Lossless BMP-to-PNG conversion using Pillow; no image synthesis."
+    },
+    "docs/evidence/m2-runtime-first-person.png": {
+      "sha256": "8c745dc4035ce305be83b963d5fe078fd84a7d82c2f2df5a19c2791fd882ad80",
+      "conversion": "Lossless BMP-to-PNG conversion using Pillow; no image synthesis."
+    }
+  },
+  "limitations": [
+    "No continuous player viewport or input-device integration.",
+    "C# reload/shipping labs remain separate; no production gameplay SDK.",
+    "Runtime state and retry receipts are process-local; no persistent simulation saves.",
+    "No shipping frame-time, large-world or multiplayer determinism qualification.",
+    "GPU images use the existing box preview renderer; no advanced lighting or materials.",
+    "Physics rollback handles reported update failures; fatal allocation/process failure recovery is not qualified."
+  ],
+  "install_check": {
+    "prefix": "build/install-runtime",
+    "installed_binary_matches_tested_build": true,
+    "dependency_license_sha256": {
+      "Jolt": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+      "EnTT": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99"
+    }
+  },
+  "authoring_only_regression": {
+    "command": [
+      "ctest",
+      "--preset",
+      "headless",
+      "-R",
+      "cli_contract|world_contract",
+      "--output-on-failure"
+    ],
+    "passed_suites": 2,
+    "failed_suites": 0,
+    "duration_seconds": 3.55
+  },
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

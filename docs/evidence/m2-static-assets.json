@@ -1,0 +1,1333 @@
+{
+  "recorded_at_utc": "2026-09-26T07:48:01.026289+00:00",
+  "engine_version": "0.0.7",
+  "scope": "Initial static geometry import and PBR material factors; texture maps/broader glTF support and full M0/M1/M2 deliverables remain incomplete.",
+  "builds": {
+    "linux_authoring": {
+      "preset": "headless",
+      "compiler": "GNU 15.2.0",
+      "sha256": "0a854f74dfb0ead89dc3b4b5986139090cec325c9a766e17f6d4b17c2e5b08a7"
+    },
+    "linux_runtime": {
+      "preset": "runtime-headless",
+      "sha256": "046c82fdd951cc601b591caee4b614a30e6c8c6599e18252cd54355a039a1158"
+    },
+    "windows": {
+      "preset": "windows-runtime",
+      "compiler": "LLVM-MinGW Clang 23.1.2",
+      "native_execution": true,
+      "sha256": "3ae1040bddd1f103694ae677f6b34a770649e2d27edbefe3b63dcccf1119fb89"
+    }
+  },
+  "dependency": {
+    "repository": "https://github.com/jkuhlmann/cgltf",
+    "tag": "v1.15",
+    "commit": "360db1a95480fe102ae9c69b27c5d101167ff5ba",
+    "license": "MIT",
+    "files": {
+      "cgltf.h": "e378a21c084bf1f288bb799de827bb26906efb024255f1ecf1705ea13f11c6ec",
+      "LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95"
+    }
+  },
+  "linux_ctest": {
+    "headless": {
+      "passed": 7,
+      "failed": 0,
+      "duration_seconds": 16.11,
+      "log": "Start testing: Sep 26 03:30 EDT\n----------------------------------------------------------\n1/7 Testing: asset_hash\n1/7 Test: asset_hash\nCommand: \"<checkout>/build/headless/poima-hash-test\"\nDirectory: <checkout>/build/headless\n\"asset_hash\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\nSHA-256 empty, short, multi-block and million-byte known answers passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"asset_hash\" end time: Sep 26 03:30 EDT\n\"asset_hash\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n2/7 Testing: player_input\n2/7 Test: player_input\nCommand: \"<checkout>/build/headless/poima-player-input-test\"\nDirectory: <checkout>/build/headless\n\"player_input\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\nInput edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"player_input\" end time: Sep 26 03:30 EDT\n\"player_input\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n3/7 Testing: scene_math\n3/7 Test: scene_math\nCommand: \"<checkout>/build/headless/poima-scene-math-test\"\nDirectory: <checkout>/build/headless\n\"scene_math\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\nHierarchy, affine inverse, camera rigidity and [0,1] perspective depth passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"scene_math\" end time: Sep 26 03:30 EDT\n\"scene_math\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n4/7 Testing: asset_contract\n4/7 Test: asset_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/asset_contract.py\" \"<checkout>/build/headless/poima\"\nDirectory: <checkout>/build/headless\n\"asset_contract\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\ntest_corrupt_cooked_data_and_failed_instance_are_rejected (__main__.Assets.test_corrupt_cooked_data_and_failed_instance_are_rejected) ... ok\ntest_glb_external_data_uri_and_shipping_package (__main__.Assets.test_glb_external_data_uri_and_shipping_package) ... ok\ntest_instance_hierarchy_preview_retry_edit_and_source_independence (__main__.Assets.test_instance_hierarchy_preview_retry_edit_and_source_independence) ... ok\ntest_missing_normals_are_generated_flat (__main__.Assets.test_missing_normals_are_generated_flat) ... ok\ntest_unsupported_or_invalid_source_leaves_scene_and_cache_unchanged (__main__.Assets.test_unsupported_or_invalid_source_leaves_scene_and_cache_unchanged) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 1.367s\n\nOK\n<end of output>\nTest time =   1.53 sec\n----------------------------------------------------------\nTest Passed.\n\"asset_contract\" end time: Sep 26 03:30 EDT\n\"asset_contract\" time elapsed: 00:00:01\n----------------------------------------------------------\n\n5/7 Testing: cli_contract\n5/7 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/headless/poima\" \"0\" \"0\"\nDirectory: <checkout>/build/headless\n\"cli_contract\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.457s\n\nOK\n<end of output>\nTest time =   0.59 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 03:30 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n6/7 Testing: world_contract\n6/7 Test: world_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/world_contract.py\" \"<checkout>/build/headless/poima\"\nDirectory: <checkout>/build/headless\n\"world_contract\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\ntest_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_components_hierarchy_matrices_and_capture_validation (__main__.WorldContract.test_components_hierarchy_matrices_and_capture_validation) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... ok\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_runtime_discovery_and_optional_build (__main__.WorldContract.test_runtime_discovery_and_optional_build) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.891s\n\nOK\n<end of output>\nTest time =   3.06 sec\n----------------------------------------------------------\nTest Passed.\n\"world_contract\" end time: Sep 26 03:30 EDT\n\"world_contract\" time elapsed: 00:00:03\n----------------------------------------------------------\n\n7/7 Testing: native_module_contract\n7/7 Test: native_module_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/scripts/measure_native_module.py\" \"--host\" \"<checkout>/build/headless/poima-module-lab\" \"--output\" \"<checkout>/build/headless/module-contract\" \"--warm-edits\" \"2\"\nDirectory: <checkout>/build/headless\n\"native_module_contract\" start time: Sep 26 03:30 EDT\nOutput:\n----------------------------------------------------------\n{\n  \"build_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 745.7916545008629,\n    \"p95_ms\": 746.2544420013728,\n    \"max_ms\": 746.2544420013728\n  },\n  \"reload_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 5.088505,\n    \"p95_ms\": 5.10255,\n    \"max_ms\": 5.10255\n  },\n  \"observed_total_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 793.9892760023213,\n    \"p95_ms\": 794.1808410032536,\n    \"max_ms\": 794.1808410032536\n  },\n  \"repeated_reload_ms\": {\n    \"samples\": 100,\n    \"median_ms\": 5.389575000000001,\n    \"p95_ms\": 6.36984,\n    \"max_ms\": 7.5649\n  }\n}\n<end of output>\nTest time =  10.86 sec\n----------------------------------------------------------\nTest Passed.\n\"native_module_contract\" end time: Sep 26 03:30 EDT\n\"native_module_contract\" time elapsed: 00:00:10\n----------------------------------------------------------\n\nEnd testing: Sep 26 03:30 EDT\n"
+    },
+    "runtime_headless": {
+      "passed": 9,
+      "failed": 0,
+      "duration_seconds": 17.1,
+      "log": "Start testing: Sep 26 03:33 EDT\n----------------------------------------------------------\n1/9 Testing: asset_hash\n1/9 Test: asset_hash\nCommand: \"<checkout>/build/runtime-headless/poima-hash-test\"\nDirectory: <checkout>/build/runtime-headless\n\"asset_hash\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\nSHA-256 empty, short, multi-block and million-byte known answers passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"asset_hash\" end time: Sep 26 03:33 EDT\n\"asset_hash\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n2/9 Testing: player_input\n2/9 Test: player_input\nCommand: \"<checkout>/build/runtime-headless/poima-player-input-test\"\nDirectory: <checkout>/build/runtime-headless\n\"player_input\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\nInput edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"player_input\" end time: Sep 26 03:33 EDT\n\"player_input\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n3/9 Testing: scene_math\n3/9 Test: scene_math\nCommand: \"<checkout>/build/runtime-headless/poima-scene-math-test\"\nDirectory: <checkout>/build/runtime-headless\n\"scene_math\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\nHierarchy, affine inverse, camera rigidity and [0,1] perspective depth passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"scene_math\" end time: Sep 26 03:33 EDT\n\"scene_math\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n4/9 Testing: runtime_native\n4/9 Test: runtime_native\nCommand: \"<checkout>/build/runtime-headless/poima-runtime-test\"\nDirectory: <checkout>/build/runtime-headless\n\"runtime_native\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\nPhysics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed.\n<end of output>\nTest time =   0.09 sec\n----------------------------------------------------------\nTest Passed.\n\"runtime_native\" end time: Sep 26 03:33 EDT\n\"runtime_native\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n5/9 Testing: asset_contract\n5/9 Test: asset_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/asset_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"asset_contract\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\ntest_corrupt_cooked_data_and_failed_instance_are_rejected (__main__.Assets.test_corrupt_cooked_data_and_failed_instance_are_rejected) ... ok\ntest_glb_external_data_uri_and_shipping_package (__main__.Assets.test_glb_external_data_uri_and_shipping_package) ... ok\ntest_instance_hierarchy_preview_retry_edit_and_source_independence (__main__.Assets.test_instance_hierarchy_preview_retry_edit_and_source_independence) ... ok\ntest_missing_normals_are_generated_flat (__main__.Assets.test_missing_normals_are_generated_flat) ... ok\ntest_unsupported_or_invalid_source_leaves_scene_and_cache_unchanged (__main__.Assets.test_unsupported_or_invalid_source_leaves_scene_and_cache_unchanged) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 1.507s\n\nOK\n<end of output>\nTest time =   1.68 sec\n----------------------------------------------------------\nTest Passed.\n\"asset_contract\" end time: Sep 26 03:33 EDT\n\"asset_contract\" time elapsed: 00:00:01\n----------------------------------------------------------\n\n6/9 Testing: runtime_contract\n6/9 Test: runtime_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/runtime_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"runtime_contract\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\ntest_collision_jump_retries_and_live_authoring_separation (__main__.RuntimeContract.test_collision_jump_retries_and_live_authoring_separation) ... ok\ntest_player_validation_does_not_advance_runtime (__main__.RuntimeContract.test_player_validation_does_not_advance_runtime) ... ok\ntest_receipt_window_and_repeated_lifetimes (__main__.RuntimeContract.test_receipt_window_and_repeated_lifetimes) ... ok\ntest_repeatable_replay_and_chunk_equivalence (__main__.RuntimeContract.test_repeatable_replay_and_chunk_equivalence) ... ok\ntest_validation_failed_start_recovery_and_stale_observation (__main__.RuntimeContract.test_validation_failed_start_recovery_and_stale_observation) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.487s\n\nOK\n<end of output>\nTest time =   0.64 sec\n----------------------------------------------------------\nTest Passed.\n\"runtime_contract\" end time: Sep 26 03:33 EDT\n\"runtime_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n7/9 Testing: cli_contract\n7/9 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/runtime-headless/poima\" \"0\" \"0\"\nDirectory: <checkout>/build/runtime-headless\n\"cli_contract\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.559s\n\nOK\n<end of output>\nTest time =   0.69 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 03:33 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n8/9 Testing: world_contract\n8/9 Test: world_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/world_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"world_contract\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\ntest_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_components_hierarchy_matrices_and_capture_validation (__main__.WorldContract.test_components_hierarchy_matrices_and_capture_validation) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... ok\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_runtime_discovery_and_optional_build (__main__.WorldContract.test_runtime_discovery_and_optional_build) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.974s\n\nOK\n<end of output>\nTest time =   3.14 sec\n----------------------------------------------------------\nTest Passed.\n\"world_contract\" end time: Sep 26 03:33 EDT\n\"world_contract\" time elapsed: 00:00:03\n----------------------------------------------------------\n\n9/9 Testing: native_module_contract\n9/9 Test: native_module_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/scripts/measure_native_module.py\" \"--host\" \"<checkout>/build/runtime-headless/poima-module-lab\" \"--output\" \"<checkout>/build/runtime-headless/module-contract\" \"--warm-edits\" \"2\"\nDirectory: <checkout>/build/runtime-headless\n\"native_module_contract\" start time: Sep 26 03:33 EDT\nOutput:\n----------------------------------------------------------\n{\n  \"build_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 750.1150665011664,\n    \"p95_ms\": 752.6811370007636,\n    \"max_ms\": 752.6811370007636\n  },\n  \"reload_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 5.1867,\n    \"p95_ms\": 5.50255,\n    \"max_ms\": 5.50255\n  },\n  \"observed_total_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 806.8829800013191,\n    \"p95_ms\": 807.799406000413,\n    \"max_ms\": 807.799406000413\n  },\n  \"repeated_reload_ms\": {\n    \"samples\": 100,\n    \"median_ms\": 5.121175,\n    \"p95_ms\": 5.8393,\n    \"max_ms\": 7.38218\n  }\n}\n<end of output>\nTest time =  10.76 sec\n----------------------------------------------------------\nTest Passed.\n\"native_module_contract\" end time: Sep 26 03:33 EDT\n\"native_module_contract\" time elapsed: 00:00:10\n----------------------------------------------------------\n\nEnd testing: Sep 26 03:33 EDT\n"
+    }
+  },
+  "native_import_contracts": {
+    "linux": {
+      "binary": "<checkout>/build/headless/poima",
+      "binary_sha256": "0a854f74dfb0ead89dc3b4b5986139090cec325c9a766e17f6d4b17c2e5b08a7",
+      "passed": true,
+      "tests": 5,
+      "reports": [
+        {
+          "asset": "151be1bb7501f963ba429616dbf20f460addb0ba3b5ccb973b79d19e08c984a4",
+          "bytes": 66260,
+          "vertices": 1225,
+          "triangles": 2208,
+          "source_forms_identical": true
+        }
+      ]
+    },
+    "windows": {
+      "binary": "<checkout>/build/windows-runtime/poima.exe",
+      "binary_sha256": "3ae1040bddd1f103694ae677f6b34a770649e2d27edbefe3b63dcccf1119fb89",
+      "passed": true,
+      "tests": 5,
+      "reports": [
+        {
+          "asset": "151be1bb7501f963ba429616dbf20f460addb0ba3b5ccb973b79d19e08c984a4",
+          "bytes": 66260,
+          "vertices": 1225,
+          "triangles": 2208,
+          "source_forms_identical": true
+        }
+      ]
+    },
+    "cross_platform_cooked_identity_equal": true
+  },
+  "gpu_material_checks": [
+    {
+      "binary_sha256": "3ae1040bddd1f103694ae677f6b34a770649e2d27edbefe3b63dcccf1119fb89",
+      "gpu_index": 0,
+      "checks": {
+        "gpu_brdf_matches_scalar_reference": true,
+        "backface_culling_and_double_sided": true,
+        "frozen_runtime_material": true,
+        "authoring_edit_visible": true,
+        "reopen_without_sources_pixel_identical": true,
+        "instanced_indexed_geometry": true
+      },
+      "brdf_samples": [
+        {
+          "name": "dielectric",
+          "actual": [
+            139,
+            93,
+            53
+          ],
+          "expected": [
+            139,
+            93,
+            53
+          ]
+        },
+        {
+          "name": "metal",
+          "actual": [
+            93,
+            56,
+            26
+          ],
+          "expected": [
+            93,
+            56,
+            26
+          ]
+        },
+        {
+          "name": "rough",
+          "actual": [
+            99,
+            60,
+            28
+          ],
+          "expected": [
+            99,
+            60,
+            28
+          ]
+        }
+      ],
+      "assets": {
+        "sphere": "151be1bb7501f963ba429616dbf20f460addb0ba3b5ccb973b79d19e08c984a4",
+        "quad": "f4fce1ec9b36266044a4dafb576dbc39b3966ab88e2ccb6e250d029a235bfd14"
+      },
+      "images": {
+        "back-culled": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/back-culled.bmp",
+          "sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+        },
+        "back-double": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/back-double.bmp",
+          "sha256": "2f8c7a72f2d0abeeff34c79ad28d062c95b09b14798872afc3b8253d284ec1e1"
+        },
+        "dielectric": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/dielectric.bmp",
+          "sha256": "4666814f680d38cea50104598784d074a72d32337b4cb8a5c2d0c433988aac39"
+        },
+        "edited": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/edited.bmp",
+          "sha256": "c658368b4407fc11ec0e5865e83b5451193c1b57c0cf0db42ac8c218100badca"
+        },
+        "frozen": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/frozen.bmp",
+          "sha256": "2f8c7a72f2d0abeeff34c79ad28d062c95b09b14798872afc3b8253d284ec1e1"
+        },
+        "material-grid": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/material-grid.bmp",
+          "sha256": "ab778c19a2d8d9296e1f88ee40e6b77d465b48d7183c59044142f5012386ed9b"
+        },
+        "metal": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/metal.bmp",
+          "sha256": "4bf09035ea540e1c165473c4e23715649d20bf36e8a2bd273940439200f824d3"
+        },
+        "reopened": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/reopened.bmp",
+          "sha256": "c658368b4407fc11ec0e5865e83b5451193c1b57c0cf0db42ac8c218100badca"
+        },
+        "rough": {
+          "path": "<checkout>/build/gltf-evidence/ce18cd588a0d4e39bf70c0ce5bd59af7/rough.bmp",
+          "sha256": "2f8c7a72f2d0abeeff34c79ad28d062c95b09b14798872afc3b8253d284ec1e1"
+        }
+      },
+      "passed": true,
+      "captures": [
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\dielectric.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 1,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\metal.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 2,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\rough.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 3,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\back-culled.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 4,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\back-double.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 5,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\frozen.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 5,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000384",
+          "source": "runtime",
+          "tick": 0,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\edited.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\reopened.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            11.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 34.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 8,
+          "path": "<checkout>\\build\\gltf-evidence\\ce18cd588a0d4e39bf70c0ce5bd59af7\\material-grid.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 7,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "7df2db38c66c5bc412bb9a0e1cc7cc6b"
+        }
+      ],
+      "processes": [
+        {
+          "exit_code": 0,
+          "stderr": ""
+        },
+        {
+          "exit_code": 0,
+          "stderr": ""
+        },
+        {
+          "exit_code": 0,
+          "stderr": ""
+        },
+        {
+          "exit_code": 0,
+          "stderr": ""
+        }
+      ]
+    },
+    {
+      "binary_sha256": "3ae1040bddd1f103694ae677f6b34a770649e2d27edbefe3b63dcccf1119fb89",
+      "gpu_index": 1,
+      "checks": {
+        "gpu_brdf_matches_scalar_reference": true,
+        "backface_culling_and_double_sided": true,
+        "frozen_runtime_material": true,
+        "authoring_edit_visible": true,
+        "reopen_without_sources_pixel_identical": true,
+        "instanced_indexed_geometry": true
+      },
+      "brdf_samples": [
+        {
+          "name": "dielectric",
+          "actual": [
+            139,
+            93,
+            53
+          ],
+          "expected": [
+            139,
+            93,
+            53
+          ]
+        },
+        {
+          "name": "metal",
+          "actual": [
+            93,
+            56,
+            26
+          ],
+          "expected": [
+            93,
+            56,
+            26
+          ]
+        },
+        {
+          "name": "rough",
+          "actual": [
+            99,
+            60,
+            28
+          ],
+          "expected": [
+            99,
+            60,
+            28
+          ]
+        }
+      ],
+      "assets": {
+        "sphere": "151be1bb7501f963ba429616dbf20f460addb0ba3b5ccb973b79d19e08c984a4",
+        "quad": "f4fce1ec9b36266044a4dafb576dbc39b3966ab88e2ccb6e250d029a235bfd14"
+      },
+      "images": {
+        "back-culled": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/back-culled.bmp",
+          "sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+        },
+        "back-double": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/back-double.bmp",
+          "sha256": "677ac38ea49e01cd92d989246e692e072788844710f3ef2b49a3f05e5aea8d02"
+        },
+        "dielectric": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/dielectric.bmp",
+          "sha256": "da4025fdd2445ec2ea53bc98ba08859b514ddb1b65933318d616f0a64093a720"
+        },
+        "edited": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/edited.bmp",
+          "sha256": "67475f2d3adbace2bb698ff32d3db24019024e26eda0e97086511e434fe59460"
+        },
+        "frozen": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/frozen.bmp",
+          "sha256": "677ac38ea49e01cd92d989246e692e072788844710f3ef2b49a3f05e5aea8d02"
+        },
+        "material-grid": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/material-grid.bmp",
+          "sha256": "80e4894abc056f3e2f57a7dfa70e63a7b491ce620670d0db9a5787466657f2e3"
+        },
+        "metal": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/metal.bmp",
+          "sha256": "f9dde2b56eaffe1e61e97861d6a1412ac3c449bd9fa08e91280d733055b55576"
+        },
+        "reopened": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/reopened.bmp",
+          "sha256": "67475f2d3adbace2bb698ff32d3db24019024e26eda0e97086511e434fe59460"
+        },
+        "rough": {
+          "path": "<checkout>/build/gltf-evidence/e91ecabde9904c77a52a7e579caf20e8/rough.bmp",
+          "sha256": "677ac38ea49e01cd92d989246e692e072788844710f3ef2b49a3f05e5aea8d02"
+        }
+      },
+      "passed": true,
+      "captures": [
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\dielectric.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 1,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\metal.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 2,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\rough.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 3,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\back-culled.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 4,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\back-double.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 5,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\frozen.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 5,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000384",
+          "source": "runtime",
+          "tick": 0,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\edited.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\reopened.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        },
+        {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            11.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 34.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 8,
+          "path": "<checkout>\\build\\gltf-evidence\\e91ecabde9904c77a52a7e579caf20e8\\material-grid.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 7,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "d315c715adbc4bf8790f3ca1a351e0ff"
+        }
+      ],
+      "processes": [
+        {
+          "exit_code": 0,
+          "stderr": ""
+        },
+        {
+          "exit_code": 0,
+          "stderr": ""
+        },
+        {
+          "exit_code": 0,
+          "stderr": ""
+        },
+        {
+          "exit_code": 0,
+          "stderr": ""
+        }
+      ]
+    }
+  ],
+  "shader_interface": {
+    "vs": {
+      "sha256": "56f474e4dbcd59cbfab532b656962d39aa19d507101423004500878bc93d56e1",
+      "frame_descriptor_set": 0,
+      "frame_binding": 257,
+      "constant_buffer_register": 1,
+      "nvrhi_constant_buffer_offset": 256
+    },
+    "ps": {
+      "sha256": "0000db2c3d4040869132663f082770d117522d44227bc83c0cf7d21d9dc6ad5e",
+      "frame_descriptor_set": 0,
+      "frame_binding": 257,
+      "constant_buffer_register": 1,
+      "nvrhi_constant_buffer_offset": 256
+    }
+  },
+  "regressions": {
+    "scene_capture": {
+      "exit_code": 0,
+      "checks": {
+        "depth_occlusion": true,
+        "hierarchy_edit_visible": true,
+        "camera_edit_visible": true,
+        "visibility": true,
+        "behind_camera_clipped": true,
+        "msaa_changed_pixels": 1586,
+        "revision_and_failure_guards": true,
+        "reopened_scene_pixel_equality": true
+      }
+    },
+    "continuous_player": {
+      "binary_sha256": "3ae1040bddd1f103694ae677f6b34a770649e2d27edbefe3b63dcccf1119fb89",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      }
+    },
+    "window_lifecycle": {
+      "binary_sha256": "3ae1040bddd1f103694ae677f6b34a770649e2d27edbefe3b63dcccf1119fb89",
+      "passed": true,
+      "checks": {
+        "targeted_keyboard_moves_character": false,
+        "focus_loss_clears_held_input": false,
+        "minimize_restore_survives": true,
+        "paused_time_bound": true,
+        "resize_rebuilds_swapchain_and_capture": true,
+        "window_close_preserves_runtime": true
+      },
+      "initial_foreground": false,
+      "expected_size": [
+        804,
+        481
+      ]
+    },
+    "windows_world_contract": {
+      "tests": 9,
+      "passed": 8,
+      "skipped": 1,
+      "skip_reason": "Abrupt Windows process termination unqualified by WSL harness."
+    },
+    "windows_cli_contract": {
+      "tests": 8,
+      "passed": 7,
+      "skipped": 1,
+      "skip_reason": "Actual GPU execution is a separate integration test."
+    }
+  },
+  "example": {
+    "commands": "examples/material-grid.jsonl",
+    "responses": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "asset": "151be1bb7501f963ba429616dbf20f460addb0ba3b5ccb973b79d19e08c984a4",
+          "bytes": 66260,
+          "diagnostics": [],
+          "format": "poima.static-model.v1",
+          "nodes": 2,
+          "primitives": 1,
+          "roots": [
+            0
+          ],
+          "triangles": 2208,
+          "vertices": 1225
+        }
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "result": {
+          "changed_ids": [
+            "00000000000000000000000000000001",
+            "000000000000000000000000000000c8",
+            "000000000000000000000000000000c9",
+            "000000000000000000000000000000ca",
+            "000000000000000000000000000000cb",
+            "000000000000000000000000000000cc",
+            "000000000000000000000000000000cd",
+            "000000000000000000000000000000ce",
+            "000000000000000000000000000000cf",
+            "1c68195f296d5cf70571e332fe364ef9",
+            "1f065a34b5b328c96e71a2e681560a0d",
+            "278d086186d9dddeda6ecd64230fefae",
+            "2e7ca0cad7f5d4f7a80f697e53a99486",
+            "3e74c6f3acdc7c278656b70ae2d26417",
+            "4466289cd9e77802ad1b34ff4787dd67",
+            "44e031bfdf6b41d16ebdf456c7c8c2e1",
+            "5e7c775c9b224b4095815a71ef193b12",
+            "66b972ef31654cf61a9b66d68bf6f5a6",
+            "852c07eb39f326fb9b37d15e21892aa0",
+            "93abb08ffed84a802bb4f49dbb29e9f4",
+            "9a26de75dafae9bc7048862d2fe0d225",
+            "a7a4cc939b62a8c7009bb617a284b5a4",
+            "a7d82556b06c359911c7c15cec20fc1d",
+            "c6c1796a38e4a866bff0f2571bd29d03",
+            "c90c1c0c4174fddf4ee6d445eef97bfb",
+            "d556fbc4642e1e298eab63353025d872",
+            "d9cee7ea3cdd4d173d6853b05b2b7090",
+            "dc2badae0e1f624052782354ab3d1e7d",
+            "e0d22e181cd29a694c3274b2671c8564",
+            "e10587b0b7e4413bddead2e19340e43b",
+            "eda6a2d3c7f9a650031f0efc744ebbec",
+            "f9fcf2542e709335f67a1904056a14d1",
+            "fa0a023a41ddd4b9b4985e23dbf7bfb0"
+          ],
+          "committed": true,
+          "replayed": false,
+          "revision": 1
+        }
+      },
+      {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "result": {
+          "build_version": "0.0.7",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            11.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 34.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 8,
+          "path": "<checkout>\\build\\material-grid.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness factors; fixed directional light; no shadows/textures",
+          "revision": 1,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "f06ba7f754ee59190db874e03e39eda1"
+        }
+      }
+    ]
+  },
+  "installation": {
+    "prefix": "build/install-assets",
+    "installed_cgltf_license_sha256": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+    "installed_binary_matches_tested_headless": true
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "691c57db5eeecf3df74f1037980609f51c437baf741c3d84fd1f77895f1fffaf",
+    "cmake/render_smoke.cmake": "10731b44fd8a653cc0a142bb5b78bc58ef561b481635cff33906266e2364e27e",
+    "include/poima/assets.hpp": "15e9b72fcdebc9942d83761edb8d95f0bf2849002125f6a243c48d0748c194b4",
+    "include/poima/scene.hpp": "f26c4a37a93033586a18720716d2b6ab808d1222b8d2eb3057c56471d89afd71",
+    "include/poima/runtime.hpp": "b8946caeb2545eb10978618a57d610e4065e2e5652428174bb26cfffa54c569b",
+    "src/gltf.cpp": "c5e8d376d01b0d2372fb892bf97efcd3594e2713f6509d82cf914375d42c0762",
+    "src/model_codec.cpp": "80b109de1ba015fd62d2508b6c6250e7a8af97f9c5d751f387821ef6b5368334",
+    "src/hash.cpp": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5",
+    "src/asset_store.hpp": "0dc306e6865082f0fb491c0bf2b4704c5d2eab24d7e7c3450ed9833ba6b7dd61",
+    "src/world.cpp": "256abff8516a16ec7d1f3e32f927f8c90b6be83027bbad8216a9b0b98a303fd3",
+    "src/runtime.cpp": "fb2338dcb984b654713670867928b6cbfbd7d54abf87b51120e92f941ad14502",
+    "src/render_smoke.cpp": "59ad92f841a8dc9ba23475270cb7955d33718a8b3b5431eab6b56f1b35565ebd",
+    "shaders/scene.hlsl": "664d9c6479637c6e091c4467f076b541ed3217c0dfdf4ee49c382a252723e045",
+    "src/core.cpp": "0c0a9429ae45a17bdc0e95d94c6f2748fb185fd89efcf0dbcf391cb9477283e5",
+    "tests/asset_contract.py": "1d16df8d9cdf68569a348b0f30e1463326175daf58999e96e6bd3266345b658e",
+    "tests/gltf_capture.py": "1fe430afc2bb0d21aee94f8e8d383234e57d8d3ad0fb4a53b822b68a980642aa",
+    "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+    "tests/hash_native.cpp": "86181b990fab30267d26c5a8798410a7bd9a41dea79dd26d236caab14a7bd9b6",
+    "examples/assets/material-sphere.glb": "000000f6c2b8a58d024168ffa467e8b24d73314c27f00bf8f37ce6e1417e39de",
+    "examples/material-grid.jsonl": "115fe5551cb42df7162d44e7531e1e244c9ee8c7bd1cf84f9817997137a0aae3"
+  },
+  "material_grid": {
+    "path": "docs/evidence/m2-material-grid.png",
+    "sha256": "bd97b6a0491830dd9ba43cc8a9d7f3ddc0fd363188c3327bd2e4a84a8d154e3c",
+    "source": "Lossless format conversion of actual NVIDIA BMP readback with Pillow; no image synthesis.",
+    "visually_inspected": true
+  },
+  "limitations": [
+    "Factor-only opaque static glTF profile; textures, animations, skinning, matrix-authored transforms, negative scales and listed extensions are rejected.",
+    "No automatic imported collision geometry.",
+    "No shadows, environment maps, GI, HDR presentation, frame-time or production-content qualification.",
+    "NVRHI validation is enabled; full Vulkan API validation remains unimplemented.",
+    "Physical keyboard/mouse remains unqualified because the automated desktop did not grant foreground access.",
+    "Native Linux graphics and Windows-hosted MSVC remain unqualified."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

@@ -1,0 +1,2349 @@
+{
+  "recorded": "2026-09-26",
+  "engine_version": "0.0.15",
+  "world_schema_revision": 13,
+  "scope": "Native content-addressed clips and agent-accessible acoustic authoring; synchronous direct-path/HRTF snapshot observation. Not continuous playback or the complete environmental audio system.",
+  "sources": {
+    "CMakeLists.txt": "d9c6ea0f3a3227f1e1e0a90f936ab85084ae2ea3166ce06522e7363e232bcb70",
+    "cmake/audio.cmake": "9115c80f7e41d96e44b5e9cf2f40b71e8cd4c2fb7bb03503caf2ed7f2632bea5",
+    "include/poima/audio.hpp": "e4b8d1f166a3bc7604de9e9c1f1e4ac911c13df528f01f3b254e390525dfee66",
+    "include/poima/runtime.hpp": "cb1bb69617d070b08c517d8faae7f86a015a28e17a26afae3ae70b57db9f68b9",
+    "src/audio.cpp": "3565765b0989d53438f46bcff6ab6c421449225f29814c9f3bf753c6a47042d9",
+    "src/audio_clip.cpp": "824ce921d19bf23f398a7c6796c3203035ccf4b61dbbe49b7b11e69f4d23b91b",
+    "src/asset_store.hpp": "e432e2f29f19fb9a5e21ef60c06743c85abe1f32dede997c8bd81ebe1ba9d1d5",
+    "src/world.cpp": "ab3bc14478b0720b119a4a7e172e6f04923dedb8478cb2d8808c6c57365661f4",
+    "src/core.cpp": "f4feab728ea4031c8cb03a6a9f138478d2d1df2a75e7e335849f1e620ad79e0a",
+    "scripts/bootstrap_tools.py": "604535626b5ade1c8fcd644ac42583f5c47d62c2cbb33306fe481457bdb3bbfe",
+    "tests/audio_contract.py": "0fb9d8e91c64e95493c2d04466f9c4aaff60dcc27ece7cbc8a125e521d4be332",
+    "examples/audio-room.jsonl": "9ee00d4020ad349c8650a9b45cbdb3ea61cbe1c73ed77cdc14e8f2a5663c29bc",
+    "examples/assets/acoustic-probe.wav": "bfbe27ec9d9b6dc06f81c002c6395224ccea9a78b83c00effbc31236684d85fe"
+  },
+  "binaries": {
+    "headless": {
+      "path": "build/headless/poima",
+      "sha256": "10251e4152ba391e37fcd9385b9fa93aa8413eb92c37be2474b252be6be4501d"
+    },
+    "runtime_headless": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "1c2aa71cc959c3f9dddaf706d871ae5d91acb100d592da58b2ff3c4948b1c4c1"
+    },
+    "windows_runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "c207869b967275bcc2e09b4e2f28bb2647a805c76d5216990635ed739494e5f3"
+    }
+  },
+  "backend": {
+    "name": "Steam Audio",
+    "version": "4.8.1",
+    "release": "https://github.com/ValveSoftware/steam-audio/releases/tag/v4.8.1",
+    "archive_sha256": "4a0aa5ec1176f38f0b0993a37c2259d9e86f27e22d5e24f83ec4c3cb9a1d5449",
+    "ray_tracer": "default CPU",
+    "simd_ceiling": "SSE2",
+    "direct_surface_limit": 8,
+    "sample_rate": 48000,
+    "block_frames": 512,
+    "library_linux": {
+      "path": ".cache/sdk/steam-audio-4.8.1/steamaudio/lib/linux-x64/libphonon.so",
+      "sha256": "faf7c4d69e0f104366f6553cda38d3f946f761f7db223baf12663f6fbf2387da"
+    },
+    "library_windows": {
+      "path": ".cache/sdk/steam-audio-4.8.1/steamaudio/lib/windows-x64/phonon.dll",
+      "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+    },
+    "license": {
+      "path": "third_party/steam_audio/LICENSE.md",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "third_party_notices": {
+      "path": ".cache/sdk/steam-audio-4.8.1/steamaudio/THIRDPARTY.md",
+      "sha256": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0"
+    }
+  },
+  "ctest": {
+    "headless": {
+      "passed": 13,
+      "failed": 0,
+      "path": "build/audio-headless-tests.log",
+      "sha256": "00d2c70d2578a895e4ba10b651595771990cae77eb206d542dc10806d369ce6c",
+      "text": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/13 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/13 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/13 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/13 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/13 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/13 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/13 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: lighting_contract\n 8/13 Test  #8: lighting_contract ................   Passed    1.18 sec\n      Start  9: audio_contract\n 9/13 Test  #9: audio_contract ...................   Passed    1.13 sec\n      Start 10: asset_contract\n10/13 Test #10: asset_contract ...................   Passed    3.81 sec\n      Start 11: cli_contract\n11/13 Test #11: cli_contract .....................   Passed    0.57 sec\n      Start 12: world_contract\n12/13 Test #12: world_contract ...................   Passed    3.75 sec\n      Start 13: native_module_contract\n13/13 Test #13: native_module_contract ...........   Passed    9.81 sec\n\n100% tests passed, 0 tests failed out of 13\n\nTotal Test time (real) =  20.42 sec\n"
+    },
+    "runtime_headless": {
+      "passed": 16,
+      "failed": 0,
+      "path": "build/audio-runtime-tests.log",
+      "sha256": "76f65c6e3f64e3a700e7828557297920b00d57dd3f22cd7bdf545243169a40fb",
+      "text": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/16 Test  #1: asset_hash .......................   Passed    0.05 sec\n      Start  2: texture_native\n 2/16 Test  #2: texture_native ...................   Passed    0.05 sec\n      Start  3: tangents_native\n 3/16 Test  #3: tangents_native ..................   Passed    0.05 sec\n      Start  4: player_input\n 4/16 Test  #4: player_input .....................   Passed    0.04 sec\n      Start  5: scene_math\n 5/16 Test  #5: scene_math .......................   Passed    0.05 sec\n      Start  6: shadow_math\n 6/16 Test  #6: shadow_math ......................   Passed    0.05 sec\n      Start  7: visibility_math\n 7/16 Test  #7: visibility_math ..................   Passed    0.05 sec\n      Start  8: runtime_native\n 8/16 Test  #8: runtime_native ...................   Passed    0.13 sec\n      Start  9: interaction_native\n 9/16 Test  #9: interaction_native ...............   Passed    0.13 sec\n      Start 10: lighting_contract\n10/16 Test #10: lighting_contract ................   Passed    1.08 sec\n      Start 11: audio_contract\n11/16 Test #11: audio_contract ...................   Passed    3.44 sec\n      Start 12: asset_contract\n12/16 Test #12: asset_contract ...................   Passed    5.87 sec\n      Start 13: runtime_contract\n13/16 Test #13: runtime_contract .................   Passed    1.15 sec\n      Start 14: cli_contract\n14/16 Test #14: cli_contract .....................   Passed    2.51 sec\n      Start 15: world_contract\n15/16 Test #15: world_contract ...................   Passed    3.75 sec\n      Start 16: native_module_contract\n16/16 Test #16: native_module_contract ...........   Passed   10.03 sec\n\n100% tests passed, 0 tests failed out of 16\n\nTotal Test time (real) =  28.53 sec\n"
+    }
+  },
+  "audio_contracts": {
+    "linux": {
+      "passed": true,
+      "tests_run": 10,
+      "skipped": [],
+      "raw_evidence": {
+        "path": "build/audio-contract-linux.json",
+        "sha256": "3dce0306f96028696b8ff45ed8960bf0a512f54df291cec9d7ee3371df0c3e11"
+      },
+      "log": {
+        "path": "build/audio-contract-linux.log",
+        "sha256": "43dc661c0f151a84d12926a2f4d49fbdc5c389d4b86a5d448d44cc8ce5ff269d",
+        "text": "test_CSharp_use_changes_native_audio_path (__main__.AudioContract.test_CSharp_use_changes_native_audio_path) ... ok\ntest_audio_observation_ignores_unrelated_graphics_assets (__main__.AudioContract.test_audio_observation_ignores_unrelated_graphics_assets) ... ok\ntest_authoring_schema_preview_and_validation (__main__.AudioContract.test_authoring_schema_preview_and_validation) ... ok\ntest_clip_import_is_source_independent_and_hash_checked (__main__.AudioContract.test_clip_import_is_source_independent_and_hash_checked) ... ok\ntest_distance_delay_elevation_and_listener_orientation (__main__.AudioContract.test_distance_delay_elevation_and_listener_orientation) ... ok\ntest_imported_mesh_geometry_and_scaled_source (__main__.AudioContract.test_imported_mesh_geometry_and_scaled_source) ... ok\ntest_mix_linearity_disabled_geometry_and_capture_protection (__main__.AudioContract.test_mix_linearity_disabled_geometry_and_capture_protection) ... ok\ntest_runtime_geometry_is_current_and_authoring_is_frozen (__main__.AudioContract.test_runtime_geometry_is_current_and_authoring_is_frozen) ... ok\ntest_stationary_endpoints_door_opening_and_material_filter (__main__.AudioContract.test_stationary_endpoints_door_opening_and_material_filter) ... ok\ntest_wav_validation_and_pcm16 (__main__.AudioContract.test_wav_validation_and_pcm16) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 4.376s\n\nOK\n"
+      },
+      "test_cases": [
+        "test_CSharp_use_changes_native_audio_path",
+        "test_audio_observation_ignores_unrelated_graphics_assets",
+        "test_authoring_schema_preview_and_validation",
+        "test_clip_import_is_source_independent_and_hash_checked",
+        "test_distance_delay_elevation_and_listener_orientation",
+        "test_imported_mesh_geometry_and_scaled_source",
+        "test_mix_linearity_disabled_geometry_and_capture_protection",
+        "test_runtime_geometry_is_current_and_authoring_is_frozen",
+        "test_stationary_endpoints_door_opening_and_material_filter",
+        "test_wav_validation_and_pcm16"
+      ],
+      "selected_observations": [
+        {
+          "test": "test_CSharp_use_changes_native_audio_path",
+          "responses": []
+        },
+        {
+          "test": "test_CSharp_use_changes_native_audio_path",
+          "responses": [
+            {
+              "id": 4,
+              "jsonrpc": "2.0",
+              "result": {
+                "module": {
+                  "assembly": "<checkout>/examples/managed/DoorGame/bin/Release/net10.0/Poima.DoorGame.dll",
+                  "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+                  "migration": {
+                    "added": [
+                      "Activations",
+                      "Camera",
+                      "Door",
+                      "Open",
+                      "OpenX",
+                      "Player",
+                      "UseDistance"
+                    ],
+                    "preserved": [],
+                    "removed": []
+                  },
+                  "schema": {
+                    "bytes": 72,
+                    "fields": [
+                      {
+                        "bytes": 4,
+                        "kind": "int32",
+                        "name": "Activations",
+                        "offset": 68
+                      },
+                      {
+                        "bytes": 16,
+                        "kind": "entity",
+                        "name": "Camera",
+                        "offset": 16
+                      },
+                      {
+                        "bytes": 16,
+                        "kind": "entity",
+                        "name": "Door",
+                        "offset": 32
+                      },
+                      {
+                        "bytes": 4,
+                        "kind": "int32",
+                        "name": "Open",
+                        "offset": 64
+                      },
+                      {
+                        "bytes": 8,
+                        "kind": "float64",
+                        "name": "OpenX",
+                        "offset": 48
+                      },
+                      {
+                        "bytes": 16,
+                        "kind": "entity",
+                        "name": "Player",
+                        "offset": 0
+                      },
+                      {
+                        "bytes": 8,
+                        "kind": "float64",
+                        "name": "UseDistance",
+                        "offset": 56
+                      }
+                    ],
+                    "identity": "poima.example.sliding-door"
+                  },
+                  "type": "Poima.Examples.DoorGame",
+                  "values": {
+                    "Activations": 0,
+                    "Camera": "00000000000000000000000000000065",
+                    "Door": "00000000000000000000000000000002",
+                    "Open": 0,
+                    "OpenX": 2.2,
+                    "Player": "00000000000000000000000000000064",
+                    "UseDistance": 10.0
+                  }
+                },
+                "replayed": false,
+                "revision": 1,
+                "session_id": "00000000000000000000000000000384",
+                "tick": 0
+              }
+            },
+            {
+              "id": 6,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_CSharp_use_changes_native_audio_path/CSharp-closed.wav",
+                  "peak": 0.006588418036699295,
+                  "rms": 0.0032508302706999075,
+                  "sample_rate": 48000,
+                  "sha256": "25e06aefcd41622ce14a3617e3a416ef22667e48bc755d8341fb1e2ac5b2834b"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 37.811872,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000065",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.580000057367018,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 4.086688,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.0056,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012246131897,
+                      0.9864913821220398,
+                      0.8644971251487732
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.12499375641345978,
+                    "distance_m": 8.000399990574142,
+                    "entity": "0000000000000000000000000000012c",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      -0.00999950720729864,
+                      -0.9999500036779895
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.580000057367018,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": 120,
+                "triangles": 12,
+                "world_id": "6d8677407dc03cf6408b5f97c04af3cf"
+              }
+            },
+            {
+              "id": 8,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_CSharp_use_changes_native_audio_path/CSharp-open.wav",
+                  "peak": 0.03695818781852722,
+                  "rms": 0.015391001073904299,
+                  "sample_rate": 48000,
+                  "sha256": "0d57e666731cbc464f12333a4736b1c0b4bdbfa817b8c498717a534aa1884d66"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 15.614333,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      2.199999999254942,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000065",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.580000057367018,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.036548,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.002916,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012246131897,
+                      0.9864913821220398,
+                      0.8644971251487732
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.12499375641345978,
+                    "distance_m": 8.000399990574142,
+                    "entity": "0000000000000000000000000000012c",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      -0.00999950720729864,
+                      -0.9999500036779895
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.580000057367018,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": 240,
+                "triangles": 12,
+                "world_id": "6d8677407dc03cf6408b5f97c04af3cf"
+              }
+            },
+            {
+              "id": 9,
+              "jsonrpc": "2.0",
+              "result": {
+                "module": {
+                  "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+                  "identity": "poima.example.sliding-door",
+                  "values": {
+                    "Activations": 1,
+                    "Camera": "00000000000000000000000000000065",
+                    "Door": "00000000000000000000000000000002",
+                    "Open": 1,
+                    "OpenX": 2.2,
+                    "Player": "00000000000000000000000000000064",
+                    "UseDistance": 10.0
+                  }
+                },
+                "revision": 1,
+                "session_id": "00000000000000000000000000000384",
+                "tick": 240
+              }
+            }
+          ]
+        },
+        {
+          "test": "test_imported_mesh_geometry_and_scaled_source",
+          "responses": []
+        },
+        {
+          "test": "test_imported_mesh_geometry_and_scaled_source",
+          "responses": []
+        },
+        {
+          "test": "test_imported_mesh_geometry_and_scaled_source",
+          "responses": [
+            {
+              "id": 2,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "static_mesh",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 4.024923,
+                "session_id": null,
+                "simulation_ms": 0.005841,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "authored",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": null,
+                "triangles": 120,
+                "world_id": "41f4027cb0d3df7e57e351d0365388ac"
+              }
+            },
+            {
+              "id": 4,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.015458,
+                "session_id": null,
+                "simulation_ms": 0.002235,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "authored",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": null,
+                "triangles": 0,
+                "world_id": "41f4027cb0d3df7e57e351d0365388ac"
+              }
+            }
+          ]
+        },
+        {
+          "test": "test_runtime_geometry_is_current_and_authoring_is_frozen",
+          "responses": []
+        },
+        {
+          "test": "test_runtime_geometry_is_current_and_authoring_is_frozen",
+          "responses": [
+            {
+              "id": 3,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_runtime_geometry_is_current_and_authoring_is_frozen/runtime-closed.wav",
+                  "peak": 0.006573565769940615,
+                  "rms": 0.003245807939124878,
+                  "sample_rate": 48000,
+                  "sha256": "71d44ff572540c88737359cb5d7fe8d89f1346acb3ebc6404c3118440829ef15"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 35.156129,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 4.785745,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.008375,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": 0,
+                "triangles": 12,
+                "world_id": "c8b8149d9867e95ae36934eaa9038aa1"
+              }
+            },
+            {
+              "id": 5,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 0.028483,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.003707,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": 0,
+                "triangles": 12,
+                "world_id": "c8b8149d9867e95ae36934eaa9038aa1"
+              }
+            },
+            {
+              "id": 7,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_runtime_geometry_is_current_and_authoring_is_frozen/runtime-open.wav",
+                  "peak": 0.03670666366815567,
+                  "rms": 0.015304419810426262,
+                  "sample_rate": 48000,
+                  "sha256": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 14.643028,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      2.199999999254942,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 0.022472,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.001573,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": 120,
+                "triangles": 12,
+                "world_id": "c8b8149d9867e95ae36934eaa9038aa1"
+              }
+            },
+            {
+              "id": 10,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.019085,
+                "session_id": null,
+                "simulation_ms": 0.002735,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "authored",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": null,
+                "triangles": 0,
+                "world_id": "c8b8149d9867e95ae36934eaa9038aa1"
+              }
+            }
+          ]
+        }
+      ],
+      "wave_files": {
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_audio_observation_ignores_unrelated_graphics_assets/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_audio_observation_ignores_unrelated_graphics_assets/without-render-assets.wav": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_authoring_schema_preview_and_validation/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_CSharp_use_changes_native_audio_path/CSharp-closed.wav": "25e06aefcd41622ce14a3617e3a416ef22667e48bc755d8341fb1e2ac5b2834b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_CSharp_use_changes_native_audio_path/CSharp-open.wav": "0d57e666731cbc464f12333a4736b1c0b4bdbfa817b8c498717a534aa1884d66",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_CSharp_use_changes_native_audio_path/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_distance_delay_elevation_and_listener_orientation/above.wav": "d46e3ffa121d344eadc3643079e85619280ad4c5af6eb378b63f3a20c36f91d0",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_distance_delay_elevation_and_listener_orientation/below.wav": "bb261883cbe4ff7fc89090153ae5565d3ae03e0764f8be603fa19c04dabe0337",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_distance_delay_elevation_and_listener_orientation/distant.wav": "0fddc192810efcfb65e38f40f117e769684ad1d40feb3a2c814b3c90fc3ae0ee",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_distance_delay_elevation_and_listener_orientation/left.wav": "c22c8257632d207a3f4701322a9cd9359dea1e9bc61c8badd4de70490133189d",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_distance_delay_elevation_and_listener_orientation/original.wav": "5468cac8817e5eabf48db29c774bf4590cacc8e958029c032a923380b3c391e5",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_distance_delay_elevation_and_listener_orientation/turned.wav": "5af30b6bc94ee7e248feee52f150fb8ea3d01aa71e783f8005ca5f6779ee980f",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_imported_mesh_geometry_and_scaled_source/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_mix_linearity_disabled_geometry_and_capture_protection/double.wav": "09860c65fce7ff85f84c803e658b5e5a476916afa0750689356ac81be2ab783c",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_mix_linearity_disabled_geometry_and_capture_protection/one-again.wav": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_mix_linearity_disabled_geometry_and_capture_protection/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_mix_linearity_disabled_geometry_and_capture_protection/single.wav": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_runtime_geometry_is_current_and_authoring_is_frozen/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_runtime_geometry_is_current_and_authoring_is_frozen/runtime-closed.wav": "71d44ff572540c88737359cb5d7fe8d89f1346acb3ebc6404c3118440829ef15",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_runtime_geometry_is_current_and_authoring_is_frozen/runtime-open.wav": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_stationary_endpoints_door_opening_and_material_filter/closed.wav": "71d44ff572540c88737359cb5d7fe8d89f1346acb3ebc6404c3118440829ef15",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_stationary_endpoints_door_opening_and_material_filter/open.wav": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_stationary_endpoints_door_opening_and_material_filter/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_stationary_endpoints_door_opening_and_material_filter/quiet.wav": "dc8892ee5fb1ccb7248623e21d00d83abedb5aa63cda22e70c6a383be6c642df",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_stationary_endpoints_door_opening_and_material_filter/repeat.wav": "4bcb94868f38eb2fba60e78726cb18e57e20b0d505d5172d24373c0502986a5b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-0.wav": "8f9d4a35b4af467d537b9e48cce96213417be672e0a6630b6e690544d22e83ee",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-1.wav": "8dae14c348c2d45f76d56b9b48a2f1d38ba9e30b858033e3c7f34c602de5f13a",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-2.wav": "5d6deac24150ed337b193ef0ad6bdf0df4af1b1cb41d20d0a891fc80d3c9196b",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-3.wav": "245a676eee8d086026620668b678b19661874b7b25402c057d56090a93f150fe",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-4.wav": "fc54a7dd06b2f6c7242f29e787d5e3ff7afe8df010a7518424fa91f5d86ed204",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-5.wav": "9e8c4bdd5b697ca8c44c3ba327ef17009abe904e94f5ef33c2c0c4b0a5b784f9",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-6.wav": "1e5130647a41a233a8eca4557d7e483ad5b216048247ebe5872d51d6932e7ed9",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/bad-7.wav": "1719e11bea46d5af373e3412d83ff558d54b7b062b6cccfd89e37b59c9e93e5c",
+        "<checkout>/build/audio-contract/72484272513f4c039bb39b9433f89499/test_wav_validation_and_pcm16/pcm16.wav": "f390d52f56866c6e2a2cf72899426590a0cf3e8669731317f07cb68d7e381b76"
+      }
+    },
+    "windows": {
+      "passed": true,
+      "tests_run": 10,
+      "skipped": [],
+      "raw_evidence": {
+        "path": "build/audio-contract-windows.json",
+        "sha256": "9fc8dc9e303053db9c01004d04a41f7b905d9749f6988f14ab4ae03a32faef52"
+      },
+      "log": {
+        "path": "build/audio-contract-windows.log",
+        "sha256": "009e7984e31cf0724a3d2be0b8ed2504066d173151e63cf8e098b458a057bd50",
+        "text": "test_CSharp_use_changes_native_audio_path (__main__.AudioContract.test_CSharp_use_changes_native_audio_path) ... ok\ntest_audio_observation_ignores_unrelated_graphics_assets (__main__.AudioContract.test_audio_observation_ignores_unrelated_graphics_assets) ... ok\ntest_authoring_schema_preview_and_validation (__main__.AudioContract.test_authoring_schema_preview_and_validation) ... ok\ntest_clip_import_is_source_independent_and_hash_checked (__main__.AudioContract.test_clip_import_is_source_independent_and_hash_checked) ... ok\ntest_distance_delay_elevation_and_listener_orientation (__main__.AudioContract.test_distance_delay_elevation_and_listener_orientation) ... ok\ntest_imported_mesh_geometry_and_scaled_source (__main__.AudioContract.test_imported_mesh_geometry_and_scaled_source) ... ok\ntest_mix_linearity_disabled_geometry_and_capture_protection (__main__.AudioContract.test_mix_linearity_disabled_geometry_and_capture_protection) ... ok\ntest_runtime_geometry_is_current_and_authoring_is_frozen (__main__.AudioContract.test_runtime_geometry_is_current_and_authoring_is_frozen) ... ok\ntest_stationary_endpoints_door_opening_and_material_filter (__main__.AudioContract.test_stationary_endpoints_door_opening_and_material_filter) ... ok\ntest_wav_validation_and_pcm16 (__main__.AudioContract.test_wav_validation_and_pcm16) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 2.821s\n\nOK\n"
+      },
+      "test_cases": [
+        "test_CSharp_use_changes_native_audio_path",
+        "test_audio_observation_ignores_unrelated_graphics_assets",
+        "test_authoring_schema_preview_and_validation",
+        "test_clip_import_is_source_independent_and_hash_checked",
+        "test_distance_delay_elevation_and_listener_orientation",
+        "test_imported_mesh_geometry_and_scaled_source",
+        "test_mix_linearity_disabled_geometry_and_capture_protection",
+        "test_runtime_geometry_is_current_and_authoring_is_frozen",
+        "test_stationary_endpoints_door_opening_and_material_filter",
+        "test_wav_validation_and_pcm16"
+      ],
+      "selected_observations": [
+        {
+          "test": "test_CSharp_use_changes_native_audio_path",
+          "responses": []
+        },
+        {
+          "test": "test_CSharp_use_changes_native_audio_path",
+          "responses": [
+            {
+              "id": 4,
+              "jsonrpc": "2.0",
+              "result": {
+                "module": {
+                  "assembly": "<checkout>\\examples\\managed\\DoorGame\\bin\\Release\\net10.0\\Poima.DoorGame.dll",
+                  "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+                  "migration": {
+                    "added": [
+                      "Activations",
+                      "Camera",
+                      "Door",
+                      "Open",
+                      "OpenX",
+                      "Player",
+                      "UseDistance"
+                    ],
+                    "preserved": [],
+                    "removed": []
+                  },
+                  "schema": {
+                    "bytes": 72,
+                    "fields": [
+                      {
+                        "bytes": 4,
+                        "kind": "int32",
+                        "name": "Activations",
+                        "offset": 68
+                      },
+                      {
+                        "bytes": 16,
+                        "kind": "entity",
+                        "name": "Camera",
+                        "offset": 16
+                      },
+                      {
+                        "bytes": 16,
+                        "kind": "entity",
+                        "name": "Door",
+                        "offset": 32
+                      },
+                      {
+                        "bytes": 4,
+                        "kind": "int32",
+                        "name": "Open",
+                        "offset": 64
+                      },
+                      {
+                        "bytes": 8,
+                        "kind": "float64",
+                        "name": "OpenX",
+                        "offset": 48
+                      },
+                      {
+                        "bytes": 16,
+                        "kind": "entity",
+                        "name": "Player",
+                        "offset": 0
+                      },
+                      {
+                        "bytes": 8,
+                        "kind": "float64",
+                        "name": "UseDistance",
+                        "offset": 56
+                      }
+                    ],
+                    "identity": "poima.example.sliding-door"
+                  },
+                  "type": "Poima.Examples.DoorGame",
+                  "values": {
+                    "Activations": 0,
+                    "Camera": "00000000000000000000000000000065",
+                    "Door": "00000000000000000000000000000002",
+                    "Open": 0,
+                    "OpenX": 2.2,
+                    "Player": "00000000000000000000000000000064",
+                    "UseDistance": 10.0
+                  }
+                },
+                "replayed": false,
+                "revision": 1,
+                "session_id": "00000000000000000000000000000384",
+                "tick": 0
+              }
+            },
+            {
+              "id": 6,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>\\build\\audio-contract\\782da0935ed647498e189ab11006a770\\test_CSharp_use_changes_native_audio_path\\CSharp-closed.wav",
+                  "peak": 0.006588413380086422,
+                  "rms": 0.0032508280844383533,
+                  "sample_rate": 48000,
+                  "sha256": "bd4f0f474f9cc248676c67a53bb616867a6480708a6ec750040a6f89268b26c1"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 8.1704,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000065",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.580000057367018,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.1054,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.0082,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012246131897,
+                      0.9864913821220398,
+                      0.8644971251487732
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.12499375641345978,
+                    "distance_m": 8.000399990574142,
+                    "entity": "0000000000000000000000000000012c",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      -0.00999950720729864,
+                      -0.9999500036779895
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.580000057367018,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": 120,
+                "triangles": 12,
+                "world_id": "e39fcab83e578d2f5b7367f26dd2039a"
+              }
+            },
+            {
+              "id": 8,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>\\build\\audio-contract\\782da0935ed647498e189ab11006a770\\test_CSharp_use_changes_native_audio_path\\CSharp-open.wav",
+                  "peak": 0.03695817291736603,
+                  "rms": 0.015390993801135231,
+                  "sample_rate": 48000,
+                  "sha256": "a0367ca87c3ffa6f37cc59b1cebcc668ee0dd8af65352ea00aa82cfae533d83b"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 8.0203,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      2.199999999254942,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000065",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.580000057367018,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.0241,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.0012,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012246131897,
+                      0.9864913821220398,
+                      0.8644971251487732
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.12499375641345978,
+                    "distance_m": 8.000399990574142,
+                    "entity": "0000000000000000000000000000012c",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      -0.00999950720729864,
+                      -0.9999500036779895
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.580000057367018,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": 240,
+                "triangles": 12,
+                "world_id": "e39fcab83e578d2f5b7367f26dd2039a"
+              }
+            },
+            {
+              "id": 9,
+              "jsonrpc": "2.0",
+              "result": {
+                "module": {
+                  "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+                  "identity": "poima.example.sliding-door",
+                  "values": {
+                    "Activations": 1,
+                    "Camera": "00000000000000000000000000000065",
+                    "Door": "00000000000000000000000000000002",
+                    "Open": 1,
+                    "OpenX": 2.2,
+                    "Player": "00000000000000000000000000000064",
+                    "UseDistance": 10.0
+                  }
+                },
+                "revision": 1,
+                "session_id": "00000000000000000000000000000384",
+                "tick": 240
+              }
+            }
+          ]
+        },
+        {
+          "test": "test_imported_mesh_geometry_and_scaled_source",
+          "responses": []
+        },
+        {
+          "test": "test_imported_mesh_geometry_and_scaled_source",
+          "responses": []
+        },
+        {
+          "test": "test_imported_mesh_geometry_and_scaled_source",
+          "responses": [
+            {
+              "id": 2,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "static_mesh",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      1.0,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 0.1416,
+                "session_id": null,
+                "simulation_ms": 0.0297,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "authored",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": null,
+                "triangles": 120,
+                "world_id": "ce83c2600552f56a7df551f406e770c1"
+              }
+            },
+            {
+              "id": 4,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.0145,
+                "session_id": null,
+                "simulation_ms": 0.0012,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "authored",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": null,
+                "triangles": 0,
+                "world_id": "ce83c2600552f56a7df551f406e770c1"
+              }
+            }
+          ]
+        },
+        {
+          "test": "test_runtime_geometry_is_current_and_authoring_is_frozen",
+          "responses": []
+        },
+        {
+          "test": "test_runtime_geometry_is_current_and_authoring_is_frozen",
+          "responses": [
+            {
+              "id": 3,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>\\build\\audio-contract\\782da0935ed647498e189ab11006a770\\test_runtime_geometry_is_current_and_authoring_is_frozen\\runtime-closed.wav",
+                  "peak": 0.006573565769940615,
+                  "rms": 0.00324580802355659,
+                  "sample_rate": 48000,
+                  "sha256": "f5a079937c07e356caadc03fe83926b8042ac21cabf92227aa35d30a33f71e23"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 9.8235,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 0.113,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.0089,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": 0,
+                "triangles": 12,
+                "world_id": "5687db13a034b8b78820168f0078f9dc"
+              }
+            },
+            {
+              "id": 5,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      0.0,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 0.0331,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.0025,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 0.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      0.3535533845424652,
+                      0.058094751089811325,
+                      0.005196152254939079
+                    ]
+                  }
+                ],
+                "tick": 0,
+                "triangles": 12,
+                "world_id": "5687db13a034b8b78820168f0078f9dc"
+              }
+            },
+            {
+              "id": 7,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "capture": {
+                  "channels": 2,
+                  "format": "WAV IEEE float32",
+                  "frames": 24000,
+                  "over_range_samples": 0,
+                  "path": "<checkout>\\build\\audio-contract\\782da0935ed647498e189ab11006a770\\test_runtime_geometry_is_current_and_authoring_is_frozen\\runtime-open.wav",
+                  "peak": 0.03670669347047806,
+                  "rms": 0.015304431926960637,
+                  "sample_rate": 48000,
+                  "sha256": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972"
+                },
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 7.8876,
+                "geometry": [
+                  {
+                    "absorption": [
+                      0.10000000149011612,
+                      0.20000000298023224,
+                      0.30000001192092896
+                    ],
+                    "entity": "00000000000000000000000000000002",
+                    "scattering": 0.5,
+                    "shape": "box_collider",
+                    "transmission": [
+                      0.5,
+                      0.15000000596046448,
+                      0.029999999329447746
+                    ],
+                    "world_matrix": [
+                      2.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      3.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.4,
+                      0.0,
+                      2.199999999254942,
+                      1.5,
+                      -3.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 1,
+                "scene_ms": 0.02,
+                "session_id": "00000000000000000000000000000384",
+                "simulation_ms": 0.0013,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "runtime",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": 120,
+                "triangles": 12,
+                "world_id": "5687db13a034b8b78820168f0078f9dc"
+              }
+            },
+            {
+              "id": 10,
+              "jsonrpc": "2.0",
+              "result": {
+                "backend": "Steam Audio 4.8.1; CPU direct paths; default HRTF",
+                "build_version": "0.0.15",
+                "device_playback": false,
+                "diffraction": false,
+                "dsp_ms": 0.0,
+                "geometry": [],
+                "listener": "00000000000000000000000000000064",
+                "listener_world": [
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0,
+                  0.0,
+                  0.0,
+                  1.5,
+                  2.0,
+                  1.0
+                ],
+                "reflections": false,
+                "revision": 2,
+                "scene_ms": 0.0142,
+                "session_id": null,
+                "simulation_ms": 0.001,
+                "snapshot_policy": "fresh synchronous frozen geometry/poses; capture restarts clips at sample zero",
+                "source": "authored",
+                "sources": [
+                  {
+                    "air_absorption": [
+                      0.9984012842178345,
+                      0.9864920377731323,
+                      0.8645034432411194
+                    ],
+                    "asset": "ce6c6975a772cefec13940e7baafaabe0d8185233de655d06acd5ff5f7dc21b3",
+                    "clip_frames": 4800,
+                    "direct_visibility": 1.0,
+                    "distance_gain": 0.125,
+                    "distance_m": 8.0,
+                    "entity": "00000000000000000000000000000065",
+                    "gain": 1.0,
+                    "listener_local_direction": [
+                      0.0,
+                      0.0,
+                      -1.0
+                    ],
+                    "listener_position": [
+                      0.0,
+                      1.5,
+                      2.0
+                    ],
+                    "loop": true,
+                    "propagation_delay_samples": 1120,
+                    "source_position": [
+                      0.0,
+                      1.5,
+                      -6.0
+                    ],
+                    "transmission": [
+                      1.0,
+                      1.0,
+                      1.0
+                    ]
+                  }
+                ],
+                "tick": null,
+                "triangles": 0,
+                "world_id": "5687db13a034b8b78820168f0078f9dc"
+              }
+            }
+          ]
+        }
+      ],
+      "wave_files": {
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_audio_observation_ignores_unrelated_graphics_assets/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_audio_observation_ignores_unrelated_graphics_assets/without-render-assets.wav": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_authoring_schema_preview_and_validation/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_CSharp_use_changes_native_audio_path/CSharp-closed.wav": "bd4f0f474f9cc248676c67a53bb616867a6480708a6ec750040a6f89268b26c1",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_CSharp_use_changes_native_audio_path/CSharp-open.wav": "a0367ca87c3ffa6f37cc59b1cebcc668ee0dd8af65352ea00aa82cfae533d83b",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_CSharp_use_changes_native_audio_path/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_distance_delay_elevation_and_listener_orientation/above.wav": "aea15e0d7f2ba15d4b950c08f2fbd6881b94b8ad07a32bbb724e2119fb667d83",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_distance_delay_elevation_and_listener_orientation/below.wav": "246303e26c2164a02337375f9ab34a6d7c87fcdf30d987ab6587d2bd1768b042",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_distance_delay_elevation_and_listener_orientation/distant.wav": "c979f4d40aa7730fd34be7aa69c7594f6bc4d262e10d12562180d8a408476f3f",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_distance_delay_elevation_and_listener_orientation/left.wav": "27b8c433c859f571eace8cd2e1ac10be70b307b39ec461538a31541bf6ef391c",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_distance_delay_elevation_and_listener_orientation/original.wav": "5468cac8817e5eabf48db29c774bf4590cacc8e958029c032a923380b3c391e5",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_distance_delay_elevation_and_listener_orientation/turned.wav": "cba8ec564954eaaaa1803a971cf7c954415d969665dd344f9e28cd881f57362b",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_imported_mesh_geometry_and_scaled_source/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_mix_linearity_disabled_geometry_and_capture_protection/double.wav": "5dc35ae70fbe1dc074486d2782f2bcf804d5c06f31ab1569c7f0002f8ca3a22e",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_mix_linearity_disabled_geometry_and_capture_protection/one-again.wav": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_mix_linearity_disabled_geometry_and_capture_protection/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_mix_linearity_disabled_geometry_and_capture_protection/single.wav": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_runtime_geometry_is_current_and_authoring_is_frozen/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_runtime_geometry_is_current_and_authoring_is_frozen/runtime-closed.wav": "f5a079937c07e356caadc03fe83926b8042ac21cabf92227aa35d30a33f71e23",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_runtime_geometry_is_current_and_authoring_is_frozen/runtime-open.wav": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_stationary_endpoints_door_opening_and_material_filter/closed.wav": "f5a079937c07e356caadc03fe83926b8042ac21cabf92227aa35d30a33f71e23",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_stationary_endpoints_door_opening_and_material_filter/open.wav": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_stationary_endpoints_door_opening_and_material_filter/original.wav": "df63e4c1bedde76046e73f7bb829a05cc6436042a66503aec44c19afbbd44f72",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_stationary_endpoints_door_opening_and_material_filter/quiet.wav": "dee9d1939b54a7d0886cc14403390cd19696fad66d073da9302e8be658a0bde1",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_stationary_endpoints_door_opening_and_material_filter/repeat.wav": "b78665e1fe1e3c84b770ac78e5d4147aa6cd6cec09755eb3f52380fac69cf972",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-0.wav": "8f9d4a35b4af467d537b9e48cce96213417be672e0a6630b6e690544d22e83ee",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-1.wav": "8dae14c348c2d45f76d56b9b48a2f1d38ba9e30b858033e3c7f34c602de5f13a",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-2.wav": "5d6deac24150ed337b193ef0ad6bdf0df4af1b1cb41d20d0a891fc80d3c9196b",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-3.wav": "245a676eee8d086026620668b678b19661874b7b25402c057d56090a93f150fe",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-4.wav": "fc54a7dd06b2f6c7242f29e787d5e3ff7afe8df010a7518424fa91f5d86ed204",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-5.wav": "9e8c4bdd5b697ca8c44c3ba327ef17009abe904e94f5ef33c2c0c4b0a5b784f9",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-6.wav": "1e5130647a41a233a8eca4557d7e483ad5b216048247ebe5872d51d6932e7ed9",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/bad-7.wav": "1719e11bea46d5af373e3412d83ff558d54b7b062b6cccfd89e37b59c9e93e5c",
+        "<checkout>/build/audio-contract/782da0935ed647498e189ab11006a770/test_wav_validation_and_pcm16/pcm16.wav": "f390d52f56866c6e2a2cf72899426590a0cf3e8669731317f07cb68d7e381b76"
+      }
+    }
+  },
+  "pcm_measurements": {
+    "linux": {
+      "closed_rms_after_startup": 0.00333906597934988,
+      "open_rms_after_startup": 0.015743278232146267,
+      "gain_quarter_rms_ratio": 0.2500001133580001,
+      "closed_to_open_left_channel_band_ratios": {
+        "200": 0.310343233647477,
+        "1000": 0.1177001413189885,
+        "6000": 0.05210117387019504
+      },
+      "band_method": "Magnitude of unwindowed discrete Fourier sum at 200/1000/6000 Hz, left channel samples 4800..14399; exact periods after startup. Ratio uses identical open-path source/listener/clip.",
+      "distant_silence_before_sample_48000": true,
+      "distant_post_arrival_rms": 3.538950565623292e-06,
+      "elevation_max_sample_difference": 0.10993420146405697,
+      "right_source_right_to_left_rms": 4.332535190766436,
+      "left_source_left_to_right_rms": 4.224842587565291,
+      "turned_right_to_left_rms": 3.1144110618552867,
+      "repeat_pcm_exact": true
+    },
+    "windows": {
+      "closed_rms_after_startup": 0.003339066064054367,
+      "open_rms_after_startup": 0.01574329070803337,
+      "gain_quarter_rms_ratio": 0.25000009649896404,
+      "closed_to_open_left_channel_band_ratios": {
+        "200": 0.3103428793584399,
+        "1000": 0.11770002852445109,
+        "6000": 0.052101178585105226
+      },
+      "band_method": "Magnitude of unwindowed discrete Fourier sum at 200/1000/6000 Hz, left channel samples 4800..14399; exact periods after startup. Ratio uses identical open-path source/listener/clip.",
+      "distant_silence_before_sample_48000": true,
+      "distant_post_arrival_rms": 3.538951022101469e-06,
+      "elevation_max_sample_difference": 0.10993417911231518,
+      "right_source_right_to_left_rms": 4.332534855335518,
+      "left_source_left_to_right_rms": 4.224841983156867,
+      "turned_right_to_left_rms": 3.1144109951093513,
+      "repeat_pcm_exact": true
+    }
+  },
+  "installed_linux": {
+    "raw_evidence": {
+      "path": "build/audio-installed-sample.json",
+      "sha256": "9a7009fce5529abd9b75f2cc22ccd8c504e992472b3e95d3dc9dfe1800efd8a3"
+    },
+    "passed": true,
+    "binary_sha256": "d3ddf89f02198dfd546bc2428d7751bcc9a766ccad74af5765209878c685b97e",
+    "source_build_sha256": "1c2aa71cc959c3f9dddaf706d871ae5d91acb100d592da58b2ff3c4948b1c4c1",
+    "library_sha256": "faf7c4d69e0f104366f6553cda38d3f946f761f7db223baf12663f6fbf2387da",
+    "runpath": "$ORIGIN/../lib",
+    "closed_direct_visibility": 0.0,
+    "open_direct_visibility": 1.0
+  },
+  "windows_cli": {
+    "path": "build/audio-cli-windows.log",
+    "sha256": "ce5afef4702b79feb3b34163729695ad12b57c689841464e19f417d6a354da1c",
+    "text": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.709s\n\nOK (skipped=1)\n"
+  },
+  "cross_os_open_capture_max_absolute_sample_difference": 4.470348358154297e-08,
+  "listening_artifacts": {
+    "closed": {
+      "path": "docs/evidence/m2-audio-door-closed.wav",
+      "sha256": "bd4f0f474f9cc248676c67a53bb616867a6480708a6ec750040a6f89268b26c1"
+    },
+    "open": {
+      "path": "docs/evidence/m2-audio-door-open.wav",
+      "sha256": "a0367ca87c3ffa6f37cc59b1cebcc668ee0dd8af65352ea00aa82cfae533d83b"
+    }
+  },
+  "checks": {
+    "native_clip_import_and_corruption_detection": true,
+    "typed_agent_authoring_preview_and_validation": true,
+    "dynamic_door_with_stationary_endpoints": true,
+    "independent_frequency_attenuation_measurement": true,
+    "playback_gain_preserved_in_snapshot": true,
+    "independent_source_linear_mix": true,
+    "distance_delay_exact_prearrival_silence": true,
+    "elevation_output_difference": true,
+    "lateral_energy_and_listener_rotation": true,
+    "live_physics_pose_with_frozen_authoring": true,
+    "CSharp_use_action_changes_acoustic_path": true,
+    "hidden_imported_mesh_acoustics": true,
+    "unrelated_render_assets_not_loaded_for_authored_audio": true,
+    "capture_path_and_revision_guards": true,
+    "installed_native_library_execution": true
+  },
+  "limitations": [
+    "No device playback, subjective listening qualification or production callback/resource-budget qualification.",
+    "Frozen synchronous snapshots rebuild the scene; no asynchronous worker publication, persistent event/voice cursors, streaming or source virtualization.",
+    "Direct paths/HRTF only. Absorption/scattering authored but no reflection/reverb or diffraction simulation yet.",
+    "Mono 48 kHz PCM16/float32 imports only; no automatic resampling or compressed assets.",
+    "C# use moves a native occluder; a C# sound event API is not yet implemented.",
+    "One Windows/Linux laptop environment; consoles and broader hardware/platform support unqualified.",
+    "DSP differs by floating-point roundoff across OS libraries; different elevation filters do not establish human localization accuracy.",
+    "The dynamic-door subset does not complete the full M0 acoustic proof, M2 room or engine roadmap."
+  ],
+  "managed_interaction_artifacts": {
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll": "5bb188cfd11c594edf7aee31a5129c10b4e18bc43888b64928e429fef7b3e199",
+    "managed/Poima.Gameplay/bin/Release/net10.0/Poima.Gameplay.dll": "b7cbb129d7da7c2143374efadfd84d09a19e6feb613a9310b447f71056830dcc",
+    "examples/managed/DoorGame/bin/Release/net10.0/Poima.DoorGame.dll": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+    "examples/managed/DoorGame/DoorGame.cs": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4"
+  },
+  "managed_interaction_coreclr": {
+    "linux": "10.0.12",
+    "windows": "10.0.11"
+  },
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

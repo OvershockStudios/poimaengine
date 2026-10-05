@@ -1,0 +1,61 @@
+{
+  "recorded_at_utc": "2026-09-26T05:42:50.858807+00:00",
+  "scope": "Initial M1 authored hierarchy and Transform service; M0 and M1 remain incomplete",
+  "commands": [
+    {
+      "command": [
+        "ctest",
+        "--preset",
+        "headless"
+      ],
+      "exit_code": 0,
+      "stdout": "Test project <checkout>/build/headless\n    Start 1: cli_contract\n1/3 Test #1: cli_contract .....................   Passed    0.68 sec\n    Start 2: world_contract\n2/3 Test #2: world_contract ...................   Passed    2.74 sec\n    Start 3: native_module_contract\n3/3 Test #3: native_module_contract ...........   Passed   10.02 sec\n\n100% tests passed, 0 tests failed out of 3\n\nTotal Test time (real) =  13.48 sec\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tests/world_contract.py",
+        "build/windows-render/poima.exe",
+        "--windows-interop"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... skipped 'Abrupt Windows process termination is not qualified by the WSL harness'\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 1.873s\n\nOK (skipped=1)\n"
+    },
+    {
+      "command": [
+        "/mnt/c/Python313/python.exe",
+        "tests/cli_contract.py",
+        "build/windows-render/poima.exe",
+        "1",
+        "1"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.677s\n\nOK (skipped=1)\n"
+    }
+  ],
+  "sha256": {
+    "CMakeLists.txt": "077996ff891a769d7030051817c778cd585f4d4ef16166f635d5fe732cebe852",
+    "include/poima/world.hpp": "37825912ca1656ae5f77b5a109a20880e97013261ca6aeff9bc63a164a6b1060",
+    "src/world.cpp": "c5173c3ab5f94f3811fb99da398f5c8aa8d3f0668c1786ea876bc333070fb3ef",
+    "src/world_storage.hpp": "f7bb8d46514805fa33973913301c6d7c7e680f71ae420e81c0ed2db71d757de2",
+    "src/main.cpp": "e78eda49e7cec795f2f8cd91affb4c6d44ed53f25ff12a3f75257935796e6b6a",
+    "src/core.cpp": "8fe0e95073f02f92994954e43a54c37f9e4d2aca0a6d3f2d721da2e2915212bd",
+    "tests/world_contract.py": "b1734f688f089a4b99bdffb498205deb72b04de0e0d0386c8ddc621b85e07df8",
+    "tests/cli_contract.py": "d15e30e783b11fb7cc4498a1f41f4139fd23661bd87e13e10cda04a81ae9d678",
+    "third_party/nlohmann/json.hpp": "aaf127c04cb31c406e5b04a63f1ae89369fccde6d8fa7cdda1ed4f32dfc5de63",
+    "third_party/nlohmann/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+    "build/headless/poima": "0aaf1466fef06c5ae6cfa02582e6017ff48e5ca718638ef9d86aa8aa513b8866",
+    "build/windows-render/poima.exe": "79bd68a037ea518b381c561f7fca256e983868eac3ed976e9792dddcef439321"
+  },
+  "limits": [
+    "Windows abrupt termination is skipped by WSL harness",
+    "No scene rendering or simulation ECS",
+    "No cross-OS simultaneous writer qualification",
+    "No power-loss durability qualification",
+    "No representative large-world performance qualification"
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

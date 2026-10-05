@@ -1,0 +1,1968 @@
+{
+  "recorded_at_utc": "2026-09-26T09:28:44.184159+00:00",
+  "engine_version": "0.0.11",
+  "scope": "Optional directional cascades, spot and point shadow maps, authoring budgets and frozen runtime settings, current caster/light poses, analytic receiver-plane filtering. Full engine roadmap remains incomplete.",
+  "builds": {
+    "windows_runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37"
+    },
+    "linux_headless": {
+      "path": "build/headless/poima",
+      "sha256": "5fbb4214456430aced304781eac795545d14778629dff2d16428ad065c41c7e5"
+    },
+    "linux_runtime": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "6f8348b01bf9ec38aa62df18b41222e5a17b17b492270679443496b6750bf3d2"
+    }
+  },
+  "test_sources": {
+    "tests/shadow_math.cpp": "89f48180338dd722e0c8c7afcd89243ceb85abcaa81ed03aa95d8cb7876b3694",
+    "tests/lighting_contract.py": "2ee923a05a549e7e5b321332c9f997a31f7b81e3abe643f7c406d7773809ab1b",
+    "tests/shadow_capture.py": "a6306c0fecac9c8f0898239a375ae5b512f80f63fd1ed81e6d84663635f6bd14",
+    "tests/player_contract.py": "b66c461de665f609ddefc6446704933a36b793b67f49726cd9705369b70b90e0",
+    "tests/lighting_capture.py": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+    "tests/material_capture.py": "14179932cc55f7da69c6b701e82fc14bcf77c3845c05cb9ef3fe4a02a6a26804"
+  },
+  "shader_sources": {
+    "shaders/scene.hlsl": "f0f54cda1987a7c9d5fada583aa0e75b312b06c2eee309f6c72f9374fc005a37",
+    "shaders/shadow.hlsl": "f285ba3d3fc4b4107f6dce2e972371c557cf458e3ac0d05e1bf1c9dbb4a39066",
+    "src/shadows.cpp": "0eb39a93d5359317535a288a3f39403e12c65cd1e8ada0f6ebf9de4fce64ecdb"
+  },
+  "ctest": {
+    "headless": {
+      "passed": 11,
+      "failed": 0,
+      "path": "build/shadows-headless-tests.log",
+      "sha256": "b88712620be0940b44b8481bc2e7566bbf6555d7c5e9cd57590fe96e962a95db",
+      "text": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/11 Test  #1: asset_hash .......................   Passed    0.02 sec\n      Start  2: texture_native\n 2/11 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/11 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/11 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/11 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/11 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: lighting_contract\n 7/11 Test  #7: lighting_contract ................   Passed    0.67 sec\n      Start  8: asset_contract\n 8/11 Test  #8: asset_contract ...................   Passed    4.12 sec\n      Start  9: cli_contract\n 9/11 Test  #9: cli_contract .....................   Passed    0.64 sec\n      Start 10: world_contract\n10/11 Test #10: world_contract ...................   Passed    3.24 sec\n      Start 11: native_module_contract\n11/11 Test #11: native_module_contract ...........   Passed   11.53 sec\n\n100% tests passed, 0 tests failed out of 11\n\nTotal Test time (real) =  20.36 sec\n"
+    },
+    "runtime_headless": {
+      "passed": 13,
+      "failed": 0,
+      "path": "build/shadows-runtime-tests.log",
+      "sha256": "371056f11cfd723f26b4e7bafedb1f2d8fdd22875ca937affd56600d78d3e8e4",
+      "text": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/13 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/13 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/13 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/13 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/13 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/13 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: runtime_native\n 7/13 Test  #7: runtime_native ...................   Passed    0.10 sec\n      Start  8: lighting_contract\n 8/13 Test  #8: lighting_contract ................   Passed    0.74 sec\n      Start  9: asset_contract\n 9/13 Test  #9: asset_contract ...................   Passed    3.95 sec\n      Start 10: runtime_contract\n10/13 Test #10: runtime_contract .................   Passed    0.61 sec\n      Start 11: cli_contract\n11/13 Test #11: cli_contract .....................   Passed    0.71 sec\n      Start 12: world_contract\n12/13 Test #12: world_contract ...................   Passed    3.09 sec\n      Start 13: native_module_contract\n13/13 Test #13: native_module_contract ...........   Passed   10.47 sec\n\n100% tests passed, 0 tests failed out of 13\n\nTotal Test time (real) =  19.83 sec\n"
+    }
+  },
+  "windows_authoring": {
+    "path": "build/shadows-windows-contract.log",
+    "sha256": "fe5874394deb9491c62a4d85458aa85890f8c635ed7b1f6cc0ea3b2a4430eca7",
+    "text": "test_discovery_preview_receipts_persistence_and_fallback (__main__.LightingContract.test_discovery_preview_receipts_persistence_and_fallback) ... ok\ntest_invalid_values_and_global_limits_are_atomic (__main__.LightingContract.test_invalid_values_and_global_limits_are_atomic) ... ok\ntest_runtime_freezes_settings_and_tracks_moving_parent (__main__.LightingContract.test_runtime_freezes_settings_and_tracks_moving_parent) ... ok\ntest_shadow_defaults_validation_and_resource_limits (__main__.LightingContract.test_shadow_defaults_validation_and_resource_limits) ... ok\ntest_transformed_pose_and_units (__main__.LightingContract.test_transformed_pose_and_units) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.685s\n\nOK\n"
+  },
+  "windows_cli": {
+    "path": "build/shadows-windows-cli.log",
+    "sha256": "edb5f0cf5f5af7461e319e55175d9ffc982bdc23d3357babf79cb4d6ddde6f18",
+    "text": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.710s\n\nOK (skipped=1)\n"
+  },
+  "shadow_gpus": [
+    {
+      "raw_evidence": "build/shadow-capture/gpu-0.json",
+      "raw_sha256": "c4e19d3b66f781b550d6308bf3898d1e9abb3b3f0780954c8365668261b4c7b3",
+      "binary_sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37",
+      "test_sha256": "a6306c0fecac9c8f0898239a375ae5b512f80f63fd1ed81e6d84663635f6bd14",
+      "gpu_index": 0,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "capture_count": 45,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "unshadowed",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "directional",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "directional-off",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "spot",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "spot-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "point",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "point-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "cascade-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-7",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-8",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-9",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "outside-shadow-distance",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "moved-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "expected": [
+            162,
+            117,
+            79
+          ],
+          "tolerance": 1
+        },
+        {
+          "name": "indexed-occluder",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-1-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-2-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-3-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-4-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-5-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-6-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "last-shadow-layer",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "last-shadow-layer-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "resolution-256",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-512",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-2048",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        }
+      ],
+      "checks": {
+        "smooth_normals_do_not_change_receiver_plane": true,
+        "all_resolutions_and_final_array_layer": true,
+        "directional_spot_point_occlusion": true,
+        "all_cascades_and_blends": true,
+        "shadow_distance_bound": true,
+        "moving_hidden_and_indexed_casters": true,
+        "six_point_faces_and_seam": true,
+        "frozen_runtime_settings_and_moving_occluder": true
+      },
+      "smooth_normal_max_error": 0
+    },
+    {
+      "raw_evidence": "build/shadow-capture/gpu-1.json",
+      "raw_sha256": "b4b9f780b576389b744cffb70e9957bdab531ae1404614bce84807c1ca03de84",
+      "binary_sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37",
+      "test_sha256": "a6306c0fecac9c8f0898239a375ae5b512f80f63fd1ed81e6d84663635f6bd14",
+      "gpu_index": 1,
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "capture_count": 45,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "unshadowed",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "directional",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "directional-off",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "spot",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "spot-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "point",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "point-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "cascade-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-7",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-8",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-9",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "outside-shadow-distance",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "moved-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "expected": [
+            162,
+            117,
+            79
+          ],
+          "tolerance": 1
+        },
+        {
+          "name": "indexed-occluder",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-1-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-2-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-3-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-4-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-5-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-6-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "last-shadow-layer",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "last-shadow-layer-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "resolution-256",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-512",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-2048",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        }
+      ],
+      "checks": {
+        "smooth_normals_do_not_change_receiver_plane": true,
+        "all_resolutions_and_final_array_layer": true,
+        "directional_spot_point_occlusion": true,
+        "all_cascades_and_blends": true,
+        "shadow_distance_bound": true,
+        "moving_hidden_and_indexed_casters": true,
+        "six_point_faces_and_seam": true,
+        "frozen_runtime_settings_and_moving_occluder": true
+      },
+      "smooth_normal_max_error": 0
+    }
+  ],
+  "player_gpus": [
+    {
+      "raw_evidence": "build/shadow-player/gpu-0.json",
+      "raw_sha256": "23be848e52a706d80562e3885aada116648b9a9e75fc4666c8a6b0fd590904fd",
+      "binary_sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37",
+      "test_sha256": "b66c461de665f609ddefc6446704933a36b793b67f49726cd9705369b70b90e0",
+      "shadows": true,
+      "passed": true,
+      "ticks": 371,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "actual_final_lighting": {
+        "ambient": [
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.30000001192092896,
+              0.10000000149011612
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "000000000000000000000000000000c9",
+            "inner_angle": 0.0,
+            "intensity": 80.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              2.0000171168637775,
+              1.9799998874860767,
+              -2.93648467698015e-06
+            ],
+            "range": 20.0,
+            "shadow": {
+              "bias": 0.0005000000237487257,
+              "distance": 20.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.009999999776482582
+            }
+          },
+          {
+            "color": [
+              0.20000000298023224,
+              0.5,
+              1.0
+            ],
+            "direction": [
+              -0.6644630653442007,
+              0.3420201526119447,
+              -0.6644629786532058
+            ],
+            "id": "000000000000000000000000000000ca",
+            "inner_angle": 0.0,
+            "intensity": 120.0,
+            "intensity_unit": "candela",
+            "kind": "spot",
+            "outer_angle": 45.0,
+            "position": [
+              3.2724404060536676,
+              1.3920615717609601,
+              -1.409346824226061
+            ],
+            "range": 20.0,
+            "shadow": {
+              "bias": 0.0005000000237487257,
+              "distance": 20.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.009999999776482582
+            }
+          }
+        ],
+        "preview_fallback": false,
+        "shadow_bytes": 7340032,
+        "shadow_resolution": 512,
+        "shadow_views": 7
+      }
+    },
+    {
+      "raw_evidence": "build/shadow-player/gpu-1.json",
+      "raw_sha256": "e30451a0bc9b54103b7f54f1a6be1070948d44bb361ba3ae383d623ef59fff11",
+      "binary_sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37",
+      "test_sha256": "b66c461de665f609ddefc6446704933a36b793b67f49726cd9705369b70b90e0",
+      "shadows": true,
+      "passed": true,
+      "ticks": 371,
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "actual_final_lighting": {
+        "ambient": [
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.30000001192092896,
+              0.10000000149011612
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "000000000000000000000000000000c9",
+            "inner_angle": 0.0,
+            "intensity": 80.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              2.0000171168637775,
+              1.9799998874860767,
+              -2.93648467698015e-06
+            ],
+            "range": 20.0,
+            "shadow": {
+              "bias": 0.0005000000237487257,
+              "distance": 20.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.009999999776482582
+            }
+          },
+          {
+            "color": [
+              0.20000000298023224,
+              0.5,
+              1.0
+            ],
+            "direction": [
+              -0.6644630653442007,
+              0.3420201526119447,
+              -0.6644629786532058
+            ],
+            "id": "000000000000000000000000000000ca",
+            "inner_angle": 0.0,
+            "intensity": 120.0,
+            "intensity_unit": "candela",
+            "kind": "spot",
+            "outer_angle": 45.0,
+            "position": [
+              3.2724404060536676,
+              1.3920615717609601,
+              -1.409346824226061
+            ],
+            "range": 20.0,
+            "shadow": {
+              "bias": 0.0005000000237487257,
+              "distance": 20.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.009999999776482582
+            }
+          }
+        ],
+        "preview_fallback": false,
+        "shadow_bytes": 7340032,
+        "shadow_resolution": 512,
+        "shadow_views": 7
+      }
+    }
+  ],
+  "regressions": [
+    {
+      "raw_evidence": "build/shadow-lighting-regression/gpu-0.json",
+      "raw_sha256": "a96236764d7d09f3c7b14aa25f612c9c9e813bf62700acaced80edd03d75be4d",
+      "binary_sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37",
+      "test_sha256": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+      "gpu_index": 0,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "capture_count": 18,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "directional",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "point-near",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "point-far",
+          "actual": [
+            105,
+            71,
+            49
+          ],
+          "expected": [
+            105,
+            71,
+            49
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "range-taper",
+          "actual": [
+            166,
+            124,
+            91
+          ],
+          "expected": [
+            166,
+            124,
+            91
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "range-boundary",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-axis",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-cone",
+          "actual": [
+            122,
+            85,
+            60
+          ],
+          "expected": [
+            123,
+            86,
+            60
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-away",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "disabled",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "ambient-exposure",
+          "actual": [
+            92,
+            77,
+            48
+          ],
+          "expected": [
+            92,
+            77,
+            48
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "colored-sum",
+          "actual": [
+            169,
+            160,
+            0
+          ],
+          "expected": [
+            169,
+            160,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "last-slot",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            116,
+            76,
+            45
+          ],
+          "expected": [
+            116,
+            76,
+            45
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            158,
+            114,
+            79
+          ],
+          "expected": [
+            158,
+            114,
+            79
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored-dark",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "builtin-box",
+          "actual": [
+            164,
+            114,
+            66
+          ],
+          "expected": [
+            164,
+            114,
+            66
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "emission",
+          "actual": [
+            85,
+            113,
+            146
+          ],
+          "expected": [
+            85,
+            113,
+            146
+          ],
+          "tolerance": 3
+        }
+      ],
+      "checks": {},
+      "smooth_normal_max_error": null
+    },
+    {
+      "raw_evidence": "build/shadow-material-regression/gpu-0.json",
+      "raw_sha256": "e7756e3588f4d58d4c1aeb54ea18149f72b7d938ed11ca22640b1e37c8afdb8a",
+      "binary_sha256": "f0acfb9a66556a40fbcfef1f46ea8c12b0828de1e9032922bc959cde33b83a37",
+      "test_sha256": null,
+      "gpu_index": 0,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "capture_count": 14,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "generated",
+          "actual": [
+            133,
+            87,
+            47
+          ],
+          "expected": [
+            133,
+            87,
+            47
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "zero-scale",
+          "actual": [
+            140,
+            94,
+            55
+          ],
+          "expected": [
+            140,
+            94,
+            55
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "mirrored",
+          "actual": [
+            162,
+            115,
+            74
+          ],
+          "expected": [
+            162,
+            115,
+            73
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored",
+          "actual": [
+            149,
+            100,
+            58
+          ],
+          "expected": [
+            149,
+            101,
+            58
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "nonuniform",
+          "actual": [
+            78,
+            46,
+            22
+          ],
+          "expected": [
+            78,
+            46,
+            22
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "green",
+          "actual": [
+            0,
+            188,
+            0
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "red",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "explicit-null",
+          "actual": [
+            188,
+            188,
+            188
+          ],
+          "expected": [
+            188,
+            188,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "inherited",
+          "actual": [
+            0,
+            0,
+            188
+          ],
+          "expected": [
+            0,
+            0,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "legacy-v2",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "box-normal",
+          "actual": [
+            39,
+            20,
+            6
+          ],
+          "expected": [
+            39,
+            20,
+            6
+          ],
+          "tolerance": 3
+        }
+      ],
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      },
+      "smooth_normal_max_error": null
+    }
+  ],
+  "observed_failures_and_corrections": [
+    "Oblique flat receiver showed constant-bias PCF stripes. Added analytic receiver-plane adjustment; shadowed/unshadowed sample now agrees within one RGB level.",
+    "Smoothed vertex normals changed the depth plane on a flat receiver, causing a measured maximum 19-level RGB mismatch. Derive the triangle plane before divergent branches; both GPUs must now differ by no more than one level.",
+    "Indexed-caster fixture covered the camera sample ray; reduced its extent to test shadow visibility independently of camera occlusion."
+  ],
+  "example": {
+    "fixture": "examples/shadow-grid.jsonl",
+    "fixture_sha256": "da5ede61d877566f9a0a728d5e1a656b11fbc2bee1068eefd8e741775fe21eaa",
+    "capture": "docs/evidence/m2-shadow-grid.png",
+    "capture_sha256": "3a5ec9a3f701315c52ea499838bbffc2afe148be476fe074e0dccba0c1069364",
+    "response": {
+      "build_version": "0.0.11",
+      "camera": "00000000000000000000000000000001",
+      "camera_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        11.0,
+        1.0
+      ],
+      "capture_written": true,
+      "format": "BMP",
+      "frames_presented": 2,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "height": 540,
+      "lens": {
+        "far": 100.0,
+        "near": 0.1,
+        "vertical_fov": 34.0
+      },
+      "lighting": {
+        "ambient": [
+          0.012000000104308128,
+          0.014000000432133675,
+          0.02500000037252903
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.5699999928474426,
+              0.2199999988079071
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "0000000000000000000000000000000a",
+            "inner_angle": 0.0,
+            "intensity": 150.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              -4.0,
+              3.0,
+              4.0
+            ],
+            "range": 18.0,
+            "shadow": {
+              "bias": 9.999999747378752e-05,
+              "distance": 24.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.004999999888241291
+            }
+          },
+          {
+            "color": [
+              0.1599999964237213,
+              0.47999998927116394,
+              1.0
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "0000000000000000000000000000000b",
+            "inner_angle": 0.0,
+            "intensity": 100.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              5.0,
+              1.0,
+              3.0
+            ],
+            "range": 18.0,
+            "shadow": {
+              "bias": 9.999999747378752e-05,
+              "distance": 24.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.004999999888241291
+            }
+          },
+          {
+            "color": [
+              0.5,
+              1.0,
+              0.699999988079071
+            ],
+            "direction": [
+              -0.0,
+              -0.7071067811865476,
+              -0.7071067811865475
+            ],
+            "id": "0000000000000000000000000000000c",
+            "inner_angle": 15.0,
+            "intensity": 240.0,
+            "intensity_unit": "candela",
+            "kind": "spot",
+            "outer_angle": 55.0,
+            "position": [
+              0.0,
+              6.0,
+              3.0
+            ],
+            "range": 16.0,
+            "shadow": {
+              "bias": 9.999999747378752e-05,
+              "distance": 24.0,
+              "enabled": true,
+              "near": 0.05000000074505806,
+              "normal_bias": 0.004999999888241291
+            }
+          }
+        ],
+        "preview_fallback": false,
+        "shadow_bytes": 54525952,
+        "shadow_resolution": 1024,
+        "shadow_views": 13
+      },
+      "nvrhi_errors": 0,
+      "object_count": 9,
+      "path": "<checkout>\\build\\shadow-grid-final.bmp",
+      "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+      "revision": 1,
+      "samples": 4,
+      "session_id": null,
+      "source": "authored",
+      "tick": null,
+      "width": 960,
+      "world_id": "99decf42fbfc2d6ebcdca2478a53a5cb"
+    },
+    "visually_inspected": true,
+    "note": "Actual GPU BMP readback serialized losslessly to PNG; no image generation or retouching."
+  },
+  "limitations": [
+    "16 views, 128 MiB depth-texel bound; no caching, caster culling or production frame-time qualification.",
+    "Three-by-three fixed PCF with clamped point-face edges; no area penumbrae or seamless cross-face filtering.",
+    "No ray-traced/virtual/ReSTIR shadows, sky/IBL/GI or volumetrics.",
+    "NVRHI checks only, not full Khronos Vulkan validation.",
+    "Only the two named Windows laptop GPUs qualified here; not native Linux hardware, MSVC or consoles.",
+    "Shadow settings freeze at runtime creation. Runtime parameter animation/hot reload and per-object cast/receive masks are outstanding.",
+    "Physical keyboard/mouse foreground input remains unqualified in the automation desktop."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

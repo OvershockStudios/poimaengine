@@ -1,0 +1,565 @@
+{
+  "date": "2026-09-26",
+  "version": "0.0.21",
+  "schema_revision": 19,
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "scope": "Editable glTF rig entities, compiled sampling, fixed-tick clip playback, atomic pose/physics rollback and immutable live GPU palettes. No complete animation graph, retargeting, Mixamo/FBX or C# animation controls claimed.",
+  "source_sha256": {
+    "CMakeLists.txt": "106b698781fb117c53e1263ec854aa0bc8722d9dbc021d85243ba4145a9f1e1b",
+    "README.md": "7836e333734ac8db1bc12f4dff3de3dec3de6bf135e9ebdb6b4c0bc2f539b90c",
+    "docs/ANIMATION_ASSETS.md": "2bfb941e808d17dc99cac3ca31dd42305e6502c1d88acb853c36e658c73001b9",
+    "docs/GPU_SKINNING.md": "bc7010a363df08a0000662701b548b29f2a92703438e723231446c894fb75ca7",
+    "docs/IMPLEMENTATION_STATUS.md": "ae567f90a506d8630fc2830f9e5ca2102510a36b79b053f6abdb9975dbf186e1",
+    "docs/PLAYER.md": "884427dcde22fb3f2e30c517b82907e31037d3b6cb245743b2ce91f089fb6fa0",
+    "docs/RUNTIME.md": "1cd67e936776bbac0f95703bc267cf5dfe201574565d6c1b95d5892dbe77bc21",
+    "docs/RUNTIME_ANIMATION.md": "94d0c87c50177dbe7a82b12a87a4571a077e8b85ddaa13c041eee092b64fb5e6",
+    "docs/evidence/m2-runtime-animation.png": "c637d290df6e842fdf981482278bcfb1fb3b26380fca5cf21fd18ac942570ff4",
+    "include/poima/animation.hpp": "d9c396081ad57037a3ad4f71650849eafee481097d824ce372e735d0f95ee5cb",
+    "include/poima/runtime.hpp": "11bbb15062e005cd9bb2c9ede8fec4bd663f757590be4013b4d5c627665b08d0",
+    "include/poima/runtime_animation.hpp": "a087052ccf1358ac95109ec560083a355bdff86aa73fd30857934a3f960382bb",
+    "src/animation.cpp": "c4d855de13e1801e7170ccaadbf27dabbe9aa3394ddace40a004f7d3ee1caff4",
+    "src/core.cpp": "7dcf08d4bb7d52df3863d599878bc5aeb5e8acbe3d70e173cb01403e37478498",
+    "src/runtime.cpp": "d5aad2bb9cd12db1cff67f935aca788ea460cc013f0bc46ee148798a8f7e9190",
+    "src/runtime_animation.cpp": "80fc3440dd9153f621814a6b63bb9d48f1af2613cca394c10b966f11cd1185bc",
+    "src/runtime_disabled.cpp": "03b7c59a4a4157a30591ec90565f1a644aa66cbd79eb2b689276a3349a02b621",
+    "src/world.cpp": "312f98f6800344b96eb866df58891293512ab9187b6169325b835b625a877d82",
+    "tests/animation_contract.py": "e8df31fe10af6736775274d7468d7d9f6fe9a1a23676cc934c2e1d82b419a1ae",
+    "tests/animation_native.cpp": "1d371fbea67789846b63a76357aa9d0080c042b1fa1cd72f79d90e928228e790",
+    "tests/runtime_animation_capture.py": "3bccd157fe401a5eee55a939fd391515d39e95b5c067f6a6bdee1a6b252a723a",
+    "tests/runtime_animation_contract.py": "00dff517caf8845ee390513962ede5a70c37d046d44b1fccdba2837ed9aa8243",
+    "tests/runtime_animation_native.cpp": "9f1312e4246dcddd50b0beec5093c17986cbed517c8f49acfb5eb97d6aa42115"
+  },
+  "binaries": {
+    "headless": {
+      "path": "build/headless/poima",
+      "sha256": "29af944a34d1b6440f5315557ab222b735eaee1dea427bc9fd0b1ce702f93b3c"
+    },
+    "runtime-headless": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "227b53d6c901a2648079e652fd8536628cbba876c097d2f42ad6dcf8ff598fda"
+    },
+    "windows-runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "55cdfbf0a3a9fc268af09971c8a0efecb2bc1d78b43ffd3263adf2a0fc228612"
+    }
+  },
+  "ctest": {
+    "headless": {
+      "passed": true,
+      "suites": 19,
+      "path": ".cache/runtime-animation-validation/ctest-headless.log",
+      "sha256": "f3f817e0f43b6af3ee246048170a1522883b0e272ce7cfb1116d48dd977402eb"
+    },
+    "runtime": {
+      "passed": true,
+      "suites": 23,
+      "path": ".cache/runtime-animation-validation/ctest-runtime.log",
+      "sha256": "74ebc71c3e3a6683dd993e75e08e1f06a13a25c02a0957b53062b153a0a49dfc"
+    }
+  },
+  "contracts": {
+    "headless": {
+      "tests": 11,
+      "skipped": 7,
+      "passed": true,
+      "runtime": false,
+      "binary_sha256": "29af944a34d1b6440f5315557ab222b735eaee1dea427bc9fd0b1ce702f93b3c",
+      "test_sha256": "00dff517caf8845ee390513962ede5a70c37d046d44b1fccdba2837ed9aa8243",
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "editable_bones": 3,
+          "source_independent": true
+        }
+      ],
+      "record": {
+        "path": ".cache/runtime-animation-validation/headless-contract.json",
+        "sha256": "9648b35545b0a718e6198b09f258c0ebea3a086b1270089caa60e1cffb547f6b"
+      }
+    },
+    "runtime": {
+      "tests": 11,
+      "skipped": 0,
+      "passed": true,
+      "runtime": true,
+      "binary_sha256": "227b53d6c901a2648079e652fd8536628cbba876c097d2f42ad6dcf8ff598fda",
+      "test_sha256": "00dff517caf8845ee390513962ede5a70c37d046d44b1fccdba2837ed9aa8243",
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "editable_bones": 3,
+          "source_independent": true
+        }
+      ],
+      "record": {
+        "path": ".cache/runtime-animation-validation/runtime-contract.json",
+        "sha256": "9ec3ba817384aff72535fb9a98bd48733830e76fd8962357c5deb8f54562ec4b"
+      }
+    },
+    "windows": {
+      "tests": 11,
+      "skipped": 0,
+      "passed": true,
+      "runtime": true,
+      "binary_sha256": "55cdfbf0a3a9fc268af09971c8a0efecb2bc1d78b43ffd3263adf2a0fc228612",
+      "test_sha256": "00dff517caf8845ee390513962ede5a70c37d046d44b1fccdba2837ed9aa8243",
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "editable_bones": 3,
+          "source_independent": true
+        }
+      ],
+      "record": {
+        "path": ".cache/runtime-animation-validation/contract-windows.json",
+        "sha256": "c8a8ffd79fbf51f182bd7601bf24a607623d5481bb04ba8121b57bb6d48d05a0"
+      }
+    },
+    "existing_animation_windows": {
+      "tests": 11,
+      "passed": true,
+      "reports": [
+        {
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "source_independent": true,
+          "format": "poima.model.v4"
+        }
+      ],
+      "record": {
+        "path": ".cache/runtime-animation-validation/asset-contract-windows.json",
+        "sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740"
+      }
+    }
+  },
+  "native_windows": {
+    "passed": true,
+    "binary": {
+      "path": "build/windows-runtime/poima-runtime-animation-test.exe",
+      "sha256": "651a2714fcb4441b2ecacb633dc2807698e37c6bf4fb9acccc19aba97cf6c6a3"
+    },
+    "log": {
+      "path": ".cache/runtime-animation-validation/native-windows.log",
+      "sha256": "9a8b0a3c17d6534bdf8b48baf56efe6f5565d5c3f7779bbdffe956503a584ef4"
+    }
+  },
+  "gpu": [
+    {
+      "passed": true,
+      "binary_sha256": "55cdfbf0a3a9fc268af09971c8a0efecb2bc1d78b43ffd3263adf2a0fc228612",
+      "comparisons": {
+        "continuous_vs_capture": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "live_vs_cpu_reference": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "authored_unchanged": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "motion": {
+          "maximum": 84,
+          "changed": 21424,
+          "over_two": 21424
+        }
+      },
+      "rig": {
+        "animation": {
+          "clip": 0,
+          "duration": 2.0,
+          "loop": true,
+          "playing": true,
+          "speed": 1.0,
+          "time": 1.0
+        },
+        "ground": "",
+        "has_body": false,
+        "id": "00000000000000000000000000000064",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "none",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 60,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      "authored_bytes_unchanged": true,
+      "images": {
+        "play": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+        "live": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+        "reference": "ecfe21c4d3ed75f19d8d9994c8fefdf7801459398a177155f2984b8cb6ca54eb",
+        "authored-rest": "b85c902305f2c216708f43771ab85bf5e5a871f1aad74c5e973b120be711d053",
+        "authored-after": "b85c902305f2c216708f43771ab85bf5e5a871f1aad74c5e973b120be711d053"
+      },
+      "record": {
+        "path": ".cache/runtime-animation-validation/gpu-amd/64de1c0088fb40668994e094a474aa4e/evidence.json",
+        "sha256": "68446e95debd29a0b5784a034d38b0d0a54effb6060ec335a6744e7e7299af4d"
+      },
+      "play": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "tick": 60,
+        "frames_presented": 61,
+        "nvrhi_errors": 0,
+        "render_diagnostics": {
+          "completed_submissions": 61,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0055,
+              "max_ms": 8.2907,
+              "mean_ms": 0.14078709677419354,
+              "min_ms": 0.0037,
+              "samples": 62
+            },
+            "record": {
+              "last_ms": 0.0764,
+              "max_ms": 0.1899,
+              "mean_ms": 0.10219180327868847,
+              "min_ms": 0.0537,
+              "samples": 61
+            },
+            "render_call": {
+              "last_ms": 7.0937,
+              "max_ms": 22.8252,
+              "mean_ms": 6.857386885245903,
+              "min_ms": 0.3844,
+              "samples": 61
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.10012,
+              "max_ms": 0.10012,
+              "mean_ms": 0.07347409836065574,
+              "min_ms": 0.06188,
+              "samples": 61
+            },
+            "post": {
+              "last_ms": 0.24092,
+              "max_ms": 0.24092,
+              "mean_ms": 0.0896518032786885,
+              "min_ms": 0.07056,
+              "samples": 61
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.012799999999999999,
+              "max_ms": 0.01388,
+              "mean_ms": 0.012800655737704919,
+              "min_ms": 0.0106,
+              "samples": 61
+            },
+            "skinning": {
+              "last_ms": 0.01856,
+              "max_ms": 0.02044,
+              "mean_ms": 0.01853245901639344,
+              "min_ms": 0.017679999999999998,
+              "samples": 61
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.3724,
+              "max_ms": 0.3724,
+              "mean_ms": 0.19445901639344257,
+              "min_ms": 0.16616,
+              "samples": 61
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          },
+          "profile_requested": true
+        }
+      }
+    },
+    {
+      "passed": true,
+      "binary_sha256": "55cdfbf0a3a9fc268af09971c8a0efecb2bc1d78b43ffd3263adf2a0fc228612",
+      "comparisons": {
+        "continuous_vs_capture": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "live_vs_cpu_reference": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "authored_unchanged": {
+          "maximum": 0,
+          "changed": 0,
+          "over_two": 0
+        },
+        "motion": {
+          "maximum": 84,
+          "changed": 21424,
+          "over_two": 21424
+        }
+      },
+      "rig": {
+        "animation": {
+          "clip": 0,
+          "duration": 2.0,
+          "loop": true,
+          "playing": true,
+          "speed": 1.0,
+          "time": 1.0
+        },
+        "ground": "",
+        "has_body": false,
+        "id": "00000000000000000000000000000064",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "none",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 60,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      "authored_bytes_unchanged": true,
+      "images": {
+        "play": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+        "live": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+        "reference": "8db80315813cf1e5afd14b9dd404110e42225c1030792175b1cc42b3393b9286",
+        "authored-rest": "808cfe4bb027ac5394583f87add2b86f61df26a40d0e0d4dd78e6c74e1242e2d",
+        "authored-after": "808cfe4bb027ac5394583f87add2b86f61df26a40d0e0d4dd78e6c74e1242e2d"
+      },
+      "record": {
+        "path": ".cache/runtime-animation-validation/gpu-nvidia/631c198007354c41ab3d438cf3173652/evidence.json",
+        "sha256": "c8e425a2077f681472bd3f4dbc248f76aa797a78ff2537ada3cc385105b7b214"
+      },
+      "play": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "tick": 60,
+        "frames_presented": 61,
+        "nvrhi_errors": 0,
+        "render_diagnostics": {
+          "completed_submissions": 61,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.005,
+              "max_ms": 1.9984,
+              "mean_ms": 0.03743870967741933,
+              "min_ms": 0.0033,
+              "samples": 62
+            },
+            "record": {
+              "last_ms": 0.0688,
+              "max_ms": 0.1973,
+              "mean_ms": 0.0733016393442623,
+              "min_ms": 0.0375,
+              "samples": 61
+            },
+            "render_call": {
+              "last_ms": 0.3908,
+              "max_ms": 14.5745,
+              "mean_ms": 1.5306983606557374,
+              "min_ms": 0.1829,
+              "samples": 61
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.010239999999999999,
+              "max_ms": 0.011264,
+              "mean_ms": 0.009719606557377055,
+              "min_ms": 0.009216,
+              "samples": 61
+            },
+            "post": {
+              "last_ms": 0.103776,
+              "max_ms": 0.103776,
+              "mean_ms": 0.012434885245901646,
+              "min_ms": 0.010239999999999999,
+              "samples": 61
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.001344,
+              "max_ms": 0.003168,
+              "mean_ms": 0.0018019672131147542,
+              "min_ms": 0.001152,
+              "samples": 61
+            },
+            "skinning": {
+              "last_ms": 0.011776,
+              "max_ms": 0.036288,
+              "mean_ms": 0.01569206557377049,
+              "min_ms": 0.010879999999999999,
+              "samples": 61
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.127136,
+              "max_ms": 0.127136,
+              "mean_ms": 0.039648524590163936,
+              "min_ms": 0.032608,
+              "samples": 61
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 1,
+            "camera_triangles": 4,
+            "objects": 1,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 6
+          },
+          "profile_requested": true
+        }
+      }
+    }
+  ],
+  "visual_review": {
+    "image": {
+      "path": "docs/evidence/m2-runtime-animation.png",
+      "sha256": "c637d290df6e842fdf981482278bcfb1fb3b26380fca5cf21fd18ac942570ff4"
+    },
+    "observation": "Inspected actual NVIDIA live capture: continuous sheared two-joint ribbon, intact shape. Synthetic analytic fixture, not a production character or Mixamo qualification."
+  },
+  "managed_regression": {
+    "passed": true,
+    "binary_sha256": "55cdfbf0a3a9fc268af09971c8a0efecb2bc1d78b43ffd3263adf2a0fc228612",
+    "bridge_sha256": "7bb3210b3b1d524d11296caf4428142f6ea0e61f9f95130e175c20cc21340ca0",
+    "game_sha256": "9a05f4623b68e4ca535f0aa86afe91e62a9be13c02df9587285a5aef4a187fa8",
+    "checks": {
+      "CSharp_use_opens_door_and_character_passes": true,
+      "continuous_replay_matches_headless_state_and_CSharp_fields": true,
+      "final_pixels_match_unculled_headless_capture": true,
+      "retry_does_not_repeat_CSharp": true,
+      "stationary_camera_observes_scripted_motion": true,
+      "all_contexts_released": true
+    },
+    "record": {
+      "path": ".cache/runtime-animation-validation/managed-regression/gpu-1.json",
+      "sha256": "2b9b660f4995dd09f9af5cb9fa14704f84ebf714cdaf1ae98ceaa4b81beb34c0"
+    },
+    "ticks": 480
+  },
+  "limitations": [
+    "Initial single clip per rig, no blending/graph/events/IK/root motion/retargeting or general C# animation service yet.",
+    "Actual Mixamo content and direct FBX import remain unqualified; synthetic glTF fixtures establish only supported-profile behavior.",
+    "Animated authoring creates all source model nodes, rendering only selected-scene primitives. Structural live editing requires runtime restart.",
+    "Bone transforms own their descendants; physics and controller-driven cameras cannot share those transforms. No deforming skinned acoustic geometry.",
+    "Cubic invalid pose or runtime matrix failure rolls back the whole step; later GPU-only failure does not rewind committed simulation.",
+    "Test captures are simple analytic ribbons; no production crowd throughput, broad asset coverage or game performance claim.",
+    "Native Linux graphics and consoles remain unqualified.",
+    "Cinematics/post-processing research and GUI/package priorities are documentation; those frameworks are not implemented by this milestone."
+  ],
+  "public_history_note": "Private document references and original private Git revision identifiers are omitted. Reported measurements and retained code/binary digests are unchanged."
+}

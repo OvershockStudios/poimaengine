@@ -1,0 +1,865 @@
+{
+  "recorded_at_utc": "2026-09-26T06:04:57.315852+00:00",
+  "engine_version": "0.0.4",
+  "scope": "Initial authored scene observation path; M0, M1 and M2 incomplete; no production renderer or gameplay qualification",
+  "contracts": [
+    {
+      "command": [
+        "ctest",
+        "--preset",
+        "headless"
+      ],
+      "exit_code": 0,
+      "stdout": "Test project <checkout>/build/headless\n    Start 1: scene_math\n1/4 Test #1: scene_math .......................   Passed    0.01 sec\n    Start 2: cli_contract\n2/4 Test #2: cli_contract .....................   Passed    0.59 sec\n    Start 3: world_contract\n3/4 Test #3: world_contract ...................   Passed    3.08 sec\n    Start 4: native_module_contract\n4/4 Test #4: native_module_contract ...........   Passed   10.38 sec\n\n100% tests passed, 0 tests failed out of 4\n\nTotal Test time (real) =  14.10 sec\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "python3",
+        "tests/world_contract.py",
+        "build/windows-render/poima.exe",
+        "--windows-interop"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "test_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_components_hierarchy_matrices_and_capture_validation (__main__.WorldContract.test_components_hierarchy_matrices_and_capture_validation) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... skipped 'Abrupt Windows process termination is not qualified by the WSL harness'\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 2.074s\n\nOK (skipped=1)\n"
+    }
+  ],
+  "windows_cli_contract": {
+    "command": [
+      "C:/Python313/python.exe",
+      "tests/cli_contract.py",
+      "build/windows-render/poima.exe",
+      "1",
+      "1"
+    ],
+    "exit_code": 0,
+    "passed": 7,
+    "skipped": 1,
+    "skip_reason": "Render-not-built case does not apply to graphics build",
+    "duration_seconds": 0.67
+  },
+  "gpus": [
+    {
+      "command": [
+        "<checkout>/build/windows-render/poima.exe",
+        "world",
+        "<checkout>\\build\\scene-evidence\\bc9a3705e1534b10afd3424e4ea28356\\world.json"
+      ],
+      "gpu_index": 0,
+      "exit_code": 0,
+      "stderr": "",
+      "checks": {
+        "depth_occlusion": true,
+        "hierarchy_edit_visible": true,
+        "camera_edit_visible": true,
+        "visibility": true,
+        "behind_camera_clipped": true,
+        "msaa_changed_pixels": 1586,
+        "revision_and_failure_guards": true,
+        "reopened_scene_pixel_equality": true
+      },
+      "captures": {
+        "baseline": {
+          "path": "<checkout>/build/scene-evidence/bc9a3705e1534b10afd3424e4ea28356/baseline.bmp",
+          "sha256": "f110b3a26f36d2db2cad204af6229662bc2e13c48386780ac8770bf27d6bd2b6",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 4,
+            "path": "<checkout>\\build\\scene-evidence\\bc9a3705e1534b10afd3424e4ea28356\\baseline.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "width": 960,
+            "world_id": "6cef27f4b7f1c44b2a36a5788ead3888"
+          },
+          "red": {
+            "count": 17424,
+            "centroid_x": 479.5
+          },
+          "green": {
+            "count": 21248,
+            "centroid_x": 479.5
+          },
+          "blue": {
+            "count": 5154,
+            "centroid_x": 658.0892510671323
+          }
+        },
+        "single-sample": {
+          "path": "<checkout>/build/scene-evidence/bc9a3705e1534b10afd3424e4ea28356/single-sample.bmp",
+          "sha256": "73d5e7731cb0abeed811f67e28a427cc2e5d1a8d81eb6eaec49868b67e117d50",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 4,
+            "path": "<checkout>\\build\\scene-evidence\\bc9a3705e1534b10afd3424e4ea28356\\single-sample.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 1,
+            "width": 960,
+            "world_id": "6cef27f4b7f1c44b2a36a5788ead3888"
+          },
+          "red": {
+            "count": 17956,
+            "centroid_x": 479.5
+          },
+          "green": {
+            "count": 20460,
+            "centroid_x": 479.5
+          },
+          "blue": {
+            "count": 4900,
+            "centroid_x": 657.9183673469388
+          }
+        },
+        "edited": {
+          "path": "<checkout>/build/scene-evidence/bc9a3705e1534b10afd3424e4ea28356/edited.bmp",
+          "sha256": "1b784de908e504b29b0365c71c278d719c13b599eb3c8bac2fddfd3adfea9f5d",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\scene-evidence\\bc9a3705e1534b10afd3424e4ea28356\\edited.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 2,
+            "samples": 4,
+            "width": 960,
+            "world_id": "6cef27f4b7f1c44b2a36a5788ead3888"
+          },
+          "red": {
+            "count": 0,
+            "centroid_x": 0.0
+          },
+          "green": {
+            "count": 38180,
+            "centroid_x": 477.0658198009429
+          },
+          "blue": {
+            "count": 4596,
+            "centroid_x": 599.5117493472585
+          }
+        },
+        "camera-moved": {
+          "path": "<checkout>/build/scene-evidence/bc9a3705e1534b10afd3424e4ea28356/camera-moved.bmp",
+          "sha256": "2ac4627d065c7fd08e55d250e73ec7b96fdb64eb0480d038b4b309891a08ab8c",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\scene-evidence\\bc9a3705e1534b10afd3424e4ea28356\\camera-moved.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 3,
+            "samples": 4,
+            "width": 960,
+            "world_id": "6cef27f4b7f1c44b2a36a5788ead3888"
+          },
+          "red": {
+            "count": 0,
+            "centroid_x": 0.0
+          },
+          "green": {
+            "count": 37752,
+            "centroid_x": 427.12873490146217
+          },
+          "blue": {
+            "count": 4167,
+            "centroid_x": 540.8161747060235
+          }
+        }
+      },
+      "reopened": {
+        "exit_code": 0,
+        "stderr": "",
+        "response": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\scene-evidence\\bc9a3705e1534b10afd3424e4ea28356\\reopened.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 3,
+            "samples": 4,
+            "width": 960,
+            "world_id": "6cef27f4b7f1c44b2a36a5788ead3888"
+          }
+        },
+        "sha256": "2ac4627d065c7fd08e55d250e73ec7b96fdb64eb0480d038b4b309891a08ab8c"
+      },
+      "passed": true,
+      "full_run_record_sha256": "76df6a4681e937e73d5cf9d717623bed779a905e57da046eacab42273b6d796c"
+    },
+    {
+      "command": [
+        "<checkout>/build/windows-render/poima.exe",
+        "world",
+        "<checkout>\\build\\scene-evidence\\567c9bcde3a84e98be423a9db64d1038\\world.json"
+      ],
+      "gpu_index": 1,
+      "exit_code": 0,
+      "stderr": "",
+      "checks": {
+        "depth_occlusion": true,
+        "hierarchy_edit_visible": true,
+        "camera_edit_visible": true,
+        "visibility": true,
+        "behind_camera_clipped": true,
+        "msaa_changed_pixels": 1586,
+        "revision_and_failure_guards": true,
+        "reopened_scene_pixel_equality": true
+      },
+      "captures": {
+        "baseline": {
+          "path": "<checkout>/build/scene-evidence/567c9bcde3a84e98be423a9db64d1038/baseline.bmp",
+          "sha256": "fba3a43dbdd04ac336f425ad479826582c58deee27941d188b85835b9c6b812a",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 4,
+            "path": "<checkout>\\build\\scene-evidence\\567c9bcde3a84e98be423a9db64d1038\\baseline.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 4,
+            "width": 960,
+            "world_id": "e69a9a791d3087c430d771ca13e57b6c"
+          },
+          "red": {
+            "count": 17424,
+            "centroid_x": 479.5
+          },
+          "green": {
+            "count": 21248,
+            "centroid_x": 479.5
+          },
+          "blue": {
+            "count": 5154,
+            "centroid_x": 658.0892510671323
+          }
+        },
+        "single-sample": {
+          "path": "<checkout>/build/scene-evidence/567c9bcde3a84e98be423a9db64d1038/single-sample.bmp",
+          "sha256": "73d5e7731cb0abeed811f67e28a427cc2e5d1a8d81eb6eaec49868b67e117d50",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 4,
+            "path": "<checkout>\\build\\scene-evidence\\567c9bcde3a84e98be423a9db64d1038\\single-sample.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 1,
+            "samples": 1,
+            "width": 960,
+            "world_id": "e69a9a791d3087c430d771ca13e57b6c"
+          },
+          "red": {
+            "count": 17956,
+            "centroid_x": 479.5
+          },
+          "green": {
+            "count": 20460,
+            "centroid_x": 479.5
+          },
+          "blue": {
+            "count": 4900,
+            "centroid_x": 657.9183673469388
+          }
+        },
+        "edited": {
+          "path": "<checkout>/build/scene-evidence/567c9bcde3a84e98be423a9db64d1038/edited.bmp",
+          "sha256": "215c0caed4d30a4c6c25ad13e7da68b44fafb6a0e608634e53c825905f4fa1ae",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\scene-evidence\\567c9bcde3a84e98be423a9db64d1038\\edited.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 2,
+            "samples": 4,
+            "width": 960,
+            "world_id": "e69a9a791d3087c430d771ca13e57b6c"
+          },
+          "red": {
+            "count": 0,
+            "centroid_x": 0.0
+          },
+          "green": {
+            "count": 38180,
+            "centroid_x": 477.0658198009429
+          },
+          "blue": {
+            "count": 4596,
+            "centroid_x": 599.5117493472585
+          }
+        },
+        "camera-moved": {
+          "path": "<checkout>/build/scene-evidence/567c9bcde3a84e98be423a9db64d1038/camera-moved.bmp",
+          "sha256": "19fba8aeab48bef513ef5761709458075cd5007a09b36f6e68a9593015294ef9",
+          "report": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\scene-evidence\\567c9bcde3a84e98be423a9db64d1038\\camera-moved.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 3,
+            "samples": 4,
+            "width": 960,
+            "world_id": "e69a9a791d3087c430d771ca13e57b6c"
+          },
+          "red": {
+            "count": 0,
+            "centroid_x": 0.0
+          },
+          "green": {
+            "count": 37752,
+            "centroid_x": 427.12873490146217
+          },
+          "blue": {
+            "count": 4167,
+            "centroid_x": 540.8161747060235
+          }
+        }
+      },
+      "reopened": {
+        "exit_code": 0,
+        "stderr": "",
+        "response": {
+          "id": 1,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.4",
+            "camera": "00000000000000000000000000000064",
+            "camera_world": [
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.0,
+              0.0,
+              1.0,
+              0.0,
+              8.0,
+              1.0
+            ],
+            "capture_written": true,
+            "format": "BMP",
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "lens": {
+              "far": 100,
+              "near": 0.1,
+              "vertical_fov": 60
+            },
+            "nvrhi_errors": 0,
+            "object_count": 3,
+            "path": "<checkout>\\build\\scene-evidence\\567c9bcde3a84e98be423a9db64d1038\\reopened.bmp",
+            "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+            "revision": 3,
+            "samples": 4,
+            "width": 960,
+            "world_id": "e69a9a791d3087c430d771ca13e57b6c"
+          }
+        },
+        "sha256": "19fba8aeab48bef513ef5761709458075cd5007a09b36f6e68a9593015294ef9"
+      },
+      "passed": true,
+      "full_run_record_sha256": "78f817b8e867e65f63d06fa3bed5ec73b7e83643dc3467dab66b6caecd7fc52a"
+    }
+  ],
+  "triangle_regression": {
+    "command": [
+      "<checkout>/build/windows-render/poima.exe",
+      "render-smoke",
+      "--frames",
+      "12",
+      "--gpu",
+      "0",
+      "--width",
+      "960",
+      "--height",
+      "540",
+      "--capture",
+      "<checkout>\\build\\scene-triangle-regression\\gpu-0.bmp"
+    ],
+    "exit_code": 0,
+    "stderr": "",
+    "response": {
+      "protocol_version": 1,
+      "request_id": null,
+      "command": "render-smoke",
+      "status": "ok",
+      "result": {
+        "build": {
+          "version": "0.0.4",
+          "compiler": "Clang",
+          "compiler_version": "23.1.2",
+          "target_os": "Windows",
+          "target_arch": "AMD64"
+        },
+        "available": true,
+        "pattern": "rgb_triangle_v1",
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "frames_presented": 12,
+        "width": 960,
+        "height": 540,
+        "capture_written": true,
+        "capture_path": "<checkout>\\build\\scene-triangle-regression\\gpu-0.bmp",
+        "nvrhi_errors": 0,
+        "renderer_qualified": false,
+        "detail": "Vulkan triangle drawn and presented through NVRHI. Serialized smoke test; no game-performance qualification."
+      },
+      "diagnostics": []
+    },
+    "image_check": {
+      "width": 960,
+      "height": 540,
+      "sample_fractions": {
+        "red": 0.06269097222222222,
+        "green": 0.06501736111111112,
+        "blue": 0.061371527777777775,
+        "foreground": 0.24727430555555555
+      },
+      "sha256": "1de63daf4e1533076561b3647f6e6e98e4627d4cab130bbe2e4b87ce51aab6bc",
+      "bytes": 2073738
+    },
+    "passed": true
+  },
+  "courtyard": {
+    "command": [
+      "poima",
+      "world",
+      "<checkout>\\build\\courtyard\\06789c2f45e344efb28d803fac0086d5\\world.json"
+    ],
+    "source": "examples/courtyard.jsonl",
+    "responses": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "changed_ids": [
+            "00000000000000000000000000000001",
+            "00000000000000000000000000000002",
+            "00000000000000000000000000000003",
+            "00000000000000000000000000000004",
+            "00000000000000000000000000000005",
+            "00000000000000000000000000000006",
+            "00000000000000000000000000000007",
+            "00000000000000000000000000000008",
+            "00000000000000000000000000000009",
+            "0000000000000000000000000000000a",
+            "0000000000000000000000000000000b",
+            "0000000000000000000000000000000c",
+            "0000000000000000000000000000000d",
+            "0000000000000000000000000000000e",
+            "0000000000000000000000000000000f",
+            "00000000000000000000000000000010",
+            "00000000000000000000000000000011",
+            "00000000000000000000000000000012",
+            "00000000000000000000000000000013",
+            "00000000000000000000000000000014",
+            "00000000000000000000000000000015",
+            "00000000000000000000000000000016",
+            "00000000000000000000000000000017",
+            "00000000000000000000000000000018",
+            "00000000000000000000000000000019",
+            "0000000000000000000000000000001a",
+            "0000000000000000000000000000001b",
+            "0000000000000000000000000000001c",
+            "0000000000000000000000000000001d",
+            "0000000000000000000000000000001e",
+            "0000000000000000000000000000001f",
+            "00000000000000000000000000000020",
+            "00000000000000000000000000000021",
+            "00000000000000000000000000000022",
+            "00000000000000000000000000000023",
+            "00000000000000000000000000000024",
+            "00000000000000000000000000000025",
+            "00000000000000000000000000000026",
+            "00000000000000000000000000000027",
+            "00000000000000000000000000000028",
+            "00000000000000000000000000000029",
+            "0000000000000000000000000000002a",
+            "0000000000000000000000000000002b",
+            "0000000000000000000000000000002c",
+            "0000000000000000000000000000002d",
+            "0000000000000000000000000000002e",
+            "0000000000000000000000000000002f",
+            "00000000000000000000000000000030",
+            "00000000000000000000000000000031",
+            "000000000000000000000000000003e8"
+          ],
+          "committed": true,
+          "replayed": false,
+          "revision": 1
+        }
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "result": {
+          "build_version": "0.0.4",
+          "camera": "000000000000000000000000000003e8",
+          "camera_world": [
+            0.7963564013274265,
+            -2.7755575615628914e-17,
+            -0.6048276465777924,
+            0.0,
+            -0.25443587822584923,
+            0.9072114049349935,
+            -0.33500723966403484,
+            0.0,
+            0.5487065389953647,
+            0.4206750132297797,
+            0.72246360967723,
+            0.0,
+            12.0,
+            10.0,
+            17.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 720,
+          "lens": {
+            "far": 200,
+            "near": 0.1,
+            "vertical_fov": 55
+          },
+          "nvrhi_errors": 0,
+          "object_count": 49,
+          "path": "<checkout>\\build\\courtyard\\06789c2f45e344efb28d803fac0086d5\\courtyard.bmp",
+          "renderer": "forward box preview; fixed directional light + ambient; linear RGB to sRGB; no shadows",
+          "revision": 1,
+          "samples": 4,
+          "width": 1280,
+          "world_id": "3be538282ea937e71254eac7e07442b5"
+        }
+      }
+    ],
+    "stderr": "",
+    "exit_code": 0,
+    "bmp": "<checkout>/build/courtyard/06789c2f45e344efb28d803fac0086d5/courtyard.bmp",
+    "bmp_sha256": "c9a211b30d36d9da5a724184b12a4f092377ff4295baecfd60dd0a24ec3d96a2",
+    "png": "docs/evidence/m2-courtyard.png",
+    "png_sha256": "f5022edd04d0aa8d5072cd731a90bdd623f55b2859abbfbdb314be5d11de2117",
+    "visually_inspected": true,
+    "image_conversion": "Lossless BMP-to-PNG using Pillow; no visual editing."
+  },
+  "sha256": {
+    "CMakeLists.txt": "3214912a80941ecc23e45cd752e98a729afbe4c9aea771effe274a441d9d3d16",
+    "CMakePresets.json": "d9fc038df700a960ee61874f5b88db3af00d01f5f412128219f35274f952911b",
+    "cmake/render_smoke.cmake": "5bc2408599dbdcb0c78e2e1eac991acebaaedc5903a709fec8b777454e5fcc42",
+    "include/poima/core.hpp": "462086656120eb3072043b60ae72f53b0b8a18eabe639f97425d982977c1436c",
+    "include/poima/scene.hpp": "188ed00c902807dc280d83337ec8a85d03bea34895cd10b4a07b82f02d67b98d",
+    "src/scene.cpp": "d5cee2bcb72131a655481fecf7f5c9a25ce402633ea9fe5880a95bf3441a3d54",
+    "src/world.cpp": "1426fb686281111c5d04a2e9885bf96a045defd9087ee184bd6d7058deb4d729",
+    "src/world_storage.hpp": "a2286e75b264f45956ec67b2a689a44ae6d69947a096a879d40b2e03026db080",
+    "src/core.cpp": "ec403b058f418c4b11067fd1cd8a17b4021e574f6cd83a3e311d32be0f3ac921",
+    "src/render_smoke.cpp": "f00115d4688923ec7a8f097144580c2c66217fd438032b1048750777420b282e",
+    "src/render_smoke_disabled.cpp": "554624ea3cc5cf3a6a5654ef330734445142d7090e022cefa0fbc422f2c9e161",
+    "shaders/scene.hlsl": "6ab377e74ebcaf37f5827857aa8d1cc6c1f5b1259d87784429ed57a265a9b516",
+    "tests/scene_math.cpp": "fd80397d41c09dbaeeccde56340e80a46abc686d39b37327c5f5050b7242a092",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tests/world_contract.py": "9e6121aa2af72c00179bae9401c80b50a5781e0b3ece8cc9ce3f71464aa4f413",
+    "tests/cli_contract.py": "9cfc6d633ad1b43eef0796d25a97bab6674e80fbd375b701b9a278aae4fed087",
+    "examples/courtyard.jsonl": "266bff0d042a699cff223356bf9bb95b396150b14e6319426dc8afbc9a18e941",
+    "docs/evidence/m2-courtyard.png": "f5022edd04d0aa8d5072cd731a90bdd623f55b2859abbfbdb314be5d11de2117",
+    "build/headless/poima": "7f4909677b3447349132750ceb3c76c15eeea73975b8a6d840dc7d8f176c292e",
+    "build/headless/poima-scene-math-test": "0393672361aaf28382b65205e6177955622e025c6a35fba7713c38cee868704b",
+    "build/windows-render/poima.exe": "2e195aa5191d47a5bbbe5d751afb51ab1599312fa675d04b79512abddb74eb62"
+  },
+  "limitations": [
+    "Native Windows Vulkan tested; Linux authoring/math tests only",
+    "One laptop with NVIDIA and AMD GPUs",
+    "NVRHI validation only; Khronos validation not enabled",
+    "4x MSAA and fixed Lambert plus ambient; boxes only; no shadows, textures or imported meshes",
+    "Synchronous display-backed capture with fresh context per request; no game-performance claim",
+    "No simulation/gameplay, persistent viewport, render graph or device-loss recovery",
+    "Windows abrupt termination remains skipped by WSL harness",
+    "Cross-device pixel equality is not promised"
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

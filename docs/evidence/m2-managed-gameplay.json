@@ -1,0 +1,2287 @@
+{
+  "recorded": "2026-09-26",
+  "engine_version": "0.0.14",
+  "world_schema_revision": 12,
+  "scope": "Initial C# module integrated with native simulation and Windows Vulkan play; not the full gameplay SDK or shipping AOT.",
+  "sources": {
+    "CMakeLists.txt": "49e696dd7e719683191d0c920962995a60ab0cc543fb14eec8e44debf1e92d6a",
+    "examples/managed/Directory.Build.props": "470a1f598c9dc34a4e3b19bf035183dab0b2e8da1aa88258efb2f57054b088a5",
+    "examples/managed/DoorGame/DoorGame.cs": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+    "examples/managed/DoorGame/Poima.DoorGame.csproj": "7145f02cbb1d355973bbc6c77ae3124571ae6880fa0be55b291a72f432daa5c1",
+    "include/poima/gameplay.hpp": "99d45e8e22ccf31eba44d0e92b65765599e099fb4257a34343032e000d233d28",
+    "include/poima/gameplay_abi.h": "0494a57476e8158b8653c63029b5ae56a8c98ee6adf2c7bc5c269772b4a8b6b8",
+    "include/poima/player.hpp": "1ef1a71ca5440c0e0e1e02d0674576ba9e97fd20510af028f29987818da56087",
+    "include/poima/runtime.hpp": "55fef5f08ba3706d332c5ec5ac7c587ecd0fbf9a6c93c86176771a6a67cac100",
+    "managed/Directory.Build.props": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d",
+    "managed/Poima.Gameplay/Gameplay.cs": "81ea39ba0e7b31ee916a28d0e3660c920d2ae2a05cf9134f085ce5aef5426d19",
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "managed/Poima.ManagedBridge/Entry.cs": "97451d0a48c95e8e619a61db30e85e20b8e9f2e16fe5b530b4eb1e8ece8ccfab",
+    "managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj": "e676ffaa402f48fd5afe199bf453bfa523ded6a766c2d51ea1dd15c576e898f9",
+    "scripts/verify_gameplay.py": "456a215a1f26313fa99ca25f4313b952078edabef4e43201c5523154459e4df4",
+    "src/core.cpp": "ebcd4fbe29baa752d94644e7154d231fc0f5b3edd54b1e6246bc4893f37830ff",
+    "src/gameplay.cpp": "888fd064b1a0bf96b1822c6036ad69f949a28153624a17bc10b1d0e5b32e8407",
+    "src/player.cpp": "5a6fb110f1b7299accc293e54393102a934c3c18e3bae5e8043663a098af6097",
+    "src/render_smoke.cpp": "51f5e317dd26468a866a0485dfeef9bc4b3f0f10ca2f4e92320f6e60f14bb555",
+    "src/runtime.cpp": "66a724e95689fa804781cf0f2726e04585ee2851a50429f210cb71f106e6dae4",
+    "src/runtime_disabled.cpp": "b14d132361ac1e960716e87bc1ce8226540afe78ed6861d8845f07cc1e672f4d",
+    "src/world.cpp": "0b0cf607c293d3b6aee2c0e7a5e5930e5f0ab096b0361bbb7d81c6510011abf6",
+    "tests/gameplay_capture.py": "b6a569dea768e536498ea99a6b13c46003e7e57287f9f07d87371ac8be87d4aa",
+    "tests/player_input.cpp": "966e67fa19eab6e8f26c0c7b02db1c80ff49abba2ce43c46e619008ecb3ce0cc"
+  },
+  "artifacts": {
+    "headless": {
+      "path": "build/headless/poima",
+      "sha256": "36a3f7753d5a3a55ed383b102e075eb438ceb8bb065b8592c3a190e0b5e11f82"
+    },
+    "runtime_headless": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "54fa80bfd9567b06a13aa472eae7f42f3fa542bcd11cc259e9a9da0614a80fc4"
+    },
+    "windows_runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "f9e12a4ce144b66fceac2a2a7717d1ec63ce3d886f1d7db3138b6379a7227f41"
+    },
+    "bridge": {
+      "path": "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll",
+      "sha256": "5bb188cfd11c594edf7aee31a5129c10b4e18bc43888b64928e429fef7b3e199"
+    },
+    "sdk": {
+      "path": "managed/Poima.Gameplay/bin/Release/net10.0/Poima.Gameplay.dll",
+      "sha256": "b7cbb129d7da7c2143374efadfd84d09a19e6feb613a9310b447f71056830dcc"
+    },
+    "game": {
+      "path": "examples/managed/DoorGame/bin/Release/net10.0/Poima.DoorGame.dll",
+      "sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb"
+    }
+  },
+  "toolchains": {
+    "linux_sdk": "10.0.401",
+    "linux_coreclr": "10.0.12",
+    "windows_sdk": "10.0.204",
+    "windows_coreclr": "10.0.11",
+    "host_headers": "Linux host pack 10.0.12, platform-conditional headers used for both native hosts",
+    "native_linux": "GNU 15.2",
+    "native_windows": "LLVM-MinGW Clang 23.1.2 cross-compiled from WSL"
+  },
+  "ctest": {
+    "headless": {
+      "passed": 12,
+      "failed": 0,
+      "path": "build/gameplay-headless-tests.log",
+      "sha256": "00105d7a149e24724421159965e98f0fd38a3af1622ebecb3752d162e1b1bebd",
+      "text": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/12 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/12 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/12 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/12 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/12 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/12 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/12 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: lighting_contract\n 8/12 Test  #8: lighting_contract ................   Passed    0.58 sec\n      Start  9: asset_contract\n 9/12 Test  #9: asset_contract ...................   Passed    3.53 sec\n      Start 10: cli_contract\n10/12 Test #10: cli_contract .....................   Passed    0.55 sec\n      Start 11: world_contract\n11/12 Test #11: world_contract ...................   Passed    2.80 sec\n      Start 12: native_module_contract\n12/12 Test #12: native_module_contract ...........   Passed    9.74 sec\n\n100% tests passed, 0 tests failed out of 12\n\nTotal Test time (real) =  17.35 sec\n"
+    },
+    "runtime_headless": {
+      "passed": 15,
+      "failed": 0,
+      "path": "build/gameplay-runtime-tests.log",
+      "sha256": "09d49c89f77b7e53b8226847a005229e10a96d4de1e091846f7c52ec8baa322c",
+      "text": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/15 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/15 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/15 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/15 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/15 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/15 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/15 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: runtime_native\n 8/15 Test  #8: runtime_native ...................   Passed    0.10 sec\n      Start  9: interaction_native\n 9/15 Test  #9: interaction_native ...............   Passed    0.09 sec\n      Start 10: lighting_contract\n10/15 Test #10: lighting_contract ................   Passed    0.76 sec\n      Start 11: asset_contract\n11/15 Test #11: asset_contract ...................   Passed    3.74 sec\n      Start 12: runtime_contract\n12/15 Test #12: runtime_contract .................   Passed    0.83 sec\n      Start 13: cli_contract\n13/15 Test #13: cli_contract .....................   Passed    0.66 sec\n      Start 14: world_contract\n14/15 Test #14: world_contract ...................   Passed    3.20 sec\n      Start 15: native_module_contract\n15/15 Test #15: native_module_contract ...........   Passed   10.19 sec\n\n100% tests passed, 0 tests failed out of 15\n\nTotal Test time (real) =  19.77 sec\n"
+    }
+  },
+  "windows_checks": {
+    "input": {
+      "path": "build/gameplay-input-windows.log",
+      "sha256": "cf560fba19b93411b26b6c130c2f236a8f4bab5bb323be28c258396b6b268b11",
+      "text": "Input edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n"
+    },
+    "runtime": {
+      "path": "build/gameplay-runtime-windows.log",
+      "sha256": "96a410c726b17569b31c70c415e22c42f00f36f8c796d16a154d65a061068938",
+      "text": "Physics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed.\n"
+    },
+    "interaction": {
+      "path": "build/gameplay-interaction-windows.log",
+      "sha256": "34089bae437911563e37a7d22196667993184311c7ff6d0cafdaca602bafe936",
+      "text": "Ray faces/inside/ignore/ties/endpoints, closed/open door collision, chunked motion, rotation/retarget, child poses, dynamic pushing and real update rollback passed.\n"
+    },
+    "cli": {
+      "path": "build/gameplay-cli-windows.log",
+      "sha256": "39e4a33c00931f1acfee40959a691425ba3a91db067d30431ba3551b2519b592",
+      "text": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.714s\n\nOK (skipped=1)\n"
+    }
+  },
+  "managed_contracts": {
+    "linux": {
+      "raw_evidence": {
+        "path": "build/gameplay-contract-linux/evidence.json",
+        "sha256": "ae8d40b2d7cfc03799b9c50c6c49dffea32d5714c768d17a32d67f4216075432"
+      },
+      "passed": true,
+      "exit_code": 0,
+      "stderr": "",
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "reload_count": 100,
+      "reload_round_trip_milliseconds_excluding_diagnostic_gc": {
+        "samples": 100,
+        "min": 43.22465800214559,
+        "median": 49.82067300079507,
+        "p95": 52.909785001247656,
+        "max": 57.1460669998487
+      },
+      "normal_collect_round_trip_milliseconds": {
+        "samples": 100,
+        "min": 0.6776909976906609,
+        "median": 0.9208110004692571,
+        "p95": 1.3549600007536355,
+        "max": 5.88817899915739
+      },
+      "normal_retired_alive_after_collect": 0,
+      "after_stop_collects": [
+        {
+          "active_modules": 0,
+          "retired_alive": 0
+        },
+        {
+          "active_modules": 0,
+          "retired_alive": 0
+        }
+      ],
+      "intentional_retention_probe": {
+        "active_modules": 1,
+        "retired_alive": 1
+      },
+      "initial_load": {
+        "module": {
+          "assembly": "<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/base/bin/Release/net10.0/Poima.VerifyGame.dll",
+          "assembly_sha256": "d27056ce7dedc462253011f699ba79fe5a67c162521a658c1a961df2ee9744b0",
+          "migration": {
+            "added": [
+              "Activations",
+              "Camera",
+              "Door",
+              "Open",
+              "OpenX",
+              "Player",
+              "UseDistance"
+            ],
+            "preserved": [],
+            "removed": []
+          },
+          "schema": {
+            "bytes": 72,
+            "fields": [
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Activations",
+                "offset": 68
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Camera",
+                "offset": 16
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Door",
+                "offset": 32
+              },
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Open",
+                "offset": 64
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "OpenX",
+                "offset": 48
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Player",
+                "offset": 0
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "UseDistance",
+                "offset": 56
+              }
+            ],
+            "identity": "poima.example.sliding-door"
+          },
+          "type": "Poima.Examples.DoorGame",
+          "values": {
+            "Activations": 0,
+            "Camera": "00000000000000000000000000000065",
+            "Door": "00000000000000000000000000000002",
+            "Open": 0,
+            "OpenX": 2.2,
+            "Player": "00000000000000000000000000000064",
+            "UseDistance": 3.0
+          }
+        },
+        "replayed": false,
+        "revision": 1,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 0
+      },
+      "first_compatible_replacement": {
+        "module": {
+          "assembly": "<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/upgrade/bin/Release/net10.0/Poima.VerifyGame.dll",
+          "assembly_sha256": "1ef4a717ca74d95fdfca041b366450c8e71dfffe0187487fa6a60aa33678d3ac",
+          "migration": {
+            "added": [
+              "FloatProbe",
+              "LongProbe",
+              "ReloadMarker"
+            ],
+            "preserved": [
+              "Activations",
+              "Camera",
+              "Door",
+              "Open",
+              "OpenX",
+              "Player",
+              "UseDistance"
+            ],
+            "removed": []
+          },
+          "schema": {
+            "bytes": 88,
+            "fields": [
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Activations",
+                "offset": 68
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Camera",
+                "offset": 16
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Door",
+                "offset": 32
+              },
+              {
+                "bytes": 4,
+                "kind": "float32",
+                "name": "FloatProbe",
+                "offset": 76
+              },
+              {
+                "bytes": 8,
+                "kind": "int64",
+                "name": "LongProbe",
+                "offset": 80
+              },
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Open",
+                "offset": 64
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "OpenX",
+                "offset": 48
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Player",
+                "offset": 0
+              },
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "ReloadMarker",
+                "offset": 72
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "UseDistance",
+                "offset": 56
+              }
+            ],
+            "identity": "poima.example.sliding-door"
+          },
+          "type": "Poima.Examples.DoorGame",
+          "values": {
+            "Activations": 1,
+            "Camera": "00000000000000000000000000000065",
+            "Door": "00000000000000000000000000000002",
+            "FloatProbe": 0.25,
+            "LongProbe": "9223372036854775807",
+            "Open": 1,
+            "OpenX": 2.2,
+            "Player": "00000000000000000000000000000064",
+            "ReloadMarker": 7,
+            "UseDistance": 3.0
+          }
+        },
+        "replayed": false,
+        "revision": 2,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 392
+      },
+      "final_run_compiler_records": [
+        {
+          "variant": "base",
+          "reused": true,
+          "source_sha256": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+          "assembly_sha256": "d27056ce7dedc462253011f699ba79fe5a67c162521a658c1a961df2ee9744b0",
+          "assembly": "<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/base/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "upgrade",
+          "source_sha256": "86b7f0059dc7def4d15da1456cace59bfcd94ad4bbdf915fb7b5d4bb9301730f",
+          "exit_code": 0,
+          "milliseconds": 10955.529539998679,
+          "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/upgrade/Poima.VerifyGame.csproj (in 98 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/upgrade/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.08\n",
+          "assembly_sha256": "1ef4a717ca74d95fdfca041b366450c8e71dfffe0187487fa6a60aa33678d3ac",
+          "assembly": "<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/upgrade/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "bad-layout",
+          "reused": true,
+          "source_sha256": "adcde876ecafad2f83fc45a8fded1221d3116415882ca35f227e958c4b12debd",
+          "assembly_sha256": "052e4e848f6c8ce9393bd25959a1390c14effd583c008b0f8016533c7bcfdb65",
+          "assembly": "<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/bad-layout/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "bad-initialize",
+          "reused": true,
+          "source_sha256": "fe5f29e28fc560ecc37e60979f0b96fc8d41faa3a0fdf398488d7367a37bb762",
+          "assembly_sha256": "6543d470da8f4348cd4cf7c96ff000531a9591f8e91b9ce854afb873952cb85c",
+          "assembly": "<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/bad-initialize/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "fault",
+          "reused": true,
+          "source_sha256": "4a910ca2a8b2589f68f17631f2f380d653d194f43daf03a7640e0ed29d87659e",
+          "assembly_sha256": "c27cd1c7357a28b7e72143b7d25bac04834265b764da8c284de0cbae37a56a49",
+          "assembly": "<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/fault/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "retained-context",
+          "source_sha256": "c471edf99dd21abd62f6a2a061dce1f9bd89f1928a9b6358dd5de205b6f86d84",
+          "exit_code": 0,
+          "milliseconds": 8006.483724002464,
+          "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/retained-context/Poima.VerifyGame.csproj (in 93 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/retained-context/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:07.43\n",
+          "assembly_sha256": "4c49e26c328c0b111094506a8fb06196ae0ec40a3b6e2cbd55768225f6cc0674",
+          "assembly": "<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/retained-context/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "broken-build",
+          "source_sha256": "20a15af3d543995f3d5368f961cbffb5ba472112d7c12a2237387dc0d076d72e",
+          "exit_code": 1,
+          "milliseconds": 7004.408087999764,
+          "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj (in 93 ms).\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,1): error CS1031: Type expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1514: { expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1513: } expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n\nBuild FAILED.\n\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,1): error CS1031: Type expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1514: { expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/DoorGame.cs(32,33): error CS1513: } expected [<checkout>/build/gameplay-contract-linux/1c1b27dc395742b7ab920d8df94a4172/broken-build/Poima.VerifyGame.csproj]\n    0 Warning(s)\n    10 Error(s)\n\nTime Elapsed 00:00:06.46\n"
+        }
+      ],
+      "original_variant_compiles": {
+        "detail": "Earlier run, separate fixture compilation timings; not a 40-edit iteration distribution. Some unchanged assemblies reused in final run with exact source equality checked.",
+        "raw_evidence": {
+          "path": "build/gameplay-contract-linux/initial-evidence.json",
+          "sha256": "99ec3ce8e6aab222c1e112ce2dc45aceae8815e613bf35188bf1f9513b44063e"
+        },
+        "earlier_binary_sha256": "b2dd29859714d1a5807307f557cd8ce97f0d701b35b32eee92434103dce72bc4",
+        "builds": [
+          {
+            "variant": "base",
+            "source_sha256": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+            "exit_code": 0,
+            "milliseconds": 11183.800103000976,
+            "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/base/Poima.VerifyGame.csproj (in 95 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/base/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:10.33\n",
+            "assembly_sha256": "d27056ce7dedc462253011f699ba79fe5a67c162521a658c1a961df2ee9744b0"
+          },
+          {
+            "variant": "upgrade",
+            "source_sha256": "4ffc376b8b1eaad4644c19c7d1048596010041f703352546111cc4cdc8a248e4",
+            "exit_code": 0,
+            "milliseconds": 9176.212120000855,
+            "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/upgrade/Poima.VerifyGame.csproj (in 96 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/upgrade/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:08.60\n",
+            "assembly_sha256": "045400755155b183687ac9f96a55e480a0092a9b5043f1f5226f70ef527b09bc"
+          },
+          {
+            "variant": "bad-layout",
+            "source_sha256": "adcde876ecafad2f83fc45a8fded1221d3116415882ca35f227e958c4b12debd",
+            "exit_code": 0,
+            "milliseconds": 7860.4403600002115,
+            "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/bad-layout/Poima.VerifyGame.csproj (in 97 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/bad-layout/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:07.31\n",
+            "assembly_sha256": "052e4e848f6c8ce9393bd25959a1390c14effd583c008b0f8016533c7bcfdb65"
+          },
+          {
+            "variant": "bad-initialize",
+            "source_sha256": "fe5f29e28fc560ecc37e60979f0b96fc8d41faa3a0fdf398488d7367a37bb762",
+            "exit_code": 0,
+            "milliseconds": 8475.296073000209,
+            "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/bad-initialize/Poima.VerifyGame.csproj (in 92 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/bad-initialize/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:07.89\n",
+            "assembly_sha256": "6543d470da8f4348cd4cf7c96ff000531a9591f8e91b9ce854afb873952cb85c"
+          },
+          {
+            "variant": "fault",
+            "source_sha256": "4a910ca2a8b2589f68f17631f2f380d653d194f43daf03a7640e0ed29d87659e",
+            "exit_code": 0,
+            "milliseconds": 7937.887547999708,
+            "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/fault/Poima.VerifyGame.csproj (in 95 ms).\n  Poima.VerifyGame -> <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/fault/bin/Release/net10.0/Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:07.36\n",
+            "assembly_sha256": "c27cd1c7357a28b7e72143b7d25bac04834265b764da8c284de0cbae37a56a49"
+          },
+          {
+            "variant": "broken-build",
+            "source_sha256": "20a15af3d543995f3d5368f961cbffb5ba472112d7c12a2237387dc0d076d72e",
+            "exit_code": 1,
+            "milliseconds": 6899.812217001454,
+            "output": "  Determining projects to restore...\n  Restored <checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj (in 94 ms).\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,1): error CS1031: Type expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1514: { expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1513: } expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n\nBuild FAILED.\n\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,1): error CS1031: Type expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1514: { expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/DoorGame.cs(32,33): error CS1513: } expected [<checkout>/build/gameplay-contract-linux/e5ccf9082447475f9ee1fa67b62d2b00/broken-build/Poima.VerifyGame.csproj]\n    0 Warning(s)\n    10 Error(s)\n\nTime Elapsed 00:00:06.38\n"
+          }
+        ]
+      }
+    },
+    "windows": {
+      "raw_evidence": {
+        "path": "build/gameplay-contract-windows/evidence.json",
+        "sha256": "d93f3b4962ae587290058f6585656a5f6d85ce18363c178efced766645fb8144"
+      },
+      "passed": true,
+      "exit_code": 0,
+      "stderr": "",
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "reload_count": 100,
+      "reload_round_trip_milliseconds_excluding_diagnostic_gc": {
+        "samples": 100,
+        "min": 30.509207001159666,
+        "median": 34.43117149981845,
+        "p95": 40.27435699754278,
+        "max": 44.51969400179223
+      },
+      "normal_collect_round_trip_milliseconds": {
+        "samples": 100,
+        "min": 0.8424090010521468,
+        "median": 1.0900084980676183,
+        "p95": 1.5652750007575378,
+        "max": 5.604816000413848
+      },
+      "normal_retired_alive_after_collect": 0,
+      "after_stop_collects": [
+        {
+          "active_modules": 0,
+          "retired_alive": 0
+        },
+        {
+          "active_modules": 0,
+          "retired_alive": 0
+        }
+      ],
+      "intentional_retention_probe": {
+        "active_modules": 1,
+        "retired_alive": 1
+      },
+      "initial_load": {
+        "module": {
+          "assembly": "<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\base\\bin\\Release\\net10.0\\Poima.VerifyGame.dll",
+          "assembly_sha256": "63c0b9e5c753fb0961e589b59394636e196b0af57b4989a191b147b67ca65846",
+          "migration": {
+            "added": [
+              "Activations",
+              "Camera",
+              "Door",
+              "Open",
+              "OpenX",
+              "Player",
+              "UseDistance"
+            ],
+            "preserved": [],
+            "removed": []
+          },
+          "schema": {
+            "bytes": 72,
+            "fields": [
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Activations",
+                "offset": 68
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Camera",
+                "offset": 16
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Door",
+                "offset": 32
+              },
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Open",
+                "offset": 64
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "OpenX",
+                "offset": 48
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Player",
+                "offset": 0
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "UseDistance",
+                "offset": 56
+              }
+            ],
+            "identity": "poima.example.sliding-door"
+          },
+          "type": "Poima.Examples.DoorGame",
+          "values": {
+            "Activations": 0,
+            "Camera": "00000000000000000000000000000065",
+            "Door": "00000000000000000000000000000002",
+            "Open": 0,
+            "OpenX": 2.2,
+            "Player": "00000000000000000000000000000064",
+            "UseDistance": 3.0
+          }
+        },
+        "replayed": false,
+        "revision": 1,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 0
+      },
+      "first_compatible_replacement": {
+        "module": {
+          "assembly": "<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\upgrade\\bin\\Release\\net10.0\\Poima.VerifyGame.dll",
+          "assembly_sha256": "e1abceb4c7c675ecb9d2daa07f492e9a8817913952e40c41b811dd71183da077",
+          "migration": {
+            "added": [
+              "FloatProbe",
+              "LongProbe",
+              "ReloadMarker"
+            ],
+            "preserved": [
+              "Activations",
+              "Camera",
+              "Door",
+              "Open",
+              "OpenX",
+              "Player",
+              "UseDistance"
+            ],
+            "removed": []
+          },
+          "schema": {
+            "bytes": 88,
+            "fields": [
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Activations",
+                "offset": 68
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Camera",
+                "offset": 16
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Door",
+                "offset": 32
+              },
+              {
+                "bytes": 4,
+                "kind": "float32",
+                "name": "FloatProbe",
+                "offset": 76
+              },
+              {
+                "bytes": 8,
+                "kind": "int64",
+                "name": "LongProbe",
+                "offset": 80
+              },
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "Open",
+                "offset": 64
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "OpenX",
+                "offset": 48
+              },
+              {
+                "bytes": 16,
+                "kind": "entity",
+                "name": "Player",
+                "offset": 0
+              },
+              {
+                "bytes": 4,
+                "kind": "int32",
+                "name": "ReloadMarker",
+                "offset": 72
+              },
+              {
+                "bytes": 8,
+                "kind": "float64",
+                "name": "UseDistance",
+                "offset": 56
+              }
+            ],
+            "identity": "poima.example.sliding-door"
+          },
+          "type": "Poima.Examples.DoorGame",
+          "values": {
+            "Activations": 1,
+            "Camera": "00000000000000000000000000000065",
+            "Door": "00000000000000000000000000000002",
+            "FloatProbe": 0.25,
+            "LongProbe": "9223372036854775807",
+            "Open": 1,
+            "OpenX": 2.2,
+            "Player": "00000000000000000000000000000064",
+            "ReloadMarker": 7,
+            "UseDistance": 3.0
+          }
+        },
+        "replayed": false,
+        "revision": 2,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 392
+      },
+      "final_run_compiler_records": [
+        {
+          "variant": "base",
+          "reused": true,
+          "source_sha256": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+          "assembly_sha256": "63c0b9e5c753fb0961e589b59394636e196b0af57b4989a191b147b67ca65846",
+          "assembly": "<checkout>/build/gameplay-contract-windows/987be6235ae64e4d860254705f6cb0b4/base/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "upgrade",
+          "source_sha256": "86b7f0059dc7def4d15da1456cace59bfcd94ad4bbdf915fb7b5d4bb9301730f",
+          "exit_code": 0,
+          "milliseconds": 1685.9305260004476,
+          "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\upgrade\\Poima.VerifyGame.csproj (in 81 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\upgrade\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.34\n",
+          "assembly_sha256": "e1abceb4c7c675ecb9d2daa07f492e9a8817913952e40c41b811dd71183da077",
+          "assembly": "<checkout>/build/gameplay-contract-windows/c45c1c7e06c341488aef98048b8101b5/upgrade/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "bad-layout",
+          "reused": true,
+          "source_sha256": "adcde876ecafad2f83fc45a8fded1221d3116415882ca35f227e958c4b12debd",
+          "assembly_sha256": "4b8372a3a2fd574e9f3f8ee61dfadcfb4843610a358e54c0e34eb6b88ac1f118",
+          "assembly": "<checkout>/build/gameplay-contract-windows/987be6235ae64e4d860254705f6cb0b4/bad-layout/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "bad-initialize",
+          "reused": true,
+          "source_sha256": "fe5f29e28fc560ecc37e60979f0b96fc8d41faa3a0fdf398488d7367a37bb762",
+          "assembly_sha256": "8c19111950cbf5e513f885d578c7eb4a6a7f3532a4ea9e6bdf91dcb622f9dd75",
+          "assembly": "<checkout>/build/gameplay-contract-windows/987be6235ae64e4d860254705f6cb0b4/bad-initialize/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "fault",
+          "reused": true,
+          "source_sha256": "4a910ca2a8b2589f68f17631f2f380d653d194f43daf03a7640e0ed29d87659e",
+          "assembly_sha256": "538665769057ac7e66bb944cd5ba91d49de83ea6257e071aff5b1f4518678338",
+          "assembly": "<checkout>/build/gameplay-contract-windows/987be6235ae64e4d860254705f6cb0b4/fault/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "retained-context",
+          "source_sha256": "c471edf99dd21abd62f6a2a061dce1f9bd89f1928a9b6358dd5de205b6f86d84",
+          "exit_code": 0,
+          "milliseconds": 1617.1950669995567,
+          "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\retained-context\\Poima.VerifyGame.csproj (in 64 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\retained-context\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.30\n",
+          "assembly_sha256": "5d012fa6beca2aac67b9442529731ae15c8ce0062e02ea75a6ca044acd775662",
+          "assembly": "<checkout>/build/gameplay-contract-windows/c45c1c7e06c341488aef98048b8101b5/retained-context/bin/Release/net10.0/Poima.VerifyGame.dll"
+        },
+        {
+          "variant": "broken-build",
+          "source_sha256": "20a15af3d543995f3d5368f961cbffb5ba472112d7c12a2237387dc0d076d72e",
+          "exit_code": 1,
+          "milliseconds": 1513.111932999891,
+          "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj (in 65 ms).\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,1): error CS1031: Type expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1514: { expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1513: } expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n\nBuild FAILED.\n\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,1): error CS1031: Type expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1514: { expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\DoorGame.cs(32,33): error CS1513: } expected [<checkout>\\build\\gameplay-contract-windows\\c45c1c7e06c341488aef98048b8101b5\\broken-build\\Poima.VerifyGame.csproj]\n    0 Warning(s)\n    10 Error(s)\n\nTime Elapsed 00:00:01.20\n"
+        }
+      ],
+      "original_variant_compiles": {
+        "detail": "Earlier run, separate fixture compilation timings; not a 40-edit iteration distribution. Some unchanged assemblies reused in final run with exact source equality checked.",
+        "raw_evidence": {
+          "path": "build/gameplay-contract-windows/initial-evidence.json",
+          "sha256": "bbccc9e7809ede90d22a7c120562c0e08dfe77a7468dbdc060778efe73ae2732"
+        },
+        "earlier_binary_sha256": "20a4856f1dd314101efe7b997697b22bcd4faffd649225b1b501c4118afab3c5",
+        "builds": [
+          {
+            "variant": "base",
+            "source_sha256": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+            "exit_code": 0,
+            "milliseconds": 4391.395457001636,
+            "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\base\\Poima.VerifyGame.csproj (in 83 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\base\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:03.90\n",
+            "assembly_sha256": "63c0b9e5c753fb0961e589b59394636e196b0af57b4989a191b147b67ca65846"
+          },
+          {
+            "variant": "upgrade",
+            "source_sha256": "4ffc376b8b1eaad4644c19c7d1048596010041f703352546111cc4cdc8a248e4",
+            "exit_code": 0,
+            "milliseconds": 1462.6466139998229,
+            "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\upgrade\\Poima.VerifyGame.csproj (in 59 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\upgrade\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.18\n",
+            "assembly_sha256": "fddcacd55d617792ea68640fd43850b008fc2d1ab1775b989f29269d572a8a93"
+          },
+          {
+            "variant": "bad-layout",
+            "source_sha256": "adcde876ecafad2f83fc45a8fded1221d3116415882ca35f227e958c4b12debd",
+            "exit_code": 0,
+            "milliseconds": 1455.9493929991731,
+            "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\bad-layout\\Poima.VerifyGame.csproj (in 61 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\bad-layout\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.18\n",
+            "assembly_sha256": "4b8372a3a2fd574e9f3f8ee61dfadcfb4843610a358e54c0e34eb6b88ac1f118"
+          },
+          {
+            "variant": "bad-initialize",
+            "source_sha256": "fe5f29e28fc560ecc37e60979f0b96fc8d41faa3a0fdf398488d7367a37bb762",
+            "exit_code": 0,
+            "milliseconds": 1479.7362289973535,
+            "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\bad-initialize\\Poima.VerifyGame.csproj (in 62 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\bad-initialize\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.19\n",
+            "assembly_sha256": "8c19111950cbf5e513f885d578c7eb4a6a7f3532a4ea9e6bdf91dcb622f9dd75"
+          },
+          {
+            "variant": "fault",
+            "source_sha256": "4a910ca2a8b2589f68f17631f2f380d653d194f43daf03a7640e0ed29d87659e",
+            "exit_code": 0,
+            "milliseconds": 1454.3485039976076,
+            "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\fault\\Poima.VerifyGame.csproj (in 59 ms).\n  Poima.VerifyGame -> <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\fault\\bin\\Release\\net10.0\\Poima.VerifyGame.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.17\n",
+            "assembly_sha256": "538665769057ac7e66bb944cd5ba91d49de83ea6257e071aff5b1f4518678338"
+          },
+          {
+            "variant": "broken-build",
+            "source_sha256": "20a15af3d543995f3d5368f961cbffb5ba472112d7c12a2237387dc0d076d72e",
+            "exit_code": 1,
+            "milliseconds": 1468.6092560004909,
+            "output": "  Determining projects to restore...\n  Restored <checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj (in 63 ms).\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,1): error CS1031: Type expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1514: { expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1513: } expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n\nBuild FAILED.\n\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,1): error CS1031: Type expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(30,1): error CS1519: Invalid token '}' in a member declaration [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,6): error CS1003: Syntax error, '[' expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,6): error CS1041: Identifier expected; 'is' is a keyword [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,31): error CS1003: Syntax error, ',' expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,32): error CS1040: Preprocessor directives must appear as the first non-whitespace character on a line [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1001: Identifier expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1003: Syntax error, ']' expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1514: { expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\DoorGame.cs(32,33): error CS1513: } expected [<checkout>\\build\\gameplay-contract-windows\\987be6235ae64e4d860254705f6cb0b4\\broken-build\\Poima.VerifyGame.csproj]\n    0 Warning(s)\n    10 Error(s)\n\nTime Elapsed 00:00:01.17\n"
+          }
+        ]
+      }
+    }
+  },
+  "vulkan": {
+    "0": {
+      "raw_evidence": {
+        "path": "build/gameplay-capture/gpu-0.json",
+        "sha256": "093378d2f5b36797d5cad92c221c30bd5b94a4f583dbc029f09b674c50c1de32"
+      },
+      "checks": {
+        "CSharp_use_opens_door_and_character_passes": true,
+        "continuous_replay_matches_headless_state_and_CSharp_fields": true,
+        "final_pixels_match_unculled_headless_capture": true,
+        "retry_does_not_repeat_CSharp": true,
+        "stationary_camera_observes_scripted_motion": true,
+        "all_contexts_released": true
+      },
+      "exit_code": 0,
+      "stderr": "",
+      "play": {
+        "build_version": "0.0.14",
+        "camera": "00000000000000000000000000000065",
+        "camera_world": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.5800001035606188,
+          -8.514999990733836,
+          1.0
+        ],
+        "capture_written": true,
+        "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+        "dropped_wall_seconds": 0.0,
+        "frames_presented": 481,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "height": 540,
+        "lighting": {
+          "ambient": [
+            0.05000000074505806,
+            0.05999999865889549,
+            0.07999999821186066
+          ],
+          "exposure": 1.0,
+          "lights": [
+            {
+              "color": [
+                1.0,
+                0.8799999952316284,
+                0.699999988079071
+              ],
+              "direction": [
+                -0.0,
+                -0.7071067811865476,
+                -0.7071067811865475
+              ],
+              "id": "000000000000000000000000000000c9",
+              "inner_angle": 0.0,
+              "intensity": 4.0,
+              "intensity_unit": "lux",
+              "kind": "directional",
+              "outer_angle": 45.0,
+              "position": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "range": 0.0,
+              "shadow": {
+                "bias": 0.0005000000237487257,
+                "distance": 40.0,
+                "enabled": true,
+                "near": 0.05000000074505806,
+                "normal_bias": 0.009999999776482582
+              }
+            }
+          ],
+          "preview_fallback": false,
+          "shadow_bytes": 4194304,
+          "shadow_resolution": 512,
+          "shadow_views": 4
+        },
+        "mode": "replay",
+        "nvrhi_errors": 0,
+        "path": "<checkout>\\build\\gameplay-capture\\517ce0f97d4e437cb42b3df44270ea0f\\player.bmp",
+        "previous_tick": 0,
+        "render_diagnostics": {
+          "completed_submissions": 481,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.011,
+              "max_ms": 0.0409,
+              "mean_ms": 0.011701867219917013,
+              "min_ms": 0.0089,
+              "samples": 482
+            },
+            "record": {
+              "last_ms": 0.0635,
+              "max_ms": 0.2501,
+              "mean_ms": 0.05814303534303534,
+              "min_ms": 0.0377,
+              "samples": 481
+            },
+            "render_call": {
+              "last_ms": 0.4772,
+              "max_ms": 4.4579,
+              "mean_ms": 0.5572457380457376,
+              "min_ms": 0.2051,
+              "samples": 481
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.006144,
+              "max_ms": 0.062464,
+              "mean_ms": 0.04088548856548853,
+              "min_ms": 0.0051199999999999996,
+              "samples": 481
+            },
+            "post": {
+              "last_ms": 0.17782399999999998,
+              "max_ms": 0.17782399999999998,
+              "mean_ms": 0.013233031185031167,
+              "min_ms": 0.009696,
+              "samples": 481
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.015168,
+              "max_ms": 0.024992,
+              "mean_ms": 0.019666494802494803,
+              "min_ms": 0.014848,
+              "samples": 481
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.19913599999999998,
+              "max_ms": 0.19913599999999998,
+              "mean_ms": 0.0737850145530146,
+              "min_ms": 0.031167999999999998,
+              "samples": 481
+            }
+          },
+          "last_draws": {
+            "camera_culled": 6,
+            "camera_draws": 0,
+            "camera_triangles": 0,
+            "objects": 6,
+            "shadow_candidates": 24,
+            "shadow_culled": 1,
+            "shadow_draws": 23,
+            "shadow_triangles": 276,
+            "shadow_views": 4
+          },
+          "profile_requested": true
+        },
+        "replayed": false,
+        "revision": 1,
+        "samples": 4,
+        "session_id": "00000000000000000000000000000384",
+        "stop_reason": "replay_complete",
+        "success": true,
+        "swapchain_rebuilds": 1,
+        "tick": 480,
+        "width": 960,
+        "world_id": "c20ebc5b27dc37ef7c33d6d147f4bd25"
+      },
+      "gameplay_observations": [
+        {
+          "module": {
+            "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+            "identity": "poima.example.sliding-door",
+            "values": {
+              "Activations": 1,
+              "Camera": "00000000000000000000000000000065",
+              "Door": "00000000000000000000000000000002",
+              "Open": 1,
+              "OpenX": 2.2,
+              "Player": "00000000000000000000000000000064",
+              "UseDistance": 3.0
+            }
+          },
+          "revision": 1,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 480
+        },
+        {
+          "module": {
+            "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+            "identity": "poima.example.sliding-door",
+            "values": {
+              "Activations": 1,
+              "Camera": "00000000000000000000000000000065",
+              "Door": "00000000000000000000000000000002",
+              "Open": 1,
+              "OpenX": 2.2,
+              "Player": "00000000000000000000000000000064",
+              "UseDistance": 3.0
+            }
+          },
+          "revision": 1,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 480
+        }
+      ],
+      "captures": [
+        {
+          "build_version": "0.0.14",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.5800001035606188,
+            -8.514999990733836,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 200.0,
+            "near": 0.1,
+            "vertical_fov": 70.0
+          },
+          "lighting": {
+            "ambient": [
+              0.05000000074505806,
+              0.05999999865889549,
+              0.07999999821186066
+            ],
+            "exposure": 1.0,
+            "lights": [
+              {
+                "color": [
+                  1.0,
+                  0.8799999952316284,
+                  0.699999988079071
+                ],
+                "direction": [
+                  -0.0,
+                  -0.7071067811865476,
+                  -0.7071067811865475
+                ],
+                "id": "000000000000000000000000000000c9",
+                "inner_angle": 0.0,
+                "intensity": 4.0,
+                "intensity_unit": "lux",
+                "kind": "directional",
+                "outer_angle": 45.0,
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "range": 0.0,
+                "shadow": {
+                  "bias": 0.0005000000237487257,
+                  "distance": 40.0,
+                  "enabled": true,
+                  "near": 0.05000000074505806,
+                  "normal_bias": 0.009999999776482582
+                }
+              }
+            ],
+            "preview_fallback": false,
+            "shadow_bytes": 4194304,
+            "shadow_resolution": 512,
+            "shadow_views": 4
+          },
+          "nvrhi_errors": 0,
+          "object_count": 6,
+          "path": "<checkout>\\build\\gameplay-capture\\517ce0f97d4e437cb42b3df44270ea0f\\baseline.bmp",
+          "render_diagnostics": {
+            "completed_submissions": 2,
+            "cpu": {
+              "prepare": {
+                "last_ms": 0.0242,
+                "max_ms": 0.0242,
+                "mean_ms": 0.0242,
+                "min_ms": 0.0242,
+                "samples": 1
+              },
+              "record": {
+                "last_ms": 0.2542,
+                "max_ms": 0.2542,
+                "mean_ms": 0.21849999999999997,
+                "min_ms": 0.1828,
+                "samples": 2
+              },
+              "render_call": {
+                "last_ms": 0.7307,
+                "max_ms": 0.7307,
+                "mean_ms": 0.6273500000000001,
+                "min_ms": 0.524,
+                "samples": 2
+              }
+            },
+            "culling": false,
+            "gpu": {
+              "available": true,
+              "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+              "opaque": {
+                "last_ms": 0.007168,
+                "max_ms": 0.007168,
+                "mean_ms": 0.0066560000000000005,
+                "min_ms": 0.006144,
+                "samples": 2
+              },
+              "post": {
+                "last_ms": 0.178176,
+                "max_ms": 0.178176,
+                "mean_ms": 0.0948,
+                "min_ms": 0.011424,
+                "samples": 2
+              },
+              "samples_dropped": 0,
+              "shadows": {
+                "last_ms": 0.015808,
+                "max_ms": 0.018816,
+                "mean_ms": 0.017312,
+                "min_ms": 0.015808,
+                "samples": 2
+              },
+              "timestamp_period_ns": 1.0,
+              "timestamp_valid_bits": 64,
+              "total": {
+                "last_ms": 0.201152,
+                "max_ms": 0.201152,
+                "mean_ms": 0.118768,
+                "min_ms": 0.036384,
+                "samples": 2
+              }
+            },
+            "last_draws": {
+              "camera_culled": 0,
+              "camera_draws": 6,
+              "camera_triangles": 72,
+              "objects": 6,
+              "shadow_candidates": 24,
+              "shadow_culled": 0,
+              "shadow_draws": 24,
+              "shadow_triangles": 288,
+              "shadow_views": 4
+            },
+            "profile_requested": true
+          },
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000385",
+          "source": "runtime",
+          "tick": 480,
+          "width": 960,
+          "world_id": "c20ebc5b27dc37ef7c33d6d147f4bd25"
+        },
+        {
+          "build_version": "0.0.14",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.580000057367018,
+            2.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 200.0,
+            "near": 0.1,
+            "vertical_fov": 70.0
+          },
+          "lighting": {
+            "ambient": [
+              0.05000000074505806,
+              0.05999999865889549,
+              0.07999999821186066
+            ],
+            "exposure": 1.0,
+            "lights": [
+              {
+                "color": [
+                  1.0,
+                  0.8799999952316284,
+                  0.699999988079071
+                ],
+                "direction": [
+                  -0.0,
+                  -0.7071067811865476,
+                  -0.7071067811865475
+                ],
+                "id": "000000000000000000000000000000c9",
+                "inner_angle": 0.0,
+                "intensity": 4.0,
+                "intensity_unit": "lux",
+                "kind": "directional",
+                "outer_angle": 45.0,
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "range": 0.0,
+                "shadow": {
+                  "bias": 0.0005000000237487257,
+                  "distance": 40.0,
+                  "enabled": true,
+                  "near": 0.05000000074505806,
+                  "normal_bias": 0.009999999776482582
+                }
+              }
+            ],
+            "preview_fallback": false,
+            "shadow_bytes": 4194304,
+            "shadow_resolution": 512,
+            "shadow_views": 4
+          },
+          "nvrhi_errors": 0,
+          "object_count": 6,
+          "path": "<checkout>\\build\\gameplay-capture\\517ce0f97d4e437cb42b3df44270ea0f\\closed.bmp",
+          "render_diagnostics": {
+            "completed_submissions": 2,
+            "cpu": {
+              "prepare": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "record": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "render_call": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "culling": true,
+            "gpu": {
+              "available": false,
+              "detail": "Profiling not requested.",
+              "opaque": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "post": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "samples_dropped": 0,
+              "shadows": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "timestamp_period_ns": 0.0,
+              "timestamp_valid_bits": 0,
+              "total": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "last_draws": {
+              "camera_culled": 0,
+              "camera_draws": 6,
+              "camera_triangles": 72,
+              "objects": 6,
+              "shadow_candidates": 24,
+              "shadow_culled": 0,
+              "shadow_draws": 24,
+              "shadow_triangles": 288,
+              "shadow_views": 4
+            },
+            "profile_requested": false
+          },
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000386",
+          "source": "runtime",
+          "tick": 120,
+          "width": 960,
+          "world_id": "c20ebc5b27dc37ef7c33d6d147f4bd25"
+        },
+        {
+          "build_version": "0.0.14",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.580000057367018,
+            2.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 200.0,
+            "near": 0.1,
+            "vertical_fov": 70.0
+          },
+          "lighting": {
+            "ambient": [
+              0.05000000074505806,
+              0.05999999865889549,
+              0.07999999821186066
+            ],
+            "exposure": 1.0,
+            "lights": [
+              {
+                "color": [
+                  1.0,
+                  0.8799999952316284,
+                  0.699999988079071
+                ],
+                "direction": [
+                  -0.0,
+                  -0.7071067811865476,
+                  -0.7071067811865475
+                ],
+                "id": "000000000000000000000000000000c9",
+                "inner_angle": 0.0,
+                "intensity": 4.0,
+                "intensity_unit": "lux",
+                "kind": "directional",
+                "outer_angle": 45.0,
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "range": 0.0,
+                "shadow": {
+                  "bias": 0.0005000000237487257,
+                  "distance": 40.0,
+                  "enabled": true,
+                  "near": 0.05000000074505806,
+                  "normal_bias": 0.009999999776482582
+                }
+              }
+            ],
+            "preview_fallback": false,
+            "shadow_bytes": 4194304,
+            "shadow_resolution": 512,
+            "shadow_views": 4
+          },
+          "nvrhi_errors": 0,
+          "object_count": 6,
+          "path": "<checkout>\\build\\gameplay-capture\\517ce0f97d4e437cb42b3df44270ea0f\\open.bmp",
+          "render_diagnostics": {
+            "completed_submissions": 2,
+            "cpu": {
+              "prepare": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "record": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "render_call": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "culling": true,
+            "gpu": {
+              "available": false,
+              "detail": "Profiling not requested.",
+              "opaque": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "post": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "samples_dropped": 0,
+              "shadows": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "timestamp_period_ns": 0.0,
+              "timestamp_valid_bits": 0,
+              "total": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "last_draws": {
+              "camera_culled": 0,
+              "camera_draws": 6,
+              "camera_triangles": 72,
+              "objects": 6,
+              "shadow_candidates": 24,
+              "shadow_culled": 0,
+              "shadow_draws": 24,
+              "shadow_triangles": 288,
+              "shadow_views": 4
+            },
+            "profile_requested": false
+          },
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000386",
+          "source": "runtime",
+          "tick": 240,
+          "width": 960,
+          "world_id": "c20ebc5b27dc37ef7c33d6d147f4bd25"
+        }
+      ],
+      "images": {
+        "baseline.bmp": {
+          "path": "<checkout>/build/gameplay-capture/517ce0f97d4e437cb42b3df44270ea0f/baseline.bmp",
+          "sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+        },
+        "closed.bmp": {
+          "path": "<checkout>/build/gameplay-capture/517ce0f97d4e437cb42b3df44270ea0f/closed.bmp",
+          "sha256": "855308a780310fac891dc49899c5317316e578b602b465b18a420e21545e0b19"
+        },
+        "open.bmp": {
+          "path": "<checkout>/build/gameplay-capture/517ce0f97d4e437cb42b3df44270ea0f/open.bmp",
+          "sha256": "f2dbd0ac2fb2489419f6c2191c11c617aca0878fa9f6671be0145fb4d437c99a"
+        },
+        "player.bmp": {
+          "path": "<checkout>/build/gameplay-capture/517ce0f97d4e437cb42b3df44270ea0f/player.bmp",
+          "sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+        }
+      }
+    },
+    "1": {
+      "raw_evidence": {
+        "path": "build/gameplay-capture/gpu-1.json",
+        "sha256": "6b0b68b6001c70cf4d4d7baf40bf50d60138824b5b3978c6fe88b45705964981"
+      },
+      "checks": {
+        "CSharp_use_opens_door_and_character_passes": true,
+        "continuous_replay_matches_headless_state_and_CSharp_fields": true,
+        "final_pixels_match_unculled_headless_capture": true,
+        "retry_does_not_repeat_CSharp": true,
+        "stationary_camera_observes_scripted_motion": true,
+        "all_contexts_released": true
+      },
+      "exit_code": 0,
+      "stderr": "",
+      "play": {
+        "build_version": "0.0.14",
+        "camera": "00000000000000000000000000000065",
+        "camera_world": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          1.5800001035606188,
+          -8.514999990733836,
+          1.0
+        ],
+        "capture_written": true,
+        "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+        "dropped_wall_seconds": 0.0,
+        "frames_presented": 481,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "height": 540,
+        "lighting": {
+          "ambient": [
+            0.05000000074505806,
+            0.05999999865889549,
+            0.07999999821186066
+          ],
+          "exposure": 1.0,
+          "lights": [
+            {
+              "color": [
+                1.0,
+                0.8799999952316284,
+                0.699999988079071
+              ],
+              "direction": [
+                -0.0,
+                -0.7071067811865476,
+                -0.7071067811865475
+              ],
+              "id": "000000000000000000000000000000c9",
+              "inner_angle": 0.0,
+              "intensity": 4.0,
+              "intensity_unit": "lux",
+              "kind": "directional",
+              "outer_angle": 45.0,
+              "position": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "range": 0.0,
+              "shadow": {
+                "bias": 0.0005000000237487257,
+                "distance": 40.0,
+                "enabled": true,
+                "near": 0.05000000074505806,
+                "normal_bias": 0.009999999776482582
+              }
+            }
+          ],
+          "preview_fallback": false,
+          "shadow_bytes": 4194304,
+          "shadow_resolution": 512,
+          "shadow_views": 4
+        },
+        "mode": "replay",
+        "nvrhi_errors": 0,
+        "path": "<checkout>\\build\\gameplay-capture\\fbfe8d270dff473aa856201bc04550f7\\player.bmp",
+        "previous_tick": 0,
+        "render_diagnostics": {
+          "completed_submissions": 481,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0134,
+              "max_ms": 0.0387,
+              "mean_ms": 0.014331950207468882,
+              "min_ms": 0.0094,
+              "samples": 482
+            },
+            "record": {
+              "last_ms": 0.1261,
+              "max_ms": 0.2111,
+              "mean_ms": 0.09667671517671522,
+              "min_ms": 0.0634,
+              "samples": 481
+            },
+            "render_call": {
+              "last_ms": 0.7828,
+              "max_ms": 5.0345,
+              "mean_ms": 1.1026625779625774,
+              "min_ms": 0.6032,
+              "samples": 481
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.11048,
+              "max_ms": 0.58304,
+              "mean_ms": 0.3563300623700626,
+              "min_ms": 0.09047999999999999,
+              "samples": 481
+            },
+            "post": {
+              "last_ms": 0.18716,
+              "max_ms": 0.18716,
+              "mean_ms": 0.11385130977130976,
+              "min_ms": 0.08792,
+              "samples": 481
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.18195999999999998,
+              "max_ms": 0.23676,
+              "mean_ms": 0.1716567983367984,
+              "min_ms": 0.1348,
+              "samples": 481
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.47959999999999997,
+              "max_ms": 0.90352,
+              "mean_ms": 0.6418381704781704,
+              "min_ms": 0.38495999999999997,
+              "samples": 481
+            }
+          },
+          "last_draws": {
+            "camera_culled": 6,
+            "camera_draws": 0,
+            "camera_triangles": 0,
+            "objects": 6,
+            "shadow_candidates": 24,
+            "shadow_culled": 1,
+            "shadow_draws": 23,
+            "shadow_triangles": 276,
+            "shadow_views": 4
+          },
+          "profile_requested": true
+        },
+        "replayed": false,
+        "revision": 1,
+        "samples": 4,
+        "session_id": "00000000000000000000000000000384",
+        "stop_reason": "replay_complete",
+        "success": true,
+        "swapchain_rebuilds": 1,
+        "tick": 480,
+        "width": 960,
+        "world_id": "73a4d2c6d409d8b76d218e842076bd81"
+      },
+      "gameplay_observations": [
+        {
+          "module": {
+            "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+            "identity": "poima.example.sliding-door",
+            "values": {
+              "Activations": 1,
+              "Camera": "00000000000000000000000000000065",
+              "Door": "00000000000000000000000000000002",
+              "Open": 1,
+              "OpenX": 2.2,
+              "Player": "00000000000000000000000000000064",
+              "UseDistance": 3.0
+            }
+          },
+          "revision": 1,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 480
+        },
+        {
+          "module": {
+            "assembly_sha256": "7c6d36a42b122703885b4a7b511cba120f3cb144ce46c94fd084caf48ad5aaeb",
+            "identity": "poima.example.sliding-door",
+            "values": {
+              "Activations": 1,
+              "Camera": "00000000000000000000000000000065",
+              "Door": "00000000000000000000000000000002",
+              "Open": 1,
+              "OpenX": 2.2,
+              "Player": "00000000000000000000000000000064",
+              "UseDistance": 3.0
+            }
+          },
+          "revision": 1,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 480
+        }
+      ],
+      "captures": [
+        {
+          "build_version": "0.0.14",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.5800001035606188,
+            -8.514999990733836,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 200.0,
+            "near": 0.1,
+            "vertical_fov": 70.0
+          },
+          "lighting": {
+            "ambient": [
+              0.05000000074505806,
+              0.05999999865889549,
+              0.07999999821186066
+            ],
+            "exposure": 1.0,
+            "lights": [
+              {
+                "color": [
+                  1.0,
+                  0.8799999952316284,
+                  0.699999988079071
+                ],
+                "direction": [
+                  -0.0,
+                  -0.7071067811865476,
+                  -0.7071067811865475
+                ],
+                "id": "000000000000000000000000000000c9",
+                "inner_angle": 0.0,
+                "intensity": 4.0,
+                "intensity_unit": "lux",
+                "kind": "directional",
+                "outer_angle": 45.0,
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "range": 0.0,
+                "shadow": {
+                  "bias": 0.0005000000237487257,
+                  "distance": 40.0,
+                  "enabled": true,
+                  "near": 0.05000000074505806,
+                  "normal_bias": 0.009999999776482582
+                }
+              }
+            ],
+            "preview_fallback": false,
+            "shadow_bytes": 4194304,
+            "shadow_resolution": 512,
+            "shadow_views": 4
+          },
+          "nvrhi_errors": 0,
+          "object_count": 6,
+          "path": "<checkout>\\build\\gameplay-capture\\fbfe8d270dff473aa856201bc04550f7\\baseline.bmp",
+          "render_diagnostics": {
+            "completed_submissions": 2,
+            "cpu": {
+              "prepare": {
+                "last_ms": 0.0295,
+                "max_ms": 0.0295,
+                "mean_ms": 0.0295,
+                "min_ms": 0.0295,
+                "samples": 1
+              },
+              "record": {
+                "last_ms": 0.1903,
+                "max_ms": 0.8567,
+                "mean_ms": 0.5235,
+                "min_ms": 0.1903,
+                "samples": 2
+              },
+              "render_call": {
+                "last_ms": 1.9663,
+                "max_ms": 12.6284,
+                "mean_ms": 7.29735,
+                "min_ms": 1.9663,
+                "samples": 2
+              }
+            },
+            "culling": false,
+            "gpu": {
+              "available": true,
+              "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+              "opaque": {
+                "last_ms": 0.12716,
+                "max_ms": 0.12716,
+                "mean_ms": 0.12516,
+                "min_ms": 0.12315999999999999,
+                "samples": 2
+              },
+              "post": {
+                "last_ms": 0.20987999999999998,
+                "max_ms": 0.20987999999999998,
+                "mean_ms": 0.16304,
+                "min_ms": 0.1162,
+                "samples": 2
+              },
+              "samples_dropped": 0,
+              "shadows": {
+                "last_ms": 0.17579999999999998,
+                "max_ms": 0.17579999999999998,
+                "mean_ms": 0.16534,
+                "min_ms": 0.15488,
+                "samples": 2
+              },
+              "timestamp_period_ns": 10.0,
+              "timestamp_valid_bits": 64,
+              "total": {
+                "last_ms": 0.51284,
+                "max_ms": 0.51284,
+                "mean_ms": 0.45353999999999994,
+                "min_ms": 0.39424,
+                "samples": 2
+              }
+            },
+            "last_draws": {
+              "camera_culled": 0,
+              "camera_draws": 6,
+              "camera_triangles": 72,
+              "objects": 6,
+              "shadow_candidates": 24,
+              "shadow_culled": 0,
+              "shadow_draws": 24,
+              "shadow_triangles": 288,
+              "shadow_views": 4
+            },
+            "profile_requested": true
+          },
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000385",
+          "source": "runtime",
+          "tick": 480,
+          "width": 960,
+          "world_id": "73a4d2c6d409d8b76d218e842076bd81"
+        },
+        {
+          "build_version": "0.0.14",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.580000057367018,
+            2.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 200.0,
+            "near": 0.1,
+            "vertical_fov": 70.0
+          },
+          "lighting": {
+            "ambient": [
+              0.05000000074505806,
+              0.05999999865889549,
+              0.07999999821186066
+            ],
+            "exposure": 1.0,
+            "lights": [
+              {
+                "color": [
+                  1.0,
+                  0.8799999952316284,
+                  0.699999988079071
+                ],
+                "direction": [
+                  -0.0,
+                  -0.7071067811865476,
+                  -0.7071067811865475
+                ],
+                "id": "000000000000000000000000000000c9",
+                "inner_angle": 0.0,
+                "intensity": 4.0,
+                "intensity_unit": "lux",
+                "kind": "directional",
+                "outer_angle": 45.0,
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "range": 0.0,
+                "shadow": {
+                  "bias": 0.0005000000237487257,
+                  "distance": 40.0,
+                  "enabled": true,
+                  "near": 0.05000000074505806,
+                  "normal_bias": 0.009999999776482582
+                }
+              }
+            ],
+            "preview_fallback": false,
+            "shadow_bytes": 4194304,
+            "shadow_resolution": 512,
+            "shadow_views": 4
+          },
+          "nvrhi_errors": 0,
+          "object_count": 6,
+          "path": "<checkout>\\build\\gameplay-capture\\fbfe8d270dff473aa856201bc04550f7\\closed.bmp",
+          "render_diagnostics": {
+            "completed_submissions": 2,
+            "cpu": {
+              "prepare": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "record": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "render_call": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "culling": true,
+            "gpu": {
+              "available": false,
+              "detail": "Profiling not requested.",
+              "opaque": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "post": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "samples_dropped": 0,
+              "shadows": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "timestamp_period_ns": 0.0,
+              "timestamp_valid_bits": 0,
+              "total": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "last_draws": {
+              "camera_culled": 0,
+              "camera_draws": 6,
+              "camera_triangles": 72,
+              "objects": 6,
+              "shadow_candidates": 24,
+              "shadow_culled": 0,
+              "shadow_draws": 24,
+              "shadow_triangles": 288,
+              "shadow_views": 4
+            },
+            "profile_requested": false
+          },
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000386",
+          "source": "runtime",
+          "tick": 120,
+          "width": 960,
+          "world_id": "73a4d2c6d409d8b76d218e842076bd81"
+        },
+        {
+          "build_version": "0.0.14",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.580000057367018,
+            2.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 200.0,
+            "near": 0.1,
+            "vertical_fov": 70.0
+          },
+          "lighting": {
+            "ambient": [
+              0.05000000074505806,
+              0.05999999865889549,
+              0.07999999821186066
+            ],
+            "exposure": 1.0,
+            "lights": [
+              {
+                "color": [
+                  1.0,
+                  0.8799999952316284,
+                  0.699999988079071
+                ],
+                "direction": [
+                  -0.0,
+                  -0.7071067811865476,
+                  -0.7071067811865475
+                ],
+                "id": "000000000000000000000000000000c9",
+                "inner_angle": 0.0,
+                "intensity": 4.0,
+                "intensity_unit": "lux",
+                "kind": "directional",
+                "outer_angle": 45.0,
+                "position": [
+                  0.0,
+                  0.0,
+                  0.0
+                ],
+                "range": 0.0,
+                "shadow": {
+                  "bias": 0.0005000000237487257,
+                  "distance": 40.0,
+                  "enabled": true,
+                  "near": 0.05000000074505806,
+                  "normal_bias": 0.009999999776482582
+                }
+              }
+            ],
+            "preview_fallback": false,
+            "shadow_bytes": 4194304,
+            "shadow_resolution": 512,
+            "shadow_views": 4
+          },
+          "nvrhi_errors": 0,
+          "object_count": 6,
+          "path": "<checkout>\\build\\gameplay-capture\\fbfe8d270dff473aa856201bc04550f7\\open.bmp",
+          "render_diagnostics": {
+            "completed_submissions": 2,
+            "cpu": {
+              "prepare": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "record": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "render_call": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "culling": true,
+            "gpu": {
+              "available": false,
+              "detail": "Profiling not requested.",
+              "opaque": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "post": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "samples_dropped": 0,
+              "shadows": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              },
+              "timestamp_period_ns": 0.0,
+              "timestamp_valid_bits": 0,
+              "total": {
+                "last_ms": null,
+                "max_ms": null,
+                "mean_ms": null,
+                "min_ms": null,
+                "samples": 0
+              }
+            },
+            "last_draws": {
+              "camera_culled": 0,
+              "camera_draws": 6,
+              "camera_triangles": 72,
+              "objects": 6,
+              "shadow_candidates": 24,
+              "shadow_culled": 0,
+              "shadow_draws": 24,
+              "shadow_triangles": 288,
+              "shadow_views": 4
+            },
+            "profile_requested": false
+          },
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback",
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000386",
+          "source": "runtime",
+          "tick": 240,
+          "width": 960,
+          "world_id": "73a4d2c6d409d8b76d218e842076bd81"
+        }
+      ],
+      "images": {
+        "baseline.bmp": {
+          "path": "<checkout>/build/gameplay-capture/fbfe8d270dff473aa856201bc04550f7/baseline.bmp",
+          "sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+        },
+        "closed.bmp": {
+          "path": "<checkout>/build/gameplay-capture/fbfe8d270dff473aa856201bc04550f7/closed.bmp",
+          "sha256": "67fda62d561df345581ac5321dbfc52e54b939e1c94151558add8c43cd088991"
+        },
+        "open.bmp": {
+          "path": "<checkout>/build/gameplay-capture/fbfe8d270dff473aa856201bc04550f7/open.bmp",
+          "sha256": "5e3454c6dfc421e7681b159c51efbacd96ea01de03d27a04e109dd906a4181a2"
+        },
+        "player.bmp": {
+          "path": "<checkout>/build/gameplay-capture/fbfe8d270dff473aa856201bc04550f7/player.bmp",
+          "sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+        }
+      }
+    }
+  },
+  "screenshots": {
+    "closed": {
+      "path": "docs/evidence/m2-csharp-door-closed.png",
+      "sha256": "673ba2bd7741f3ec9a9f3ab3578c8e881fff91fe5dfc7eb9be30b72e15b218e2"
+    },
+    "open": {
+      "path": "docs/evidence/m2-csharp-door-open.png",
+      "sha256": "b45c5d788563a7131e0635d1e0b3f59146afb9133afaf2dd83d7667cdfb94d9c"
+    }
+  },
+  "visual_review": "Actual NVIDIA stationary-camera closed/open captures inspected. Visible door and attached handle move aside to reveal the passage. Final replay camera has walked beyond the small fixture, so final-image equality alone is not evidence of visible door motion.",
+  "limitations": [
+    "One trusted global Game<TState>, not general per-entity registered gameplay components.",
+    "No authoritative state outside native-owned fields is covered by rollback.",
+    "CoreCLR development integration only; production AOT and consoles remain unqualified.",
+    "Small fixtures do not establish full-game performance, zero allocations, full SDK build times or arbitrary C# determinism.",
+    "Forced diagnostic GC is outside reported reload round-trip timings; the intentional retention probe deliberately leaves one retired context alive until process exit.",
+    "Windows-hosted MSVC, native Linux hardware graphics and foreground physical controls remain unqualified.",
+    "No gameplay saves, audio/UI/VFX/animation or packaging integrated here."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

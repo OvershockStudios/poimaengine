@@ -1,0 +1,136 @@
+{
+  "date": "2026-09-26",
+  "engine_version": "0.0.16",
+  "schema_revision": 14,
+  "status": "Verified initial native sound events, temporal capture and Windows output; complete environmental audio and production qualification remain pending.",
+  "audio_contract": {
+    "linux": {
+      "passed": true,
+      "tests": 17,
+      "skips": [],
+      "binary_sha256": "779de57a771b55cf4e299a7feda94161693e5040c9284b9a6da9f99319f756ee",
+      "script_sha256": "27eb4530cd1014ab5ccc33364b8299f6516322c975eaa6fc4235fef037c010e8",
+      "full_record": "build/audio-events-linux.json"
+    },
+    "windows": {
+      "passed": true,
+      "tests": 17,
+      "skips": [],
+      "binary_sha256": "4de358c9404b25f1b50b18b52624fc82c767aa2525587e6b19cea71361b97cf4",
+      "script_sha256": "27eb4530cd1014ab5ccc33364b8299f6516322c975eaa6fc4235fef037c010e8",
+      "full_record": "build/audio-events-windows.json"
+    }
+  },
+  "regressions": {
+    "headless": {
+      "passed": 13,
+      "skipped": 0,
+      "log": "build/audio-events-headless-ctest.log",
+      "log_sha256": "b826de48c31b281d5de513bb9f1fdd4815ab7e6b5c8b58ce56d17a8d6bb98bd1"
+    },
+    "runtime": {
+      "passed": 16,
+      "skipped": 0,
+      "log": "build/audio-events-runtime-ctest.log",
+      "log_sha256": "2b4f662e9de33ac98b2626d02f10f28fa0f3401c895e2614ca6eb9a8bbb7a05f"
+    },
+    "windows_cli": {
+      "passed": 7,
+      "skipped": 1,
+      "log": "build/audio-events-windows-cli.log",
+      "log_sha256": "5e663f00cdf4120a8b1c01edd4ad3000393a4b666316d1de12956dcda043d290"
+    }
+  },
+  "windows_player": {
+    "binary_sha256": "4de358c9404b25f1b50b18b52624fc82c767aa2525587e6b19cea71361b97cf4",
+    "test_sha256": "266cf8ce177906627380531e17f7fc51f0ead4e189c7f5c1f334f46260dc0367",
+    "device": {
+      "backpressure_ms": 1707.7599999999998,
+      "driver": "wasapi",
+      "dsp_ms": 9.372799999999994,
+      "empty_queue_observations": 0,
+      "enabled": true,
+      "max_queued_frames": 5824,
+      "over_range_samples": 0,
+      "peak": 0.004061116836965084,
+      "stream_drained": true,
+      "submitted_frames": 96000,
+      "voices_started": 1
+    },
+    "headless_capture_sha256": "b5d82f191f8c2f80dfeb7535b74170bf70ba23d11fb64ef20a2484b24daa1366",
+    "headless_mixer_comparison": "Identical peak, over-range sample count and voice-start count; exact requested frame count. No device loopback PCM was recorded.",
+    "full_record": "build/audio-events-player.json"
+  },
+  "failed_device": {
+    "passed": true,
+    "scope": "Failed output initialization retains tick zero and a retry receipt; headless audio remains usable in the same runtime session.",
+    "full_record": "build/audio-events-device-failure.json"
+  },
+  "example": {
+    "path": "m2-audio-events.wav",
+    "sha256": "088c3f3f6265619f660615f23df5370cba9a86b9d0b73ad8c2acb71a4485ceac",
+    "frames": 120000,
+    "seconds": 2.5,
+    "stream": {
+      "blocks": 235,
+      "dsp_ms": 3.097948999999998,
+      "frames": 120000,
+      "over_range_samples": 0,
+      "path_updates": 61,
+      "peak": 0.03267412260174751,
+      "voices_started": 1
+    },
+    "voice": {
+      "asset": "e600508bc9f7be06f4675bb17c3739954b8e5578ae7c71dcaebde195ab99c14f",
+      "clip_frame": null,
+      "emitter": "00000000000000000000000000000065",
+      "emitter_gain": 1.0,
+      "emitting": false,
+      "end_sample": "96000",
+      "gain": 1.0,
+      "loop": true,
+      "start_tick": 0,
+      "stop_sample": "96000",
+      "voice": 1
+    },
+    "description": "Original three-tone diagnostic: play behind a door, open it, stop, then allow bounded filter-tail silence."
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "8219547d263d76a55cc029326842743a7be673a0372afeca1ea8cfc63752b2e8",
+    "cmake/render_smoke.cmake": "a5d616c7b2e23ee291cc057da274e3f5710b7246fc0ac753deaa92cb0960a68c",
+    "include/poima/audio.hpp": "9f4f3553b4dcc4b47fcdfc474cddc6c6602db8d736b9c35fcfbc3196b33c981b",
+    "include/poima/player.hpp": "a7835a8b342d251c5bcceef78f50afeb0893be52fa783c6ce04fa9e10df96bed",
+    "include/poima/runtime.hpp": "aea13c8f4fb396a5170e3716b098720e814e0adb071755b0257bb4f0731f29ce",
+    "include/poima/gameplay_abi.h": "c766361f452300695bc246e79f70234147818490cdda1c209a2655a41c731c46",
+    "src/core.cpp": "e38a5febf8782293596cb22f88c9ac2bf8f015c442b19337fda1ebb0e760c7fc",
+    "src/runtime.cpp": "46616d9e7e37c0cc8f7ecd1cbf549708946e286dcb42e52d47a9b6fb375bfbcf",
+    "src/runtime_disabled.cpp": "b493a7796067feb73b8203176ddf824bc1567257eabe2ec57de1bf373ba12591",
+    "src/audio_events.cpp": "36c6785e94cfb175fa584eab8782fbbb5ac28921976065a953614b84aa13fc4b",
+    "src/audio_stream.cpp": "f9550c3fe5e7a24c439ad9f163ec992b0b6549e838816597612bcb13b195eecb",
+    "src/player_audio.hpp": "4dba88a939a080f8b5b4a29d63f6f3ccd1a8b413f85c5d9a11f8a99fbd1f377e",
+    "src/render_smoke.cpp": "bdc4c64083d521fd4e692416b24007c2165a75e1a74f7f9fd273698ec8ba4ee2",
+    "src/world.cpp": "e29f8426204018e6d85aa420483f7220a9a7b05545e5be9fb4531412856d534a",
+    "managed/Poima.Gameplay/Gameplay.cs": "0582f19c7110a92f8629db1148482aec04570b08111a366a6673ee3634871ac9",
+    "managed/Poima.ManagedBridge/Entry.cs": "a9495bce6955c3879f6edbfe57a4aeb24a56a07f08e814300ec2bf94e93efd7f",
+    "tests/audio_contract.py": "27eb4530cd1014ab5ccc33364b8299f6516322c975eaa6fc4235fef037c010e8",
+    "tests/audio_player.py": "266cf8ce177906627380531e17f7fc51f0ead4e189c7f5c1f334f46260dc0367",
+    "tests/fixtures/audio_game/AudioProbe.cs": "cf7f40916576279f86e81b48b7761f919c41c5dfe19edaa2f174d1e8e2c55e19",
+    "tests/fixtures/audio_game/Poima.AudioProbe.csproj": "32e5ac546670bc3348426e1de55b5a83f2c8409f0fd91587f1ec49da7ceac1ed",
+    "examples/audio-events-room.jsonl": "89b5554c8f8f539aff19e986d82dee34a73685d9484989fc6e762c0d628a6485"
+  },
+  "managed_binaries": {
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll": "7bb3210b3b1d524d11296caf4428142f6ea0e61f9f95130e175c20cc21340ca0",
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.Gameplay.dll": "dba333e50207212edf0f95bdf89dc4fdd7bb340ddae75f90f6ad4337ab4ff893",
+    "tests/fixtures/audio_game/bin/Release/net10.0/Poima.AudioProbe.dll": "6b77ef0191b84a6c54d020828f41279a3c3a038ad63be1bd09929388ee597530"
+  },
+  "limitations": [
+    "Synchronous acoustic rebuilds on pose changes; no production CPU/latency qualification.",
+    "Main-thread PCM production; worker scheduling and robust device lifecycle remain pending.",
+    "Queue observations are not hardware underrun or speaker-latency measurements.",
+    "No physical-output capture or controlled comparative listening test.",
+    "Direct/transmitted paths and HRTF only; no reflections, reverb or around-corner pathing yet.",
+    "Delay is latched on attachment; moving-source travel time and Doppler remain pending.",
+    "No console implementation; Steam Audio public SDK does not list Xbox or PlayStation support."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

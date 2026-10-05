@@ -1,0 +1,1294 @@
+{
+  "recorded_at_utc": "2026-09-26T08:56:51.625596+00:00",
+  "engine_version": "0.0.10",
+  "scope": "Authored directional/point/spot lighting, ambient fill and exposure, resolved inspection, moving runtime attachments and initial Vulkan direct lighting. Full engine roadmap remains incomplete.",
+  "builds": {
+    "windows_runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf"
+    },
+    "linux_headless": {
+      "path": "build/headless/poima",
+      "sha256": "0a66df35a13646ca8b3e917d41477a698b9cdff6b961a34bf245cac957d1ee73"
+    },
+    "linux_runtime": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "b9c0c5053d74ccf8eaf0c84be096d0b84f6733a40dcf9ab3096891a7dd142a13"
+    }
+  },
+  "test_sources": {
+    "tests/lighting_contract.py": "69928dfa4a7ee4cb289023c512e210b0eacf0159b64e342c19aa9bf1ce56dec1",
+    "tests/lighting_capture.py": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+    "tests/player_contract.py": "e3b6c4095db62aa49192e1ce25b1225e546b5378ced24a3efbed2323879f5afd",
+    "tests/material_capture.py": "14179932cc55f7da69c6b701e82fc14bcf77c3845c05cb9ef3fe4a02a6a26804"
+  },
+  "ctest": {
+    "headless": {
+      "passed": 10,
+      "failed": 0,
+      "path": "build/lighting-headless-tests.log",
+      "sha256": "c504de97e81d3a56f0af9270621d6f6af1bd3f6992bb127a5d88deb21c3aab8e",
+      "text": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/10 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/10 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/10 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/10 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/10 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: lighting_contract\n 6/10 Test  #6: lighting_contract ................   Passed    0.46 sec\n      Start  7: asset_contract\n 7/10 Test  #7: asset_contract ...................   Passed    3.65 sec\n      Start  8: cli_contract\n 8/10 Test  #8: cli_contract .....................   Passed    0.60 sec\n      Start  9: world_contract\n 9/10 Test  #9: world_contract ...................   Passed    3.22 sec\n      Start 10: native_module_contract\n10/10 Test #10: native_module_contract ...........   Passed   10.77 sec\n\n100% tests passed, 0 tests failed out of 10\n\nTotal Test time (real) =  18.83 sec\n"
+    },
+    "runtime_headless": {
+      "passed": 12,
+      "failed": 0,
+      "path": "build/lighting-runtime-tests.log",
+      "sha256": "ce04698744a2500c0a34a11dc2e1f1d650200109233728322e76645204427065",
+      "text": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/12 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/12 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/12 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/12 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/12 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: runtime_native\n 6/12 Test  #6: runtime_native ...................   Passed    0.09 sec\n      Start  7: lighting_contract\n 7/12 Test  #7: lighting_contract ................   Passed    0.59 sec\n      Start  8: asset_contract\n 8/12 Test  #8: asset_contract ...................   Passed    3.84 sec\n      Start  9: runtime_contract\n 9/12 Test  #9: runtime_contract .................   Passed    0.68 sec\n      Start 10: cli_contract\n10/12 Test #10: cli_contract .....................   Passed    0.73 sec\n      Start 11: world_contract\n11/12 Test #11: world_contract ...................   Passed    3.03 sec\n      Start 12: native_module_contract\n12/12 Test #12: native_module_contract ...........   Passed   10.56 sec\n\n100% tests passed, 0 tests failed out of 12\n\nTotal Test time (real) =  19.66 sec\n"
+    }
+  },
+  "windows_authoring": {
+    "path": "build/lighting-windows-contract.log",
+    "sha256": "987e193da54e8aebe607f9a02aa1a9c52be0659463b9feaebc2d288c5d07280c",
+    "text": "test_discovery_preview_receipts_persistence_and_fallback (__main__.LightingContract.test_discovery_preview_receipts_persistence_and_fallback) ... ok\ntest_invalid_values_and_global_limits_are_atomic (__main__.LightingContract.test_invalid_values_and_global_limits_are_atomic) ... ok\ntest_runtime_freezes_settings_and_tracks_moving_parent (__main__.LightingContract.test_runtime_freezes_settings_and_tracks_moving_parent) ... ok\ntest_transformed_pose_and_units (__main__.LightingContract.test_transformed_pose_and_units) ... ok\n\n----------------------------------------------------------------------\nRan 4 tests in 0.531s\n\nOK\n"
+  },
+  "windows_cli": {
+    "path": "build/lighting-windows-cli.log",
+    "sha256": "eadf06469469c1b24625fb58ac59e544fc9cbe5ada91318e005ff1d567f58951",
+    "text": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.691s\n\nOK (skipped=1)\n"
+  },
+  "lighting_gpus": [
+    {
+      "raw_evidence": "build/lighting-capture/gpu-0.json",
+      "raw_sha256": "b31fd4e93074c049ca0740f958818b1d6b517eb9965d56345b75f9652dfc28db",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+      "gpu_index": 0,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "capture_count": 18,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "directional",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "point-near",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "point-far",
+          "actual": [
+            105,
+            71,
+            49
+          ],
+          "expected": [
+            105,
+            71,
+            49
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "range-taper",
+          "actual": [
+            166,
+            124,
+            91
+          ],
+          "expected": [
+            166,
+            124,
+            91
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "range-boundary",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-axis",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-cone",
+          "actual": [
+            122,
+            85,
+            60
+          ],
+          "expected": [
+            123,
+            86,
+            60
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-away",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "disabled",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "ambient-exposure",
+          "actual": [
+            92,
+            77,
+            48
+          ],
+          "expected": [
+            92,
+            77,
+            48
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "colored-sum",
+          "actual": [
+            169,
+            160,
+            0
+          ],
+          "expected": [
+            169,
+            160,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "last-slot",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            116,
+            76,
+            45
+          ],
+          "expected": [
+            116,
+            76,
+            45
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            158,
+            114,
+            79
+          ],
+          "expected": [
+            158,
+            114,
+            79
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored-dark",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "builtin-box",
+          "actual": [
+            164,
+            114,
+            66
+          ],
+          "expected": [
+            164,
+            114,
+            66
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "emission",
+          "actual": [
+            85,
+            113,
+            146
+          ],
+          "expected": [
+            85,
+            113,
+            146
+          ],
+          "tolerance": 3
+        }
+      ],
+      "checks": {}
+    },
+    {
+      "raw_evidence": "build/lighting-capture/gpu-1.json",
+      "raw_sha256": "5789c5e78ead184c857eeb8398532bc76e50c6e7e30ff633912a6402fc40627f",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+      "gpu_index": 1,
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "capture_count": 18,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "directional",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "point-near",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "point-far",
+          "actual": [
+            105,
+            71,
+            49
+          ],
+          "expected": [
+            105,
+            71,
+            49
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "range-taper",
+          "actual": [
+            166,
+            124,
+            91
+          ],
+          "expected": [
+            166,
+            124,
+            91
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "range-boundary",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-axis",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-cone",
+          "actual": [
+            122,
+            85,
+            60
+          ],
+          "expected": [
+            123,
+            86,
+            60
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "spot-away",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "disabled",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "ambient-exposure",
+          "actual": [
+            92,
+            77,
+            48
+          ],
+          "expected": [
+            92,
+            77,
+            48
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "colored-sum",
+          "actual": [
+            169,
+            160,
+            0
+          ],
+          "expected": [
+            169,
+            160,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "last-slot",
+          "actual": [
+            169,
+            127,
+            94
+          ],
+          "expected": [
+            169,
+            127,
+            94
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            116,
+            76,
+            45
+          ],
+          "expected": [
+            116,
+            76,
+            45
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            158,
+            114,
+            79
+          ],
+          "expected": [
+            158,
+            114,
+            79
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored-dark",
+          "actual": [
+            0,
+            0,
+            0
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "builtin-box",
+          "actual": [
+            164,
+            114,
+            66
+          ],
+          "expected": [
+            164,
+            114,
+            66
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "emission",
+          "actual": [
+            85,
+            114,
+            146
+          ],
+          "expected": [
+            85,
+            113,
+            146
+          ],
+          "tolerance": 3
+        }
+      ],
+      "checks": {}
+    }
+  ],
+  "material_regressions": [
+    {
+      "raw_evidence": "build/lighting-material-regression/gpu-0.json",
+      "raw_sha256": "9e830e96015291e5e4f91d895dd1c330e3ca7159d63112a2ccd4f4d897118c41",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": null,
+      "gpu_index": 0,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "capture_count": 14,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "generated",
+          "actual": [
+            133,
+            87,
+            47
+          ],
+          "expected": [
+            133,
+            87,
+            47
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "zero-scale",
+          "actual": [
+            140,
+            94,
+            55
+          ],
+          "expected": [
+            140,
+            94,
+            55
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "mirrored",
+          "actual": [
+            162,
+            115,
+            74
+          ],
+          "expected": [
+            162,
+            115,
+            73
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored",
+          "actual": [
+            149,
+            100,
+            58
+          ],
+          "expected": [
+            149,
+            101,
+            58
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "nonuniform",
+          "actual": [
+            78,
+            46,
+            22
+          ],
+          "expected": [
+            78,
+            46,
+            22
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "green",
+          "actual": [
+            0,
+            188,
+            0
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "red",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "explicit-null",
+          "actual": [
+            188,
+            188,
+            188
+          ],
+          "expected": [
+            188,
+            188,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "inherited",
+          "actual": [
+            0,
+            0,
+            188
+          ],
+          "expected": [
+            0,
+            0,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "legacy-v2",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "box-normal",
+          "actual": [
+            39,
+            20,
+            6
+          ],
+          "expected": [
+            39,
+            20,
+            6
+          ],
+          "tolerance": 3
+        }
+      ],
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      }
+    },
+    {
+      "raw_evidence": "build/lighting-material-regression/gpu-1.json",
+      "raw_sha256": "f44768c8ae07de2883e2f7514ca212b24c4c5be38189418d6841c4e97f87580e",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": null,
+      "gpu_index": 1,
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "capture_count": 14,
+      "nvrhi_errors": 0,
+      "samples": [
+        {
+          "name": "generated",
+          "actual": [
+            133,
+            87,
+            47
+          ],
+          "expected": [
+            133,
+            87,
+            47
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "zero-scale",
+          "actual": [
+            140,
+            94,
+            55
+          ],
+          "expected": [
+            140,
+            94,
+            55
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "mirrored",
+          "actual": [
+            162,
+            115,
+            73
+          ],
+          "expected": [
+            162,
+            115,
+            73
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored",
+          "actual": [
+            149,
+            100,
+            58
+          ],
+          "expected": [
+            149,
+            101,
+            58
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "nonuniform",
+          "actual": [
+            78,
+            46,
+            22
+          ],
+          "expected": [
+            78,
+            46,
+            22
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "green",
+          "actual": [
+            0,
+            188,
+            0
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "red",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "explicit-null",
+          "actual": [
+            188,
+            188,
+            188
+          ],
+          "expected": [
+            188,
+            188,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "inherited",
+          "actual": [
+            0,
+            0,
+            188
+          ],
+          "expected": [
+            0,
+            0,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "legacy-v2",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "box-normal",
+          "actual": [
+            39,
+            20,
+            6
+          ],
+          "expected": [
+            39,
+            20,
+            6
+          ],
+          "tolerance": 3
+        }
+      ],
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      }
+    }
+  ],
+  "player_regressions": [
+    {
+      "raw_evidence": "build/lighting-player-regression/gpu-0.json",
+      "raw_sha256": "aacf284681ae1065c48f463c9e724d3c4db9ee2fff440110ae1365a8fad380c8",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": null,
+      "authored_lights": false,
+      "passed": true,
+      "ticks": 371,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "actual_final_lighting": {
+        "ambient": [
+          0.03500000014901161,
+          0.03500000014901161,
+          0.03500000014901161
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "direction": [
+              0.37139067635410367,
+              -0.7427813527082073,
+              -0.5570860145311555
+            ],
+            "id": "preview",
+            "inner_angle": 0.0,
+            "intensity": 3.1415927410125732,
+            "intensity_unit": "lux",
+            "kind": "directional",
+            "outer_angle": 45.0,
+            "position": [
+              0.0,
+              0.0,
+              0.0
+            ],
+            "range": 0.0
+          }
+        ],
+        "preview_fallback": true
+      }
+    },
+    {
+      "raw_evidence": "build/lighting-player-authored/gpu-0.json",
+      "raw_sha256": "840832f5199765461129eeadfbcbd4058afeb986229403b309a8db0aa65b413a",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": "e3b6c4095db62aa49192e1ce25b1225e546b5378ced24a3efbed2323879f5afd",
+      "authored_lights": true,
+      "passed": true,
+      "ticks": 371,
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "actual_final_lighting": {
+        "ambient": [
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.30000001192092896,
+              0.10000000149011612
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "000000000000000000000000000000c9",
+            "inner_angle": 0.0,
+            "intensity": 80.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              2.0000171168637775,
+              1.9799998874860767,
+              -2.93648467698015e-06
+            ],
+            "range": 20.0
+          },
+          {
+            "color": [
+              0.20000000298023224,
+              0.5,
+              1.0
+            ],
+            "direction": [
+              -0.6644630653442007,
+              0.3420201526119447,
+              -0.6644629786532058
+            ],
+            "id": "000000000000000000000000000000ca",
+            "inner_angle": 0.0,
+            "intensity": 120.0,
+            "intensity_unit": "candela",
+            "kind": "spot",
+            "outer_angle": 45.0,
+            "position": [
+              3.2724404060536676,
+              1.3920615717609601,
+              -1.409346824226061
+            ],
+            "range": 20.0
+          }
+        ],
+        "preview_fallback": false
+      }
+    },
+    {
+      "raw_evidence": "build/lighting-player-authored/gpu-1.json",
+      "raw_sha256": "a5775ac1b33d40be715200ea38b076b4f06dc0cf8302cd36991e7e4a800c517d",
+      "binary_sha256": "796c207361e5dcedaab09da80738b5c921626e74e13a11259438096924d0d7cf",
+      "test_sha256": "e3b6c4095db62aa49192e1ce25b1225e546b5378ced24a3efbed2323879f5afd",
+      "authored_lights": true,
+      "passed": true,
+      "ticks": 371,
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "actual_final_lighting": {
+        "ambient": [
+          0.029999999329447746,
+          0.029999999329447746,
+          0.029999999329447746
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.30000001192092896,
+              0.10000000149011612
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "000000000000000000000000000000c9",
+            "inner_angle": 0.0,
+            "intensity": 80.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              2.0000171168637775,
+              1.9799998874860767,
+              -2.93648467698015e-06
+            ],
+            "range": 20.0
+          },
+          {
+            "color": [
+              0.20000000298023224,
+              0.5,
+              1.0
+            ],
+            "direction": [
+              -0.6644630653442007,
+              0.3420201526119447,
+              -0.6644629786532058
+            ],
+            "id": "000000000000000000000000000000ca",
+            "inner_angle": 0.0,
+            "intensity": 120.0,
+            "intensity_unit": "candela",
+            "kind": "spot",
+            "outer_angle": 45.0,
+            "position": [
+              3.2724404060536676,
+              1.3920615717609601,
+              -1.409346824226061
+            ],
+            "range": 20.0
+          }
+        ],
+        "preview_fallback": false
+      }
+    }
+  ],
+  "example": {
+    "fixture": "examples/lighting-grid.jsonl",
+    "fixture_sha256": "868bd2e22bad6ddc540ddf522a7999bd7f73958c5853fbd6fd8ecd1ea7a8ed18",
+    "capture": "docs/evidence/m2-lighting-grid.png",
+    "capture_sha256": "684d5dfc319924664f4c705d66fff56b2fb93f5c83761a7b61becd791f3ee54a",
+    "capture_response": {
+      "build_version": "0.0.10",
+      "camera": "00000000000000000000000000000001",
+      "camera_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        11.0,
+        1.0
+      ],
+      "capture_written": true,
+      "format": "BMP",
+      "frames_presented": 2,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "height": 540,
+      "lens": {
+        "far": 100.0,
+        "near": 0.1,
+        "vertical_fov": 34.0
+      },
+      "lighting": {
+        "ambient": [
+          0.012000000104308128,
+          0.014000000432133675,
+          0.02500000037252903
+        ],
+        "exposure": 1.0,
+        "lights": [
+          {
+            "color": [
+              1.0,
+              0.5699999928474426,
+              0.2199999988079071
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "0000000000000000000000000000000a",
+            "inner_angle": 0.0,
+            "intensity": 150.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              -4.0,
+              3.0,
+              4.0
+            ],
+            "range": 18.0
+          },
+          {
+            "color": [
+              0.1599999964237213,
+              0.47999998927116394,
+              1.0
+            ],
+            "direction": [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            "id": "0000000000000000000000000000000b",
+            "inner_angle": 0.0,
+            "intensity": 100.0,
+            "intensity_unit": "candela",
+            "kind": "point",
+            "outer_angle": 45.0,
+            "position": [
+              5.0,
+              1.0,
+              3.0
+            ],
+            "range": 18.0
+          },
+          {
+            "color": [
+              0.5,
+              1.0,
+              0.699999988079071
+            ],
+            "direction": [
+              -0.0,
+              -0.7071067811865476,
+              -0.7071067811865475
+            ],
+            "id": "0000000000000000000000000000000c",
+            "inner_angle": 15.0,
+            "intensity": 240.0,
+            "intensity_unit": "candela",
+            "kind": "spot",
+            "outer_angle": 55.0,
+            "position": [
+              0.0,
+              6.0,
+              3.0
+            ],
+            "range": 16.0
+          }
+        ],
+        "preview_fallback": false
+      },
+      "nvrhi_errors": 0,
+      "object_count": 9,
+      "path": "<checkout>\\build\\lighting-grid.bmp",
+      "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored directional/point/spot lighting or explicit preview fallback; no shadows",
+      "revision": 1,
+      "samples": 4,
+      "session_id": null,
+      "source": "authored",
+      "tick": null,
+      "width": 960,
+      "world_id": "07218e4b69558cf301a382bbe7fced66"
+    },
+    "visually_inspected": true,
+    "note": "Lossless BMP-to-PNG serialization of actual readback; no image generation or retouching."
+  },
+  "limitations": [
+    "Direct lighting only; no shadows, sky/IBL, GI, volumetric lighting or HDR presentation.",
+    "64 enabled lights in a forward per-pixel loop; no clustered culling, streaming or performance qualification.",
+    "NVRHI error checks only; not full Khronos validation.",
+    "Windows Vulkan qualified only on the two named laptop GPUs; not MSVC, native Linux hardware or consoles.",
+    "Runtime light settings remain frozen; animated/runtime parameter editing and live authoring reconciliation are unfinished.",
+    "Physical keyboard/mouse foreground input remains unqualified on this automation desktop.",
+    "Legacy player regression used the previous test script before the optional authored-light variant was added; the two authored-light runs include the current script SHA."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

@@ -1,0 +1,1909 @@
+{
+  "recorded_at_utc": "2026-09-26T07:09:02.537063+00:00",
+  "engine_version": "0.0.6",
+  "scope": "Continuous native player/replay over existing fixed-step runtime; M0, M1 and M2 remain incomplete.",
+  "builds": {
+    "windows": {
+      "preset": "windows-runtime",
+      "compiler": "LLVM-MinGW Clang 23.1.2",
+      "binary_sha256": "c52c31f47f914eaddbc3e52fa1149eeb186a612f94dad365fdb6ee45e6d00029",
+      "native_windows_execution": true
+    },
+    "linux": {
+      "preset": "runtime-headless",
+      "compiler": "GNU 15.2.0",
+      "binary_sha256": "9e6441a00bb6f77acca763e64e0f5595ebac44c8e5e3384280fa125b7868fb56"
+    }
+  },
+  "linux_ctest": {
+    "passed_suites": 7,
+    "failed_suites": 0,
+    "duration_seconds": 14.8,
+    "log": "Start testing: Sep 26 03:06 EDT\n----------------------------------------------------------\n1/7 Testing: player_input\n1/7 Test: player_input\nCommand: \"<checkout>/build/runtime-headless/poima-player-input-test\"\nDirectory: <checkout>/build/runtime-headless\n\"player_input\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\nInput edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"player_input\" end time: Sep 26 03:06 EDT\n\"player_input\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n2/7 Testing: scene_math\n2/7 Test: scene_math\nCommand: \"<checkout>/build/runtime-headless/poima-scene-math-test\"\nDirectory: <checkout>/build/runtime-headless\n\"scene_math\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\nHierarchy, affine inverse, camera rigidity and [0,1] perspective depth passed.\n<end of output>\nTest time =   0.01 sec\n----------------------------------------------------------\nTest Passed.\n\"scene_math\" end time: Sep 26 03:06 EDT\n\"scene_math\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n3/7 Testing: runtime_native\n3/7 Test: runtime_native\nCommand: \"<checkout>/build/runtime-headless/poima-runtime-test\"\nDirectory: <checkout>/build/runtime-headless\n\"runtime_native\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\nPhysics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed.\n<end of output>\nTest time =   0.09 sec\n----------------------------------------------------------\nTest Passed.\n\"runtime_native\" end time: Sep 26 03:06 EDT\n\"runtime_native\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n4/7 Testing: runtime_contract\n4/7 Test: runtime_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/runtime_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"runtime_contract\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\ntest_collision_jump_retries_and_live_authoring_separation (__main__.RuntimeContract.test_collision_jump_retries_and_live_authoring_separation) ... ok\ntest_player_validation_does_not_advance_runtime (__main__.RuntimeContract.test_player_validation_does_not_advance_runtime) ... ok\ntest_receipt_window_and_repeated_lifetimes (__main__.RuntimeContract.test_receipt_window_and_repeated_lifetimes) ... ok\ntest_repeatable_replay_and_chunk_equivalence (__main__.RuntimeContract.test_repeatable_replay_and_chunk_equivalence) ... ok\ntest_validation_failed_start_recovery_and_stale_observation (__main__.RuntimeContract.test_validation_failed_start_recovery_and_stale_observation) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.526s\n\nOK\n<end of output>\nTest time =   0.68 sec\n----------------------------------------------------------\nTest Passed.\n\"runtime_contract\" end time: Sep 26 03:06 EDT\n\"runtime_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n5/7 Testing: cli_contract\n5/7 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/runtime-headless/poima\" \"0\" \"0\"\nDirectory: <checkout>/build/runtime-headless\n\"cli_contract\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.540s\n\nOK\n<end of output>\nTest time =   0.67 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 03:06 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n6/7 Testing: world_contract\n6/7 Test: world_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/world_contract.py\" \"<checkout>/build/runtime-headless/poima\"\nDirectory: <checkout>/build/runtime-headless\n\"world_contract\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\ntest_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_components_hierarchy_matrices_and_capture_validation (__main__.WorldContract.test_components_hierarchy_matrices_and_capture_validation) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... ok\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_runtime_discovery_and_optional_build (__main__.WorldContract.test_runtime_discovery_and_optional_build) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.866s\n\nOK\n<end of output>\nTest time =   3.01 sec\n----------------------------------------------------------\nTest Passed.\n\"world_contract\" end time: Sep 26 03:06 EDT\n\"world_contract\" time elapsed: 00:00:03\n----------------------------------------------------------\n\n7/7 Testing: native_module_contract\n7/7 Test: native_module_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/scripts/measure_native_module.py\" \"--host\" \"<checkout>/build/runtime-headless/poima-module-lab\" \"--output\" \"<checkout>/build/runtime-headless/module-contract\" \"--warm-edits\" \"2\"\nDirectory: <checkout>/build/runtime-headless\n\"native_module_contract\" start time: Sep 26 03:06 EDT\nOutput:\n----------------------------------------------------------\n{\n  \"build_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 775.548487999913,\n    \"p95_ms\": 779.6122700001433,\n    \"max_ms\": 779.6122700001433\n  },\n  \"reload_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 4.937530000000001,\n    \"p95_ms\": 4.98521,\n    \"max_ms\": 4.98521\n  },\n  \"observed_total_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 825.1426424994861,\n    \"p95_ms\": 828.2390969998232,\n    \"max_ms\": 828.2390969998232\n  },\n  \"repeated_reload_ms\": {\n    \"samples\": 100,\n    \"median_ms\": 4.7076899999999995,\n    \"p95_ms\": 5.40674,\n    \"max_ms\": 8.41777\n  }\n}\n<end of output>\nTest time =  10.28 sec\n----------------------------------------------------------\nTest Passed.\n\"native_module_contract\" end time: Sep 26 03:06 EDT\n\"native_module_contract\" time elapsed: 00:00:10\n----------------------------------------------------------\n\nEnd testing: Sep 26 03:06 EDT\n"
+  },
+  "authoring_only_regression": {
+    "preset": "headless",
+    "suites": [
+      "player_input",
+      "cli_contract",
+      "world_contract"
+    ],
+    "passed": 3,
+    "failed": 0,
+    "duration_seconds": 3.57
+  },
+  "windows_input_unit": {
+    "command": [
+      "./build/windows-runtime/poima-player-input-test.exe"
+    ],
+    "exit_code": 0,
+    "binary_sha256": "4cabc2032b9a1b4dc4dd4dd1eb11d97aa94d0270ea8ec7ca569e880f66d9f877",
+    "checks": [
+      "Sub-tick input preservation",
+      "One-shot jump/look consumption",
+      "Repeat suppression",
+      "Opposed movement cancellation",
+      "Focus reset",
+      "Bounded look overflow",
+      "60 fixed ticks across 30/144 Hz frame schedules",
+      "Inactive pause",
+      "Bounded catch-up and invalid duration rejection"
+    ]
+  },
+  "runtime_contract": {
+    "linux": {
+      "binary": "<checkout>/build/runtime-headless/poima",
+      "binary_sha256": "9e6441a00bb6f77acca763e64e0f5595ebac44c8e5e3384280fa125b7868fb56",
+      "tests_run": 5,
+      "passed": true,
+      "skips": [],
+      "replay_trace": [
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.019999942632981993,
+            2.0,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 300,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.01999991990871086,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "not_supported",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 310,
+          "velocity": [
+            0.0,
+            3.3309648036956787,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.660147277188829,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            0.0,
+            -0.020000040481648496,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            0.0,
+            1.5799999595183516,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999916056949507,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000839430506,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      ]
+    },
+    "windows": {
+      "binary": "<checkout>/build/windows-runtime/poima.exe",
+      "binary_sha256": "c52c31f47f914eaddbc3e52fa1149eeb186a612f94dad365fdb6ee45e6d00029",
+      "tests_run": 5,
+      "passed": true,
+      "skips": [],
+      "replay_trace": [
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.019999942632981993,
+            2.0,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 300,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.01999991990871086,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "not_supported",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 310,
+          "velocity": [
+            0.0,
+            3.3309648036956787,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.660147277188829,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            0.0,
+            -0.020000040481648496,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 431,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            0.0,
+            1.5799999595183516,
+            -2.462944447994232,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999916056949507,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 491,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000839430506,
+            -1.6151236034929752,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      ]
+    },
+    "recorded_states_numerically_equal_across_platforms": true
+  },
+  "windows_world_contract": {
+    "tests": 9,
+    "passed": 8,
+    "skipped": 1,
+    "skip_reason": "Abrupt Windows process termination remains unqualified by the WSL harness."
+  },
+  "windows_cli_contract": {
+    "tests": 8,
+    "passed": 7,
+    "skipped": 1,
+    "skip_reason": "Actual GPU execution is a separate integration test."
+  },
+  "continuous_replay": [
+    {
+      "gpu_index": 0,
+      "binary_sha256": "c52c31f47f914eaddbc3e52fa1149eeb186a612f94dad365fdb6ee45e6d00029",
+      "exit_code": 0,
+      "stderr": "",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/player-evidence/610ccbbf6764456096a569b10336cab8/player.bmp",
+          "sha256": "60da2deb532963f677bd43921ac430b2effeeb12bdeec82400063c1436007b88"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/player-evidence/610ccbbf6764456096a569b10336cab8/baseline.bmp",
+          "sha256": "60da2deb532963f677bd43921ac430b2effeeb12bdeec82400063c1436007b88"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/player-evidence/610ccbbf6764456096a569b10336cab8/recovered.bmp",
+          "sha256": "60da2deb532963f677bd43921ac430b2effeeb12bdeec82400063c1436007b88"
+        }
+      },
+      "sequence": [
+        {
+          "ticks": 120
+        },
+        {
+          "ticks": 60,
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 10,
+          "jump": true
+        },
+        {
+          "ticks": 120
+        },
+        {
+          "ticks": 1,
+          "look": [
+            45,
+            20
+          ]
+        },
+        {
+          "ticks": 60,
+          "move": [
+            0.4,
+            -0.7
+          ]
+        }
+      ],
+      "play_results": [
+        {
+          "id": 3,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": true,
+            "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 372,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\610ccbbf6764456096a569b10336cab8\\player.bmp",
+            "previous_tick": 0,
+            "replayed": false,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "stop_reason": "replay_complete",
+            "success": true,
+            "swapchain_rebuilds": 1,
+            "tick": 371,
+            "width": 960,
+            "world_id": "8740c2d24ebd16da9533f5a6e2438e04"
+          }
+        },
+        {
+          "id": 4,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": true,
+            "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 372,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\610ccbbf6764456096a569b10336cab8\\player.bmp",
+            "previous_tick": 0,
+            "replayed": true,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "stop_reason": "replay_complete",
+            "success": true,
+            "swapchain_rebuilds": 1,
+            "tick": 371,
+            "width": 960,
+            "world_id": "8740c2d24ebd16da9533f5a6e2438e04"
+          }
+        },
+        {
+          "error": {
+            "code": -32010,
+            "message": "Runtime request ID reused with different parameters."
+          },
+          "id": 5,
+          "jsonrpc": "2.0"
+        },
+        {
+          "error": {
+            "code": -32009,
+            "message": "Runtime tick conflict."
+          },
+          "id": 7,
+          "jsonrpc": "2.0"
+        },
+        {
+          "id": 23,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": false,
+            "detail": "No selected device satisfies Vulkan 1.3, presentation, timeline semaphore, synchronization2 and dynamic rendering requirements. Software devices require --allow-software.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 0,
+            "gpu": "",
+            "hardware": false,
+            "height": 0,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\610ccbbf6764456096a569b10336cab8\\bad.bmp",
+            "previous_tick": 371,
+            "replayed": false,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000385",
+            "stop_reason": "error",
+            "success": false,
+            "swapchain_rebuilds": 0,
+            "tick": 371,
+            "width": 0,
+            "world_id": "8740c2d24ebd16da9533f5a6e2438e04"
+          }
+        },
+        {
+          "id": 24,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": false,
+            "detail": "No selected device satisfies Vulkan 1.3, presentation, timeline semaphore, synchronization2 and dynamic rendering requirements. Software devices require --allow-software.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 0,
+            "gpu": "",
+            "hardware": false,
+            "height": 0,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\610ccbbf6764456096a569b10336cab8\\bad.bmp",
+            "previous_tick": 371,
+            "replayed": true,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000385",
+            "stop_reason": "error",
+            "success": false,
+            "swapchain_rebuilds": 0,
+            "tick": 371,
+            "width": 0,
+            "world_id": "8740c2d24ebd16da9533f5a6e2438e04"
+          }
+        },
+        {
+          "id": 25,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": true,
+            "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 2,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 540,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\610ccbbf6764456096a569b10336cab8\\recovered.bmp",
+            "previous_tick": 371,
+            "replayed": false,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000385",
+            "stop_reason": "replay_complete",
+            "success": true,
+            "swapchain_rebuilds": 1,
+            "tick": 372,
+            "width": 960,
+            "world_id": "8740c2d24ebd16da9533f5a6e2438e04"
+          }
+        }
+      ],
+      "state_comparison": [
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 371,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999904757843856,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000952421562,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 371,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999904757843856,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000952421562,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      ]
+    },
+    {
+      "gpu_index": 1,
+      "binary_sha256": "c52c31f47f914eaddbc3e52fa1149eeb186a612f94dad365fdb6ee45e6d00029",
+      "exit_code": 0,
+      "stderr": "",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/player-evidence/dab1cf6823e34b66bf58357de60b2aaf/player.bmp",
+          "sha256": "f38dcb803491555adf23afd0e12db101c44e0c3e86da0fc2137e0fd826690e69"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/player-evidence/dab1cf6823e34b66bf58357de60b2aaf/baseline.bmp",
+          "sha256": "f38dcb803491555adf23afd0e12db101c44e0c3e86da0fc2137e0fd826690e69"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/player-evidence/dab1cf6823e34b66bf58357de60b2aaf/recovered.bmp",
+          "sha256": "f38dcb803491555adf23afd0e12db101c44e0c3e86da0fc2137e0fd826690e69"
+        }
+      },
+      "sequence": [
+        {
+          "ticks": 120
+        },
+        {
+          "ticks": 60,
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 10,
+          "jump": true
+        },
+        {
+          "ticks": 120
+        },
+        {
+          "ticks": 1,
+          "look": [
+            45,
+            20
+          ]
+        },
+        {
+          "ticks": 60,
+          "move": [
+            0.4,
+            -0.7
+          ]
+        }
+      ],
+      "play_results": [
+        {
+          "id": 3,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": true,
+            "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 372,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\dab1cf6823e34b66bf58357de60b2aaf\\player.bmp",
+            "previous_tick": 0,
+            "replayed": false,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "stop_reason": "replay_complete",
+            "success": true,
+            "swapchain_rebuilds": 1,
+            "tick": 371,
+            "width": 960,
+            "world_id": "c0f1ba9fdcb34076e0fb72ff15036119"
+          }
+        },
+        {
+          "id": 4,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": true,
+            "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 372,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\dab1cf6823e34b66bf58357de60b2aaf\\player.bmp",
+            "previous_tick": 0,
+            "replayed": true,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000384",
+            "stop_reason": "replay_complete",
+            "success": true,
+            "swapchain_rebuilds": 1,
+            "tick": 371,
+            "width": 960,
+            "world_id": "c0f1ba9fdcb34076e0fb72ff15036119"
+          }
+        },
+        {
+          "error": {
+            "code": -32010,
+            "message": "Runtime request ID reused with different parameters."
+          },
+          "id": 5,
+          "jsonrpc": "2.0"
+        },
+        {
+          "error": {
+            "code": -32009,
+            "message": "Runtime tick conflict."
+          },
+          "id": 7,
+          "jsonrpc": "2.0"
+        },
+        {
+          "id": 23,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": false,
+            "detail": "No selected device satisfies Vulkan 1.3, presentation, timeline semaphore, synchronization2 and dynamic rendering requirements. Software devices require --allow-software.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 0,
+            "gpu": "",
+            "hardware": false,
+            "height": 0,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\dab1cf6823e34b66bf58357de60b2aaf\\bad.bmp",
+            "previous_tick": 371,
+            "replayed": false,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000385",
+            "stop_reason": "error",
+            "success": false,
+            "swapchain_rebuilds": 0,
+            "tick": 371,
+            "width": 0,
+            "world_id": "c0f1ba9fdcb34076e0fb72ff15036119"
+          }
+        },
+        {
+          "id": 24,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": false,
+            "detail": "No selected device satisfies Vulkan 1.3, presentation, timeline semaphore, synchronization2 and dynamic rendering requirements. Software devices require --allow-software.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 0,
+            "gpu": "",
+            "hardware": false,
+            "height": 0,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\dab1cf6823e34b66bf58357de60b2aaf\\bad.bmp",
+            "previous_tick": 371,
+            "replayed": true,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000385",
+            "stop_reason": "error",
+            "success": false,
+            "swapchain_rebuilds": 0,
+            "tick": 371,
+            "width": 0,
+            "world_id": "c0f1ba9fdcb34076e0fb72ff15036119"
+          }
+        },
+        {
+          "id": 25,
+          "jsonrpc": "2.0",
+          "result": {
+            "build_version": "0.0.6",
+            "camera": "00000000000000000000000000000065",
+            "camera_world": [
+              0.7071067350592308,
+              0.0,
+              -0.7071068273138611,
+              0.0,
+              0.24184478499083475,
+              0.9396926174059803,
+              0.24184475343789202,
+              0.0,
+              0.6644630653442006,
+              -0.34202015261194463,
+              0.6644629786532057,
+              0.0,
+              3.1086773425340652,
+              1.5800000952421562,
+              -1.1488458253443241,
+              1.0
+            ],
+            "capture_written": true,
+            "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+            "dropped_wall_seconds": 0.0,
+            "frames_presented": 2,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 540,
+            "mode": "replay",
+            "nvrhi_errors": 0,
+            "path": "<checkout>\\build\\player-evidence\\dab1cf6823e34b66bf58357de60b2aaf\\recovered.bmp",
+            "previous_tick": 371,
+            "replayed": false,
+            "revision": 1,
+            "samples": 4,
+            "session_id": "00000000000000000000000000000385",
+            "stop_reason": "replay_complete",
+            "success": true,
+            "swapchain_rebuilds": 1,
+            "tick": 372,
+            "width": 960,
+            "world_id": "c0f1ba9fdcb34076e0fb72ff15036119"
+          }
+        }
+      ],
+      "state_comparison": [
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 371,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999904757843856,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000952421562,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 20.0,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 371,
+          "velocity": [
+            3.1086771488189697,
+            0.0,
+            0.8478208184242249
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.7071068273138611,
+            0.0,
+            0.7071067350592308,
+            0.0,
+            3.1086773425340652,
+            -0.019999904757843856,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 45.0
+        },
+        {
+          "ground": "",
+          "has_body": false,
+          "id": "00000000000000000000000000000065",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.7071067350592308,
+            0.0,
+            -0.7071068273138611,
+            0.0,
+            0.24184478499083475,
+            0.9396926174059803,
+            0.24184475343789202,
+            0.0,
+            0.6644630653442006,
+            -0.34202015261194463,
+            0.6644629786532057,
+            0.0,
+            3.1086773425340652,
+            1.5800000952421562,
+            -1.1488458253443241,
+            1.0
+          ],
+          "yaw": 0.0
+        },
+        {
+          "ground": "",
+          "has_body": true,
+          "id": "00000000000000000000000000000003",
+          "is_character": false,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000385",
+          "tick": 371,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            0.9999999837727862,
+            -1.4983771574797117e-08,
+            0.0001801511229067166,
+            0.0,
+            1.1986444339153861e-08,
+            0.7999999999999999,
+            3.181302348703112e-09,
+            0.0,
+            -0.00018015112290677618,
+            -3.973928657090102e-09,
+            0.9999999837727863,
+            0.0,
+            2.000017092890889,
+            0.3799998874860768,
+            -2.9428472816775564e-06,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      ]
+    }
+  ],
+  "window_lifecycle": {
+    "binary_sha256": "c52c31f47f914eaddbc3e52fa1149eeb186a612f94dad365fdb6ee45e6d00029",
+    "responses": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "changed_ids": [
+            "00000000000000000000000000000001",
+            "00000000000000000000000000000002",
+            "00000000000000000000000000000003",
+            "00000000000000000000000000000064",
+            "00000000000000000000000000000065",
+            "000000000000000000000000000000c8"
+          ],
+          "committed": true,
+          "replayed": false,
+          "revision": 1
+        }
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "result": {
+          "authored_revision": 1,
+          "replayed": false,
+          "session_id": "00000000000000000000000000000384",
+          "started": true,
+          "tick": 0
+        }
+      },
+      {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "result": {
+          "previous_tick": 0,
+          "replayed": false,
+          "session_id": "00000000000000000000000000000384",
+          "stepped": 120,
+          "tick": 120
+        }
+      },
+      {
+        "id": 4,
+        "jsonrpc": "2.0",
+        "result": {
+          "build_version": "0.0.6",
+          "camera": "00000000000000000000000000000065",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.580000057367018,
+            2.0,
+            1.0
+          ],
+          "capture_written": true,
+          "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+          "dropped_wall_seconds": 0.0,
+          "frames_presented": 70,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 481,
+          "mode": "interactive",
+          "nvrhi_errors": 0,
+          "path": "<checkout>\\build\\player-evidence\\44ed2f5cdae84df0b61934ed10d1bdba\\window.bmp",
+          "previous_tick": 120,
+          "replayed": false,
+          "revision": 1,
+          "samples": 4,
+          "session_id": "00000000000000000000000000000384",
+          "stop_reason": "window_closed",
+          "success": true,
+          "swapchain_rebuilds": 3,
+          "tick": 120,
+          "width": 804,
+          "world_id": "e2c6650e845c23a1ba6af754bbfa2b48"
+        }
+      },
+      {
+        "id": 5,
+        "jsonrpc": "2.0",
+        "result": {
+          "ground": "on_ground",
+          "has_body": true,
+          "id": "00000000000000000000000000000064",
+          "is_character": true,
+          "layout": "column_major",
+          "pitch": 0.0,
+          "session_id": "00000000000000000000000000000384",
+          "tick": 120,
+          "velocity": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "world_matrix": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -0.019999942632981993,
+            2.0,
+            1.0
+          ],
+          "yaw": 0.0
+        }
+      },
+      {
+        "id": 6,
+        "jsonrpc": "2.0",
+        "result": {
+          "authored_revision": 1,
+          "bodies": 4,
+          "characters": 1,
+          "current_authored_revision": 1,
+          "entities": 6,
+          "fixed_dt": 0.016666666666666666,
+          "physics": "Jolt 5.4.0; double positions; SSE2 baseline",
+          "scheduler": "single_threaded_fixed_60_hz",
+          "session_id": "00000000000000000000000000000384",
+          "source_stale": false,
+          "tick": 120,
+          "world_id": "e2c6650e845c23a1ba6af754bbfa2b48"
+        }
+      },
+      {
+        "id": 7,
+        "jsonrpc": "2.0",
+        "result": {
+          "closed": true
+        }
+      }
+    ],
+    "input_source": "Targeted Win32 window messages; not physical keyboard/mouse qualification.",
+    "foreground_request_succeeded": false,
+    "initial_foreground": false,
+    "input_qualification": "Foreground unavailable: movement and physical input remain unqualified by this desktop run.",
+    "passed": true,
+    "elapsed_seconds": 2.252796300002956,
+    "expected_size": [
+      804,
+      481
+    ],
+    "checks": {
+      "targeted_keyboard_moves_character": false,
+      "focus_loss_clears_held_input": false,
+      "minimize_restore_survives": true,
+      "paused_time_bound": true,
+      "resize_rebuilds_swapchain_and_capture": true,
+      "window_close_preserves_runtime": true
+    },
+    "image": {
+      "path": "<checkout>\\build\\player-evidence\\44ed2f5cdae84df0b61934ed10d1bdba\\window.bmp",
+      "sha256": "2dc4a79791e0b2935f72513f9952ca038cc01300bff47f33a45638ea01e981a4"
+    },
+    "stderr": "",
+    "exit_code": 0
+  },
+  "scene_capture_regression": {
+    "exit_code": 0,
+    "stderr": "",
+    "checks": {
+      "depth_occlusion": true,
+      "hierarchy_edit_visible": true,
+      "camera_edit_visible": true,
+      "visibility": true,
+      "behind_camera_clipped": true,
+      "msaa_changed_pixels": 1586,
+      "revision_and_failure_guards": true,
+      "reopened_scene_pixel_equality": true
+    }
+  },
+  "findings": [
+    {
+      "problem": "Native minimization can set Vulkan surface extent to zero before the SDL minimize event reaches the loop.",
+      "observed_failure": "The window has an empty rendering extent.",
+      "fix": "Treat zero extent as suspension; rebuild after restoration and retain live runtime state.",
+      "verified_by": "Native Windows minimize/restore/resize/close test."
+    }
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "78c2d9050aacec1c895cc880c8b2bf4de210933e9bdcfba44a1b79b249eedf6f",
+    "include/poima/player.hpp": "0e094ee41f1673774d678e968897a5d229f419310c2061a2e51eb4f2e79151be",
+    "src/player.cpp": "b3021b66fb9ed279a49dcfd484a330cb45ca64b4819b6dfb7d6f815a9a289e82",
+    "src/render_smoke.cpp": "43195521596f6c7d191d14386a7c24bd0d35067a450ac97e7491000cfa89852c",
+    "src/render_smoke_disabled.cpp": "a31607ef17e7ecefa298d1cdb7b71a406450fb0097b2e7785161765bb7ae58c1",
+    "src/world.cpp": "cc04664295a8c4b2cd6b60a0e9f884687417412f7384c481a47788c430a4d4c7",
+    "src/core.cpp": "d7001ec6ef6eeb914e3f3f1aaa0d76be1e67e284a610c9e96d3e380689e37242",
+    "tests/player_input.cpp": "ca569a0d708440251df1d3519f8da8f33e3818f0a6255590fb7b22132a4a3c3f",
+    "tests/player_contract.py": "42ae3ce4ab0076d9c11cb0f97b9c1badf169786a0078c36d4b74af8f030b6977",
+    "tests/player_window.py": "d6a1d1d8e15424b96767f3f028d69d0b087de297b4d97532ed334136a4b1cacd",
+    "tests/runtime_contract.py": "badcfca0fe0e2fe8dc6d120e323c1c035f2ac9b9c6ddb5432ce324b1b0119993",
+    "examples/play-room.jsonl": "aa3c6df6d79dd0912debc0a1b308b93aa3f14591ef78d98b7a665be5b43a430c"
+  },
+  "images": {
+    "docs/evidence/m2-player-replay.png": {
+      "sha256": "c9daa357d2628addbafc54db052ac8ae33bf8646f27f7ec189a60b8ae75070b1",
+      "conversion": "Lossless BMP-to-PNG with Pillow; no image synthesis.",
+      "visually_inspected": true
+    },
+    "docs/evidence/m2-player-resized.png": {
+      "sha256": "b3475d9ce64cdd99e667e961979d4dd4755c9eb0b1def1a7cc50fe4019ee1d0b",
+      "conversion": "Lossless BMP-to-PNG with Pillow; no image synthesis.",
+      "visually_inspected": true
+    }
+  },
+  "limitations": [
+    "Foreground request was declined; physical keyboard/mouse and targeted-message movement are not qualified.",
+    "Player blocks this world-service connection; concurrent editing/independent player process remains future work.",
+    "No render interpolation, configurable actions, controller support or recorded human-input export yet.",
+    "Serialized Vulkan rendering is not shipping frame-time/pacing qualification.",
+    "Native Linux graphics, MSVC and actual device-loss recovery remain unqualified.",
+    "No PBR/import, complete C# SDK, packaged game or completed M2 room."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

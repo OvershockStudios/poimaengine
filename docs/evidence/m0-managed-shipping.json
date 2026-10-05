@@ -1,0 +1,2540 @@
+{
+  "recorded_utc": "2026-09-26T05:18:38.997246+00:00",
+  "fixture": "managed_shipping_v1",
+  "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.42",
+  "builds": [
+    {
+      "name": "Inspect SDK",
+      "command": [
+        "<checkout>/.cache/toolchains/dotnet-10.0.401/dotnet",
+        "--info"
+      ],
+      "elapsed_ms": 1430.626642999414,
+      "exit_code": 0,
+      "stdout": ".NET SDK:\n Version:           10.0.401\n Commit:            e34a38d2ae\n Workload version:  10.0.400-manifests.63b36e85\n MSBuild version:   18.9.11+e34a38d2a\n\nRuntime Environment:\n OS Name:     kali\n OS Version:  2026.1\n OS Platform: Linux\n RID:         linux-x64\n Base Path:   <checkout>/.cache/toolchains/dotnet-10.0.401/sdk/10.0.401/\n\n.NET workloads installed:\nThere are no installed workloads to display.\nConfigured to use workload sets when installing new manifests.\nNo workload sets are installed. Run \"dotnet workload restore\" to install a workload set.\n\nHost:\n  Version:      10.0.12\n  Architecture: x64\n  Commit:       95017c711e\n\n.NET SDKs installed:\n  10.0.401 [<checkout>/.cache/toolchains/dotnet-10.0.401/sdk]\n\n.NET runtimes installed:\n  Microsoft.AspNetCore.App 10.0.12 [<checkout>/.cache/toolchains/dotnet-10.0.401/shared/Microsoft.AspNetCore.App]\n  Microsoft.NETCore.App 10.0.12 [<checkout>/.cache/toolchains/dotnet-10.0.401/shared/Microsoft.NETCore.App]\n\nOther architectures found:\n  None\n\nEnvironment variables:\n  DOTNET_CLI_HOME                          [<checkout>/.cache/dotnet-user]\n  DOTNET_CLI_TELEMETRY_OPTOUT              [1]\n  DOTNET_CLI_USE_MSBUILD_SERVER            [0]\n  DOTNET_NOLOGO                            [1]\n  DOTNET_PROCESSOR_COUNT                   [2]\n\nglobal.json file:\n  Not found\n\nLearn more:\n  https://aka.ms/dotnet/info\n\nDownload .NET:\n  https://aka.ms/dotnet/download\n",
+      "stderr": ""
+    },
+    {
+      "name": "Inspect native toolchain",
+      "command": [
+        "clang",
+        "--version"
+      ],
+      "elapsed_ms": 377.8169099987281,
+      "exit_code": 0,
+      "stdout": "Debian clang version 21.1.8 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+      "stderr": ""
+    },
+    {
+      "name": "Configure native kernel",
+      "command": [
+        "cmake",
+        "-S",
+        "<checkout>/experiments/managed_gameplay",
+        "-B",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/native",
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DPOIMA_DOTNET_HOST_HEADERS=<checkout>/.cache/toolchains/dotnet-10.0.401/packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native"
+      ],
+      "elapsed_ms": 3695.7429209996917,
+      "exit_code": 0,
+      "stdout": "-- The CXX compiler identification is GNU 15.2.0\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (3.4s)\n-- Generating done (0.1s)\n-- Build files have been written to: <checkout>/build/managed-shipping-evidence/run-1790399918987801700/native\n",
+      "stderr": ""
+    },
+    {
+      "name": "Build native kernel",
+      "command": [
+        "cmake",
+        "--build",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/native",
+        "--parallel",
+        "2"
+      ],
+      "elapsed_ms": 2929.2903160003334,
+      "exit_code": 0,
+      "stdout": "[1/4] Building CXX object CMakeFiles/poima_managed_kernel.dir/kernel.cpp.o\n[2/4] Linking CXX shared library libpoima_managed_kernel.so\n[3/4] Building CXX object CMakeFiles/poima-managed-lab.dir/launcher.cpp.o\n[4/4] Linking CXX executable poima-managed-lab\n",
+      "stderr": ""
+    },
+    {
+      "name": "Publish schema 1 jit",
+      "command": [
+        "<checkout>/.cache/toolchains/dotnet-10.0.401/dotnet",
+        "publish",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/Poima.ShippingLab.csproj",
+        "-c",
+        "Release",
+        "-r",
+        "linux-x64",
+        "-o",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/jit",
+        "--nologo",
+        "-p:RuntimeFrameworkVersion=10.0.12",
+        "-p:UseSharedCompilation=false",
+        "-m:2",
+        "-p:PublishAot=false",
+        "--self-contained",
+        "false"
+      ],
+      "elapsed_ms": 24738.589701999445,
+      "exit_code": 0,
+      "stdout": "  Determining projects to restore...\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/Poima.ShippingLab.csproj (in 153 ms).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Contracts/Poima.Lab.Contracts.csproj (in 143 ms).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Game/Poima.Lab.Game.csproj (in 15 ms).\n  Poima.Lab.Contracts -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Contracts/bin/Release/net10.0/Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Game/bin/Release/net10.0/Poima.Lab.Game.dll\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/bin/Release/net10.0/linux-x64/Poima.ShippingLab.dll\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/jit/\n",
+      "stderr": ""
+    },
+    {
+      "name": "Publish schema 1 aot",
+      "command": [
+        "<checkout>/.cache/toolchains/dotnet-10.0.401/dotnet",
+        "publish",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/Poima.ShippingLab.csproj",
+        "-c",
+        "Release",
+        "-r",
+        "linux-x64",
+        "-o",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/aot",
+        "--nologo",
+        "-p:RuntimeFrameworkVersion=10.0.12",
+        "-p:UseSharedCompilation=false",
+        "-m:2",
+        "-p:PublishAot=true",
+        "--self-contained",
+        "true"
+      ],
+      "elapsed_ms": 70700.74276699961,
+      "exit_code": 0,
+      "stdout": "  Determining projects to restore...\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/Poima.ShippingLab.csproj (in 23.56 sec).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Contracts/Poima.Lab.Contracts.csproj (in 23.56 sec).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Game/Poima.Lab.Game.csproj (in 28 ms).\n  Poima.Lab.Contracts -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Contracts/bin/Release/net10.0/Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Game/bin/Release/net10.0/Poima.Lab.Game.dll\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/bin/Release/net10.0/linux-x64/Poima.ShippingLab.dll\n  Generating native code\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/aot/\n",
+      "stderr": ""
+    },
+    {
+      "name": "Inspect ELF dependencies",
+      "command": [
+        "ldd",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/aot/Poima.ShippingLab"
+      ],
+      "elapsed_ms": 41.2392810012534,
+      "exit_code": 0,
+      "stdout": "\tlinux-vdso.so.1 (0x00007fff7c7f8000)\n\tlibm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x00007b655f730000)\n\tlibc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x00007b655f53a000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007b655fa48000)\n",
+      "stderr": ""
+    },
+    {
+      "name": "Publish schema 2 jit",
+      "command": [
+        "<checkout>/.cache/toolchains/dotnet-10.0.401/dotnet",
+        "publish",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/Poima.ShippingLab.csproj",
+        "-c",
+        "Release",
+        "-r",
+        "linux-x64",
+        "-o",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/jit",
+        "--nologo",
+        "-p:RuntimeFrameworkVersion=10.0.12",
+        "-p:UseSharedCompilation=false",
+        "-m:2",
+        "-p:PublishAot=false",
+        "--self-contained",
+        "false"
+      ],
+      "elapsed_ms": 21766.151802999957,
+      "exit_code": 0,
+      "stdout": "  Determining projects to restore...\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/Poima.ShippingLab.csproj (in 167 ms).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Contracts/Poima.Lab.Contracts.csproj (in 153 ms).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Game/Poima.Lab.Game.csproj (in 16 ms).\n  Poima.Lab.Contracts -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Contracts/bin/Release/net10.0/Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Game/bin/Release/net10.0/Poima.Lab.Game.dll\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/bin/Release/net10.0/linux-x64/Poima.ShippingLab.dll\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/jit/\n",
+      "stderr": ""
+    },
+    {
+      "name": "Publish schema 2 aot",
+      "command": [
+        "<checkout>/.cache/toolchains/dotnet-10.0.401/dotnet",
+        "publish",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/Poima.ShippingLab.csproj",
+        "-c",
+        "Release",
+        "-r",
+        "linux-x64",
+        "-o",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/aot",
+        "--nologo",
+        "-p:RuntimeFrameworkVersion=10.0.12",
+        "-p:UseSharedCompilation=false",
+        "-m:2",
+        "-p:PublishAot=true",
+        "--self-contained",
+        "true"
+      ],
+      "elapsed_ms": 40166.70181799964,
+      "exit_code": 0,
+      "stdout": "  Determining projects to restore...\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/Poima.ShippingLab.csproj (in 906 ms).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Contracts/Poima.Lab.Contracts.csproj (in 906 ms).\n  Restored <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Game/Poima.Lab.Game.csproj (in 31 ms).\n  Poima.Lab.Contracts -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Contracts/bin/Release/net10.0/Poima.Lab.Contracts.dll\n  Poima.Lab.Game -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Game/bin/Release/net10.0/Poima.Lab.Game.dll\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/bin/Release/net10.0/linux-x64/Poima.ShippingLab.dll\n  Generating native code\n  Poima.ShippingLab -> <checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/aot/\n",
+      "stderr": ""
+    },
+    {
+      "name": "Inspect ELF dependencies",
+      "command": [
+        "ldd",
+        "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/aot/Poima.ShippingLab"
+      ],
+      "elapsed_ms": 31.036362001032103,
+      "exit_code": 0,
+      "stdout": "\tlinux-vdso.so.1 (0x00007ffe2f3cb000)\n\tlibm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x00007f7ec7327000)\n\tlibc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x00007f7ec7131000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007f7ec763f000)\n",
+      "stderr": ""
+    }
+  ],
+  "runs": [
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 100,
+      "process_ms": 196.0402629993041,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 1648087596974738512,
+        "native_calls": 100000,
+        "native_live_bytes": 0,
+        "loop_ms": 2.2134,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34988032,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/1-jit-100.bin",
+      "ticks": 0,
+      "process_ms": 185.07367200072622,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 1648087596974738512,
+        "native_calls": 0,
+        "native_live_bytes": 0,
+        "loop_ms": 0.0176,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 274280,
+        "working_set_bytes": 35389440,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 100,
+      "process_ms": 50.63723199964443,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 1648087596974738512,
+        "native_calls": 100000,
+        "native_live_bytes": 0,
+        "loop_ms": 0.6713,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/1-aot-100.bin",
+      "ticks": 0,
+      "process_ms": 63.44788400019752,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 1648087596974738512,
+        "native_calls": 0,
+        "native_live_bytes": 0,
+        "loop_ms": 0.0006,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 237712,
+        "working_set_bytes": 9043968,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 2,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 100,
+      "process_ms": 176.1007229997631,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 2,
+        "entity_bytes": 40,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 15798630557805179320,
+        "native_calls": 100000,
+        "native_live_bytes": 0,
+        "loop_ms": 2.0243,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35127296,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 200
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 200
+        }
+      }
+    },
+    {
+      "schema": 2,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/2-jit-100.bin",
+      "ticks": 0,
+      "process_ms": 196.0311519997049,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 2,
+        "entity_bytes": 40,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 15798630557805179320,
+        "native_calls": 0,
+        "native_live_bytes": 0,
+        "loop_ms": 0.0119,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 274280,
+        "working_set_bytes": 35258368,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 200
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 200
+        }
+      }
+    },
+    {
+      "schema": 2,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 100,
+      "process_ms": 55.36174500048219,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 2,
+        "entity_bytes": 40,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 15798630557805179320,
+        "native_calls": 100000,
+        "native_live_bytes": 0,
+        "loop_ms": 0.3824,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 200
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 200
+        }
+      }
+    },
+    {
+      "schema": 2,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/2-aot-100.bin",
+      "ticks": 0,
+      "process_ms": 55.023124999934225,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 2,
+        "entity_bytes": 40,
+        "entities": 1000,
+        "tick": 100,
+        "state_hash": 15798630557805179320,
+        "native_calls": 0,
+        "native_live_bytes": 0,
+        "loop_ms": 0.0005,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 237712,
+        "working_set_bytes": 9043968,
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 200
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 200
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/1-aot-100.bin",
+      "ticks": 37,
+      "process_ms": 230.85170400008792,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 137,
+        "state_hash": 9753973269602607159,
+        "native_calls": 37000,
+        "native_live_bytes": 0,
+        "loop_ms": 1.0223,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 274280,
+        "working_set_bytes": 35258368,
+        "first": {
+          "id": 0,
+          "position_mm": 137,
+          "velocity_mm_per_tick": 1,
+          "updates": 137,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3819,
+          "velocity_mm_per_tick": 6,
+          "updates": 137,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 2,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/jit-resume.bin",
+      "ticks": 7,
+      "process_ms": 190.39307000093686,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 2,
+        "entity_bytes": 40,
+        "entities": 1000,
+        "tick": 144,
+        "state_hash": 16129918375637718006,
+        "native_calls": 7000,
+        "native_live_bytes": 0,
+        "loop_ms": 0.2668,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 274280,
+        "working_set_bytes": 35127296,
+        "first": {
+          "id": 0,
+          "position_mm": 144,
+          "velocity_mm_per_tick": 1,
+          "updates": 144,
+          "energy": 107
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3861,
+          "velocity_mm_per_tick": 6,
+          "updates": 144,
+          "energy": 107
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/jit-upgraded.bin",
+      "ticks": 0,
+      "process_ms": 161.51214000092295,
+      "reply": {
+        "status": "error",
+        "message": "Unsupported schema migration."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/1-jit-100.bin",
+      "ticks": 37,
+      "process_ms": 62.290728999869316,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 137,
+        "state_hash": 9753973269602607159,
+        "native_calls": 37000,
+        "native_live_bytes": 0,
+        "loop_ms": 0.1469,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 237712,
+        "working_set_bytes": 9043968,
+        "first": {
+          "id": 0,
+          "position_mm": 137,
+          "velocity_mm_per_tick": 1,
+          "updates": 137,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3819,
+          "velocity_mm_per_tick": 6,
+          "updates": 137,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 2,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/aot-resume.bin",
+      "ticks": 7,
+      "process_ms": 60.72726000093098,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 2,
+        "entity_bytes": 40,
+        "entities": 1000,
+        "tick": 144,
+        "state_hash": 16129918375637718006,
+        "native_calls": 7000,
+        "native_live_bytes": 0,
+        "loop_ms": 0.0277,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 237712,
+        "working_set_bytes": 9043968,
+        "first": {
+          "id": 0,
+          "position_mm": 144,
+          "velocity_mm_per_tick": 1,
+          "updates": 144,
+          "energy": 107
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3861,
+          "velocity_mm_per_tick": 6,
+          "updates": 144,
+          "energy": 107
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/aot-upgraded.bin",
+      "ticks": 0,
+      "process_ms": 53.709501000412274,
+      "reply": {
+        "status": "error",
+        "message": "Unsupported schema migration."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-checksum.bin",
+      "ticks": 1,
+      "process_ms": 167.5449739996111,
+      "reply": {
+        "status": "error",
+        "message": "Checkpoint checksum/count mismatch."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-checksum.bin",
+      "ticks": 1,
+      "process_ms": 48.64218200054893,
+      "reply": {
+        "status": "error",
+        "message": "Checkpoint checksum/count mismatch."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-length.bin",
+      "ticks": 1,
+      "process_ms": 163.2026440001937,
+      "reply": {
+        "status": "error",
+        "message": "Checkpoint length mismatch."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-length.bin",
+      "ticks": 1,
+      "process_ms": 47.04843600120512,
+      "reply": {
+        "status": "error",
+        "message": "Checkpoint length mismatch."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-schema.bin",
+      "ticks": 1,
+      "process_ms": 166.88441500082263,
+      "reply": {
+        "status": "error",
+        "message": "Unsupported schema migration."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-schema.bin",
+      "ticks": 1,
+      "process_ms": 51.651642001161235,
+      "reply": {
+        "status": "error",
+        "message": "Unsupported schema migration."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-identity.bin",
+      "ticks": 1,
+      "process_ms": 167.25183100061258,
+      "reply": {
+        "status": "error",
+        "message": "Checkpoint identity mismatch."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-identity.bin",
+      "ticks": 1,
+      "process_ms": 50.15276499943866,
+      "reply": {
+        "status": "error",
+        "message": "Checkpoint identity mismatch."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-overflow.bin",
+      "ticks": 1,
+      "process_ms": 165.31464399849938,
+      "reply": {
+        "status": "error",
+        "message": "Tick overflow."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/bad-overflow.bin",
+      "ticks": 1,
+      "process_ms": 50.272065000172006,
+      "reply": {
+        "status": "error",
+        "message": "Tick overflow."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 10001,
+      "process_ms": 158.19631799968192,
+      "reply": {
+        "status": "error",
+        "message": "Usage: Poima.ShippingLab KERNEL INPUT_OR_DASH OUTPUT TICKS (0..10000)."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1,
+      "process_ms": 172.19877499883296,
+      "reply": {
+        "status": "error",
+        "message": "Could not find a part of the path '<checkout>/build/managed-shipping-evidence/run-1790399918987801700/missing-directory/state.bin.b5b5213495cd4072ae5525903df08121.tmp'."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 10001,
+      "process_ms": 44.66863999914494,
+      "reply": {
+        "status": "error",
+        "message": "Usage: Poima.ShippingLab KERNEL INPUT_OR_DASH OUTPUT TICKS (0..10000)."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1,
+      "process_ms": 46.12920500039763,
+      "reply": {
+        "status": "error",
+        "message": "Could not find a part of the path '<checkout>/build/managed-shipping-evidence/run-1790399918987801700/missing-directory/state.bin.863afc97741d4c729b7885f50fefe4b2.tmp'."
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 242.98176699994656,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 28.749,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35258368,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 247.2261829989293,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 12.9193,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35520512,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 208.59812599883298,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 13.0047,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35258368,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 175.05630199957523,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 13.0805,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35258368,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 189.23671900120098,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 17.7051,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34996224,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 234.70776100111834,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 28.4878,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34848768,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 201.8946420012071,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 14.0926,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34996224,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 202.89255900024727,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 14.4245,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34713600,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 243.93881799915107,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 18.5094,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35127296,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 269.98124700003245,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 16.5775,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35090432,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 293.21174299911945,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 16.0587,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34717696,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 293.6688650006545,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 20.7673,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34996224,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 250.22389300102077,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 21.155,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35127296,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 211.2923500008037,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 13.2449,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35258368,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 263.3046330010984,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 15.0491,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35110912,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 309.14878099974885,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 18.3223,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34996224,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 307.0191770002566,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 22.4254,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35241984,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 325.0646849992336,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 13.3189,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35127296,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 297.3641509997833,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 16.7995,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 35123200,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "jit",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 245.12157299977844,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": true,
+        "dynamic_code_compiled": true,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 14.9719,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 194760,
+        "working_set_bytes": 34996224,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 73.10843000050227,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.688,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 74.02349299991329,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.1801,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8781824,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 63.69202999849222,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.4868,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 89.74236999893037,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.6115,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8781824,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 64.03102100011893,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.2856,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 72.49113199941348,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.3245,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 80.06903200111992,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.5878,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 77.05522400101472,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.421,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 72.76792400080012,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.2274,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8781824,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 75.89426599952276,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.2559,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 67.90349500079174,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.164,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 80.72182799878647,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 5.1983,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 70.30106700040051,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.1172,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 75.49023200044758,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.2889,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 67.70656899971073,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.595,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 63.29262600047514,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.1913,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 76.38629999928526,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.3929,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 85.60463200046797,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.3964,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8912896,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 62.47857199923601,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.3861,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 9043968,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    },
+    {
+      "schema": 1,
+      "mode": "aot",
+      "input": "-",
+      "ticks": 1000,
+      "process_ms": 70.26769499861985,
+      "reply": {
+        "status": "ok",
+        "fixture": "managed_shipping_v1",
+        "runtime": ".NET 10.0.12",
+        "dynamic_code_supported": false,
+        "dynamic_code_compiled": false,
+        "schema": 1,
+        "entity_bytes": 32,
+        "entities": 1000,
+        "tick": 1000,
+        "state_hash": 14255543716200894499,
+        "native_calls": 1000000,
+        "native_live_bytes": 0,
+        "loop_ms": 4.3665,
+        "loop_allocated_bytes": 0,
+        "loop_collections": 0,
+        "managed_heap_bytes": 157576,
+        "working_set_bytes": 8650752,
+        "first": {
+          "id": 0,
+          "position_mm": 1000,
+          "velocity_mm_per_tick": 1,
+          "updates": 1000,
+          "energy": 0
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 8997,
+          "velocity_mm_per_tick": 6,
+          "updates": 1000,
+          "energy": 0
+        }
+      }
+    }
+  ],
+  "checks": {
+    "independent_checkpoint_matches_cpp_and_recorded_coreclr": true,
+    "jit_aot_initialization_and_all_1000_entities_match_oracle": true,
+    "both_schemas_roundtrip": true,
+    "cross_runtime_resume_and_schema_upgrade": true,
+    "downgrade_rejected_without_overwriting_output": true,
+    "malformed_checkpoints_rejected_without_overwriting_output": true,
+    "invalid_ticks_and_output_errors_reported": true,
+    "20_process_restarts_each_runtime_preserve_expected_behavior": true
+  },
+  "passed": true,
+  "sdk": ".NET SDK:\n Version:           10.0.401\n Commit:            e34a38d2ae\n Workload version:  10.0.400-manifests.63b36e85\n MSBuild version:   18.9.11+e34a38d2a\n\nRuntime Environment:\n OS Name:     kali\n OS Version:  2026.1\n OS Platform: Linux\n RID:         linux-x64\n Base Path:   <checkout>/.cache/toolchains/dotnet-10.0.401/sdk/10.0.401/\n\n.NET workloads installed:\nThere are no installed workloads to display.\nConfigured to use workload sets when installing new manifests.\nNo workload sets are installed. Run \"dotnet workload restore\" to install a workload set.\n\nHost:\n  Version:      10.0.12\n  Architecture: x64\n  Commit:       95017c711e\n\n.NET SDKs installed:\n  10.0.401 [<checkout>/.cache/toolchains/dotnet-10.0.401/sdk]\n\n.NET runtimes installed:\n  Microsoft.AspNetCore.App 10.0.12 [<checkout>/.cache/toolchains/dotnet-10.0.401/shared/Microsoft.AspNetCore.App]\n  Microsoft.NETCore.App 10.0.12 [<checkout>/.cache/toolchains/dotnet-10.0.401/shared/Microsoft.NETCore.App]\n\nOther architectures found:\n  None\n\nEnvironment variables:\n  DOTNET_CLI_HOME                          [<checkout>/.cache/dotnet-user]\n  DOTNET_CLI_TELEMETRY_OPTOUT              [1]\n  DOTNET_CLI_USE_MSBUILD_SERVER            [0]\n  DOTNET_NOLOGO                            [1]\n  DOTNET_PROCESSOR_COUNT                   [2]\n\nglobal.json file:\n  Not found\n\nLearn more:\n  https://aka.ms/dotnet/info\n\nDownload .NET:\n  https://aka.ms/dotnet/download\n",
+  "clang": "Debian clang version 21.1.8 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /usr/lib/llvm-21/bin\n",
+  "schema_1_package_files": [
+    "Poima.Lab.Contracts.pdb",
+    "Poima.Lab.Game.pdb",
+    "Poima.ShippingLab",
+    "Poima.ShippingLab.dbg",
+    "libpoima_managed_kernel.so",
+    "notices/Poima-LICENSE",
+    "notices/dotnet-LICENSE.txt",
+    "notices/dotnet-ThirdPartyNotices.txt"
+  ],
+  "schema_1_native_dependencies": "\tlinux-vdso.so.1 (0x00007fff7c7f8000)\n\tlibm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x00007b655f730000)\n\tlibc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x00007b655f53a000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007b655fa48000)\n",
+  "schema_2_package_files": [
+    "Poima.Lab.Contracts.pdb",
+    "Poima.Lab.Game.pdb",
+    "Poima.ShippingLab",
+    "Poima.ShippingLab.dbg",
+    "libpoima_managed_kernel.so",
+    "notices/Poima-LICENSE",
+    "notices/dotnet-LICENSE.txt",
+    "notices/dotnet-ThirdPartyNotices.txt"
+  ],
+  "schema_2_native_dependencies": "\tlinux-vdso.so.1 (0x00007ffe2f3cb000)\n\tlibm.so.6 => /usr/lib/x86_64-linux-gnu/libm.so.6 (0x00007f7ec7327000)\n\tlibc.so.6 => /usr/lib/x86_64-linux-gnu/libc.so.6 (0x00007f7ec7131000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007f7ec763f000)\n",
+  "process_timings": {
+    "jit": {
+      "samples": 20,
+      "median_ms": 246.17387799935386,
+      "p95_ms": 309.14878099974885,
+      "max_ms": 325.0646849992336
+    },
+    "aot": {
+      "samples": 20,
+      "median_ms": 72.9381770006512,
+      "p95_ms": 85.60463200046797,
+      "max_ms": 89.74236999893037
+    }
+  },
+  "source_sha256": {
+    "experiments/managed_gameplay/Bridge/Entry.cs": "84dcb0b74d948b1825f948bc876460b5dc578dd11eb1d965533b30b8c0af3154",
+    "experiments/managed_gameplay/Bridge/Host.cs": "1b409fe90f4bd47dc15d2a94edd5d4c07074fb7fd57d762d9360abfed3421da4",
+    "experiments/managed_gameplay/Bridge/NativeKernel.cs": "5a5095c765f0d24072d684eeaf1a3aff203b0b957c62da48b0d61432b0e9b118",
+    "experiments/managed_gameplay/Bridge/Poima.ManagedLab.csproj": "a16e98707bf4f52418330ea9ee909fde940cfa6186a666f61d9bfd8e3ff3a7fb",
+    "experiments/managed_gameplay/Bridge/StateCodec.cs": "d0d8e53028518256d45385fbaec4b9c5a2c4426a6ff75374fb5b741e71ad7b96",
+    "experiments/managed_gameplay/CMakeLists.txt": "acbd9bd2bf6c9ad95e4670148f5790dc71be233ca701a0cfa6efa158c36ff6b2",
+    "experiments/managed_gameplay/Contracts/Contracts.cs": "8089b658f58e1088a47dd98673cc83fd2be3cfa861e45a2e9ae5fd066efab1d1",
+    "experiments/managed_gameplay/Contracts/Poima.Lab.Contracts.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "experiments/managed_gameplay/Directory.Build.props": "12b4ce7615058ab0788c6aa6acaddbd7404b1f05ea5161fad30f57ba8f400696",
+    "experiments/managed_gameplay/Game/Game.cs": "bd1a0221c3e7fe0c8d01981852b1ff07be6129a4d4845061d344461e0e0c002f",
+    "experiments/managed_gameplay/Game/Poima.Lab.Game.csproj": "ac6be67fb2954ff06f7318153a801f45151307dfd98c5472cdeddefee15c9766",
+    "experiments/managed_gameplay/Shipping/Poima.ShippingLab.csproj": "4e9974903238fca3250b8a97e55bbb7b53430de66f115dd773e44ceee12faeaa",
+    "experiments/managed_gameplay/Shipping/Program.cs": "db1169b211c3a365137ff78767bf9e7ce1c23ec5a00b400079c750cf1dbe7751",
+    "experiments/managed_gameplay/kernel.cpp": "5cbab4b45e8caf641cee2a2b3428c27321ac3b3c7dabb79798a07e823ea4ed1a",
+    "experiments/managed_gameplay/launcher.cpp": "8e15a51712839ccf2fbddc2de393b239ce40505adb2a80f677976a042fe8d144",
+    "scripts/bootstrap_tools.py": "61f56229f1755db9694de6116efb14f59f93c1967a0e592023c2478751766449",
+    "scripts/verify_managed_shipping.py": "2bc1847a21d4d3e2b1b27f7c12a2d7a4d7aba18214a7db182094d370cb63a002"
+  },
+  "artifacts": {
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/native/libpoima_managed_kernel.so": {
+      "sha256": "3802180984390a3cb2307fe5bed0330429aeadfde2e1bfa2272a35cdceb2f76b",
+      "bytes": 15688
+    },
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/jit/Poima.ShippingLab.dll": {
+      "sha256": "589c0a27b2a23e0f49cb1c65118819bd21af928c219af2c34742c78e5f5a97ba",
+      "bytes": 13312
+    },
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/aot/Poima.ShippingLab": {
+      "sha256": "db9b1a1e4432d2ffebdfd5d20a12a5c1750747cdcabbece979a5ca3640ca3634",
+      "bytes": 1872096
+    },
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/jit/Poima.ShippingLab.dll": {
+      "sha256": "e63912decd00c973fe194278099d4811d0780b70ec92a8d64836776d46bc3f09",
+      "bytes": 13312
+    },
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/aot/Poima.ShippingLab": {
+      "sha256": "9da266e1d6dbfb234980c90e455e8efadc4f075b668da4458809c3ff0a5c2a40",
+      "bytes": 1872096
+    },
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-1/source/Shipping/obj/project.assets.json": {
+      "sha256": "f7192c282bdf721cd1bf5e166fd081ee636d07459c39114941aa96fe3c062b62",
+      "bytes": 40315
+    },
+    "<checkout>/build/managed-shipping-evidence/run-1790399918987801700/schema-2/source/Shipping/obj/project.assets.json": {
+      "sha256": "34bcf011a7b362e5fec70fdeee321bf895f1da77100e2463ca2abe87a5fbf040",
+      "bytes": 40315
+    }
+  },
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

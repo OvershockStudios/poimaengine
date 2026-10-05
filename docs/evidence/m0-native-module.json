@@ -1,0 +1,2470 @@
+{
+  "recorded_utc": "2026-09-26T04:31:56.106178+00:00",
+  "qualification": "Isolated C++ native extension fixture; no C# or game-runtime qualification",
+  "cross_platform_canonical_checkpoint_equal": true,
+  "checkpoint_sha256": "3ab4dce34b7f92ec0b924d7c02342352ab1adb3686916ff984eede662149d41a",
+  "runs": {
+    "linux": {
+      "fixture": "native_module_v1",
+      "language": "C++20",
+      "entities": 1000,
+      "windows_execution": false,
+      "build_host": "Linux/WSL",
+      "builds": [
+        {
+          "name": "initial",
+          "build_ms": 525.8767189998252,
+          "exit_code": 0,
+          "ticks_during_build": 0,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-0",
+          "build_ms": 521.7302609999024,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-1",
+          "build_ms": 520.7881979995364,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-2",
+          "build_ms": 514.6887760001846,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-3",
+          "build_ms": 518.1653570007256,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-4",
+          "build_ms": 513.5735710000517,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-5",
+          "build_ms": 516.6906130007192,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-6",
+          "build_ms": 516.6413209999519,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-7",
+          "build_ms": 514.840687999822,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-8",
+          "build_ms": 486.9260679997751,
+          "exit_code": 0,
+          "ticks_during_build": 86,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-9",
+          "build_ms": 513.2744149996142,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-10",
+          "build_ms": 520.2375030003168,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-11",
+          "build_ms": 508.60329999977694,
+          "exit_code": 0,
+          "ticks_during_build": 90,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-12",
+          "build_ms": 520.6951049995041,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-13",
+          "build_ms": 531.5880569996807,
+          "exit_code": 0,
+          "ticks_during_build": 94,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-14",
+          "build_ms": 527.693920999809,
+          "exit_code": 0,
+          "ticks_during_build": 93,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-15",
+          "build_ms": 516.2295159998394,
+          "exit_code": 0,
+          "ticks_during_build": 91,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-16",
+          "build_ms": 526.6304130000208,
+          "exit_code": 0,
+          "ticks_during_build": 93,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-17",
+          "build_ms": 520.9135340001012,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-18",
+          "build_ms": 537.2657280004205,
+          "exit_code": 0,
+          "ticks_during_build": 94,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-19",
+          "build_ms": 520.3079249995426,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-20",
+          "build_ms": 527.5448949996644,
+          "exit_code": 0,
+          "ticks_during_build": 93,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-21",
+          "build_ms": 510.54172099975403,
+          "exit_code": 0,
+          "ticks_during_build": 90,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-22",
+          "build_ms": 491.337890000068,
+          "exit_code": 0,
+          "ticks_during_build": 87,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-23",
+          "build_ms": 505.5833229998825,
+          "exit_code": 0,
+          "ticks_during_build": 90,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-24",
+          "build_ms": 502.1436900005938,
+          "exit_code": 0,
+          "ticks_during_build": 89,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-25",
+          "build_ms": 521.0630820001825,
+          "exit_code": 0,
+          "ticks_during_build": 92,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-26",
+          "build_ms": 496.0072289995878,
+          "exit_code": 0,
+          "ticks_during_build": 88,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-27",
+          "build_ms": 491.61650899986853,
+          "exit_code": 0,
+          "ticks_during_build": 88,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-28",
+          "build_ms": 488.5931110002275,
+          "exit_code": 0,
+          "ticks_during_build": 88,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-29",
+          "build_ms": 487.8578320003726,
+          "exit_code": 0,
+          "ticks_during_build": 88,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-30",
+          "build_ms": 469.32551200006856,
+          "exit_code": 0,
+          "ticks_during_build": 85,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-31",
+          "build_ms": 471.2075540001024,
+          "exit_code": 0,
+          "ticks_during_build": 85,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-32",
+          "build_ms": 465.3692089996184,
+          "exit_code": 0,
+          "ticks_during_build": 84,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-33",
+          "build_ms": 472.18809900005,
+          "exit_code": 0,
+          "ticks_during_build": 85,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-34",
+          "build_ms": 458.5437749992707,
+          "exit_code": 0,
+          "ticks_during_build": 83,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-35",
+          "build_ms": 470.4369199998837,
+          "exit_code": 0,
+          "ticks_during_build": 85,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-36",
+          "build_ms": 476.61596899979486,
+          "exit_code": 0,
+          "ticks_during_build": 86,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-37",
+          "build_ms": 477.5435669998842,
+          "exit_code": 0,
+          "ticks_during_build": 86,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "edit-38",
+          "build_ms": 472.572334000688,
+          "exit_code": 0,
+          "ticks_during_build": 85,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20432,
+          "sha256": "f18ddc67b1db61fa3524c82e598472dbf2f849a11692f448bdd6dd0e6fb87f05"
+        },
+        {
+          "name": "edit-39",
+          "build_ms": 479.96661699926335,
+          "exit_code": 0,
+          "ticks_during_build": 86,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "58ea96b2550a4ed8eccf1f7310e83d75679a9fe889b09c5b733b38e7cc0e09b5"
+        },
+        {
+          "name": "broken",
+          "build_ms": 28.749537000294367,
+          "exit_code": 1,
+          "ticks_during_build": 5,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\nFAILED: [code=1] CMakeFiles/poima_game_fixture.dir/fixture.cpp.o \n/usr/bin/c++ -DPOIMA_FIXTURE_BAD_ABI=0 -DPOIMA_FIXTURE_FAIL_STEP=0 -DPOIMA_FIXTURE_REJECT_MIGRATION=0 -DPOIMA_FIXTURE_SCALE=1 -DPOIMA_FIXTURE_SCHEMA=1 -Dpoima_game_fixture_EXPORTS -I<checkout>/include -O2 -g -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -MD -MT CMakeFiles/poima_game_fixture.dir/fixture.cpp.o -MF CMakeFiles/poima_game_fixture.dir/fixture.cpp.o.d -o CMakeFiles/poima_game_fixture.dir/fixture.cpp.o -c <checkout>/build/module-evidence-linux/run-1790397008466242892/source/fixture.cpp\n<checkout>/build/module-evidence-linux/run-1790397008466242892/source/fixture.cpp:104:2: error: #error Intentional compile failure for retention test\n  104 | #error Intentional compile failure for retention test\n      |  ^~~~~\nninja: build stopped: subcommand failed.\n"
+        },
+        {
+          "name": "bad-abi",
+          "build_ms": 472.8476580003189,
+          "exit_code": 0,
+          "ticks_during_build": 85,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "d225214947d52882047e9506d82d153f59dfb7b98f7a095e29529261fe4ac6b3"
+        },
+        {
+          "name": "migration-failure",
+          "build_ms": 478.4521359997598,
+          "exit_code": 0,
+          "ticks_during_build": 86,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "b1bfbb999e285850b41e915af162fd078801318084f79536ed67b3b8627047db"
+        },
+        {
+          "name": "step-failure",
+          "build_ms": 491.71907900017686,
+          "exit_code": 0,
+          "ticks_during_build": 88,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20424,
+          "sha256": "60bf8e7d3c7abb84bf73383c642a71690ae05902a9d4648bae16714951944b0c"
+        },
+        {
+          "name": "schema-2",
+          "build_ms": 490.26531300023635,
+          "exit_code": 0,
+          "ticks_during_build": 88,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.o\n[2/2] Linking CXX shared library libpoima_game_fixture.so\n",
+          "bytes": 20552,
+          "sha256": "6b50ba6cb5029f7fb054c25978ba40baff0056443443b94aa4204083581ec339"
+        }
+      ],
+      "warm_edits": [
+        {
+          "build_ms": 521.7302609999024,
+          "reload_ms": 0.248452,
+          "observed_total_ms": 523.8544650001131
+        },
+        {
+          "build_ms": 520.7881979995364,
+          "reload_ms": 0.345293,
+          "observed_total_ms": 523.2899839993479
+        },
+        {
+          "build_ms": 514.6887760001846,
+          "reload_ms": 0.211123,
+          "observed_total_ms": 516.8488870003785
+        },
+        {
+          "build_ms": 518.1653570007256,
+          "reload_ms": 0.215431,
+          "observed_total_ms": 520.2364919996398
+        },
+        {
+          "build_ms": 513.5735710000517,
+          "reload_ms": 0.259553,
+          "observed_total_ms": 515.6635199991797
+        },
+        {
+          "build_ms": 516.6906130007192,
+          "reload_ms": 0.25228,
+          "observed_total_ms": 518.9952509999785
+        },
+        {
+          "build_ms": 516.6413209999519,
+          "reload_ms": 0.309406,
+          "observed_total_ms": 518.8850059994365
+        },
+        {
+          "build_ms": 514.840687999822,
+          "reload_ms": 0.310167,
+          "observed_total_ms": 517.1450570005618
+        },
+        {
+          "build_ms": 486.9260679997751,
+          "reload_ms": 0.344391,
+          "observed_total_ms": 489.56406799970864
+        },
+        {
+          "build_ms": 513.2744149996142,
+          "reload_ms": 0.273389,
+          "observed_total_ms": 515.7105570006024
+        },
+        {
+          "build_ms": 520.2375030003168,
+          "reload_ms": 0.511071,
+          "observed_total_ms": 523.3827259999089
+        },
+        {
+          "build_ms": 508.60329999977694,
+          "reload_ms": 0.220009,
+          "observed_total_ms": 510.4632720003792
+        },
+        {
+          "build_ms": 520.6951049995041,
+          "reload_ms": 0.359549,
+          "observed_total_ms": 523.1399349995627
+        },
+        {
+          "build_ms": 531.5880569996807,
+          "reload_ms": 0.309917,
+          "observed_total_ms": 534.2366459999539
+        },
+        {
+          "build_ms": 527.693920999809,
+          "reload_ms": 0.26331,
+          "observed_total_ms": 530.0621900005353
+        },
+        {
+          "build_ms": 516.2295159998394,
+          "reload_ms": 0.339202,
+          "observed_total_ms": 518.5248979996686
+        },
+        {
+          "build_ms": 526.6304130000208,
+          "reload_ms": 0.33868,
+          "observed_total_ms": 529.0648440004588
+        },
+        {
+          "build_ms": 520.9135340001012,
+          "reload_ms": 0.212065,
+          "observed_total_ms": 522.9497929994977
+        },
+        {
+          "build_ms": 537.2657280004205,
+          "reload_ms": 0.362114,
+          "observed_total_ms": 539.6773360007501
+        },
+        {
+          "build_ms": 520.3079249995426,
+          "reload_ms": 0.24729,
+          "observed_total_ms": 522.3784600002546
+        },
+        {
+          "build_ms": 527.5448949996644,
+          "reload_ms": 0.283308,
+          "observed_total_ms": 530.1056709995464
+        },
+        {
+          "build_ms": 510.54172099975403,
+          "reload_ms": 0.293536,
+          "observed_total_ms": 513.3165939996616
+        },
+        {
+          "build_ms": 491.337890000068,
+          "reload_ms": 0.205372,
+          "observed_total_ms": 493.3075250000911
+        },
+        {
+          "build_ms": 505.5833229998825,
+          "reload_ms": 0.284669,
+          "observed_total_ms": 509.35097499950643
+        },
+        {
+          "build_ms": 502.1436900005938,
+          "reload_ms": 0.355482,
+          "observed_total_ms": 504.89487999948324
+        },
+        {
+          "build_ms": 521.0630820001825,
+          "reload_ms": 0.310879,
+          "observed_total_ms": 523.2772130002559
+        },
+        {
+          "build_ms": 496.0072289995878,
+          "reload_ms": 0.235078,
+          "observed_total_ms": 498.05083199953515
+        },
+        {
+          "build_ms": 491.61650899986853,
+          "reload_ms": 0.318362,
+          "observed_total_ms": 493.9967689997502
+        },
+        {
+          "build_ms": 488.5931110002275,
+          "reload_ms": 0.328893,
+          "observed_total_ms": 491.0489220001182
+        },
+        {
+          "build_ms": 487.8578320003726,
+          "reload_ms": 0.239947,
+          "observed_total_ms": 489.9721470001168
+        },
+        {
+          "build_ms": 469.32551200006856,
+          "reload_ms": 0.325726,
+          "observed_total_ms": 471.91854799984867
+        },
+        {
+          "build_ms": 471.2075540001024,
+          "reload_ms": 0.208919,
+          "observed_total_ms": 473.0252870003824
+        },
+        {
+          "build_ms": 465.3692089996184,
+          "reload_ms": 0.300038,
+          "observed_total_ms": 467.5726499999655
+        },
+        {
+          "build_ms": 472.18809900005,
+          "reload_ms": 0.250176,
+          "observed_total_ms": 474.2207520002921
+        },
+        {
+          "build_ms": 458.5437749992707,
+          "reload_ms": 0.29009,
+          "observed_total_ms": 461.03807799954666
+        },
+        {
+          "build_ms": 470.4369199998837,
+          "reload_ms": 0.186697,
+          "observed_total_ms": 472.34093400038546
+        },
+        {
+          "build_ms": 476.61596899979486,
+          "reload_ms": 0.200584,
+          "observed_total_ms": 478.50305199972354
+        },
+        {
+          "build_ms": 477.5435669998842,
+          "reload_ms": 0.242591,
+          "observed_total_ms": 479.8329979994378
+        },
+        {
+          "build_ms": 472.572334000688,
+          "reload_ms": 0.293236,
+          "observed_total_ms": 474.95050999987143
+        },
+        {
+          "build_ms": 479.96661699926335,
+          "reload_ms": 0.292504,
+          "observed_total_ms": 482.5199689994406
+        }
+      ],
+      "reloads": [
+        {
+          "operation_ms": 0.207165,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.20412,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.183692,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.174485,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.296551,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.224358,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.193159,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.202146,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.402769,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.200463,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.179865,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.199551,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.255275,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.180726,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.17745,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.279531,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.276504,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.473051,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.224047,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.32202,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.23658,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.253482,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.185115,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.257489,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.353538,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.21502,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.243413,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.18812,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.263039,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.19321,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.189112,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.17231,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.216312,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.189803,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.318062,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.270353,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.224658,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.203339,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.187589,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.281455,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.258541,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.179935,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.233023,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.216563,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.191988,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.222434,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.218797,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.209029,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.253582,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.250677,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.285412,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.369248,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.186096,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.268399,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.276134,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.244174,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.231862,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.292164,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.224508,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.200413,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.181989,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.187469,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.185025,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.271976,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.251678,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.302623,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.394234,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.206976,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.216633,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.270684,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.221513,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.210813,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.189332,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.185125,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.191577,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.265855,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.205423,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.189583,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.19877,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.235909,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.207486,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.276926,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.282646,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.272907,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.194542,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.191596,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.221964,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.263721,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.180146,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.287255,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.328381,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.185435,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.261456,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.345362,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.289288,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.216904,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.200503,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.217314,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.373475,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 0.27934,
+          "resident_bytes": 4325376,
+          "shadow_files": 1
+        }
+      ],
+      "checks": {
+        "deterministic_initial_update": true,
+        "canonical_save_restore_save": true,
+        "corrupt_checkpoint_retains_state": true,
+        "real_function_edits_preserve_state": true,
+        "compile_failure_old_module_keeps_running": true,
+        "bad-abi_retains_state": true,
+        "migration-failure_retains_state": true,
+        "partial_update_failure_retains_state": true,
+        "100_reloads_preserve_state_and_retire_shadow_files": true,
+        "layout_upgrade_and_rejected_downgrade": true,
+        "old_checkpoint_migrates": true
+      },
+      "configure": {
+        "ms": 2488.735345999885,
+        "command": [
+          "cmake",
+          "-S",
+          "<checkout>/build/module-evidence-linux/run-1790397008466242892/source",
+          "-B",
+          "<checkout>/build/module-evidence-linux/run-1790397008466242892/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+          "-DPOIMA_INCLUDE_DIR=<checkout>/include"
+        ],
+        "exit_code": 0,
+        "log": "-- The CXX compiler identification is GNU 15.2.0\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: /usr/bin/c++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (2.5s)\n-- Generating done (0.0s)\n-- Build files have been written to: <checkout>/build/module-evidence-linux/run-1790397008466242892/build\n"
+      },
+      "final_state": {
+        "entities": 1000,
+        "tick": 100,
+        "revision": 4218,
+        "native_calls": 4184000,
+        "resident_bytes": 4325376,
+        "shadow_files": 1,
+        "loaded": true,
+        "schema": 2,
+        "entity_bytes": 40,
+        "state_hash": "9b7280df5c85b83f",
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 100
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 100
+        }
+      },
+      "summary": {
+        "build_ms": {
+          "samples": 40,
+          "median_ms": 511.90806799968414,
+          "p95_ms": 527.693920999809,
+          "max_ms": 537.2657280004205
+        },
+        "reload_ms": {
+          "samples": 40,
+          "median_ms": 0.2873795,
+          "p95_ms": 0.359549,
+          "max_ms": 0.511071
+        },
+        "observed_total_ms": {
+          "samples": 40,
+          "median_ms": 514.4900569994206,
+          "p95_ms": 530.1056709995464,
+          "max_ms": 539.6773360007501
+        },
+        "repeated_reload_ms": {
+          "samples": 100,
+          "median_ms": 0.22219899999999998,
+          "p95_ms": 0.353538,
+          "max_ms": 0.473051
+        }
+      },
+      "passed": true,
+      "source_sha256": {
+        "experiments/native_module/host.cpp": "068b04b7f0489ed647ed4d5c3eeed5acfed0c7d3e242efd988f8f56cc535ff3d",
+        "experiments/native_module/fixture.cpp": "94b83da9040b8c17a69e2a0487f8e5229e4b41a41576ec5b29ed50c8d85d2748",
+        "include/poima/experimental/module_abi.h": "81cf9f6b284cd8d92bb2ee57d24d89d07932d463c7be5ffed882657fad6da9d9",
+        "scripts/measure_native_module.py": "2f8c5897349e2bbeb1a228799549e06e223834212adacc8980bfac9df2b57839"
+      },
+      "host_sha256": "b3399e5b96f3a17b87fe20b284227ef3abc29adc566d653b322162688a84d992",
+      "resident_summary_after_first_10_reloads": {
+        "first_bytes": 4325376,
+        "last_bytes": 4325376,
+        "min_bytes": 4325376,
+        "max_bytes": 4325376,
+        "interpretation": "Resident working set observation, not proof of absence of leaks."
+      }
+    },
+    "windows": {
+      "fixture": "native_module_v1",
+      "language": "C++20",
+      "entities": 1000,
+      "windows_execution": true,
+      "build_host": "Linux/WSL",
+      "builds": [
+        {
+          "name": "initial",
+          "build_ms": 330.989328999749,
+          "exit_code": 0,
+          "ticks_during_build": 0,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "09fa8e1b5e59b9e8e3c02ad2ccdb18e40a4708c131dd80aff22bf54523389467"
+        },
+        {
+          "name": "edit-0",
+          "build_ms": 292.37890700005664,
+          "exit_code": 0,
+          "ticks_during_build": 48,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "e1cd7b8ea50fc54707c2d2100ac5766333293583e0d774b50f1392fbd2559e70"
+        },
+        {
+          "name": "edit-1",
+          "build_ms": 311.00396100009675,
+          "exit_code": 0,
+          "ticks_during_build": 51,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "1110f3e036ec7c6a6cc9914923c9919ea809b1d100230dbed29550c511474ee7"
+        },
+        {
+          "name": "edit-2",
+          "build_ms": 300.3706730005433,
+          "exit_code": 0,
+          "ticks_during_build": 49,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "2df3911a00296e90c1f7bf95a2cf8e936087e2bfb50285f1763dbbb4fb485094"
+        },
+        {
+          "name": "edit-3",
+          "build_ms": 299.2643870002212,
+          "exit_code": 0,
+          "ticks_during_build": 49,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "651b006e9d6b4a30305cb10674955a0738b7d4ff0172c61fabc1687f8b9c0505"
+        },
+        {
+          "name": "edit-4",
+          "build_ms": 290.3845069995441,
+          "exit_code": 0,
+          "ticks_during_build": 48,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "4e157f8a092a1d669d6de56990359a61df2eb4d1338a5001e9ff502e32f6f50f"
+        },
+        {
+          "name": "edit-5",
+          "build_ms": 311.9183050002903,
+          "exit_code": 0,
+          "ticks_during_build": 51,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "651b006e9d6b4a30305cb10674955a0738b7d4ff0172c61fabc1687f8b9c0505"
+        },
+        {
+          "name": "edit-6",
+          "build_ms": 301.4246530001401,
+          "exit_code": 0,
+          "ticks_during_build": 50,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "92c91a2f17bd84080a78832eb7af6bd0ad9f00377822a60b9f227649b0187712"
+        },
+        {
+          "name": "edit-7",
+          "build_ms": 304.3274179999571,
+          "exit_code": 0,
+          "ticks_during_build": 49,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "713451fb330010595eaedf00230bc82fa6f346c61cea0d339b2c374f3034caa9"
+        },
+        {
+          "name": "edit-8",
+          "build_ms": 303.60083499999746,
+          "exit_code": 0,
+          "ticks_during_build": 49,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "92c91a2f17bd84080a78832eb7af6bd0ad9f00377822a60b9f227649b0187712"
+        },
+        {
+          "name": "edit-9",
+          "build_ms": 446.8767819998902,
+          "exit_code": 0,
+          "ticks_during_build": 67,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "910e0c3e6a03de0ed67cd46aa4d98ff165ab722ac795ed8e4474610e39cbeebe"
+        },
+        {
+          "name": "edit-10",
+          "build_ms": 2608.162273999369,
+          "exit_code": 0,
+          "ticks_during_build": 381,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "655a32002536176211367c27710553cc7746d8825c4302683b7097d7052000e0"
+        },
+        {
+          "name": "edit-11",
+          "build_ms": 3038.4573479996106,
+          "exit_code": 0,
+          "ticks_during_build": 436,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "a99ad51205fd55024cddcb71535f56e6267cb8f17c450614657825841687bf9d"
+        },
+        {
+          "name": "edit-12",
+          "build_ms": 524.3609879998985,
+          "exit_code": 0,
+          "ticks_during_build": 73,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "af23a4c517e350b424e257535ef9be4b2045e9d134c850b29e6c7976149ac849"
+        },
+        {
+          "name": "edit-13",
+          "build_ms": 337.66753300005803,
+          "exit_code": 0,
+          "ticks_during_build": 55,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "d20df12a555d45f900eb1058344fca736566a3262daa3ec6c2b773336056e4b4"
+        },
+        {
+          "name": "edit-14",
+          "build_ms": 406.77099599997746,
+          "exit_code": 0,
+          "ticks_during_build": 58,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "9872088e24b7407e1ada776af31ba7bcacdd7e2c665c8bbf74046ea5597c9db6"
+        },
+        {
+          "name": "edit-15",
+          "build_ms": 365.97773099947517,
+          "exit_code": 0,
+          "ticks_during_build": 56,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "86d7a5e46dc7b89e47b5aa13041a639b18141a4302ab9a1dd71cbac47860ef19"
+        },
+        {
+          "name": "edit-16",
+          "build_ms": 329.4717099997797,
+          "exit_code": 0,
+          "ticks_during_build": 53,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "2e2f80dbf42b40246e4480b12ad81695e0538e30b05bb9745cbf7a5701160548"
+        },
+        {
+          "name": "edit-17",
+          "build_ms": 345.007813999473,
+          "exit_code": 0,
+          "ticks_during_build": 55,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "184c78530f83585abbb5fad7f5e8c82b4a90f5fccd8cf155f5d935e7eea4b112"
+        },
+        {
+          "name": "edit-18",
+          "build_ms": 341.72201000001223,
+          "exit_code": 0,
+          "ticks_during_build": 55,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "04d0b0869e78b8e9f997157fc4ce5fd8cb97e3a2050d9ca2a0252e6c83b6d60f"
+        },
+        {
+          "name": "edit-19",
+          "build_ms": 344.3450720005785,
+          "exit_code": 0,
+          "ticks_during_build": 56,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "184c78530f83585abbb5fad7f5e8c82b4a90f5fccd8cf155f5d935e7eea4b112"
+        },
+        {
+          "name": "edit-20",
+          "build_ms": 409.68166299990116,
+          "exit_code": 0,
+          "ticks_during_build": 65,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "fb740204933118b4f8c54e86df98213c8044b1ecf2a12a5b6cf688b50a0edfff"
+        },
+        {
+          "name": "edit-21",
+          "build_ms": 319.4527209998341,
+          "exit_code": 0,
+          "ticks_during_build": 52,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "2e35a5ce5c6b5492e5b35c08dbbacc421a5eeae5c67d06f40c500a42e31d9693"
+        },
+        {
+          "name": "edit-22",
+          "build_ms": 326.5028430005259,
+          "exit_code": 0,
+          "ticks_during_build": 53,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "db57f5d84545bebc0a783c2204b741ef220f4830d554cda550b7cec6c4ec2f56"
+        },
+        {
+          "name": "edit-23",
+          "build_ms": 317.4147500003528,
+          "exit_code": 0,
+          "ticks_during_build": 52,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "7723e2c05cf068854ee1720e9756d8af9299e8e5d2038f7b01f749a56cbe2ca0"
+        },
+        {
+          "name": "edit-24",
+          "build_ms": 347.46434799944836,
+          "exit_code": 0,
+          "ticks_during_build": 56,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "db57f5d84545bebc0a783c2204b741ef220f4830d554cda550b7cec6c4ec2f56"
+        },
+        {
+          "name": "edit-25",
+          "build_ms": 342.6730499995756,
+          "exit_code": 0,
+          "ticks_during_build": 55,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "6ebe195a425dfebb34fee48404634f627a722d4a5da8776df2c816f08b8c0535"
+        },
+        {
+          "name": "edit-26",
+          "build_ms": 340.4786350001814,
+          "exit_code": 0,
+          "ticks_during_build": 55,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "c70e9d19583664e29fc79b3bcea39fff33c44c1127166ca2874bbea965390b16"
+        },
+        {
+          "name": "edit-27",
+          "build_ms": 339.96952699999383,
+          "exit_code": 0,
+          "ticks_during_build": 55,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "203aaae89c40a4d0218c66a388550fdf68733811e42b0f09fe56f69f1b82f9a3"
+        },
+        {
+          "name": "edit-28",
+          "build_ms": 333.86727000015526,
+          "exit_code": 0,
+          "ticks_during_build": 54,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "47194301aa2d20973fad339fa7fdc389af8c01034a6747ea88348420e5694f80"
+        },
+        {
+          "name": "edit-29",
+          "build_ms": 335.4631199999858,
+          "exit_code": 0,
+          "ticks_during_build": 54,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "203aaae89c40a4d0218c66a388550fdf68733811e42b0f09fe56f69f1b82f9a3"
+        },
+        {
+          "name": "edit-30",
+          "build_ms": 402.82220400058577,
+          "exit_code": 0,
+          "ticks_during_build": 64,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "824bfb1236428791db08135425daf0204d9aaff60d67e2cd879a121948643f71"
+        },
+        {
+          "name": "edit-31",
+          "build_ms": 309.6098229998461,
+          "exit_code": 0,
+          "ticks_during_build": 51,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "61ab75cb407344ff8195a00863a8cd6a7365eb01e5e8efefd11538411c1dee3a"
+        },
+        {
+          "name": "edit-32",
+          "build_ms": 312.3102090003158,
+          "exit_code": 0,
+          "ticks_during_build": 51,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "ce9e5f7790329dfcb3531206da2beca863e3ecb834ce2a28855503833d6798b7"
+        },
+        {
+          "name": "edit-33",
+          "build_ms": 325.6115040003351,
+          "exit_code": 0,
+          "ticks_during_build": 53,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "4031640173aa06507f95266c78fa56e6e15b2a8aec87d5ded6b75a155b06295f"
+        },
+        {
+          "name": "edit-34",
+          "build_ms": 321.1957280000206,
+          "exit_code": 0,
+          "ticks_during_build": 52,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "3632d1e29ff8fea08f9879f88ee00438063e1dac7e99afcceff590f10a9d432b"
+        },
+        {
+          "name": "edit-35",
+          "build_ms": 319.0625050001472,
+          "exit_code": 0,
+          "ticks_during_build": 52,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "28a3cf3b176dd6c642da0b37d9eb320c00c6dad3de2818ba758795a9f5bc978d"
+        },
+        {
+          "name": "edit-36",
+          "build_ms": 313.8050400002612,
+          "exit_code": 0,
+          "ticks_during_build": 51,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "3632d1e29ff8fea08f9879f88ee00438063e1dac7e99afcceff590f10a9d432b"
+        },
+        {
+          "name": "edit-37",
+          "build_ms": 305.34734899993055,
+          "exit_code": 0,
+          "ticks_during_build": 50,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "9876278a9dda0307648ea414f779f86baeab8a93a62a88f718d842379aae9117"
+        },
+        {
+          "name": "edit-38",
+          "build_ms": 323.00427199970727,
+          "exit_code": 0,
+          "ticks_during_build": 52,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "7e16ad3cd0ee776381292d9e8786dd6b82bc7c1456d0365962d1092bd7301a92"
+        },
+        {
+          "name": "edit-39",
+          "build_ms": 300.9919739997713,
+          "exit_code": 0,
+          "ticks_during_build": 49,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "9876278a9dda0307648ea414f779f86baeab8a93a62a88f718d842379aae9117"
+        },
+        {
+          "name": "broken",
+          "build_ms": 49.98231300032785,
+          "exit_code": 1,
+          "ticks_during_build": 8,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\nFAILED: [code=1] CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj \n<checkout>/.cache/toolchains/llvm-mingw-20260922-ucrt-ubuntu-22.04-x86_64/bin/x86_64-w64-mingw32-clang++ -DPOIMA_FIXTURE_BAD_ABI=0 -DPOIMA_FIXTURE_FAIL_STEP=0 -DPOIMA_FIXTURE_REJECT_MIGRATION=0 -DPOIMA_FIXTURE_SCALE=1 -DPOIMA_FIXTURE_SCHEMA=1 -Dpoima_game_fixture_EXPORTS -I<checkout>/include -O2 -g -DNDEBUG -std=c++20 -fvisibility=hidden -MD -MT CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj -MF CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj.d -o CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj -c <checkout>/build/module-evidence-windows/run-1790397033863057004/source/fixture.cpp\n<checkout>/build/module-evidence-windows/run-1790397033863057004/source/fixture.cpp:104:2: error: Intentional compile failure for retention test\n  104 | #error Intentional compile failure for retention test\n      |  ^\n1 error generated.\nninja: build stopped: subcommand failed.\n"
+        },
+        {
+          "name": "bad-abi",
+          "build_ms": 307.31887000001734,
+          "exit_code": 0,
+          "ticks_during_build": 50,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "9d28d783999f100b3f7b70f249d9e5d5b603dcd43b009e3b36aa8b7ea9990728"
+        },
+        {
+          "name": "migration-failure",
+          "build_ms": 306.78276199978427,
+          "exit_code": 0,
+          "ticks_during_build": 50,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "9a4c1b3361b37e8e64636b02410e1eeed332e0fc66b34011b655c3f95c7c9720"
+        },
+        {
+          "name": "step-failure",
+          "build_ms": 305.31063200032804,
+          "exit_code": 0,
+          "ticks_during_build": 50,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 51200,
+          "sha256": "7cf8381cc55137a4d94f44123c5feb288c85663e95ff8bb222dd6e0103bd21c6"
+        },
+        {
+          "name": "schema-2",
+          "build_ms": 356.3455060002525,
+          "exit_code": 0,
+          "ticks_during_build": 58,
+          "log": "[1/2] Building CXX object CMakeFiles/poima_game_fixture.dir/fixture.cpp.obj\n[2/2] Linking CXX shared library libpoima_game_fixture.dll\n",
+          "bytes": 50688,
+          "sha256": "97190a141497afba45f717cf7a82692178c178b5df17d8cb11c1b50643c7cc28"
+        }
+      ],
+      "warm_edits": [
+        {
+          "build_ms": 292.37890700005664,
+          "reload_ms": 48.6813,
+          "observed_total_ms": 346.3001740001346
+        },
+        {
+          "build_ms": 311.00396100009675,
+          "reload_ms": 54.3963,
+          "observed_total_ms": 371.4336610000828
+        },
+        {
+          "build_ms": 300.3706730005433,
+          "reload_ms": 64.012,
+          "observed_total_ms": 371.00542600001063
+        },
+        {
+          "build_ms": 299.2643870002212,
+          "reload_ms": 62.197,
+          "observed_total_ms": 367.3486160005268
+        },
+        {
+          "build_ms": 290.3845069995441,
+          "reload_ms": 45.3316,
+          "observed_total_ms": 340.9891219998826
+        },
+        {
+          "build_ms": 311.9183050002903,
+          "reload_ms": 54.3931,
+          "observed_total_ms": 371.43219400059024
+        },
+        {
+          "build_ms": 301.4246530001401,
+          "reload_ms": 43.0688,
+          "observed_total_ms": 349.3770029999723
+        },
+        {
+          "build_ms": 304.3274179999571,
+          "reload_ms": 51.5883,
+          "observed_total_ms": 361.46737599938206
+        },
+        {
+          "build_ms": 303.60083499999746,
+          "reload_ms": 44.9718,
+          "observed_total_ms": 356.16985599972395
+        },
+        {
+          "build_ms": 446.8767819998902,
+          "reload_ms": 134.652,
+          "observed_total_ms": 588.580562000061
+        },
+        {
+          "build_ms": 2608.162273999369,
+          "reload_ms": 74.7762,
+          "observed_total_ms": 2689.6039650000603
+        },
+        {
+          "build_ms": 3038.4573479996106,
+          "reload_ms": 134.087,
+          "observed_total_ms": 3180.211985999449
+        },
+        {
+          "build_ms": 524.3609879998985,
+          "reload_ms": 57.1176,
+          "observed_total_ms": 588.5510960006286
+        },
+        {
+          "build_ms": 337.66753300005803,
+          "reload_ms": 62.6091,
+          "observed_total_ms": 406.9842230001086
+        },
+        {
+          "build_ms": 406.77099599997746,
+          "reload_ms": 107.876,
+          "observed_total_ms": 524.251085999822
+        },
+        {
+          "build_ms": 365.97773099947517,
+          "reload_ms": 62.0509,
+          "observed_total_ms": 433.8835549997384
+        },
+        {
+          "build_ms": 329.4717099997797,
+          "reload_ms": 50.0832,
+          "observed_total_ms": 385.48262599942973
+        },
+        {
+          "build_ms": 345.007813999473,
+          "reload_ms": 57.4262,
+          "observed_total_ms": 408.2763559999876
+        },
+        {
+          "build_ms": 341.72201000001223,
+          "reload_ms": 60.7024,
+          "observed_total_ms": 408.851830000458
+        },
+        {
+          "build_ms": 344.3450720005785,
+          "reload_ms": 73.8565,
+          "observed_total_ms": 423.9148930000738
+        },
+        {
+          "build_ms": 409.68166299990116,
+          "reload_ms": 67.8828,
+          "observed_total_ms": 484.1907279997031
+        },
+        {
+          "build_ms": 319.4527209998341,
+          "reload_ms": 69.426,
+          "observed_total_ms": 394.2355449999013
+        },
+        {
+          "build_ms": 326.5028430005259,
+          "reload_ms": 50.3945,
+          "observed_total_ms": 382.82926700048847
+        },
+        {
+          "build_ms": 317.4147500003528,
+          "reload_ms": 55.7656,
+          "observed_total_ms": 378.8735230000384
+        },
+        {
+          "build_ms": 347.46434799944836,
+          "reload_ms": 48.9909,
+          "observed_total_ms": 402.15437400001974
+        },
+        {
+          "build_ms": 342.6730499995756,
+          "reload_ms": 51.3955,
+          "observed_total_ms": 398.96091099944897
+        },
+        {
+          "build_ms": 340.4786350001814,
+          "reload_ms": 47.9455,
+          "observed_total_ms": 393.5460519996923
+        },
+        {
+          "build_ms": 339.96952699999383,
+          "reload_ms": 50.7103,
+          "observed_total_ms": 396.72516900009214
+        },
+        {
+          "build_ms": 333.86727000015526,
+          "reload_ms": 60.9894,
+          "observed_total_ms": 401.58835999955045
+        },
+        {
+          "build_ms": 335.4631199999858,
+          "reload_ms": 52.9275,
+          "observed_total_ms": 395.08548699996027
+        },
+        {
+          "build_ms": 402.82220400058577,
+          "reload_ms": 56.17,
+          "observed_total_ms": 464.1958380007054
+        },
+        {
+          "build_ms": 309.6098229998461,
+          "reload_ms": 51.4019,
+          "observed_total_ms": 366.4304630001425
+        },
+        {
+          "build_ms": 312.3102090003158,
+          "reload_ms": 56.301,
+          "observed_total_ms": 374.37018000036915
+        },
+        {
+          "build_ms": 325.6115040003351,
+          "reload_ms": 170.685,
+          "observed_total_ms": 503.87861900071584
+        },
+        {
+          "build_ms": 321.1957280000206,
+          "reload_ms": 47.4305,
+          "observed_total_ms": 373.93651500042324
+        },
+        {
+          "build_ms": 319.0625050001472,
+          "reload_ms": 58.9419,
+          "observed_total_ms": 383.5535420002998
+        },
+        {
+          "build_ms": 313.8050400002612,
+          "reload_ms": 56.5816,
+          "observed_total_ms": 375.6511550000141
+        },
+        {
+          "build_ms": 305.34734899993055,
+          "reload_ms": 46.7383,
+          "observed_total_ms": 357.4069979995329
+        },
+        {
+          "build_ms": 323.00427199970727,
+          "reload_ms": 49.6751,
+          "observed_total_ms": 378.59021500025847
+        },
+        {
+          "build_ms": 300.9919739997713,
+          "reload_ms": 61.8945,
+          "observed_total_ms": 370.0088630002938
+        }
+      ],
+      "reloads": [
+        {
+          "operation_ms": 51.1667,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.9598,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.0804,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.6038,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 65.9334,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.0829,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 63.3783,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 53.8922,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 54.4984,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 62.5273,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.8781,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 60.2114,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.9817,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 67.092,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 55.9931,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.8733,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 46.8258,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.9352,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 64.6711,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.5084,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.4464,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 47.2392,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 64.2392,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 56.9484,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 57.4928,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 53.3493,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 47.3599,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.2985,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.6338,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.5257,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 66.3802,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 53.9681,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.4604,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.485,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.2576,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.968,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.9933,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.0067,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.3382,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 57.0846,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 59.2733,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.5481,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 53.5658,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.0453,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 55.7204,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 64.2395,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.6514,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.3113,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.1772,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 57.4789,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.3405,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 59.4914,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 64.9846,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.4715,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 63.8642,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.5599,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.3187,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 53.4067,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 65.2303,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 54.2226,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 45.7617,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.6076,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 61.9356,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.6324,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 64.0876,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 56.1043,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 47.7556,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 47.3738,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 46.5384,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.5462,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 62.6852,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.5089,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 54.1122,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.0937,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.4645,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 46.2514,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.9376,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 45.4201,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.6735,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.4348,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 58.2051,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 45.1903,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 49.8925,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.336,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 54.7037,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 54.805,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 57.2929,
+          "resident_bytes": 4931584,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 46.7207,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 47.5134,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 46.453,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.1751,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 44.4008,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 48.3108,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 44.4919,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 60.6147,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 62.5497,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 52.1698,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 60.4653,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 50.7711,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        },
+        {
+          "operation_ms": 51.3161,
+          "resident_bytes": 4984832,
+          "shadow_files": 1
+        }
+      ],
+      "checks": {
+        "deterministic_initial_update": true,
+        "canonical_save_restore_save": true,
+        "corrupt_checkpoint_retains_state": true,
+        "real_function_edits_preserve_state": true,
+        "compile_failure_old_module_keeps_running": true,
+        "bad-abi_retains_state": true,
+        "migration-failure_retains_state": true,
+        "partial_update_failure_retains_state": true,
+        "100_reloads_preserve_state_and_retire_shadow_files": true,
+        "layout_upgrade_and_rejected_downgrade": true,
+        "old_checkpoint_migrates": true
+      },
+      "configure": {
+        "ms": 7400.4718249998405,
+        "command": [
+          "cmake",
+          "-S",
+          "<checkout>/build/module-evidence-windows/run-1790397033863057004/source",
+          "-B",
+          "<checkout>/build/module-evidence-windows/run-1790397033863057004/build",
+          "-G",
+          "Ninja",
+          "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+          "-DPOIMA_INCLUDE_DIR=<checkout>/include",
+          "-DCMAKE_TOOLCHAIN_FILE=<checkout>/cmake/windows-llvm-mingw.cmake"
+        ],
+        "exit_code": 0,
+        "log": "-- The CXX compiler identification is Clang 23.1.2\n-- Detecting CXX compiler ABI info\n-- Detecting CXX compiler ABI info - done\n-- Check for working CXX compiler: <checkout>/.cache/toolchains/llvm-mingw-20260922-ucrt-ubuntu-22.04-x86_64/bin/x86_64-w64-mingw32-clang++ - skipped\n-- Detecting CXX compile features\n-- Detecting CXX compile features - done\n-- Configuring done (7.4s)\n-- Generating done (0.0s)\n-- Build files have been written to: <checkout>/build/module-evidence-windows/run-1790397033863057004/build\n"
+      },
+      "final_state": {
+        "entities": 1000,
+        "tick": 100,
+        "revision": 3373,
+        "native_calls": 3339000,
+        "resident_bytes": 5005312,
+        "shadow_files": 1,
+        "loaded": true,
+        "schema": 2,
+        "entity_bytes": 40,
+        "state_hash": "9b7280df5c85b83f",
+        "first": {
+          "id": 0,
+          "position_mm": 100,
+          "velocity_mm_per_tick": 1,
+          "updates": 100,
+          "energy": 100
+        },
+        "last": {
+          "id": 999,
+          "position_mm": 3597,
+          "velocity_mm_per_tick": 6,
+          "updates": 100,
+          "energy": 100
+        }
+      },
+      "summary": {
+        "build_ms": {
+          "samples": 40,
+          "median_ms": 326.0571735004305,
+          "p95_ms": 524.3609879998985,
+          "max_ms": 3038.4573479996106
+        },
+        "reload_ms": {
+          "samples": 40,
+          "median_ms": 56.2355,
+          "p95_ms": 134.087,
+          "max_ms": 170.685
+        },
+        "observed_total_ms": {
+          "samples": 40,
+          "median_ms": 389.514338999561,
+          "p95_ms": 588.580562000061,
+          "max_ms": 3180.211985999449
+        },
+        "repeated_reload_ms": {
+          "samples": 100,
+          "median_ms": 51.90665,
+          "p95_ms": 64.6711,
+          "max_ms": 67.092
+        }
+      },
+      "passed": true,
+      "source_sha256": {
+        "experiments/native_module/host.cpp": "068b04b7f0489ed647ed4d5c3eeed5acfed0c7d3e242efd988f8f56cc535ff3d",
+        "experiments/native_module/fixture.cpp": "94b83da9040b8c17a69e2a0487f8e5229e4b41a41576ec5b29ed50c8d85d2748",
+        "include/poima/experimental/module_abi.h": "81cf9f6b284cd8d92bb2ee57d24d89d07932d463c7be5ffed882657fad6da9d9",
+        "scripts/measure_native_module.py": "2f8c5897349e2bbeb1a228799549e06e223834212adacc8980bfac9df2b57839"
+      },
+      "host_sha256": "519e965926601f145cc759cc7b70e51a21ba09e8a31bdaab3f34e4f2ed84bede",
+      "resident_summary_after_first_10_reloads": {
+        "first_bytes": 4984832,
+        "last_bytes": 4984832,
+        "min_bytes": 4931584,
+        "max_bytes": 4984832,
+        "interpretation": "Resident working set observation, not proof of absence of leaks."
+      }
+    }
+  },
+  "additional_sources_sha256": {
+    "CMakeLists.txt": "c335c759a68b2c111d18c11cfe509cca9b80cad22fa9b32b475dc67a7535607e",
+    "experiments/native_module/CMakeLists.txt": "b0cf9069c6eb85a51ddbbb0c23580b576fc57a757c4d2e3822c24b83f9e60105",
+    "cmake/windows-llvm-mingw.cmake": "8416d2f836578692c765abc7fd857ca390d8ea4833a57e97adf0590d76b102d2"
+  },
+  "headless_ctest_log": "Start testing: Sep 26 00:29 EDT\n----------------------------------------------------------\n1/2 Testing: cli_contract\n1/2 Test: cli_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/tests/cli_contract.py\" \"<checkout>/build/headless/poima\" \"0\" \"0\"\nDirectory: <checkout>/build/headless\n\"cli_contract\" start time: Sep 26 00:29 EDT\nOutput:\n----------------------------------------------------------\ntest_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 0.076s\n\nOK\n<end of output>\nTest time =   0.14 sec\n----------------------------------------------------------\nTest Passed.\n\"cli_contract\" end time: Sep 26 00:29 EDT\n\"cli_contract\" time elapsed: 00:00:00\n----------------------------------------------------------\n\n2/2 Testing: native_module_contract\n2/2 Test: native_module_contract\nCommand: \"/home/<user>/venv/bin/python3\" \"<checkout>/scripts/measure_native_module.py\" \"--host\" \"<checkout>/build/headless/poima-module-lab\" \"--output\" \"<checkout>/build/headless/module-contract\" \"--warm-edits\" \"2\"\nDirectory: <checkout>/build/headless\n\"native_module_contract\" start time: Sep 26 00:29 EDT\nOutput:\n----------------------------------------------------------\n{\n  \"build_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 514.21500799961,\n    \"p95_ms\": 518.4720449997258,\n    \"max_ms\": 518.4720449997258\n  },\n  \"reload_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 0.266235,\n    \"p95_ms\": 0.311149,\n    \"max_ms\": 0.311149\n  },\n  \"observed_total_ms\": {\n    \"samples\": 2,\n    \"median_ms\": 516.1996410001848,\n    \"p95_ms\": 520.6206530001509,\n    \"max_ms\": 520.6206530001509\n  },\n  \"repeated_reload_ms\": {\n    \"samples\": 100,\n    \"median_ms\": 0.2310355,\n    \"p95_ms\": 0.351003,\n    \"max_ms\": 0.529365\n  }\n}\n<end of output>\nTest time =   6.41 sec\n----------------------------------------------------------\nTest Passed.\n\"native_module_contract\" end time: Sep 26 00:30 EDT\n\"native_module_contract\" time elapsed: 00:00:06\n----------------------------------------------------------\n\nEnd testing: Sep 26 00:30 EDT\n",
+  "build_logs": {
+    "linux": "[0/1] Re-running CMake...\n-- Configuring done (0.1s)\n-- Generating done (0.0s)\n-- Build files have been written to: <checkout>/build/headless\n[1/3] Building CXX object CMakeFiles/poima-module-lab.dir/experiments/native_module/host.cpp.o\n[2/3] Linking CXX executable poima-module-lab\n",
+    "windows": "[0/2] Re-checking globbed directories...\n[1/2] Re-running CMake...\n-- Checking for module 'libusb-1.0>=1.0.16'\n--   Package 'libusb-1.0' not found\n-- Could NOT find LibUSB (missing: LibUSB_LIBRARY LibUSB_INCLUDE_PATH) (found version \"LibUSB_VERSION-NOTFOUND\")\n-- \n-- SDL3 was configured with the following options:\n-- \n-- Platform: Windows\n-- 64-bit:   TRUE\n-- Compiler: <checkout>/.cache/toolchains/llvm-mingw-20260922-ucrt-ubuntu-22.04-x86_64/bin/x86_64-w64-mingw32-clang\n-- Revision: SDL-release-3.4.16-0-gfa2c02bb6\n-- Vendor:   \n-- \n-- Subsystems:\n--   Audio:    OFF\n--   Video:    ON\n--   GPU:      OFF\n--   Render:   OFF\n--   Camera:   ON\n--   Joystick: ON\n--   Haptic:   ON\n--   Hidapi:   ON\n--   Power:    ON\n--   Sensor:   ON\n--   Dialog:   ON\n--   Tray:     ON\n-- \n-- Options:\n--   SDL_ALSA                    (Wanted: OFF): OFF\n--   SDL_ALSA_SHARED             (Wanted: OFF): OFF\n--   SDL_ALTIVEC                 (Wanted: OFF): OFF\n--   SDL_ARMNEON                 (Wanted: OFF): OFF\n--   SDL_ASAN                    (Wanted: OFF): OFF\n--   SDL_ASSEMBLY                (Wanted: ON): ON\n--   SDL_ASSERTIONS              (Wanted: auto): auto\n--   SDL_AVX                     (Wanted: ON): ON\n--   SDL_AVX2                    (Wanted: ON): ON\n--   SDL_AVX512F                 (Wanted: ON): ON\n--   SDL_BACKGROUNDING_SIGNAL    (Wanted: OFF): OFF\n--   SDL_CCACHE                  (Wanted: OFF): OFF\n--   SDL_CLANG_TIDY              (Wanted: OFF): OFF\n--   SDL_CLOCK_GETTIME           (Wanted: OFF): OFF\n--   SDL_COCOA                   (Wanted: OFF): OFF\n--   SDL_DBUS                    (Wanted: OFF): OFF\n--   SDL_DEPS_SHARED             (Wanted: ON): OFF\n--   SDL_DIRECTX                 (Wanted: OFF): OFF\n--   SDL_DISKAUDIO               (Wanted: OFF): OFF\n--   SDL_DLOPEN_NOTES            (Wanted: OFF): OFF\n--   SDL_DUMMYAUDIO              (Wanted: OFF): OFF\n--   SDL_DUMMYCAMERA             (Wanted: ON): ON\n--   SDL_DUMMYVIDEO              (Wanted: ON): ON\n--   SDL_EXAMPLES                (Wanted: OFF): OFF\n--   SDL_EXAMPLES_LINK_SHARED    (Wanted: OFF): OFF\n--   SDL_FOREGROUNDING_SIGNAL    (Wanted: OFF): OFF\n--   SDL_FRIBIDI                 (Wanted: OFF): OFF\n--   SDL_FRIBIDI_SHARED          (Wanted: OFF): OFF\n--   SDL_GCC_ATOMICS             (Wanted: ON): ON\n--   SDL_HIDAPI                  (Wanted: ON): ON\n--   SDL_HIDAPI_JOYSTICK         (Wanted: ON): ON\n--   SDL_HIDAPI_LIBUSB           (Wanted: ON): OFF\n--   SDL_HIDAPI_LIBUSB_SHARED    (Wanted: ON): OFF\n--   SDL_IBUS                    (Wanted: OFF): OFF\n--   SDL_INSTALL                 (Wanted: OFF): OFF\n--   SDL_INSTALL_TESTS           (Wanted: OFF): OFF\n--   SDL_JACK                    (Wanted: OFF): OFF\n--   SDL_JACK_SHARED             (Wanted: OFF): OFF\n--   SDL_KMSDRM                  (Wanted: OFF): OFF\n--   SDL_KMSDRM_SHARED           (Wanted: OFF): OFF\n--   SDL_LASX                    (Wanted: OFF): OFF\n--   SDL_LIBC                    (Wanted: ON): ON\n--   SDL_LIBICONV                (Wanted: OFF): OFF\n--   SDL_LIBTHAI                 (Wanted: OFF): OFF\n--   SDL_LIBTHAI_SHARED          (Wanted: OFF): OFF\n--   SDL_LIBUDEV                 (Wanted: ON): OFF\n--   SDL_LIBURING                (Wanted: OFF): OFF\n--   SDL_LSX                     (Wanted: OFF): OFF\n--   SDL_METAL                   (Wanted: OFF): OFF\n--   SDL_MMX                     (Wanted: ON): ON\n--   SDL_OFFSCREEN               (Wanted: ON): ON\n--   SDL_OPENGL                  (Wanted: OFF): OFF\n--   SDL_OPENGLES                (Wanted: OFF): OFF\n--   SDL_OPENVR                  (Wanted: OFF): OFF\n--   SDL_OSS                     (Wanted: OFF): OFF\n--   SDL_PIPEWIRE                (Wanted: OFF): OFF\n--   SDL_PIPEWIRE_SHARED         (Wanted: OFF): OFF\n--   SDL_PTHREADS                (Wanted: OFF): OFF\n--   SDL_PTHREADS_SEM            (Wanted: OFF): OFF\n--   SDL_PULSEAUDIO              (Wanted: OFF): OFF\n--   SDL_PULSEAUDIO_SHARED       (Wanted: OFF): OFF\n--   SDL_RENDER_D3D              (Wanted: OFF): OFF\n--   SDL_RENDER_D3D11            (Wanted: OFF): OFF\n--   SDL_RENDER_D3D12            (Wanted: OFF): OFF\n--   SDL_RENDER_GPU              (Wanted: OFF): OFF\n--   SDL_RENDER_METAL            (Wanted: OFF): OFF\n--   SDL_RENDER_VULKAN           (Wanted: OFF): OFF\n--   SDL_ROCKCHIP                (Wanted: OFF): OFF\n--   SDL_RPATH                   (Wanted: OFF): OFF\n--   SDL_RPI                     (Wanted: OFF): OFF\n--   SDL_SNDIO                   (Wanted: OFF): OFF\n--   SDL_SNDIO_SHARED            (Wanted: OFF): OFF\n--   SDL_SSE                     (Wanted: ON): ON\n--   SDL_SSE2                    (Wanted: ON): ON\n--   SDL_SSE3                    (Wanted: ON): ON\n--   SDL_SSE4_1                  (Wanted: ON): ON\n--   SDL_SSE4_2                  (Wanted: ON): ON\n--   SDL_SYSTEM_ICONV            (Wanted: OFF): OFF\n--   SDL_TESTS                   (Wanted: OFF): OFF\n--   SDL_TESTS_LINK_SHARED       (Wanted: OFF): OFF\n--   SDL_UNINSTALL               (Wanted: OFF): OFF\n--   SDL_VIRTUAL_JOYSTICK        (Wanted: ON): ON\n--   SDL_VIVANTE                 (Wanted: OFF): OFF\n--   SDL_VULKAN                  (Wanted: ON): ON\n--   SDL_WASAPI                  (Wanted: OFF): OFF\n--   SDL_WAYLAND                 (Wanted: OFF): OFF\n--   SDL_WAYLAND_LIBDECOR        (Wanted: OFF): OFF\n--   SDL_WAYLAND_LIBDECOR_SHARED (Wanted: OFF): OFF\n--   SDL_WAYLAND_SHARED          (Wanted: OFF): OFF\n--   SDL_X11                     (Wanted: OFF): OFF\n--   SDL_X11_SHARED              (Wanted: OFF): OFF\n--   SDL_X11_XCURSOR             (Wanted: OFF): OFF\n--   SDL_X11_XDBE                (Wanted: OFF): OFF\n--   SDL_X11_XFIXES              (Wanted: OFF): OFF\n--   SDL_X11_XINPUT              (Wanted: OFF): OFF\n--   SDL_X11_XRANDR              (Wanted: OFF): OFF\n--   SDL_X11_XSCRNSAVER          (Wanted: OFF): OFF\n--   SDL_X11_XSHAPE              (Wanted: OFF): OFF\n--   SDL_X11_XSYNC               (Wanted: OFF): OFF\n--   SDL_X11_XTEST               (Wanted: OFF): OFF\n--   SDL_XINPUT                  (Wanted: ON): ON\n-- \n--  Build Shared Library: OFF\n--  Build Static Library: ON\n-- \n-- Enabled backends:\n--   Video drivers: dummy offscreen windows\n--   Render drivers: \n--   GPU drivers: disabled\n--   Audio drivers: dummy\n--   Joystick drivers: hidapi rawinput virtual wgi xinput\n--   Camera drivers: dummy mediafoundation\n-- \n-- Configuring done (2.4s)\n-- Generating done (0.0s)\n-- Build files have been written to: <checkout>/build/windows-render\n[0/4] Re-checking globbed directories...\n[1/5] Building CXX object CMakeFiles/poima-module-lab.dir/experiments/native_module/host.cpp.obj\n[2/5] Linking CXX executable poima-module-lab.exe\n"
+  },
+  "limitations": [
+    "Single-threaded trusted-code fixture; no live jobs, callbacks or GPU/audio handles",
+    "Windows runs a Linux cross-build; measured path includes WSL/Windows filesystem and pipe overhead",
+    "Only two native module layouts; not a generic gameplay SDK",
+    "No C# or Rust result, no console result",
+    "No isolation from arbitrary native-code crashes",
+    "Native AOT library unloading unsupported; do not reuse this loader for that runtime"
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

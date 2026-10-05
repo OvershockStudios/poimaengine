@@ -1,0 +1,321 @@
+{
+  "date_utc": "2026-09-27T01:07:26.454803+00:00",
+  "version": "0.0.23",
+  "schema_revision": 21,
+  "parent_commit": "pre-publication baseline (record retained privately)",
+  "scope": "Shared local authoring hosts and CLI clients, live editor attachment, draft conflict preservation, fresh captures and recoverable unavailable scenes. Core/editor milestone; no completed engine or production performance claim.",
+  "source_sha256": {
+    "CMakeLists.txt": "14ed0b0965a15b0c1b10769f0111fdd6a356147d3b5a38c8b0b591c332b29afb",
+    "README.md": "4b2aa1917ffba76622bef8a1f56248e7c240ae58c9b70a9083271da1405d6f07",
+    "docs/BUILD.md": "5536bdafae951254bec6100307cd56f18568e3697478ad15050a382840aa9f9c",
+    "docs/EDITOR.md": "9b3ecdb1e7020ac6ebae31fdd15831047eb7241c2978ee5933825203cb1b2ac0",
+    "docs/IMPLEMENTATION_STATUS.md": "6fc9d6867bc33916c4e48d5cfb47d007c98ec89ccb856d7caf9dc87ccc5aaedc",
+    "docs/SHARED_SESSIONS.md": "18abdd3e3caf69283093fbd953899ac16a43a6d1bc88b7d13344b8e7811e352a",
+    "docs/WORLD_SERVICE.md": "f2419529c68a8ed44a932f04b3bfe42869661ba7354b3a64e6b4cae576602a34",
+    "docs/evidence/m2-shared-sessions.png": "9ccf4c11177a77db3509a4a40bdafe264e47a29a97e283d13f9092cd87a74f90",
+    "include/poima/editor.hpp": "fd0aee5e1b2c1351b1ff2f360ac31da691aeef2aa14cb7d463ee98139c22aaa9",
+    "include/poima/editor_viewport.hpp": "a8ae215496e2718aba2671d4d0ec7065cbb72d7f268e98e28ae6ad820f33dac8",
+    "include/poima/local_session.hpp": "8197d3b55a7f9e3c1b301c57c1d8f82324bd9b371fda645ba46b85bc823079cd",
+    "include/poima/shared_session.hpp": "31f7ba63bd062f20b7fbb8d931ce3b3557ddde1e244bbe00fe655097d5e6fd2e",
+    "include/poima/world.hpp": "a45d3433fc2d1f69a603cdb69de1ef04ac9cb8b7684abebf9364064640befbc1",
+    "launch-editor.cmd": "7a5104a14647a7889bd5ad80d22ffd046088d6db164f867c54abe3c2f100dca3",
+    "src/core.cpp": "29516a4a28bf9ac05f53457ce9a14eb250616c8f0ae3545d2aa34134bc7bc02e",
+    "src/editor.cpp": "1bd969564fe43bf40e2cfbfaf444a6e5dc367d0821ab80723bcb727bac8389a3",
+    "src/editor_viewport_disabled.cpp": "cefb416ab2534a6aa2a899dad9eea0eb8ce6358b371505115b80baa5648c9b63",
+    "src/local_session.cpp": "a24b5c4c9f581f382d64c1c2e74c5edfb501773dc7fd1ec43930752d3150a32b",
+    "src/main.cpp": "12799be5e4805be4312b565599491f244b984d354b3461577464601c1b4d9693",
+    "src/render_smoke.cpp": "78a369f89b5b57b7cf1c455741397cea935afe7f144cc143867b2f07d9051eee",
+    "src/shared_session.cpp": "8e990bd437a11614b034721da536e2781bc1216f2b011c458afb514947b72f4e",
+    "src/world.cpp": "66026a5966aba9b9dceb6bf2d87e04432fe95417d02fed8591189c86691c5fb0",
+    "tests/cli_contract.py": "9dd0a7db528308c566cabbdfcd30629f6de60ed17a02a84cca03bdf573986c85",
+    "tests/local_session_native.cpp": "a277c655aabd7fe44879740a3c8c43686117093827d1dd2843a0517594c7161b",
+    "tests/shared_editor_capture.py": "6025882410e3f9ac3f859a67b37df9b6ed12e161433927d65d380322dd3c501c",
+    "tests/shared_session_contract.py": "34c409f23d956ca1ec11caabf715f3a4b97ac88d05b889ee180cd161065e771f",
+    "tests/world_session_native.cpp": "e45587f64a223e0850b721121accd797d6189488ef8929bd572a64f613638b8b"
+  },
+  "binaries": {
+    "headless": {
+      "path": "build/headless/poima",
+      "sha256": "8a56baeba71770e997c34ed755fa25440e50d95bc404bcc5d0885ea010b43cf7"
+    },
+    "runtime_headless": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "77ea54d7242ac02a5a8131e8f6330898124a6eafa9915cd05317aca5a6d12455"
+    },
+    "windows_editor": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "25a65fc3146431cce65ee10ae4eff956302b95299623b9f870cfc68d8ffe8bb6"
+    },
+    "windows_transport_test": {
+      "path": "build/windows-runtime/poima-local-session-test.exe",
+      "sha256": "74f000ce0214cf10c089453dc127db780e5f0fc7871f195487ebaebefe3d1c52"
+    },
+    "windows_session_test": {
+      "path": "build/windows-runtime/poima-world-session-test.exe",
+      "sha256": "f2a58133b4a85cece88c6b32e15057d3d3bd370ca7db79ac198c3cfe83420300"
+    }
+  },
+  "tests": {
+    "headless_ctest": {
+      "passed": 23,
+      "detail": "20 existing suites passed in the initial regression run; 3 native/shared-session suites passed after fixing the Linux endpoint-startup race. Final CLI usage-only relink also passed CLI suite.",
+      "targeted_log": {
+        "path": "build/shared-headless-targeted.log",
+        "sha256": "9f099751635ec03591755d064d410fcaf1da4117d7ceb9269d2ab98b673e41c5"
+      },
+      "final_cli_log": {
+        "path": "build/shared-headless-cli.log",
+        "sha256": "bc6176442d45d5106185643ff9952e6b08215d3f2850c6bc39023d2f353d3439"
+      }
+    },
+    "runtime_ctest": {
+      "passed": 27,
+      "log": {
+        "path": "build/shared-runtime-tests.log",
+        "sha256": "0cd122205db07e0ea6623a0c2bd847b63add82e72fed8d72a0f7e18fb49e7b46"
+      },
+      "final_cli_log": {
+        "path": "build/shared-runtime-cli.log",
+        "sha256": "f91fc6103d45fe6f2626019a370fc11ac70f2d878f73f9cf3fa0a16a6c76149f"
+      }
+    },
+    "windows_transport": {
+      "passed": true,
+      "log": {
+        "path": "build/shared-windows-transport.log",
+        "sha256": "d3179596d62abfa02aa007494d8fe400436078b0ec9d14ac8b13b3077cbddea3"
+      }
+    },
+    "windows_native_session": {
+      "passed": true,
+      "log": {
+        "path": "build/shared-windows-session.log",
+        "sha256": "2396ff74e2a05f50fa7ed79e6c7090bb35db937a4c1e78f80e14bae0bb58e47a"
+      }
+    },
+    "windows_shared_host": {
+      "passed": 7,
+      "log": {
+        "path": "build/shared-windows-contract.log",
+        "sha256": "fb4d046db2da84e70b12b6c82e58a746ac8b4e9bd3878cc1d3d608680686fcf5"
+      }
+    },
+    "windows_cli": {
+      "passed": 7,
+      "skipped": 2,
+      "log": {
+        "path": "build/shared-windows-final-cli.log",
+        "sha256": "fc1d756e4e5d1afd69a7f8ef0f991990af5876800ad1cc97e84d1a3c0ec20804"
+      }
+    },
+    "editor_file_safety": {
+      "passed": true,
+      "cases": 13,
+      "evidence": {
+        "path": "build/shared-editor-failures/c724aa3a4e604cd9baa8f5268fa52bdf/evidence.json",
+        "sha256": "45c7a3e65cd7cfddbdcbb1694bccf956a2e44af3cb7c7d435aa53058c5a12dd9"
+      },
+      "detail": "Ran before final snapshot-recovery-only frontend change; protected output code unchanged."
+    }
+  },
+  "shared_editor_gpu_runs": [
+    {
+      "path": "build/shared-editor-nvidia-final/25579b77f2eb41dda91b2251d8e0eaf8/evidence.json",
+      "sha256": "d81826196686167af4372cfdf33e34791d0862f45324a5a7a8ef5a19a4619611",
+      "binary_sha256": "25a65fc3146431cce65ee10ae4eff956302b95299623b9f870cfc68d8ffe8bb6",
+      "checks": [
+        "two clients share authoring, Inspector refresh, undo and fresh scene pixels",
+        "stale/overwriting screenshots and nested graphics commands are rejected",
+        "remote and GUI runtime controls synchronize; fresh captures identify frozen runtime revision/tick",
+        "accepted missing-asset edit keeps GUI/IPC alive, refuses stale capture and recovers after undo",
+        "session.close is rejected without closing GUI; client disconnect preserves authoring and owned-window close flushes report",
+        "dirty Inspector survives remote edit, rejects stale Apply/selection, then Reload and valid Apply succeed",
+        "remote deletion preserves dirty draft; failed same-ID selection retains it; explicit Reload clears selection",
+        "invalid startup opens empty fallback with null scene revision and supports live repair/capture"
+      ],
+      "editors": [
+        {
+          "label": "shared",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 118,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 6,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 118
+        },
+        {
+          "label": "dirty-draft",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 379,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 3,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 379
+        },
+        {
+          "label": "deleted-draft",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 184,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 2,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 184
+        },
+        {
+          "label": "unavailable-start",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 16,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 2,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 16
+        }
+      ]
+    },
+    {
+      "path": "build/shared-editor-amd-final/8df6db2fc6da42759d83763ac3f7dca6/evidence.json",
+      "sha256": "505584ded9c6ae5600ebce048ae0b88c5f1836a4e0c2abc7b60b46b83dd58ac8",
+      "binary_sha256": "25a65fc3146431cce65ee10ae4eff956302b95299623b9f870cfc68d8ffe8bb6",
+      "checks": [
+        "two clients share authoring, Inspector refresh, undo and fresh scene pixels",
+        "stale/overwriting screenshots and nested graphics commands are rejected",
+        "remote and GUI runtime controls synchronize; fresh captures identify frozen runtime revision/tick",
+        "accepted missing-asset edit keeps GUI/IPC alive, refuses stale capture and recovers after undo",
+        "session.close is rejected without closing GUI; client disconnect preserves authoring and owned-window close flushes report",
+        "dirty Inspector survives remote edit, rejects stale Apply/selection, then Reload and valid Apply succeed",
+        "remote deletion preserves dirty draft; failed same-ID selection retains it; explicit Reload clears selection",
+        "invalid startup opens empty fallback with null scene revision and supports live repair/capture"
+      ],
+      "editors": [
+        {
+          "label": "shared",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 115,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 6,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 115
+        },
+        {
+          "label": "dirty-draft",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 378,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 3,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 378
+        },
+        {
+          "label": "deleted-draft",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 183,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 2,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 183
+        },
+        {
+          "label": "unavailable-start",
+          "render": {
+            "capture_written": true,
+            "frames_presented": 21,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "hardware": true,
+            "height": 900,
+            "nvrhi_errors": 0,
+            "width": 1440
+          },
+          "authored_revision": 2,
+          "presentation_current": true,
+          "presentation_error": null,
+          "frames": 21
+        }
+      ]
+    }
+  ],
+  "editor_regression": {
+    "path": "build/shared-editor-regression/35eb48e0d6de44db86d1713bf6827c6f/evidence.json",
+    "sha256": "d38cdfe87135441973ee8d7be928ca530928b0bbf36b36e07b3d46fd4a8ad72d",
+    "passed": true,
+    "actions": 75,
+    "render": {
+      "capture_written": true,
+      "frames_presented": 56,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "height": 900,
+      "nvrhi_errors": 0,
+      "width": 1440
+    },
+    "checks": [
+      "create/import/instantiate/component edits",
+      "delete/undo/redo preserves entity identity",
+      "40 presented mesh/texture replacements",
+      "shadow toggle/resolution changes",
+      "play/pause/60-tick step/stop",
+      "bounded live cache entries"
+    ]
+  },
+  "image": {
+    "path": "docs/evidence/m2-shared-sessions.png",
+    "sha256": "9ccf4c11177a77db3509a4a40bdafe264e47a29a97e283d13f9092cd87a74f90"
+  },
+  "limitations": [
+    "Human mouse/keyboard widget input remains unqualified; semantic fixtures do not substitute for physical interaction.",
+    "Small fixture scenes do not establish engine game performance or large-project responsiveness.",
+    "World operations remain synchronous on the GUI/host thread; graphics still serialize GPU work.",
+    "IPC is same-user local authoring, not multiplayer networking; no separate-process GUI attachment to headless owner or MCP packaging yet.",
+    "Captures and editor controls lack durable retry receipts; reconnect clients explicitly inspect/retry supported world operations.",
+    "General package manager, mature editor, production gameplay SDK and remaining roadmap systems are unfinished."
+  ],
+  "public_history_note": "Private document references and original private Git revision identifiers are omitted. Reported measurements and retained code/binary digests are unchanged."
+}

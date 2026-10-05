@@ -1,0 +1,2655 @@
+{
+  "recorded_at_utc": "2026-09-26T09:50:59.648144+00:00",
+  "engine_version": "0.0.12",
+  "schema_revision": 10,
+  "scope": "Conservative per-object camera and independent shadow-frustum rejection, draw counters and optional CPU/64-bit Vulkan GPU timestamps through capture/play. Engine roadmap remains incomplete.",
+  "builds": {
+    "windows_runtime": {
+      "path": "build/windows-runtime/poima.exe",
+      "sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9"
+    },
+    "linux_headless": {
+      "path": "build/headless/poima",
+      "sha256": "4e3049f9a013a9973e9d6c67324abe7750ca0dbf68c480f975fc8f532610ef71"
+    },
+    "linux_runtime": {
+      "path": "build/runtime-headless/poima",
+      "sha256": "2701f26f10ae42f24dd358bbed9f3adfe7bd236306023182e7a1f6c245e79559"
+    }
+  },
+  "sources": {
+    "src/visibility.cpp": "69bd7374e82e7a407937e3cc675dca8fd488fac81adc39515dadeb504982481a",
+    "src/render_smoke.cpp": "29e1fdeda90538b6676abfdf71219cff6b7894102eaab1f6c5c56e13001a6c51",
+    "src/world.cpp": "4e3a92f6c822754ae505a9bbe2f139977570297056d11540d93e1be134964c2e",
+    "include/poima/core.hpp": "1bed0e45c462b23ac74e36a893fd9f5fa276f491cc59af7756d4d9917063af2a",
+    "include/poima/scene.hpp": "2b5b36bca163d2132cb267fc1c939d850b67526b317ef2140dffb08306a0d6d6",
+    "tests/visibility_math.cpp": "2091ac109da75c083f4766e171ed46d1c4d849a1f30e1b3825a991cd7c8b136e",
+    "tests/culling_capture.py": "c71a6976da13a8dc033c152e6d9d51875c9b2c5ecb00e3dc43bef0452be211cc",
+    "tests/player_contract.py": "76e65362537d0e35ec6949bf67a85d9684bdd196f74e5af7da3ab9742b2cb6b4",
+    "tests/runtime_contract.py": "0db0554c51dd72a56b020a4ab00dc2005f9dc3ee3bbd2e877b96e5ebf9ed5f0b"
+  },
+  "ctest": {
+    "headless": {
+      "passed": 12,
+      "failed": 0,
+      "path": "build/culling-headless-tests.log",
+      "sha256": "ff4d0e022a35d4142a8ca81d5996c3d8f6e8daceb27d0fff655f5ae142733001",
+      "text": "Test project <checkout>/build/headless\n      Start  1: asset_hash\n 1/12 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/12 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/12 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/12 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/12 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/12 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/12 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: lighting_contract\n 8/12 Test  #8: lighting_contract ................   Passed    0.68 sec\n      Start  9: asset_contract\n 9/12 Test  #9: asset_contract ...................   Passed    3.93 sec\n      Start 10: cli_contract\n10/12 Test #10: cli_contract .....................   Passed    0.61 sec\n      Start 11: world_contract\n11/12 Test #11: world_contract ...................   Passed    3.13 sec\n      Start 12: native_module_contract\n12/12 Test #12: native_module_contract ...........   Passed   11.16 sec\n\n100% tests passed, 0 tests failed out of 12\n\nTotal Test time (real) =  19.68 sec\n"
+    },
+    "runtime_headless": {
+      "passed": 14,
+      "failed": 0,
+      "path": "build/culling-runtime-tests.log",
+      "sha256": "76883ee27e334036032006f8b854331ba7307e4b121df041dc0e753dff6fe77c",
+      "text": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/14 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/14 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/14 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/14 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/14 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: shadow_math\n 6/14 Test  #6: shadow_math ......................   Passed    0.01 sec\n      Start  7: visibility_math\n 7/14 Test  #7: visibility_math ..................   Passed    0.01 sec\n      Start  8: runtime_native\n 8/14 Test  #8: runtime_native ...................   Passed    0.08 sec\n      Start  9: lighting_contract\n 9/14 Test  #9: lighting_contract ................   Passed    0.69 sec\n      Start 10: asset_contract\n10/14 Test #10: asset_contract ...................   Passed    3.61 sec\n      Start 11: runtime_contract\n11/14 Test #11: runtime_contract .................   Passed    0.61 sec\n      Start 12: cli_contract\n12/14 Test #12: cli_contract .....................   Passed    0.66 sec\n      Start 13: world_contract\n13/14 Test #13: world_contract ...................   Passed    2.95 sec\n      Start 14: native_module_contract\n14/14 Test #14: native_module_contract ...........   Passed   10.01 sec\n\n100% tests passed, 0 tests failed out of 14\n\nTotal Test time (real) =  18.80 sec\n"
+    }
+  },
+  "windows_contracts": {
+    "runtime_contract": {
+      "path": "build/culling-windows-contract.log",
+      "sha256": "788e6ca962ce5e2456cd4c80094a4033e8ba0dc41c46da3af17f7ceca436281b",
+      "text": "test_collision_jump_retries_and_live_authoring_separation (__main__.RuntimeContract.test_collision_jump_retries_and_live_authoring_separation) ... ok\ntest_player_validation_does_not_advance_runtime (__main__.RuntimeContract.test_player_validation_does_not_advance_runtime) ... ok\ntest_receipt_window_and_repeated_lifetimes (__main__.RuntimeContract.test_receipt_window_and_repeated_lifetimes) ... ok\ntest_repeatable_replay_and_chunk_equivalence (__main__.RuntimeContract.test_repeatable_replay_and_chunk_equivalence) ... ok\ntest_validation_failed_start_recovery_and_stale_observation (__main__.RuntimeContract.test_validation_failed_start_recovery_and_stale_observation) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.520s\n\nOK\n"
+    },
+    "cli_contract": {
+      "path": "build/culling-windows-cli.log",
+      "sha256": "a16e90e90e245b0677cfa417f9d416341f1e948fd9f83a767ffb111a5dc49fdf",
+      "text": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.700s\n\nOK (skipped=1)\n"
+    }
+  },
+  "culling_gpus": [
+    {
+      "raw_evidence": {
+        "path": "build/culling-capture/gpu-0.json",
+        "sha256": "5377694fa0467e2ae37e59fe3029884c8140cf10569496b45e4de9d021dce290"
+      },
+      "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+      "test_source": {
+        "path": "tests/culling_capture.py",
+        "sha256": "c71a6976da13a8dc033c152e6d9d51875c9b2c5ecb00e3dc43bef0452be211cc"
+      },
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "gpu_index": 0,
+      "checks": {
+        "profiled_and_unprofiled_pixel_parity": true,
+        "offscreen_shadow_caster_retained": true,
+        "240_distant_objects_rejected": true,
+        "near_plane_and_sheared_hierarchy": true,
+        "runtime_motion_parity": true,
+        "actual_gpu_timestamp_intervals": true
+      },
+      "samples": [
+        {
+          "name": "culled",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "caster-hidden",
+          "actual": [
+            148,
+            101,
+            61
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "moved-culled",
+          "actual": [
+            148,
+            101,
+            61
+          ],
+          "minimum_red": 60
+        }
+      ],
+      "comparison": {
+        "unculled": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.9074,
+              "max_ms": 0.9074,
+              "mean_ms": 0.9074,
+              "min_ms": 0.9074,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.6113,
+              "max_ms": 0.9416,
+              "mean_ms": 0.77645,
+              "min_ms": 0.6113,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 1.1738,
+              "max_ms": 1.3354,
+              "mean_ms": 1.2546,
+              "min_ms": 1.1738,
+              "samples": 2
+            }
+          },
+          "culling": false,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.037888,
+              "max_ms": 0.039936,
+              "mean_ms": 0.038912,
+              "min_ms": 0.037888,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.182272,
+              "max_ms": 0.182272,
+              "mean_ms": 0.09798399999999999,
+              "min_ms": 0.013696,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.044384,
+              "max_ms": 0.05472,
+              "mean_ms": 0.049552,
+              "min_ms": 0.044384,
+              "samples": 2
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.264544,
+              "max_ms": 0.264544,
+              "mean_ms": 0.186448,
+              "min_ms": 0.10835199999999999,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 245,
+            "camera_triangles": 2930,
+            "objects": 245,
+            "shadow_candidates": 1470,
+            "shadow_culled": 0,
+            "shadow_draws": 1470,
+            "shadow_triangles": 17580,
+            "shadow_views": 6
+          },
+          "profile_requested": true
+        },
+        "culled": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.8442,
+              "max_ms": 0.8442,
+              "mean_ms": 0.8442,
+              "min_ms": 0.8442,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.2021,
+              "max_ms": 0.2021,
+              "mean_ms": 0.17320000000000002,
+              "min_ms": 0.1443,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 0.647,
+              "max_ms": 0.647,
+              "mean_ms": 0.5429,
+              "min_ms": 0.4388,
+              "samples": 2
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.037888,
+              "max_ms": 0.038911999999999995,
+              "mean_ms": 0.0384,
+              "min_ms": 0.037888,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.188416,
+              "max_ms": 0.188416,
+              "mean_ms": 0.100864,
+              "min_ms": 0.013312,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.01968,
+              "max_ms": 0.031967999999999996,
+              "mean_ms": 0.025824,
+              "min_ms": 0.01968,
+              "samples": 2
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.24598399999999998,
+              "max_ms": 0.24598399999999998,
+              "mean_ms": 0.16508799999999998,
+              "min_ms": 0.084192,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 241,
+            "camera_draws": 4,
+            "camera_triangles": 38,
+            "objects": 245,
+            "shadow_candidates": 1470,
+            "shadow_culled": 1462,
+            "shadow_draws": 8,
+            "shadow_triangles": 76,
+            "shadow_views": 6
+          },
+          "profile_requested": true
+        }
+      },
+      "images": {
+        "all-draws": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/all-draws.bmp",
+          "sha256": "8ded00eca4e9157378ac3a8e8a6a4331a9ed95f01fb5b0d1798fd624b79f87c1"
+        },
+        "caster-hidden": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/caster-hidden.bmp",
+          "sha256": "33203a9b034ea9fb801c5a665cc515ab98819e05a24210aa443f186b5e96a0aa"
+        },
+        "culled": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/culled.bmp",
+          "sha256": "8ded00eca4e9157378ac3a8e8a6a4331a9ed95f01fb5b0d1798fd624b79f87c1"
+        },
+        "moved-all": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/moved-all.bmp",
+          "sha256": "33203a9b034ea9fb801c5a665cc515ab98819e05a24210aa443f186b5e96a0aa"
+        },
+        "moved-culled": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/moved-culled.bmp",
+          "sha256": "33203a9b034ea9fb801c5a665cc515ab98819e05a24210aa443f186b5e96a0aa"
+        },
+        "runtime-all": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/runtime-all.bmp",
+          "sha256": "8ded00eca4e9157378ac3a8e8a6a4331a9ed95f01fb5b0d1798fd624b79f87c1"
+        },
+        "runtime-culled": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/runtime-culled.bmp",
+          "sha256": "8ded00eca4e9157378ac3a8e8a6a4331a9ed95f01fb5b0d1798fd624b79f87c1"
+        },
+        "unprofiled": {
+          "path": "<checkout>/build/culling-capture/de86050a777c4102a101b38c1436f0a1/unprofiled.bmp",
+          "sha256": "8ded00eca4e9157378ac3a8e8a6a4331a9ed95f01fb5b0d1798fd624b79f87c1"
+        }
+      }
+    },
+    {
+      "raw_evidence": {
+        "path": "build/culling-capture/gpu-1.json",
+        "sha256": "6f3c5e7f30cebdb2d86c0304647042b6b861bff3a5e6317158d1abeeda0de2c8"
+      },
+      "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+      "test_source": {
+        "path": "tests/culling_capture.py",
+        "sha256": "c71a6976da13a8dc033c152e6d9d51875c9b2c5ecb00e3dc43bef0452be211cc"
+      },
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "gpu_index": 1,
+      "checks": {
+        "profiled_and_unprofiled_pixel_parity": true,
+        "offscreen_shadow_caster_retained": true,
+        "240_distant_objects_rejected": true,
+        "near_plane_and_sheared_hierarchy": true,
+        "runtime_motion_parity": true,
+        "actual_gpu_timestamp_intervals": true
+      },
+      "samples": [
+        {
+          "name": "culled",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "caster-hidden",
+          "actual": [
+            148,
+            101,
+            61
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "moved-culled",
+          "actual": [
+            148,
+            101,
+            61
+          ],
+          "minimum_red": 60
+        }
+      ],
+      "comparison": {
+        "unculled": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 3.5837,
+              "max_ms": 3.5837,
+              "mean_ms": 3.5837,
+              "min_ms": 3.5837,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.5679,
+              "max_ms": 1.5779,
+              "mean_ms": 1.0729,
+              "min_ms": 0.5679,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 2.5701,
+              "max_ms": 7.5965,
+              "mean_ms": 5.0832999999999995,
+              "min_ms": 2.5701,
+              "samples": 2
+            }
+          },
+          "culling": false,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.45683999999999997,
+              "max_ms": 0.48519999999999996,
+              "mean_ms": 0.47102,
+              "min_ms": 0.45683999999999997,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.19508,
+              "max_ms": 0.19508,
+              "mean_ms": 0.16433999999999999,
+              "min_ms": 0.1336,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.9814799999999999,
+              "max_ms": 0.9814799999999999,
+              "mean_ms": 0.93356,
+              "min_ms": 0.88564,
+              "samples": 2
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 1.6334,
+              "max_ms": 1.6334,
+              "mean_ms": 1.5689199999999999,
+              "min_ms": 1.50444,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 245,
+            "camera_triangles": 2930,
+            "objects": 245,
+            "shadow_candidates": 1470,
+            "shadow_culled": 0,
+            "shadow_draws": 1470,
+            "shadow_triangles": 17580,
+            "shadow_views": 6
+          },
+          "profile_requested": true
+        },
+        "culled": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 3.2026,
+              "max_ms": 3.2026,
+              "mean_ms": 3.2026,
+              "min_ms": 3.2026,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.1866,
+              "max_ms": 0.9,
+              "mean_ms": 0.5433,
+              "min_ms": 0.1866,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 2.0951,
+              "max_ms": 7.5564,
+              "mean_ms": 4.82575,
+              "min_ms": 2.0951,
+              "samples": 2
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.41268,
+              "max_ms": 0.41268,
+              "mean_ms": 0.38792,
+              "min_ms": 0.36316,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.18144,
+              "max_ms": 0.18144,
+              "mean_ms": 0.14628,
+              "min_ms": 0.11112,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 1.05888,
+              "max_ms": 1.05888,
+              "mean_ms": 1.02938,
+              "min_ms": 0.99988,
+              "samples": 2
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 1.653,
+              "max_ms": 1.653,
+              "mean_ms": 1.56358,
+              "min_ms": 1.47416,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 241,
+            "camera_draws": 4,
+            "camera_triangles": 38,
+            "objects": 245,
+            "shadow_candidates": 1470,
+            "shadow_culled": 1462,
+            "shadow_draws": 8,
+            "shadow_triangles": 76,
+            "shadow_views": 6
+          },
+          "profile_requested": true
+        }
+      },
+      "images": {
+        "all-draws": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/all-draws.bmp",
+          "sha256": "303386e054bb1a00393fe06ebbee9270feee79db58331c5a1e3bb17a3cffaf4e"
+        },
+        "caster-hidden": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/caster-hidden.bmp",
+          "sha256": "093f667671f0cb9d338abdf018bd43b5ac188b0bdbfffafc2912339543ec72de"
+        },
+        "culled": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/culled.bmp",
+          "sha256": "303386e054bb1a00393fe06ebbee9270feee79db58331c5a1e3bb17a3cffaf4e"
+        },
+        "moved-all": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/moved-all.bmp",
+          "sha256": "093f667671f0cb9d338abdf018bd43b5ac188b0bdbfffafc2912339543ec72de"
+        },
+        "moved-culled": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/moved-culled.bmp",
+          "sha256": "093f667671f0cb9d338abdf018bd43b5ac188b0bdbfffafc2912339543ec72de"
+        },
+        "runtime-all": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/runtime-all.bmp",
+          "sha256": "303386e054bb1a00393fe06ebbee9270feee79db58331c5a1e3bb17a3cffaf4e"
+        },
+        "runtime-culled": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/runtime-culled.bmp",
+          "sha256": "303386e054bb1a00393fe06ebbee9270feee79db58331c5a1e3bb17a3cffaf4e"
+        },
+        "unprofiled": {
+          "path": "<checkout>/build/culling-capture/4fd0d56a5a7a466384a50decd75765b4/unprofiled.bmp",
+          "sha256": "303386e054bb1a00393fe06ebbee9270feee79db58331c5a1e3bb17a3cffaf4e"
+        }
+      }
+    }
+  ],
+  "continuous_player_gpus": [
+    {
+      "raw_evidence": {
+        "path": "build/culling-player/gpu-0.json",
+        "sha256": "49e8ed9cea0863f269522e35525182d36e97568d113481db996b893f5a605d22"
+      },
+      "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+      "test_source": {
+        "path": "tests/player_contract.py",
+        "sha256": "76e65362537d0e35ec6949bf67a85d9684bdd196f74e5af7da3ab9742b2cb6b4"
+      },
+      "gpu_names": [
+        "",
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "profile_comparison": {
+        "culled_player": {
+          "completed_submissions": 372,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0137,
+              "max_ms": 0.0313,
+              "mean_ms": 0.01088016085790885,
+              "min_ms": 0.0081,
+              "samples": 373
+            },
+            "record": {
+              "last_ms": 0.08,
+              "max_ms": 0.2577,
+              "mean_ms": 0.054312903225806466,
+              "min_ms": 0.0347,
+              "samples": 372
+            },
+            "render_call": {
+              "last_ms": 0.7272,
+              "max_ms": 3.8566,
+              "mean_ms": 0.6143655913978495,
+              "min_ms": 0.2375,
+              "samples": 372
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.053248,
+              "max_ms": 0.096256,
+              "mean_ms": 0.0716111827956988,
+              "min_ms": 0.053248,
+              "samples": 372
+            },
+            "post": {
+              "last_ms": 0.180384,
+              "max_ms": 0.180384,
+              "mean_ms": 0.013664172043010752,
+              "min_ms": 0.012288,
+              "samples": 372
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.030751999999999998,
+              "max_ms": 0.042207999999999996,
+              "mean_ms": 0.030911827956989223,
+              "min_ms": 0.028287999999999997,
+              "samples": 372
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.264384,
+              "max_ms": 0.264384,
+              "mean_ms": 0.11618718279569891,
+              "min_ms": 0.095648,
+              "samples": 372
+            }
+          },
+          "last_draws": {
+            "camera_culled": 1,
+            "camera_draws": 2,
+            "camera_triangles": 24,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 11,
+            "shadow_draws": 10,
+            "shadow_triangles": 120,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        },
+        "unculled_capture": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.018,
+              "max_ms": 0.018,
+              "mean_ms": 0.018,
+              "min_ms": 0.018,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.2868,
+              "max_ms": 0.2868,
+              "mean_ms": 0.2057,
+              "min_ms": 0.1246,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 0.7308,
+              "max_ms": 0.7308,
+              "mean_ms": 0.5698,
+              "min_ms": 0.4088,
+              "samples": 2
+            }
+          },
+          "culling": false,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.054272,
+              "max_ms": 0.054272,
+              "mean_ms": 0.054272,
+              "min_ms": 0.054272,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.180224,
+              "max_ms": 0.180224,
+              "mean_ms": 0.09676799999999999,
+              "min_ms": 0.013312,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.030688,
+              "max_ms": 0.035616,
+              "mean_ms": 0.033152,
+              "min_ms": 0.030688,
+              "samples": 2
+            },
+            "timestamp_period_ns": 1.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.265184,
+              "max_ms": 0.265184,
+              "mean_ms": 0.184192,
+              "min_ms": 0.1032,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 3,
+            "camera_triangles": 36,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 0,
+            "shadow_draws": 21,
+            "shadow_triangles": 252,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        }
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/culling-player/60a57e5423f74bf7bca781a74b872ce1/player.bmp",
+          "sha256": "b8b4a45ecbc196ae90e28e796d4962495e3c764562763901bf7f690b0fc2b10f"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/culling-player/60a57e5423f74bf7bca781a74b872ce1/baseline.bmp",
+          "sha256": "b8b4a45ecbc196ae90e28e796d4962495e3c764562763901bf7f690b0fc2b10f"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/culling-player/60a57e5423f74bf7bca781a74b872ce1/recovered.bmp",
+          "sha256": "b8b4a45ecbc196ae90e28e796d4962495e3c764562763901bf7f690b0fc2b10f"
+        }
+      }
+    },
+    {
+      "raw_evidence": {
+        "path": "build/culling-player/gpu-1.json",
+        "sha256": "39f1196cc5bb77e84ea5b1bcaf612aca2669c28f8fe9743f6b6ae81aa90f236b"
+      },
+      "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+      "test_source": {
+        "path": "tests/player_contract.py",
+        "sha256": "76e65362537d0e35ec6949bf67a85d9684bdd196f74e5af7da3ab9742b2cb6b4"
+      },
+      "gpu_names": [
+        "",
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "profile_comparison": {
+        "culled_player": {
+          "completed_submissions": 372,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0101,
+              "max_ms": 0.0405,
+              "mean_ms": 0.011603753351206426,
+              "min_ms": 0.0087,
+              "samples": 373
+            },
+            "record": {
+              "last_ms": 0.103,
+              "max_ms": 0.2379,
+              "mean_ms": 0.09202204301075273,
+              "min_ms": 0.0674,
+              "samples": 372
+            },
+            "render_call": {
+              "last_ms": 0.9307,
+              "max_ms": 6.336,
+              "mean_ms": 1.1878048387096785,
+              "min_ms": 0.7641,
+              "samples": 372
+            }
+          },
+          "culling": true,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.26839999999999997,
+              "max_ms": 0.84312,
+              "mean_ms": 0.4001235483870965,
+              "min_ms": 0.23379999999999998,
+              "samples": 372
+            },
+            "post": {
+              "last_ms": 0.15516,
+              "max_ms": 0.15516,
+              "mean_ms": 0.09760430107526892,
+              "min_ms": 0.07392,
+              "samples": 372
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.29312,
+              "max_ms": 0.44016,
+              "mean_ms": 0.33242204301075284,
+              "min_ms": 0.25656,
+              "samples": 372
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 0.71668,
+              "max_ms": 1.3386,
+              "mean_ms": 0.8301498924731179,
+              "min_ms": 0.58428,
+              "samples": 372
+            }
+          },
+          "last_draws": {
+            "camera_culled": 1,
+            "camera_draws": 2,
+            "camera_triangles": 24,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 11,
+            "shadow_draws": 10,
+            "shadow_triangles": 120,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        },
+        "unculled_capture": {
+          "completed_submissions": 2,
+          "cpu": {
+            "prepare": {
+              "last_ms": 0.0206,
+              "max_ms": 0.0206,
+              "mean_ms": 0.0206,
+              "min_ms": 0.0206,
+              "samples": 1
+            },
+            "record": {
+              "last_ms": 0.1678,
+              "max_ms": 0.6086,
+              "mean_ms": 0.3882,
+              "min_ms": 0.1678,
+              "samples": 2
+            },
+            "render_call": {
+              "last_ms": 1.5051,
+              "max_ms": 6.2334,
+              "mean_ms": 3.86925,
+              "min_ms": 1.5051,
+              "samples": 2
+            }
+          },
+          "culling": false,
+          "gpu": {
+            "available": true,
+            "detail": "64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.",
+            "opaque": {
+              "last_ms": 0.5489999999999999,
+              "max_ms": 0.5866399999999999,
+              "mean_ms": 0.56782,
+              "min_ms": 0.5489999999999999,
+              "samples": 2
+            },
+            "post": {
+              "last_ms": 0.19288,
+              "max_ms": 0.19288,
+              "mean_ms": 0.14692,
+              "min_ms": 0.10096,
+              "samples": 2
+            },
+            "samples_dropped": 0,
+            "shadows": {
+              "last_ms": 0.39264,
+              "max_ms": 0.39264,
+              "mean_ms": 0.33908,
+              "min_ms": 0.28552,
+              "samples": 2
+            },
+            "timestamp_period_ns": 10.0,
+            "timestamp_valid_bits": 64,
+            "total": {
+              "last_ms": 1.13452,
+              "max_ms": 1.13452,
+              "mean_ms": 1.05382,
+              "min_ms": 0.97312,
+              "samples": 2
+            }
+          },
+          "last_draws": {
+            "camera_culled": 0,
+            "camera_draws": 3,
+            "camera_triangles": 36,
+            "objects": 3,
+            "shadow_candidates": 21,
+            "shadow_culled": 0,
+            "shadow_draws": 21,
+            "shadow_triangles": 252,
+            "shadow_views": 7
+          },
+          "profile_requested": true
+        }
+      },
+      "images": {
+        "player.bmp": {
+          "path": "<checkout>/build/culling-player/93af99152ebf498e803b2673a3d5a186/player.bmp",
+          "sha256": "a786206d762b8a0009481d12782fa2fc44ee2a3ffa90222b8b0ef66148442521"
+        },
+        "baseline.bmp": {
+          "path": "<checkout>/build/culling-player/93af99152ebf498e803b2673a3d5a186/baseline.bmp",
+          "sha256": "a786206d762b8a0009481d12782fa2fc44ee2a3ffa90222b8b0ef66148442521"
+        },
+        "recovered.bmp": {
+          "path": "<checkout>/build/culling-player/93af99152ebf498e803b2673a3d5a186/recovered.bmp",
+          "sha256": "a786206d762b8a0009481d12782fa2fc44ee2a3ffa90222b8b0ef66148442521"
+        }
+      }
+    }
+  ],
+  "shadow_regression_gpus": [
+    {
+      "raw_evidence": {
+        "path": "build/culling-shadow-regression/gpu-0.json",
+        "sha256": "b4c573415bbcff79a93598e359fb0b66924e8cf06b8c04eb23ba88027e3f6903"
+      },
+      "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+      "test_source": {
+        "path": "tests/shadow_capture.py",
+        "sha256": "a6306c0fecac9c8f0898239a375ae5b512f80f63fd1ed81e6d84663635f6bd14"
+      },
+      "gpu_names": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "gpu_index": 0,
+      "checks": {
+        "smooth_normals_do_not_change_receiver_plane": true,
+        "all_resolutions_and_final_array_layer": true,
+        "directional_spot_point_occlusion": true,
+        "all_cascades_and_blends": true,
+        "shadow_distance_bound": true,
+        "moving_hidden_and_indexed_casters": true,
+        "six_point_faces_and_seam": true,
+        "frozen_runtime_settings_and_moving_occluder": true
+      },
+      "samples": [
+        {
+          "name": "unshadowed",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "directional",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "directional-off",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "spot",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "spot-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "point",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "point-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "cascade-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-7",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-8",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-9",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "outside-shadow-distance",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "moved-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "expected": [
+            162,
+            117,
+            79
+          ],
+          "tolerance": 1
+        },
+        {
+          "name": "indexed-occluder",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-1-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-2-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-3-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-4-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-5-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-6-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "last-shadow-layer",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "last-shadow-layer-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "resolution-256",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-512",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-2048",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        }
+      ],
+      "smooth_normal_max_error": 0,
+      "images": {
+        "cascade-0": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-0.bmp",
+          "sha256": "c1b803ecdce42e630838e5c405f46decf51057af9e21ccd1522bae699438bc00"
+        },
+        "cascade-1": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-1.bmp",
+          "sha256": "e3e8c5b355a1978d40e6e77bdc7dc13692dc3678c6d54a506f5d19481ddc7267"
+        },
+        "cascade-2": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-2.bmp",
+          "sha256": "589d5e1da5f34a9d661210ede71b56941228b6ba958014fb996f6f209c288bf1"
+        },
+        "cascade-3": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-3.bmp",
+          "sha256": "6bbd874bfdb9c7a186755d3fe49ed72bc5801f3501464214cc912b933a7614ed"
+        },
+        "cascade-4": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-4.bmp",
+          "sha256": "0a508ef514ffcc7756ff04c905f82a95caff2c1082d0bbd1245dc57ffc56ff3c"
+        },
+        "cascade-5": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-5.bmp",
+          "sha256": "e509f1083dfbcc310f5411ceaaf2fd738c53026490a4cc5c5705d8a4ba81ec9b"
+        },
+        "cascade-6": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-6.bmp",
+          "sha256": "90309a88ba64b71cfceecb788b8ef124886ee1843503ba07d47e42277f831743"
+        },
+        "cascade-7": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-7.bmp",
+          "sha256": "48298836fd2a6e754458bb30f51b632aa3c1be301438228d419fd1aba5a613fa"
+        },
+        "cascade-8": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-8.bmp",
+          "sha256": "41565d5aeb4406255ded27b41cf34897eff7facdec3f7ac2e6d89615c3533252"
+        },
+        "cascade-9": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/cascade-9.bmp",
+          "sha256": "348c34a1c955b82dff829edf5405cf85a4ef7931cad0297f476be7583d02c9ba"
+        },
+        "directional-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/directional-off.bmp",
+          "sha256": "765729fd163f5bc00c48e8da7a342b50bc873d766093c7cf5138a57c8d0b43a5"
+        },
+        "directional": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/directional.bmp",
+          "sha256": "d657ad3a91bd0d16982e2ce48dfa688e9dd9acbb5fcc0f230c16b60f749c2fe9"
+        },
+        "face-0-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-0-off.bmp",
+          "sha256": "97f4a3af7eff013763e74c49564cbe1f4d7782ad7ffe8fe309fb86d16d286148"
+        },
+        "face-0": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-0.bmp",
+          "sha256": "2f3b2c78300cf70069f7e3cac87164b687c1b6e561cb551a477736a44a4bf525"
+        },
+        "face-1-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-1-off.bmp",
+          "sha256": "767ed0d2aa75894925bb9b61c589f6b27dda4a11084c68332836fe79c1f7c6a5"
+        },
+        "face-1": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-1.bmp",
+          "sha256": "6d6ee80a22b13f78e69b3f34f44be34856cece2d16c686a3f09fb837f4807be5"
+        },
+        "face-2-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-2-off.bmp",
+          "sha256": "d65f112cca8535721b74788b6e9f04870d9d0a1c911bc475caa8069c1c7142b7"
+        },
+        "face-2": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-2.bmp",
+          "sha256": "0e203a9e2b6964987f4776143bb07f0bfc8c60ad0e52e18f7072d3a9a4591084"
+        },
+        "face-3-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-3-off.bmp",
+          "sha256": "36abaa5d398593c5c4810b06eed54dce197d69c5af065ecb8ea2a81ec613a25e"
+        },
+        "face-3": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-3.bmp",
+          "sha256": "e161a00a1f931c84aa244317909ab7e6f656413defc690e788d0ca77f760da23"
+        },
+        "face-4-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-4-off.bmp",
+          "sha256": "8ed014ac61a1fd172c584ee39eafc23b59b242b5fee2b326c12f2516d4045e49"
+        },
+        "face-4": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-4.bmp",
+          "sha256": "13e85ccffa34a2336bb35a1346474a71dc5dbd7ce3bec18f2769853c14cab1c1"
+        },
+        "face-5-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-5-off.bmp",
+          "sha256": "4d6a691f09d0704f5620bb7a7606534ec82d8cc65d078da2e8499d0bfba1ef2a"
+        },
+        "face-5": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-5.bmp",
+          "sha256": "3082a611001d3e9d99e7ab7291fcf6b1d6bdb18a635f64dd7f6a19eeda809c5e"
+        },
+        "face-6-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-6-off.bmp",
+          "sha256": "7786128695ef4c7844dcf60b4b10097b1daa7303c44fefb21fa8d384b43affed"
+        },
+        "face-6": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/face-6.bmp",
+          "sha256": "75cf034cb289ba2db2fa4eb2d75f69776bc85c782de04e0479964b572d43d63e"
+        },
+        "hidden-occluder": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/hidden-occluder.bmp",
+          "sha256": "ff7010bb8cb73c625948268197165268a3aa86d38ed9e1d1008e55312b032e54"
+        },
+        "indexed-occluder": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/indexed-occluder.bmp",
+          "sha256": "f8a33b9a07042c3b55d7885ba734015028a90ed1d22fe013b3e31a969b13a01a"
+        },
+        "last-shadow-layer-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/last-shadow-layer-off.bmp",
+          "sha256": "1d72f7368eb8fb42cd44db63afe6a1fbd0697f509f1e46b7be0ae62ea7e8ec53"
+        },
+        "last-shadow-layer": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/last-shadow-layer.bmp",
+          "sha256": "8a4e9c9a90e150e44d2423edcdb70ff17f5abae0d37a447fef93ec378c076b80"
+        },
+        "moved-occluder": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/moved-occluder.bmp",
+          "sha256": "96590da29f0461ef5e9f185cf6c74e120a10aa7648ea0797edc1434f98a759b9"
+        },
+        "outside-shadow-distance": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/outside-shadow-distance.bmp",
+          "sha256": "d0c3aa1a46bf6ea14f553e58162c66f817b3899d8cb25f1fa4cea7eb97d4f8ce"
+        },
+        "point-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/point-off.bmp",
+          "sha256": "1d72f7368eb8fb42cd44db63afe6a1fbd0697f509f1e46b7be0ae62ea7e8ec53"
+        },
+        "point": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/point.bmp",
+          "sha256": "8a4e9c9a90e150e44d2423edcdb70ff17f5abae0d37a447fef93ec378c076b80"
+        },
+        "resolution-2048": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/resolution-2048.bmp",
+          "sha256": "c8f11f2cef2ae197724bf9959e269b77c3541ca1924ced98ad28b09351e6df8b"
+        },
+        "resolution-256": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/resolution-256.bmp",
+          "sha256": "0588a3151223eb0ed1fc998b808db024b903e6c1dedc984151dfcd6770b5d66a"
+        },
+        "resolution-512": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/resolution-512.bmp",
+          "sha256": "084c3e397e51ccd4e1c1d111b925b9aa7f95bfc988c36ddaa47ee611dadbd39e"
+        },
+        "runtime-frozen": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/runtime-frozen.bmp",
+          "sha256": "ad63e525059cc403c74d77158a409e417e0f37328ebc450e614ae7657f19d271"
+        },
+        "runtime-initial": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/runtime-initial.bmp",
+          "sha256": "ad63e525059cc403c74d77158a409e417e0f37328ebc450e614ae7657f19d271"
+        },
+        "runtime-moved": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/runtime-moved.bmp",
+          "sha256": "6a9642f372ed916864493920f5031bb16724a4cf63970b8327e5545c3ef007d0"
+        },
+        "smooth-normal-shadow": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/smooth-normal-shadow.bmp",
+          "sha256": "8d6ef20dae8b8db2be0e3b2facba3df34fceff8bcb0622208f68d3b642b4df32"
+        },
+        "smooth-normal-unshadowed": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/smooth-normal-unshadowed.bmp",
+          "sha256": "8d6ef20dae8b8db2be0e3b2facba3df34fceff8bcb0622208f68d3b642b4df32"
+        },
+        "spot-off": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/spot-off.bmp",
+          "sha256": "d8f3417c25d08903f3a9becc86e0f169457b1603efd0b61365e3487caff8b496"
+        },
+        "spot": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/spot.bmp",
+          "sha256": "ad63e525059cc403c74d77158a409e417e0f37328ebc450e614ae7657f19d271"
+        },
+        "unshadowed": {
+          "path": "<checkout>/build/culling-shadow-regression/22c248f81f9f4a26ba8e6c7d3733313e/unshadowed.bmp",
+          "sha256": "765729fd163f5bc00c48e8da7a342b50bc873d766093c7cf5138a57c8d0b43a5"
+        }
+      }
+    },
+    {
+      "raw_evidence": {
+        "path": "build/culling-shadow-regression/gpu-1.json",
+        "sha256": "86096f76803f42ef59dd4b2809c47714a09d3b7be119177e431306887b82c274"
+      },
+      "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+      "test_source": {
+        "path": "tests/shadow_capture.py",
+        "sha256": "a6306c0fecac9c8f0898239a375ae5b512f80f63fd1ed81e6d84663635f6bd14"
+      },
+      "gpu_names": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "gpu_index": 1,
+      "checks": {
+        "smooth_normals_do_not_change_receiver_plane": true,
+        "all_resolutions_and_final_array_layer": true,
+        "directional_spot_point_occlusion": true,
+        "all_cascades_and_blends": true,
+        "shadow_distance_bound": true,
+        "moving_hidden_and_indexed_casters": true,
+        "six_point_faces_and_seam": true,
+        "frozen_runtime_settings_and_moving_occluder": true
+      },
+      "samples": [
+        {
+          "name": "unshadowed",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "directional",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "directional-off",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "spot",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "spot-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "point",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "point-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "cascade-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-7",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-8",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "cascade-9",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "outside-shadow-distance",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "moved-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "hidden-occluder",
+          "actual": [
+            162,
+            117,
+            79
+          ],
+          "expected": [
+            162,
+            117,
+            79
+          ],
+          "tolerance": 1
+        },
+        {
+          "name": "indexed-occluder",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-0-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-1",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-1-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-2",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-2-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-3",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-3-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-4",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-4-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-5",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-5-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "face-6",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "face-6-off",
+          "actual": [
+            177,
+            131,
+            89
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "last-shadow-layer",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "last-shadow-layer-off",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        },
+        {
+          "name": "resolution-256",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-512",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "resolution-2048",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-initial",
+          "actual": [
+            28,
+            13,
+            3
+          ],
+          "expected": [
+            28,
+            13,
+            3
+          ],
+          "tolerance": 4
+        },
+        {
+          "name": "runtime-moved",
+          "actual": [
+            162,
+            117,
+            80
+          ],
+          "minimum_red": 60
+        }
+      ],
+      "smooth_normal_max_error": 0,
+      "images": {
+        "cascade-0": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-0.bmp",
+          "sha256": "c6619ddc0d44de43e05217e5d4a9823b48915fa5c7b09150eed1afb865dcb396"
+        },
+        "cascade-1": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-1.bmp",
+          "sha256": "636b97f377ca79b5e08d0e198628fac894d44d930bb6215be3140cd26fc82105"
+        },
+        "cascade-2": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-2.bmp",
+          "sha256": "3c75adc5bab5fd0146b6cb15c6134bc3521febfe9edea1955cb56cadff7d78e7"
+        },
+        "cascade-3": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-3.bmp",
+          "sha256": "3c1a4d2311f681ced7ecabc1cbb1784749a3f9fdd83b946147343dee1037ccfb"
+        },
+        "cascade-4": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-4.bmp",
+          "sha256": "e906f4cf24230282742ea6ca0d08d44f4172fc182824c572fda39415d89453af"
+        },
+        "cascade-5": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-5.bmp",
+          "sha256": "5b27c47216f025ff0425c10fa2c7efb346a07032dc661c1bc4abe7117ab4b76d"
+        },
+        "cascade-6": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-6.bmp",
+          "sha256": "2dc13a4f2af1a5ec9b0fe4c2e3ffde72130e8de696bd64683db906c1e865d2a4"
+        },
+        "cascade-7": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-7.bmp",
+          "sha256": "afa46819c24bd32efa55fa7cec93ef10dfbb835a06e32e2edb38f769c2835e7f"
+        },
+        "cascade-8": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-8.bmp",
+          "sha256": "8ef94692a41e766112b985e5b658f1cec61897a3589f12354131a6f773f64eb0"
+        },
+        "cascade-9": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/cascade-9.bmp",
+          "sha256": "d987587866222d8ae6ecdd46517280dd4a3c864bb87bb562f90f6ea62d25510b"
+        },
+        "directional-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/directional-off.bmp",
+          "sha256": "7ef2ddda5bbaa27211768542e50527f692b9b41431064fd15ad30cc6ec8aefcb"
+        },
+        "directional": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/directional.bmp",
+          "sha256": "afbcc63e6b8700d35ef364d24ba003561769f60dc9a84a4b87447c81c0257393"
+        },
+        "face-0-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-0-off.bmp",
+          "sha256": "249883fb0563bbdac1b6ee8a00a7840050ba20e7992fa580f457d557ce1d8f9d"
+        },
+        "face-0": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-0.bmp",
+          "sha256": "9e89f663b54f8a08ffd6278a016d3484a0b76a6d6d5c99614ec6bf38b144a341"
+        },
+        "face-1-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-1-off.bmp",
+          "sha256": "8e92912f995e4ff471d53ddc81f9cf4629ffda542433952fa36c8bfc330fb4e8"
+        },
+        "face-1": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-1.bmp",
+          "sha256": "99d794a00934c7486f0873830af62bbac834e6e7c71f8cc1205e64c8f06dd400"
+        },
+        "face-2-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-2-off.bmp",
+          "sha256": "6726e1bbd887f00ddea6772fe99ff8de078c92a13db158cbd9f0fde4841b53a7"
+        },
+        "face-2": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-2.bmp",
+          "sha256": "66ed761611e7d805bbb28cac07c0b77f1d53ee1fc4053d7f2f5d8d1ae5dab27a"
+        },
+        "face-3-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-3-off.bmp",
+          "sha256": "0158a3dc47e24f4206bf87eb26e4f571b64d2004640c2c3de52cc5625b8321ba"
+        },
+        "face-3": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-3.bmp",
+          "sha256": "65cff631e6c4c872b4ec5e936b680e4a42f618c341da718206600e9fe493ca6e"
+        },
+        "face-4-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-4-off.bmp",
+          "sha256": "9599a1fb90814f8f66681e87e11a1aa1a1429ff3a548037175a48ddab6e6a121"
+        },
+        "face-4": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-4.bmp",
+          "sha256": "be140e5652bd5d2b9898b41e0b602403b7e31b4bfc5b28144b4d07331120cf8d"
+        },
+        "face-5-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-5-off.bmp",
+          "sha256": "d2dc7978b6a367dbb9e96020e05cd945600682fb957217d052f5526413d9c5fa"
+        },
+        "face-5": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-5.bmp",
+          "sha256": "eedb63b3bf36d5b78b7d03eeb5311422164ab4fdf0823ceb33ea26147fb2a81d"
+        },
+        "face-6-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-6-off.bmp",
+          "sha256": "c769ca7a018075e9dc70dbfac07761ea23c5e2aa163343cb3e86ee9116c8bcb7"
+        },
+        "face-6": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/face-6.bmp",
+          "sha256": "61396587e6ef4889f6f1462070ba73ab7c7fb69025c0268da5dc746e7a4d9fe0"
+        },
+        "hidden-occluder": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/hidden-occluder.bmp",
+          "sha256": "9a4b0971131048b1f00c982ca89b181ef71ab8393c3f01a18542f29d5bc47583"
+        },
+        "indexed-occluder": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/indexed-occluder.bmp",
+          "sha256": "3fd954171c9d6543ea5d7f577db4795d4054152b28faf1184e2245be9f3cb28a"
+        },
+        "last-shadow-layer-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/last-shadow-layer-off.bmp",
+          "sha256": "a1ebbfd6cc51a01ef5e5e5e5ae5779670441e56c789447e20d2482d0e077e550"
+        },
+        "last-shadow-layer": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/last-shadow-layer.bmp",
+          "sha256": "7b4a387a97d732b3e3cddfc3d438eb5a94b5e20df39f3fb3168d92582c3ec4f1"
+        },
+        "moved-occluder": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/moved-occluder.bmp",
+          "sha256": "96e1e8a962444a1e1e774a7e5adc47636be80346d46f15ccaf94d41bdad40b21"
+        },
+        "outside-shadow-distance": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/outside-shadow-distance.bmp",
+          "sha256": "b7e78a533433fba16fa7765adfab9bb029ea662760ab9aa3044f64b50d3af431"
+        },
+        "point-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/point-off.bmp",
+          "sha256": "a1ebbfd6cc51a01ef5e5e5e5ae5779670441e56c789447e20d2482d0e077e550"
+        },
+        "point": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/point.bmp",
+          "sha256": "7b4a387a97d732b3e3cddfc3d438eb5a94b5e20df39f3fb3168d92582c3ec4f1"
+        },
+        "resolution-2048": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/resolution-2048.bmp",
+          "sha256": "6a9a91e44f1ed66326e69bf31a72d79f1f106c36d937a639d5a007a9aefd7f16"
+        },
+        "resolution-256": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/resolution-256.bmp",
+          "sha256": "ec985d77ce639da3a8311668cf808c480de846ea59111f129b37d05c91bc810b"
+        },
+        "resolution-512": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/resolution-512.bmp",
+          "sha256": "f042b497b5b9f09cc7732cfa1496df2b37488509a6ef3cd1513c10e57af12f1c"
+        },
+        "runtime-frozen": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/runtime-frozen.bmp",
+          "sha256": "310157cb11866b083e0517e1f43f4f3cdc87d7253ed043bf2c034d20202dbba6"
+        },
+        "runtime-initial": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/runtime-initial.bmp",
+          "sha256": "310157cb11866b083e0517e1f43f4f3cdc87d7253ed043bf2c034d20202dbba6"
+        },
+        "runtime-moved": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/runtime-moved.bmp",
+          "sha256": "e7455aea80763768e2b989cd1be6095c737785c5d3c9fe1ee3c2644d1042fdf8"
+        },
+        "smooth-normal-shadow": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/smooth-normal-shadow.bmp",
+          "sha256": "5c994082330b5fed6443f0dcb1f5a91255478538403319e54bcdcb317f67cae2"
+        },
+        "smooth-normal-unshadowed": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/smooth-normal-unshadowed.bmp",
+          "sha256": "5c994082330b5fed6443f0dcb1f5a91255478538403319e54bcdcb317f67cae2"
+        },
+        "spot-off": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/spot-off.bmp",
+          "sha256": "47e9f01e47c3f25487849dcc72183000273f731c8b0ed632a5c5e1a7098f5dbd"
+        },
+        "spot": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/spot.bmp",
+          "sha256": "310157cb11866b083e0517e1f43f4f3cdc87d7253ed043bf2c034d20202dbba6"
+        },
+        "unshadowed": {
+          "path": "<checkout>/build/culling-shadow-regression/4ad2fa9839b8409ca7ea132d5bd4545b/unshadowed.bmp",
+          "sha256": "7ef2ddda5bbaa27211768542e50527f692b9b41431064fd15ad30cc6ec8aefcb"
+        }
+      }
+    }
+  ],
+  "material_regression": {
+    "raw_evidence": {
+      "path": "build/culling-material-regression/gpu-0.json",
+      "sha256": "3a37252a3ccfa3b5fff47af57269e61920eab7ef6bd694c25e4d45b84d2a8d1b"
+    },
+    "binary_sha256": "6a88f4a2464b4edccaf1a28588aab5a95c3b5565968c04ac116291a9e25bdaf9",
+    "test_source": {
+      "path": "tests/material_capture.py",
+      "sha256": "14179932cc55f7da69c6b701e82fc14bcf77c3845c05cb9ef3fe4a02a6a26804"
+    },
+    "gpu_names": [
+      "NVIDIA GeForce RTX 4070 Laptop GPU"
+    ],
+    "passed": true,
+    "gpu_index": 0,
+    "checks": {
+      "legacy_v2_render_and_normal_rejection": true,
+      "builtin_box_tangent_frame": true,
+      "generated_authored_mirrored_tangent_normals": true,
+      "normal_scale_zero": true,
+      "nonuniform_transform": true,
+      "standalone_image_overrides": true,
+      "preview_read_only": true,
+      "retry_receipt": true,
+      "effective_material_inspection": true,
+      "null_disable_remove_inherit": true,
+      "frozen_runtime_120_tick_replay": true,
+      "source_independent_reopen": true,
+      "wrong_color_space_rejected_before_capture": true
+    },
+    "samples": [
+      {
+        "name": "generated",
+        "actual": [
+          133,
+          87,
+          47
+        ],
+        "expected": [
+          133,
+          87,
+          47
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "zero-scale",
+        "actual": [
+          140,
+          94,
+          55
+        ],
+        "expected": [
+          140,
+          94,
+          55
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "mirrored",
+        "actual": [
+          162,
+          115,
+          74
+        ],
+        "expected": [
+          162,
+          115,
+          73
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "authored",
+        "actual": [
+          149,
+          100,
+          58
+        ],
+        "expected": [
+          149,
+          101,
+          58
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "nonuniform",
+        "actual": [
+          78,
+          46,
+          22
+        ],
+        "expected": [
+          78,
+          46,
+          22
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "green",
+        "actual": [
+          0,
+          188,
+          0
+        ],
+        "expected": [
+          0,
+          188,
+          0
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "red",
+        "actual": [
+          188,
+          0,
+          0
+        ],
+        "expected": [
+          188,
+          0,
+          0
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "explicit-null",
+        "actual": [
+          188,
+          188,
+          188
+        ],
+        "expected": [
+          188,
+          188,
+          188
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "inherited",
+        "actual": [
+          0,
+          0,
+          188
+        ],
+        "expected": [
+          0,
+          0,
+          188
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "legacy-v2",
+        "actual": [
+          188,
+          0,
+          0
+        ],
+        "expected": [
+          188,
+          0,
+          0
+        ],
+        "tolerance": 3
+      },
+      {
+        "name": "box-normal",
+        "actual": [
+          39,
+          20,
+          6
+        ],
+        "expected": [
+          39,
+          20,
+          6
+        ],
+        "tolerance": 3
+      }
+    ],
+    "images": {
+      "authored": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/authored.bmp",
+        "sha256": "a54b53880ba136bf509a1dbff5c971b0d769169e59fe524ab0963ae2c347a494"
+      },
+      "box-normal": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/box-normal.bmp",
+        "sha256": "5e4e46780eb2219d6792e4e879a4fc8f0645f05759d8ba5c0ab63a5ee937f51c"
+      },
+      "explicit-null": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/explicit-null.bmp",
+        "sha256": "03c67eb9cfcba02c2f825e58683d5aaeebdaa6551b8fa666fe048af83f6cda35"
+      },
+      "frozen-player": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/frozen-player.bmp",
+        "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+      },
+      "generated": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/generated.bmp",
+        "sha256": "6366162bd38566c40b133dd354e28d2e56165a3794f47eb77ba6d08ad9cd94a7"
+      },
+      "green": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/green.bmp",
+        "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+      },
+      "inherited": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/inherited.bmp",
+        "sha256": "c1d36d2a2d6a139691591a208882ce470854bee99dc9d745234fc0df345f159e"
+      },
+      "legacy-v2": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/legacy-v2.bmp",
+        "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+      },
+      "mirrored": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/mirrored.bmp",
+        "sha256": "a5dd4b8632aefc7757c426d9ae79cc5f20574a3e75ec4a125da76cd59eff0ecb"
+      },
+      "nonuniform": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/nonuniform.bmp",
+        "sha256": "357b618621a15b3caca4046c4a03cb6d48d79ad542d33de387212e4c02913cee"
+      },
+      "preview": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/preview.bmp",
+        "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+      },
+      "red": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/red.bmp",
+        "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+      },
+      "reopened": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/reopened.bmp",
+        "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+      },
+      "zero-scale": {
+        "path": "<checkout>/build/culling-material-regression/56aa107d1f7a404fb1cbe8f6f7993703/zero-scale.bmp",
+        "sha256": "540a123f70e2ed958d6c63e2a392e815ba85b979621cf6c412fb2157ee2e0d4a"
+      }
+    }
+  },
+  "observations": [
+    "Both GPUs retained exact pixel equality for culled/unculled and profiled/unprofiled captures. The offscreen caster still shadows the receiver; hiding/falling it clears that shadow.",
+    "The constructed 245-object fixture reduced camera submissions from 245 to 4 and shadow submissions from 1470 to 8 on both GPUs.",
+    "Both 371-tick continuous replays matched independent headless state and unculled final capture. Each recorded 372 completed GPU timestamp samples with zero dropped samples.",
+    "The NVIDIA fixture image was visually inspected: a visible receiver retains the large shadow from an offscreen caster.",
+    "Existing shadow tests passed all cascades/blend boundaries, six point faces/seam, all supported resolutions, final array layer, indexed/hidden/moving casters and smooth-normal receiver-plane checks under default culling."
+  ],
+  "limits": [
+    "Draw reductions describe a deliberately offscreen-heavy correctness fixture, not a representative game speedup.",
+    "Initial culling captures overlapped a CPU runtime build. Their tiny two-frame timings are diagnostics, not a controlled performance benchmark.",
+    "Timestamp intervals use one graphics queue, valid-bit masking and actual device periods. GPU stages overlap; the four boundaries are approximate and instrumentation has overhead.",
+    "The renderer still serializes FIFO submissions with a per-frame GPU wait. Capture includes readback; timing excludes full game simulation, presentation completion and file encoding.",
+    "No hierarchical scene index, occlusion culling, instanced batching, resource streaming, shadow caching or production render graph is supplied by this change.",
+    "Evidence covers two GPUs in one laptop on native Windows through WSL interop. Intel, native Linux hardware, other machines, MSVC builds and consoles remain unqualified.",
+    "NVRHI validation reported no errors; full Khronos Vulkan validation and physical human-input qualification remain outstanding."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}

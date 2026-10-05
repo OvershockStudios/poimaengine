@@ -1,0 +1,1989 @@
+{
+  "recorded_at_utc": "2026-09-26T08:34:15.433206+00:00",
+  "engine_version": "0.0.9",
+  "scope": "MikkTSpace/authored normal frames, independent images, per-entity texture overrides and effective material inspection. Full engine roadmap and M0/M1/M2 remain incomplete.",
+  "builds": {
+    "native_windows_runtime_sha256": "0fb07359490447beea2776c27f4dff49944e72d3c1f72d89901763c72b5b22c2",
+    "linux_headless_sha256": "76c6b4324f5b7bbb44309d2143cf9b3699117b8c1ae042a7643fc87e22b80dce",
+    "linux_runtime_sha256": "961af3623b8da1cc97c72853e3952c6e5f126408242daa0384b37d548541faec"
+  },
+  "dependency": {
+    "repository": "https://github.com/mmikk/MikkTSpace",
+    "commit": "3e895b49d05ea07e4c2133156cfa94369e19e409",
+    "license": "zlib-style notice in each source header",
+    "files": {
+      "mikktspace.c": "de87e74107df766ce68108801262bd8d53899414236b59810509a8fc2a51e288",
+      "mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0"
+    }
+  },
+  "ctest": {
+    "headless": {
+      "passed": 9,
+      "failed": 0,
+      "log": "Test project <checkout>/build/headless\n    Start 1: asset_hash\n1/9 Test #1: asset_hash .......................   Passed    0.01 sec\n    Start 2: texture_native\n2/9 Test #2: texture_native ...................   Passed    0.01 sec\n    Start 3: tangents_native\n3/9 Test #3: tangents_native ..................   Passed    0.01 sec\n    Start 4: player_input\n4/9 Test #4: player_input .....................   Passed    0.01 sec\n    Start 5: scene_math\n5/9 Test #5: scene_math .......................   Passed    0.01 sec\n    Start 6: asset_contract\n6/9 Test #6: asset_contract ...................   Passed    3.55 sec\n    Start 7: cli_contract\n7/9 Test #7: cli_contract .....................   Passed    0.67 sec\n    Start 8: world_contract\n8/9 Test #8: world_contract ...................   Passed    3.27 sec\n    Start 9: native_module_contract\n9/9 Test #9: native_module_contract ...........   Passed   10.59 sec\n\n100% tests passed, 0 tests failed out of 9\n\nTotal Test time (real) =  18.21 sec\n",
+      "sha256": "7bcb20039a6a4564f4cbe570a753f56cd40d6c42f600ad0dbc3d0df9d0d30f9c"
+    },
+    "runtime": {
+      "passed": 11,
+      "failed": 0,
+      "log": "Test project <checkout>/build/runtime-headless\n      Start  1: asset_hash\n 1/11 Test  #1: asset_hash .......................   Passed    0.01 sec\n      Start  2: texture_native\n 2/11 Test  #2: texture_native ...................   Passed    0.01 sec\n      Start  3: tangents_native\n 3/11 Test  #3: tangents_native ..................   Passed    0.01 sec\n      Start  4: player_input\n 4/11 Test  #4: player_input .....................   Passed    0.01 sec\n      Start  5: scene_math\n 5/11 Test  #5: scene_math .......................   Passed    0.01 sec\n      Start  6: runtime_native\n 6/11 Test  #6: runtime_native ...................   Passed    0.10 sec\n      Start  7: asset_contract\n 7/11 Test  #7: asset_contract ...................   Passed    3.63 sec\n      Start  8: runtime_contract\n 8/11 Test  #8: runtime_contract .................   Passed    0.75 sec\n      Start  9: cli_contract\n 9/11 Test  #9: cli_contract .....................   Passed    0.75 sec\n      Start 10: world_contract\n10/11 Test #10: world_contract ...................   Passed    3.11 sec\n      Start 11: native_module_contract\n11/11 Test #11: native_module_contract ...........   Passed   10.60 sec\n\n100% tests passed, 0 tests failed out of 11\n\nTotal Test time (real) =  19.10 sec\n",
+      "sha256": "de4b7dc9073573f83227f35baba7ad3bb0806b14a8bfe0891465b0266fded8e3"
+    }
+  },
+  "asset_contract": {
+    "linux": {
+      "binary": "<checkout>/build/headless/poima",
+      "binary_sha256": "76c6b4324f5b7bbb44309d2143cf9b3699117b8c1ae042a7643fc87e22b80dce",
+      "passed": true,
+      "tests": 11,
+      "reports": [
+        {
+          "asset": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+          "bytes": 85992,
+          "vertices": 1225,
+          "triangles": 2208,
+          "source_forms_identical": true
+        },
+        {
+          "image_srgb_asset": "167ca65009d412446e130cd8aad8e80bb6a5bb09f787a23dc024417b5091d8b5",
+          "image_linear_asset": "e32905c1bbe3662c7631313059f5b28f7c197fc0a9dfe22bfe3cb1898221ef73",
+          "preview_retry_rollback": true
+        },
+        {
+          "normal_model": "6c92377122ccdf3be1b573483c2f90e14a50acd087af1e456f347c41f069f277",
+          "authored_tangent_model": "4e564ab59ce29a30ff1fa8aee44ff42d21b783230e5bebd5c1a7adaaa85c1341",
+          "generated_and_authored_tangents_verified": true
+        },
+        {
+          "texture_asset": "3a91a9a21063f12538a5d9886e2e513c37677a2f83c85db2e9863d9a755fbe3d",
+          "source_forms_identical": true,
+          "srgb_and_linear_mips_verified": true
+        }
+      ]
+    },
+    "windows": {
+      "binary": "<checkout>/build/windows-runtime/poima.exe",
+      "binary_sha256": "0fb07359490447beea2776c27f4dff49944e72d3c1f72d89901763c72b5b22c2",
+      "passed": true,
+      "tests": 11,
+      "reports": [
+        {
+          "asset": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+          "bytes": 85992,
+          "vertices": 1225,
+          "triangles": 2208,
+          "source_forms_identical": true
+        },
+        {
+          "image_srgb_asset": "167ca65009d412446e130cd8aad8e80bb6a5bb09f787a23dc024417b5091d8b5",
+          "image_linear_asset": "e32905c1bbe3662c7631313059f5b28f7c197fc0a9dfe22bfe3cb1898221ef73",
+          "preview_retry_rollback": true
+        },
+        {
+          "normal_model": "6c92377122ccdf3be1b573483c2f90e14a50acd087af1e456f347c41f069f277",
+          "authored_tangent_model": "4e564ab59ce29a30ff1fa8aee44ff42d21b783230e5bebd5c1a7adaaa85c1341",
+          "generated_and_authored_tangents_verified": true
+        },
+        {
+          "texture_asset": "3a91a9a21063f12538a5d9886e2e513c37677a2f83c85db2e9863d9a755fbe3d",
+          "source_forms_identical": true,
+          "srgb_and_linear_mips_verified": true
+        }
+      ]
+    }
+  },
+  "cross_platform_fixture_cooks_match": true,
+  "gpus": [
+    {
+      "gpu": 0,
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      },
+      "samples": [
+        {
+          "name": "generated",
+          "actual": [
+            133,
+            87,
+            47
+          ],
+          "expected": [
+            133,
+            87,
+            47
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "zero-scale",
+          "actual": [
+            140,
+            94,
+            55
+          ],
+          "expected": [
+            140,
+            94,
+            55
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "mirrored",
+          "actual": [
+            162,
+            115,
+            74
+          ],
+          "expected": [
+            162,
+            115,
+            73
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored",
+          "actual": [
+            149,
+            100,
+            58
+          ],
+          "expected": [
+            149,
+            101,
+            58
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "nonuniform",
+          "actual": [
+            78,
+            46,
+            22
+          ],
+          "expected": [
+            78,
+            46,
+            22
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "green",
+          "actual": [
+            0,
+            188,
+            0
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "red",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "explicit-null",
+          "actual": [
+            188,
+            188,
+            188
+          ],
+          "expected": [
+            188,
+            188,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "inherited",
+          "actual": [
+            0,
+            0,
+            188
+          ],
+          "expected": [
+            0,
+            0,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "legacy-v2",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "box-normal",
+          "actual": [
+            39,
+            20,
+            6
+          ],
+          "expected": [
+            39,
+            20,
+            6
+          ],
+          "tolerance": 3
+        }
+      ],
+      "captures": [
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\generated.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 1,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\zero-scale.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 2,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\mirrored.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 3,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\authored.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 4,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\nonuniform.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 5,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\green.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\preview.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+          "dropped_wall_seconds": 0.0,
+          "frames_presented": 121,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "mode": "replay",
+          "nvrhi_errors": 0,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\frozen-player.bmp",
+          "previous_tick": 0,
+          "replayed": false,
+          "revision": 7,
+          "samples": 4,
+          "session_id": "000000000000000000000000000002bc",
+          "stop_reason": "replay_complete",
+          "success": true,
+          "swapchain_rebuilds": 1,
+          "tick": 120,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\red.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 8,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\reopened.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 8,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\explicit-null.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 9,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\inherited.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 10,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\legacy-v2.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 12,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\6f209e6b8dc64d5bafa121ed48b730c4\\box-normal.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 14,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "af288fd46905f437b3bb14cf7e727887"
+        }
+      ],
+      "images": {
+        "authored": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/authored.bmp",
+          "sha256": "a54b53880ba136bf509a1dbff5c971b0d769169e59fe524ab0963ae2c347a494"
+        },
+        "box-normal": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/box-normal.bmp",
+          "sha256": "5e4e46780eb2219d6792e4e879a4fc8f0645f05759d8ba5c0ab63a5ee937f51c"
+        },
+        "explicit-null": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/explicit-null.bmp",
+          "sha256": "03c67eb9cfcba02c2f825e58683d5aaeebdaa6551b8fa666fe048af83f6cda35"
+        },
+        "frozen-player": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/frozen-player.bmp",
+          "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+        },
+        "generated": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/generated.bmp",
+          "sha256": "6366162bd38566c40b133dd354e28d2e56165a3794f47eb77ba6d08ad9cd94a7"
+        },
+        "green": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/green.bmp",
+          "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+        },
+        "inherited": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/inherited.bmp",
+          "sha256": "c1d36d2a2d6a139691591a208882ce470854bee99dc9d745234fc0df345f159e"
+        },
+        "legacy-v2": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/legacy-v2.bmp",
+          "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+        },
+        "mirrored": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/mirrored.bmp",
+          "sha256": "a5dd4b8632aefc7757c426d9ae79cc5f20574a3e75ec4a125da76cd59eff0ecb"
+        },
+        "nonuniform": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/nonuniform.bmp",
+          "sha256": "357b618621a15b3caca4046c4a03cb6d48d79ad542d33de387212e4c02913cee"
+        },
+        "preview": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/preview.bmp",
+          "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+        },
+        "red": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/red.bmp",
+          "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+        },
+        "reopened": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/reopened.bmp",
+          "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+        },
+        "zero-scale": {
+          "path": "<checkout>/build/material-authoring-evidence/6f209e6b8dc64d5bafa121ed48b730c4/zero-scale.bmp",
+          "sha256": "540a123f70e2ed958d6c63e2a392e815ba85b979621cf6c412fb2157ee2e0d4a"
+        }
+      },
+      "trace": "build/material-authoring-evidence/gpu-0.json",
+      "trace_sha256": "494fe023828630967c5f4d1d904144375fece221fae518071d3bdfe4b06adeaf"
+    },
+    {
+      "gpu": 1,
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      },
+      "samples": [
+        {
+          "name": "generated",
+          "actual": [
+            133,
+            87,
+            47
+          ],
+          "expected": [
+            133,
+            87,
+            47
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "zero-scale",
+          "actual": [
+            140,
+            94,
+            55
+          ],
+          "expected": [
+            140,
+            94,
+            55
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "mirrored",
+          "actual": [
+            162,
+            115,
+            73
+          ],
+          "expected": [
+            162,
+            115,
+            73
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "authored",
+          "actual": [
+            149,
+            100,
+            58
+          ],
+          "expected": [
+            149,
+            101,
+            58
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "nonuniform",
+          "actual": [
+            78,
+            46,
+            22
+          ],
+          "expected": [
+            78,
+            46,
+            22
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "green",
+          "actual": [
+            0,
+            188,
+            0
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "red",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "explicit-null",
+          "actual": [
+            188,
+            188,
+            188
+          ],
+          "expected": [
+            188,
+            188,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "inherited",
+          "actual": [
+            0,
+            0,
+            188
+          ],
+          "expected": [
+            0,
+            0,
+            188
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "legacy-v2",
+          "actual": [
+            188,
+            0,
+            0
+          ],
+          "expected": [
+            188,
+            0,
+            0
+          ],
+          "tolerance": 3
+        },
+        {
+          "name": "box-normal",
+          "actual": [
+            39,
+            20,
+            6
+          ],
+          "expected": [
+            39,
+            20,
+            6
+          ],
+          "tolerance": 3
+        }
+      ],
+      "captures": [
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\generated.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 1,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\zero-scale.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 2,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\mirrored.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 3,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\authored.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 4,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\nonuniform.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 5,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\green.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\preview.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 6,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "detail": "Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.",
+          "dropped_wall_seconds": 0.0,
+          "frames_presented": 121,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "mode": "replay",
+          "nvrhi_errors": 0,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\frozen-player.bmp",
+          "previous_tick": 0,
+          "replayed": false,
+          "revision": 7,
+          "samples": 4,
+          "session_id": "000000000000000000000000000002bc",
+          "stop_reason": "replay_complete",
+          "success": true,
+          "swapchain_rebuilds": 1,
+          "tick": 120,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\red.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 8,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\reopened.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 8,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\explicit-null.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 9,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\inherited.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 10,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\legacy-v2.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 12,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        },
+        {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            4.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 60.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 1,
+          "path": "<checkout>\\build\\material-authoring-evidence\\b2227b592a9f478893d6fa4d853858a3\\box-normal.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 14,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "b599bae4dbaa15d66f2d69e6b15e692e"
+        }
+      ],
+      "images": {
+        "authored": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/authored.bmp",
+          "sha256": "a54b53880ba136bf509a1dbff5c971b0d769169e59fe524ab0963ae2c347a494"
+        },
+        "box-normal": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/box-normal.bmp",
+          "sha256": "9bf3b115cb7b51659d9290dbad1e204f7850e15d740fc51e41baa3fba9665c90"
+        },
+        "explicit-null": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/explicit-null.bmp",
+          "sha256": "03c67eb9cfcba02c2f825e58683d5aaeebdaa6551b8fa666fe048af83f6cda35"
+        },
+        "frozen-player": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/frozen-player.bmp",
+          "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+        },
+        "generated": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/generated.bmp",
+          "sha256": "01daa5293bc6132fb3d17ad0267f333db80e92766bbd10ff98758af9bba50012"
+        },
+        "green": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/green.bmp",
+          "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+        },
+        "inherited": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/inherited.bmp",
+          "sha256": "c1d36d2a2d6a139691591a208882ce470854bee99dc9d745234fc0df345f159e"
+        },
+        "legacy-v2": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/legacy-v2.bmp",
+          "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+        },
+        "mirrored": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/mirrored.bmp",
+          "sha256": "00f7608f2752ef03e6dc5dd3b156687917852055cf6a6c9a213dddc078a764fa"
+        },
+        "nonuniform": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/nonuniform.bmp",
+          "sha256": "8995275ab09a4ef028d9e05250670258e8fa7a65e2357d00dfa2a316b41bfb5e"
+        },
+        "preview": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/preview.bmp",
+          "sha256": "a67ff259c289c841331cb6ede5d58a1fb9f95eb18ed3ea3f7907362125886da0"
+        },
+        "red": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/red.bmp",
+          "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+        },
+        "reopened": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/reopened.bmp",
+          "sha256": "a7745e27a1caaf3103c4359429aec61759f7411bdee2700c74bc0f04dc7f15da"
+        },
+        "zero-scale": {
+          "path": "<checkout>/build/material-authoring-evidence/b2227b592a9f478893d6fa4d853858a3/zero-scale.bmp",
+          "sha256": "07a360593e1b1a81e6403c759513623d302f5bf4a2ef16f42cfd8cd5562e94c4"
+        }
+      },
+      "trace": "build/material-authoring-evidence/gpu-1.json",
+      "trace_sha256": "20d0d2e755fefa37b26013ba3e9b1edce5d2a69af3adb8d8f248dd3ef34596a8"
+    }
+  ],
+  "regressions": {
+    "texture": {
+      "passed": true,
+      "checks": {
+        "ambient_occlusion_isolated": true,
+        "continuous_textured_replay": true,
+        "four_map_channels_scalar_reference": true,
+        "uv_top_left_orientation": true,
+        "repeat_clamp_mirror_positive_negative": true,
+        "srgb_linear_filter": true,
+        "srgb_minified_mips": true,
+        "non_mip_sampler": true,
+        "jpeg": true,
+        "source_independent_reopen": true,
+        "runtime_snapshot_owns_textures": true
+      },
+      "trace": "build/material-authoring-texture-regression/gpu-0.json",
+      "trace_sha256": "18c2b75203d6335bd3ea966af434e1b8b109bc6c88dbd1a32222506b306f42f8"
+    },
+    "player": {
+      "passed": true,
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "trace": "build/material-authoring-player-regression/gpu-0.json",
+      "trace_sha256": "33d322da0c7b8dbe2253880b782e4258a34cb03506120810d8222323de94629a"
+    }
+  },
+  "windows_cli_native_python": "test_absent_driver_or_disabled_probe_is_explicit (__main__.CliContract.test_absent_driver_or_disabled_probe_is_explicit) ... ok\ntest_diagnostics_escape_user_strings (__main__.CliContract.test_diagnostics_escape_user_strings) ... ok\ntest_discovery_is_repeatable_and_has_no_fake_features (__main__.CliContract.test_discovery_is_repeatable_and_has_no_fake_features) ... ok\ntest_headless_inspection_from_unrelated_directory (__main__.CliContract.test_headless_inspection_from_unrelated_directory) ... ok\ntest_help_and_version_aliases (__main__.CliContract.test_help_and_version_aliases) ... ok\ntest_invalid_requests_are_machine_readable (__main__.CliContract.test_invalid_requests_are_machine_readable) ... ok\ntest_render_arguments_fail_before_opening_a_window (__main__.CliContract.test_render_arguments_fail_before_opening_a_window) ... ok\ntest_render_not_built_is_explicit (__main__.CliContract.test_render_not_built_is_explicit) ... skipped 'Actual GPU execution is a separate integration test'\n\n----------------------------------------------------------------------\nRan 8 tests in 0.696s\n\nOK (skipped=1)\n",
+  "windows_world_via_interop": "test_authoring_preview_atomicity_restart_and_receipts (__main__.WorldContract.test_authoring_preview_atomicity_restart_and_receipts) ... ok\ntest_components_hierarchy_matrices_and_capture_validation (__main__.WorldContract.test_components_hierarchy_matrices_and_capture_validation) ... ok\ntest_corrupt_primary_preserves_previous_snapshot (__main__.WorldContract.test_corrupt_primary_preserves_previous_snapshot) ... ok\ntest_crash_releases_lock_and_ignores_unpublished_staging (__main__.WorldContract.test_crash_releases_lock_and_ignores_unpublished_staging) ... skipped 'Abrupt Windows process termination is not qualified by the WSL harness'\ntest_pagination_recursive_delete_and_identity_retirement (__main__.WorldContract.test_pagination_recursive_delete_and_identity_retirement) ... ok\ntest_protocol_errors_and_notification (__main__.WorldContract.test_protocol_errors_and_notification) ... ok\ntest_receipt_eviction_preserves_stale_revision_guard (__main__.WorldContract.test_receipt_eviction_preserves_stale_revision_guard) ... ok\ntest_runtime_discovery_and_optional_build (__main__.WorldContract.test_runtime_discovery_and_optional_build) ... ok\ntest_storage_failure_external_edit_and_exclusive_writer (__main__.WorldContract.test_storage_failure_external_edit_and_exclusive_writer) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 2.108s\n\nOK (skipped=1)\n",
+  "example": {
+    "requests": "examples/normal-grid.jsonl",
+    "responses": [
+      {
+        "id": 1,
+        "jsonrpc": "2.0",
+        "result": {
+          "asset": "507b8ad14e51423bb5094030db7937ef9921506d35dc506aab909405aee69055",
+          "bytes": 2883941,
+          "diagnostics": [],
+          "format": "poima.static-model.v3",
+          "images": 4,
+          "nodes": 2,
+          "primitives": 1,
+          "roots": [
+            0
+          ],
+          "triangles": 2208,
+          "vertices": 1223
+        }
+      },
+      {
+        "id": 2,
+        "jsonrpc": "2.0",
+        "result": {
+          "changed_ids": [
+            "00000000000000000000000000000001",
+            "000000000000000000000000000000c8",
+            "000000000000000000000000000000c9",
+            "000000000000000000000000000000ca",
+            "000000000000000000000000000000cb",
+            "000000000000000000000000000000cc",
+            "000000000000000000000000000000cd",
+            "000000000000000000000000000000ce",
+            "000000000000000000000000000000cf",
+            "1c68195f296d5cf70571e332fe364ef9",
+            "1f065a34b5b328c96e71a2e681560a0d",
+            "278d086186d9dddeda6ecd64230fefae",
+            "2e7ca0cad7f5d4f7a80f697e53a99486",
+            "3e74c6f3acdc7c278656b70ae2d26417",
+            "4466289cd9e77802ad1b34ff4787dd67",
+            "44e031bfdf6b41d16ebdf456c7c8c2e1",
+            "5e7c775c9b224b4095815a71ef193b12",
+            "66b972ef31654cf61a9b66d68bf6f5a6",
+            "852c07eb39f326fb9b37d15e21892aa0",
+            "93abb08ffed84a802bb4f49dbb29e9f4",
+            "9a26de75dafae9bc7048862d2fe0d225",
+            "a7a4cc939b62a8c7009bb617a284b5a4",
+            "a7d82556b06c359911c7c15cec20fc1d",
+            "c6c1796a38e4a866bff0f2571bd29d03",
+            "c90c1c0c4174fddf4ee6d445eef97bfb",
+            "d556fbc4642e1e298eab63353025d872",
+            "d9cee7ea3cdd4d173d6853b05b2b7090",
+            "dc2badae0e1f624052782354ab3d1e7d",
+            "e0d22e181cd29a694c3274b2671c8564",
+            "e10587b0b7e4413bddead2e19340e43b",
+            "eda6a2d3c7f9a650031f0efc744ebbec",
+            "f9fcf2542e709335f67a1904056a14d1",
+            "fa0a023a41ddd4b9b4985e23dbf7bfb0"
+          ],
+          "committed": true,
+          "replayed": false,
+          "revision": 1
+        }
+      },
+      {
+        "id": 3,
+        "jsonrpc": "2.0",
+        "result": {
+          "build_version": "0.0.9",
+          "camera": "00000000000000000000000000000001",
+          "camera_world": [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            11.0,
+            1.0
+          ],
+          "capture_written": true,
+          "format": "BMP",
+          "frames_presented": 2,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 540,
+          "lens": {
+            "far": 100.0,
+            "near": 0.1,
+            "vertical_fov": 34.0
+          },
+          "nvrhi_errors": 0,
+          "object_count": 8,
+          "path": "<checkout>\\build\\normal-grid.bmp",
+          "renderer": "forward static geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; fixed directional light; no shadows",
+          "revision": 1,
+          "samples": 4,
+          "session_id": null,
+          "source": "authored",
+          "tick": null,
+          "width": 960,
+          "world_id": "a1c3074803ecc36a1767e786e67284f0"
+        }
+      }
+    ],
+    "source": "examples/assets/normal-sphere.glb",
+    "source_sha256": "b13c47edd423b904db90a727245de5068813dc8afe9f6ccf95d3d632a105adbc",
+    "image": "docs/evidence/m2-normal-grid.png",
+    "image_sha256": "2af30a97914aa75f7b495022234ee35b5ad8eb097cf273d9fe5c9ce3631b88c7",
+    "visually_inspected": true
+  },
+  "compatibility_fixture": {
+    "path": "tests/fixtures/legacy-textured-v2.pmodel",
+    "sha256": "247bd5ef2ffb749c595be93befb0c47058566766e19817f21a492bbe0e157ede",
+    "origin": "Actual Poima 0.0.8 original red/green emissive quad package from the preceding texture capture qualification."
+  },
+  "installation": {
+    "license_notice_matches_upstream": true,
+    "binary_matches_tested_headless": true
+  },
+  "source_sha256": {
+    "include/poima/assets.hpp": "6b2205d305ade83ed3e8fec24a113387a56d22fc3f3859bf2ab1589f7c854957",
+    "include/poima/scene.hpp": "d883f3b2ebdbc8caa805156136be4e82c45085aa0025ca733f9fb7e8dd885bf3",
+    "include/poima/runtime.hpp": "bce780f65791f8c00c863d5e5d1f7bd2518a396f0e6cbf42b8abc505ce22161e",
+    "src/tangents.cpp": "bd03cb4a98ebf3064f821428fb590ad1acf2949942d586318a4fab57ff789c26",
+    "src/gltf.cpp": "2d0050f80aa2e089a92de4cd70373085184fe4c129192e382fd4c482c32a6c0e",
+    "src/model_codec.cpp": "0780aea3ca4202a5073c6f32bfcbd1257db32ce8aeae04d4cd629bd977116035",
+    "src/asset_store.hpp": "3e0e4d4b1f10b9ee68b48320a8ed5676f001fb9895326e942dbb56ec3fbd4b3d",
+    "src/world.cpp": "3245a8a60411a00bf6d648a35fba08eb9e765345b81091cac9e7d7ec0f6ea7e2",
+    "src/runtime.cpp": "0370ea0b9a97544ad0f6ea52daa52f42d5e070cb04e113d07754d024a2bd120f",
+    "src/render_smoke.cpp": "43cb2b11fa65fb73ae693e7fee09e6f03689ba54eee9d2cd8bf91cb8f8a71faa",
+    "shaders/scene.hlsl": "491b7dadf235dea6f8b621d91a23a33f3ff241fcf14fa8b7ffbfbb759a3266b6",
+    "tests/tangents_native.cpp": "03949569b986390bf86bd378d202322eef40465b8e13224f7eb13c83755fb029",
+    "tests/asset_contract.py": "54c563119fb8e101b300b46256a67d610baec1663b559df458cfe1335a725f46",
+    "tests/material_capture.py": "14179932cc55f7da69c6b701e82fc14bcf77c3845c05cb9ef3fe4a02a6a26804"
+  },
+  "limitations": [
+    "Only bounded fixtures on this laptop NVIDIA/AMD Vulkan adapters; no production performance, console or native Linux GPU qualification.",
+    "Fixed direct light/ambient approximation remain; no shadows/IBL/GI, texture streaming/compression or variance-aware normal/specular filtering.",
+    "Resource references may be authored before availability; effective inspection/capture/runtime creation validate image indices, color spaces, UVs and tangent frames.",
+    "Runtime material state remains frozen; live runtime edits, general undo history and native procedural material graphs remain future work.",
+    "Khronos Vulkan validation layers and physical human input remain unqualified."
+  ],
+  "public_record_note": "Local path strings and private reference labels generalized for publication. Measured results and source/binary digests are unchanged; the original record is retained in a private local archive."
+}
