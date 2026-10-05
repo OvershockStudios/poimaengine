@@ -1,0 +1,470 @@
+{
+  "milestone": "Per-tick native editor playback and committed input traces",
+  "date": "2026-10-05",
+  "engine_version": "0.0.36",
+  "source_base": "31e92bac9d167549af96e0369c94f56bfe114ac2",
+  "source_sha256": {
+    "CMakeLists.txt": "937e0aaaf4622b93d27e2fc1191ee20fbec48e86dd2db50410d3fb69291305c6",
+    "include/poima/input_profile.hpp": "f64851c6103e13a729a8a98ef42e299237d67c2a6530e0e8eac6f322769c7af6",
+    "include/poima/player.hpp": "9bb05e63c24f917617a349791211b6fcdb3cd816e4a5f94bf7ba74d0d22e113f",
+    "include/poima/world.hpp": "926f6ce58d83c5a5a8b3b469cdc17e07165f6256a2ebd05619e552494f5eca02",
+    "src/desktop_bridge.cpp": "eb7ff33fd7fd43300319751c90e9e120b8dbc9589c50cad8eae22f90b9211a3f",
+    "src/input_profile.cpp": "ef3d805895ab4bd56eeeaf377f500878b8b70e321e18685c5f113c6207b94b91",
+    "src/player.cpp": "cc4485a2067268857a078880b2c3454444d81dd9b05625e4ae1bdeb214f5a556",
+    "src/world.cpp": "471f595c3695def2a199004c3f937f28258be5ce63de2e653636ebd4d550b810",
+    "tests/desktop_frontend.py": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84",
+    "tests/desktop_game_input.py": "ae9a589397618f2ab5284a8546c0f86394d913c46c02b171c30f2af1b2f2a0eb",
+    "tests/desktop_gameplay_save_requests.py": "e700a0726cf414dfcc0b0a5ffcaf8aae75ac6dad69c57189eab4ef2c19cd7080",
+    "tests/desktop_playback_contract.py": "b3bbdc295e11c740cc75932cae04db5296e9c381d67e01a9d17ebe3b0eddb19b",
+    "tests/desktop_profiler_frontend.py": "6acecb4593f028104854c82d0fc092991f05bd02cc293034cf1491464088abc8",
+    "tests/gameplay-save/SaveRequests.cs": "b7b8e17d7efc7a7c4ddf3363c1ba54852b1123a6e5e120eef25d67b196e6834b",
+    "tests/input_profile.cpp": "457e9ee6ddc50e24ae626f298fc00300dd184ac4334d492b5bbad689af85125d",
+    "tests/player_input.cpp": "4fea6c313f7bdf6d3e6961baf21b155c2ba5f58b03a7e27fb4843d8ed3fb0845",
+    "tests/world_tick_native.cpp": "76cdecd89dbb1f1cab7d954b15f24adfb421fe535ff6a58e7717730e962df13f"
+  },
+  "implemented": [
+    "Native WorldSession::advance_tick validates session/tick/input guards, commits one tick and services queued saves, returning fixed-size replacement metadata without JSON, UUIDs or public retry receipts.",
+    "Automatic editor catch-up commits each tick independently, retaining successful predecessors when a later tick fails; explicit multi-tick RPC requests preserve whole-batch rollback.",
+    "Input preparation precedes simulation; allocation-free noexcept commit consumes edges/mouse backlog only after success. Held movement and evaluator analog rates remain per-tick.",
+    "The last controlled poll retains a bounded exact committed input sequence and its legacy first-frame metadata; failed ticks never enter the trace.",
+    "Gameplay saves execute after their requesting automatic tick; a load stops catch-up, opens a fresh paused session and clears old input. Storage service time is excluded from subsequent catch-up."
+  ],
+  "package": {
+    "directory": "build/desktop-tick-final",
+    "manifest": {
+      "path": "build/desktop-tick-final/poima-desktop-build.json",
+      "sha256": "d73f52e3fd93b2667e66738e0c4fa8e6a314b407fbc7dfb751b7d82469f13df5",
+      "bytes": 55753
+    },
+    "files": 362,
+    "dependency_records": 36,
+    "runtime_packs": 2,
+    "native": {
+      "path": "build/desktop-tick-final/poima.exe",
+      "sha256": "712f008afe87bfbe00d1473db363a3d3596c2c9e3596c4129e4390c4f3dd4b03",
+      "bytes": 134914560
+    },
+    "bridge": {
+      "path": "build/desktop-tick-final/poima_desktop.dll",
+      "sha256": "7d70c25d20b9f76b3a2be72801d6604a8dd8caabcdad9bc0f6e94b2b50b54288",
+      "bytes": 126125568
+    },
+    "editor": {
+      "path": "build/desktop-tick-final/Poima.Editor.dll",
+      "sha256": "939e98821f9111eae5ab3d5656674611cd952aba7d32c3c688eafca26ed0afc2",
+      "bytes": 1175552
+    },
+    "verified_inventory": {
+      "path": "build/tick-package-inventory.json",
+      "sha256": "971b0408290716b1c161b04e637e83f672802f48abc09b6d1d1e02634f7f7137",
+      "bytes": 55909
+    }
+  },
+  "qualification": {
+    "linux_ctest": [
+      {
+        "configuration": "runtime",
+        "passed": 46,
+        "log": {
+          "path": "build/tick-runtime-ctest.log",
+          "sha256": "f338b5134ab5aa0d20db31e413afb1e190d47209cec8a23d6d04efe43bf8482a",
+          "bytes": 5164
+        },
+        "xml": {
+          "path": "build/tick-runtime-ctest.xml",
+          "sha256": "605254cebe718fd76887116113c6e11deb3e5480a1534c6a2e01b7079aefc40a",
+          "bytes": 30179
+        }
+      },
+      {
+        "configuration": "authoring",
+        "passed": 38,
+        "log": {
+          "path": "build/tick-authoring-ctest.log",
+          "sha256": "d60a8d55e9b05342e8b009901864ca97edd92782bd98f204593bf2a7ebb67439",
+          "bytes": 4273
+        },
+        "xml": {
+          "path": "build/tick-authoring-ctest.xml",
+          "sha256": "2d99aa726336c965e34e99637b152315c5ae40bbf902a28d83827ae61b5ccb12",
+          "bytes": 26707
+        }
+      }
+    ],
+    "final_native_receipt_test": {
+      "log": {
+        "path": "build/tick-native-final-ctest.log",
+        "sha256": "f0db42e29159a2b524b5b7496e2360bf74e007b95763d30d849f5f9f5064167a",
+        "bytes": 248
+      },
+      "xml": {
+        "path": "build/tick-native-final-ctest.xml",
+        "sha256": "2ac418be06ac41f98fce384bb66eddb503968e2403e71737750c47933db3db33",
+        "bytes": 445
+      },
+      "binary": {
+        "path": "build/runtime-headless/poima-world-tick-test",
+        "sha256": "ebc765066a54b1631146fbe7ac972242988915975d9997397b94dc354e284286",
+        "bytes": 93037824
+      },
+      "note": "After the full runtime run, strengthened only the native test to retain an explicit receipt across forty automatic ticks; rebuilt and reran that test. Production source/binaries unchanged."
+    },
+    "linux_binaries": [
+      {
+        "path": "build/runtime-headless/poima",
+        "sha256": "57b4b97cf87e34497d5963bad2daa99ad5f686d842d469402a14516e812bc6e3",
+        "bytes": 100778424
+      },
+      {
+        "path": "build/headless/poima",
+        "sha256": "6af260a0924656f4fe66779314275406b72cf4fd244b1069fc5111f3b1239a2b",
+        "bytes": 59543936
+      }
+    ],
+    "windows_native_units": [
+      {
+        "target": "poima-world-tick-test",
+        "exit_code": 0,
+        "log": {
+          "path": "build/tick-native-world-tick.log",
+          "sha256": "0605ef983a846110965c03b73fed94a80ea81bba4e3280394f1462718567f44c",
+          "bytes": 104
+        },
+        "binary": {
+          "path": "build/windows-runtime/poima-world-tick-test.exe",
+          "sha256": "20d8c83340e9cc7aa06639d8c1fd627068ba8cd3ecf6b66fcac406704e53a13e",
+          "bytes": 121092096
+        }
+      },
+      {
+        "target": "poima-input-profile-test",
+        "exit_code": 0,
+        "log": {
+          "path": "build/tick-native-input-profile.log",
+          "sha256": "b95dd8d48e0d6c88712989d37edb37ab28fea7a89569ec4136ed054a72d96813",
+          "bytes": 151
+        },
+        "binary": {
+          "path": "build/windows-runtime/poima-input-profile-test.exe",
+          "sha256": "96031a8c4737fe4a49fa44eb713f6e10dcb2ebb6d8547cd0b5588e2ab984034a",
+          "bytes": 2308608
+        }
+      },
+      {
+        "target": "poima-player-input-test",
+        "exit_code": 0,
+        "log": {
+          "path": "build/tick-native-player-input.log",
+          "sha256": "cf560fba19b93411b26b6c130c2f236a8f4bab5bb323be28c258396b6b268b11",
+          "bytes": 103
+        },
+        "binary": {
+          "path": "build/windows-runtime/poima-player-input-test.exe",
+          "sha256": "4dde47e77cf98667a194d7e28aa5976171251b321617be283de29252c85e1677",
+          "bytes": 1650688
+        }
+      }
+    ],
+    "windows_runs": [
+      {
+        "name": "tick-playback-headless",
+        "gpu": null,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-playback-headless/run-6b0117ed98bb49e7b1d2236b4e651350/result.json",
+          "sha256": "24e2acf787f7de283a09c5b788ff2c1ee0afe746b86d9de8500a13de08e5654f",
+          "bytes": 167971
+        },
+        "log": {
+          "path": "build/tick-playback-headless.log",
+          "sha256": "860798533c329d9de6ade6f875f1c2853f874eee52352a36daa31879eac3e5ba",
+          "bytes": 145
+        },
+        "checks": 6,
+        "calls": 123,
+        "coverage": [
+          "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+          "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+          "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+          "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+          "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+          "A genuine animation sampling failure preserves automatic ticks15\u201317 and pauses before18; explicit four-tick Step still rolls back all state, with unchanged authored bytes/history."
+        ],
+        "automatic_failure_committed_tick": 17,
+        "explicit_failure_retained_tick": 14
+      },
+      {
+        "name": "tick-input-headless",
+        "gpu": null,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-input-headless/run-4fc5f28775234ac69d18737822e3f82a/result.json",
+          "sha256": "ff069642cca99ba13a3989418e547097fc91c6f9204f5c57666516da9af11166",
+          "bytes": 545658
+        },
+        "log": {
+          "path": "build/tick-input-headless.log",
+          "sha256": "8f7efb0189477f872db2796abae7f3cc6a504dd484301ec994af76772eb7004d",
+          "bytes": 142
+        },
+        "checks": 8,
+        "calls": 305,
+        "coverage": [
+          "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+          "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+          "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+          "Eight-tick catch-up drains independent mouse frames -180/-180/-70 then zero, preserves held movement, and consumes jump/use once; exact frames feed independent replay.",
+          "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+          "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+          "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+          "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+        ],
+        "exact_replay_ticks": 239
+      },
+      {
+        "name": "tick-gameplay-save-headless",
+        "gpu": null,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-gameplay-save-headless/d889b04c2c3a4f98955faa4aabaa79bd/evidence.json",
+          "sha256": "1b1af46eacd178cac0779743bc9c656fa06ff384e2dcc591e1336858fd07d909",
+          "bytes": 267919
+        },
+        "log": {
+          "path": "build/tick-gameplay-save-headless.log",
+          "sha256": "3368684bd08602a360ead340a51257a7c0ee28eab56c437a567c5cdb3ef43fa3",
+          "bytes": 161
+        },
+        "checks": 8,
+        "calls": 67,
+        "coverage": [
+          "Automatic playback commits a Tick-zero save exactly at tick1, independently of later due ticks in the same poll.",
+          "External save mutations remain rejected while playing through both direct C ABI and local IPC.",
+          "A later real game callback observes terminal completion and clears its pending state without repeating the write.",
+          "Automatic game load adopts a fresh paused session, clears native input/clock/module caches and leaves authoring and save bytes unchanged.",
+          "Paused step exposes source/current replacement metadata; exact old-session retry is inert and restored saved tokens do not reenact commands.",
+          "Explicit four-tick batch failure restores complete C# and controller state and performs no durable save.",
+          "Automatic failure preserves its first three C#/physics ticks and first-tick durable save; movement persists while look/jump/use consume once, then input clears.",
+          "Explicit recovery resumes from the committed prefix without replaying old input, failed callbacks or completed saves."
+        ],
+        "save_semantics": {
+          "initial_save_tick": 1,
+          "later_save_committed_tick": 2,
+          "automatic_failure_retained_tick": 4,
+          "committed_input_frames": 3
+        }
+      },
+      {
+        "name": "tick-input-gpu1",
+        "gpu": 1,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-input-gpu1/run-d449939b9bb24d5fb4fc774395496bda/result.json",
+          "sha256": "af125d7841aa1c0bac6131d0598d0f1b070e251923dd8b0273b464152f0a8e2e",
+          "bytes": 672889
+        },
+        "log": {
+          "path": "build/tick-input-gpu1.log",
+          "sha256": "9f795094dfdafbda5be4d648e275ab671d059433a97558f984e010c5e8db990d",
+          "bytes": 138
+        },
+        "checks": 9,
+        "calls": 364,
+        "coverage": [
+          "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+          "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+          "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+          "Eight-tick catch-up drains independent mouse frames -180/-180/-70 then zero, preserves held movement, and consumes jump/use once; exact frames feed independent replay.",
+          "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+          "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+          "Real Vulkan capture holds input and clock without consumption; the next simulated batch receives retained movement/look/use exactly once.",
+          "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+          "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+        ],
+        "exact_replay_ticks": 251
+      },
+      {
+        "name": "tick-playback-gpu1",
+        "gpu": 1,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-playback-gpu1/run-8ff494d9fc984f57a0d3c92d6acc0746/result.json",
+          "sha256": "fba38dcd030883ad96a999b83098cd590e3b87ca0c91b6dff9faa582b0de5a88",
+          "bytes": 215722
+        },
+        "log": {
+          "path": "build/tick-playback-gpu1.log",
+          "sha256": "f52c42faebcef5d1b538d78dcdf72a3d391e3bb0866eaa828017aa61293fc47a",
+          "bytes": 141
+        },
+        "checks": 8,
+        "calls": 156,
+        "coverage": [
+          "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+          "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+          "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+          "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+          "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+          "Actual Vulkan Game captures preserve frozen camera pose/lens; auto-play holds queued capture, resumes without catch-up, and view changes invalidate capture.",
+          "Missing authored camera after Stop is a recoverable presentation error; Scene restores the same viewport with zero backend errors.",
+          "A genuine animation sampling failure preserves automatic ticks15\u201317 and pauses before18; explicit four-tick Step still rolls back all state, with unchanged authored bytes/history."
+        ],
+        "automatic_failure_committed_tick": 17,
+        "explicit_failure_retained_tick": 14
+      },
+      {
+        "name": "tick-input-gpu0",
+        "gpu": 0,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-input-gpu0/run-252ea33606cc41f0a6f73dd535c5c39a/result.json",
+          "sha256": "251179fbe055a95b56654c5b2b8b213576a38f1dfe712cc0b00049ee5e58a94f",
+          "bytes": 662385
+        },
+        "log": {
+          "path": "build/tick-input-gpu0.log",
+          "sha256": "ff549ef1f944117346833f7ad976189c91d2bd1fda4ccef7676108969423d072",
+          "bytes": 138
+        },
+        "checks": 9,
+        "calls": 361,
+        "coverage": [
+          "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+          "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+          "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+          "Eight-tick catch-up drains independent mouse frames -180/-180/-70 then zero, preserves held movement, and consumes jump/use once; exact frames feed independent replay.",
+          "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+          "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+          "Real Vulkan capture holds input and clock without consumption; the next simulated batch receives retained movement/look/use exactly once.",
+          "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+          "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+        ],
+        "exact_replay_ticks": 248
+      },
+      {
+        "name": "tick-playback-gpu0",
+        "gpu": 0,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-playback-gpu0/run-5d5e890cdda741289f4416de38713f1b/result.json",
+          "sha256": "75735ad67e056236ac26cd4f588864f9ac65fd7ab50e96270557c227b4047c52",
+          "bytes": 215535
+        },
+        "log": {
+          "path": "build/tick-playback-gpu0.log",
+          "sha256": "b404280312f2d9ef2b57e87b36e71bcea022015bdd01e8c59566938ae862edc3",
+          "bytes": 141
+        },
+        "checks": 8,
+        "calls": 156,
+        "coverage": [
+          "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+          "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+          "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+          "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+          "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+          "Actual Vulkan Game captures preserve frozen camera pose/lens; auto-play holds queued capture, resumes without catch-up, and view changes invalidate capture.",
+          "Missing authored camera after Stop is a recoverable presentation error; Scene restores the same viewport with zero backend errors.",
+          "A genuine animation sampling failure preserves automatic ticks15\u201317 and pauses before18; explicit four-tick Step still rolls back all state, with unchanged authored bytes/history."
+        ],
+        "automatic_failure_committed_tick": 17,
+        "explicit_failure_retained_tick": 14
+      },
+      {
+        "name": "tick-desktop-full-final",
+        "gpu": 1,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-desktop-full-final/ee36f2ebf41643e4955532ab94806fde/evidence.json",
+          "sha256": "37b672fd41c38406bcd8b871be5aa237a42e400f977d9e5a6b9fdc3fd8d65ac2",
+          "bytes": 1031397
+        },
+        "log": {
+          "path": "build/tick-desktop-full-final.log",
+          "sha256": "e291920298cf5d48aaed18e32079f610fadb221bdbc72ecf3b291d940ec190d5",
+          "bytes": 93
+        },
+        "actions": 232,
+        "restart_actions": 4,
+        "coverage": [
+          "actual Avalonia Vulkan backend with native child Scene",
+          "shared CLI connection",
+          "dirty draft preserved; stale Apply rejects; Reload explicit",
+          "undo/redo and fixed-tick runtime",
+          "invalid raw field survives floating/reset; dirty close cancelled",
+          "missing-asset Scene error recovers after authoring repair without reattachment",
+          "actual Inspector and Scene floating windows; reset and continued presentation",
+          "native HWND look/fly/frame/click messages; input released cleanly",
+          "saved floating layout restores its panel structure and bounds, including a fresh process",
+          "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+          "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+          "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+          "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+          "independent Game HWND gestures preserve Scene camera; both panes render in one shared session",
+          "paused Game capture and Stop preserve authored transforms/revision/history",
+          "revision-guarded native viewport capture",
+          "bounded process exit",
+          "window screenshot unavailable; semantic GUI and native Scene capture qualified separately"
+        ],
+        "window_capture": {
+          "status": "unavailable",
+          "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+        }
+      },
+      {
+        "name": "tick-profiler-gui-final",
+        "gpu": 1,
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/tick-profiler-gui-final/887e4b60a0d44616b89115328b4cf15c/evidence.json",
+          "sha256": "3857857091733d5f5a8bdaa2e6c1ee08661b70461991222bf84efa25d46543d0",
+          "bytes": 296519
+        },
+        "log": {
+          "path": "build/tick-profiler-gui-final.log",
+          "sha256": "483bda4264312f7d51196e04c6396e54eff0bcd461e277a94d7def9957b77434",
+          "bytes": 93
+        },
+        "actions": 43,
+        "coverage": [
+          "Actual controls record native fixed ticks and both viewport sources; summary percentiles, CPU selection and exact native export agree.",
+          "Stale Record preserves the loaded capture and pending request; empty/full/replaced captures load explicitly; closing the tool preserves native recording."
+        ],
+        "visual": {
+          "path": "build/tick-profiler-gui-final/887e4b60a0d44616b89115328b4cf15c/profiler.png",
+          "sha256": "7c935d47efdc5546eb63a49db722195f10b88f0076419c1ad86f36a54309cfed",
+          "bytes": 148510
+        },
+        "visual_review": "Attached Profiler content remains readable; not an OS screenshot."
+      }
+    ],
+    "native_test_coverage": [
+      "120 typed-versus-one-tick-RPC comparisons preserve controller, camera and dynamic-body state exactly.",
+      "Closed/inactive/wrong-session/stale-tick/invalid-input guards reject without mutation; typed ticks do not allocate or evict public RPC receipts.",
+      "A real Jolt contact-capacity failure rolls back body state and tick, with failure/rollback scopes recorded.",
+      "Input commit runs with global allocation refusal and noexcept assertions; backlog, held keys, edges, neutral gating and stick-rate semantics pass."
+    ],
+    "source_and_run_aggregation": {
+      "path": "build/tick-windows-validation.json",
+      "sha256": "1229cb86766b62882d0f338b0c71c47a5605187d06880cb1310fdee89a6df4eb",
+      "bytes": 6653
+    }
+  },
+  "review": {
+    "failures": [],
+    "build_warnings": [
+      "Existing Vulkan-Headers deprecated implicit copy-assignment warning; no renderer implementation change.",
+      "Existing obsolete Bitmap.Save overload warnings in GameplayWindow and SaveWindow.",
+      "GCC variable-tracking-size fallback in the existing world schema description."
+    ],
+    "changes_after_main_build": "Test-only explicit-receipt-retention strengthening; final Linux and Windows native test binaries rerun."
+  },
+  "limitations": [
+    "Per-tick automatic commits intentionally differ from explicit multi-tick all-or-nothing requests. Earlier successful saves cannot be undone by a later automatic failure.",
+    "The input trace covers at most the most recent eight committed controlled ticks; it is not retained simulation history or a general replay recording system.",
+    "Editor physical gamepad acquisition and native audio output remain unconnected. This establishes their tick boundary, not completed device integration.",
+    "Native owner, storage and presentation remain synchronous. No new asynchronous scheduler, sustained frame-time, game-performance or checkpoint-overhead claim.",
+    "Windows HWND and semantic Avalonia tests use synthetic events. The session was locked; no OS screenshot, physical input feel, general DPI/IME/accessibility or power-loss qualification.",
+    "Both GPUs are on one laptop; broad shipped-game hardware, Linux hardware rendering and console qualification remain unfinished."
+  ]
+}

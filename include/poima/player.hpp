@@ -15,6 +15,9 @@ public:
     void button(PlayerAction action, bool down);
     void look(double yaw, double pitch);
     void clear();
+    // Commit an already prepared tick without allocating an ignored entity ID.
+    // Held controls remain; mouse backlog drains by at most 180 degrees/axis.
+    void commit_tick() noexcept;
     RuntimeInput consume(const std::string& entity);
 };
 class PlayerClock {

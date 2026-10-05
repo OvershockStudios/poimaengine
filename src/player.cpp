@@ -23,8 +23,12 @@ void PlayerInput::clear() { held_.fill(false); look_.fill(0); jump_=false;use_=f
 RuntimeInput PlayerInput::consume(const std::string& entity) {
     RuntimeInput result; result.entity=entity;
     result.move={float(held_[3])-float(held_[2]),float(held_[0])-float(held_[1])};
-    for(std::size_t k=0;k<2;++k) { const auto value=std::clamp(look_[k],-180.0,180.0); result.look[k]=static_cast<float>(value); look_[k]-=value; }
-    result.jump=jump_;result.use=use_;jump_=false;use_=false;return result;
+    for(std::size_t k=0;k<2;++k)result.look[k]=static_cast<float>(std::clamp(look_[k],-180.0,180.0));
+    result.jump=jump_;result.use=use_;commit_tick();return result;
+}
+void PlayerInput::commit_tick() noexcept {
+    for(auto& value:look_)value-=std::clamp(value,-180.0,180.0);
+    jump_=false;use_=false;
 }
 std::uint32_t PlayerClock::advance(double elapsed,bool active) {
     if(!std::isfinite(elapsed) || elapsed<0) throw std::invalid_argument("Invalid frame duration.");

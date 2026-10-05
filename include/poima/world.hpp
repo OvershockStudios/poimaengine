@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include "poima/profiler.hpp"
+#include "poima/runtime.hpp"
 #include <memory>
 #include <string>
 #include <string_view>
@@ -29,6 +30,10 @@ struct WorldGameplayStatus {
 struct WorldProfilerContext {
     std::array<char,33> session{};
     std::int64_t tick=-1;
+};
+struct WorldTickAdvance {
+    std::uint64_t committed_tick=0,current_tick=0;
+    bool replaced=false,save_serviced=false;
 };
 struct WorldSaveStatus {
     std::uint64_t generation=0;
@@ -62,6 +67,13 @@ public:
     profiling::Recorder& profiler() noexcept;
     WorldProfilerContext profiler_context() const;
     WorldRuntimeStatus runtime_status() const;
+    // Owner-only automatic playback: exactly one atomic tick, then any queued
+    // save/load service. No RPC receipt is created. Success is committed even
+    // if a later presentation operation fails; never retry it as a new tick.
+    // A replacement's current_tick belongs to the fresh runtime. The caller
+    // must reacquire its identity and release old input before continuing.
+    WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
+        const std::vector<RuntimeInput>& inputs={});
     // Counters only: does not serialize gameplay schema or field values.
     WorldGameplayStatus gameplay_status() const;
     // Session configuration only; does not inspect or create storage files.

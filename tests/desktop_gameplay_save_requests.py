@@ -149,20 +149,24 @@ def main():
         check(desktop.gameplay(sid)['module']['backend'] == 'coreclr', 'Wrong fixture backend.')
         check(not list(storage.iterdir()), 'Configuration/Initialize touched storage.')
         desktop.rpc('desktop.play.resume', dict(session_id=sid))
-        first = desktop.wait(lambda s: s['runtime']['tick'] > 0, 'automatic Tick-originated save')
+        time.sleep(.23)
+        first = desktop.poll()
         values = desktop.gameplay(sid)['module']['values']
         status = desktop.rpc('runtime.save.status', dict(session_id=sid))
-        ticket = dict(epoch=status['epoch'], sequence=int(values['TicketSequence']))
+        # Later ticks in this poll may already have cleared the game's pending
+        # token. The first native request in this epoch has sequence one.
+        ticket = dict(epoch=status['epoch'], sequence=1)
         operation = desktop.rpc('runtime.save.result', ticket)
         saved_tick = operation['committed_tick']
         check(operation['state'] == 3 and operation['kind'] == 1 and operation['generation'] == 1, operation)
-        check(operation['requested_tick'] == 0 and 1 <= saved_tick <= 8 and first['runtime']['tick'] == saved_tick, operation)
+        check(operation['requested_tick'] == 0 and saved_tick == 1 and 1 <= first['runtime']['tick'] <= 8,
+              {'operation': operation, 'runtime': first['runtime']})
         check(values['Requests'] == 1 and values['QueuedState'] == 1 and values['BusyRejection'] == 2 and status['pending'] is None, values)
         check(first['playback']['state'] == 'playing', 'Save unexpectedly paused the automatic clock.')
         slot = desktop.rpc('save.inspect', dict(slot='quick'))
         check(slot['current']['generation'] == 1 and slot['current']['verified'], slot)
         store_hashes = inventory(storage)
-        record['checks'].append('Automatic playback executes real Tick save after its bounded whole batch; memory result identifies requested and committed ticks.')
+        record['checks'].append('Automatic playback commits a Tick-zero save exactly at tick1, independently of later due ticks in the same poll.')
 
         for method in ('save.configure', 'save.write', 'save.load'):
             desktop.rpc(method, {}, error=-32009)
@@ -186,15 +190,17 @@ def main():
         desktop.rpc('desktop.input.events', dict(session_id=sid, request_id=uuid.uuid4().hex,
             events=[{'control': 'key.w', 'down': True}, {'motion': [5, -2]}]))
         check(desktop.rpc('desktop.input.inspect')['focused'], 'Protocol input fixture failed to engage.')
-        after = desktop.wait(lambda s: s['runtime']['session_id'] != sid, 'automatic Tick-originated load')
+        time.sleep(.23)
+        after = desktop.poll()
         fresh = after['runtime']['session_id']
+        check(fresh != sid, 'First automatic fixed tick did not adopt the requested load.')
         check(after['runtime']['tick'] == saved_tick and after['playback']['state'] == 'paused', after['playback'])
         check(after['playback']['last_error'] is None and after['playback']['dropped_seconds'] == 0, after['playback'])
         check(not after['input']['configured'] and not after['input']['focused'] and after['input']['accepted_batches'] == 0, after['input'])
         check(after['gameplay']['runtime']['session_id'] == fresh, 'Gameplay metadata retained the old session.')
         restored = desktop.rpc('runtime.save.status', dict(session_id=fresh))
         restore = restored['last_restore']
-        check(restored['epoch'] != ticket['epoch'] and restore['restored_tick'] == saved_tick and source_tick < restore['source_tick'] <= source_tick+8, restore)
+        check(restored['epoch'] != ticket['epoch'] and restore['restored_tick'] == saved_tick and restore['source_tick'] == source_tick+1, restore)
         load_ticket = dict(epoch=restore['initiating_epoch'], sequence=restore['initiating_sequence'])
         loaded = desktop.rpc('runtime.save.result', load_ticket)
         check(loaded['state'] == 3 and loaded['kind'] == 2 and loaded['restored_epoch'] == restored['epoch'], loaded)
@@ -219,6 +225,79 @@ def main():
         check(desktop.rpc('desktop.input.inspect')['configured'], 'Exact retry repeated session activation/input clearing.')
         check(inventory(storage) == store_hashes and sha(world) == source_hash, 'Continuation/retry changed stored checkpoint or world.')
         record['checks'].append('Paused step exposes source/current replacement metadata; exact old-session retry is inert and restored saved tokens do not reenact commands.')
+        # Identical C# failure contrasts explicit batch atomicity with automatic
+        # per-tick commits: the fourth callback throws after the first requested
+        # a save. Only automatic advancement may have published that save.
+        desktop.edit(second, Mode=1, TriggerTick=saved_tick, ThrowTick=saved_tick+3, ExpectedGeneration=1)
+        initial_game = desktop.gameplay(second)
+        initial_body = desktop.rpc('runtime.entity', dict(session_id=second, id=controller))
+        initial_disk = inventory(storage)
+        failed = dict(session_id=second, request_id=uuid.uuid4().hex, expected_tick=saved_tick, ticks=4)
+        desktop.rpc('desktop.play.step', failed, error=-32040)
+        check(desktop.rpc('desktop.play.inspect')['tick'] == saved_tick and desktop.gameplay(second) == initial_game,
+              'Explicit failed batch retained earlier C# changes.')
+        check(desktop.rpc('runtime.entity', dict(session_id=second, id=controller)) == initial_body,
+              'Explicit failed batch retained earlier physics changes.')
+        check(inventory(storage) == initial_disk and desktop.rpc('save.inspect', dict(slot='quick'))['generation'] == 1,
+              'Explicit failed batch published a save before committing.')
+        record['checks'].append('Explicit four-tick batch failure restores complete C# and controller state and performs no durable save.')
+
+        desktop.rpc('desktop.play.resume', dict(session_id=second))
+        desktop.rpc('desktop.input.focus', dict(session_id=second, focused=True))
+        desktop.rpc('desktop.input.events', dict(session_id=second, request_id=uuid.uuid4().hex,
+            events=[{'control': name, 'down': True} for name in ('key.w', 'key.space', 'key.e')]+[{'motion': [30, -20]}]))
+        time.sleep(.23)
+        committed = desktop.poll()
+        committed_tick = saved_tick+3
+        check(committed['playback']['state'] == 'paused' and committed['runtime']['tick'] == committed_tick
+              and committed['playback']['last_error'], committed['playback'])
+        committed_game = desktop.gameplay(second)
+        committed_body = desktop.rpc('runtime.entity', dict(session_id=second, id=controller))
+        fields = committed_game['module']['values']
+        check(fields['Ticks'] == initial_game['module']['values']['Ticks']+3 and fields['Requests'] == 2
+              and fields['LastState'] == 3 and fields['TicketSequence'] == '0', fields)
+        check(abs(committed_body['yaw']-initial_body['yaw']+3) < 1e-6
+              and abs(committed_body['pitch']-initial_body['pitch']-2) < 1e-6, committed_body)
+        check(committed_body['world_matrix'][14] < initial_body['world_matrix'][14]-.05,
+              'Earlier successful automatic ticks did not preserve real forward movement.')
+        inputs = committed['input']
+        check(inputs['configured'] and not inputs['focused'] and inputs['pending'] ==
+              {'move': [0, 0], 'look': [0, 0], 'jump': False, 'use': False}, inputs)
+        applied = inputs['last_applied']
+        first_input = {'entity': controller, 'move': [0, 1], 'look': [-3, 2], 'jump': True, 'use': True}
+        held_input = dict(first_input, look=[0, 0], jump=False, use=False)
+        check(applied['first_tick'] == saved_tick+1 and applied['ticks'] == 3 and applied['input'] == first_input
+              and applied['frames'] == [first_input, held_input, held_input], applied)
+        active_save = desktop.rpc('runtime.save.status', dict(session_id=second))
+        saved_operation = desktop.rpc('runtime.save.result', dict(epoch=active_save['epoch'], sequence=1))
+        check(saved_operation['state'] == 3 and saved_operation['generation'] == 2
+              and saved_operation['requested_tick'] == saved_tick and saved_operation['committed_tick'] == saved_tick+1,
+              saved_operation)
+        committed_disk = inventory(storage)
+        check(committed_disk != initial_disk and desktop.rpc('save.inspect', dict(slot='quick'))['current']['verified'],
+              'Earlier committed save was lost when a later automatic tick failed.')
+        time.sleep(.08)
+        retained = desktop.poll()
+        check(retained['runtime']['tick'] == committed_tick and retained['playback']['last_error'] == committed['playback']['last_error'],
+              'Failed automatic callback retried itself or lost the failure diagnostic.')
+        check(desktop.gameplay(second) == committed_game and inventory(storage) == committed_disk,
+              'Paused callback changed the successfully committed prefix.')
+        record['automatic_failure'] = {'poll': committed, 'controller': committed_body, 'gameplay': committed_game,
+                                       'saved_operation': saved_operation}
+        record['checks'].append('Automatic failure preserves its first three C#/physics ticks and first-tick durable save; movement persists while look/jump/use consume once, then input clears.')
+
+        desktop.edit(second, ThrowTick=-1)
+        desktop.rpc('desktop.play.resume', dict(session_id=second))
+        time.sleep(.04)
+        recovered = desktop.poll()
+        check(recovered['runtime']['tick'] > committed_tick and recovered['playback']['last_error'] is None, recovered['playback'])
+        recovered_body = desktop.rpc('runtime.entity', dict(session_id=second, id=controller))
+        check(recovered_body['yaw'] == committed_body['yaw'] and recovered_body['pitch'] == committed_body['pitch'],
+              'Resume reapplied old look input after the failed tick.')
+        check(sha(world) == source_hash and desktop.rpc('world.history') == history and inventory(storage) == committed_disk,
+              'Recovery changed authored data/history or repeated the committed save.')
+        desktop.rpc('desktop.play.stop', dict(session_id=second))
+        record['checks'].append('Explicit recovery resumes from the committed prefix without replaying old input, failed callbacks or completed saves.')
         record.update(success=True, saved_tick=saved_tick, load_source_tick=restore['source_tick'],
             first_session=sid, restored_session=fresh, second_restored_session=second,
             authored_sha256=source_hash, final_state=desktop.rpc('desktop.inspect'))

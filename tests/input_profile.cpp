@@ -1,10 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/input_profile.hpp"
 #include <cmath>
+#include <cstdlib>
+#include <new>
+#include <utility>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
 using namespace poima;
+namespace { bool reject_allocations=false; }
+void* operator new(std::size_t size) {
+    if(reject_allocations)throw std::bad_alloc();
+    if(auto* memory=std::malloc(size ? size : 1))return memory;
+    throw std::bad_alloc();
+}
+void operator delete(void* memory) noexcept { std::free(memory); }
+void operator delete(void* memory,std::size_t) noexcept { std::free(memory); }
+static_assert(noexcept(std::declval<PlayerInput&>().commit_tick()));
+static_assert(noexcept(std::declval<BoundPlayerInput&>().commit_tick()));
 namespace {
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
 void key(BoundPlayerInput& input,std::uint16_t code,bool down=true) { input.control(InputControlKind::keyboard,code,down); }
@@ -21,6 +34,35 @@ void rejects(const InputProfile& profile) {
 int main() {
     try {
         auto defaults=default_input_profile();validate_input_profile(defaults);
+        // Prepare every potentially allocating value before a committed tick.
+        // A regression allocating during commit terminates this test under the
+        // noexcept contract instead of silently losing post-commit input state.
+        BoundPlayerInput committed(default_gamepad_input_profile());
+        committed.gamepad_connect();committed.gamepad_axis(2,32767);
+        key(committed,26);key(committed,44);key(committed,8);
+        committed.motion(4300,-2700);
+        const std::string long_entity(200,'a');
+        const auto prepared=committed.peek(long_entity);
+        check(prepared.look==std::array<float,2>{-180,180} && prepared.jump && prepared.use,
+            "Committed backlog fixture was not prepared.");
+        check(equal(prepared,committed.peek(long_entity)),"Uncommitted preparation consumed input.");
+        reject_allocations=true;committed.commit_tick();reject_allocations=false;
+        auto following=committed.peek(long_entity);
+        check(following.move==std::array<float,2>{0,1} && !following.jump && !following.use &&
+            following.look==std::array<float,2>{-180,90},"Commit lost held movement, drained excess motion, or repeated edges.");
+        reject_allocations=true;committed.commit_tick();reject_allocations=false;
+        check(committed.peek(long_entity).look==std::array<float,2>{-73,0},"Second committed tick lost mouse remainder or stick rate.");
+        reject_allocations=true;committed.commit_tick();reject_allocations=false;
+        check(committed.peek(long_entity).look==std::array<float,2>{-3,0},"Mouse backlog contaminated continued gamepad rate.");
+        for(int i=0;i<60;++i) { reject_allocations=true;committed.commit_tick();reject_allocations=false; }
+        check(committed.peek(long_entity).look==std::array<float,2>{-3,0},"Commit consumed a held stick rate.");
+        committed.gamepad_disconnect();
+        check(committed.peek(long_entity).look==std::array<float,2>{0,0},"Disconnected stick retained a synthetic backlog.");
+        PlayerInput direct;direct.button(PlayerAction::forward,true);direct.button(PlayerAction::jump,true);direct.look(430,-270);
+        reject_allocations=true;direct.commit_tick();reject_allocations=false;
+        const auto direct_next=direct.consume(long_entity);
+        check(direct_next.move[1]==1 && !direct_next.jump && direct_next.look==std::array<float,2>{180,-90},
+            "PlayerInput no-allocation commit differs from consume semantics.");
         BoundPlayerInput original(defaults);
         key(original,26);key(original,7);key(original,44);key(original,44,false);
         key(original,8);key(original,8,false);original.motion(20,-10);

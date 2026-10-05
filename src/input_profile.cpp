@@ -257,7 +257,8 @@ RuntimeInput BoundPlayerInput::frame(const std::string& entity,PlayerInput& pend
     return result;
 }
 RuntimeInput BoundPlayerInput::peek(const std::string& entity) const { auto pending=input_;return frame(entity,pending); }
+void BoundPlayerInput::commit_tick() noexcept { input_.commit_tick();edges_={}; }
 RuntimeInput BoundPlayerInput::consume(const std::string& entity) {
-    auto result=frame(entity,input_);edges_={};return result;
+    auto pending=input_;auto result=frame(entity,pending);commit_tick();return result;
 }
 }

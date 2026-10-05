@@ -814,6 +814,24 @@ public:
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision; }
         return status;
     }
+    WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
+        const std::vector<RuntimeInput>& inputs) {
+        require(expected_session.size()==32 && std::all_of(expected_session.begin(),expected_session.end(),[](char c) {
+            return (c>='0' && c<='9') || (c>='a' && c<='f');
+        }),"ID must be 32 lowercase hexadecimal characters.");
+        require(expected_tick<=max_revision,"Runtime tick exceeds supported range.");
+        require(bool(runtime_),"No runtime is active.",-32030);
+        require(expected_session==runtime_id_,"Runtime session conflict.",-32031);
+        require(expected_tick==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        // The native gameplay ABI has a fixed 32-controller input array. The
+        // JSON route already enforces this; the typed route must do so too.
+        require(inputs.size()<=32,"Runtime inputs must contain at most 32 characters.");
+        for(const auto& input:inputs)require(input.entity.size()==32 && std::all_of(input.entity.begin(),input.entity.end(),[](char c) {
+            return (c>='0' && c<='9') || (c>='a' && c<='f');
+        }),"Input entity ID must be 32 lowercase hexadecimal characters.");
+        const auto result=advance_runtime(1,inputs);
+        return {result.committed_tick,result.current_tick,result.replaced,result.save_serviced};
+    }
     WorldGameplayStatus gameplay_status() const {
         WorldGameplayStatus status;status.active=bool(runtime_);
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.revision=runtime_->gameplay_revision(); }
@@ -2204,6 +2222,12 @@ WorldPackageContent WorldSession::package_content() const {
 }
 WorldRuntimeStatus WorldSession::runtime_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_status();
+}
+WorldTickAdvance WorldSession::advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
+    const std::vector<RuntimeInput>& inputs) {
+    require(!closed(),"World session is closed.",-32001);
+    profiling::Binding trace(&impl_->world.profiler());
+    return impl_->world.advance_tick(expected_session,expected_tick,inputs);
 }
 std::vector<std::pair<std::string,std::string>> WorldSession::runtime_hierarchy() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_hierarchy();

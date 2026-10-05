@@ -493,27 +493,34 @@ struct Bridge : ViewportState {
         if(!playing || held || capture_hold) { play_clock.advance(0,false);capture_hold=held;return; }
         try {
             const auto ticks=play_clock.advance(elapsed,true);if(!ticks)return;
-            std::random_device random;std::string receipt(32,'0');constexpr char hex[]="0123456789abcdef";
-            for(auto& digit:receipt)digit=hex[random()&15];
-            Json parameters={{"session_id",play_session},{"request_id",receipt},{"expected_tick",play_tick},{"ticks",ticks}};
             const bool apply=game_input && input_focused;
-            Json applied=nullptr;
-            if(apply) {
-                auto input=input_frame(game_input->peek(input_controller),true);parameters["inputs"]=Json::array({input});
-                applied={{"first_tick",play_tick+1},{"ticks",ticks},{"input",std::move(input)}};
+            for(std::uint32_t index=0;index<ticks;++index) {
+                // Prepare all allocating input/inspection data before entering
+                // the transaction. Only a successful tick consumes its edges
+                // and publishes this poll's committed input prefix.
+                std::vector<RuntimeInput> inputs;
+                Json applied=nullptr;
+                if(apply) {
+                    inputs.push_back(game_input->peek(input_controller));
+                    auto frame=input_frame(inputs.front(),true);
+                    applied=index==0 ? Json{{"first_tick",play_tick+1},{"ticks",0},{"input",frame},{"frames",Json::array()}} : last_input_applied;
+                    applied["frames"].push_back(std::move(frame));
+                    applied["ticks"]=index+1;
+                }
+                const auto result=world->advance_tick(play_session,play_tick,inputs);
+                if(result.replaced) {
+                    // No source-world input or presentation may reach the
+                    // restored world, even when catch-up ticks remain.
+                    sync_playback();expire_gizmo();expire_capture();play_last=Clock::now();return;
+                }
+                play_tick=result.current_tick;
+                if(apply) { game_input->commit_tick();last_input_applied.swap(applied); }
+                // Each automatic tick is its own commit. Earlier successful
+                // ticks survive a later failure; explicit RPC batches retain
+                // their existing all-or-nothing rollback contract.
+                // Synchronous storage time must not become catch-up work.
+                if(result.save_serviced)play_last=Clock::now();
             }
-            const auto result=world_call("runtime.step",parameters);
-            if(result.at("runtime_replaced").get<bool>()) {
-                // The committed source tick is not the restored world's tick.
-                // Synchronization pauses and releases old input before another
-                // callback can touch the replacement.
-                sync_playback();expire_gizmo();expire_capture();play_last=Clock::now();return;
-            }
-            play_tick=result.at("current_tick");
-            if(apply) { game_input->consume(input_controller);last_input_applied=std::move(applied); }
-            // Synchronous storage must not become catch-up simulation work.
-            // Keep ordinary stepping time in the clock when no save was serviced.
-            if(result.at("save_serviced").get<bool>())play_last=Clock::now();
         }catch(const std::exception& failure) {
             playing=false;release_input();play_clock.advance(0,false);capture_hold=false;
             const auto state=world->runtime_status();play_tick=state.active ? state.tick : 0;
@@ -828,7 +835,7 @@ struct Bridge : ViewportState {
         methods["desktop.capture"]=object({{"revision",integer_schema},{"path",{{"type","string"},{"minLength",1}}},{"view",{{"enum",{"scene","game"}}}}},{"revision","path"});
         methods["desktop.capture.status"]=object({{"capture_id",{{"type","integer"},{"minimum",1},{"maximum",max_integer}}}},{"capture_id"});
         return {{"methods",methods},{"world_methods","world.describe"},{"viewports",{{"names",{"scene","game"}},{"binding","Named HWNDs are independent and cannot be mixed with legacy viewport ABI. One creating UI thread; one shared world and owner poll clock."},{"camera","desktop.camera controls Scene; desktop.game.camera selects Game camera or null. Attach is lazy; missing camera/asset errors remain local and repairable."},{"state","desktop.inspect.views reports attachment, extent, graphics/preparation errors and presentation metadata per pane."}}},{"capture",{{"completion","Asynchronous: queue returns capture_id/state; inspect status after poll/draw."},{"capacity",1},{"retained_results",1},{"timeout_ms",2000},{"guards","Authored revision, runtime session and tick plus target camera; Scene also guards gizmo/selection. Only target draw completes the job. Default target is Scene for named panes or current legacy view."},{"format","BMP; native viewport only; exclusive new path"}}},
-            {"playback",{{"clock","Owner poll only; fixed 60 Hz; at most 8 catch-up ticks/poll; excess wall time is dropped and reported. Inspect, draw and capture never step."},
+            {"playback",{{"clock","Owner poll only; fixed 60 Hz; at most 8 catch-up ticks/poll; each automatic tick commits independently. A failed tick pauses at the last successful tick. Explicit multi-tick runtime.step remains atomic. Excess wall time is dropped and reported. Inspect, draw and capture never step."},
                 {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits and save.configure/save.write/save.load. Successful save.load opens a fresh paused session with cleared input. Stop discards runtime without authored writes."},
                 {"capture","A queued capture holds automatic ticking until completion/error; resume discards the held wall-time interval."},
                 {"background","Playback continues while the owner polls, including hidden/detached viewports. Gameplay input has a separate explicit focus gate; editor audio playback is not connected."}}},
@@ -842,8 +849,8 @@ struct Bridge : ViewportState {
                 {"configure","Active runtime controller and read-only frozen profile; missing profile means keyboard/mouse v1 defaults. input_revision requires input_profile. Successful reconfiguration releases old input; validation failure preserves it."},
                 {"focus","Explicit focus true requires playing Game view using the configured controller camera. Pause, Game camera change, Game detachment or focus false releases held controls and pending edges/look; Stop/session replacement drops configuration. Resume does not regain focus."},
                 {"events","Ordered atomic batches with request_id and the latest 32 successful in-memory receipts per runtime session. Exact retries return the original accepted result with replayed:true without reinjection, even after focus loss, pause or reconfiguration; changed payload conflicts. Stop/session replacement discards receipts. Beyond retention, a forgotten ID is a new request; inspect before recovery. No authored or storage writes. Repeated control-down does not retrigger held actions. Capture hold retains pending input until a committed tick."},
-                {"commit","One atomic runtime.step batch applies look/jump/use on its first tick and movement throughout. Consume pending edges/look only after success. A failed batch pauses playback and clears focus/input; it never replays a partially applied batch."},
-                {"inspection","configured,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks and complete input including entity for the last committed controlled batch."}}},
+                {"commit","Automatic playback evaluates and commits one tick at a time. Consume pending edges and up to 180 degrees of mouse backlog per axis only after each success; held movement and analog rates apply every tick. A failed tick pauses playback and clears focus/input, retaining earlier committed ticks and their input trace."},
+                {"inspection","configured,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks, the first input and frames (one complete input including entity per committed tick, at most 8) for the last controlled poll. On failure it retains the successful prefix. Use frames for exact replay, including mouse backlog across ticks."}}},
             {"views",{{"scene","Free inspection camera; authored or runtime world."},{"game","Explicit Camera entity, authored when stopped, frozen runtime lens and live pose while active. No automatic camera replacement if a camera is absent after Stop; choose another camera or Scene."}}},
             {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
             {"gizmo",{{"coordinates","Physical client pixels, top-left; attached extent must match. begin hit-tests handles. World/local axes; default move/world."},

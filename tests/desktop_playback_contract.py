@@ -445,7 +445,8 @@ try:
     unchanged(storage, history)
 
     # A valid authored clip has positive endpoint scale keys but crosses through
-    # zero between them. This produces a real atomic Runtime::step failure.
+    # zero between them. Explicit requests remain atomic, whereas automatic
+    # playback commits each successful fixed tick before attempting the next.
     doc, blob = ribbon(cubic=True)
     doc['animations'][0]['channels'][0]['target']['path'] = 'scale'
     accessor = doc['accessors'][doc['animations'][0]['samplers'][0]['output']]
@@ -460,26 +461,38 @@ try:
     transact([{'op': 'asset.instantiate', 'id': rig, 'asset': asset, 'name': 'Atomic failure rig'}])
     sid = start(paused=True)
     command = {'entity': rig, 'clip': 0, 'time': 0, 'speed': 1, 'loop': True, 'playing': True}
-    play('step', step_params(sid, ticks=10, animations=[command]))
+    play('step', step_params(sid, ticks=14, animations=[command]))
     storage, history = world.read_bytes(), rpc('world.history')
+    tip = hashlib.sha256(f'poima.instance.v1/{rig}/node/1'.encode()).hexdigest()[:32]
+    watched = [rig, tip, manifest['entry']['controller']]
+    before_failure = [rpc('runtime.entity', {'session_id': sid, 'id': identity}) for identity in watched]
+    # Key times are 0 and 2 seconds; Hermite endpoint tangents are -4 and
+    # +4. The independent polynomial is 1 - 4*t + 2*t*t. Tick17 is positive
+    # and tick18 is negative, so a four-tick request from14 must roll back.
+    check(1-4*(17/60)+2*(17/60)**2 > 0 and 1-4*(18/60)+2*(18/60)**2 < 0, 'Invalid analytic fixture.')
+    play('step', step_params(sid, ticks=4), expected_error=-32040)
+    check(playback()['tick'] == 14 and playback()['state'] == 'paused', 'Explicit failed batch did not roll back all four ticks.')
+    after_failure = [rpc('runtime.entity', {'session_id': sid, 'id': identity}) for identity in watched]
+    check(before_failure == after_failure, 'Explicit batch failure changed bone/rig/controller state.')
     play('resume', {'session_id': sid})
-    previous = playback()['tick']
-    deadline = time.monotonic()+3
-    while time.monotonic() < deadline:
-        time.sleep(.05); poll()
-        state = playback()
-        if state['state'] == 'paused':
-            check(state['tick'] == previous and state['last_error'], 'Failed batch partly advanced or did not expose the error.')
-            break
-        previous = state['tick']
-    else:
-        raise AssertionError('Invalid sampled animation did not pause real-time playback.')
+    # Deliberately accumulate more than four due ticks. This forces the failure
+    # into the same automatic poll as its three successful predecessors.
+    time.sleep(.23); poll()
+    state = playback()
+    check(state['state'] == 'paused' and state['tick'] == 17 and state['last_error'],
+          'Automatic failure lost earlier committed ticks, committed invalid tick18, or did not pause: '+str(state))
+    animated = rpc('runtime.entity', {'session_id': sid, 'id': rig})
+    bone = rpc('runtime.entity', {'session_id': sid, 'id': tip})
+    check(abs(animated['animation']['time']-17/60) < 1e-12, animated)
+    scale = bone['local_transform']['scale']
+    check(abs(scale[0]-(1-4*(17/60)+2*(17/60)**2)) < 1e-10 and scale[1:] == [1, 1], bone)
     record['failed_clock'] = state
+    record['committed_animation_before_failure'] = {'rig': animated, 'bone': bone}
     time.sleep(.07); poll()
-    check(playback()['tick'] == previous, 'Playback retried a failing tick automatically.')
+    check(playback()['tick'] == 17 and playback()['last_error'] == state['last_error'], 'Playback retried a failing tick or lost its diagnostic automatically.')
     play('stop', {'session_id': sid})
     unchanged(storage, history)
-    checks.append('A genuine animation sampling failure rolls back the entire batch, pauses playback, exposes the error, and preserves authored bytes/history.')
+    checks.append('A genuine animation sampling failure preserves automatic ticks15–17 and pauses before18; explicit four-tick Step still rolls back all state, with unchanged authored bytes/history.')
     record['final_state'] = rpc('desktop.inspect')
     record['success'] = True
 except BaseException:

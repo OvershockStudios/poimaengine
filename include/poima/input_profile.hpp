@@ -76,6 +76,8 @@ public:
     bool gamepad_armed() const { return armed_; }
     // Peek copies only the small pending-input accumulator, not the profile.
     RuntimeInput peek(const std::string& entity) const;
+    // No allocation or failure after the owner has committed this fixed tick.
+    void commit_tick() noexcept;
     RuntimeInput consume(const std::string& entity);
 };
 }

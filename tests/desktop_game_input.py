@@ -218,11 +218,15 @@ def pump(delay=.04, draw=False):
     state = input_state()
     if before is not None and after is not None and after > before:
         applied = state['last_applied']
-        values = []
         if applied is not None and applied['first_tick'] == before+1:
             check(applied['ticks'] == after-before, applied)
-            values = [applied['input']]
-        timeline.append({'ticks': after-before, 'inputs': values})
+            frames = applied['frames']
+            check(len(frames) == applied['ticks'] and 1 <= len(frames) <= 8, applied)
+            check(frames[0] == applied['input'], 'Legacy first-frame metadata changed.')
+            for frame in frames:
+                timeline.append({'ticks': 1, 'inputs': [frame]})
+        else:
+            timeline.append({'ticks': after-before, 'inputs': []})
     if draw:
         check(library.poima_desktop_draw(host) >= 0, error(host))
     return state
@@ -328,6 +332,21 @@ try:
     check_zero(); focus(True)
     checks.append('Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.')
     checks.append('Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.')
+
+    # A mouse displacement can span several fixed ticks. Treating one pump as
+    # a batch with first-tick look loses the remaining 250 degrees here.
+    before_backlog = entity()['yaw']
+    events([control('key.w'), control('key.space'), control('key.e'), {'motion': [4300, 0]}])
+    burst = pump(.15)
+    frames = burst['last_applied']['frames']
+    check(len(frames) == 8, 'Catch-up fixture did not exercise the eight-tick budget.')
+    check([frame['look'] for frame in frames] == [[-180, 0], [-180, 0], [-70, 0]]+[[0, 0]]*5, frames)
+    check(all(frame['move'] == [0, 1] for frame in frames), frames)
+    check(frames[0]['jump'] and frames[0]['use'] and all(not frame['jump'] and not frame['use'] for frame in frames[1:]), frames)
+    check(abs(entity()['yaw']-math.remainder(before_backlog-430, 360)) < 1e-6, 'Committed catch-up lost mouse backlog.')
+    check(burst['pending'] == {'move': [0, 1], 'look': [0, 0], 'jump': False, 'use': False}, burst)
+    events([control('key.w', False), control('key.space', False), control('key.e', False)])
+    checks.append('Eight-tick catch-up drains independent mouse frames -180/-180/-70 then zero, preserves held movement, and consumes jump/use once; exact frames feed independent replay.')
 
     clear_lifecycle(lambda: focus(False), lambda: None)
     clear_lifecycle(lambda: rpc('desktop.play.pause', {'session_id': sid}),

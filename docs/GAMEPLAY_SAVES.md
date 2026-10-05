@@ -52,6 +52,8 @@ A callback at tick 100 may request a save during a batch advancing to tick 105. 
 
 If any later tick in that batch fails, gameplay state, ticket allocation and the request roll back together with simulation. The save owner is never called, so that request creates no slot or files. Storage failure after a successful batch does not undo those committed simulation ticks. Its outcome is a save-operation result.
 
+Automatic editor playback and the standalone player use one-tick commits. A save requested at tick zero therefore snapshots committed tick one, even when the editor poll has more catch-up ticks to run. A later automatic tick failure cannot undo that earlier committed save. Explicit multi-tick `runtime.step` still defers servicing until its entire batch succeeds. A successful load ends the editor’s remaining catch-up work and opens the restored session paused with old input released.
+
 Writes use retained operation identities and durable receipts. If storage reports an error after publication, the owner checks the same receipt before deciding success or failure. When storage cannot be inspected, or the relevant receipt has fallen outside retained history, the request stays `Resolving`. Another simulation batch is blocked until that outcome can be resolved; gameplay must not interpret this as permission to issue a fresh write. Pending work also prevents reconfiguring storage, external replacement, stopping, code reload or field edits.
 
 The owner retains 64 terminal operation results. Reads are repeatable; unknown or evicted tickets expire. The ordinary slot store retains 32 durable write receipts independently. These are bounded histories, not permanent audit logs.
