@@ -188,3 +188,7 @@ The isolated Avalonia Vulkan-only startup probe observed `Avalonia.Vulkan.Vulkan
 Multiselect, drag imports, editor gamepad/audio output, rendered asset previews, material/texture pickers and dedicated animation/VFX authoring are not implemented. ImGui editor shortcuts and capabilities are not inherited merely because both frontends share the native service.
 
 The build packages native engine notices, package-provided license/third-party files, pinned upstream license texts for expression-only NuGet packages, Inter licensing (plus Source Sans notices for the older ImGui frontend) and notices from the resolved .NET runtime/apphost packs. The manifest records payload hashes and provenance. Packaging checks cover the locked dependency inventory; they are not a complete source-level legal audit. See [desktop notice provenance](../third_party/desktop_notices/provenance.json).
+
+## Static mesh collision authoring
+
+An imported StaticMesh exposes **Add static collision**, an explicit undoable action copying the selected asset and primitive. The Mesh Collider Inspector edits that reference and contact material and offers removal. Attach/remove require stopped playback and clean drafts, preserve stale-edit conflicts, and reject objects that already have a box collider or character controller. Runtime ray queries use the resulting triangle mesh, including actual door/fence openings. See [the mesh collision contract](MESH_COLLISION.md) for static-only restrictions, front-face contacts and two-sided rays.

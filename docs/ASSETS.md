@@ -40,9 +40,9 @@ The caller supplies the new outer root ID. The operation creates that root, the 
 
 Generated IDs are the first 32 lowercase hex digits of SHA-256 over UTF-8 `poima.instance.v1/<root-id>/node/<source-index>`. Primitive children append `/primitive/<slot>` to the node suffix. The source index and slot are zero-based. Collisions or retired IDs fail the transaction. Different outer roots produce distinct editable instances sharing the same geometry package. Source transforms remain local; the wrapper root starts at identity and can place the entire model.
 
-Only the selected glTF scene is instantiated. If there is no default scene, all parentless nodes are used. The importer currently validates/cooks all meshes in the source file, including unused ones. Import does not synthesize collision bodies; add explicit collider components where appropriate. Static mesh collision and automatic collider cooking remain future work.
+Only the selected glTF scene is instantiated. If there is no default scene, all parentless nodes are used. The importer currently validates/cooks all meshes in the source file, including unused ones. Import does not synthesize collision bodies; add explicit collider components where appropriate. [Static mesh collision](MESH_COLLISION.md) uses an explicit unweighted primitive reference and preserves geometric openings. Automatic collider generation remains future work.
 
-Animated models now have a separate [reference import, inspection and pose-capture path](ANIMATION_ASSETS.md). They cannot yet be instantiated into the ordinary runtime.
+Animated models have a [reference import, inspection and pose-capture path](ANIMATION_ASSETS.md) and [explicit rig instantiation with fixed-tick playback](RUNTIME_ANIMATION.md). Blending, retargeting and broader character workflows remain unfinished.
 
 ## Components
 

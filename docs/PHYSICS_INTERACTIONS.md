@@ -22,9 +22,10 @@ The response returns `session_id`, `tick`, and `hit`. A miss is `hit: null`; a h
 | `fraction` | Fraction along the ray segment, within [0,1]. The endpoint is included. |
 | `distance` | Fraction multiplied by the requested distance. |
 | `position` | World-space hit position. |
-| `normal` | Outward world-space surface normal, or null for a zero-fraction hit at/inside the origin. |
+| `normal` | World-space surface normal; null for a solid primitive origin-inside hit. Mesh hits retain triangle winding normals from either side. |
+| `triangle` | Original model primitive index-triple ordinal for a MeshCollider hit; null for other shapes. |
 
-The query uses current Jolt collision shapes, including collision-only and visually hidden objects. It does not pick triangles from an imported render mesh without a collider. Box/character geometry is currently the supported collision set. Exactly equal hit fractions select the lexicographically smallest entity ID. The collector retains one hit and does not prune equal-distance candidates by traversal order; broader query performance qualification remains open. Near-equal hits are not artificially merged.
+The query uses current Jolt collision shapes, including collision-only and visually hidden objects. It does not pick triangles from an imported render mesh without a collider. Boxes, capsule characters and explicit [static MeshCollider geometry](MESH_COLLISION.md) are supported. Mesh rays hit both sides; physics contacts use front faces. Exactly equal hit fractions select the lexicographically smallest entity ID, then the smallest source triangle ordinal within a mesh. The collector retains one hit and does not prune equal-distance candidates by traversal order; broader query performance qualification remains open. Near-equal hits are not artificially merged.
 
 Queries do not advance time, wake bodies or mutate authored state. Stale ticks report `-32009`; malformed vectors/ranges/ignore lists and unknown ignored entities report `-32602`. Existing runtime-session errors apply.
 

@@ -1,0 +1,615 @@
+{
+  "milestone": "M2 explicit static mesh collision",
+  "version": "0.0.32",
+  "date": "2026-10-05",
+  "source_base": "401b7f2ac947cbb136b30972689d9e31c4af3723",
+  "sources": {
+    "CMakeLists.txt": "8e3bfb4a1365e49e081f76db46b6151563f75a582c6145f2cc3335bfece4456c",
+    "cmake/desktop_bridge.cmake": "916903bc4cea2d5ee61316aebb5cb518d77f1cfe5713c44fe6492c730f35fd4c",
+    "include/poima/runtime.hpp": "78dd382ec620ad2faaf73a653338ce0e1fabfd32d55368f38c09abc307f9e3cd",
+    "src/runtime_geometry.cpp": "4f759aad183444c1d8f27b453dfa8380d7c87cc87d86a9ff9b24761a85d80d13",
+    "src/runtime.cpp": "31d26d1809056c0df4112deb62d18d20a26e9d98ab8f85109511cc1326afab06",
+    "src/runtime_animation.cpp": "0a4dab0dec34247bb4a5d0d43a050080ebbdd17bdf5c0c91c33cd86acb254437",
+    "src/world.cpp": "5378f0f298bc55abeeccbd29c31d2ccb02bb143c54c3284fa1a94f5c80074e4d",
+    "desktop/Poima.Editor/EditorModel.cs": "b7b0cc8b29b8d79d88305a5e033f92f151f89b1714e7c743ebaf400f37bc2c89",
+    "desktop/Poima.Editor/MainWindow.cs": "adafb00c369c039b88c5e2470b67e1fb6933c2fd85f3348f7ced72f3c32f16c5",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "afdc90f6ebde0d5e30d594528c3ced2201abf1952e03294a8ce27533e9e6035c",
+    "tests/runtime_mesh_native.cpp": "3a32476c90d3e2d4a795df68bc618b36f807b2e2b044f679720cceca5c9990e6",
+    "tests/mesh_collision_contract.py": "1c7d3bf4b469feef42401c11e632686f8a6c67788024bb8c485c346d6295f8b5",
+    "tests/desktop_mesh_collider.py": "dd8cbef42d40254320c8201fef50d4d3e07d47ea4e7ebca7ab9dcf1521bf2a3d",
+    "tests/world_session_native.cpp": "db39e12c1cca19d07774cb6467ecaed171ade85f1a261bc495c63e4e868853b6"
+  },
+  "binaries": {
+    "build/windows-runtime/poima.exe": "449466c89e82db5af576fa1a64a8a3ed099e14c3eb01ee1c3f00fc4a34852d2e",
+    "build/windows-runtime/poima_desktop.dll": "1ba64ad5f188d8010ca7ad7d15ab17ef4bb48cd0dd35e33c8827dc4909874af0",
+    "build/windows-runtime/poima-runtime-mesh-test.exe": "9a9fd7a6c78cf4ed1a8043d0971f866939e830d16abfcdc1e5959f1594acc14e",
+    "build/runtime-headless/poima": "fc4b085adba8acdc65554089f2e1492ce6b713c1abd54fafa766b1eef4cedb0b",
+    "build/runtime-headless/poima-runtime-mesh-test": "ecbb90c83cb2bda44326f6e3042ad4b62555d47a2bee7720aa0a4fe887b55ca1",
+    "build/headless/poima": "9d46f6db7df98236426806c1c19db2211fadb4d7e52134bd0ee620f313f99ec3",
+    "build/desktop-mesh-collision/Poima.Editor.dll": "0a6d132728673c9c4cd1231e87c98594fc87a846cb6806ed6d9e2f69f9504486"
+  },
+  "linux_ctest": [
+    {
+      "configuration": "runtime",
+      "unique_suites": 31,
+      "all_have_passing_results": true,
+      "initial": {
+        "artifact": "build/mesh-linux-ctest.xml",
+        "sha256": "d906dc1d05d177e80da65e33c3f3b0c9e1d1c94847f6e8b01c44c139a87cb3e2",
+        "tests": 31,
+        "failures": 1,
+        "seconds": 102.0
+      },
+      "corrected_test_recheck": {
+        "artifact": "build/mesh-linux-schema-retest.xml",
+        "sha256": "f1253dbe32475cc5e6ee14ad489af7ac953111dc8345cfd8840d42efcaa539c7",
+        "tests": 1,
+        "failures": 0
+      },
+      "note": "Initial run failed only a stale schema revision assertion (23 instead of 24). The test was updated and rerun successfully; production binaries were unchanged."
+    },
+    {
+      "configuration": "authoring_only",
+      "unique_suites": 26,
+      "all_have_passing_results": true,
+      "initial": {
+        "artifact": "build/mesh-headless-ctest.xml",
+        "sha256": "53bff21176a8193fd1fb7d0c817c28a3379ca216cf49d4344277b8e7e626b2c5",
+        "tests": 26,
+        "failures": 1,
+        "seconds": 59.0
+      },
+      "corrected_test_recheck": {
+        "artifact": "build/mesh-headless-schema-retest.xml",
+        "sha256": "6f5f61d62198d1cef430474fe15399aa4e03a6ab77fcb1772d831c41e8106b9e",
+        "tests": 1,
+        "failures": 0
+      },
+      "note": "Initial run failed only a stale schema revision assertion (23 instead of 24). The test was updated and rerun successfully; production binaries were unchanged."
+    }
+  ],
+  "windows_contracts": [
+    {
+      "artifact": "build/mesh-collision-windows-export-final.json",
+      "sha256": "670bcee79b481b31a8c5eef01da4698507909dd0a31950007515a6ca8af01391",
+      "suite": "mesh_and_actual_bundle_export",
+      "tests": 9,
+      "passed": true,
+      "skipped": 0,
+      "binary_sha256": "449466c89e82db5af576fa1a64a8a3ed099e14c3eb01ee1c3f00fc4a34852d2e"
+    },
+    {
+      "artifact": "build/mesh-project-windows-export-final.json",
+      "sha256": "6b01c8101bcb7cd555b00c77944974298e88e480de998073dc5188d45a275308",
+      "suite": "projects_and_export",
+      "tests": 11,
+      "passed": true,
+      "skipped": 0,
+      "binary_sha256": "449466c89e82db5af576fa1a64a8a3ed099e14c3eb01ee1c3f00fc4a34852d2e"
+    },
+    {
+      "artifact": "build/mesh-runtime-windows-regression.json",
+      "sha256": "f5925e31e4ec35398987f6b80d42b40070507a37a4f88ec0bc8b8f1969909152",
+      "suite": "runtime_regression",
+      "tests": 7,
+      "passed": true,
+      "skipped": 0,
+      "binary_sha256": "449466c89e82db5af576fa1a64a8a3ed099e14c3eb01ee1c3f00fc4a34852d2e"
+    },
+    {
+      "artifact": "build/mesh-animation-windows-regression.json",
+      "sha256": "dd7d33389a2cba5731648c6a7b8c7d0a226f9200f5f37a128a195bcc70e7cfdd",
+      "suite": "animation_regression",
+      "tests": 11,
+      "passed": true,
+      "skipped": 0,
+      "binary_sha256": "449466c89e82db5af576fa1a64a8a3ed099e14c3eb01ee1c3f00fc4a34852d2e"
+    }
+  ],
+  "native_mesh_checks": {
+    "platforms": [
+      "Linux x64",
+      "Windows x64"
+    ],
+    "passed": true,
+    "cases": [
+      "Geometric fence gap and open stair riser, neighboring triangle hits.",
+      "One-millimeter aperture in a four-meter-wide fixture; diagonal hits offset 0.1 mm. These are specific fixtures, not a global precision guarantee.",
+      "Original triangle ordinals, two-sided ray hits, retained winding normals, exact reported-fraction ties, ignore filters and unchanged primitive origin-inside behavior.",
+      "Translated/rotated/nonuniformly scaled static hierarchy; shear and negative ancestor scale rejection.",
+      "Dynamic box and capsule floor contacts, equivalent tick partitioning and actual contact-overflow rollback retaining the BVH.",
+      "Missing/invalid/weighted/duplicate/degenerate geometry, float-collapse, incompatible bodies, moving or animation-owned ancestors and per-world instance budgets."
+    ]
+  },
+  "mesh_measurements": [
+    {
+      "case": "contacts",
+      "gap_character": {
+        "animation": null,
+        "ground": "on_ground",
+        "has_body": true,
+        "id": "0000000000000000000000000000000a",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            6.660687176918145e-06,
+            -0.019845816424627793,
+            -3.9949933513998985
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 210,
+        "velocity": [
+          0.0,
+          0.0,
+          -3.996666669845581
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          6.660687176918145e-06,
+          -0.019845816424627793,
+          -3.9949933513998985,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      "rail_character": {
+        "animation": null,
+        "ground": "on_ground",
+        "has_body": true,
+        "id": "00000000000000000000000000000014",
+        "is_character": true,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            -0.85,
+            -0.019999948591835404,
+            0.2000000039115548
+          ],
+          "rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "character",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 210,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          -0.85,
+          -0.019999948591835404,
+          0.2000000039115548,
+          1.0
+        ],
+        "yaw": 0.0
+      },
+      "resting_box": {
+        "animation": null,
+        "ground": "",
+        "has_body": true,
+        "id": "0000000000000000000000000000001e",
+        "is_character": false,
+        "kinematic_target": null,
+        "layout": "column_major",
+        "local_transform": {
+          "position": [
+            2.000005909818947,
+            0.22999994944189453,
+            1.0000127979212698
+          ],
+          "rotation": [
+            2.4789512664824542e-08,
+            -0.0001621696719666943,
+            -2.043799440798466e-08,
+            1.0
+          ],
+          "scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "motion": "dynamic",
+        "motion_remaining_ticks": 0,
+        "pitch": 0.0,
+        "session_id": "00000000000000000000000000000384",
+        "tick": 120,
+        "velocity": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "world_matrix": [
+          0.9999999474019955,
+          -4.088402795503426e-08,
+          0.00032433933540257397,
+          0.0,
+          4.086794752690888e-08,
+          0.9999999999999979,
+          4.958565287129342e-08,
+          0.0,
+          -0.00032433933540460056,
+          -4.957239518024689e-08,
+          0.9999999474019952,
+          0.0,
+          2.000005909818947,
+          0.22999994944189453,
+          1.0000127979212698,
+          1.0
+        ],
+        "yaw": 0.0
+      }
+    },
+    {
+      "case": "collision_only_dependency",
+      "assets": [
+        {
+          "bytes": 2522,
+          "filename": "2f129d6d7e43bf8cdb496ecd443909cff0e80a8a286a62b11946c70069fd830d.pmodel",
+          "sha256": "2f129d6d7e43bf8cdb496ecd443909cff0e80a8a286a62b11946c70069fd830d"
+        }
+      ],
+      "actual_export": true
+    },
+    {
+      "case": "fence",
+      "backface": false,
+      "hit": {
+        "distance": 2.9999998211860657,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.29999998211860657,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          -0.9,
+          0.2,
+          2.384185791015625e-07
+        ],
+        "triangle": 0
+      }
+    },
+    {
+      "case": "fence",
+      "backface": true,
+      "hit": {
+        "distance": 0.9999999403953552,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.09999999403953552,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          -0.9,
+          0.2,
+          -5.960464477539063e-08
+        ],
+        "triangle": 0
+      }
+    },
+    {
+      "case": "fence",
+      "backface": false,
+      "hit": {
+        "distance": 2.9999998211860657,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.29999998211860657,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          -0.95,
+          2.0,
+          2.384185791015625e-07
+        ],
+        "triangle": 1
+      }
+    },
+    {
+      "case": "fence",
+      "backface": true,
+      "hit": {
+        "distance": 0.9999999403953552,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.09999999403953552,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          -0.95,
+          2.0,
+          -5.960464477539063e-08
+        ],
+        "triangle": 1
+      }
+    },
+    {
+      "case": "fence",
+      "backface": false,
+      "hit": {
+        "distance": 2.9999998211860657,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.29999998211860657,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          0.9,
+          0.2,
+          2.384185791015625e-07
+        ],
+        "triangle": 2
+      }
+    },
+    {
+      "case": "fence",
+      "backface": true,
+      "hit": {
+        "distance": 0.9999999403953552,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.09999999403953552,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          0.9,
+          0.2,
+          -5.960464477539063e-08
+        ],
+        "triangle": 2
+      }
+    },
+    {
+      "case": "fence",
+      "backface": false,
+      "hit": {
+        "distance": 2.9999998211860657,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.29999998211860657,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          0.8,
+          2.0,
+          2.384185791015625e-07
+        ],
+        "triangle": 3
+      }
+    },
+    {
+      "case": "fence",
+      "backface": true,
+      "hit": {
+        "distance": 0.9999999403953552,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.09999999403953552,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          0.8,
+          2.0,
+          -5.960464477539063e-08
+        ],
+        "triangle": 3
+      }
+    },
+    {
+      "case": "fence",
+      "backface": false,
+      "hit": {
+        "distance": 2.9999998211860657,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.29999998211860657,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          0.0,
+          2.55,
+          2.384185791015625e-07
+        ],
+        "triangle": 4
+      }
+    },
+    {
+      "case": "fence",
+      "backface": true,
+      "hit": {
+        "distance": 0.9999999403953552,
+        "entity": "00000000000000000000000000000001",
+        "fraction": 0.09999999403953552,
+        "normal": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "position": [
+          0.0,
+          2.55,
+          -5.960464477539063e-08
+        ],
+        "triangle": 4
+      }
+    }
+  ],
+  "desktop": [
+    {
+      "artifact": "build/desktop-mesh-final-ui-gpu1/5cc8cdcf5ed746499f87bc6714636c70/evidence.json",
+      "sha256": "4c1373fc128a43cf5ebcdf98ffc8d1ee01df60040606a9ce0f5d7327f1e9cd10",
+      "gpu": 1,
+      "passed": true,
+      "scripted_actions": 76,
+      "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "font_resolved": "Inter",
+      "render_scaling": 1.25,
+      "editor_sha256": "0a6d132728673c9c4cd1231e87c98594fc87a846cb6806ed6d9e2f69f9504486",
+      "test_sha256": "dd8cbef42d40254320c8201fef50d4d3e07d47ea4e7ebca7ab9dcf1521bf2a3d",
+      "views": {
+        "game": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0,
+          "frames_presented": 115
+        },
+        "scene": {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0,
+          "frames_presented": 154
+        }
+      },
+      "captures": {
+        "scene.bmp": "1e13e8e632819ecd854e123d82ed232b19d3f7d1fe4a193a3f4c2f5f66c57c64",
+        "game.bmp": "fa2ca86af8cc6f6bc00cd632622c5414a62e91da9e29718af247accc128e4c39",
+        "window.png": "ae37282cf49f59fc3383de1fbd75173f99ff2ec60d83a523cc34ba4e8b1a126a"
+      },
+      "input": "Accessible control semantic actions; physical input is not qualified."
+    },
+    {
+      "artifact": "build/desktop-mesh-final-ui-gpu0/62a85ac3aa234d2b96802ac603772293/evidence.json",
+      "sha256": "4dbf9e652cdbf49946359d224875cb14013040142ef6c74d6d1c599e7f516c41",
+      "gpu": 0,
+      "passed": true,
+      "scripted_actions": 76,
+      "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "font_resolved": "Inter",
+      "render_scaling": 1.25,
+      "editor_sha256": "0a6d132728673c9c4cd1231e87c98594fc87a846cb6806ed6d9e2f69f9504486",
+      "test_sha256": "dd8cbef42d40254320c8201fef50d4d3e07d47ea4e7ebca7ab9dcf1521bf2a3d",
+      "views": {
+        "game": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0,
+          "frames_presented": 115
+        },
+        "scene": {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0,
+          "frames_presented": 154
+        }
+      },
+      "captures": {
+        "scene.bmp": "5d060c3968d2a78a1f45f01fc5dcfbf21b97d62181b98a6d9120dddea68c9f07",
+        "game.bmp": "a63b0d21cadc0d873c2fddcc08eb95045c6484795cd7107373fa5730f421774a",
+        "window.png": "dfe7303a58ddd07513e49420ce89add52f76b6e4b51f75f255a48d77e33d0729"
+      },
+      "input": "Accessible control semantic actions; physical input is not qualified."
+    }
+  ],
+  "desktop_checks": [
+    "Explicit attach/remove each commit one guarded undoable edit; imports do not attach automatically.",
+    "Typed hash/integer primitive/material fields preserve invalid drafts; stale revision Apply rejects without discarding edits.",
+    "Conflicting box/controller components, stale controls and active playback cannot silently attach collision.",
+    "Runtime queries through the GUI-authored doorway miss its opening, hit both sides of its surfaces and retain source ordinals."
+  ],
+  "install": {
+    "default_runtime_contains_sdk_headers": false,
+    "development_component_header_matches_source": true,
+    "header_sha256": "3cb2ea21a1a71125ef5a9577257abb8cb3dc216c54dedc4c69978a3ee75d55a9",
+    "logs": [
+      {
+        "artifact": "build/mesh-windows-runtime-final-install.log",
+        "sha256": "4cce8bd522c6c83b362cad4a13962fd3aaa8fce856ad95b5f9c4a6a90194c13e"
+      },
+      {
+        "artifact": "build/mesh-windows-sdk-final-install.log",
+        "sha256": "b595a3d8c995a3fd04c38432fdfd3d7743478c0dfba09581fe6f798b906744e9"
+      }
+    ],
+    "note": "The development header is an opt-in CMake Development component. Use a separate SDK prefix; old install prefixes are not automatically cleaned."
+  },
+  "screenshot": {
+    "path": "m2-mesh-collision.png",
+    "sha256": "ae37282cf49f59fc3383de1fbd75173f99ff2ec60d83a523cc34ba4e8b1a126a",
+    "source": "Actual owned NVIDIA editor window showing the doorway fixture and typed MeshCollider Inspector, visually inspected."
+  },
+  "limitations": [
+    "Static unweighted indexed meshes only; no moving/deforming meshes, texture-alpha collision masks, separate movement/weapon-query channels or finite-radius projectile sweeps.",
+    "Front-face physics contacts and two-sided rays; open shells do not become closed solids.",
+    "Finite-precision BVH with source and scaled-coordinate guards. No exact-arithmetic or arbitrary narrow-feature guarantee.",
+    "Each body currently cooks a BVH during preparation; persistent collision cache, shared shape optimization and representative performance qualification remain unfinished.",
+    "C# ray queries share accurate geometry but the current managed ABI does not expose triangle ordinal.",
+    "Synthetic GUI semantic actions are not physical input, accessibility or game-feel qualification. GPU checks are one laptop with AMD integrated and NVIDIA RTX 4070 Laptop graphics, not broad hardware or game-scale performance qualification.",
+    "MeshCollider data in authored worlds and internal rollback do not implement public game-save serialization."
+  ],
+  "resolved_findings": [
+    "Export validation now catches geometry collapsing or merging at scaled float precision before backend construction; Jolt may additionally reject BVH quantization collapse.",
+    "An authored diagonal is not a reliable exact tie after BVH quantization. The test now uses strict interior overlap for equal-fraction ordering and separately checks near-diagonal hits.",
+    "Fresh desktop-enabled installation initially failed export because it included an SDK header. Opt-in Development installation fixed the package boundary; actual exports were rerun."
+  ]
+}

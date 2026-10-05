@@ -19,6 +19,10 @@ struct BoxCollider {
     BodyMotion motion = BodyMotion::Static;
     float mass = 1, friction = 0.5f, restitution = 0;
 };
+struct MeshCollider {
+    std::shared_ptr<const MeshAsset> mesh;
+    float friction=0.5f,restitution=0;
+};
 struct CharacterController {
     float radius = 0.3f, height = 1.8f, speed = 4, jump_speed = 5;
     std::string camera;
@@ -65,6 +69,7 @@ struct RuntimeEntityDefinition {
     std::optional<RuntimeAnimationRig> animation_rig;
     std::optional<RuntimeRigNode> rig_node;
     std::optional<RuntimeSkinnedMesh> skinned_mesh;
+    std::optional<MeshCollider> mesh_collider;
 };
 struct RuntimeDefinition {
     std::string world_id;
@@ -73,6 +78,7 @@ struct RuntimeDefinition {
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
+void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
 struct RuntimeInput {
     std::string entity;
     std::array<float,2> move{0,0}; // right, forward; diagonal magnitude clamped to one
@@ -95,7 +101,8 @@ struct RuntimeRayHit {
     std::string entity;
     double fraction=0,distance=0;
     std::array<double,3> position{};
-    std::optional<std::array<double,3>> normal; // Absent for an origin-inside hit.
+    std::optional<std::array<double,3>> normal; // Absent for primitive origin-inside hits; mesh surface hits retain winding normals.
+    std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
 };
 struct RuntimeEntityState {
     std::string id;

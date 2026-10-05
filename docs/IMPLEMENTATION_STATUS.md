@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-10-04. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-05 for **0.0.32**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
 
@@ -12,9 +12,11 @@ A full editor profiler and benchmark workflow remain planned core tooling. Curre
 
 Planned editor workflow improvements include configurable hierarchy/folder styling, component isolation/search/copy-paste, focused object/asset tabs, persistent favorites, fullscreen panels, configurable smooth navigation, hover highlighting and overlap selection, a live preferences inspector, clickable breadcrumbs/back-forward history/context locking, and integrated Git/GitHub workflows. Existing striping, automatic icons, basic geometry picking and dock panels cover only the initial subset.
 
-Runtime collision currently supports boxes and capsule controllers. Accurate mesh/query geometry that preserves fence and stair openings, distinct movement versus weapon-query shapes, and explicit handling of texture-cutout holes are planned. Editor triangle picking does not imply runtime mesh-collider support.
+Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 
 ## Implemented
+
+- **0.0.32 static mesh collision:** explicit `MeshCollider` references an imported, unweighted model primitive independently of its rendered mesh. Indexed triangle acceleration preserves geometric gaps, and raycasts report original triangle ordinals. Static hierarchies and positive nonuniform scale are supported; incompatible bodies, animation-owned transforms, shear and invalid geometry reject. The Inspector attaches/removes collision in one guarded undoable edit and exposes typed primitive/material fields while retaining invalid or conflicted drafts. Windows native mesh tests, nine public-protocol groups and runtime/animation regressions (7/11 groups) passed; both laptop GPUs passed 76 semantic GUI actions with doorway ray queries and Scene/Game captures. These tests use synthetic fixtures. Collision-only bundle export and all 11 project/export regression groups also passed with a fresh runtime installation. [Collision contract](MESH_COLLISION.md) and [recorded evidence](evidence/m2-mesh-collision.json).
 
 - **0.0.31 independent Scene and Game panels:** two native HWND/renderers share one authoring session and fixed-tick simulation. Cameras, capture targets, renderer errors and detach/reattach lifetimes remain pane-specific; drawing never advances the clock. Modified Tall is the default workspace, with a vertically split Scene/Game variant. Version 2 layout preferences retain all six panels and migrate existing version 1 arrangements. Native tests pass three headless groups and seven groups for each GPU at 1×/4× MSAA; isolated sky/player regression passes 88 captures. Layout storage passes 28 cases on each OS. The final desktop passes 97 scripted actions and a three-action fresh-process restart on each GPU. [Desktop guide](DESKTOP_EDITOR.md) and [independent-viewport evidence](evidence/m2-desktop-dual-view.json).
 
@@ -48,7 +50,7 @@ Runtime collision currently supports boxes and capsule controllers. Accurate mes
 
 - Continuous native player: fixed-step human input, deterministic visual replay, a persistent Vulkan context, resize/minimize handling, retry receipts and final-state capture. Actual Windows replay/lifecycle checks pass; the automated desktop could not grant foreground input, so physical controls remain unqualified. [Player contract](PLAYER.md).
 
-- Optional EnTT/Jolt fixed-step runtime: frozen authored revisions, stable identities, static/dynamic/kinematic box collision, capsule locomotion/jumping/look, guarded input batches, live inspection/capture and internal failure rollback. [Runtime contract](RUNTIME.md).
+- Optional EnTT/Jolt fixed-step runtime: frozen authored revisions, stable identities, static/dynamic/kinematic box collision, static triangle mesh collision, capsule locomotion/jumping/look, guarded input batches, live inspection/capture and internal failure rollback. [Runtime contract](RUNTIME.md).
 
 - Initial M2 observation path: Vulkan depth-tested box rendering from an immutable authored snapshot, camera/hierarchy evaluation, preview or authored lighting, 1×/4× MSAA and revision-tagged BMP capture. Actual image checks pass on NVIDIA and AMD. [Scene capture](SCENE_CAPTURE.md).
 
@@ -66,7 +68,7 @@ Runtime collision currently supports boxes and capsule controllers. Accurate mes
 - Native Windows launcher hosting CoreCLR, with collectible C# game assemblies, native entity buffers, staged updates/migration, checkpoint parity and unload/allocation diagnostics. This remains a separate development experiment, not the production C# gameplay SDK.
 - Linux x64 CoreCLR/Native AOT shipping experiment using the same C# game, with independently verified full-state equality, cross-runtime checkpoint resume/migration, error handling and runtime/native-allocation diagnostics.
 
-See the [build instructions](BUILD.md). The authoring-only headless build has recorded 21 passing CTest suites; the current optional runtime build passes 29. Windows passes the native shared-session test, ten history cases and seven applicable CLI cases; unbuilt-editor/renderer tests are skipped in that configuration. Earlier bootstrap evidence also covers the Linux Vulkan-inspection variant. Three explicit Windows renderer failure tests cover a missing driver, an unavailable selected GPU and an unwritable capture path. These are bootstrap checks, not the planned game workload or agent-task qualification suite.
+See the [build instructions](BUILD.md). The 0.0.32 Linux qualification has passing results for 26 authoring-only and 31 optional-runtime CTest suites. Initial runs exposed one stale discovery-schema assertion in each configuration; it was updated from revision 23 to 24 and the affected suite rerun successfully. [Collision evidence](evidence/m2-mesh-collision.json) records the checkpoint. Earlier Windows qualification covers the native shared-session test, ten history cases and seven applicable CLI cases; unbuilt-editor/renderer tests are skipped in that configuration. Earlier bootstrap evidence also covers the Linux Vulkan-inspection variant. Three explicit Windows renderer failure tests cover a missing driver, an unavailable selected GPU and an unwritable capture path. These are bounded checks, not the planned game workload or agent-task qualification suite.
 
 ## Findings
 

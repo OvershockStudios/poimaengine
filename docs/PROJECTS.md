@@ -56,7 +56,7 @@ cmake --install build/windows-runtime --prefix build/runtime-windows
 ./build/headless/poima game inspect build/MyRoom-game/game.json
 ```
 
-The exporter accepts only `runtime.json`, `bin/`, `lib/` and `share/poima/` in its runtime root. A desktop-enabled CMake install also contains the development header `include/poima/desktop_bridge.h`; stage a separate runtime directory excluding `include/` before export.
+The exporter accepts only `runtime.json`, `bin/`, `lib/` and `share/poima/` in its runtime root. The default install includes only runtime files, including when the desktop bridge is enabled. Its C ABI development header is opt-in: `cmake --install build/windows-runtime --component Development --prefix build/desktop-sdk`. Keep that SDK prefix separate from the runtime. Use a fresh runtime prefix if an older installation left development headers in it; CMake does not remove obsolete installed files.
 
 The exporting headless executable and installed runtime must have the same exact engine version. The runtime descriptor, generated and installed by CMake, is `runtime.json`:
 

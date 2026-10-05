@@ -195,6 +195,28 @@ public sealed class EditorModel : IDisposable
         Host.Call("world.transact", new() { ["request_id"] = NewId(), ["base_revision"] = Revision, ["ops"] = ops });
         Refresh();
     }
+    public void AttachMeshCollider()
+    {
+        RequireStopped(); RequireClean();
+        if (Selected is null || DraftComponents["StaticMesh"] is not JsonObject mesh)
+            throw new InvalidOperationException("Select an object with a StaticMesh first.");
+        if (DraftComponents.ContainsKey("MeshCollider"))
+            throw new InvalidOperationException("This object already has a MeshCollider.");
+        if (DraftComponents.ContainsKey("BoxCollider") || DraftComponents.ContainsKey("CharacterController"))
+            throw new InvalidOperationException("Static mesh collision cannot share an object with BoxCollider or CharacterController.");
+        Transact(new JsonArray(new JsonObject
+        {
+            ["op"] = "component.set", ["id"] = Selected, ["type"] = "MeshCollider",
+            ["value"] = new JsonObject { ["asset"] = mesh["asset"]!.DeepClone(), ["primitive"] = mesh["primitive"]!.DeepClone(), ["friction"] = .5, ["restitution"] = 0 }
+        }));
+    }
+    public void RemoveMeshCollider()
+    {
+        RequireStopped(); RequireClean();
+        if (Selected is null || !DraftComponents.ContainsKey("MeshCollider"))
+            throw new InvalidOperationException("Select an object with a MeshCollider first.");
+        Transact(new JsonArray(new JsonObject { ["op"] = "component.remove", ["id"] = Selected, ["type"] = "MeshCollider" }));
+    }
     public JsonObject SkyDefaults() => Clone(Host.Call("world.describe")["components"]!["LightingEnvironment"]!["properties"]!["sky"]!["default"]!.AsObject());
     public string Create(string kind)
     {

@@ -66,7 +66,7 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
         const auto& e=*entity;const auto parent_rig=e.parent.empty() ? std::string{} : enclosing.at(e.parent);
         enclosing[e.id]=e.animation_rig ? e.id : parent_rig;
         animated[e.id]=bool(e.rig_node) || (!e.parent.empty() && animated.at(e.parent));
-        if(animated[e.id])check(!e.collider && !e.character && !controlled_cameras.contains(e.id),"Animation-owned transform subtrees cannot contain physics bodies or controller-owned cameras.");
+        if(animated[e.id])check(!e.collider && !e.character && !e.mesh_collider && !controlled_cameras.contains(e.id),"Animation-owned transform subtrees cannot contain physics bodies or controller-owned cameras.");
         if(e.rig_node) {
             const auto& binding=*e.rig_node;const auto found=mappings.find(binding.rig);
             check(found!=mappings.end() && parent_rig==binding.rig,"RigNode must be a descendant of its own AnimationRig wrapper.");

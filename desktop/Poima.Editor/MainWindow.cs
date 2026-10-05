@@ -407,7 +407,7 @@ public sealed class MainWindow : Window
                 if (pair.Value is not JsonObject component) continue;
                 var section = new StackPanel { Spacing = 2, Margin = new Thickness(8, 5, 8, 7) };
                 if (pair.Key == "Transform") BuildTransform(section, component, Banner);
-                else if (pair.Key is "Camera" or "MeshRenderer" or "PbrMaterial" or "Light" or "LightingEnvironment") BuildTypedComponent(section, pair.Key, component, Banner);
+                else if (pair.Key is "Camera" or "MeshRenderer" or "MeshCollider" or "PbrMaterial" or "Light" or "LightingEnvironment") BuildTypedComponent(section, pair.Key, component, Banner);
                 else
                 {
                     var json = new TextBox { Text = Model.FieldText(pair.Key, component.ToJsonString(new JsonSerializerOptions { WriteIndented = true })), AcceptsReturn = true, FontSize = 12, MinHeight = 80, FontFamily = new FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
@@ -422,10 +422,24 @@ public sealed class MainWindow : Window
                     });
                     section.Children.Add(Label("Component data · JSON", true)); section.Children.Add(json);
                 }
+                if (pair.Key == "StaticMesh" && !Model.DraftComponents.ContainsKey("MeshCollider"))
+                {
+                    var entity = Model.Selected; var generation = Model.DraftGeneration;
+                    var incompatible = Model.DraftComponents.ContainsKey("BoxCollider") || Model.DraftComponents.ContainsKey("CharacterController");
+                    var attach = Button("Add static collision", () =>
+                    {
+                        if (Model.Selected == entity && Model.DraftGeneration == generation) Model.AttachMeshCollider();
+                    });
+                    attach.IsEnabled = !incompatible;
+                    AutomationProperties.SetName(attach, "StaticMesh Add static mesh collision");
+                    ToolTip.SetTip(attach, "Attach collision from this mesh primitive in one undoable edit. Apply or reload Inspector changes first.");
+                    section.Children.Add(attach);
+                    if (incompatible) section.Children.Add(new TextBlock { Text = "Remove BoxCollider or CharacterController before adding mesh collision.", TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+                }
                 var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
                 title.Children.Add(EditorIcons.Make(pair.Key switch { "Transform" => "transform", "Camera" => "camera", "Light" or "LightingEnvironment" => "light", "MeshRenderer" => "cube", _ => "entity" }, 13));
-                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
-                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
+                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "MeshCollider" => "Mesh Collider · Static", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
+                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "StaticMesh" or "MeshCollider" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
             }
         }
         Observe(root, Model, Refresh); Refresh(); return root;
@@ -548,16 +562,16 @@ public sealed class MainWindow : Window
             var row = new Grid { ColumnDefinitions = new ColumnDefinitions("112,*"), ColumnSpacing = 5 };
             var label = Label(text); label.FontSize = 12; row.Children.Add(label); Grid.SetColumn(control, 1); row.Children.Add(control); return row;
         }
-        TextBox Numeric(string label, string key, double current, double min, double max, Action<double> set)
+        TextBox Numeric(string label, string key, double current, double min, double max, Action<double> set, bool integer = false)
         {
             var edit = new TextBox { Text = Model.FieldText(type + ".input." + key, current.ToString(type == "LightingEnvironment" ? "G6" : "G9", CultureInfo.InvariantCulture)), FontSize = 12, MinWidth = 35 };
             edit.BorderBrush = EditorTheme.Brush(Model.HasInvalid(type + ".input." + key) ? "#BA6B60" : "#191919");
             AutomationProperties.SetName(edit, type + " " + label);
-            ToolTip.SetTip(edit, $"{label}: {min:G} to {max:G}");
+            ToolTip.SetTip(edit, $"{label}: {min:G} to {max:G}" + (integer ? " (whole number)" : ""));
             ObserveInspectorText(edit, text =>
             {
                 Model.SetFieldText(type + ".input." + key, text);
-                var valid = double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number) && number >= min && number <= max;
+                var valid = double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number) && number >= min && number <= max && (!integer || number == Math.Truncate(number));
                 Model.SetInvalid(type + ".input." + key, !valid);
                 edit.BorderBrush = EditorTheme.Brush(valid ? "#191919" : "#BA6B60");
                 if (valid) { set(number); Commit(); } else changed();
@@ -620,6 +634,30 @@ public sealed class MainWindow : Window
                     break;
                 case "MeshRenderer":
                     panel.Children.Add(Row("Mesh", Label("Box"))); Toggle("Visible", "visible"); ColorField("Albedo", "albedo");
+                    break;
+                case "MeshCollider":
+                    panel.Children.Add(new TextBlock { Text = "Static triangle collision. No motion or mass.", TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+                    panel.Children.Add(Label("Collision asset", true));
+                    var assetKey = type + ".input.asset";
+                    var asset = new TextBox { Text = Model.FieldText(assetKey, value["asset"]!.GetValue<string>()), FontSize = 12 };
+                    asset.BorderBrush = EditorTheme.Brush(Model.HasInvalid(assetKey) ? "#BA6B60" : "#191919");
+                    AutomationProperties.SetName(asset, "MeshCollider Collision asset");
+                    ToolTip.SetTip(asset, "64-character cooked model hash. This collision reference is independent of the rendered mesh.");
+                    ObserveInspectorText(asset, text =>
+                    {
+                        Model.SetFieldText(assetKey, text);
+                        var valid = text.Length == 64 && text.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
+                        Model.SetInvalid(assetKey, !valid); asset.BorderBrush = EditorTheme.Brush(valid ? "#191919" : "#BA6B60");
+                        if (valid) { value["asset"] = text; Commit(); } else changed();
+                    });
+                    panel.Children.Add(asset);
+                    panel.Children.Add(Row("Primitive index", Numeric("Primitive index", "primitive", Number(value, "primitive"), 0, 9999, n => value["primitive"] = (int)n, integer: true)));
+                    Scalar("Friction", "friction", 0, 2); Scalar("Restitution", "restitution", 0, 1);
+                    panel.Children.Add(new TextBlock { Text = "Physics uses front-face winding; rays hit both sides. Holes need geometry, not texture cutouts.", TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+                    var remove = Button("Remove collision", () => { if (CurrentDraft()) Model.RemoveMeshCollider(); });
+                    AutomationProperties.SetName(remove, "MeshCollider Remove static mesh collision");
+                    ToolTip.SetTip(remove, "Remove this collider in one undoable edit. Apply or reload Inspector changes first.");
+                    panel.Children.Add(remove);
                     break;
                 case "PbrMaterial":
                     ColorField("Base color", "base_color"); Scalar("Metallic", "metallic", 0, 1); Scalar("Roughness", "roughness", 0, 1);

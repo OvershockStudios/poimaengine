@@ -16,6 +16,7 @@
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
 #include <Jolt/Physics/Character/Character.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Math/Trigonometry.h>
@@ -114,6 +115,7 @@ struct Runtime::Impl {
     std::map<std::string,entt::entity> identities;
     std::vector<entt::entity> order, hierarchy, characters, kinematics;
     std::map<JPH::uint32,std::string> body_names;
+    std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>> mesh_shapes;
     Runtime* owner=nullptr;
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
@@ -171,6 +173,7 @@ struct Runtime::Impl {
         world_id=definition.world_id; revision=definition.authored_revision;
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         animations=std::make_unique<RuntimeAnimations>(definition);
+        validate_runtime_mesh_colliders(definition);
         physics.Init(4096,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
         auto definitions=definition.entities;
@@ -192,8 +195,8 @@ struct Runtime::Impl {
                 else throw std::runtime_error("Acoustic material needs runtime geometry.");
                 acoustic_geometry.push_back(std::move(g));
             }
-            if (d.collider || d.character) ++body_count;
-            require(!(d.collider && d.character),"An entity cannot combine BoxCollider and CharacterController.");
+            if (d.collider || d.character || d.mesh_collider) ++body_count;
+            require(int(bool(d.collider))+int(bool(d.character))+int(bool(d.mesh_collider))<=1,"An entity cannot combine BoxCollider, MeshCollider and CharacterController.");
         }
         std::size_t lights=0,environments=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
         for(const auto& d:definitions) {
@@ -231,6 +234,39 @@ struct Runtime::Impl {
         for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
         for (const auto& d : definitions) {
             auto e=find(d.id); const auto& node=registry.get<Node>(e);
+            if(d.mesh_collider) {
+                const auto& collider=*d.mesh_collider;
+                for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
+                    require(!moving_roots.contains(parent),"MeshCollider cannot inherit a moving body/controller.");
+                const auto p=pose(node.world);
+                // Fill default settings directly: the list-taking constructors
+                // silently sanitize geometry. Create instead reports degenerate
+                // triangles, including degeneracy after Jolt's quantization.
+                JPH::MeshShapeSettings mesh_settings;mesh_settings.mPerTriangleUserData=true;
+                const auto& mesh=*collider.mesh;
+                mesh_settings.mTriangleVertices.reserve(mesh.vertices.size());
+                for(const auto& vertex:mesh.vertices) {
+                    std::array<float,3> point;
+                    for(std::size_t k=0;k<3;++k) {
+                        const double value=vertex.position[k]*p.scale[k];
+                        require(std::isfinite(value) && std::abs(value)<=10000,"Scaled MeshCollider vertices must be within +/-10000 meters.");
+                        point[k]=static_cast<float>(value);
+                    }
+                    mesh_settings.mTriangleVertices.emplace_back(point[0],point[1],point[2]);
+                }
+                mesh_settings.mIndexedTriangles.reserve(mesh.indices.size()/3);
+                for(std::size_t i=0;i<mesh.indices.size();i+=3)
+                    mesh_settings.mIndexedTriangles.emplace_back(mesh.indices[i],mesh.indices[i+1],mesh.indices[i+2],0,static_cast<JPH::uint32>(i/3));
+                auto shape=mesh_settings.Create();
+                if(shape.HasError())throw std::runtime_error("MeshCollider '"+d.id+"': "+shape.GetError().c_str());
+                JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,JPH::EMotionType::Static,0);
+                settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
+                auto& body=registry.emplace<Body>(e);
+                body.id=physics.GetBodyInterface().CreateAndAddBody(settings,JPH::EActivation::DontActivate);
+                require(!body.id.IsInvalid(),"Jolt mesh body allocation failed.");
+                body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
+                mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),static_cast<const JPH::MeshShape*>(shape.Get().GetPtr()));
+            }
             if (d.collider) {
                 const auto& collider=*d.collider;
                 require(std::isfinite(collider.mass) && collider.mass>0 && collider.mass<=1e6f &&
@@ -506,19 +542,30 @@ std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     // stable entity IDs rather than broad-phase visitation order.
     struct Collector final : JPH::CastRayCollector {
         const std::map<JPH::uint32,std::string>& names;std::optional<JPH::RayCastResult> hit;
-        explicit Collector(const std::map<JPH::uint32,std::string>& n):names(n) {}
+        const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& meshes;
+        Collector(const std::map<JPH::uint32,std::string>& n,const std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>>& m):names(n),meshes(m) {}
         void AddHit(const JPH::RayCastResult& value) override {
             if(value.mFraction<0 || value.mFraction>1)return;
-            if(!hit || value.mFraction<hit->mFraction || (value.mFraction==hit->mFraction && names.at(value.mBodyID.GetIndexAndSequenceNumber())<names.at(hit->mBodyID.GetIndexAndSequenceNumber())))hit=value;
+            bool better=!hit || value.mFraction<hit->mFraction;
+            if(hit && value.mFraction==hit->mFraction) {
+                const auto id=value.mBodyID.GetIndexAndSequenceNumber(),old=hit->mBodyID.GetIndexAndSequenceNumber();
+                better=names.at(id)<names.at(old);
+                if(id==old)if(const auto mesh=meshes.find(id);mesh!=meshes.end())
+                    better=mesh->second->GetTriangleUserData(value.mSubShapeID2)<mesh->second->GetTriangleUserData(hit->mSubShapeID2);
+            }
+            if(better)hit=value;
         }
-    } collector(impl_->body_names);
+    } collector(impl_->body_names,impl_->mesh_shapes);
     const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
-    impl_->physics.GetNarrowPhaseQuery().CastRay(ray,JPH::RayCastSettings{},collector,{}, {},filter);
+    JPH::RayCastSettings ray_settings;ray_settings.mBackFaceModeTriangles=JPH::EBackFaceMode::CollideWithBackFaces;
+    impl_->physics.GetNarrowPhaseQuery().CastRay(ray,ray_settings,collector,{}, {},filter);
     if(!collector.hit)return {};
     const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
     RuntimeRayHit result;result.entity=impl_->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
     result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
-    if(hit.mFraction>0) {
+    if(const auto mesh=impl_->mesh_shapes.find(hit.mBodyID.GetIndexAndSequenceNumber());mesh!=impl_->mesh_shapes.end())
+        result.triangle=mesh->second->GetTriangleUserData(hit.mSubShapeID2);
+    if(hit.mFraction>0 || result.triangle) {
         JPH::BodyLockRead lock(impl_->physics.GetBodyLockInterface(),hit.mBodyID);require(lock.Succeeded(),"Ray hit body could not be inspected.");
         const auto normal=lock.GetBody().GetWorldSpaceSurfaceNormal(hit.mSubShapeID2,point);
         result.normal=std::array<double,3>{normal.GetX(),normal.GetY(),normal.GetZ()};

@@ -27,4 +27,7 @@ if(POIMA_ENABLE_AUDIO)
         "${POIMA_STEAM_AUDIO_ROOT}/lib/windows-x64/phonon.dll" "$<TARGET_FILE_DIR:poima_desktop>/phonon.dll")
 endif()
 install(TARGETS poima_desktop RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
-install(FILES "${CMAKE_SOURCE_DIR}/include/poima/desktop_bridge.h" DESTINATION include/poima)
+# The default installation is a redistributable runtime tree. Development
+# headers are opt-in and belong in a separate SDK prefix, not game bundles.
+install(FILES "${CMAKE_SOURCE_DIR}/include/poima/desktop_bridge.h"
+    DESTINATION include/poima COMPONENT Development EXCLUDE_FROM_ALL)
