@@ -166,6 +166,11 @@ internal sealed class DesktopScript
                         window.Game.SelectProfile(action["path"]?.GetValue<string>());
                         result["game_input"] = window.Game.Inspect(); break;
                     case "show_gameplay": window.ShowGameplay(); break;
+                    case "open_saves": window.ShowSaves(); break;
+                    case "close_saves": window.CloseSaves(); break;
+                    case "inspect_saves": result["saves"] = window.Saves.Inspect(); break;
+                    case "render_saves": result["visual"] = window.RenderSaves(Text("path")); break;
+                    case "scroll_saves": window.ScrollSaves(Text("position")); break;
                     case "render_gameplay": result["visual"] = window.RenderGameplay(Text("path")); break;
                     case "scroll_gameplay": window.ScrollGameplay(Text("position")); break;
                     case "select": window.SelectEntity(Text("id")); break;
@@ -278,6 +283,7 @@ internal sealed class DesktopScript
                         result["draft"] = window.InspectDraft(); result["native"] = model.Host.Call("desktop.inspect");
                         result["playback"] = model.InspectPlayback();
                         result["gameplay_draft"] = window.Gameplay.Inspect();
+                        result["save_draft"] = window.Saves.Inspect();
                         result["playback_controls"] = window.InspectPlaybackControls();
                         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                             result["windows"] = new JsonArray(desktop.Windows.Select(w => (JsonNode?)new JsonObject {

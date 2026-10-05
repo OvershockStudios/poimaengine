@@ -25,6 +25,10 @@ struct WorldGameplayStatus {
     std::string session_id;
     std::uint64_t tick=0,revision=0;
 };
+struct WorldSaveStatus {
+    std::uint64_t generation=0;
+    std::string root;
+};
 struct EditorCamera {
     Matrix4 world=identity_matrix();
     double vertical_fov=60,near_plane=.1,far_plane=1000;
@@ -52,6 +56,8 @@ public:
     WorldRuntimeStatus runtime_status() const;
     // Counters only: does not serialize gameplay schema or field values.
     WorldGameplayStatus gameplay_status() const;
+    // Session configuration only; does not inspect or create storage files.
+    WorldSaveStatus save_status() const;
     std::vector<std::pair<std::string,std::string>> runtime_hierarchy() const;
     // Validates the complete typed asset closure; no storage writes.
     WorldPackageContent package_content() const;

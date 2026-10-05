@@ -1,0 +1,201 @@
+{
+  "milestone": "Human editor save and load workflow",
+  "date": "2026-10-05",
+  "engine_version": "0.0.36",
+  "source_base": "8a1a3424b98645722e8550e6ac866ee81b8bdf55",
+  "source_sha256": {
+    "include/poima/world.hpp": "3db8c2f908a576ab66f2d094a1e64afdbed6b77c09a18861dc051b27969df868",
+    "src/world.cpp": "631acc2518778efa03078c1d4aa18af37b50cda03c18a06131d8f001ca9f55c7",
+    "src/desktop_bridge.cpp": "80826ea324eb755b8bb4028667f9a9c199119a4032540161f2dd396e2a0b26cf",
+    "tests/world_save_native.cpp": "15806a562874d4089dd59ba3bd899f81dbaddb7e8472b4d85efda65e6d8401bf",
+    "desktop/Poima.Editor/MainWindow.cs": "9052e730508f5cbd11260b0fe69d5f1f89338333c79d1a9a1c3bdaa4da0f6d73",
+    "desktop/Poima.Editor/NativeHost.cs": "1a35f335e29be1ff890db16d7c9c49adae66ddf6abadfb3dfffe34e3d66a6fc9",
+    "desktop/Poima.Editor/DesktopScript.cs": "cc6d1ac3dedb5bdd9dbb9790955d1cad6e0124e5fdb2aea749775f532c4503d5",
+    "desktop/Poima.Editor/SaveEditorModel.cs": "4500e7c4ab6808101bd486f6123559c6fc97b1858c182481d91bfb4dbcf26e6e",
+    "desktop/Poima.Editor/SaveWindow.cs": "737c359df6ad0ca54320ed15c8b4fea4db65d68b3f5e142fee381acf110074f5",
+    "desktop/Poima.Editor/GameplayWindow.cs": "282f5ece168743ac0ae47cc7300045bc5473b6f4c34b8bebfbb7efda1d6fef58",
+    "tests/desktop_save_frontend.py": "644d590ead12a786564ca301988f0cf9692371405cee78d7da9c134dc3211055",
+    "tests/desktop_frontend.py": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84",
+    "tests/desktop_save_contract.py": "d0f3d6995699b57ea339b8022a7dbbb1aa82661402c465eaa704b0afb8ff34f1",
+    "scripts/build_desktop.py": "a1a6ef5053ee56eb65dd0442f42e3e05751b2f810bc5d94f48e822816cf5f105"
+  },
+  "package": {
+    "manifest": {
+      "path": "build/desktop-saves-reviewable/poima-desktop-build.json",
+      "sha256": "2d669de8c359c346bd3358f462b5ff43361502ec767dcd58df387743721ad4ba",
+      "bytes": 55753
+    },
+    "file_count": 362,
+    "frontend": {
+      "path": "build/desktop-saves-reviewable/Poima.Editor.dll",
+      "sha256": "88d3f3404b89fb54b28eaf67f015183e967d9bb895842031846cdce31cf60ed1",
+      "bytes": 1146880
+    },
+    "native": {
+      "path": "build/desktop-saves-reviewable/poima.exe",
+      "sha256": "fe917f1770a5ada5a131e16a322867ee91ea0f691f269bb826fa34de884f7930",
+      "bytes": 131891712
+    },
+    "bridge": {
+      "path": "build/desktop-saves-reviewable/poima_desktop.dll",
+      "sha256": "2b352ffc66b9732291049d84576051fcb3264306c8e08ba3557d73b43d5e1105",
+      "bytes": 123184128
+    }
+  },
+  "implemented": [
+    "First-class editor Save/Load tool using shared native save.* operations; no separate serialization implementation.",
+    "Explicit folder/slot observations preserve stale runtime, gameplay, content and slot guards.",
+    "Retained failed-operation IDs/parameters; explicit retry or dismissal, root and close-draft protection.",
+    "Stopped restore uses an observed trusted C# launch profile or explicit no-gameplay selection; active restore inherits loaded code.",
+    "Explicit prior-generation recovery and acknowledged writes preserve corrupt data.",
+    "Cheap native save configuration status in desktop polling makes external configuration changes visible without disk reads.",
+    "Compact human controls with conditional recovery/retry sections and technical details behind an expander."
+  ],
+  "qualification": {
+    "save_window": [
+      {
+        "adapter_index": 1,
+        "passed": true,
+        "actions": 129,
+        "editor_processes": 3,
+        "checks": [
+          "Actual Save-window controls preserve dirty and stale observations.",
+          "Exact pending mutation retry survives explicit observation refresh.",
+          "Saved typed C# state and mid-motion door restore in the same and fresh editor processes.",
+          "Implicit recovery is refused; explicit load and acknowledged write preserve quarantined payload.",
+          "Authored world bytes remain unchanged throughout all phases.",
+          "Dirty folder draft prevents both tool-window and main-editor close, with a persistent explanation."
+        ],
+        "images": [
+          {
+            "path": "build/editor-saves-frontend-final-gpu1/fe5b6a5325604d379e44168f8d98f5c3/save-window-top.png",
+            "sha256": "7a065dbe8b05415d9b59ff969a62322959d09bd8007faa842c98ffee760b17c9",
+            "bytes": 50894
+          },
+          {
+            "path": "build/editor-saves-frontend-final-gpu1/fe5b6a5325604d379e44168f8d98f5c3/save-window-bottom.png",
+            "sha256": "7a065dbe8b05415d9b59ff969a62322959d09bd8007faa842c98ffee760b17c9",
+            "bytes": 50894
+          },
+          {
+            "path": "build/editor-saves-frontend-final-gpu1/fe5b6a5325604d379e44168f8d98f5c3/save-recovery.png",
+            "sha256": "94baffb0c7bdcf4f283026a656314718e1f684174c70af8e6863fe911cc1ae35",
+            "bytes": 68163
+          }
+        ],
+        "visual_review": "Readable controls, no clipped controls. Top and bottom captures are byte-identical because the content fits.",
+        "raw_evidence": {
+          "path": "build/editor-saves-frontend-final-gpu1/fe5b6a5325604d379e44168f8d98f5c3/evidence.json",
+          "sha256": "ad4565246a5fcafc777d560ea96398c95c2ad19867da854a5cfa9489b07fa0f0",
+          "bytes": 280417
+        }
+      },
+      {
+        "adapter_index": 0,
+        "passed": true,
+        "actions": 129,
+        "editor_processes": 3,
+        "checks": [
+          "Actual Save-window controls preserve dirty and stale observations.",
+          "Exact pending mutation retry survives explicit observation refresh.",
+          "Saved typed C# state and mid-motion door restore in the same and fresh editor processes.",
+          "Implicit recovery is refused; explicit load and acknowledged write preserve quarantined payload.",
+          "Authored world bytes remain unchanged throughout all phases.",
+          "Dirty folder draft prevents both tool-window and main-editor close, with a persistent explanation."
+        ],
+        "images": [
+          {
+            "path": "build/editor-saves-frontend-final-gpu0/a6729273635e460a951dfe037ca5e31d/save-window-top.png",
+            "sha256": "3b1a1e71d69d006bb9d33642033b601f8459bd2edaf332c3996fbc8261e749e1",
+            "bytes": 51136
+          },
+          {
+            "path": "build/editor-saves-frontend-final-gpu0/a6729273635e460a951dfe037ca5e31d/save-window-bottom.png",
+            "sha256": "3b1a1e71d69d006bb9d33642033b601f8459bd2edaf332c3996fbc8261e749e1",
+            "bytes": 51136
+          },
+          {
+            "path": "build/editor-saves-frontend-final-gpu0/a6729273635e460a951dfe037ca5e31d/save-recovery.png",
+            "sha256": "379a5a767d2f2275825c877797a2103538aa3709e12d72f8ffa38066fddb66fd",
+            "bytes": 68434
+          }
+        ],
+        "visual_review": "Readable controls, no clipped controls. Top and bottom captures are byte-identical because the content fits.",
+        "raw_evidence": {
+          "path": "build/editor-saves-frontend-final-gpu0/a6729273635e460a951dfe037ca5e31d/evidence.json",
+          "sha256": "0d1100727988973a20286291160f66729397fa47565a902a49d8555ec44bdbed",
+          "bytes": 280180
+        }
+      }
+    ],
+    "full_editor": {
+      "passed": true,
+      "actions": 232,
+      "restart_actions": 4,
+      "window_capture": {
+        "status": "unavailable",
+        "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+      },
+      "raw_evidence": {
+        "path": "build/editor-saves-full-final/697f112de5314f69a25dea90e7af5898/evidence.json",
+        "sha256": "297d3d88ad0798048bb4ec07597cab99b06a0cfb71b3417db59d19372c7b20b9",
+        "bytes": 977271
+      }
+    },
+    "native_editor": {
+      "passed": true,
+      "groups": 4,
+      "rpc_count": 47,
+      "raw_evidence": {
+        "path": "build/editor-saves-native-contract/a2e4017ad87842029913683cfac20340/evidence.json",
+        "sha256": "f6db07b1e469d17f2775debbdae194fd3515b7c07f966c7421dbb1534b7963bb",
+        "bytes": 251100
+      }
+    },
+    "linux_service": {
+      "passed": true,
+      "groups": 7,
+      "rpc_count": 547,
+      "raw_evidence": {
+        "path": "build/editor-saves-linux-service.json",
+        "sha256": "210e19b4f26bc5573fd9ee91691e9c04e54403d32819addd126bcd94d2695440",
+        "bytes": 1003366
+      }
+    },
+    "native_configuration_and_bundle_tests": {
+      "passed": true,
+      "logs": [
+        {
+          "path": "build/editor-saves-linux-native.log",
+          "sha256": "ea16b7ac1592e7e22693ba5a399e7a4cd21ce2fabbcc9f8baf5e057ffc28574b",
+          "bytes": 81
+        },
+        {
+          "path": "build/editor-saves-windows-native.log",
+          "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a",
+          "bytes": 82
+        },
+        {
+          "path": "build/editor-saves-authoring-native.log",
+          "sha256": "821e14b8619c2c5f94f23174751a4201660d3e7228d91626d23ce7624d33c5d6",
+          "bytes": 80
+        }
+      ]
+    }
+  },
+  "review_fixes": [
+    "Completed native operations remain successful if presentation refresh fails; the result stays available.",
+    "A delayed folder-picker result cannot overwrite a newer folder draft or configuration observation.",
+    "Cancelled tool-window close reports its draft/pending guard through persistent model error state.",
+    "Initial readable but diagnostic-heavy layout was replaced with a compact main workflow and collapsed details."
+  ],
+  "limitations": [
+    "Semantic routed control/HWND tests and attached Avalonia visual-content renders; no physical input, IME or general accessibility qualification.",
+    "Windows was locked; no OS window screenshot or desktop compositor qualification.",
+    "Native folder-picker interaction and arbitrary DPI/multi-display layouts were not exercised by automation.",
+    "Synchronous paused save/load; no autosave scheduler, slot browser, thumbnails or persistent storage-root preferences.",
+    "Fixed supported entity set, external verified assets and exact module/backend/schema binding; no general save migration.",
+    "Typed gameplay callback Save/Load requests and safe continuous-player handoff remain separate implementation work.",
+    "The existing snapshot/storage limits, including physics reconstruction and unqualified power-loss behavior, still apply."
+  ]
+}

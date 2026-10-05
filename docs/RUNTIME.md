@@ -113,7 +113,7 @@ Version 0.0.21 adds editable rig bindings and fixed-tick clip playback. `runtime
 
 ## Portable runtime snapshot foundation
 
-The C++ runtime has an experimental logical checkpoint API. The [save-slot service](#durable-save-slots) adds storage and guarded activation around it. A typed C# save command and dedicated editor save/load window remain unfinished. Stopping an ordinary session still discards its unsaved runtime state.
+The C++ runtime has an experimental logical checkpoint API. The [save-slot service](#durable-save-slots) adds storage and guarded activation around it. The [editor Save/Load window](EDITOR_SAVES.md) uses this service; typed C# gameplay save commands remain unfinished. Stopping an ordinary session still discards its unsaved runtime state.
 
 ```cpp
 // frozen_definition and content_sha256 come from the trusted host/content system.
@@ -146,7 +146,7 @@ Native tests cover motion/character continuation, interrupted animation, sound, 
 
 ## Durable save slots
 
-The native world service exposes `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. These operate through `poima world`, shared sessions and the editor's native service. Discover their complete parameter schemas with `world.describe` (schema revision 27). A dedicated human save window and a typed gameplay `Save`/`Load` API are not implemented yet.
+The native world service exposes `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. These operate through `poima world`, shared sessions and the editor's native service. Discover their complete parameter schemas with `world.describe` (schema revision 27). The [human Save/Load window](EDITOR_SAVES.md) uses these operations. A typed gameplay `Save`/`Load` API remains unfinished.
 
 Create an ordinary directory outside the asset store, then configure its path. Relative paths resolve beside the world document. Configuration is session-local; reopening requires configuration again. Packaged games additionally reject roots and derived slot paths inside their immutable bundle. Hosts constructing a read-only `WorldSession` pass the full bundle root as the third constructor argument; without it, protection covers only the world file's parent directory.
 

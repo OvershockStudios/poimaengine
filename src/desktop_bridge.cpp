@@ -715,7 +715,8 @@ struct Bridge : ViewportState {
         committed_gesture={{"drag_id",id},{"request_id",receipt},{"result",result}};cancel_gizmo();return result;
     }
     Json inspect() {
-        sync_playback();expire_gizmo();expire_capture();return {{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        sync_playback();expire_gizmo();expire_capture();const auto saves=world->save_status();
+        return {{"saves",{{"generation",saves.generation},{"root",saves.root.empty() ? Json(nullptr) : Json(saves.root)}}},{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},

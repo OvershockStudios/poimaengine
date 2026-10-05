@@ -64,7 +64,7 @@ public sealed class GameplayWindow : Window
         var apply = MakeButton("Apply live values", model.ApplyValues);
         var reload = MakeButton("Reload assembly retaining state", model.Reload);
         liveActions.Children.Add(refresh); liveActions.Children.Add(apply); liveActions.Children.Add(reload); root.Children.Add(liveActions);
-        root.Children.Add(new TextBlock { Text = "Live edits do not change launch values or authored objects. Stop discards runtime state. Reload preserves compatible fields and initializes new fields.", TextWrapping = TextWrapping.Wrap, Foreground = EditorTheme.Brush("#A0A0A5") });
+        root.Children.Add(new TextBlock { Text = "Live edits do not change launch values or authored objects. Stop discards unsaved runtime state; use Window > Saves for checkpoints. Reload preserves compatible fields and initializes new fields.", TextWrapping = TextWrapping.Wrap, Foreground = EditorTheme.Brush("#A0A0A5") });
         AutomationProperties.SetName(message, "Gameplay message"); root.Children.Add(message);
         Content = new ScrollViewer { Content = root, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled };
         long version = -1;

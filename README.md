@@ -39,7 +39,7 @@ These are bounded implementations with subsystem-specific limits, not finished v
 
 [Native C# gameplay](docs/NATIVE_GAMEPLAY.md) uses the same supported game source and native services as the CoreCLR development path. Native libraries stay loaded for the player process; changing the compiled library requires a restart. [Recorded evidence](docs/evidence/m2-native-gameplay.json) covers both operating systems, backend state comparisons and relocated Windows game replay.
 
-The experimental [save-slot service](docs/RUNTIME.md#durable-save-slots) preserves supported physics, animation, sound and typed gameplay state with guarded writes, fresh-process loads and explicit corruption recovery. The CLI and editor service share these operations; a dedicated save window, typed C# save commands and general migrations remain unfinished.
+The experimental [save-slot service](docs/RUNTIME.md#durable-save-slots) preserves supported physics, animation, sound and typed gameplay state with guarded writes, fresh-process loads and explicit corruption recovery. The CLI and [editor Save/Load window](docs/EDITOR_SAVES.md) share these operations. Typed C# gameplay save commands and general migrations remain unfinished.
 
 Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
 

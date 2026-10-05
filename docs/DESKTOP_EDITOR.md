@@ -210,3 +210,7 @@ The live summary shows destination time and active fade weight, duration and out
 These controls use `runtime.entity` and `desktop.play.step`, the same guarded operations available to agents. They are a playback/transition tool, not a graph editor, animation timeline, IK authoring suite or game-save system. See [runtime animation](RUNTIME_ANIMATION.md) for clock, interruption and rollback behavior.
 
 The [0.0.35 final-package regression](evidence/m2-native-gameplay.json) adapts the full earlier input suite to independent Scene/Game windows and passes 232 actions on NVIDIA, including layout restart and an inspected [editor screenshot](evidence/m2-native-gameplay-editor.png). An earlier attempt lost Game input capture during concurrent Windows tests; an unchanged exclusive-window rerun passed. The external-focus explanation remains an inference. These synthetic actions still do not qualify physical raw input or general DPI/accessibility behavior.
+
+## Runtime saves
+
+**Window > Saves** (also **File > Runtime saves**) configures an external checkpoint folder and saves/loads named slots through the native world service. Paused save/load uses explicitly observed guards; failed requests retain their IDs, recovery requires deliberate acknowledgement, and loading preserves the authored scene. See the [Save/Load workflow](EDITOR_SAVES.md) and its supported-state limits.

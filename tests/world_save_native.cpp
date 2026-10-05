@@ -62,12 +62,16 @@ void readonly_bundle(const fs::path& base) {
     fixture(world_path);const auto original=tree(bundle);
     {
         poima::WorldSession world(path_text(world_path),poima::WorldOpenMode::read_only_runtime,path_text(bundle));
+        check(world.save_status().generation==0 && world.save_status().root.empty(),"Native save configuration did not start empty.");
         for(const auto& path:{bundle,content,assets,sibling}) {
             rejected(world,"save.configure",configuration(path),-32070);
             check(call(world,"save.status").at("generation")==0,"Rejected configuration consumed its generation.");
             check(tree(bundle)==original,"Rejected configuration changed immutable bundle files.");
         }
         call(world,"save.configure",configuration(external));
+        const auto save_config=world.save_status();
+        check(save_config.generation==1 && fs::path(std::u8string(save_config.root.begin(),save_config.root.end()))==external,
+            "Native save configuration observation differs from committed root.");
         rejected(world,"save.configure",configuration(sibling,'4',1),-32070);
         check(call(world,"save.status").at("generation")==1,"Rejected replacement changed save configuration.");
         check(!call(world,"save.inspect",{{"slot","main"}}).at("exists").get<bool>(),"Fresh external save slot unexpectedly exists.");
