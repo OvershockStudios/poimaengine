@@ -41,7 +41,8 @@ public static unsafe class Entry
         call->Output[0]=0;
         try
         {
-            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=48 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80)
+            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=64 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid)
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -63,6 +64,22 @@ public static unsafe class Entry
             if(message.Length>450)message=message[..450];
             Write(call,message);return -1;
         }
+    }
+    private static class AnimationLayout
+    {
+        // Verify tail offsets as well as total sizes; checking sizes alone can
+        // miss mismatched field ordering across native and managed builds.
+        internal static readonly bool Valid=
+            Marshal.OffsetOf<NativeServices>(nameof(NativeServices.Context)).ToInt64()==8 &&
+            Marshal.OffsetOf<NativeServices>(nameof(NativeServices.Sound)).ToInt64()==40 &&
+            Marshal.OffsetOf<NativeServices>(nameof(NativeServices.AnimationGet)).ToInt64()==48 &&
+            Marshal.OffsetOf<NativeServices>(nameof(NativeServices.AnimationSet)).ToInt64()==56 &&
+            Marshal.OffsetOf<NativeAnimationCommand>(nameof(NativeAnimationCommand.Clip)).ToInt64()==32 &&
+            Marshal.OffsetOf<NativeAnimationCommand>(nameof(NativeAnimationCommand.BlendTicks)).ToInt64()==44 &&
+            Marshal.OffsetOf<NativeAnimationTransition>(nameof(NativeAnimationTransition.DurationTicks)).ToInt64()==32 &&
+            Marshal.OffsetOf<NativeAnimationTransition>(nameof(NativeAnimationTransition.SourceClip)).ToInt64()==40 &&
+            Marshal.OffsetOf<NativeAnimationState>(nameof(NativeAnimationState.Present)).ToInt64()==44 &&
+            Marshal.OffsetOf<NativeAnimationState>(nameof(NativeAnimationState.Transition)).ToInt64()==64;
     }
     private static void Write(NativeCall* call,string text)
     {
@@ -113,7 +130,12 @@ public static unsafe class Entry
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
-        if(call->Services==null || call->Services->Version!=2 || call->Services->Bytes!=48 || call->InputCount>32)throw new ArgumentException("Gameplay service ABI mismatch.");
+        // Check the stable header before reading any v3 tail pointer. An old
+        // engine/bridge pair must be rebuilt together, never partially invoked.
+        if(call->Services==null || call->Services->Version!=3 || call->Services->Bytes!=64 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
+            throw new ArgumentException("Gameplay service ABI mismatch: services v3/64 bytes required.");
+        if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null ||
+            call->Services->AnimationGet==null || call->Services->AnimationSet==null)throw new ArgumentException("Gameplay service callback is absent.");
         module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));
     }
     [MethodImpl(MethodImplOptions.NoInlining)]

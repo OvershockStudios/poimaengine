@@ -121,6 +121,7 @@ struct Runtime::Impl {
     std::unique_ptr<RuntimeAnimations> animations;
     std::uint64_t game_revision=0;
     std::vector<KinematicTarget> game_commands;
+    std::vector<AnimationCommand> game_animation_commands;
     SoundState sounds;
     std::vector<AcousticGeometry> acoustic_geometry;
     std::uint32_t game_sound_calls=0;
@@ -381,6 +382,41 @@ struct Runtime::Impl {
             KinematicTarget target;target.entity=gameplay_id(source->entity);target.duration_ticks=source->duration_ticks;std::copy_n(source->position,3,target.position.begin());std::copy_n(source->rotation,4,target.rotation.begin());commands.push_back(std::move(target));
         });
     }
+    static int32_t POIMA_CALL get_animation(void* context,const PoimaEntityId* id,PoimaGameAnimationState* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            // Runtime::animation checks entity existence before returning null
+            // for an existing entity that is not an AnimationRig.
+            const auto state=static_cast<Impl*>(context)->owner->animation(gameplay_id(*id));
+            *output={};output->entity=*id;output->clip=-1;output->transition.source_clip=-1;
+            if(!state)return;
+            output->present=1;output->clip=state->clip ? static_cast<std::int32_t>(*state->clip) : -1;
+            output->time=state->time;output->speed=state->speed;output->duration=state->duration;
+            output->loop=state->loop ? 1u : 0u;output->playing=state->playing ? 1u : 0u;
+            if(state->transition) {
+                const auto& source=*state->transition;auto& target=output->transition;output->transition_present=1;
+                target.start_tick=source.start_tick;target.duration_ticks=source.duration_ticks;target.elapsed_ticks=source.elapsed_ticks;
+                target.weight=source.weight;target.source_frozen=source.source_frozen ? 1u : 0u;
+                if(!source.source_frozen) {
+                    target.source_clip=source.source_clip ? static_cast<std::int32_t>(*source.source_clip) : -1;
+                    target.source_time=source.source_time;target.source_speed=source.source_speed;
+                    target.source_loop=source.source_loop ? 1u : 0u;target.source_playing=source.source_playing ? 1u : 0u;
+                }
+            }
+        });
+    }
+    static int32_t POIMA_CALL set_animation(void* context,const PoimaGameAnimationCommand* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            auto& commands=static_cast<Impl*>(context)->game_animation_commands;
+            require(commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
+            require(source->clip>=-1 && source->loop<=1 && source->playing<=1,"Invalid gameplay animation command encoding.");
+            AnimationCommand command;command.entity=gameplay_id(source->entity);
+            if(source->clip>=0)command.clip=static_cast<std::uint32_t>(source->clip);
+            command.time=source->time;command.speed=source->speed;command.loop=source->loop!=0;command.playing=source->playing!=0;command.blend_ticks=source->blend_ticks;
+            // Stage writes until Tick returns. Shared animation validation then
+            // rejects duplicates, invalid references/ranges and invalid poses.
+            commands.push_back(std::move(command));
+        });
+    }
     std::uint64_t play_sound(const std::string& emitter,float gain) {
         auto e=find(emitter);require(registry.all_of<AudioEmitter>(e),"Sound target needs an AudioEmitter.");
         return sounds.play(emitter,registry.get<AudioEmitter>(e),tick,gain);
@@ -444,20 +480,28 @@ struct Runtime::Impl {
                     if(command.stop)sounds.stop(command.voice,tick);else (void)play_sound(command.emitter,command.gain);
                 }
                 if(game) {
-                    game_sound_calls=0;sync();game_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    game_sound_calls=0;sync();game_commands.clear();game_animation_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
                         (void)e;PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    const PoimaGameServices services{2,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event};
+                    const PoimaGameServices services{3,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation};
                     game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                     auto commands=prepare_motions(game_commands);
                     for(auto& [e,motion]:commands) {
                         require(frame!=0 || !prepared.contains(e),"Gameplay and caller targeted the same body in one tick.");
                         registry.get<Body>(e).target=std::move(motion);
                     }
+                    require(game_animation_commands.size()+(frame==0 ? animation_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation commands in one tick.");
+                    for(const auto& command:game_animation_commands)
+                        require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity; }),
+                            "Gameplay and caller targeted the same animation rig in one tick.");
+                    if(!game_animation_commands.empty()) {
+                        animations->apply(game_animation_commands,tick);animation_locals();sync();
+                    }
                     game_commands.clear();
+                    game_animation_commands.clear();
                 }
                 for(auto e:kinematics) {
                     auto& body=registry.get<Body>(e);
@@ -485,6 +529,7 @@ struct Runtime::Impl {
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();
+            game_animation_commands.clear();
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
             for(std::size_t k=0;k<characters.size();++k) {

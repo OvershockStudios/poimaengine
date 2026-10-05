@@ -30,6 +30,10 @@ public enum BodyMotion : uint { None, Static, Dynamic, Kinematic, Character }
 [StructLayout(LayoutKind.Sequential)]
 public struct EntitySnapshot { public WorldTransform Transform; public Vector3d Velocity; public BodyMotion Motion; public uint MotionRemainingTicks; }
 public readonly record struct RayHit(EntityId Entity, double Distance, Vector3d Position, Vector3d? Normal);
+public readonly record struct AnimationTransition(ulong StartTick,uint DurationTicks,uint ElapsedTicks,double Weight,
+    bool SourceFrozen,int? SourceClip,double? SourceTime,double? SourceSpeed,bool? SourceLoop,bool? SourcePlaying);
+public readonly record struct AnimationState(EntityId Entity,int? Clip,double Time,double Speed,bool Loop,bool Playing,
+    double Duration,AnimationTransition? Transition);
 public enum GameAction : uint { Jump=1, Use=2 }
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInput
@@ -64,6 +68,18 @@ public abstract class Game<TState> : IGame where TState : unmanaged
 [StructLayout(LayoutKind.Sequential)] internal struct NativeHit { public EntityId Entity; public double Fraction,Distance;public Vector3d Position,Normal;public uint Hit,NormalValid; }
 [StructLayout(LayoutKind.Sequential)] internal struct NativeMotion { public EntityId Entity;public Vector3d Position;public double X,Y,Z,W;public uint Ticks,Reserved; }
 [StructLayout(LayoutKind.Sequential)] internal struct NativeSound { public EntityId Emitter;public ulong Voice;public float Gain;public uint Stop; }
+[StructLayout(LayoutKind.Sequential)] internal struct NativeAnimationCommand
+{ public EntityId Entity;public double Time,Speed;public int Clip;public uint Loop,Playing,BlendTicks; }
+[StructLayout(LayoutKind.Sequential)] internal struct NativeAnimationTransition
+{
+    public ulong StartTick;public double Weight,SourceTime,SourceSpeed;public uint DurationTicks,ElapsedTicks;
+    public int SourceClip;public uint SourceFrozen,SourceLoop,SourcePlaying;
+}
+[StructLayout(LayoutKind.Sequential)] internal struct NativeAnimationState
+{
+    public EntityId Entity;public double Time,Speed,Duration;public int Clip;
+    public uint Present,Loop,Playing,TransitionPresent,Reserved;public NativeAnimationTransition Transition;
+}
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeError { public fixed byte Text[2048]; }
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeServices
 {
@@ -72,6 +88,8 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public delegate* unmanaged[Cdecl]<void*,NativeRay*,NativeHit*,NativeError*,int> Raycast;
     public delegate* unmanaged[Cdecl]<void*,NativeMotion*,NativeError*,int> Move;
     public delegate* unmanaged[Cdecl]<void*,NativeSound*,ulong*,NativeError*,int> Sound;
+    public delegate* unmanaged[Cdecl]<void*,EntityId*,NativeAnimationState*,NativeError*,int> AnimationGet;
+    public delegate* unmanaged[Cdecl]<void*,NativeAnimationCommand*,NativeError*,int> AnimationSet;
 }
 public readonly unsafe ref struct GameContext
 {
@@ -86,6 +104,31 @@ public readonly unsafe ref struct GameContext
     { if(code!=0)throw new InvalidOperationException(Marshal.PtrToStringUTF8((nint)error->Text) ?? "Native gameplay service failed."); }
     public EntitySnapshot Get(EntityId entity)
     { EntitySnapshot result=default;NativeError error=default;Check(services->Entity(services->Context,&entity,&result,&error),&error);return result; }
+    // Queries observe current native state, including explicit caller commands,
+    // but not SetAnimation writes queued by this Tick callback.
+    public AnimationState? GetAnimation(EntityId entity)
+    {
+        NativeAnimationState result=default;NativeError error=default;
+        Check(services->AnimationGet(services->Context,&entity,&result,&error),&error);
+        if(result.Present==0)return null;
+        AnimationTransition? transition=null;
+        if(result.TransitionPresent!=0)
+        {
+            var t=result.Transition;bool frozen=t.SourceFrozen!=0;
+            transition=new(t.StartTick,t.DurationTicks,t.ElapsedTicks,t.Weight,frozen,
+                !frozen && t.SourceClip>=0 ? t.SourceClip : null,frozen ? null : t.SourceTime,
+                frozen ? null : t.SourceSpeed,frozen ? null : t.SourceLoop!=0,frozen ? null : t.SourcePlaying!=0);
+        }
+        return new(entity,result.Clip>=0 ? result.Clip : null,result.Time,result.Speed,result.Loop!=0,result.Playing!=0,result.Duration,transition);
+    }
+    // Full replacement, applied after Tick returns. Call on state changes rather
+    // than every frame: repeating a command intentionally restarts its clock.
+    public void SetAnimation(EntityId entity,int? clip,double time=0,double speed=1,bool loop=true,bool playing=true,uint blendTicks=0)
+    {
+        if(clip is <0)throw new ArgumentOutOfRangeException(nameof(clip),"Use null for the authored rest pose.");
+        NativeAnimationCommand command=new(){Entity=entity,Clip=clip ?? -1,Time=time,Speed=speed,Loop=loop ? 1u : 0u,Playing=playing ? 1u : 0u,BlendTicks=blendTicks};
+        NativeError error=default;Check(services->AnimationSet(services->Context,&command,&error),&error);
+    }
     public bool Pressed(EntityId entity,GameAction action)
     { foreach(ref readonly var input in inputs)if(input.Entity==entity && input.Pressed(action))return true;return false; }
     public RayHit? Raycast(Vector3d origin,Vector3d direction,double distance,ReadOnlySpan<EntityId> ignore=default)

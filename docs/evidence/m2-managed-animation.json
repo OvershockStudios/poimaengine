@@ -1,0 +1,407 @@
+{
+  "milestone": "M2 C# gameplay animation services",
+  "version": "0.0.34",
+  "date": "2026-10-05",
+  "source_base": "ce884b47b1306ae24ac4ffa34e19d3665b8a99bc",
+  "service_abi": {
+    "version": 3,
+    "bytes": 64,
+    "outer_call_version": 1,
+    "outer_call_bytes": 80
+  },
+  "sources": {
+    "CMakeLists.txt": "b58d5d22a252b3babd682703f2e1706f513ee241ce8af1fed9cb23b27e7a758a",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "db8694730844616aa5a4ec6ec01063110b7c3a376aad00a3f70b1588179583df",
+    "include/poima/gameplay_abi.h": "2d645751eb3147f649e93f216882a55612276ff16faef807ea91e4b4c31ca4cc",
+    "src/runtime.cpp": "c10862c71a471f0f9d148ea8269369475337014f01150b9ad229dff764374818",
+    "managed/Poima.Gameplay/Gameplay.cs": "d2c0f265fe9e39351fa76a8a7572f8332034e34884bf088060ffc9c6d8df867d",
+    "managed/Poima.ManagedBridge/Entry.cs": "577e0a74c9ad4b14aaa727986c7e0f70de7a05a4706ba38da45a4ce1826a081c",
+    "examples/managed/AnimationGame/AnimationGame.cs": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+    "examples/managed/AnimationGame/Poima.AnimationGame.csproj": "7145f02cbb1d355973bbc6c77ae3124571ae6880fa0be55b291a72f432daa5c1",
+    "scripts/verify_gameplay_animation.py": "5adba6e9ed77416f20be3e944925567d1a9979c7f5da8cc63643529e6cbc2ec1",
+    "tests/managed_service_abi/Program.cs": "e5496bf12eb80d51e16c35a20c60c5b0af867bd24be6ddde7b9a83f97781755d",
+    "tests/managed_service_abi/ManagedServiceAbi.csproj": "4c981adc9603e515e72963ca2b6d6a1fad532023a381f02958b77183c665c18b",
+    "tests/managed_service_abi/NuGet.Config": "2142cfb2dfa2c7feefbe40fabcc68b0dfecadafa99a1db9b70239d977cf2a7ef",
+    "scripts/verify_gameplay.py": "456a215a1f26313fa99ca25f4313b952078edabef4e43201c5523154459e4df4",
+    "tests/gameplay_capture.py": "b6a569dea768e536498ea99a6b13c46003e7e57287f9f07d87371ac8be87d4aa",
+    "tests/desktop_animation_controls.py": "f4a1c66ef87b6bc334564178e78fd99a7e10f72d0524967dc2c347f76d7f610e"
+  },
+  "binaries": {
+    "build/runtime-headless/poima": "92a2390892b62febc1884c9d5b48c65d521329f9a22a9c7029928e21aa90466c",
+    "build/headless/poima": "fccae9011b00d947523f9674ac99d3e72495777e80bbe9c2a45877a82ba9ca50",
+    "build/windows-runtime/poima.exe": "09ebe8d12a3d1f44837a6938559e514f7fbaf76844669866c5e09725d3895498",
+    "build/windows-runtime/poima_desktop.dll": "9131d6a2a9fecd04749d5d9bd985048e0813b3c04299d90240e289a1ef6d7bb3",
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.Gameplay.dll": "a6f3fbefadb88967872df2a147b06792b0ae7939b0c3d2a644b71549b68b76fd",
+    "build/desktop-managed-animation/Poima.Editor.dll": "559c6d21b78bf429217fecbbff7c6ca7b7fca994fec9eef8333edc54408071ab",
+    "build/desktop-managed-animation/Poima.Editor.exe": "f2d4a862b398dde8403263d3d886df708aed3c662bf22b6cb542fc17a80e629b"
+  },
+  "managed_animation": [
+    {
+      "platform": "linux",
+      "report_sha256": "852c2b5c9bad2ffcdc2eb2b78022ae009699ead1e00dcef33d8ce6e1e750a8d8",
+      "passed": true,
+      "binary_sha256": "92a2390892b62febc1884c9d5b48c65d521329f9a22a9c7029928e21aa90466c",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "sdk_sha256": "a6f3fbefadb88967872df2a147b06792b0ae7939b0c3d2a644b71549b68b76fd",
+      "test_sha256": "5adba6e9ed77416f20be3e944925567d1a9979c7f5da8cc63643529e6cbc2ec1",
+      "example_sha256": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+      "exit_code": 0,
+      "checks": {
+        "existing_nonrig_null_unknown_rejects_and_recovery": true,
+        "explicit_first_tick_command_visible_to_managed_query": true,
+        "advancing_clocks_interruption_rest_and_query_metadata": true,
+        "reload_preserves_state_and_active_transition_new_code_runs": true,
+        "duplicate_invalid_and_native_caller_conflicts_atomic_no_stale_queue": true,
+        "caller_target_can_receive_managed_command_on_later_batch_tick": true,
+        "exact_64_limit_and_combined_caller_limit": true,
+        "managed_failure_restores_existing_frozen_interrupted_transition": true,
+        "later_throw_and_sample_failure_restore_animation_physics_sound_game_state": true,
+        "partition_equivalence_and_independent_rigs": true,
+        "published_example_compiles_runs_and_use_edge_once_per_batch": true,
+        "authored_world_bytes_unchanged": true
+      },
+      "rpc_calls": 2183,
+      "builds": [
+        {
+          "name": "base",
+          "source_sha256": "ce2ca9336bdff755ce003beab90c9e8b341d85a49d29a0e167447a245f84a411",
+          "exit_code": 0,
+          "assembly_sha256": "0888048808765e9cda391e00744f30712a13fdfb619e1fd1ff67e19ef2c7de95"
+        },
+        {
+          "name": "upgrade",
+          "source_sha256": "45328d7e15c558474f31332e08a052c713d9d81dff56501be0ea1d0fcf12b69a",
+          "exit_code": 0,
+          "assembly_sha256": "c1767b7112011d3bb479987db3a31522664389ab3a5b416f842e8b98c86d055f"
+        },
+        {
+          "name": "example",
+          "source_sha256": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+          "exit_code": 0,
+          "assembly_sha256": "ff2a05fbe90cc58ef1d2f210117b3ee59538edc1e0c45d006f694a939782befc"
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "report_sha256": "aea74276398c19b2d231c8d213f9bdb9a450683d62b3e1b054bbe5ce1e599e9b",
+      "passed": true,
+      "binary_sha256": "09ebe8d12a3d1f44837a6938559e514f7fbaf76844669866c5e09725d3895498",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "sdk_sha256": "a6f3fbefadb88967872df2a147b06792b0ae7939b0c3d2a644b71549b68b76fd",
+      "test_sha256": "5adba6e9ed77416f20be3e944925567d1a9979c7f5da8cc63643529e6cbc2ec1",
+      "example_sha256": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+      "exit_code": 0,
+      "checks": {
+        "existing_nonrig_null_unknown_rejects_and_recovery": true,
+        "explicit_first_tick_command_visible_to_managed_query": true,
+        "advancing_clocks_interruption_rest_and_query_metadata": true,
+        "reload_preserves_state_and_active_transition_new_code_runs": true,
+        "duplicate_invalid_and_native_caller_conflicts_atomic_no_stale_queue": true,
+        "caller_target_can_receive_managed_command_on_later_batch_tick": true,
+        "exact_64_limit_and_combined_caller_limit": true,
+        "managed_failure_restores_existing_frozen_interrupted_transition": true,
+        "later_throw_and_sample_failure_restore_animation_physics_sound_game_state": true,
+        "partition_equivalence_and_independent_rigs": true,
+        "published_example_compiles_runs_and_use_edge_once_per_batch": true,
+        "authored_world_bytes_unchanged": true
+      },
+      "rpc_calls": 2183,
+      "builds": [
+        {
+          "name": "base",
+          "source_sha256": "ce2ca9336bdff755ce003beab90c9e8b341d85a49d29a0e167447a245f84a411",
+          "exit_code": 0,
+          "assembly_sha256": "8a388e28c9cf69d133e535ce5714594263def3fbfc714e9049f086c08fceb7be"
+        },
+        {
+          "name": "upgrade",
+          "source_sha256": "45328d7e15c558474f31332e08a052c713d9d81dff56501be0ea1d0fcf12b69a",
+          "exit_code": 0,
+          "assembly_sha256": "ae6f604fdae76c47145db7340acc79c03084c0b6496005314c7615ee2eff554a"
+        },
+        {
+          "name": "example",
+          "source_sha256": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+          "exit_code": 0,
+          "assembly_sha256": "6d406c639a5268801fccc8ba63622d97da6f93fcb15aea12c7133fa4723dce3d"
+        }
+      ]
+    }
+  ],
+  "service_abi_checks": [
+    {
+      "report_sha256": "c267fc57f779032981c3fe3dd92691636aff0a2bdbd1d3c1fda8ff37ee17b363",
+      "passed": true,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 2/64 rejected before Tick",
+        "services 3/48 rejected before Tick",
+        "services 3/63 rejected before Tick",
+        "services 3/65 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 3/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "matching v3 transfers state, transition, nullable rest, frozen metadata and command correctly",
+        "animation fixture collectible context released"
+      ],
+      "platform": "Kali GNU/Linux Rolling",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "sdk_sha256": "a6f3fbefadb88967872df2a147b06792b0ae7939b0c3d2a644b71549b68b76fd"
+    },
+    {
+      "report_sha256": "edfecbd34a1fa1a80bcd469123f4e4bc6c6551f504906df375ea53e9c0e1ae2e",
+      "passed": true,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 2/64 rejected before Tick",
+        "services 3/48 rejected before Tick",
+        "services 3/63 rejected before Tick",
+        "services 3/65 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 3/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "matching v3 transfers state, transition, nullable rest, frozen metadata and command correctly",
+        "animation fixture collectible context released"
+      ],
+      "platform": "Microsoft Windows 10.0.26220",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "sdk_sha256": "a6f3fbefadb88967872df2a147b06792b0ae7939b0c3d2a644b71549b68b76fd"
+    }
+  ],
+  "existing_gameplay_regression": [
+    {
+      "platform": "linux",
+      "report_sha256": "8ea0c68b98c8a27e71583ff7ee5b7d603ba7c153e1829ba78d58832d333554d3",
+      "passed": true,
+      "exit_code": 0,
+      "binary_sha256": "92a2390892b62febc1884c9d5b48c65d521329f9a22a9c7029928e21aa90466c",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "test_sha256": "456a215a1f26313fa99ca25f4313b952078edabef4e43201c5523154459e4df4",
+      "reloads": 100,
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "intentional_retention_probe": {
+        "active_modules": 1,
+        "retired_alive": 1
+      },
+      "compilation": "Real portable IL fixtures compiled with the Linux .NET SDK; unchanged successful variants reused from the initial run. The deliberate compiler failure was rerun."
+    },
+    {
+      "platform": "windows",
+      "report_sha256": "c3661ebdd652b8c50845a80b14702a77271c28b25aefc4156f52bd3adf0833ae",
+      "passed": true,
+      "exit_code": 0,
+      "binary_sha256": "09ebe8d12a3d1f44837a6938559e514f7fbaf76844669866c5e09725d3895498",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "test_sha256": "456a215a1f26313fa99ca25f4313b952078edabef4e43201c5523154459e4df4",
+      "reloads": 100,
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "intentional_retention_probe": {
+        "active_modules": 1,
+        "retired_alive": 1
+      },
+      "compilation": "Real portable IL fixtures compiled with the Linux .NET SDK; unchanged successful variants reused from the initial run. The deliberate compiler failure was rerun."
+    }
+  ],
+  "linux_ctest": [
+    {
+      "configuration": "runtime_full",
+      "report_sha256": "a98edf05adc74cd3515e1252bc90dc26450d0f2b9e854996a5bf658323258a5f",
+      "tests": 32,
+      "failures": 0,
+      "skipped": 0,
+      "junit_seconds": 95.0,
+      "names": [
+        "asset_hash",
+        "texture_native",
+        "tangents_native",
+        "animation_native",
+        "player_input",
+        "editor_gizmo",
+        "input_profile_native",
+        "world_session_native",
+        "local_session_native",
+        "scene_math",
+        "shadow_math",
+        "visibility_math",
+        "runtime_native",
+        "interaction_native",
+        "runtime_animation_native",
+        "runtime_mesh_native",
+        "project_contract",
+        "shared_session_contract",
+        "world_history_contract",
+        "input_profile_contract",
+        "gamepad_contract",
+        "lighting_contract",
+        "audio_contract",
+        "asset_contract",
+        "animation_contract",
+        "runtime_animation_contract",
+        "runtime_animation_blend_contract",
+        "mesh_collision_contract",
+        "runtime_contract",
+        "cli_contract",
+        "world_contract",
+        "native_module_contract"
+      ]
+    },
+    {
+      "configuration": "authoring_only_selected",
+      "report_sha256": "61f7b1156685c750d8739370a22c2f4b8c95a1041fc1c9ae24866adad1bd8371",
+      "tests": 3,
+      "failures": 0,
+      "skipped": 0,
+      "junit_seconds": 1.0,
+      "names": [
+        "world_session_native",
+        "runtime_animation_blend_contract",
+        "cli_contract"
+      ]
+    }
+  ],
+  "gpu_gameplay_regression": [
+    {
+      "report_sha256": "f4b58b622ee4716342413d33c64bc5681517d0a252affd0786d2c0baedd9593f",
+      "passed": true,
+      "gpu_index": 0,
+      "exit_code": 0,
+      "binary_sha256": "09ebe8d12a3d1f44837a6938559e514f7fbaf76844669866c5e09725d3895498",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "game_sha256": "d2a91ffe851be30e3eb5eb863f69534b6b0da6e068823cf7d7a0dff01876e594",
+      "test_sha256": "b6a569dea768e536498ea99a6b13c46003e7e57287f9f07d87371ac8be87d4aa",
+      "checks": {
+        "CSharp_use_opens_door_and_character_passes": true,
+        "continuous_replay_matches_headless_state_and_CSharp_fields": true,
+        "final_pixels_match_unculled_headless_capture": true,
+        "retry_does_not_repeat_CSharp": true,
+        "stationary_camera_observes_scripted_motion": true,
+        "all_contexts_released": true
+      },
+      "play": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "tick": 480,
+        "frames_presented": 481,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "stop_reason": "replay_complete"
+      },
+      "images": {
+        "baseline.bmp": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a",
+        "closed.bmp": "67fda62d561df345581ac5321dbfc52e54b939e1c94151558add8c43cd088991",
+        "open.bmp": "5e3454c6dfc421e7681b159c51efbacd96ea01de03d27a04e109dd906a4181a2",
+        "player.bmp": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+      }
+    },
+    {
+      "report_sha256": "deabc8feaf2097a80c861109f434658711f345d42aefac4355c10ad41b89111f",
+      "passed": true,
+      "gpu_index": 1,
+      "exit_code": 0,
+      "binary_sha256": "09ebe8d12a3d1f44837a6938559e514f7fbaf76844669866c5e09725d3895498",
+      "bridge_sha256": "982aa5408fe41eb2c1f243fb9f3c0fee0ab828e3e694fa1d68032d3723aff3e7",
+      "game_sha256": "d2a91ffe851be30e3eb5eb863f69534b6b0da6e068823cf7d7a0dff01876e594",
+      "test_sha256": "b6a569dea768e536498ea99a6b13c46003e7e57287f9f07d87371ac8be87d4aa",
+      "checks": {
+        "CSharp_use_opens_door_and_character_passes": true,
+        "continuous_replay_matches_headless_state_and_CSharp_fields": true,
+        "final_pixels_match_unculled_headless_capture": true,
+        "retry_does_not_repeat_CSharp": true,
+        "stationary_camera_observes_scripted_motion": true,
+        "all_contexts_released": true
+      },
+      "play": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "tick": 480,
+        "frames_presented": 481,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "stop_reason": "replay_complete"
+      },
+      "images": {
+        "baseline.bmp": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a",
+        "closed.bmp": "855308a780310fac891dc49899c5317316e578b602b465b18a420e21545e0b19",
+        "open.bmp": "f2dbd0ac2fb2489419f6c2191c11c617aca0878fa9f6671be0145fb4d437c99a",
+        "player.bmp": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a"
+      }
+    }
+  ],
+  "desktop_regression": {
+    "report_sha256": "71c9da10b73c4a31ea896b95013af1c94c165a5e53a68857d58cc3626ae41072",
+    "passed": true,
+    "gpu": 1,
+    "source_sha256": "f4a1c66ef87b6bc334564178e78fd99a7e10f72d0524967dc2c347f76d7f610e",
+    "editor_sha256": "559c6d21b78bf429217fecbbff7c6ca7b7fca994fec9eef8333edc54408071ab",
+    "input": "Accessible control semantic actions; physical input is not qualified.",
+    "window_capture": {
+      "status": "unavailable",
+      "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+    },
+    "exit_code": 0,
+    "captures": {
+      "scene.bmp": "e592790a1dcb49bd73d5061aae4bdb2889c7c60575d50b1f3780e227385e1f05",
+      "game.bmp": "4a8bd45d004a3520327bff0f33848e8e952cf14dd718c319e8e18379a8aa912f"
+    },
+    "actions": 101,
+    "scope": "Existing authored/live animation Inspector controls and native Scene/Game captures on the repackaged editor; this milestone adds no new GUI controls."
+  },
+  "build_environment": {
+    "compiler_for_managed_fixtures": "Linux .NET SDK 10.0.401 producing portable IL",
+    "native_runtime_hosts": "Linux and Windows CoreCLR 10.0.12",
+    "native_builds": "Linux runtime and authoring-only, cross-compiled Windows runtime/desktop bridge; all completed successfully.",
+    "managed_bridge_and_examples": "Builds completed with zero warnings/errors.",
+    "performance": "Build/reload timing in raw artifacts is diagnostic under concurrent qualification load, not a new performance benchmark."
+  },
+  "resolved_findings": [
+    "Initial Windows integration/regression invocations referenced a removed hostfxr10.0.11 installation. Verified installed10.0.12, updated commands and the guide, and reran affected checks successfully without production code changes."
+  ],
+  "limitations": [
+    "Single Game<TState> module remains the managed gameplay model; general components, jobs/events and production AOT/console support are unfinished.",
+    "Crossfade interruption preserves pose, not velocity, locomotion phase or foot contact; layers, graphs, IK, root motion and retargeting remain unfinished.",
+    "Managed gameplay is trusted project code. Rollback cannot undo external I/O, statics, event subscriptions or other side effects.",
+    "No new crowd-throughput, GC, full-game frame-time or cross-platform bitwise C# determinism claim.",
+    "Renderer regression uses the established door fixture; new managed animation behavior is qualified by analytic pose/state checks, not a new production character scene.",
+    "Windows remained locked; semantic GUI actions and native captures passed, but no new full-window visual review was obtained.",
+    "The three authoring-only checks are a selected compatibility subset, not a full repeat of that configuration suite.",
+    "Persistent game saves and a retained simulation timeline are separate unfinished systems."
+  ]
+}
