@@ -106,3 +106,5 @@ Schema revision 13 adds `AudioEmitter`/`AcousticMaterial` components, `asset.aud
 Schema revision 14 adds native sound commands to `runtime.step` and player replay segments, `runtime.audio.voices`, `runtime.audio.replay`, and the optional `runtime.play` audio switch. See [sound-event contracts](AUDIO_EVENTS.md) for bounds, partial-progress behavior and receipt semantics. Frozen audio capture remains a separate observation.
 
 Schema revision 26 adds `runtime.gameplay.load_native` for an inventoried Native AOT artifact, with existing runtime tick/revision guards and retry semantics. An optional expected descriptor hash binds loading to previously inspected metadata. [Native gameplay contract](NATIVE_GAMEPLAY.md).
+
+Schema revision 27 adds `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. Saves use an explicit external root, persisted write receipts and guarded staged replacement without changing the authored document. See the [save-slot contract](RUNTIME.md#durable-save-slots) for examples, frozen content binding, recovery and current limits.

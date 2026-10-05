@@ -423,12 +423,19 @@ struct Bridge : ViewportState {
     void sync_playback() {
         const auto state=world->runtime_status();
         if((!state.active && !play_session.empty()) || (state.active && state.session_id!=play_session)) {
-            release_input(true);
+            release_input(true);runtime_parents.clear();runtime_parent_session.clear();
             playing=false;play_session=state.active ? state.session_id : std::string{};play_tick=state.active ? state.tick : 0;
             play_clock=PlayerClock{};play_last=Clock::now();capture_hold=false;play_error.clear();
         } else if(state.tick!=play_tick) {
             if(playing) { playing=false;release_input();play_error="Runtime advanced outside the desktop playback clock; resume explicitly."; }
             play_tick=state.tick;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false;
+        }
+        if(state.active && runtime_parent_session!=state.session_id) {
+            // A save restore can replace the session without runtime.start.
+            // Query the actual frozen runtime, never the current authored tree.
+            Parents hierarchy;
+            for(const auto& [child,parent]:world->runtime_hierarchy())hierarchy.emplace(child,parent);
+            runtime_parents.swap(hierarchy);runtime_parent_session=state.session_id;
         }
     }
     Json playback_json() const {
@@ -446,7 +453,7 @@ struct Bridge : ViewportState {
             integer(params.at("revision"));identifier(params.at("session_id"));require(!params.contains("paused") || params.at("paused").is_boolean(),"Paused must be boolean.");
             require(gameplay_profile.is_null() || params.contains("expected_gameplay_generation"),"Configured gameplay requires expected_gameplay_generation.");
             if(params.contains("expected_gameplay_generation"))require(integer(params.at("expected_gameplay_generation"))==gameplay_generation,"Gameplay configuration generation conflict.",-32009);
-            const bool fresh=!world->runtime_status().active;Parents hierarchy;if(fresh)hierarchy=parents();
+            const bool fresh=!world->runtime_status().active;
             const auto started=world_call("runtime.start",{{"revision",params.at("revision")},{"session_id",params.at("session_id")}});
             if(fresh && !gameplay_profile.is_null()) {
                 // A fresh runtime has no receipts. Its session ID is therefore
@@ -459,7 +466,6 @@ struct Bridge : ViewportState {
                     sync_playback();play_error=detail;expire_gizmo();expire_capture();throw;
                 }
             }
-            if(fresh) { runtime_parents=std::move(hierarchy);runtime_parent_session=started.at("session_id"); }
             sync_playback();
             // Replaying start must not resume a runtime that was later paused.
             if(!started.at("replayed").get<bool>()) { playing=!params.value("paused",false);play_last=Clock::now(); }
@@ -813,7 +819,7 @@ struct Bridge : ViewportState {
         methods["desktop.capture.status"]=object({{"capture_id",{{"type","integer"},{"minimum",1},{"maximum",max_integer}}}},{"capture_id"});
         return {{"methods",methods},{"world_methods","world.describe"},{"viewports",{{"names",{"scene","game"}},{"binding","Named HWNDs are independent and cannot be mixed with legacy viewport ABI. One creating UI thread; one shared world and owner poll clock."},{"camera","desktop.camera controls Scene; desktop.game.camera selects Game camera or null. Attach is lazy; missing camera/asset errors remain local and repairable."},{"state","desktop.inspect.views reports attachment, extent, graphics/preparation errors and presentation metadata per pane."}}},{"capture",{{"completion","Asynchronous: queue returns capture_id/state; inspect status after poll/draw."},{"capacity",1},{"retained_results",1},{"timeout_ms",2000},{"guards","Authored revision, runtime session and tick plus target camera; Scene also guards gizmo/selection. Only target draw completes the job. Default target is Scene for named panes or current legacy view."},{"format","BMP; native viewport only; exclusive new path"}}},
             {"playback",{{"clock","Owner poll only; fixed 60 Hz; at most 8 catch-up ticks/poll; excess wall time is dropped and reported. Inspect, draw and capture never step."},
-                {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits; Stop discards runtime without authored writes."},
+                {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits and save.configure/save.write/save.load. Successful save.load opens a fresh paused session with cleared input. Stop discards runtime without authored writes."},
                 {"capture","A queued capture holds automatic ticking until completion/error; resume discards the held wall-time interval."},
                 {"background","Playback continues while the owner polls, including hidden/detached viewports. Gameplay input has a separate explicit focus gate; editor audio playback is not connected."}}},
             {"gameplay",{{"configuration","Session-local CoreCLR launch profile; configure only while stopped. Paths resolve relative to the world and must name existing regular files; validation executes no code. Semantic type/field checks occur when Play loads the module."},
@@ -846,12 +852,10 @@ struct Bridge : ViewportState {
             const auto method=message.at("method").get<std::string>();
             if(!method.starts_with("desktop.")) {
                 sync_playback();
-                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit"))
-                    throw Failure(-32009,"Pause desktop playback before manual runtime mutation.");
-                const bool starting=method=="runtime.start" && !world->runtime_status().active;
-                Parents starting_parents;if(starting)starting_parents=parents();
+                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" ||
+                    method=="save.configure" || method=="save.write" || method=="save.load"))
+                    throw Failure(-32009,"Pause desktop playback before manual runtime mutation or saving/loading.");
                 auto response=world->request(bytes,WorldRequestScope::shared_editor);
-                if(starting) { const auto state=world->runtime_status();if(state.active) { runtime_parents=std::move(starting_parents);runtime_parent_session=state.session_id; } }
                 if(method=="world.describe" && !notification) {
                     auto value=Json::parse(response);
                     if(value.contains("result"))value["result"]["editor_discovery"]="desktop.describe";

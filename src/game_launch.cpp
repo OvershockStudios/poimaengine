@@ -75,7 +75,7 @@ Reply run_game(const GameLaunchOptions& options) {
         output_path(options.render.capture,game,options.replay);output_path(options.report,game,options.replay);
         if(!options.render.capture.empty() && !options.report.empty())require(!world_detail::same_path_name(normalized(options.render.capture),normalized(options.report)),"Game capture and report must differ.");
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
-        WorldSession world(game.world,WorldOpenMode::read_only_runtime);const auto session=id();
+        WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);const auto session=id();
         call(world,"runtime.start",{{"session_id",session},{"revision",game.revision}});
         if(!game.gameplay_descriptor.empty())call(world,"runtime.gameplay.load_native",{
             {"session_id",session},{"request_id",id()},{"expected_tick",0},{"expected_revision",0},

@@ -6,6 +6,7 @@
 #include "poima/player.hpp"
 #include "poima/build_info.hpp"
 #include "poima/native_gameplay_artifact.hpp"
+#include "poima/save_store.hpp"
 #include "world_storage.hpp"
 #include "asset_store.hpp"
 #include "input_profile_store.hpp"
@@ -360,7 +361,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 26}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 27}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -516,6 +517,28 @@ Json describe() {
     preview["properties"]["time"]=methods["asset.animation.sample"]["properties"]["time"];
     preview["properties"]["loop"]=methods["asset.animation.sample"]["properties"]["loop"];
     preview["required"].push_back("asset");preview["required"].push_back("time");methods["asset.animation.capture"]=preview;
+    const Json save_slot_schema={{"type","string"},{"pattern","^[a-z0-9_-]{1,64}$"}};
+    const Json save_path_schema={{"type","string"},{"minLength",1},{"maxLength",4096}};
+    const Json nullable_revision={{"anyOf",{rev,Json{{"type","null"}}}}};
+    methods["save.status"]=object_schema(Json::object());
+    methods["save.configure"]=object_schema({{"request_id",id},{"expected_generation",rev},{"root",{{"anyOf",{save_path_schema,Json{{"type","null"}}}}}}},{"request_id","expected_generation","root"});
+    methods["save.inspect"]=object_schema({{"slot",save_slot_schema}},{"slot"});
+    methods["save.write"]=object_schema({{"request_id",id},{"configuration_generation",rev},{"slot",save_slot_schema},{"expected_generation",rev},
+        {"session_id",id},{"expected_tick",rev},{"expected_gameplay_revision",rev},{"acknowledge_recovery",{{"type","boolean"},{"default",false}}}},
+        {"request_id","configuration_generation","slot","expected_generation","session_id","expected_tick","expected_gameplay_revision"});
+    const auto saved_managed=object_schema({{"hostfxr",save_path_schema},{"bridge",save_path_schema},{"assembly",save_path_schema},
+        {"type",{{"type","string"},{"minLength",1},{"maxLength",512}}}},{"hostfxr","bridge","assembly","type"});
+    const auto saved_native=object_schema({{"descriptor",save_path_schema},{"expected_descriptor_sha256",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}}},{"descriptor"});
+    methods["save.load"]=object_schema({{"request_id",id},{"configuration_generation",rev},{"slot",save_slot_schema},{"expected_generation",rev},
+        {"revision",rev},{"expected_session_id",parent},{"expected_tick",nullable_revision},{"expected_gameplay_revision",nullable_revision},{"new_session_id",id},
+        {"gameplay",{{"anyOf",{saved_managed,saved_native,Json{{"type","null"}}}}}},{"allow_recovery",{{"type","boolean"},{"default",false}}}},
+        {"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","new_session_id"});
+    result["saves"]={{"storage","Explicit existing root, session-local configuration. Each lowercase slot uses a separate locked subdirectory. Saves never modify the authored document; packaged hosts protect the entire bundle root."},
+        {"content","Frozen authored definition plus logical snapshot; all referenced assets are content-verified at start and again with fresh caches on load. No executable paths are selected from save bytes."},
+        {"guards","Configuration generation, slot generation, runtime session/tick/gameplay revision. Restore always uses a fresh session ID and preserves authoring. Pause desktop playback before configure/write/load."},
+        {"retry","Write receipts persist per slot; configure/load retain the latest32 session-local receipts. Exact retries do not repeat mutations. Forgotten IDs beyond retention are new requests subject to guards."},
+        {"recovery","Inspect reports verified previous-generation fallback. Load requires allow_recovery:true; writes after payload fallback require acknowledge_recovery:true. Manifest recovery permits reads only."},
+        {"limitations","Synchronous bounded64MiB save, exact gameplay backend/image/schema, fixed entity set. No general migrations, autosave scheduler, platform/cloud adapters or power-loss qualification."}};
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -625,6 +648,13 @@ class World {
     std::unique_ptr<Runtime> runtime_;
     std::shared_ptr<GamepadHost> gamepad_host_;
     RuntimeDefinition runtime_definition_;
+    Json runtime_document_;
+    std::string runtime_content_hash_;
+    std::optional<GameplayConfig> runtime_gameplay_config_;
+    fs::path protected_root_,save_root_;
+    std::uint64_t save_configuration_generation_=0;
+    Json save_receipts_=Json::array();
+    struct FrozenContent { RuntimeDefinition definition;WorldPackageContent package;Json document;std::string hash; };
     std::string runtime_id_, stopped_runtime_id_;
     std::set<std::string> used_runtime_ids_;
     Json runtime_start_params_, runtime_start_result_;
@@ -683,10 +713,12 @@ class World {
         exists_ = true;
     }
 public:
-    explicit World(const std::string& utf8_path,WorldOpenMode mode) :
+    explicit World(const std::string& utf8_path,WorldOpenMode mode,const std::string& protected_root) :
         path_(fs::weakly_canonical(fs::absolute(fs::path(std::u8string(utf8_path.begin(), utf8_path.end()))))),
         read_only_(mode==WorldOpenMode::read_only_runtime) {
         require(mode==WorldOpenMode::authoring || mode==WorldOpenMode::read_only_runtime,"Unknown world open mode.");
+        if(read_only_)protected_root_=protected_root.empty() ? path_.parent_path() : fs::canonical(fs::path(std::u8string(protected_root.begin(),protected_root.end())));
+        if(read_only_)require(fs::is_directory(protected_root_) && save_inside(path_,protected_root_),"Protected bundle root must contain this world.");
         if(read_only_)require(fs::is_regular_file(path_),"A read-only runtime world must be an existing regular file.");
         else lock_=std::make_unique<WriterLock>(fs::path(path_).concat(".lock"));
         exists_ = fs::exists(path_);
@@ -694,9 +726,9 @@ public:
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
     }
-    WorldPackageContent package_content() const {
-        WorldPackageContent result;result.revision=revision(doc_.at("revision"));
-        std::map<std::string,WorldPackageAsset> files;ModelCache assets;
+    FrozenContent freeze_content(const Json& source) const {
+        WorldPackageContent result;result.revision=revision(source.at("revision"));
+        std::map<std::string,WorldPackageAsset> files;ModelCache assets;AudioCache audio;
         auto add=[&](const std::string& id,const char* extension,std::size_t bytes) {
             const auto filename=id+extension;files.emplace(filename,WorldPackageAsset{filename,id,static_cast<std::uint64_t>(bytes)});
         };
@@ -710,7 +742,7 @@ public:
         };
         // Only active component references are dependencies. Receipt/history
         // payloads may mention retired assets and are deliberately not scanned.
-        for(const auto& entity:doc_.at("entities")) {
+        for(const auto& entity:source.at("entities")) {
             const auto& components=entity.at("components");
             for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
                 const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
@@ -721,23 +753,27 @@ public:
                 const auto& textures=components.at("PbrTextures");const std::array<const char*,5> names{"base_color","metallic_roughness","emissive","occlusion","normal"};
                 for(std::size_t slot=0;slot<names.size();++slot)if(textures.contains(names[slot]) && !textures.at(names[slot]).is_null()) {
                     const auto& ref=textures.at(names[slot]);std::shared_ptr<const TextureImage> value;
-                    if(ref.contains("image")) { const auto source=model(ref.at("asset").get<std::string>());const auto index=revision(ref.at("image"));require(index<source->images.size(),"Package texture image index does not exist.",-32050);value=source->images[static_cast<std::size_t>(index)]; }
+                    if(ref.contains("image")) { const auto source_model=model(ref.at("asset").get<std::string>());const auto index=revision(ref.at("image"));require(index<source_model->images.size(),"Package texture image index does not exist.",-32050);value=source_model->images[static_cast<std::size_t>(index)]; }
                     else value=image(ref.at("asset").get<std::string>());
                     require(value->srgb==(slot==0 || slot==2),"Package texture color space does not match its material slot.",-32050);
                 }
             }
             if(components.contains("AudioEmitter")) {
                 result.needs_audio=true;const auto id=components.at("AudioEmitter").at("asset").get<std::string>();
-                if(!files.contains(id+".paudio")) { const auto value=read_audio_asset(asset_directory(),id);add(id,".paudio",value.bytes); }
+                if(!files.contains(id+".paudio")) { (void)audio.get(asset_directory(),id);add(id,".paudio",audio.clips.at(id).bytes); }
             }
         }
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
-        (void)runtime_definition();
-        auto document=doc_;document["receipts"]=Json::array();document["retired_ids"]=Json::array();result.document=document.dump(2)+'\n';
+        auto definition=runtime_definition(false,&source,false,&assets,&audio);
+        auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
-        return result;
+        auto identity=document;identity.erase("receipts");identity.erase("retired_ids");
+        Json inventory=Json::array();for(const auto& f:result.assets)inventory.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
+        const auto hash=content_hash(Json{{"format","poima.runtime-content"},{"version",1},{"document",identity},{"assets",inventory}}.dump());
+        return {std::move(definition),std::move(result),std::move(document),hash};
     }
+    WorldPackageContent package_content() const { return freeze_content(doc_).package; }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision; }
@@ -842,6 +878,7 @@ public:
     Json dispatch(const std::string& method, const Json& params) {
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
         prune_model_cache();
+        if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") {
             fields(params, {});auto result=describe();result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
@@ -1481,9 +1518,9 @@ public:
             }
         }
     }
-    RuntimeDefinition runtime_definition(bool audio_only=false,const Json* source=nullptr,bool animation_only=false) const {
+    RuntimeDefinition runtime_definition(bool audio_only=false,const Json* source=nullptr,bool animation_only=false,ModelCache* supplied_models=nullptr,AudioCache* supplied_audio=nullptr) const {
         const auto& document=source ? *source : doc_;
-        auto& cache=model_cache_;AudioCache audio_cache;
+        auto& cache=supplied_models ? *supplied_models : model_cache_;AudioCache local_audio;auto& audio_cache=supplied_audio ? *supplied_audio : local_audio;
         std::set<std::string> rig_assets;
         if(animation_only)for(const auto& e:document.at("entities"))
             if(e.at("components").contains("AnimationRig"))rig_assets.insert(e.at("components").at("AnimationRig").at("asset").get<std::string>());
@@ -1549,10 +1586,11 @@ public:
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         return result;
     }
+#include "world_save.inc"
     Json runtime_summary() const {
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
-            {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_definition_.authored_revision!=revision(doc_.at("revision"))},
+            {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || runtime_document_.at("entities")!=doc_.at("entities")},
             {"tick",state.tick},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
@@ -1829,7 +1867,7 @@ public:
                 config.native_schema=artifact.schema;config.type=artifact.type;
                 validate_gameplay_values(config.native_schema,normalized.at("values").dump());
             }
-            if(load)runtime_->gameplay_load(config,normalized.at("values").dump());else runtime_->gameplay_edit(normalized.at("values").dump());
+            if(load) { runtime_->gameplay_load(config,normalized.at("values").dump());runtime_gameplay_config_=std::move(config); }else runtime_->gameplay_edit(normalized.at("values").dump());
         }
         catch(const std::exception& e) { throw Error(-32060,e.what()); }
         auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
@@ -1856,19 +1894,20 @@ public:
             }
             require(!used_runtime_ids_.contains(id),"Runtime session ID was already used; supply a fresh ID.",-32010);
             require(used_runtime_ids_.size()<10000,"Runtime session count limit reached; reopen the authoring process.");
-            current_revision(params); auto definition=runtime_definition();
+            current_revision(params); auto frozen=freeze_content(doc_);auto& definition=frozen.definition;
             std::unique_ptr<Runtime> candidate;
             try { candidate=std::make_unique<Runtime>(definition); }
             catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
             Json result={{"session_id",id},{"authored_revision",definition.authored_revision},{"tick",0},{"started",true},{"replayed",false}};
-            runtime_start_params_=params; runtime_start_result_=result; runtime_id_=id;
-            used_runtime_ids_.insert(id); runtime_receipts_=Json::array(); runtime_definition_=std::move(definition); runtime_=std::move(candidate);
+            auto start_params=params,start_result=result;auto session_id=id;auto used=used_runtime_ids_;used.insert(id);Json receipts=Json::array();
+            runtime_start_params_.swap(start_params);runtime_start_result_.swap(start_result);runtime_id_.swap(session_id);
+            used_runtime_ids_.swap(used);runtime_receipts_.swap(receipts);runtime_definition_=std::move(definition);runtime_document_.swap(frozen.document);runtime_content_hash_.swap(frozen.hash);runtime_gameplay_config_.reset();runtime_.swap(candidate);
             return result;
         }
         if(method=="runtime.stop") {
             fields(params,{"session_id"},{"session_id"}); const auto id=identifier(params.at("session_id"));
             if(!runtime_ && stopped_runtime_id_==id) return {{"session_id",id},{"stopped",true},{"replayed",true}};
-            runtime_guard(params); stopped_runtime_id_=id; runtime_.reset(); runtime_receipts_.clear();
+            runtime_guard(params); stopped_runtime_id_=id; runtime_.reset();runtime_gameplay_config_.reset(); runtime_receipts_.clear();
             return {{"session_id",id},{"stopped",true},{"replayed",false}};
         }
         if(method=="runtime.inspect") { fields(params,{"session_id"},{"session_id"}); runtime_guard(params); return runtime_summary(); }
@@ -2063,9 +2102,9 @@ public:
 struct WorldSession::Impl {
     World world;
     bool closed=false;
-    explicit Impl(const std::string& path,WorldOpenMode mode):world(path,mode) {}
+    explicit Impl(const std::string& path,WorldOpenMode mode,const std::string& protected_root):world(path,mode,protected_root) {}
 };
-WorldSession::WorldSession(const std::string& path,WorldOpenMode mode):impl_(std::make_unique<Impl>(path,mode)) {}
+WorldSession::WorldSession(const std::string& path,WorldOpenMode mode,const std::string& protected_root):impl_(std::make_unique<Impl>(path,mode,protected_root)) {}
 WorldSession::~WorldSession()=default;
 bool WorldSession::closed() const { return impl_->closed; }
 WorldPackageContent WorldSession::package_content() const {
@@ -2073,6 +2112,9 @@ WorldPackageContent WorldSession::package_content() const {
 }
 WorldRuntimeStatus WorldSession::runtime_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_status();
+}
+std::vector<std::pair<std::string,std::string>> WorldSession::runtime_hierarchy() const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_hierarchy();
 }
 WorldGameplayStatus WorldSession::gameplay_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.gameplay_status();

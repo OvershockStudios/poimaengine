@@ -97,7 +97,7 @@ The recorded 491-tick fixture produced exactly equal numeric results for all eig
 
 Native Windows Vulkan captures passed on both the NVIDIA and AMD GPUs. View the [spawn scene](evidence/m2-runtime-spawn.png), [settled crate](evidence/m2-runtime-settled.png) and [attached first-person camera](evidence/m2-runtime-first-person.png). These show the basic box renderer and physics observation path, not the planned final graphics.
 
-An initial [C# gameplay API](MANAGED_GAMEPLAY.md) now supports typed state, use-driven interactions and compatible-field reload. Persistent simulation saves, clocks beyond the tick counter, seeded random streams, general component/event APIs, stairs, crouching, swimming, moving-platform handling, configurable input actions, render interpolation and packaging remain unimplemented. Earlier C# reload/shipping lab measurements remain separate experiments. M0, M1 and M2 remain open.
+An initial [C# gameplay API](MANAGED_GAMEPLAY.md) now supports typed state, use-driven interactions and compatible-field reload. General save migrations and gameplay save commands, clocks beyond the tick counter, seeded random streams, general component/event APIs, stairs, crouching, swimming, moving-platform handling, configurable input actions, render interpolation and packaging remain unimplemented. Earlier C# reload/shipping lab measurements remain separate experiments. M0, M1 and M2 remain open.
 
 Static mesh geometry and PBR factors are frozen with the runtime definition. Imported geometry does not automatically supply a collider. See [static assets](ASSETS.md).
 
@@ -113,7 +113,7 @@ Version 0.0.21 adds editable rig bindings and fixed-tick clip playback. `runtime
 
 ## Portable runtime snapshot foundation
 
-The C++ runtime has an experimental logical checkpoint API. This is the first part of game-save support: **there is no save-slot service, durable storage protocol, C# save command or editor save/load workflow yet**. Stopping an ordinary editor/player session still discards its runtime state.
+The C++ runtime has an experimental logical checkpoint API. The [save-slot service](#durable-save-slots) adds storage and guarded activation around it. A typed C# save command and dedicated editor save/load window remain unfinished. Stopping an ordinary session still discards its unsaved runtime state.
 
 ```cpp
 // frozen_definition and content_sha256 come from the trusted host/content system.
@@ -140,6 +140,51 @@ The host supplies the lowercase SHA-256 of its **complete frozen authored conten
 
 The version-1 diagnostic JSON envelope carries a SHA-256 of its canonical payload. Checksums detect corruption, not deliberate save editing or authenticity. Decode rejects duplicate/unknown fields, incomplete entity/field sets, invalid references and numbers, mismatched content, excessive nesting and oversized data. Whole snapshots are limited to 64 MiB, 32 nesting levels and two million parser events; animation state is additionally limited to 16 MiB and sound state to 512 KiB. Counts retain the runtime's existing limits. Snapshot IDs contain 1–256 UTF-8 bytes without NUL (authored worlds already enforce their stricter 32-hex identities). Live state outside the supported save bounds is rejected during export instead of producing an unusable checkpoint.
 
-This synchronous implementation allocates JSON and a staged runtime; it is not a hitch-free asynchronous save system. It has no persistence policy for unimplemented general components, inventories, spawn/despawn, streamed regions or future environmental systems. File generations, recovery, migrations, cancellation, performance budgets and platform storage adapters remain separate work.
+This synchronous implementation allocates JSON and a staged runtime; it is not a hitch-free asynchronous save system. It has no persistence policy for unimplemented general components, inventories, spawn/despawn, streamed regions or future environmental systems. Migrations, cancellation, performance budgets and platform storage adapters remain separate work.
 
 Native tests cover motion/character continuation, interrupted animation, sound, corrupt data and content binding. `poima-runtime-save-test --write-fixture PATH` and a separate `--read-fixture PATH` process qualify an explicit test file round trip; those test-only file operations do not implement engine save slots. The separate `poima-runtime-save-gameplay-test HOSTFXR BRIDGE ASSEMBLY TYPE` (or `--native DESCRIPTOR` for Native AOT) uses the checked-in managed fixture to exercise real C# tick continuation and collectible module lifetimes. [Snapshot evidence](evidence/m2-runtime-snapshot.json) records the qualified configurations and limits.
+
+## Durable save slots
+
+The native world service exposes `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. These operate through `poima world`, shared sessions and the editor's native service. Discover their complete parameter schemas with `world.describe` (schema revision 27). A dedicated human save window and a typed gameplay `Save`/`Load` API are not implemented yet.
+
+Create an ordinary directory outside the asset store, then configure its path. Relative paths resolve beside the world document. Configuration is session-local; reopening requires configuration again. Packaged games additionally reject roots and derived slot paths inside their immutable bundle. Hosts constructing a read-only `WorldSession` pass the full bundle root as the third constructor argument; without it, protection covers only the world file's parent directory.
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"save.configure","params":{"request_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","expected_generation":0,"root":"saves"}}
+{"jsonrpc":"2.0","id":2,"method":"save.inspect","params":{"slot":"checkpoint"}}
+```
+
+The directory must already exist; the engine creates a `slot-checkpoint` child on the first write. Slot names contain 1–64 lowercase ASCII letters, digits, underscores or hyphens. Paths with symbolic links or Windows reparse points are rejected. Inspecting a missing slot creates no files and reports generation 0. Each slot has a nonblocking OS lock; simultaneous access reports failure instead of waiting indefinitely.
+
+Before saving, inspect the runtime and slot. Supply the configuration generation, slot generation, runtime session, tick and gameplay revision from those observations:
+
+```json
+{"jsonrpc":"2.0","id":3,"method":"save.write","params":{"request_id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","configuration_generation":1,"slot":"checkpoint","expected_generation":0,"session_id":"11111111111111111111111111111111","expected_tick":300,"expected_gameplay_revision":0}}
+```
+
+The first successful write reports generation 1, SHA-256 and byte count. These example runtime values are placeholders for an actual active session. A slot retains the latest 32 write receipts across process restarts. Retrying the same request returns its original committed generation before checking live runtime guards, so a lost response can be recovered after the simulation advances or closes. A receipt does not guarantee that its historical payload is still retained; inspect `current`, `previous` and `selected` for availability. After reopening, refresh the session-local `configuration_generation` guard; it routes the request but is excluded from its persisted semantic identity. Other changed parameters under the same retained request ID are rejected. Once a receipt expires, its old generation guard prevents a duplicate write.
+
+Restore supplies guards for both the current authored world and the runtime being replaced, plus a fresh runtime ID:
+
+```json
+{"jsonrpc":"2.0","id":4,"method":"save.load","params":{"request_id":"cccccccccccccccccccccccccccccccc","configuration_generation":1,"slot":"checkpoint","expected_generation":1,"revision":1,"expected_session_id":"11111111111111111111111111111111","expected_tick":300,"expected_gameplay_revision":0,"new_session_id":"22222222222222222222222222222222"}}
+```
+
+When no runtime is active, the three `expected_session_id`, `expected_tick` and `expected_gameplay_revision` guards must all be null. A successful load starts at the saved tick under the new session ID. Configuration/load retry receipts are session-local and bounded to 32 combined entries. A retained load retry returns its receipt without replacing the runtime again.
+
+Each save contains the frozen authored definition and logical snapshot, with a total 64 MiB limit. The service computes a content identity from that definition and its full typed asset inventory. Hidden meshes, collision-only geometry and disabled emitters still contribute their referenced assets. Start and restore read and validate these files with fresh caches. Missing, corrupt or incompatible assets reject the load. Assets remain external: the save is not a self-contained asset archive.
+
+Loading stages a separate runtime against the **saved** definition. Current authored edits and their revision/history remain unchanged. If the saved definition differs, the result reports `source_stale:true`. Failure preserves the existing runtime. Success invalidates its old session, input and runtime receipts. In the editor, saving/configuration/loading requires paused playback; restored sessions remain paused and derive their hierarchy from the saved runtime. Stop still discards unsaved changes.
+
+Saved bytes never select executable paths. By default, restore reuses the active runtime's trusted gameplay configuration. A fresh process must supply `gameplay` using the existing CoreCLR selection (`hostfxr`, `bridge`, `assembly`, `type`) or a Native AOT `descriptor` with optional `expected_descriptor_sha256`. Explicit `gameplay:null` selects no module. Backend, image, type and schema must match the saved state. Ordinary trusted constructors/statics can execute during staging even though gameplay `Initialize` is skipped.
+
+### Publication and recovery
+
+Each write creates and flushes an immutable payload, verifies it by reading it back, preserves the previous committed manifest, and publishes a checksummed manifest by replacement. Normal operation retains two payload generations. POSIX also flushes directory changes. Windows flushes files and uses `ReplaceFileW` for an existing manifest. These mechanisms and injected process exits do not establish device/filesystem power-loss guarantees.
+
+`save.inspect` exposes verification and recovery status. If the newest payload is damaged, reads can select the verified prior payload; loading it requires `allow_recovery:true`. Writing after that condition requires `acknowledge_recovery:true` and preserves the failed generation separately as `quarantined`. A second corruption while one generation is quarantined blocks further recovery writes rather than discarding evidence. A corrupt manifest can fall back to the prior committed manifest for explicit read recovery only; writes refuse because newer receipt history may be missing. New slots or deliberate external archival/repair remain necessary in those cases. Orphan staging files are never promoted to committed saves.
+
+Checksums detect accidental corruption, not authenticity. Wrong state/generation guards report `-32009`, conflicting request IDs `-32010`, and storage/content failures `-32070`. A failure after publication can have an uncertain result; retry the identical write request to resolve it. `cleanup_pending` reports retained staging debris when cleanup could not finish.
+
+This is synchronous, bounded storage for the current fixed entity set. Autosave scheduling, general schema/content migrations, spawn/despawn persistence, platform/cloud providers, cancellation and large-save performance qualification remain unfinished. Runtime physics and audio reconstruction retain the snapshot limits above; loading is not a promise of bit-identical future contact simulation.

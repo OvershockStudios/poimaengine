@@ -1,0 +1,245 @@
+{
+  "milestone": "Durable save slots and staged world-service activation",
+  "date": "2026-10-05",
+  "engine_version": "0.0.36",
+  "schema_revision": 27,
+  "source_base": "59110e5f5789344c7fe6f8492fd7113d75cd9795",
+  "source_sha256": {
+    "CMakeLists.txt": "ae206a02565ff48a212f2923f557aae250e89be72280369efd522b9046a106de",
+    "include/poima/world.hpp": "b5223fa728ac415fb2e499e0ae9da691af08e20e43be065c66020b5275371101",
+    "include/poima/save_store.hpp": "567cfec8705018a1b53d479af52e44ae8621760f31e1268e99cc5c0ff9e3efb6",
+    "src/world.cpp": "8bb207a2943c4703516333121e5c62c27ba3b6e7ca091c190764ada6a0fb3e96",
+    "src/world_save.inc": "8ee6e769dff4a501bb7818c19e9ef6ea87bd1b88e1d7b89fc1d8788390808a71",
+    "src/save_store.cpp": "0a10985cd9c1aba636a0f000139a4675931afd3ef358dd630a1ff04ab9a9ef3d",
+    "src/game_launch.cpp": "331e27b6d7f306bd3d374c8cf68a465f64dd59a8b294a491a84087ea8dc7a703",
+    "src/desktop_bridge.cpp": "0cec62b46f40a7776dc9a23567dafca32ba212b1f441cb6b7135c462985dcdab",
+    "tests/world_session_native.cpp": "87c995a52960bff439e8e07c13f2dcdff816331d3a54f93da5524f4c0c3494d8",
+    "tests/save_store_native.cpp": "7018878200aa7ae5b55f126e4b49939817e0c8954f2908794d377509a11a1c32",
+    "tests/world_save_native.cpp": "da1ad30be83f3f51588be9ab04dbcfa328e8a913d96abe1635815bb0ded363e4",
+    "tests/runtime_save_contract.py": "5b3f808d6ae61d0ecbf67d3a6839fae8d2c187836f939dffb9a056481896f8ca",
+    "tests/runtime_save_gameplay_contract.py": "0699663546c2b913501e801153d66aa48ab12fbd732d6e4eb6f02b62e8165221",
+    "tests/desktop_save_contract.py": "d0f3d6995699b57ea339b8022a7dbbb1aa82661402c465eaa704b0afb8ff34f1"
+  },
+  "implemented": [
+    "Explicit external slot roots, generation guards, checksummed version1 manifests and immutable payloads.",
+    "Two retained payload generations, explicit recovery and one preserved failed generation; manifest recovery is read-only.",
+    "Latest32 persisted write receipts recover lost responses across process restarts; session routing generation is refreshed separately.",
+    "Frozen authored definition plus fresh content-verified asset closure, including hidden/disabled references.",
+    "Candidate restore preserves existing runtime on failure; fresh session activation leaves current authoring/history unchanged.",
+    "CoreCLR and NativeAOT trusted configuration, exact saved binding, Initialize bypass and typed state continuation.",
+    "Editor service requires paused mutations; session replacement clears input/clock caches and uses the saved hierarchy."
+  ],
+  "qualification": {
+    "linux_runtime_regressions": {
+      "tests": 40,
+      "passed": 40,
+      "raw_evidence": {
+        "path": "build/world-save-linux-ctest.xml",
+        "sha256": "ac333026bcd74e2328c767b1c3bd7430b999ca9fb337f27b6958e100c1636f66",
+        "bytes": 28516
+      }
+    },
+    "linux_authoring_regressions": {
+      "tests": 33,
+      "passed": 33,
+      "raw_evidence": {
+        "path": "build/world-save-authoring-ctest.xml",
+        "sha256": "0ae3865a9177cbc49edf9cc4c13077830ad3e0fdc3d0491a1ae2de6ea360949c",
+        "bytes": 25331
+      }
+    },
+    "linux_service": {
+      "passed": true,
+      "groups": 7,
+      "rpc_count": 547,
+      "skipped": 0,
+      "binary_sha256": "96950e84f151ca021f673ab1424331b008e4a402d17d6ecd7557288c425648c7",
+      "harness_sha256": "5b3f808d6ae61d0ecbf67d3a6839fae8d2c187836f939dffb9a056481896f8ca",
+      "checks": [],
+      "raw_evidence": {
+        "path": "build/world-save-linux-rpc.json",
+        "sha256": "0f475085c46bb6b5d65bbaa4ccf3243f5ad200f930ac6b35695fdea211a9a97a",
+        "bytes": 1003366
+      }
+    },
+    "windows_service": {
+      "passed": true,
+      "groups": 7,
+      "rpc_count": 547,
+      "skipped": 0,
+      "binary_sha256": "c3f2a5838053e843c78e85d2cacfb0ea68486c4627393610c6d7203cd0e1ac02",
+      "harness_sha256": "5b3f808d6ae61d0ecbf67d3a6839fae8d2c187836f939dffb9a056481896f8ca",
+      "checks": [],
+      "raw_evidence": {
+        "path": "build/world-save-windows-rpc.json",
+        "sha256": "b3226500af67711f9d7e1ef34765f1bcd85e1cd0b4dbba7ccb746fdbec67350a",
+        "bytes": 1003392
+      }
+    },
+    "gameplay": {
+      "linux_coreclr": {
+        "passed": true,
+        "groups": 4,
+        "rpc_count": 79,
+        "skipped": 0,
+        "binary_sha256": "96950e84f151ca021f673ab1424331b008e4a402d17d6ecd7557288c425648c7",
+        "harness_sha256": "0699663546c2b913501e801153d66aa48ab12fbd732d6e4eb6f02b62e8165221",
+        "checks": [
+          "Actual probe typed state and midmoving-door physics saved; executable paths absent from save storage.",
+          "Absent/wrong trusted selection rejects staged replacement without changing live module, entities, slot files or authored bytes.",
+          "Inherited trusted configuration restores a fresh runtime ID with Initialize suppressed; continuation and delayed save/load retries preserve clocks and typed state.",
+          "Fresh process requires explicit trusted code, independently proves Initialize guard, restores full typed state and finishes the original door motion."
+        ],
+        "raw_evidence": {
+          "path": "build/world-save-gameplay-coreclr-linux.json",
+          "sha256": "bc9c20b20ff67addf5936aa248aadaa2cbca7f400cb7bea7e7fa02dd13ef55d5",
+          "bytes": 153395
+        }
+      },
+      "linux_native": {
+        "passed": true,
+        "groups": 4,
+        "rpc_count": 79,
+        "skipped": 0,
+        "binary_sha256": "96950e84f151ca021f673ab1424331b008e4a402d17d6ecd7557288c425648c7",
+        "harness_sha256": "0699663546c2b913501e801153d66aa48ab12fbd732d6e4eb6f02b62e8165221",
+        "checks": [
+          "Actual probe typed state and midmoving-door physics saved; executable paths absent from save storage.",
+          "Absent/wrong trusted selection rejects staged replacement without changing live module, entities, slot files or authored bytes.",
+          "Inherited trusted configuration restores a fresh runtime ID with Initialize suppressed; continuation and delayed save/load retries preserve clocks and typed state.",
+          "Fresh process requires explicit trusted code, independently proves Initialize guard, restores full typed state and finishes the original door motion."
+        ],
+        "raw_evidence": {
+          "path": "build/world-save-gameplay-native-linux.json",
+          "sha256": "14cf0ab0500c781db2b0782aac1122cb4a91b31bd30bbb1f9bda87c5f3609af4",
+          "bytes": 154407
+        }
+      },
+      "windows_coreclr": {
+        "passed": true,
+        "groups": 4,
+        "rpc_count": 79,
+        "skipped": 0,
+        "binary_sha256": "c3f2a5838053e843c78e85d2cacfb0ea68486c4627393610c6d7203cd0e1ac02",
+        "harness_sha256": "0699663546c2b913501e801153d66aa48ab12fbd732d6e4eb6f02b62e8165221",
+        "checks": [
+          "Actual probe typed state and midmoving-door physics saved; executable paths absent from save storage.",
+          "Absent/wrong trusted selection rejects staged replacement without changing live module, entities, slot files or authored bytes.",
+          "Inherited trusted configuration restores a fresh runtime ID with Initialize suppressed; continuation and delayed save/load retries preserve clocks and typed state.",
+          "Fresh process requires explicit trusted code, independently proves Initialize guard, restores full typed state and finishes the original door motion."
+        ],
+        "raw_evidence": {
+          "path": "build/world-save-gameplay-coreclr-windows.json",
+          "sha256": "990d2a7fbcb471d35689f85db6f63693032f3024e1d87b70d1ba0f80fa76f379",
+          "bytes": 153273
+        }
+      },
+      "windows_native": {
+        "passed": true,
+        "groups": 4,
+        "rpc_count": 79,
+        "skipped": 0,
+        "binary_sha256": "c3f2a5838053e843c78e85d2cacfb0ea68486c4627393610c6d7203cd0e1ac02",
+        "harness_sha256": "0699663546c2b913501e801153d66aa48ab12fbd732d6e4eb6f02b62e8165221",
+        "checks": [
+          "Actual probe typed state and midmoving-door physics saved; executable paths absent from save storage.",
+          "Absent/wrong trusted selection rejects staged replacement without changing live module, entities, slot files or authored bytes.",
+          "Inherited trusted configuration restores a fresh runtime ID with Initialize suppressed; continuation and delayed save/load retries preserve clocks and typed state.",
+          "Fresh process requires explicit trusted code, independently proves Initialize guard, restores full typed state and finishes the original door motion."
+        ],
+        "raw_evidence": {
+          "path": "build/world-save-gameplay-native-windows.json",
+          "sha256": "4c6979fe439f7280fe3c74cf73aa941ff9d360197717e0a6907cf78948bdfdb3",
+          "bytes": 154405
+        }
+      }
+    },
+    "windows_world_native": {
+      "passed": true,
+      "binary": {
+        "path": "build/windows-runtime/poima-world-save-test.exe",
+        "sha256": "d5d393699f5dd592342fd731cbc1c7a2b0a309831213aea340054ba39720149c",
+        "bytes": 118376448
+      },
+      "log": {
+        "path": "build/world-save-windows-native.log",
+        "sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a",
+        "bytes": 82
+      }
+    },
+    "desktop_service": {
+      "passed": true,
+      "groups": 4,
+      "rpc_count": 47,
+      "checks": [
+        "Playing-clock mutation guards apply to C ABI and local IPC; save inspection/status remain available.",
+        "Paused save/load restores a fresh paused session, resets clock/input and module caches, and frames the saved hierarchy after authored reparenting.",
+        "Failed replacement preserves active runtime, playback, input and module metadata; load leaves authored state/history and slot bytes unchanged.",
+        "Exact load retry is inert; replacement discards old input receipts and rejects events for the previous session."
+      ],
+      "binary_sha256": "c3f2a5838053e843c78e85d2cacfb0ea68486c4627393610c6d7203cd0e1ac02",
+      "bridge_sha256": "f87c6a628c22d54990e0ec6484310e71b0f7eebab9cf7f57e218c237c70d0bd9",
+      "harness_sha256": "d0f3d6995699b57ea339b8022a7dbbb1aa82661402c465eaa704b0afb8ff34f1",
+      "raw_evidence": {
+        "path": "build/world-save-desktop-final/evidence.json",
+        "sha256": "a04e5831d4427154c5fec4606cc4c77d676fc6cfd571e447c413a9d4f446aa1b",
+        "bytes": 250148
+      }
+    },
+    "storage": {
+      "exception_boundaries_per_run": 9,
+      "process_exit_boundaries_per_run": 9,
+      "environments": [
+        "Linux native temporary directory",
+        "Linux WSL DrvFS directory",
+        "Windows native temporary directory",
+        "Windows workspace directory"
+      ],
+      "logs": [
+        {
+          "path": "build/world-save-linux-store.log",
+          "sha256": "8a9d22fb94737a8332c789617246b0d6f6a5c7323d0578993129f3422cd909c2",
+          "bytes": 207
+        },
+        {
+          "path": "build/save-store-isolated/linux-drvfs.log",
+          "sha256": "8a9d22fb94737a8332c789617246b0d6f6a5c7323d0578993129f3422cd909c2",
+          "bytes": 207
+        },
+        {
+          "path": "build/save-store-windows-native.log",
+          "sha256": "355ce7476d81835dbf1170e9b2858fc60846eca187107d8395553a76c47e351b",
+          "bytes": 299
+        },
+        {
+          "path": "build/save-store-windows-drive-d.log",
+          "sha256": "355ce7476d81835dbf1170e9b2858fc60846eca187107d8395553a76c47e351b",
+          "bytes": 299
+        }
+      ],
+      "linux_symbolic_and_hard_link_rejection": "passed",
+      "windows_hard_link_rejection": "passed",
+      "windows_symbolic_link_fixture": "skipped: token cannot create symbolic links",
+      "windows_final_binary": {
+        "path": "build/windows-runtime/poima-save-store-test.exe",
+        "sha256": "ecee14dff54fabc3a004179d39f84cd9a851c0efd0d99b29d8787f8a46c013bf",
+        "bytes": 6883840
+      }
+    }
+  },
+  "review_fixes": [
+    "Derived slot paths are checked before lock creation so an ancestor root cannot place a slot inside a protected bundle.",
+    "Persisted request identity excludes the session-local configuration generation; a restart regression covers refreshed routing.",
+    "Runtime start allocates control metadata before activation, matching the staged restore pattern."
+  ],
+  "limitations": [
+    "Synchronous JSON save and staged runtime; no hitch-free/asynchronous or large-game performance claim.",
+    "Fixed entity set and exact content/backend/module/schema; no general migrations or spawn/despawn persistence.",
+    "No dedicated human save window, typed C# gameplay save commands, autosave scheduler or platform/cloud storage provider.",
+    "No power-loss or network/cloud filesystem guarantee. Injected boundaries use exceptions and real child-process exits.",
+    "Checksums detect corruption, not authenticity; trusted module constructors/statics remain outside transaction isolation.",
+    "Physics solver caches and audio DSP history rebuild; future contact trajectories need not be bit-identical.",
+    "Desktop qualification uses C ABI and IPC without GPU, HWNDs, physical input or GUI screenshots.",
+    "The installed editor package remains its separately qualified checkpoint; these service changes are source/build artifacts."
+  ]
+}

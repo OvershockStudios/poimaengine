@@ -40,7 +40,10 @@ class WorldSession {
     struct Impl;
     std::unique_ptr<Impl> impl_;
 public:
-    explicit WorldSession(const std::string& utf8_path,WorldOpenMode mode=WorldOpenMode::authoring);
+    // Packaged hosts supply their verified bundle root so save output cannot
+    // write anywhere inside it. The default protects the world's parent folder.
+    explicit WorldSession(const std::string& utf8_path,WorldOpenMode mode=WorldOpenMode::authoring,
+        const std::string& protected_root={});
     ~WorldSession();
     WorldSession(const WorldSession&)=delete;
     WorldSession& operator=(const WorldSession&)=delete;
@@ -49,6 +52,7 @@ public:
     WorldRuntimeStatus runtime_status() const;
     // Counters only: does not serialize gameplay schema or field values.
     WorldGameplayStatus gameplay_status() const;
+    std::vector<std::pair<std::string,std::string>> runtime_hierarchy() const;
     // Validates the complete typed asset closure; no storage writes.
     WorldPackageContent package_content() const;
     SceneSnapshot authored_snapshot(const EditorCamera& camera) const;
