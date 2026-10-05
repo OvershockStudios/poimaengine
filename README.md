@@ -4,7 +4,7 @@ Poima is an experimental 3D game engine designed for humans and development agen
 
 The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and C# gameplay supports development-time reloads and a bounded native AOT game-bundle route. Headless deployments can run without the editor or its managed runtime.
 
-**Status: early development, version 0.0.37.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.38.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor with independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
@@ -23,7 +23,7 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Authoring | Persistent entity hierarchy, typed component operations, atomic transactions, revision guards, durable retry receipts, bounded undo/redo and shared local sessions. |
 | Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, procedural sky, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
 | Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, static triangle mesh collision, raycasts with mesh triangle identities, moving kinematic objects, editable rigs and interruptible animation crossfades. |
-| Input and player | Native continuous player, keyboard/mouse bindings, gamepad profiles and deterministic scripted input replay. |
+| Input and player | Native continuous player, shared keyboard/mouse/gamepad profiles, editor device assignment and deterministic scripted input replay. |
 | C# gameplay | [Native-owned custom components](docs/CUSTOM_COMPONENTS.md), generated typed accessors, compatible code reload, rollback and exact-schema saves; CoreCLR development and native AOT shipping. |
 | Profiling | [Shared native captures](docs/PROFILER.md), editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
@@ -31,7 +31,7 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields and animation controls, Project browser, native navigation and transform gizmos; clocked Play with keyboard/mouse Game controls, C# launch configuration, typed live fields and compatible assembly reload. |
 | Packaging | Project manifests and native game bundles with validated content, runtime files, compiled C# gameplay artifacts, integrity checks and read-only game launch. |
 
-These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse control, while editor gamepad input and audio output remain unfinished; the separate native player supplies those paths. C# hot reload covers the documented gameplay module. Native AOT compiles that module for Linux/Windows, with a tested relocated Windows game bundle; arbitrary engine-code replacement, consoles and clean-machine production deployment remain unqualified.
+These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse and assigned gamepad controls, while editor audio output remains unfinished. Physical controller behavior still needs qualification. C# hot reload covers the documented gameplay module. Native AOT compiles that module for Linux/Windows, with a tested relocated Windows game bundle; arbitrary engine-code replacement, consoles and clean-machine production deployment remain unqualified.
 
 [Static mesh collision](docs/MESH_COLLISION.md) uses explicit imported geometry; texture transparency does not create collision holes. Moving/deforming mesh colliders and separate movement/weapon-query channels remain unfinished. [Recorded collision evidence](docs/evidence/m2-mesh-collision.json) covers synthetic native, protocol and Inspector fixtures, not game-scale performance.
 

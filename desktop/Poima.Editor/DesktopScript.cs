@@ -162,6 +162,10 @@ internal sealed class DesktopScript
                     case "game_motion":
                         ViewportInput.DispatchQualificationRelative(window.Game.Window, action["dx"]!.GetValue<int>(), action["dy"]!.GetValue<int>());
                         result["game_input"] = window.Game.Inspect(); break;
+                    case "open_game_input": window.ShowGameInput(); break;
+                    case "inspect_game_input": result["game_input_settings"] = window.InspectGameInput(); break;
+                    case "render_game_input": result["visual"] = window.RenderGameInput(Text("path")); break;
+                    case "close_game_input": window.CloseGameInput(); break;
                     case "game_profile":
                         window.Game.SelectProfile(action["path"]?.GetValue<string>());
                         result["game_input"] = window.Game.Inspect(); break;

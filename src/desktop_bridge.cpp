@@ -7,6 +7,7 @@
 #include "poima/editor_gizmo.hpp"
 #include "poima/player.hpp"
 #include "poima/input_profile.hpp"
+#include "poima/gamepad.hpp"
 #include "input_profile_store.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
@@ -243,7 +244,11 @@ struct Bridge : ViewportState {
     std::string play_session,play_error,view_mode="scene",view_camera;
     std::uint64_t play_tick=0,view_revision=0;
     bool playing=false,capture_hold=false;
-    std::optional<BoundPlayerInput> game_input;
+    // Stable evaluator address: the device adapter borrows it. Declare the
+    // adapter last so it disconnects before the evaluator is destroyed.
+    std::unique_ptr<BoundPlayerInput> game_input;
+    GamepadHost gamepad{GamepadHostMode::hosted};
+    std::string gamepad_error;
     std::string input_controller,input_camera;
     Json input_profile=nullptr,last_input_applied=nullptr;
     bool input_focused=false;
@@ -281,8 +286,9 @@ struct Bridge : ViewportState {
     }
     void release_input(bool forget=false) {
         input_focused=false;
+        gamepad.activate(false);
         if(game_input)game_input->clear();
-        if(forget) { game_input.reset();input_controller.clear();input_camera.clear();input_profile=nullptr;last_input_applied=nullptr;input_batches=0;input_receipts.clear(); }
+        if(forget) { gamepad.stop();game_input.reset();gamepad_error.clear();input_controller.clear();input_camera.clear();input_profile=nullptr;last_input_applied=nullptr;input_batches=0;input_receipts.clear(); }
     }
     static Json input_frame(const RuntimeInput& value,bool entity=false) {
         Json result={{"move",value.move},{"look",value.look},{"jump",value.jump},{"use",value.use}};
@@ -290,10 +296,17 @@ struct Bridge : ViewportState {
         return result;
     }
     Json input_json() const {
+        auto device=Json::parse(gamepad.status_json());device["available"]=GamepadHost::available();
+        device["error"]=gamepad_error.empty() ? Json(nullptr) : Json(gamepad_error);
         return {{"configured",bool(game_input)},{"session_id",game_input ? Json(play_session) : Json(nullptr)},
             {"controller",game_input ? Json(input_controller) : Json(nullptr)},{"camera",game_input ? Json(input_camera) : Json(nullptr)},
             {"focused",input_focused},{"profile",input_profile},{"accepted_batches",input_batches},
-            {"pending",input_frame(game_input ? game_input->peek(input_controller) : RuntimeInput{})},{"last_applied",last_input_applied}};
+            {"pending",input_frame(game_input ? game_input->peek(input_controller) : RuntimeInput{})},{"last_applied",last_input_applied},{"gamepad",std::move(device)}};
+    }
+    Json input_devices(const Json& params) {
+        fields(params,{});
+        if(!GamepadHost::available())return {{"available",false},{"devices",Json::array()},{"detail","SDL gamepad device host is not built."}};
+        auto result=Json::parse(gamepad.devices_json());result["available"]=true;return result;
     }
     Json controllers_json() {
         const auto runtime=world->runtime_status();Json values=Json::array();
@@ -304,18 +317,25 @@ struct Bridge : ViewportState {
     Json input_command(const std::string& method,const Json& params) {
         sync_playback();
         if(method=="desktop.input.inspect") { fields(params,{});return input_json(); }
+        if(method=="desktop.input.devices")return input_devices(params);
         require(method=="desktop.input.configure" || method=="desktop.input.focus" || method=="desktop.input.events","Unknown desktop input method.",-32601);
-        if(method=="desktop.input.configure")fields(params,{"session_id","controller","input_profile","input_revision"},{"session_id","controller"});
+        if(method=="desktop.input.configure")fields(params,{"session_id","controller","input_profile","input_revision","defaults","gamepad"},{"session_id","controller"});
         else if(method=="desktop.input.focus")fields(params,{"session_id","focused"},{"session_id","focused"});
         else fields(params,{"session_id","request_id","events"},{"session_id","request_id","events"});
         const auto session=identifier(params.at("session_id"));
         require(!play_session.empty() && session==play_session,"Runtime session conflict.",-32009);
         if(method=="desktop.input.configure") {
-            const auto controller=identifier(params.at("controller"));const auto values=world->controllers(true);
+            auto controller=identifier(params.at("controller"));const auto values=world->controllers(true);
             const auto found=std::find_if(values.begin(),values.end(),[&](const auto& value){return value.id==controller;});
             require(found!=values.end(),"Input requires a runtime CharacterController entity.",-32004);
             require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
+            require(!params.contains("defaults") || !params.contains("input_profile"),"Choose defaults or input_profile, not both.");
             auto profile=default_input_profile();Json metadata={{"source","defaults"},{"path",nullptr},{"revision",0},{"content_hash",nullptr},{"format","poima.input.v1"}};
+            if(params.contains("defaults")) {
+                require(params.at("defaults").is_string(),"Input defaults must be text.");const auto kind=params.at("defaults").get<std::string>();
+                require(kind=="keyboard_mouse" || kind=="keyboard_mouse_gamepad","Unknown input defaults.");
+                if(kind=="keyboard_mouse_gamepad") { profile=default_gamepad_input_profile();metadata["format"]="poima.input.v2"; }
+            }
             if(params.contains("input_profile")) {
                 require(params.at("input_profile").is_string(),"Input profile path must be text.");const auto text=params.at("input_profile").get<std::string>();
                 require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid input profile path.");
@@ -326,22 +346,39 @@ struct Bridge : ViewportState {
                     profile=std::move(loaded.profile);metadata={{"source","profile"},{"path",path_text(fs::absolute(path).lexically_normal())},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"format",loaded.format}};
                 }catch(const input_profiles::ProfileError& error_value) { throw Failure(error_value.code,error_value.what()); }
             }
-            BoundPlayerInput candidate(std::move(profile));
-            game_input=std::move(candidate);input_controller=controller;input_camera=found->camera;input_profile=std::move(metadata);
-            input_focused=false;last_input_applied=nullptr;input_batches=0;return input_json();
+            GamepadSelection selection;
+            if(params.contains("gamepad")) {
+                const auto& device=params.at("gamepad");fields(device,{"mode","id"},{"mode"});
+                require(device.at("mode").is_string(),"Gamepad mode must be text.");selection.mode=device.at("mode").get<std::string>();
+                require(selection.mode=="disabled" || selection.mode=="only_connected" || selection.mode=="explicit","Unknown gamepad selection policy.");
+                require((selection.mode=="explicit")==device.contains("id"),"Only explicit gamepad selection requires an id.");
+                if(device.contains("id")) { const auto id=integer(device.at("id"));require(id>0 && id<=std::numeric_limits<std::uint32_t>::max(),"Gamepad id must be a nonzero uint32.");selection.id=static_cast<std::uint32_t>(id); }
+            }
+            require(selection.mode=="disabled" || profile.gamepad.has_value(),"Gamepad selection requires a v2 profile or keyboard_mouse_gamepad defaults.");
+            auto candidate=std::make_unique<BoundPlayerInput>(std::move(profile));auto camera=found->camera;
+            // All allocating preparation precedes device acquisition. start has
+            // the strong guarantee; publishing the stable evaluator is noexcept.
+            gamepad.start(*candidate,selection,false);
+            game_input.swap(candidate);input_controller.swap(controller);input_camera.swap(camera);input_profile.swap(metadata);
+            input_focused=false;gamepad_error.clear();last_input_applied=nullptr;input_batches=0;return input_json();
         }
         if(method=="desktop.input.focus") {
             require(params.at("focused").is_boolean(),"focused must be Boolean.");
             if(!params.at("focused").get<bool>()) { release_input();return input_json(); }
-            require(game_input.has_value() && playing && game_selected() && selected_game_camera()==input_camera,"Input focus requires configured playing Game view with its controller camera.",-32009);
-            input_focused=true;return input_json();
+            require(bool(game_input) && playing && game_selected() && selected_game_camera()==input_camera,"Input focus requires configured playing Game view with its controller camera.",-32009);
+            require(gamepad_error.empty(),"Reconfigure input after the gamepad device error.",-32009);
+            if(!input_focused) {
+                try { gamepad.activate(true);input_focused=true; }
+                catch(...) { gamepad.activate(false);throw; }
+            }
+            return input_json();
         }
         identifier(params.at("request_id"));
         for(const auto& receipt:input_receipts)if(receipt.at("params").at("request_id")==params.at("request_id")) {
             require(receipt.at("params")==params,"Input request ID reused with different parameters.",-32010);
             auto result=receipt.at("result");result["replayed"]=true;return result;
         }
-        require(game_input.has_value() && input_focused && playing && game_selected() && selected_game_camera()==input_camera,"Gameplay input requires focused configured playing Game view.",-32009);
+        require(bool(game_input) && input_focused && playing && game_selected() && selected_game_camera()==input_camera,"Gameplay input requires focused configured playing Game view.",-32009);
         const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input accepts at most 256 events per batch.");
         require(input_batches<max_integer,"Input batch counter exhausted.");
         auto staged=*game_input;
@@ -362,7 +399,7 @@ struct Bridge : ViewportState {
         auto result=input_json();result["pending"]=input_frame(staged.peek(input_controller));result["accepted_batches"]=input_batches+1;result["replayed"]=false;
         auto receipts=input_receipts;if(receipts.size()==32)receipts.erase(receipts.begin());
         receipts.push_back({{"params",params},{"result",result}});
-        game_input=std::move(staged);++input_batches;input_receipts.swap(receipts);return result;
+        *game_input=std::move(staged);++input_batches;input_receipts.swap(receipts);return result;
     }
     Json gameplay_runtime() {
         const auto status=world->gameplay_status();
@@ -490,6 +527,16 @@ struct Bridge : ViewportState {
         sync_playback();expire_capture();const auto now=Clock::now();
         const double elapsed=std::chrono::duration<double>(now-play_last).count();play_last=now;
         const bool held=capture && capture->state=="queued";
+        // This updates only device state and the SDL gamepad event range. It
+        // must never take over Avalonia's Windows message dispatch. Device
+        // errors are input/presentation errors, not simulation rollback.
+        if(gamepad_error.empty())try {
+            profiling::Scope gamepad_scope("input.gamepad.poll");
+            gamepad.activate(bool(game_input) && input_focused && playing && !held && !capture_hold);
+            if(gamepad.poll() && input_focused)release_input();
+        }catch(const std::exception& failure) {
+            release_input();gamepad.stop();gamepad_error=failure.what();
+        }
         if(!playing || held || capture_hold) { play_clock.advance(0,false);capture_hold=held;return; }
         try {
             const auto ticks=play_clock.advance(elapsed,true);if(!ticks)return;
@@ -810,8 +857,13 @@ struct Bridge : ViewportState {
         methods["desktop.cameras"]=object(Json::object());
         methods["desktop.controllers"]=object(Json::object());
         methods["desktop.input.inspect"]=object(Json::object());
+        methods["desktop.input.devices"]=object(Json::object());
+        const Json gamepad_selection={{"oneOf",Json::array({
+            object({{"mode",{{"enum",{"disabled","only_connected"}}}}},{"mode"}),
+            object({{"mode",{{"const","explicit"}}},{"id",{{"type","integer"},{"minimum",1},{"maximum",std::numeric_limits<std::uint32_t>::max()}}}},{"mode","id"})})}};
         methods["desktop.input.configure"]=object({{"session_id",id_schema},{"controller",id_schema},
-            {"input_profile",{{"type","string"},{"minLength",1},{"maxLength",4096}}},{"input_revision",integer_schema}},{"session_id","controller"});
+            {"input_profile",{{"type","string"},{"minLength",1},{"maxLength",4096}}},{"input_revision",integer_schema},
+            {"defaults",{{"enum",{"keyboard_mouse","keyboard_mouse_gamepad"}}}},{"gamepad",gamepad_selection}},{"session_id","controller"});
         methods["desktop.input.focus"]=object({{"session_id",id_schema},{"focused",{{"type","boolean"}}}},{"session_id","focused"});
         const Json control_event=object({{"control",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"down",{{"type","boolean"}}}},{"control","down"});
         const Json motion_event=object({{"motion",{{"type","array"},{"minItems",2},{"maxItems",2},{"items",{{"type","number"},{"minimum",-1e6},{"maximum",1e6}}}}}},{"motion"});
@@ -845,9 +897,10 @@ struct Bridge : ViewportState {
                 {"start","A configured profile requires expected_gameplay_generation on desktop.play.start. Module loads at tick zero before playing, with initial typed overrides. Active start retry never reloads or resumes. Failure stops the newly created runtime and retains configuration; that session ID is consumed, so retry with a fresh session ID."},
                 {"inspection","desktop.gameplay.inspect returns configuration and compact runtime metadata. desktop.inspect/poll omit profile and values; gameplay revision changes expose paused edits/reloads. Use runtime.gameplay.inspect for typed values/schema."},
                 {"reload","Pause, then runtime.gameplay.load with current session/tick/gameplay revision and a new request ID; existing state migration and rollback semantics apply. Trusted CoreCLR project code only; shipping Native AOT packages are separate."}}},
-            {"input",{{"devices","Keyboard and mouse only; input.describe controls provide physical IDs, numeric SDL codes and reserved flags. V2 profiles retain keyboard/mouse bindings, but desktop gamepad events are not supported."},
-                {"configure","Active runtime controller and read-only frozen profile; missing profile means keyboard/mouse v1 defaults. input_revision requires input_profile. Successful reconfiguration releases old input; validation failure preserves it."},
+            {"input",{{"devices","Keyboard/mouse plus one assigned SDL gamepad. desktop.input.devices and input.devices share the hosted device owner; no editor Windows message pumping. Device IDs are session-local. Policies are disabled, only_connected, or explicit id; an absent explicit device is never replaced by another."},
+                {"configure","Active runtime controller and read-only frozen profile. Omitted defaults selects keyboard_mouse v1; explicitly choose keyboard_mouse_gamepad for built-in v2. defaults and input_profile are exclusive; input_revision requires input_profile. Enabled gamepad selection requires v2 bindings. Successful reconfiguration releases old input; validation/acquisition failure preserves it."},
                 {"focus","Explicit focus true requires playing Game view using the configured controller camera. Pause, Game camera change, Game detachment or focus false releases held controls and pending edges/look; Stop/session replacement drops configuration. Resume does not regain focus."},
+                {"gamepad","Assigned Start releases existing focus only. Activation, remapping and capture suspension resnapshot controls and require neutrality; no automatic editor focus acquisition. Device failures release input and require reconfiguration, without claiming simulation rollback. Inspect gamepad assignment/name, connected/armed/active state, detail and error."},
                 {"events","Ordered atomic batches with request_id and the latest 32 successful in-memory receipts per runtime session. Exact retries return the original accepted result with replayed:true without reinjection, even after focus loss, pause or reconfiguration; changed payload conflicts. Stop/session replacement discards receipts. Beyond retention, a forgotten ID is a new request; inspect before recovery. No authored or storage writes. Repeated control-down does not retrigger held actions. Capture hold retains pending input until a committed tick."},
                 {"commit","Automatic playback evaluates and commits one tick at a time. Consume pending edges and up to 180 degrees of mouse backlog per axis only after each success; held movement and analog rates apply every tick. A failed tick pauses playback and clears focus/input, retaining earlier committed ticks and their input trace."},
                 {"inspection","configured,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks, the first input and frames (one complete input including entity per committed tick, at most 8) for the last controlled poll. On failure it retains the successful prefix. Use frames for exact replay, including mouse backlog across ticks."}}},
@@ -867,6 +920,13 @@ struct Bridge : ViewportState {
             const auto message=parse(bytes);require(message.is_object() && message.value("jsonrpc",Json())=="2.0" && message.contains("method") && message.at("method").is_string(),"Invalid JSON-RPC 2.0 request.",-32600);
             if(message.contains("id")) { id=message.at("id");require(id.is_null() || id.is_string() || id.is_number_integer(),"Invalid JSON-RPC ID.",-32600); }else notification=true;
             const auto method=message.at("method").get<std::string>();
+            // The generic world service has a standalone device host. Route
+            // discovery through the hosted owner as well, including this alias.
+            if(method=="input.devices") {
+                fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});
+                const auto result=input_devices(message.value("params",Json::object()));
+                return notification ? std::string{} : Json{{"jsonrpc","2.0"},{"id",id},{"result",result}}.dump();
+            }
             if(!method.starts_with("desktop.")) {
                 sync_playback();
                 if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" || method=="runtime.component.edit" ||

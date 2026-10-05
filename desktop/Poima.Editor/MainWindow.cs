@@ -29,6 +29,7 @@ public sealed partial class MainWindow : Window
     private GameplayWindow? gameplayWindow;
     public SaveEditorModel Saves { get; }
     private SaveWindow? saveWindow;
+    private GameInputWindow? gameInputWindow;
     public ProfilerModel Profiler { get; }
     private ProfilerWindow? profilerWindow;
     private readonly EditorLayoutStore layoutStore;
@@ -123,10 +124,20 @@ public sealed partial class MainWindow : Window
                 var message = Components.Dirty ? "Apply or explicitly reload/discard live component changes before closing." : Saves.Dirty ? "Resolve or explicitly discard Save window drafts and pending operations before closing." : Gameplay.Dirty ? "Apply or explicitly revert C# Gameplay drafts before closing." : "Apply or Reload the Inspector changes before closing.";
                 Model.Note(message); status.Text = message;
             }
-            if (!e.Cancel) { profilerWindow?.Close(); saveWindow?.CloseForOwner(); gameplayWindow?.CloseForOwner(); Navigation.Cancel(); Game.Release(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
+            if (!e.Cancel) { gameInputWindow?.Close(); profilerWindow?.Close(); saveWindow?.CloseForOwner(); gameplayWindow?.CloseForOwner(); Navigation.Cancel(); Game.Release(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
         };
         Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Profiler.Dispose(); Saves.Dispose(); Components.Dispose(); Gameplay.Dispose(); Model.Dispose(); } };
     }
+    public void ShowGameInput()
+    {
+        if (gameInputWindow is not null) { gameInputWindow.Activate(); return; }
+        gameInputWindow = new GameInputWindow(Model, Game);
+        gameInputWindow.Closed += (_, _) => gameInputWindow = null;
+        gameInputWindow.Show(this);
+    }
+    public JsonObject InspectGameInput() => (gameInputWindow ?? throw new InvalidOperationException("Open Game Input first.")).Inspect();
+    public JsonObject RenderGameInput(string path) => (gameInputWindow ?? throw new InvalidOperationException("Open Game Input first.")).RenderForQualification(path, projectRoot);
+    public void CloseGameInput() => gameInputWindow?.Close();
     public void ShowProfiler()
     {
         if (profilerWindow is not null) { profilerWindow.Activate(); return; }
@@ -318,9 +329,7 @@ public sealed partial class MainWindow : Window
             ItemTemplate = new FuncDataTemplate<CameraChoice>((choice, _) => Label(choice?.Label ?? "")) };
         AutomationProperties.SetName(cameras, "Game camera");
         var bindings = ToolButton("Game input profile", () => {}, "settings");
-        var defaults = new MenuItem { Header = "Use default bindings" }; defaults.Click += (_, _) => Run(() => Game.SelectProfile(null));
-        var load = new MenuItem { Header = "Load input profile…" }; load.Click += (_, _) => _ = PickInputProfile();
-        bindings.ContextMenu = new ContextMenu { ItemsSource = new[] { defaults, load } }; bindings.Click += (_, _) => bindings.ContextMenu.Open(bindings);
+        bindings.Click += (_, _) => ShowGameInput();
         var message = Label("Camera preview", true); message.Margin = new Thickness(6, 3); AutomationProperties.SetName(message, "Game input status");
         toolbar.Children.Add(cameras); toolbar.Children.Add(bindings); toolbar.Children.Add(message); grid.Children.Add(toolbar);
         var gameView = new VulkanView(Model.Host, "game", Game);
@@ -354,7 +363,7 @@ public sealed partial class MainWindow : Window
                 // repaired camera or asset clears the error and reveals the view.
                 gameView.IsVisible = !unavailable; placeholder.IsVisible = unavailable;
                 placeholder.Text = Model.GameCamera is null ? "Choose a Camera in the Game toolbar." : preparationError ?? "The selected Camera is unavailable. Choose another Camera or restore it.";
-                ToolTip.SetTip(bindings, Game.ProfilePath is string profile ? "Input profile: " + System.IO.Path.GetFileName(profile) : "Input profile · default keyboard/mouse bindings");
+                ToolTip.SetTip(bindings, Game.ProfilePath is string profile ? "Input profile: " + System.IO.Path.GetFileName(profile) : Game.Defaults == "keyboard_mouse_gamepad" ? "Input profile · keyboard, mouse and gamepad" : "Input profile · keyboard and mouse");
             }
             finally { syncing = false; }
         }
@@ -906,19 +915,6 @@ public sealed partial class MainWindow : Window
             }
         }
         Draw();
-    }
-    private async System.Threading.Tasks.Task PickInputProfile()
-    {
-        try
-        {
-            Game.Release();
-            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Choose input profile", AllowMultiple = false,
-                FileTypeFilter = new[] { new FilePickerFileType("Poima input profile") { Patterns = new[] { "*.poima-input.json" } } } });
-            if (files.Count == 0) return;
-            var path = files[0].TryGetLocalPath() ?? throw new InvalidOperationException("Input profiles require a local file.");
-            Game.SelectProfile(path);
-        }
-        catch (Exception error) { Model.Note(error.Message); }
     }
     private async System.Threading.Tasks.Task PickModel()
     {

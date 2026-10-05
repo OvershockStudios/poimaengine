@@ -35,20 +35,70 @@ public sealed class GameInput : IViewportInteraction
     private bool replaceProfile;
     public bool Captured => capturedSession is not null && viewport?.GameCapture == true;
     public string? ProfilePath => profilePath;
+    public string Defaults { get; private set; } = "keyboard_mouse";
+    public string GamepadMode { get; private set; } = "disabled";
+    public uint GamepadId { get; private set; }
+    public string ProfileFormat { get; private set; } = "poima.input.v1";
+    public bool ConfigurationPending => replaceProfile;
     public event EventHandler? Changed;
 
     public void Attach(ViewportInput input, IntPtr window) { Release(); viewport = input; Window = window; reportedError = null; }
     public void Detach(ViewportInput input) { if (viewport != input) return; Release(); viewport = null; Window = IntPtr.Zero; }
     public void ValidateCapture() => Guard(() => viewport?.ValidateGameCapture());
 
-    public void SelectProfile(string? path)
+    public void SelectProfile(string? path) => SelectConfiguration("keyboard_mouse", path, "disabled", 0);
+
+    public void SelectConfiguration(string defaults, string? path, string mode, uint id)
     {
-        // Check before changing the active selection or releasing a valid input
-        // session. The native configure operation checks the profile again.
-        if (path is not null && model.Host.Call("input.inspect", new() { ["path"] = path })["persisted"]?.GetValue<bool>() != true)
-            throw new InvalidOperationException("Choose an existing input profile.");
-        Release(); profilePath = path; replaceProfile = true;
+        if (defaults is not ("keyboard_mouse" or "keyboard_mouse_gamepad")) throw new ArgumentException("Choose a built-in binding set.");
+        if (mode is not ("disabled" or "only_connected" or "explicit") || (mode == "explicit") != (id != 0))
+            throw new ArgumentException("Choose a gamepad assignment and, for Explicit device, an available device.");
+        var format = defaults == "keyboard_mouse_gamepad" ? "poima.input.v2" : "poima.input.v1";
+        if (path is not null)
+        {
+            var profile = model.Host.Call("input.inspect", new() { ["path"] = path });
+            if (profile["persisted"]?.GetValue<bool>() != true) throw new InvalidOperationException("Choose an existing input profile.");
+            format = profile["format"]!.GetValue<string>();
+        }
+        if (mode != "disabled" && format != "poima.input.v2")
+            throw new InvalidOperationException("Gamepad input needs a v2 profile. Choose Keyboard, mouse and gamepad or load a v2 profile.");
+        if (model.RuntimeId is null && mode == "explicit"
+            && !model.Host.Call("desktop.input.devices")["devices"]!.AsArray().Any(value => value!["id"]!.GetValue<uint>() == id))
+            throw new InvalidOperationException("The selected gamepad is disconnected. Refresh devices and choose an available device.");
+        JsonObject? applied = null;
+        if (model.RuntimeId is string session)
+        {
+            var controller = Controller();
+            applied = model.Host.Call("desktop.input.configure", Configuration(session, controller, defaults, path, mode, id));
+        }
+        // Only retire managed capture once native validation/acquisition succeeded.
+        Release();
+        profilePath = path; Defaults = defaults; GamepadMode = mode; GamepadId = id; ProfileFormat = format;
+        replaceProfile = applied is null;
+        if (applied is not null) Adopt(applied);
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private string Controller() => model.Host.Call("desktop.controllers")["controllers"]!.AsArray()
+        .FirstOrDefault(value => value?["camera"]?.GetValue<string>() == model.GameCamera)?["id"]?.GetValue<string>()
+        ?? throw new InvalidOperationException("This camera has no CharacterController. Choose a player's camera to control it.");
+
+    private static JsonObject Configuration(string session, string controller, string defaults, string? path, string mode, uint id)
+    {
+        var selection = new JsonObject { ["mode"] = mode }; if (mode == "explicit") selection["id"] = id;
+        var result = new JsonObject { ["session_id"] = session, ["controller"] = controller, ["gamepad"] = selection };
+        if (path is not null) result["input_profile"] = path; else result["defaults"] = defaults;
+        return result;
+    }
+
+    private void Adopt(JsonNode state)
+    {
+        if (state["configured"]?.GetValue<bool>() != true) return;
+        profilePath = state["profile"]?["path"]?.GetValue<string>();
+        ProfileFormat = state["profile"]?["format"]?.GetValue<string>() ?? "poima.input.v1";
+        Defaults = ProfileFormat == "poima.input.v2" ? "keyboard_mouse_gamepad" : "keyboard_mouse";
+        GamepadMode = state["gamepad"]?["policy"]?.GetValue<string>() ?? "disabled";
+        GamepadId = state["gamepad"]?["requested_id"]?.GetValue<uint>() ?? 0;
     }
 
     public void Release()
@@ -72,18 +122,14 @@ public sealed class GameInput : IViewportInteraction
     private void Engage()
     {
         if (viewport is null || model.RuntimeId is not string session || model.PlaybackState != "playing") return;
-        var controllers = model.Host.Call("desktop.controllers")["controllers"]!.AsArray();
-        var controller = controllers.FirstOrDefault(value => value?["camera"]?.GetValue<string>() == model.GameCamera)?["id"]?.GetValue<string>()
-            ?? throw new InvalidOperationException("This camera has no CharacterController. Choose a player's camera to control it.");
+        var controller = Controller();
         var state = model.Host.Call("desktop.input.inspect");
         if (replaceProfile || state["session_id"]?.GetValue<string>() != session || state["controller"]?.GetValue<string>() != controller)
         {
-            var parameters = new JsonObject { ["session_id"] = session, ["controller"] = controller };
-            if (profilePath is not null) parameters["input_profile"] = profilePath;
-            state = model.Host.Call("desktop.input.configure", parameters);
+            state = model.Host.Call("desktop.input.configure", Configuration(session, controller, Defaults, profilePath, GamepadMode, GamepadId));
             replaceProfile = false;
         }
-        profilePath = state["profile"]?["path"]?.GetValue<string>();
+        Adopt(state);
         if (keyboard is null)
         {
             keyboard = model.Host.Call("input.describe")["controls"]!.AsArray()
@@ -136,8 +182,9 @@ public sealed class GameInput : IViewportInteraction
     {
         if (viewport?.LastError is string error && reportedError != error)
         { reportedError = error; throw new InvalidOperationException(error); }
-        if (capturedSession is null) return;
         var state = model.Host.State["input"];
+        if (!replaceProfile && state is not null) Adopt(state);
+        if (capturedSession is null) return;
         if (model.PlaybackState != "playing" || model.RuntimeId != capturedSession
             || viewport?.GameCapture != true || state?["focused"]?.GetValue<bool>() != true
             || state?["session_id"]?.GetValue<string>() != capturedSession)
@@ -149,5 +196,6 @@ public sealed class GameInput : IViewportInteraction
         ["input_error"] = viewport?.LastError, ["error_count"] = ErrorCount,
         ["qualification_input"] = viewport?.QualificationInput ?? false, ["ignored_interactive_messages"] = viewport?.IgnoredInteractiveMessages ?? 0,
         ["captured"] = Captured, ["session_id"] = capturedSession,
-        ["profile_path"] = profilePath, ["native"] = model.Host.Call("desktop.input.inspect") };
+        ["profile_path"] = profilePath, ["defaults"] = Defaults, ["gamepad_mode"] = GamepadMode, ["gamepad_id"] = GamepadId,
+        ["profile_format"] = ProfileFormat, ["configuration_pending"] = replaceProfile, ["native"] = model.Host.Call("desktop.input.inspect") };
 }

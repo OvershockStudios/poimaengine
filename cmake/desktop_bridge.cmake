@@ -31,3 +31,16 @@ install(TARGETS poima_desktop RUNTIME DESTINATION bin LIBRARY DESTINATION lib)
 # headers are opt-in and belong in a separate SDK prefix, not game bundles.
 install(FILES "${CMAKE_SOURCE_DIR}/include/poima/desktop_bridge.h"
     DESTINATION include/poima COMPONENT Development EXCLUDE_FROM_ALL)
+
+# Link the same bridge source directly into this test so real SDL virtual
+# devices share its SDL instance without test hooks in the shipped C ABI.
+add_executable(poima-desktop-gamepad-test EXCLUDE_FROM_ALL
+    tests/desktop_gamepad_native.cpp src/desktop_bridge.cpp)
+target_compile_features(poima-desktop-gamepad-test PRIVATE cxx_std_20)
+target_compile_definitions(poima-desktop-gamepad-test PRIVATE POIMA_DESKTOP_EXPORTS WIN32_LEAN_AND_MEAN NOMINMAX)
+target_include_directories(poima-desktop-gamepad-test PRIVATE "${CMAKE_SOURCE_DIR}/include")
+target_include_directories(poima-desktop-gamepad-test SYSTEM PRIVATE "${CMAKE_SOURCE_DIR}/third_party")
+target_link_libraries(poima-desktop-gamepad-test PRIVATE poima_core SDL3::SDL3-static user32)
+if(MINGW)
+    target_link_options(poima-desktop-gamepad-test PRIVATE -static)
+endif()

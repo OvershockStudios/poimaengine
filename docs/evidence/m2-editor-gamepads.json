@@ -1,0 +1,356 @@
+{
+  "milestone": "Hosted editor gamepad input with shared device configuration and human controls",
+  "date": "2026-10-05",
+  "engine_version": "0.0.38",
+  "source_base": "a5262b43c0c15379a2bb042f195eb3b844c5b839",
+  "source_sha256": {
+    "CMakeLists.txt": "be52d698ed24da31956729c3d4609ebd1033538631fd60a4a3d3f8a0776c13f6",
+    "cmake/desktop_bridge.cmake": "e3520e5bb9daf7535b0a6cc4abcbed34eb226afa6eae7858f78ba447e39cad9d",
+    "desktop/Poima.Editor/DesktopScript.cs": "d516feba61f3131276691f5c8141c0357a9dab3f1c6c403a10c781968e0ab5fb",
+    "desktop/Poima.Editor/GameInput.cs": "2c72aea42ea880f193ff53fbaf04a07015f834f606ddbc846e08d61680205c08",
+    "desktop/Poima.Editor/GameInputWindow.cs": "876ed46f128c4fec94338339b82838cb9ccdf2c1fdb7df6413d2f339458ec490",
+    "desktop/Poima.Editor/MainWindow.cs": "79d40cc8a6f87c770f6b2af3044240d8a9c3e0ac665b14378a86092d2dcfc896",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "66b7e71c96d19373bf3c7b3d8fc6af7c608335e85f4bbda4c1ed1e7034d5f57d",
+    "include/poima/gamepad.hpp": "bab1bea9a1f0843839e98800518bfa44442384e32cde7dcbe451029f42d791a7",
+    "src/desktop_bridge.cpp": "59c01cf3448fba33d08a8fe7e8fa9d015df774de9e1e98793a735c999041dea7",
+    "src/gamepad_disabled.cpp": "bb73441becc13048152ab536a9d903453045339ca19c67f54e605f7712f898fc",
+    "src/gamepad_sdl.cpp": "7463142e1bfcfa628e60565d31ed5431ead64fc67c0d3691768be9ec9f6520d4",
+    "src/input_profile.cpp": "ef3d805895ab4bd56eeeaf377f500878b8b70e321e18685c5f113c6207b94b91",
+    "tests/desktop_frontend.py": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84",
+    "tests/desktop_gamepad_frontend.py": "8430feeb76a76ab76a6569aaf5c86422d86097b0a649638a6dcc9124df2b8e49",
+    "tests/desktop_gamepad_native.cpp": "040fe5193fe5b846d72e5f28e716a0f322ce25e78cea77907f2ca6beff4e01ee",
+    "tests/gamepad_sdl.cpp": "2243edd3cabb2b3dc763e38efef324f0ff119f13aaf8c36359e5654d94e5fe3a"
+  },
+  "implemented": [
+    "Hosted SDL mode updates devices without owner-thread Windows message pumping; both desktop.input.devices and the generic input.devices route use that host.",
+    "Stable evaluator ownership and staged device acquisition preserve prior assignment, focus and pending input on invalid reconfiguration. Stop/session replacement disconnects before evaluator destruction; SDL reference ownership survives for later discovery.",
+    "One assigned controller, disabled/only-connected/explicit policies, explicit v2 defaults or frozen profiles; v1 plus enabled gamepad is rejected without conversion. Start releases existing Game input only.",
+    "Per-tick native evaluation preserves analog rate across catch-up and consumes keyboard/mouse/gamepad edges once after commit. Focus, capture suspension, remapping and lifecycle transitions reapply neutral gating.",
+    "Bounded gamepad event removal and mapped raw-joystick duplicate cleanup preserve unrelated SDL events and retain removed-device overflow identities until drained.",
+    "Game Input window provides profile/default choice, device discovery/selection and assignment/arming/error status. Stopped preferences are staged for the next capture; active Apply uses shared native validation before releasing managed capture."
+  ],
+  "package": {
+    "directory": "build/desktop-gamepads-reviewable",
+    "inventory": {
+      "verified": true,
+      "files_including_manifest": 362,
+      "payload_files": 361,
+      "resolved_packages": 36,
+      "runtime_packs": 2
+    },
+    "manifest": {
+      "path": "build/desktop-gamepads-reviewable/poima-desktop-build.json",
+      "sha256": "3aa3512a6e914b5c764f314a7fc08f99e269e60c83c3d6e254e51b7ed1738243",
+      "bytes": 55753
+    },
+    "hashes": {
+      "build/desktop-gamepads-reviewable/poima.exe": "7032f4a669c70002b2152d6ee1246c2ece2f2b33cd2dbe49113e8fe697c3d962",
+      "build/desktop-gamepads-reviewable/poima_desktop.dll": "baaee4acb4499befce0d55ca47db75edebcb51234c0298dbf18e480bd29eef3d",
+      "build/desktop-gamepads-reviewable/Poima.Editor.dll": "51d516805452caa5d5177c076979549f0eff42b34a1ab94d4e825995cfd45db3",
+      "build/desktop-gamepads-reviewable/gameplay/Poima.ManagedBridge.dll": "4832d02bf7df6734a121742128945ce1ff10edcb83b8b4f6c61f0f5ebe5a74e8",
+      "build/desktop-gamepads-reviewable/gameplay/Poima.Gameplay.dll": "506bd4cd04677153dbe03d1d1dbde238d1b5bb8619504dfc2db9a07f11eaa130"
+    }
+  },
+  "qualification": {
+    "linux_ctest": [
+      {
+        "configuration": "linux",
+        "suites": 49,
+        "log": {
+          "path": "build/hosted-gamepad-linux-ctest.log",
+          "sha256": "832db2c6c4f065b308edd0f51cef708143500b6b67a4bd18130379f0c1270e93",
+          "bytes": 5504
+        },
+        "xml": {
+          "path": "build/runtime-headless/hosted-gamepad-ctest.xml",
+          "sha256": "89db9c6a91b5d8321ba079e8758c447615540162c0a5cc8edf3bb33194cb0cf1",
+          "bytes": 31905
+        }
+      },
+      {
+        "configuration": "authoring",
+        "suites": 40,
+        "log": {
+          "path": "build/hosted-gamepad-authoring-ctest.log",
+          "sha256": "b4aef9999d22603a1f15e3349de859c3ef9f7afb21ab8d5b6eba7920f3dde5e2",
+          "bytes": 4497
+        },
+        "xml": {
+          "path": "build/headless/hosted-gamepad-ctest.xml",
+          "sha256": "e930bed1c8855952a1d8e0bfdb8c35f48865cf2f860d9aab65867d5ba8bbe1f3",
+          "bytes": 28194
+        }
+      }
+    ],
+    "linux_binaries": [
+      {
+        "path": "build/runtime-headless/poima",
+        "sha256": "2fbe602ca3d5944282e251476fd234e8a8ec14b46f4230613ac53e1be65b590c",
+        "bytes": 108506616
+      },
+      {
+        "path": "build/headless/poima",
+        "sha256": "1747e76b8121fe238c182df3e5066c22eb9340cee8658cb9da47a2129acd25e6",
+        "bytes": 64036752
+      }
+    ],
+    "sdl": {
+      "groups": 18,
+      "checks": [
+        "discovery_labels",
+        "initial_event_deduplication",
+        "neutral_attachment",
+        "binding_edges",
+        "analog_axes",
+        "second_pad_filtering",
+        "focus_gating",
+        "start_rising_edges",
+        "mapping_changes",
+        "explicit_disconnect_ids",
+        "stop_cleanup",
+        "hosted_unrelated_event_preservation",
+        "hosted_no_owner_message_pump",
+        "hosted_failed_reassignment_atomic",
+        "hosted_bounded_drain",
+        "hosted_3000_tick_queue_stability",
+        "hosted_neutral_start_focus",
+        "hosted_lifetime_hotplug"
+      ],
+      "raw_evidence": {
+        "path": "build/hosted-gamepad-sdl-validation.json",
+        "sha256": "dd57a9ea55ddc5ec20121352769e56c8bdbb65ce61ae00a8d12c1855e8f214b7",
+        "bytes": 1860
+      },
+      "binary": {
+        "path": "build/windows-runtime/poima-gamepad-sdl-test.exe",
+        "sha256": "ddc4f40eedece7efdbbecb8d910a9fefdd55f47cfa40ecffa200cfbc6fbe3bdd",
+        "bytes": 16701440
+      },
+      "log": {
+        "path": "build/hosted-gamepad-sdl-validation.log",
+        "sha256": "3e0d3a9644964b65fb926d83ef2fbffa0813ec947a85dc54b7c4c2fd59c81e2b",
+        "bytes": 600
+      }
+    },
+    "native_bridge": {
+      "groups": 7,
+      "rpc_count": 66,
+      "checks": [
+        "hosted_discovery_start_poll_preserve_windows_and_unrelated_sdl_messages",
+        "failed_reconfiguration_strong_guarantee_and_repeated_focus",
+        "mixed_keyboard_mouse_gamepad_exact_catchup_frames",
+        "focus_neutral_gate_and_assigned_start_release_only",
+        "disconnect_preserves_keyboard_explicit_identity_and_auto_ambiguity",
+        "undrawn_capture_timeout_preserves_keyboard_mouse_rearms_pad_and_named_detach_isolation",
+        "save_load_fresh_session_stop_cleanup_authored_bytes_unchanged"
+      ],
+      "raw_evidence": {
+        "path": "build/hosted-gamepad-native-validation.json",
+        "sha256": "ee2a02a53f6a5a797ea69c10445b14e736c336c88819dbc9c38aa9dc02ef5576",
+        "bytes": 1915
+      },
+      "stdout": {
+        "path": "build/hosted-gamepad-native/final.stdout.log",
+        "sha256": "526d5079bea8953827c5927be43a04586798841f94ac2271326f6c95480a9a60",
+        "bytes": 767
+      },
+      "stderr": {
+        "path": "build/hosted-gamepad-native/final.stderr.log",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "binary": {
+        "path": "build/windows-runtime/poima-desktop-gamepad-test.exe",
+        "sha256": "66d93bdd9b43c7f2ff081bdd09cc19f00fdd655151ab3b3c1af04e59aad21246",
+        "bytes": 137306624
+      },
+      "note": "Same bridge source compiled directly with SDL for process-local virtual devices; no test RPCs in the production DLL. Positive control proves a real SDL pump dispatches the sentinel."
+    },
+    "final_bridge_regressions": [
+      {
+        "name": "keyboard",
+        "groups": 8,
+        "rpc_count": 305,
+        "checks": [
+          "Frozen controller discovery and strict playing/Game-camera focus gates work without requiring graphics.",
+          "Real controller movement/jump/yaw matches evaluated controls; held movement persists, while look/jump/use consume once and repeat events/receipts cannot retrigger them.",
+          "Invalid batches validate atomically; reserved/gamepad/type/shape/count errors preserve pending input and failed receipts are reusable.",
+          "Eight-tick catch-up drains independent mouse frames -180/-180/-70 then zero, preserves held movement, and consumes jump/use once; exact frames feed independent replay.",
+          "Focus loss, Pause and Scene switch clear held controls and pending edges; explicit reacquisition does not restore stale movement.",
+          "Persisted rebound profile changes actual movement and yaw/pitch; stale profile revisions reject without disturbing the old evaluator.",
+          "Stop/new session drops configuration and rejects stale events; independent semantic replay exactly matches final controller/camera state with unchanged authored bytes/history.",
+          "After actual recursive authored deletion, frozen runtime controller/camera discovery, configuration and movement remain valid; Stop restores the now-empty authored controller list."
+        ],
+        "raw_evidence": {
+          "path": "build/hosted-gamepad-keyboard-regression/run-db1da920db0f436fba6ea33daa09bdbb/result.json",
+          "sha256": "8e3538b02ccf7ba687d7b141522ee06317269f85138ca00682de553d6381444e",
+          "bytes": 586264
+        }
+      },
+      {
+        "name": "playback",
+        "groups": 6,
+        "rpc_count": 123,
+        "checks": [
+          "Playback/view schemas are discoverable; invalid camera selection is atomic and Game excludes Scene interaction tools.",
+          "Paused clock and detached draw remain inert; Step advances exactly once with core receipt retry and strict session guards.",
+          "Only owner poll advances real time; long stalls cap at eight ticks, competing runtime mutations reject, and paused wall time never catches up.",
+          "Existing runtime.start/stop synchronize with the desktop driver, defaulting external starts to paused.",
+          "Game uses the same runtime with its frozen camera lens and hierarchy despite authored camera edits and deletion.",
+          "A genuine animation sampling failure preserves automatic ticks15\u201317 and pauses before18; explicit four-tick Step still rolls back all state, with unchanged authored bytes/history."
+        ],
+        "raw_evidence": {
+          "path": "build/hosted-gamepad-playback-regression/run-c8bdc3209ccd4e2fb4a9e0ff85200bb8/result.json",
+          "sha256": "7dac9e2c7cc82365bd83b8bfe415ab39ef4366ffb24334b9ae3dc70cc28ec370",
+          "bytes": 179284
+        }
+      }
+    ],
+    "desktop": [
+      {
+        "gpu": 1,
+        "actions": 55,
+        "restart_actions": 0,
+        "raw_evidence": {
+          "path": "build/gamepad-ui-final-gpu1/cbb39be11914439a9655893c45adb1e5/evidence.json",
+          "sha256": "de569dd2f82221721e394d0af38df9b38b5d69157e769d3fdbb4bb208b20ed63",
+          "bytes": 129944
+        }
+      },
+      {
+        "gpu": 0,
+        "actions": 55,
+        "restart_actions": 0,
+        "raw_evidence": {
+          "path": "build/gamepad-ui-final-gpu0/65168ac5930349909343415f5a5e012f/evidence.json",
+          "sha256": "99366526889ce9884f155790678d54a30739a0154bd2f48a268ed77afece3b9f",
+          "bytes": 133179
+        }
+      },
+      {
+        "gpu": 1,
+        "actions": 232,
+        "restart_actions": 4,
+        "raw_evidence": {
+          "path": "build/gamepad-full-frontend-final-gpu1/06366121488a48d18cf6b91a4de7a276/evidence.json",
+          "sha256": "80a5ab7f681a5f7468c5d319576f4ce1decb2403905684a356ad56a2676dd179",
+          "bytes": 1165868
+        }
+      }
+    ],
+    "desktop_aggregate": {
+      "path": "build/hosted-gamepad-desktop-validation.json",
+      "sha256": "e1c3e704987f4ca90df04c1d5c244ce3e48ad526b4d2e0ff1f11be537cc44ccb",
+      "bytes": 3245
+    },
+    "visual": {
+      "path": "docs/evidence/m2-editor-gamepads.png",
+      "sha256": "372e68d6b0414899ec2a09dbe8c2a3d0b1c88a71f5f52ffe8c1b50eab33e5a46",
+      "bytes": 42054
+    },
+    "packaged_managed": {
+      "raw_evidence": {
+        "path": "build/hosted-gamepad-managed-validation.json",
+        "sha256": "1ae988068c6f4fddea53250c0804f4fe88d51d5995813858d1c2568a7ce83255",
+        "bytes": 2754
+      },
+      "summary": {
+        "passed": true,
+        "qualified_at": "2026-10-05T13:40:36.814544+00:00",
+        "package": "build/desktop-gamepads-reviewable",
+        "platform": "Windows x86_64 via WSL native interop",
+        "abi": {
+          "evidence": "build/hosted-gamepad-managed-abi-windows.json",
+          "checks": 26,
+          "additional_collectible_module_lifetimes": 100,
+          "build_warnings": 0,
+          "build_errors": 0
+        },
+        "components": {
+          "evidence": "build/hosted-gamepad-components-coreclr/0185a3e51b414fcf9587d1f443c2cca1/evidence.json",
+          "groups": 6,
+          "rpc_calls": 408,
+          "coreclr_reloads": 100,
+          "checks": [
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling reference and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "Compatible CLR reorder/labels preserve native values, changed defaults reject without swap, 100 real CoreCLR reloads collect all retired modules",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ]
+        },
+        "sha256": {
+          "tests/managed_service_abi/ManagedServiceAbi.csproj": "078d50e90da5c7b17ebab61b890ae166e9b5d6dc88d0e2693d8b9c70e99ec186",
+          "tests/managed_service_abi/Program.cs": "b9dce87d1faa397f96b4abaeff38d05fb287831e3ca0c64c1f9d7f41d57b5f51",
+          "tests/components_gameplay_contract.py": "c195ed201a9e3403725deb5bec0dbe2be8d51aa9bb316728d87bc8edbca6f47c",
+          "build/desktop-gamepads-reviewable/poima.exe": "7032f4a669c70002b2152d6ee1246c2ece2f2b33cd2dbe49113e8fe697c3d962",
+          "build/desktop-gamepads-reviewable/gameplay/Poima.ManagedBridge.dll": "4832d02bf7df6734a121742128945ce1ff10edcb83b8b4f6c61f0f5ebe5a74e8",
+          "build/desktop-gamepads-reviewable/gameplay/Poima.Gameplay.dll": "506bd4cd04677153dbe03d1d1dbde238d1b5bb8619504dfc2db9a07f11eaa130",
+          "build/hosted-gamepad-managed-abi/ManagedServiceAbi.dll": "7d54d8d3b9e57215b513a90b01861e4a69b06a2a0dd8807bca67a1a817227400"
+        },
+        "limitations": [
+          "Headless managed ABI and actual CoreCLR/native-engine regression; no new GUI or physical input claim.",
+          "NativeAOT artifacts were not republished for this unchanged gameplay SDK interface milestone."
+        ]
+      },
+      "abi_raw": {
+        "path": "build/hosted-gamepad-managed-abi-windows.json",
+        "sha256": "0de11447d8875f1056b8f72e54af0167e1ea8effa9c79886445aca484e06ddb7",
+        "bytes": 1560
+      },
+      "components_raw": {
+        "path": "build/hosted-gamepad-components-coreclr/0185a3e51b414fcf9587d1f443c2cca1/evidence.json",
+        "sha256": "760c0e17c41ab94cd2654e4cd81e09a456676073786681f0a601f3deacfbe63f",
+        "bytes": 2109042
+      }
+    }
+  },
+  "review": {
+    "initial_failures": [
+      {
+        "kind": "Test compile error",
+        "detail": "Native fixture JSON initializer missed a closing brace. Fixed the fixture; production source unchanged.",
+        "log": {
+          "path": "build/hosted-gamepad-windows-build.log",
+          "sha256": "9f00ea6f3b53db3d9892efe15a5b69024afa4f69ac4604d0ce34ddc304c2592a",
+          "bytes": 10671
+        }
+      },
+      {
+        "kind": "GUI harness layout assumption",
+        "detail": "Harness assumed two attached viewports in default tabbed layout; all 54 input actions passed. Corrected fixture explicitly uses split views; production unchanged.",
+        "raw_evidence": {
+          "path": "build/gamepad-ui-final-gpu1/fd881908ba7d41c6b0fc5bc018ec6db6/evidence.json",
+          "sha256": "fea5454c14571e612f298abd1b4707dc8de321a7dcec17279bdd384f5010e170",
+          "bytes": 132848
+        }
+      }
+    ],
+    "final_build": {
+      "path": "build/hosted-gamepad-windows-build-final.log",
+      "sha256": "e5b68d41c05ac9d732ec7216f20f35002970af766f9006b2d3d7638b0ebb8e97",
+      "bytes": 447
+    },
+    "test_only_followup_build": {
+      "path": "build/hosted-gamepad-native-fixture-build.log",
+      "sha256": "8498c78c73a1e4604a8d55d8e0e75e15c5cffea114c61d6f379461ba847219f4",
+      "bytes": 206
+    },
+    "warnings": [
+      "Existing Vulkan-Headers deprecated copy-assignment warning.",
+      "Existing GCC variable-tracking fallback in world schema description.",
+      "Two existing obsolete Avalonia bitmap-save overload warnings."
+    ],
+    "visual": "Attached Game Input client render inspected: readable labels/status and no clipped controls. Windows locked (flags 0); this is not an OS screenshot."
+  },
+  "limitations": [
+    "Virtual devices and synthetic/semantic controls do not qualify physical Xbox/DualSense controllers, Bluetooth, real focus/cursor confinement, input latency, IME or accessibility.",
+    "Standalone SDL fixture enables test-owned background input; production makes no global background hint change. Direct bridge fixture uses SDL video, no background hint and hidden owned HWNDs.",
+    "Capture suspension is qualified through a real queued capture timing out without drawing. This is not a rendered gamepad capture or subjective gameplay-feel test.",
+    "One assigned local controller. General action maps, haptics/gyro, controller-only editor navigation, multiplayer routing and console APIs remain unfinished. Editor audio output remains unconnected.",
+    "At most 256 gamepad and 256 mapped raw duplicate events are removed per poll. SDL_FilterEvents traverses the existing queue; no constant-time, no-allocation or sustained frame-budget claim. Profiler scope input.gamepad.poll attributes this work.",
+    "GUI choices are session-local. Live device IDs are process-session identities, not persisted hardware identities. No profile conversion or automatic focus acquisition.",
+    "Both tested Windows GPUs belong to one laptop. No Linux hardware rendering, physical-controller or console qualification is established by these runs. NVRHI error counts are not full Vulkan validation."
+  ]
+}

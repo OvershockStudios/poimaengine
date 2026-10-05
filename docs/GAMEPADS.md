@@ -96,6 +96,31 @@ Focus loss/minimize clears pending input and pauses simulation. Regaining focus 
 
 Start can resume without capturing the mouse. Keyboard and gamepad input then work while the cursor is free; mouse look/buttons resume only after capture. The recapture click is consumed rather than firing a gameplay binding, and recapturing an already-active session preserves the pad's state. Pause/resume is local player control, not a game menu framework. Disconnect clears pad input but does not automatically pause the whole simulation.
 
+## Desktop editor
+
+The editor shares the native profile evaluator and device adapter with the standalone player. Open **Game Input** with the Game toolbar’s input-profile icon. Select built-in keyboard/mouse/gamepad bindings or a saved v2 profile, then choose an assignment policy. Apply while stopped stages preferences for the next Game capture; Apply during an active runtime validates and acquires the proposed device before replacing the current configuration. A failed change preserves existing input. Settings are session-local.
+
+Click the Game view to take control. Center sticks and release buttons to arm an assigned pad. **Start releases existing Game capture; it does not pause simulation or acquire editor focus.** Escape and Tab also release capture. Pause, focus loss, Game camera changes, resizing or detaching Game clear input. Resume requires another deliberate click. Scene detachment alone does not clear Game input. A capture job suspends gamepad delivery and requires a fresh neutral snapshot afterward, while pending keyboard/mouse input is retained.
+
+Agents use `desktop.input.devices` (or `input.devices`) to discover process-session IDs. Configure a runtime controller with:
+
+```json
+{
+  "session_id": "<current runtime session>",
+  "controller": "<CharacterController entity ID>",
+  "defaults": "keyboard_mouse_gamepad",
+  "gamepad": { "mode": "only_connected" }
+}
+```
+
+Pass this object as `params` to `desktop.input.configure`. Replace `defaults` with `input_profile` and optional `input_revision` to freeze a saved profile. Built-in `defaults` accepts `keyboard_mouse` or `keyboard_mouse_gamepad`; omission selects v1 keyboard/mouse bindings. Enabling a pad with v1 is an error. Selection accepts `{"mode":"disabled"}`, `{"mode":"only_connected"}`, or `{"mode":"explicit","id":123}`. Only explicit mode takes an ID. A missing explicit ID fails initial configuration; later disconnection waits for that identity and never substitutes a different controller.
+
+`desktop.input.inspect` and the compact `input` field in editor polling include a `gamepad` object: availability, policy/requested ID, assigned ID/name, connected/armed/active flags, reason, attachment/disconnection counts and any device error. Focus remains a separate explicit gate. Device errors release input and require reconfiguration; they do not undo committed simulation. Stop or save-load session replacement releases the borrowed input/device binding while keeping the host’s SDL subsystem reference for later discovery.
+
+Hosted device polling updates SDL gamepads directly and consumes their events without pumping the editor’s Windows message loop. It removes at most 256 gamepad events and 256 duplicate raw joystick events per poll, preserving unrelated events. Raw-event filtering still traverses the queue; this bound is not a constant-time or frame-budget guarantee. The profiler records `input.gamepad.poll`. Event processing does not advance simulation: each successful automatic fixed tick consumes one evaluated frame, so stick look applies on every catch-up tick and button edges fire once.
+
+The editor does not yet provide physical-controller qualification, rumble, general action maps or controller-only editor navigation. Automated virtual-device and semantic-control tests are distinct from physical focus and cursor behavior. Editor audio output remains a separate unfinished integration.
+
 ## Headless observations
 
 This request needs no physical controller:
@@ -124,3 +149,5 @@ The existing generic `control` event accepts non-reserved physical pad buttons, 
 Native tests in `tests/input_profile.cpp` cover stick shaping, endpoints, fixed-tick rates, repeated peeks, trigger hysteresis, neutral gating, source-preserving disconnects and unchanged v1 controls. `tests/gamepad_contract.py` checks the public API, versioned persistence and malformed input. `tests/gamepad_sdl.cpp` exercises the actual SDL adapter using virtual devices, including assignment, removal/reconnection and device-state handling. [Recorded milestone evidence](evidence/m2-gamepads.json) includes 18 headless and 21 runtime CTest suites, 13 gamepad contract cases on Linux and Windows, the native Windows evaluator and SDL virtual-device test, and matching player replays on both laptop GPUs. A targeted Windows window test also verifies keyboard remapping and lifecycle behavior.
 
 Physical Xbox/DualSense/other controllers, Bluetooth behavior, actual deadzone tuning, latency and prolonged foreground use still need qualification. Device labels reported by SDL are not an implemented prompt/glyph UI. There is one local assigned controller, no runtime rebinding menu, no rumble/gyro/touch integration, no general joystick mapping editor, and no console backend. Using a console-branded gamepad on Windows is not Xbox/PlayStation platform support.
+
+The [0.0.38 editor checkpoint](evidence/m2-editor-gamepads.json) records hosted-device ownership, virtual-controller routing, capture suspension, device cleanup, managed integration and actual Game Input controls on both tested GPUs. The [settings image](evidence/m2-editor-gamepads.png) is an attached Avalonia client render, not a desktop screenshot.

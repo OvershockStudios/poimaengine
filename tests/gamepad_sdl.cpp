@@ -10,6 +10,11 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#endif
 using namespace poima;
 using Json=nlohmann::json;
 namespace {
@@ -54,6 +59,90 @@ Delivery pump(GamepadHost& host) {
 }
 Json status(GamepadHost& host) { return Json::parse(host.status_json()); }
 void still(const RuntimeInput& frame) { check(frame.move[0]==0 && frame.move[1]==0 && frame.look[0]==0 && frame.look[1]==0 && !frame.jump && !frame.use,"Unarmed/inactive pad emitted gameplay input"); }
+int queued(Uint32 first,Uint32 last) {
+    const int count=SDL_PeepEvents(nullptr,0,SDL_PEEKEVENT,first,last);
+    check(count>=0,"Queue count failed");return count;
+}
+void hosted_qualification() {
+#ifdef _WIN32
+    // Enable the actual Windows video pump so the sentinel would be consumed
+    // by the old SDL_PumpEvents path even though this test creates no UI window.
+    struct VideoSession {
+        VideoSession() { check(SDL_InitSubSystem(SDL_INIT_VIDEO),"Hosted test video init"); }
+        ~VideoSession() { SDL_QuitSubSystem(SDL_INIT_VIDEO); }
+    } video;
+#endif
+    BoundPlayerInput input(default_gamepad_input_profile()),candidate(default_gamepad_input_profile());
+    VirtualPad pad("Poima hosted virtual",11);
+    GamepadHost host(GamepadHostMode::hosted);
+    // A hosted adapter never dispatches the application's owner-thread queue.
+#ifdef _WIN32
+    MSG message{};const UINT sentinel=WM_APP+0x513;
+    (void)PeekMessageW(&message,nullptr,0,0,PM_NOREMOVE);
+    check(PostThreadMessageW(GetCurrentThreadId(),sentinel,0x1357,0x2468)!=0,"Post thread sentinel");
+#endif
+    SDL_Event user{};user.type=SDL_EVENT_USER;user.user.code=0x1357;check(SDL_PushEvent(&user),"Push unrelated user event");
+    SDL_Event key{};key.type=SDL_EVENT_KEY_DOWN;key.key.scancode=SDL_SCANCODE_F12;check(SDL_PushEvent(&key),"Push unrelated key event");
+    SDL_Event window{};window.type=SDL_EVENT_WINDOW_RESIZED;window.window.windowID=0x123456;check(SDL_PushEvent(&window),"Push unrelated window event");
+    SDL_Event joystick{};joystick.type=SDL_EVENT_JOYSTICK_AXIS_MOTION;joystick.jaxis.which=0x7fffffffu;joystick.jaxis.axis=0;joystick.jaxis.value=321;
+    // Raw queue sentinels bypass watchers: actual joystick producers invoke
+    // those under SDL's joystick lock, while these only test queue ownership.
+    check(SDL_PeepEvents(&joystick,1,SDL_ADDEVENT,0,0)==1,"Queue unrelated joystick event");
+    const int users=queued(SDL_EVENT_USER,SDL_EVENT_USER),keys=queued(SDL_EVENT_KEY_DOWN,SDL_EVENT_KEY_DOWN),windows=queued(SDL_EVENT_WINDOW_RESIZED,SDL_EVENT_WINDOW_RESIZED);
+    check(!host.poll(),"Unused hosted poll returned Start");
+    (void)host.devices_json();host.start(input,{"explicit",pad.id},false);host.poll();
+    check(status(host)["name"]=="Poima hosted virtual" && status(host)["active"]==false,"Hosted initial state/name mismatch");
+    check(queued(SDL_EVENT_USER,SDL_EVENT_USER)==users && queued(SDL_EVENT_KEY_DOWN,SDL_EVENT_KEY_DOWN)==keys && queued(SDL_EVENT_WINDOW_RESIZED,SDL_EVENT_WINDOW_RESIZED)==windows,"Hosted API consumed unrelated SDL events");
+    SDL_Event raw[32]{};const int raw_count=SDL_PeepEvents(raw,32,SDL_PEEKEVENT,SDL_EVENT_JOYSTICK_AXIS_MOTION,SDL_EVENT_JOYSTICK_AXIS_MOTION);
+    bool found=false;for(int i=0;i<raw_count;++i)if(raw[i].jaxis.which==0x7fffffffu)found=true;
+    check(found,"Hosted drain consumed unrelated raw joystick event");
+#ifdef _WIN32
+    check(PeekMessageW(&message,nullptr,sentinel,sentinel,PM_REMOVE)!=0 && message.wParam==0x1357 && message.lParam==0x2468,"Hosted API pumped the Win32 owner-thread queue");
+#endif
+    // Queued held state during activation is superseded by the physical snapshot.
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();still(input.consume("player"));
+    host.activate(true);check(!input.gamepad_armed(),"Hosted held activation bypassed neutrality");
+    host.poll();still(input.consume("player"));
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);host.poll();check(input.gamepad_armed(),"Hosted release failed to arm");
+    pad.axis(SDL_GAMEPAD_AXIS_LEFTY,-32768);pad.axis(SDL_GAMEPAD_AXIS_RIGHTX,32767);host.poll();
+    check(input.peek("player").move[1]>.99 && input.peek("player").look[0]<-2.9,"Hosted analog input missing");
+    // Failed replacement retains the assigned pad, analog state, keyboard edge
+    // and the prospective evaluator, rather than stopping before acquisition.
+    input.control(InputControlKind::keyboard,44,true);candidate.motion(17,19);
+    const auto before=input.peek("player"),candidate_before=candidate.peek("player");const auto old_status=status(host);
+    bool rejected=false;try { host.start(candidate,{"explicit",0xffffffffu},false); }catch(const std::exception&) { rejected=true; }
+    const auto after=input.peek("player"),candidate_after=candidate.peek("player");
+    check(rejected && status(host)==old_status && before.move==after.move && before.look==after.look && before.jump==after.jump && candidate_before.look==candidate_after.look && !candidate.gamepad_connected(),"Failed reassignment mutated a live or candidate evaluator");
+    pad.axis(SDL_GAMEPAD_AXIS_LEFTY,0);pad.axis(SDL_GAMEPAD_AXIS_RIGHTX,0);host.poll();(void)input.consume("player");input.control(InputControlKind::keyboard,44,false);
+    pad.button(SDL_GAMEPAD_BUTTON_START,true);check(host.poll(),"Hosted Start edge absent");check(!host.poll(),"Hosted Start repeated");
+    host.activate(false);pad.button(SDL_GAMEPAD_BUTTON_START,false);host.poll();pad.button(SDL_GAMEPAD_BUTTON_START,true);check(host.poll(),"Hosted inactive Start observation absent");
+    check(!status(host)["active"].get<bool>(),"Hosted Start implicitly resumed capture");pad.button(SDL_GAMEPAD_BUTTON_START,false);host.poll();host.activate(true);
+    // More than a poll budget remains queued. Auxiliary gamepad events must be
+    // drained as well, otherwise long-lived editors eventually fill SDL's queue.
+    while(queued(SDL_EVENT_GAMEPAD_AXIS_MOTION,SDL_EVENT_GAMEPAD_STEAM_HANDLE_UPDATED)>0)host.poll();
+    SDL_Event auxiliary{};auxiliary.type=SDL_EVENT_GAMEPAD_UPDATE_COMPLETE;auxiliary.gdevice.which=pad.id;
+    for(int i=0;i<600;++i)check(SDL_PushEvent(&auxiliary),"Push bounded-drain fixture");
+    host.poll();check(queued(SDL_EVENT_GAMEPAD_AXIS_MOTION,SDL_EVENT_GAMEPAD_STEAM_HANDLE_UPDATED)>=344,"Hosted poll exceeded event removal budget");
+    host.poll();host.poll();check(queued(SDL_EVENT_GAMEPAD_AXIS_MOTION,SDL_EVENT_GAMEPAD_STEAM_HANDLE_UPDATED)==0,"Hosted auxiliary events leaked");
+    const int unrelated_raw=queued(SDL_EVENT_JOYSTICK_AXIS_MOTION,SDL_EVENT_JOYSTICK_UPDATE_COMPLETE);
+    for(int i=0;i<3000;++i) { pad.axis(SDL_GAMEPAD_AXIS_LEFTX,(i%2) ? 16000 : -16000);host.poll();input.commit_tick(); }
+    check(queued(SDL_EVENT_JOYSTICK_AXIS_MOTION,SDL_EVENT_JOYSTICK_UPDATE_COMPLETE)==unrelated_raw,"Mapped raw joystick duplicates accumulated");
+    // Another host can acquire/release a reference without shutting down this
+    // live SDL subsystem, and stop retains discovery IDs for the next start.
+    { GamepadHost other(GamepadHostMode::hosted);(void)other.devices_json(); }
+    check(SDL_WasInit(SDL_INIT_GAMEPAD)!=0,"Other hosted lifetime quit active gamepad subsystem");
+    host.stop();check(!input.gamepad_connected(),"Hosted stop retained borrowed input");
+    (void)host.devices_json();host.start(candidate,{"explicit",pad.id},false);
+    SDL_Event duplicate{};duplicate.type=SDL_EVENT_JOYSTICK_UPDATE_COMPLETE;duplicate.jdevice.which=pad.id;
+    for(int i=0;i<600;++i)check(SDL_PeepEvents(&duplicate,1,SDL_ADDEVENT,0,0)==1,"Queue removed-device backlog");
+    pad.detach();host.poll();
+    check(!candidate.gamepad_connected() && status(host)["assigned"].is_null(),"Hosted hotplug removal failed");
+    host.poll();host.poll();host.poll();
+    check(queued(SDL_EVENT_JOYSTICK_AXIS_MOTION,SDL_EVENT_JOYSTICK_UPDATE_COMPLETE)==unrelated_raw,"Removed mapped device backlog leaked after drain budget");
+    VirtualPad next("Poima hosted replacement",11);host.poll();check(status(host)["assigned"].is_null(),"Hosted explicit ID silently reassigned");
+    host.start(candidate,{"explicit",next.id},true);check(status(host)["assigned"]==next.id,"Hosted explicit replacement failed");
+    host.stop();
+}
 }
 int main() {
     try {
@@ -117,8 +206,9 @@ int main() {
             second.detach();pump(host);check(!input.gamepad_connected(),"Auto pad disconnect did not clear input");still(input.consume("player"));
         }
         host.stop();check(!input.gamepad_connected(),"Stopped host retains input attachment");
+        hosted_qualification();
         std::cout<<Json{{"passed",true},{"source","SDL virtual joysticks and real SDL event queue; not physical devices"},
             {"auto_selection_qualified",existing==0},{"preexisting_devices",existing},
-            {"checks",{"discovery_labels","initial_event_deduplication","neutral_attachment","binding_edges","analog_axes","second_pad_filtering","focus_gating","start_rising_edges","mapping_changes","explicit_disconnect_ids","stop_cleanup"}}}.dump()<<'\n';
+            {"checks",{"discovery_labels","initial_event_deduplication","neutral_attachment","binding_edges","analog_axes","second_pad_filtering","focus_gating","start_rising_edges","mapping_changes","explicit_disconnect_ids","stop_cleanup","hosted_unrelated_event_preservation","hosted_no_owner_message_pump","hosted_failed_reassignment_atomic","hosted_bounded_drain","hosted_3000_tick_queue_stability","hosted_neutral_start_focus","hosted_lifetime_hotplug"}}}.dump()<<'\n';
     }catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

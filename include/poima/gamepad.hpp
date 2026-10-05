@@ -11,6 +11,7 @@ struct GamepadSelection {
     std::string mode="disabled";
     std::uint32_t id=0;
 };
+enum class GamepadHostMode { standalone, hosted };
 // Main-thread SDL adapter. Keep alive across device discovery and play so
 // session device IDs remain meaningful. No SDL types escape this interface.
 class GamepadHost {
@@ -18,12 +19,19 @@ class GamepadHost {
     std::unique_ptr<Impl> impl_;
 public:
     static bool available();
-    GamepadHost();
+    explicit GamepadHost(GamepadHostMode mode=GamepadHostMode::standalone);
     ~GamepadHost();
     GamepadHost(const GamepadHost&)=delete;
     GamepadHost& operator=(const GamepadHost&)=delete;
     std::string devices_json();
-    void start(BoundPlayerInput&,const GamepadSelection&);
+    // Strong replacement guarantee: failed acquisition preserves the previous
+    // assignment and both evaluators. The successful input must outlive stop().
+    void start(BoundPlayerInput&,const GamepadSelection&,bool initially_active=true);
+    // Hosted only: directly updates devices without pumping window messages.
+    // Drains at most 256 gamepad events and 256 mapped raw-joystick duplicates;
+    // preserves unrelated SDL events. Returns an assigned Start rising edge.
+    // An uninitialized host stays uninitialized.
+    bool poll();
     void stop();
     void activate(bool);
     void added(std::uint32_t);
