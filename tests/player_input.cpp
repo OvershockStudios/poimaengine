@@ -34,6 +34,18 @@ int main() {
         PlayerClock paused; check(paused.advance(.01,true)==0,"Fractional time advanced.");
         check(paused.advance(100,false)==0 && paused.advance(.01,true)==0,"Pause caught up elapsed wall time.");
         check(paused.advance(10,true)==8 && paused.dropped_seconds()>9.8,"Stall catch-up is unbounded.");
+        PlayerClock boundary;
+        // Exact double reproducer: epsilon-assisted rounding formerly returned
+        // nine ticks from the second call despite the eight-tick work budget.
+        check(boundary.advance(0.016666666665666664,true)==0,"Boundary fraction unexpectedly advanced.");
+        check(boundary.advance(8*Runtime::fixed_dt,true)==8,"Fractional carry exceeded the eight-tick cap.");
+        check(boundary.dropped_seconds()==0,"Work capping discarded accepted fractional time.");
+        check(boundary.advance(.0001,true)==1,"Work cap lost the prior fractional carry.");
+        PlayerClock bounded;
+        check(bounded.advance(0.016666666665666664,true)==0,"Bounded fixture fraction unexpectedly advanced.");
+        for(int i=0;i<100;++i)check(bounded.advance(8*Runtime::fixed_dt,true)==8,"Repeated bounded polls exceeded the work cap.");
+        bounded.advance(0,false);
+        check(bounded.advance(0,true)==0,"Suspension retained capped fractional time.");
         bool rejected=false; try { paused.advance(std::numeric_limits<double>::quiet_NaN(),true); } catch(const std::invalid_argument&) { rejected=true; }
         check(rejected,"NaN frame duration accepted.");
         std::cout<<"Input edges, focus reset, bounded look, presentation-independent fixed ticks and stall limits passed.\n";

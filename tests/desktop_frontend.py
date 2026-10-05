@@ -86,6 +86,7 @@ action(38, 'float', panel='Scene')
 action(44, 'inspect')
 action(47, 'reset_layout')
 action(53, 'runtime_toggle')
+action(53, 'runtime_pause')  # Same-frame pause: no clock pump between start and pause.
 action(56, 'step', ticks=2)
 action(58, 'inspect')
 action(60, 'runtime_toggle')
@@ -101,7 +102,7 @@ action(68, 'assert_scene_error', expected=True)
 action(70, 'rpc', method='world.transact', params={'base_revision': revision+5, 'request_id': uuid.uuid4().hex,
        'ops': [{'op': 'component.remove', 'id': entity, 'type': 'StaticMesh'},
                {'op': 'component.set', 'id': entity, 'type': 'MeshRenderer', 'value': mesh}]})
-action(75, 'assert_scene_error', expected=False)
+action(75, 'wait_scene_error', expected=False)
 action(80, 'rpc', method='desktop.capture', params={'revision': revision+6, 'path': str(run/'viewport.bmp')})
 action(85, 'inspect')
 action(95, 'scene_frame')
@@ -178,6 +179,12 @@ for frame, key, mode in ((196, 81, 'none'), (199, 87, 'move'), (202, 69, 'rotate
     action(frame, 'scene_input', message='key_down', key=key)
     action(frame+1, 'scene_input', message='key_up', key=key)
     action(frame+2, 'gizmo_inspect', tag='hotkey_'+mode)
+action(207, 'scene_input', message='key_down', key=87, control=True)
+action(207, 'scene_input', message='key_up', key=87, control=True)
+action(207, 'gizmo_inspect', tag='ctrl_hotkey_blocked')
+action(207, 'scene_input', message='key_down', key=69, alt=True)
+action(207, 'scene_input', message='key_up', key=69, alt=True)
+action(207, 'gizmo_inspect', tag='alt_hotkey_blocked')
 action(208, 'gizmo_configure', mode='move', space='local')
 action(209, 'gizmo_inspect', tag='space_local')
 action(210, 'gizmo_configure', mode='rotate', space='world')
@@ -194,6 +201,37 @@ action(222, 'gizmo_inspect', tag='final_handles')
 action(224, 'rpc', method='desktop.capture', params={'revision': revision+10, 'path': str(run/'gizmo-final.bmp')})
 action(227, 'inspect', tag='gizmo_final')
 action(230, 'save_layout')
+# Real-time playback shares the native clock with agent commands. Use tick
+# inequalities while playing and exact ticks only after a confirmed pause.
+action(240, 'inspect', tag='playback_before')
+action(240, 'rpc', method='world.history', tag='playback_history_before')
+action(242, 'runtime_toggle')
+action(244, 'inspect', tag='playback_running_first')
+action(244, 'step', error_contains='Pause playback')
+action(250, 'inspect', tag='playback_running_later')
+action(251, 'runtime_pause')
+action(252, 'inspect', tag='playback_paused')
+action(258, 'inspect', tag='playback_still_paused')
+action(259, 'step')
+action(260, 'inspect', tag='playback_stepped')
+action(261, 'view', mode='game')
+action(263, 'inspect', tag='game_preview')
+action(264, 'scene_input', message='right_down')
+action(264, 'scene_input', message='move', x=.65, y=.35)
+action(265, 'scene_input', message='right_up')
+action(266, 'inspect', tag='game_navigation_blocked')
+action(267, 'rpc', method='desktop.capture', params={'revision': revision+10, 'path': str(run/'game-preview.bmp')})
+action(270, 'inspect', tag='game_capture')
+action(271, 'view', mode='scene')
+action(272, 'inspect', tag='scene_restored')
+action(273, 'runtime_rpc', command='resume')
+action(278, 'inspect', tag='playback_external_resume')
+action(279, 'runtime_rpc', command='pause')
+action(281, 'inspect', tag='playback_external_pause')
+action(287, 'inspect', tag='playback_external_pause_stable')
+action(288, 'runtime_toggle')
+action(290, 'inspect', tag='playback_stopped')
+action(290, 'rpc', method='world.history', tag='playback_history_after')
 script = run/'actions.json'; script.write_text(json.dumps({'actions': actions}, indent=2))
 report = run/'report.json'
 u = c.WinDLL('user32', use_last_error=True)
@@ -342,8 +380,9 @@ try:
         assert inspections[3]['native']['capture']['state'] == 'complete'
         assert evidence['state']['render']['hardware'] and evidence['state']['render']['nvrhi_errors'] == 0
         assert not evidence['state']['runtime']['active']
-        recovery = [item for item in evidence['actions'] if item['op'] == 'assert_scene_error']
+        recovery = [item for item in evidence['actions'] if item['op'] in ('assert_scene_error', 'wait_scene_error')]
         assert recovery[1]['native']['frames_presented'] > recovery[0]['native']['frames_presented']
+        assert recovery[1]['native']['presented_revision'] == recovery[1]['native']['revision']
         assert evidence['draft']['name'] == 'Courtyard pillar' and not evidence['draft']['dirty']
         baseline, preview, committed = (stages[name] for name in ('gizmo_baseline', 'gizmo_preview', 'gizmo_committed'))
         original_transform = baseline['draft']['components']['Transform']
@@ -374,6 +413,16 @@ try:
         assert invalidated['draft']['components']['Transform'] == changed_transform and invalidated['navigation']['drag'] == 'None'
         for mode in ('none', 'move', 'rotate', 'scale'):
             assert stages['hotkey_'+mode]['gizmo']['mode'] == mode
+        assert stages['ctrl_hotkey_blocked']['gizmo']['mode'] == 'scale'
+        assert stages['alt_hotkey_blocked']['gizmo']['mode'] == 'scale'
+        for spec, result in zip(actions, evidence['actions']):
+            if spec['op'] == 'scene_input':
+                expected_modifiers = (1 if spec.get('shift') else 0) | (2 if spec.get('control') else 0) | (4 if spec.get('alt') else 0)
+                assert result['requested_modifiers'] == result['thread_modifiers'] == result['delivered_modifiers'] == expected_modifiers, (spec, result)
+                assert result['navigation']['qualification_input'], result
+                if spec['message'] in ('left_down', 'left_up', 'right_down', 'right_up', 'middle_down', 'middle_up', 'move', 'wheel'):
+                    assert result['navigation']['last_input_x'] == result['requested_pointer_x'], (spec, result)
+                    assert result['navigation']['last_input_y'] == result['requested_pointer_y'], (spec, result)
         assert stages['space_local']['gizmo']['space'] == 'local'
         assert stages['rmb_modes']['native']['gizmo']['mode'] == 'rotate' and stages['rmb_modes']['navigation']['drag'] == 'Right'
         final = stages['gizmo_final']
@@ -381,6 +430,42 @@ try:
         assert final['native']['gizmo']['space'] == 'world' and final['native']['gizmo']['active'] is None
         assert sum(handle['visible'] for handle in stages['final_handles']['gizmo']['handles']) >= 2
         assert evidence['state']['revision'] == invalidated['native']['revision'] and final['draft']['components']['Transform'] == changed_transform
+        before_play = stages['playback_before']
+        first_play, later_play = stages['playback_running_first'], stages['playback_running_later']
+        paused_play, stable_play, stepped_play = (stages[name] for name in ('playback_paused', 'playback_still_paused', 'playback_stepped'))
+        assert first_play['native']['playback']['state'] == first_play['playback']['state'] == 'playing'
+        assert first_play['playback_controls']['pause_enabled'] and not first_play['playback_controls']['step_enabled']
+        assert first_play['playback_controls']['pause_action'] == 'Pause simulation' and first_play['playback_controls']['pause_has_vector_icon']
+        assert later_play['native']['playback']['tick'] > first_play['native']['playback']['tick']
+        assert paused_play['native']['playback']['state'] == paused_play['playback']['state'] == 'paused'
+        assert paused_play['playback_controls']['pause_action'] == 'Resume simulation' and paused_play['playback_controls']['pause_has_vector_icon'] and paused_play['playback_controls']['step_enabled']
+        assert stable_play['native']['playback']['tick'] == paused_play['native']['playback']['tick']
+        assert stepped_play['native']['playback']['tick'] == stable_play['native']['playback']['tick'] + 1
+        for stage in (first_play, later_play, paused_play, stable_play, stepped_play):
+            assert stage['playback']['draft_generation'] == before_play['playback']['draft_generation'], stage
+            assert stage['draft']['components'] == before_play['draft']['components'] and not stage['draft']['dirty']
+        game_view = stages['game_preview']
+        assert game_view['native']['view']['mode'] == game_view['playback']['view'] == 'game'
+        assert game_view['native']['view']['camera'] and game_view['playback']['camera'] == game_view['native']['view']['camera']
+        assert stages['game_navigation_blocked']['native']['camera'] == game_view['native']['camera']
+        assert stages['game_navigation_blocked']['navigation']['drag'] == 'None'
+        assert stages['game_capture']['native']['capture']['state'] == 'complete' and (run/'game-preview.bmp').is_file()
+        assert stages['scene_restored']['native']['view']['mode'] == 'scene'
+        assert stages['scene_restored']['native']['camera'] == before_play['native']['camera']
+        resumed = stages['playback_external_resume']
+        assert resumed['native']['playback']['state'] == resumed['playback']['state'] == 'playing'
+        assert resumed['native']['playback']['tick'] > stepped_play['native']['playback']['tick']
+        remote_paused = stages['playback_external_pause']
+        assert remote_paused['native']['playback']['state'] == remote_paused['playback']['state'] == 'paused'
+        assert remote_paused['playback_controls']['pause_action'] == 'Resume simulation' and remote_paused['playback_controls']['step_enabled']
+        assert stages['playback_external_pause_stable']['native']['playback']['tick'] == remote_paused['native']['playback']['tick']
+        stopped = stages['playback_stopped']
+        assert stopped['native']['playback']['state'] == stopped['playback']['state'] == 'stopped'
+        assert not stopped['native']['runtime']['active'] and stopped['playback']['session_id'] is None
+        assert not stopped['playback_controls']['pause_enabled'] and not stopped['playback_controls']['step_enabled']
+        assert stopped['native']['revision'] == before_play['native']['revision']
+        assert stopped['draft']['components'] == before_play['draft']['components'] and not stopped['draft']['dirty']
+        assert stages['playback_history_after']['result'] == stages['playback_history_before']['result']
         assert shared and capture_ready and captured and (run/'viewport.bmp').is_file() and (run/'gizmo-final.bmp').is_file()
         assert record['window_capture']['status'] in ('captured', 'unavailable'), record['window_capture']
         if record['window_capture']['status'] == 'captured':
@@ -417,6 +502,9 @@ try:
                               'HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform',
                               'dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews',
                               'Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible',
+                              'native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild',
+                              'Game camera preview blocks Scene gestures; switching back preserves inspection camera',
+                              'paused Game capture and Stop preserve authored transforms/revision/history',
                               'revision-guarded native viewport capture', 'bounded process exit',
                               'owned desktop client-area screenshot' if record['window_capture']['status'] == 'captured'
                               else 'window screenshot unavailable; semantic GUI and native Scene capture qualified separately'])

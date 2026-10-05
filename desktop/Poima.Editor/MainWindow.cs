@@ -30,7 +30,7 @@ public sealed class MainWindow : Window
     private EditorDockFactory factory;
     private IRootDock layout;
     private readonly TextBlock status = new();
-    private readonly Button start, step, undo, redo;
+    private readonly Button start, pause, step, undo, redo;
     private readonly string projectRoot;
     private readonly Dictionary<string, string> assetNames = new();
     private bool disposed;
@@ -65,7 +65,7 @@ public sealed class MainWindow : Window
         var menu = BuildMenu(); Grid.SetRow(menu, 0); root.Children.Add(menu);
         var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*"), Background = EditorTheme.Brush("#222327") };
         var left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(5, 3) };
-        var create = Button("Create", () => {}, "plus");
+        var create = ToolButton("Create object", () => {}, "plus");
         create.ContextMenu = new ContextMenu { ItemsSource = new[] { CreateItem("Empty object", "Entity"), CreateItem("Cube", "Cube"), CreateItem("Camera", "Camera"), CreateItem("Point light", "Light") } };
         create.Click += (_, _) => create.ContextMenu.Open(create);
         left.Children.Add(create);
@@ -73,24 +73,27 @@ public sealed class MainWindow : Window
         undo = ToolButton("Undo", () => Model.History(false), "undo"); redo = ToolButton("Redo", () => Model.History(true), "redo");
         left.Children.Add(undo); left.Children.Add(redo); toolbar.Children.Add(left);
         var transport = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 1, Margin = new Thickness(0, 3) };
-        start = Button("", Model.PlayStop, "play"); ToolTip.SetTip(start, "Start simulation paused / stop simulation");
+        start = Button("", Model.PlayStop, "play"); ToolTip.SetTip(start, "Play / stop simulation. Stop discards runtime changes.");
         start.Width = 30; start.Classes.Add("transport");
         AutomationProperties.SetName(start, "Start or stop simulation");
+        pause = Button("", Model.Pause, "pause"); ToolTip.SetTip(pause, "Pause simulation");
+        pause.Width = 30; pause.Classes.Add("transport");
+        AutomationProperties.SetName(pause, "Pause simulation");
         step = Button("", () => Model.Step(), "step"); ToolTip.SetTip(step, "Advance simulation by one fixed tick"); AutomationProperties.SetName(step, "Step simulation");
         step.Width = 30; step.Classes.Add("transport");
-        transport.Children.Add(start); transport.Children.Add(step); Grid.SetColumn(transport, 1); toolbar.Children.Add(transport);
+        transport.Children.Add(start); transport.Children.Add(pause); transport.Children.Add(step); Grid.SetColumn(transport, 1); toolbar.Children.Add(transport);
         var projectLabel = Label(System.IO.Path.GetFileName(projectRoot), true); projectLabel.Margin = new Thickness(8); projectLabel.HorizontalAlignment = HorizontalAlignment.Right;
         Grid.SetColumn(projectLabel, 2); toolbar.Children.Add(projectLabel); Grid.SetRow(toolbar, 1); root.Children.Add(toolbar);
         Grid.SetRow(dock, 2); root.Children.Add(dock);
         status.FontSize = 11; status.Foreground = EditorTheme.Brush("#A0A0A5");
         var footer = new Border { Background = EditorTheme.Brush("#222327"), BorderBrush = EditorTheme.Brush("#1B1C20"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(8, 1), Child = status };
         Grid.SetRow(footer, 3); root.Children.Add(footer); Content = root;
-        Model.Changed += UpdateToolbar; UpdateToolbar(null, EventArgs.Empty);
+        Model.Changed += UpdateToolbar; Model.PlaybackChanged += UpdateToolbar; UpdateToolbar(null, EventArgs.Empty);
         KeyDown += (_, e) =>
         {
             if (e.Source is TextBox) return;
-            if (e.Key == Key.F && e.KeyModifiers == KeyModifiers.None) { Run(Navigation.FrameSelection); e.Handled = true; }
-            if (!Navigation.Flying && e.KeyModifiers == KeyModifiers.None && e.Key is Key.Q or Key.W or Key.E or Key.R)
+            if (Model.ViewMode == "scene" && e.Key == Key.F && e.KeyModifiers == KeyModifiers.None) { Run(Navigation.FrameSelection); e.Handled = true; }
+            if (Model.ViewMode == "scene" && !Navigation.Flying && e.KeyModifiers == KeyModifiers.None && e.Key is Key.Q or Key.W or Key.E or Key.R)
             {
                 Run(() => Navigation.ConfigureGizmo(e.Key switch { Key.Q => "none", Key.W => "move", Key.E => "rotate", _ => "scale" }));
                 e.Handled = true;
@@ -108,10 +111,14 @@ public sealed class MainWindow : Window
             }
             if (!e.Cancel) { Navigation.Cancel(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
         };
-        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; CloseLayout(); Model.Dispose(); } };
+        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Model.Dispose(); } };
     }
     internal void CloseQualification() { qualificationClosing = true; Close(); }
     public JsonObject InspectDraft() => Model.InspectDraft();
+    public JsonObject InspectPlaybackControls() => new() { ["pause_enabled"] = pause.IsEnabled,
+        ["pause_action"] = AutomationProperties.GetName(pause), ["pause_has_vector_icon"] = pause.Content is Viewbox,
+        ["step_enabled"] = step.IsEnabled,
+        ["status"] = status.Text };
     private MenuItem CreateItem(string label, string kind)
     {
         var item = new MenuItem { Header = label }; item.Click += (_, _) => Run(() => Model.Create(kind)); return item;
@@ -175,9 +182,16 @@ public sealed class MainWindow : Window
     private void CloseLayout() { Navigation.Cancel(); if (layout.Close.CanExecute(null)) layout.Close.Execute(null); }
     private void UpdateToolbar(object? sender, EventArgs args)
     {
-        status.Text = Model.Host.LastError is string error ? "Scene: " + error : $"{(Model.RuntimeId is null ? "Ready" : $"Simulation paused · tick {Model.Tick}")}     ·     {Model.Entities.Count} objects     ·     Revision {Model.Revision}";
+        var playback = Model.RuntimeId is null ? "Ready" : $"Simulation {Model.PlaybackState} · tick {Model.Tick}";
+        if (Model.PlaybackSuspended is string reason) playback += " · waiting for " + reason;
+        status.Text = Model.Host.LastError is string error ? "Scene: " + error : Model.PlaybackError is string playError ? "Playback: " + playError : $"{playback}     ·     {Model.Entities.Count} objects     ·     Revision {Model.Revision}";
         start.Content = EditorIcons.Make(Model.RuntimeId is null ? "play" : "stop");
-        step.IsEnabled = Model.RuntimeId is not null;
+        AutomationProperties.SetName(start, Model.RuntimeId is null ? "Play simulation" : "Stop simulation");
+        ToolTip.SetTip(start, Model.RuntimeId is null ? "Play simulation" : "Stop simulation and discard runtime changes");
+        pause.Content = EditorIcons.Make(Model.Paused ? "play" : "pause"); pause.IsEnabled = Model.RuntimeId is not null;
+        var pauseAction = Model.Paused ? "Resume simulation" : "Pause simulation";
+        AutomationProperties.SetName(pause, pauseAction); ToolTip.SetTip(pause, pauseAction);
+        step.IsEnabled = Model.RuntimeId is not null && Model.Paused;
         undo.IsEnabled = Model.UndoDepth > 0 && Model.RuntimeId is null;
         redo.IsEnabled = Model.RedoDepth > 0 && Model.RuntimeId is null;
     }
@@ -206,7 +220,7 @@ public sealed class MainWindow : Window
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")) } },
             new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Reset layout", ResetLayout) } },
-            new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Simulation starts paused; Step advances one tick. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
+            new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Game is a camera preview without gameplay input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
     }
     private Control BuildPanel(string name) => name switch
@@ -222,32 +236,66 @@ public sealed class MainWindow : Window
     }
     private Control BuildScene()
     {
-        var grid = new Grid { RowDefinitions = new RowDefinitions("24,*") };
+        var grid = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*") };
+        var views = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Margin = new Thickness(8, 1) };
+        var sceneButton = Button("Scene", () => Model.SetView("scene"));
+        var gameButton = Button("Game", () => Model.SetView("game"));
+        AutomationProperties.SetName(sceneButton, "Scene view"); AutomationProperties.SetName(gameButton, "Game preview");
+        var cameras = new ComboBox { MinWidth = 120, MaxWidth = 260, MinHeight = 22, Padding = new Thickness(5, 1),
+            ItemTemplate = new FuncDataTemplate<CameraChoice>((choice, _) => Label(choice?.Label ?? "")) };
+        AutomationProperties.SetName(cameras, "Game camera");
+        var previewLabel = Label("Preview · gameplay input unavailable", true);
+        ToolTip.SetTip(gameButton, "Preview a world Camera. Gameplay input is not connected in this editor view yet.");
+        views.Children.Add(sceneButton); views.Children.Add(gameButton); views.Children.Add(cameras); views.Children.Add(previewLabel);
+        grid.Children.Add(views);
+        var syncingView = false;
+        cameras.SelectionChanged += (_, _) =>
+        {
+            if (!syncingView && cameras.SelectedItem is CameraChoice choice && choice.Id != Model.GameCamera)
+                Run(() => Model.SetView("game", choice.Id));
+        };
         var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3 };
         var modes = new Dictionary<string, Button>();
         foreach (var (mode, title, key) in new[] { ("none", "Select", "Q"), ("move", "Move", "W"), ("rotate", "Rotate", "E"), ("scale", "Scale", "R") })
         {
-            var button = Button(title, () => Navigation.ConfigureGizmo(mode));
+            var button = ToolButton("Scene " + title, () => Navigation.ConfigureGizmo(mode), mode == "none" ? "select" : mode);
             AutomationProperties.SetName(button, "Scene "+title); ToolTip.SetTip(button, title+" tool ("+key+")");
             modes.Add(mode, button); controls.Children.Add(button);
         }
-        var space = Button("World", () => Navigation.ConfigureGizmo(Navigation.GizmoMode, Navigation.GizmoSpace == "world" ? "local" : "world"));
+        var space = ToolButton("World transform axes", () => Navigation.ConfigureGizmo(Navigation.GizmoMode, Navigation.GizmoSpace == "world" ? "local" : "world"), "world");
         AutomationProperties.SetName(space, "Scene transform space"); ToolTip.SetTip(space, "Toggle world/local axes. Ctrl snaps: 0.25 units, 15 degrees, 0.1 scale.");
         controls.Children.Add(space);
-        controls.Children.Add(Button("Frame", Navigation.FrameSelection));
+        var frame = ToolButton("Frame selected", Navigation.FrameSelection, "frame"); ToolTip.SetTip(frame, "Frame selected (F)");
+        controls.Children.Add(frame);
         ToolTip.SetTip(controls, "Q select · W move · E rotate · R scale · Ctrl snap · RMB + WASD fly · MMB pan · Alt orbit · F frame");
         void SyncTools(object? sender, EventArgs args)
         {
+            syncingView = true;
+            try
+            {
+                if (!ReferenceEquals(cameras.ItemsSource, Model.Cameras)) cameras.ItemsSource = Model.Cameras;
+                cameras.SelectedItem = Model.Cameras.FirstOrDefault(camera => camera.Id == Model.GameCamera);
+                cameras.IsVisible = previewLabel.IsVisible = Model.ViewMode == "game";
+                controls.IsVisible = Model.ViewMode == "scene";
+                gameButton.IsEnabled = Model.Cameras.Count != 0;
+                sceneButton.Background = EditorTheme.Brush(Model.ViewMode == "scene" ? "#34547B" : "#28292D");
+                gameButton.Background = EditorTheme.Brush(Model.ViewMode == "game" ? "#34547B" : "#28292D");
+            }
+            finally { syncingView = false; }
             foreach (var pair in modes)
                 pair.Value.Background = EditorTheme.Brush(pair.Key == Navigation.GizmoMode ? "#34547B" : "#28292D");
-            space.Content = Label(Navigation.GizmoSpace == "local" ? "Local" : "World");
+            space.Content = EditorIcons.Make(Navigation.GizmoSpace);
+            var local = Navigation.GizmoSpace == "local";
+            AutomationProperties.SetName(space, local ? "Local transform axes" : "World transform axes");
+            ToolTip.SetTip(space, (local ? "Local axes · switch to world" : "World axes · switch to local") + ". Ctrl snaps: 0.25 units, 15 degrees, 0.1 scale.");
         }
-        Navigation.Changed += SyncTools; SyncTools(null, EventArgs.Empty);
-        grid.DetachedFromVisualTree += (_, _) => Navigation.Changed -= SyncTools;
-        grid.AttachedToVisualTree += (_, _) => { Navigation.Changed -= SyncTools; Navigation.Changed += SyncTools; SyncTools(null, EventArgs.Empty); };
+        Navigation.Changed += SyncTools; Model.PlaybackChanged += SyncTools; SyncTools(null, EventArgs.Empty);
+        Observe(grid, Model, () => SyncTools(null, EventArgs.Empty));
+        grid.DetachedFromVisualTree += (_, _) => { Navigation.Changed -= SyncTools; Model.PlaybackChanged -= SyncTools; };
+        grid.AttachedToVisualTree += (_, _) => { Navigation.Changed -= SyncTools; Navigation.Changed += SyncTools; Model.PlaybackChanged -= SyncTools; Model.PlaybackChanged += SyncTools; SyncTools(null, EventArgs.Empty); };
         var bar = new Border { Background = EditorTheme.Brush("#28292D"), Padding = new Thickness(8, 1), Child = controls };
-        grid.Children.Add(bar);
-        var view = new VulkanView(Model.Host, Navigation); Grid.SetRow(view, 1); grid.Children.Add(view); return grid;
+        Grid.SetRow(bar, 1); grid.Children.Add(bar);
+        var view = new VulkanView(Model.Host, Navigation); Grid.SetRow(view, 2); grid.Children.Add(view); return grid;
     }
     private sealed record HierarchyItem(EntityRow Entity, int Depth, int Index);
     private Control BuildHierarchy()
@@ -591,7 +639,7 @@ public sealed class MainWindow : Window
     {
         var root = new Grid { RowDefinitions = new RowDefinitions("27,*,Auto") };
         var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,Auto,*,Auto"), ColumnSpacing = 5, Margin = new Thickness(5, 3) };
-        toolbar.Children.Add(Button("Import", () => _ = PickModel()));
+        toolbar.Children.Add(ToolButton("Import model", () => _ = PickModel(), "import"));
         var search = SearchField("Search folder"); AutomationProperties.SetName(search, "Search project files"); Grid.SetColumn(search, 2); toolbar.Children.Add(search);
         var mode = ToolButton("Switch to grid view", () => {}, "grid"); Grid.SetColumn(mode, 3); toolbar.Children.Add(mode); root.Children.Add(toolbar);
         var body = new Grid { ColumnDefinitions = new ColumnDefinitions("175,4,*") };
@@ -686,7 +734,7 @@ public sealed class MainWindow : Window
         }
         var top = Folder(projectRoot); tree.ItemsSource = new[] { top }; top.IsExpanded = true;
         tree.SelectionChanged += (_, _) => { if (tree.SelectedItem is TreeViewItem item && item.Tag is string path) { current = path; Refresh(); } };
-        var refresh = Button("Refresh", Refresh); Grid.SetColumn(refresh, 1); toolbar.Children.Add(refresh);
+        var refresh = ToolButton("Refresh project files", Refresh, "refresh"); Grid.SetColumn(refresh, 1); toolbar.Children.Add(refresh);
         search.TextChanged += (_, _) => Refresh(); mode.Click += (_, _) =>
         {
             grid = !grid; mode.Content = EditorIcons.Make(grid ? "list" : "grid");

@@ -83,6 +83,76 @@ void authored_preview_regression(const fs::path& directory) {
     check(call(session,"world.inspect")==inspected&&call(session,"world.history")==history&&tree(directory)==files,
           "Transient preview changed authoring state, history, receipts or storage.");
 }
+void game_camera_regression(const fs::path& directory) {
+    const auto path=directory/"game-cameras.json";
+    const std::string platform(32,'6'),camera(32,'7'),scaled(32,'8'),runtime_id(32,'9');
+    const Json lens={{"vertical_fov",72},{"near",.125},{"far",600}};
+    auto transform=[](Json position,Json scale=Json::array({1,1,1})) {
+        return Json{{"position",position},{"rotation",{0,0,0,1}},{"scale",scale}};
+    };
+    poima::WorldSession session(path.string());
+    const auto rejects=[](auto&& action,const char* message) {
+        bool failed=false;try{action();}catch(const std::exception&){failed=true;}check(failed,message);
+    };
+    const auto near=[](double a,double b){check(std::isfinite(a)&&std::abs(a-b)<1e-5,"Game camera pose/lens differs.");};
+    check(session.cameras(false).empty(),"Empty authored world acquired a game camera.");
+    rejects([&]{(void)session.cameras(true);},"Inactive runtime camera enumeration succeeded.");
+    rejects([&]{(void)session.runtime_camera_snapshot(camera);},"Inactive runtime camera snapshot succeeded.");
+    call(session,"world.transact",{{"request_id",std::string(32,'a')},{"base_revision",0},{"ops",Json::array({
+        {{"op","entity.create"},{"id",platform},{"name","Moving camera platform"}},
+        {{"op","component.set"},{"id",platform},{"type","BoxCollider"},{"value",{{"half_extents",{.5,.5,.5}},{"motion","kinematic"},{"mass",1},{"friction",.5},{"restitution",0}}}},
+        {{"op","component.set"},{"id",platform},{"type","MeshRenderer"},{"value",{{"primitive","box"},{"albedo",{.4,.5,.6}},{"visible",true}}}},
+        {{"op","entity.create"},{"id",camera},{"name","Game camera"},{"parent",platform}},
+        {{"op","component.set"},{"id",camera},{"type","Transform"},{"value",transform({0,1,3})}},
+        {{"op","component.set"},{"id",camera},{"type","Camera"},{"value",lens}},
+        {{"op","entity.create"},{"id",scaled},{"name","Invalid scaled camera"}},
+        {{"op","component.set"},{"id",scaled},{"type","Transform"},{"value",transform({0,0,0},{2,1,1})}},
+        {{"op","component.set"},{"id",scaled},{"type","Camera"},{"value",lens}}
+    })}});
+    const auto authored=session.cameras(false);
+    check(authored.size()==2&&authored[0].id==camera&&authored[1].id==scaled,"Camera enumeration is absent or unsorted.");
+    near(authored[0].vertical_fov,72);near(authored[0].near_plane,.125);near(authored[0].far_plane,600);
+    const auto files=tree(directory);const auto before_history=call(session,"world.history");
+    const auto snapshot=session.authored_camera_snapshot(camera);
+    check(snapshot.camera_id==camera&&snapshot.revision==1&&snapshot.objects.size()==1,"Authored game snapshot identity/content differs.");
+    near(snapshot.camera_world[12],0);near(snapshot.camera_world[13],1);near(snapshot.camera_world[14],3);
+    near(snapshot.vertical_fov,72);near(snapshot.near_plane,.125);near(snapshot.far_plane,600);
+    rejects([&]{(void)session.authored_camera_snapshot(scaled);},"Scaled authored camera accepted.");
+    rejects([&]{(void)session.authored_camera_snapshot(platform);},"Non-camera entity accepted as game camera.");
+    rejects([&]{(void)session.authored_camera_snapshot(std::string(32,'f'));},"Missing authored camera accepted.");
+    check(tree(directory)==files&&call(session,"world.history")==before_history,"Camera observation or failure changed storage/history.");
+    if(!poima::Runtime::available())return;
+    call(session,"runtime.start",{{"session_id",runtime_id},{"revision",1}});
+    const auto initial=session.runtime_camera_snapshot(camera);
+    check(initial.camera_world==snapshot.camera_world&&initial.camera_id==camera,"Runtime camera did not freeze initial authored pose.");
+    rejects([&]{(void)session.runtime_camera_snapshot(scaled);},"Scaled runtime camera accepted.");
+    rejects([&]{(void)session.runtime_camera_snapshot(platform);},"Runtime non-camera accepted.");
+    call(session,"world.transact",{{"request_id",std::string(32,'b')},{"base_revision",1},{"ops",Json::array({
+        {{"op","component.set"},{"id",camera},{"type","Camera"},{"value",{{"vertical_fov",30},{"near",.2},{"far",250}}}},
+        {{"op","component.set"},{"id",camera},{"type","Transform"},{"value",transform({100,2,4})}}
+    })}});
+    const auto edited=session.authored_camera_snapshot(camera),frozen=session.runtime_camera_snapshot(camera);
+    near(edited.vertical_fov,30);near(edited.camera_world[12],100);
+    check(frozen.camera_world==initial.camera_world&&frozen.revision==1,"Authored edit changed frozen runtime camera.");
+    near(frozen.vertical_fov,72);near(frozen.near_plane,.125);near(frozen.far_plane,600);
+    check(session.cameras(false)[0].vertical_fov==30&&session.cameras(true)[0].vertical_fov==72,"Camera enumeration ignored runtime lens freeze.");
+    call(session,"world.transact",{{"request_id",std::string(32,'c')},{"base_revision",2},{"ops",Json::array({
+        {{"op","entity.delete"},{"id",camera},{"recursive",false}}
+    })}});
+    check(session.cameras(false).size()==1&&session.cameras(true).size()==2,"Authored deletion changed frozen camera enumeration.");
+    rejects([&]{(void)session.authored_camera_snapshot(camera);},"Deleted authored camera returned a stale snapshot.");
+    const auto step_files=tree(directory);const auto history=call(session,"world.history");
+    call(session,"runtime.step",{{"session_id",runtime_id},{"request_id",std::string(32,'d')},{"expected_tick",0},{"ticks",60},
+        {"motions",Json::array({{{"entity",platform},{"position",{6,0,0}},{"rotation",{0,0,0,1}},{"duration_ticks",60}}})}});
+    const auto moved=session.runtime_camera_snapshot(camera);
+    near(moved.camera_world[12],6);near(moved.camera_world[13],1);near(moved.camera_world[14],3);
+    check(moved.camera_id==camera&&moved.revision==1&&session.runtime_status().tick==60,"Game snapshot advanced ticks or changed frozen source.");
+    near(moved.vertical_fov,72);near(initial.camera_world[12],0);
+    check(tree(directory)==step_files&&call(session,"world.history")==history,"Runtime camera movement changed authored storage/history.");
+    call(session,"runtime.stop",{{"session_id",runtime_id}});
+    rejects([&]{(void)session.cameras(true);},"Stopped runtime exposed stale camera metadata.");
+    rejects([&]{(void)session.runtime_camera_snapshot(camera);},"Stopped runtime exposed stale camera snapshot.");
+}
 int main() {
     const auto directory=fs::current_path()/("world-session-native-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     try {
@@ -214,6 +284,7 @@ int main() {
             poima::WorldSession invalid(package.string(),poima::WorldOpenMode::read_only_runtime);failed=false;try { (void)invalid.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Invalid embedded texture index was bundled.");
         }
         authored_preview_regression(directory);
+        game_camera_regression(directory);
         fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo, transient transform preview and protocol adapter passed.\n";
     }catch(const std::exception& error) { fs::remove_all(directory);std::cerr<<error.what()<<'\n';return 1; }
 }

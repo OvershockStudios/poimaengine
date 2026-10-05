@@ -1,39 +1,93 @@
 # Poima Engine
 
-A planned native 3D engine for the user's own games, with agent-native authoring, next-generation graphics, a headless API, CLI, optional editor and Vulkan graphics on PC. Permissive open source is a community benefit.
+Poima is an experimental 3D game engine built around a native, headless authoring service. Humans and development agents edit the same world through a documented API; an optional desktop editor provides visual inspection and direct manipulation.
 
-**Status:** M0 foundation work continues, with the first M1 authored-world service now implemented. The native CLI passes tests on Linux/WSL and Windows. An optional Vulkan/NVRHI experiment presents and captures a triangle on the laptop's NVIDIA and AMD GPUs. The persistent headless world service supports hierarchy, transform, camera and box-renderer transactions, with a Vulkan scene-capture path. An optional EnTT/Jolt runtime now supports fixed-step collision, capsule control and live captures. A continuous native player now supports keyboard/mouse input, deterministic visual replay and window resizing. Static glTF geometry now imports into editable hierarchies and renders with an initial PBR path supporting PNG/JPEG material maps, normal maps and mipmaps. Independent image imports and per-object texture overrides are exposed through the world API. Directional, point and spot lights, ambient fill, exposure and optional shadow maps are editable and inspectable through the same API. Conservative camera/shadow frustum culling, draw counters and optional CPU/GPU timing support measured iteration. Native collider raycasts and timed kinematic motion now support queryable, solid moving doors through steps and replay. An optional C# gameplay module now handles use-button interactions, with native-owned inspectable state and compatible-field reload. Native WAV import, acoustic material/emitter authoring and optional Steam Audio captures now expose sound obstruction and HRTF output from authored/live worlds. Native sound events, C# play/stop, temporal audio recording and optional player device output now use the same persistent mixer. Project manifests and native game bundle export now package validated content with an installed runtime; relocation qualification is in progress. Advanced graphics, production audio scheduling, the complete gameplay SDK and production distribution remain unfinished. See [audio events](docs/AUDIO_EVENTS.md).
+The core and player are C++20. The 3D renderer uses Vulkan. The optional Windows editor uses C#/Avalonia with a native Vulkan viewport, and an experimental C# gameplay integration supports development-time reloads.
 
-The optional [C#/Avalonia desktop editor](docs/DESKTOP_EDITOR.md) provides a dark dockable workspace, typed component edits, hierarchy stripes/component icons, a Project folder browser and a directly hosted native Vulkan Scene. Build with `python3 scripts/build_desktop.py`, then double-click `launch-editor.cmd`. Agents share the same world through `poima connect poima-desktop`; see [shared local sessions](docs/SHARED_SESSIONS.md). This is an early frontend, not full Unity parity. The older [ImGui prototype](docs/EDITOR.md) remains available through `launch-imgui-editor.cmd`.
+**Status: early development, version 0.0.28.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. The latest desktop package adds real-time Play/Pause/Step, Game-camera preview and vector action icons, with recorded integration tests on NVIDIA and AMD GPUs. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
-- [Open the native editor](docs/EDITOR.md)
-- [Build and run the bootstrap](docs/BUILD.md)
-- [Create projects and export native game bundles](docs/PROJECTS.md)
-- [Import static glTF assets and edit materials](docs/ASSETS.md)
-- [Inspect and preview animation assets](docs/ANIMATION_ASSETS.md)
-- [Author rigs and play animations in the runtime](docs/RUNTIME_ANIMATION.md)
-- [Inspect visibility and render timings](docs/RENDER_DIAGNOSTICS.md)
-- [Configure and verify shadow maps](docs/SHADOWS.md)
-- [Author and inspect scene lighting](docs/LIGHTING.md)
-- [Author texture slots and normal maps](docs/MATERIAL_AUTHORING.md)
-- [Open the native player or replay input](docs/PLAYER.md)
-- [Configure keyboard/mouse bindings and evaluate input](docs/INPUT_PROFILES.md)
-- [Configure gamepads, sticks and triggers](docs/GAMEPADS.md)
-- [Author and capture native acoustics](docs/AUDIO.md)
-- [Write and reload C# gameplay](docs/MANAGED_GAMEPLAY.md)
-- [Query physics and move solid doors](docs/PHYSICS_INTERACTIONS.md)
-- [Run physics and inspect live state](docs/RUNTIME.md)
-- [Author and capture a 3D scene](docs/SCENE_CAPTURE.md)
-- [Persistent world service and protocol](docs/WORLD_SERVICE.md)
-- [Implementation status and evidence](docs/IMPLEMENTATION_STATUS.md)
-- [Native module iteration experiment](docs/NATIVE_MODULE_LAB.md)
-- [C# gameplay development experiment](docs/MANAGED_GAMEPLAY_LAB.md)
-- [C# native shipping experiment](docs/MANAGED_SHIPPING_LAB.md)
-- [C# gameplay direction and runtime research](docs/research/2026-09-26-csharp-gameplay.md)
+![Poima desktop editor prototype](docs/evidence/m2-desktop-playback-editor.png)
 
-- [Architecture and delivery plan](docs/ENGINE_PLAN.md)
-- [Validation workloads and performance targets](docs/VALIDATION_PLAN.md)
-- [Product requirements](docs/PRODUCT_BRIEF.md)
-- [Research dossier](docs/research/README.md)
+*The optional desktop prototype. Its native Scene/Game viewport shares world state with CLI clients; this is not a claim of Unity feature parity.*
 
-The bootstrap uses C++20, with NVRHI, SDL3 and DXC integrated for the optional graphics experiment. The tested Windows executable is cross-compiled from WSL with a pinned workspace-local LLVM-MinGW toolchain and runs natively on Windows. Authoring with Codex, Claude and the optional editor must fit the user's laptop. Shipped games have separate performance requirements across supported PC hardware tiers and GPU vendors, with current-generation consoles planned after platform access. The laptop is one player-performance reference. M0 measures build, reload and integration feasibility before the larger engine depends on those choices.
+## Why a headless core?
+
+Poima's authoring operations live in the engine service, rather than depending on automation of editor widgets. Clients can discover schemas, query individual components, submit atomic edits, detect revision conflicts, retry acknowledged transactions and request rendered observations. The desktop editor and connected agents share the same authoritative session.
+
+No particular AI provider is required. Codex, Claude or another client can use the CLI and newline-delimited JSON-RPC. Other frontends can use the native service or local transport. This architecture is implemented for the current built-in components; a complete extensible gameplay/component SDK remains future work.
+
+## What works today
+
+| Area | Current implementation |
+| --- | --- |
+| Authoring | Persistent entity hierarchy, typed component operations, atomic transactions, revision guards, durable retry receipts, bounded undo/redo and shared local sessions. |
+| Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
+| Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, raycasts, moving kinematic objects, editable rigs and animation playback. |
+| Input and player | Native continuous player, keyboard/mouse bindings, gamepad profiles and deterministic scripted input replay. |
+| Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
+| Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events and native-player device output. |
+| Desktop | Dockable panels, hierarchy, typed Inspector fields, Project browser, native Scene navigation and transform gizmos; the 0.0.28 work adds clocked simulation and Game-camera preview. |
+| Packaging | Project manifests and native game bundles with validated content, runtime files, integrity checks and read-only game launch. |
+
+These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view currently previews physics and animation; gameplay device input and audio are provided by the separate native player, not that editor view. C# hot reload covers the documented gameplay module, not arbitrary engine-code replacement or a finished console/AOT deployment path.
+
+Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
+
+## Build the headless engine
+
+The smallest build needs CMake 3.24+, Ninja, a C++20 compiler with C99 support, and Python 3.9+ for tests. It requires no GPU, display, .NET runtime or dependency downloads.
+
+From a Linux or WSL checkout:
+
+```sh
+cmake --preset headless
+cmake --build --preset headless
+ctest --preset headless
+./build/headless/poima capabilities
+```
+
+Create a new project and open its world service:
+
+```sh
+./build/headless/poima project create build/FirstProject --name "First Project"
+./build/headless/poima world build/FirstProject/world.json
+```
+
+The destination project directory must not already exist. The world command accepts one JSON-RPC request per line; try:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"world.describe"}
+{"jsonrpc":"2.0","id":2,"method":"world.inspect"}
+{"jsonrpc":"2.0","id":3,"method":"session.close"}
+```
+
+Use the `runtime-headless` preset to add simulation; it downloads pinned Jolt and EnTT sources. Optional rendering, audio and managed gameplay have separate prerequisites. See [build instructions](docs/BUILD.md), [world protocol](docs/WORLD_SERVICE.md) and [project workflows](docs/PROJECTS.md).
+
+## Build the Windows editor
+
+The documented graphics build uses Linux x64/WSL to cross-compile a native Windows x64 executable. It requires a Vulkan-capable Windows driver for rendering. The editor adds a pinned .NET SDK and NuGet dependencies; its published application includes its .NET runtime.
+
+With the native build prerequisites above, use Python 3.12+ for tool bootstrapping:
+
+```sh
+python3 scripts/bootstrap_tools.py
+python3 scripts/bootstrap_tools.py --only dotnet
+python3 scripts/build_desktop.py
+```
+
+Then open `launch-editor.cmd` from Windows. See the [desktop guide](docs/DESKTOP_EDITOR.md) for project selection, controls, shared agent connections and packaging details. The older [ImGui prototype](docs/EDITOR.md) remains a separate optional frontend.
+
+Windows graphics/player/editor workflows and Linux headless authoring/simulation have recorded tests. Native Linux desktop rendering, Windows-hosted MSVC builds, clean-machine installers and console support are not currently qualified by those tests. GPU correctness captures on particular devices do not establish game-scale performance or broad hardware compatibility.
+
+## Documentation
+
+Start with the [Poima wiki](https://github.com/OvershockStudios/poimaengine/wiki) for guides and an overview. Detailed contracts and reproducible evidence remain versioned with the source below.
+
+- **Start here:** [build](docs/BUILD.md), [projects and exported games](docs/PROJECTS.md), [desktop editor](docs/DESKTOP_EDITOR.md), [native player](docs/PLAYER.md).
+- **Agent and tool integration:** [world API](docs/WORLD_SERVICE.md), [shared local sessions](docs/SHARED_SESSIONS.md), [runtime](docs/RUNTIME.md), [C# gameplay](docs/MANAGED_GAMEPLAY.md).
+- **Content:** [assets](docs/ASSETS.md), [materials](docs/MATERIAL_AUTHORING.md), [lighting](docs/LIGHTING.md), [shadows](docs/SHADOWS.md), [animation](docs/RUNTIME_ANIMATION.md), [audio](docs/AUDIO_EVENTS.md), [input](docs/INPUT_PROFILES.md), [gamepads](docs/GAMEPADS.md).
+- **Engineering:** [implementation evidence](docs/IMPLEMENTATION_STATUS.md), [render diagnostics](docs/RENDER_DIAGNOSTICS.md), [contributing](CONTRIBUTING.md).
+
+Roadmap items describe intended systems. Use the current executable's `capabilities`, command schemas and `world.describe` to discover what a particular build exposes.
+
+Poima's code is licensed under [Apache-2.0](LICENSE). Dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md) and the notices included with built packages.

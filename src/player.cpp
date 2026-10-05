@@ -33,7 +33,10 @@ std::uint32_t PlayerClock::advance(double elapsed,bool active) {
     // catch-up work after a debugger stop, window drag or severe stall.
     const double accepted=std::min(elapsed,8*Runtime::fixed_dt);
     dropped_+=elapsed-accepted; accumulated_+=accepted;
-    const auto ticks=static_cast<std::uint32_t>(std::floor((accumulated_+1e-12)/Runtime::fixed_dt));
+    // The boundary tolerance can round an almost-full old fraction plus eight
+    // accepted ticks up to nine. Enforce the work cap explicitly; retain the
+    // remaining fraction for a later poll instead of discarding earned time.
+    const auto ticks=std::min(8u,static_cast<std::uint32_t>(std::floor((accumulated_+1e-12)/Runtime::fixed_dt)));
     accumulated_=std::max(0.0,accumulated_-ticks*Runtime::fixed_dt);
     return ticks;
 }

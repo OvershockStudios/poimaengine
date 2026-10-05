@@ -16,6 +16,18 @@ internal sealed class DesktopScript
     [StructLayout(LayoutKind.Sequential)] private struct NativePoint { public int X,Y; }
     [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool ClientToScreen(nint hwnd, ref NativePoint point);
+    [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetKeyboardState([Out] byte[] state);
+    [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetKeyboardState([In] byte[] state);
+    [DllImport("user32.dll")] private static extern short GetKeyState(int key);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool IsWindow(nint hwnd);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool IsWindowVisible(nint hwnd);
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool IsIconic(nint hwnd);
+    [DllImport("user32.dll")] private static extern nint GetAncestor(nint hwnd, uint flags);
+    [DllImport("user32.dll")] private static extern nint GetParent(nint hwnd);
+    [StructLayout(LayoutKind.Sequential)] private struct NativeRect { public int Left, Top, Right, Bottom; }
+    [DllImport("user32.dll", SetLastError = true)] [return: MarshalAs(UnmanagedType.Bool)] private static extern bool GetClientRect(nint hwnd, out NativeRect rectangle);
     private readonly JsonArray actions;
     private int next, frameOffset;
     private int? deferredAt;
@@ -96,8 +108,45 @@ internal sealed class DesktopScript
                             point = (nint)((uint)(ushort)screen.X | ((uint)(ushort)screen.Y << 16));
                             parameter = (nuint)((uint)(ushort)(action["delta"]?.GetValue<int>() ?? 120) << 16);
                         }
-                        SendMessage(hwnd,code,parameter,code is 0x0100u or 0x0101u ? 1 : point);
+                        var requestedModifiers = (action["shift"]?.GetValue<bool>() == true ? ViewportModifiers.Shift : 0)
+                            | (action["control"]?.GetValue<bool>() == true ? ViewportModifiers.Control : 0)
+                            | (action["alt"]?.GetValue<bool>() == true ? ViewportModifiers.Alt : 0);
+                        result["requested_modifiers"] = (int)requestedModifiers;
+                        var savedKeyboard = new byte[256];
+                        if (!GetKeyboardState(savedKeyboard)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                        result["saved_thread_modifiers"] = ((savedKeyboard[0x10] & 0x80) != 0 ? 1 : 0)
+                            | ((savedKeyboard[0x11] & 0x80) != 0 ? 2 : 0) | ((savedKeyboard[0x12] & 0x80) != 0 ? 4 : 0);
+                        var scriptedKeyboard = (byte[])savedKeyboard.Clone();
+                        void Modifier(ViewportModifiers flag, int generic, int left, int right)
+                        {
+                            foreach (var key in new[] { generic, left, right }) scriptedKeyboard[key] &= 0x7f;
+                            if ((requestedModifiers & flag) != 0) { scriptedKeyboard[generic] |= 0x80; scriptedKeyboard[left] |= 0x80; }
+                        }
+                        Modifier(ViewportModifiers.Shift, 0x10, 0xA0, 0xA1);
+                        Modifier(ViewportModifiers.Control, 0x11, 0xA2, 0xA3);
+                        Modifier(ViewportModifiers.Alt, 0x12, 0xA4, 0xA5);
+                        if (!SetKeyboardState(scriptedKeyboard)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                        try
+                        {
+                            // This table belongs only to the calling UI thread;
+                            // no global input is injected or another app altered.
+                            // https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setkeyboardstate
+                            var deliveredModifiers = ((GetKeyState(0x10) & 0x8000) != 0 ? ViewportModifiers.Shift : 0)
+                                | ((GetKeyState(0x11) & 0x8000) != 0 ? ViewportModifiers.Control : 0)
+                                | ((GetKeyState(0x12) & 0x8000) != 0 ? ViewportModifiers.Alt : 0);
+                            result["thread_modifiers"] = (int)deliveredModifiers;
+                            if (deliveredModifiers != requestedModifiers) throw new InvalidOperationException("Semantic modifier state was not applied to the UI thread.");
+                            ViewportInput.DispatchQualification(hwnd, () => SendMessage(hwnd,code,parameter,code is 0x0100u or 0x0101u ? 1 : point));
+                            var observedModifiers = window.Navigation.Inspect()["last_input_modifiers"]!.GetValue<int>();
+                            result["delivered_modifiers"] = observedModifiers;
+                            if (observedModifiers != (int)requestedModifiers) throw new InvalidOperationException("Viewport received different modifiers from the semantic action.");
+                        }
+                        finally
+                        {
+                            if (!SetKeyboardState(savedKeyboard)) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "Cannot restore the UI thread keyboard state.");
+                        }
                         result["navigation"] = window.Navigation.Inspect(); result["camera"] = model.Host.Call("desktop.inspect")["camera"]!.DeepClone();
+                        result["requested_pointer_x"] = x; result["requested_pointer_y"] = y;
                         break;
                     case "select": window.SelectEntity(Text("id")); break;
                     case "create": result["id"] = model.Create(Text("kind")); break;
@@ -129,14 +178,32 @@ internal sealed class DesktopScript
                         window.Close();
                         if (!window.IsVisible) throw new InvalidOperationException("Dirty close was not cancelled.");
                         break;
+                    case "wait_scene_error":
                     case "assert_scene_error":
                         var errorExpected = action["expected"]!.GetValue<bool>();
-                        if ((model.Host.LastError != null) != errorExpected)
-                            throw new InvalidOperationException("Unexpected scene error state: " + model.Host.LastError);
                         result["scene_error"] = model.Host.LastError;
-                        result["native"] = model.Host.Call("desktop.inspect");
-                        if (result["native"]!["graphics_error"] is not null)
+                        var sceneState = model.Host.Call("desktop.inspect");
+                        result["native"] = sceneState;
+                        var sceneWindow = InspectSceneWindow(window.Navigation.Window);
+                        result["scene_window"] = sceneWindow;
+                        if (sceneState["graphics_error"] is not null)
                             throw new InvalidOperationException("Snapshot preparation poisoned the renderer.");
+                        var sceneErrorMatches = (model.Host.LastError != null) == errorExpected;
+                        var sceneReady = sceneErrorMatches && (errorExpected || JsonNode.DeepEquals(sceneState["presented_revision"], sceneState["revision"]));
+                        if (op == "wait_scene_error" && !sceneReady)
+                        {
+                            if (deferredAt is null) { deferredAt = frame; deferredStarted = System.Diagnostics.Stopwatch.GetTimestamp(); }
+                            if (System.Diagnostics.Stopwatch.GetElapsedTime(deferredStarted).TotalSeconds < 3)
+                            { --next; return; }
+                            throw new InvalidOperationException($"Scene recovery presentation timed out: error={model.Host.LastError}; revision={sceneState["revision"]}; presented_revision={sceneState["presented_revision"]}; frames_presented={sceneState["frames_presented"]}; window={sceneWindow.ToJsonString()}");
+                        }
+                        if (op == "assert_scene_error" && !sceneErrorMatches)
+                            throw new InvalidOperationException("Unexpected scene error state: " + model.Host.LastError);
+                        if (deferredAt is int sceneWaitStarted)
+                        {
+                            result["wait_pumps"] = frame-sceneWaitStarted;
+                            frameOffset += frame-sceneWaitStarted; deferredAt = null;
+                        }
                         break;
                     case "draft_component": model.SetComponent(Text("type"), action["value"]!.AsObject()); break;
                     case "apply": model.Apply(); break;
@@ -144,6 +211,13 @@ internal sealed class DesktopScript
                     case "undo": model.History(false); break;
                     case "redo": model.History(true); break;
                     case "runtime_toggle": model.PlayStop(); break;
+                    case "runtime_pause": model.Pause(); break;
+                    case "runtime_rpc":
+                        // Bypass the model, as an external client does. The next
+                        // native poll must synchronize the visible controls.
+                        result["result"] = model.Host.Call("desktop.play." + Text("command"), new() { ["session_id"] = model.RuntimeId });
+                        break;
+                    case "view": model.SetView(Text("mode"), action["camera"]?.GetValue<string>()); break;
                     case "step": model.Step(action["ticks"]?.GetValue<int>() ?? 1); break;
                     case "float": window.FloatPanel(Text("panel")); break;
                     case "reset_layout": window.ResetLayout(); break;
@@ -151,6 +225,8 @@ internal sealed class DesktopScript
                     case "inspect":
                         result["layout"] = window.InspectLayout(); result["navigation"] = window.Navigation.Inspect();
                         result["draft"] = window.InspectDraft(); result["native"] = model.Host.Call("desktop.inspect");
+                        result["playback"] = model.InspectPlayback();
+                        result["playback_controls"] = window.InspectPlaybackControls();
                         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                             result["windows"] = new JsonArray(desktop.Windows.Select(w => (JsonNode?)new JsonObject {
                                 ["title"] = w.Title, ["visible"] = w.IsVisible, ["width"] = w.Bounds.Width, ["height"] = w.Bounds.Height }).ToArray());
@@ -173,6 +249,21 @@ internal sealed class DesktopScript
             }
             Results.Add(result);
         }
+    }
+    private static JsonObject InspectSceneWindow(nint hwnd)
+    {
+        var valid = hwnd != IntPtr.Zero && IsWindow(hwnd);
+        var root = valid ? GetAncestor(hwnd, 2) : IntPtr.Zero; // GA_ROOT
+        var parent = valid ? GetParent(hwnd) : IntPtr.Zero;
+        var client = default(NativeRect);
+        var measured = valid && GetClientRect(hwnd, out client);
+        var error = valid && !measured ? Marshal.GetLastWin32Error() : 0;
+        return new JsonObject { ["hwnd"] = hwnd.ToInt64(), ["valid"] = valid,
+            ["visible"] = valid && IsWindowVisible(hwnd), ["root_hwnd"] = root.ToInt64(),
+            ["root_visible"] = root != IntPtr.Zero && IsWindowVisible(root),
+            ["root_minimized"] = root != IntPtr.Zero && IsIconic(root), ["parent_hwnd"] = parent.ToInt64(),
+            ["client_measured"] = measured, ["client_width"] = measured ? client.Right-client.Left : (int?)null,
+            ["client_height"] = measured ? client.Bottom-client.Top : (int?)null, ["client_error"] = error };
     }
     private static (double X, double Y) GizmoPoint(JsonObject action, SceneNavigation navigation)
     {

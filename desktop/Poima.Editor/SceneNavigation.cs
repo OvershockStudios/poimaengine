@@ -17,6 +17,8 @@ public sealed class SceneNavigation
     private bool cancelling;
     private long? gizmoDrag;
     private JsonObject? observedHostState;
+    private ViewportModifiers lastInputModifiers;
+    private int lastInputX, lastInputY;
     public string GizmoMode { get; private set; } = "move";
     public string GizmoSpace { get; private set; } = "world";
     public bool Flying => drag == ViewportMouseButton.Right;
@@ -80,6 +82,7 @@ public sealed class SceneNavigation
     }
     public void FrameSelection()
     {
+        RequireSceneView();
         Cancel();
         if (model.Selected is null) throw new InvalidOperationException("Select an object to frame.");
         if (input is null || input.Height < 1) throw new InvalidOperationException("The Scene viewport is unavailable.");
@@ -96,6 +99,7 @@ public sealed class SceneNavigation
     }
     public JsonObject ConfigureGizmo(string mode, string? space = null)
     {
+        RequireSceneView();
         Cancel();
         var result = model.Host.Call("desktop.gizmo.configure", new() { ["mode"] = mode, ["space"] = space ?? GizmoSpace });
         observedHostState = model.Host.State;
@@ -109,6 +113,7 @@ public sealed class SceneNavigation
     }
     public JsonObject BeginGizmo(double x, double y)
     {
+        RequireSceneView();
         model.RequireSceneEditable();
         if (input is null || input.Width < 1 || input.Height < 1) throw new InvalidOperationException("The Scene viewport is unavailable.");
         if (gizmoDrag is not null) throw new InvalidOperationException("A gizmo drag is already active.");
@@ -149,6 +154,9 @@ public sealed class SceneNavigation
     }
     public void Handle(ViewportInputEvent e) => Guard(() =>
     {
+        lastInputModifiers = e.Modifiers;
+        lastInputX = e.X; lastInputY = e.Y;
+        if (model.ViewMode != "scene") { Cancel(); return; }
         fast = e.Shift;
         switch (e.Kind)
         {
@@ -226,6 +234,7 @@ public sealed class SceneNavigation
     });
     public void Tick(double seconds) => Guard(() =>
     {
+        if (model.ViewMode != "scene") { Cancel(); return; }
         if (!ReferenceEquals(observedHostState, model.Host.State) && model.Host.State["gizmo"] is JsonObject gizmo)
         {
             observedHostState = model.Host.State;
@@ -254,8 +263,14 @@ public sealed class SceneNavigation
         if(length>1e-8) for(int i=0;i<3;++i) position[i] += direction[i]/length*speed;
         SetCamera(position,yaw,pitch);
     });
+    private void RequireSceneView()
+    {
+        if (model.ViewMode != "scene") throw new InvalidOperationException("Switch to Scene view to navigate or edit transforms.");
+    }
     public JsonObject Inspect() => new() { ["attached"] = input is not null, ["width"] = input?.Width ?? 0, ["height"] = input?.Height ?? 0,
         ["fly_speed"] = FlySpeed, ["orbit_distance"] = orbitDistance, ["drag"] = drag.ToString(), ["pressed_keys"] = keys.Count,
         ["gizmo_mode"] = GizmoMode, ["gizmo_space"] = GizmoSpace, ["gizmo_drag_id"] = gizmoDrag,
-        ["input_error"] = input?.LastError, ["error_count"] = ErrorCount };
+        ["input_error"] = input?.LastError, ["error_count"] = ErrorCount, ["last_input_modifiers"] = (int)lastInputModifiers,
+        ["last_input_x"] = lastInputX, ["last_input_y"] = lastInputY,
+        ["qualification_input"] = input?.QualificationInput ?? false, ["ignored_interactive_messages"] = input?.IgnoredInteractiveMessages ?? 0 };
 }

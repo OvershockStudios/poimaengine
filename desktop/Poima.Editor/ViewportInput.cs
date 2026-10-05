@@ -57,13 +57,17 @@ public sealed class ViewportInput : IDisposable
     private bool resetting;
     private int pointerX;
     private int pointerY;
+    private readonly bool qualificationInput;
+    private int qualificationDispatchDepth;
 
     public int Width { get; private set; }
     public int Height { get; private set; }
+    public bool QualificationInput => qualificationInput;
+    public long IgnoredInteractiveMessages { get; private set; }
     /// <summary>Latest caught callback/Win32 error; exceptions never escape WindowProc.</summary>
     public string? LastError { get; private set; }
 
-    public ViewportInput(IntPtr hwnd, Action<ViewportInputEvent> onEvent)
+    public ViewportInput(IntPtr hwnd, Action<ViewportInputEvent> onEvent, bool qualificationInput = false)
     {
         Dispatcher.UIThread.VerifyAccess();
         if (!OperatingSystem.IsWindows()) throw new PlatformNotSupportedException("Viewport HWND input requires Windows.");
@@ -72,6 +76,7 @@ public sealed class ViewportInput : IDisposable
         if (hwnd == IntPtr.Zero || thread == 0 || thread != Native.GetCurrentThreadId() || process != (uint)Environment.ProcessId)
             throw new ArgumentException("The viewport must be an owned window on the current UI thread.", nameof(hwnd));
         this.onEvent = onEvent;
+        this.qualificationInput = qualificationInput;
         window = hwnd;
         id = checked((nuint)Interlocked.Increment(ref nextId));
         RefreshSize();
@@ -82,6 +87,17 @@ public sealed class ViewportInput : IDisposable
             window = IntPtr.Zero;
             throw new InvalidOperationException("SetWindowSubclass failed for the viewport.");
         }
+    }
+
+    internal static void DispatchQualification(IntPtr hwnd, Action dispatch)
+    {
+        Dispatcher.UIThread.VerifyAccess();
+        var input = Active.Values.SingleOrDefault(value => value.window == hwnd)
+            ?? throw new InvalidOperationException("Qualification viewport is no longer attached.");
+        if (!input.qualificationInput) throw new InvalidOperationException("Scoped input requires an explicit qualification script.");
+        ++input.qualificationDispatchDepth;
+        try { dispatch(); }
+        finally { --input.qualificationDispatchDepth; }
     }
 
     /// <summary>End local drags and clear consumer key state, without stealing another HWND's capture.</summary>
@@ -138,6 +154,18 @@ public sealed class ViewportInput : IDisposable
 
     private void Process(uint message, nuint wparam, nint lparam)
     {
+        // Explicit --script qualification accepts interactive messages only
+        // during its synchronous SendMessage call. Windows can generate mouse
+        // movement after capture even without scripted movement. Ignore it
+        // before it changes pointer/button state or acquires focus/capture.
+        // Real lifecycle events always pass: loss of capture/focus, resize and
+        // destruction must still cancel a gesture or expose a failed test.
+        if (qualificationInput && qualificationDispatchDepth == 0 &&
+            (message is >= 0x0200 and <= 0x020E || message is 0x0100 or 0x0101 or 0x0104 or 0x0105))
+        {
+            ++IgnoredInteractiveMessages;
+            return;
+        }
         switch (message)
         {
             case 0x0201: case 0x0204: case 0x0207: case 0x020B: // button down

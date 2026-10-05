@@ -725,6 +725,41 @@ public:
         auto candidate=doc_;candidate["entities"][id]["components"]["Transform"]=transform;
         return editor_snapshot(camera,false,&candidate);
     }
+    std::vector<WorldCameraInfo> cameras(bool live) const {
+        std::vector<WorldCameraInfo> result;
+        if(live) {
+            require(bool(runtime_),"No runtime is active for camera enumeration.",-32030);
+            for(const auto& entity:runtime_definition_.entities)if(entity.camera) {
+                const auto& lens=*entity.camera;
+                result.push_back({entity.id,lens.vertical_fov,lens.near_plane,lens.far_plane});
+            }
+        } else {
+            for(const auto& [id,entity]:doc_.at("entities").items())if(entity.at("components").contains("Camera")) {
+                const auto& lens=entity.at("components").at("Camera");
+                result.push_back({id,lens.at("vertical_fov"),lens.at("near"),lens.at("far")});
+            }
+        }
+        std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.id<b.id;});
+        return result;
+    }
+    SceneSnapshot camera_snapshot(const std::string& id,bool live) const {
+        identifier(id);
+        if(live) {
+            require(bool(runtime_),"No runtime is active for the camera snapshot.",-32030);
+            const auto found=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+                [&](const auto& entity){return entity.id==id&&entity.camera.has_value();});
+            require(found!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
+            try { return runtime_->snapshot(id); }
+            catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        }
+        const auto& entities=doc_.at("entities");
+        require(entities.contains(id)&&entities.at(id).at("components").contains("Camera"),"Camera entity/component does not exist.",-32004);
+        const auto& lens=entities.at(id).at("components").at("Camera");
+        EditorCamera camera;
+        camera.world=world_matrices(entities).at(id);camera.vertical_fov=lens.at("vertical_fov");
+        camera.near_plane=lens.at("near");camera.far_plane=lens.at("far");
+        auto result=editor_snapshot(camera,false);result.camera_id=id;return result;
+    }
     Json dispatch(const std::string& method, const Json& params) {
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
         prune_model_cache();
@@ -1911,6 +1946,15 @@ SceneSnapshot WorldSession::authored_preview(const EditorCamera& camera,const st
 }
 SceneSnapshot WorldSession::runtime_snapshot(const EditorCamera& camera) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,true);
+}
+std::vector<WorldCameraInfo> WorldSession::cameras(bool live) const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.cameras(live);
+}
+SceneSnapshot WorldSession::authored_camera_snapshot(const std::string& id) const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.camera_snapshot(id,false);
+}
+SceneSnapshot WorldSession::runtime_camera_snapshot(const std::string& id) const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.camera_snapshot(id,true);
 }
 std::string WorldSession::request(std::string_view line,WorldRequestScope scope) {
     Json id=nullptr,response;bool notification=false;

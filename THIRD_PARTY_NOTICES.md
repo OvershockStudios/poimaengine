@@ -98,7 +98,7 @@ The optional main-engine integration (`POIMA_ENABLE_MANAGED_GAMEPLAY`) now uses 
 - Archive: `steamaudio_4.8.1.zip`, SHA-256 `4a0aa5ec1176f38f0b0993a37c2259d9e86f27e22d5e24f83ec4c3cb9a1d5449`, supplied by the release API and verified by the optional bootstrap.
 - Valve source/header license: Apache-2.0, retained in `third_party/steam_audio/LICENSE.md`; original notices remain in SDK headers. The distributed binaries include additional dependencies covered by their bundled `THIRDPARTY.md`, including Intel IPP terms. This is not an assertion that all binary dependencies use Apache-2.0.
 - `POIMA_ENABLE_AUDIO` links the selected native Windows/Linux x64 library. Installation includes that library plus the full license and third-party notices under `share/poima/licenses/SteamAudio`. Other SDK platforms/tools are not included in the engine installation.
-- Use: native CPU direct-path propagation and HRTF output for synchronous authored/runtime audio snapshots. Device playback, reflections/pathing and console qualification remain unfinished. No proprietary Vercidium Audio code, binaries or implementation knowledge is incorporated.
+- Use: native CPU direct-path propagation and HRTF output for authored/runtime audio snapshots, with event mixing and optional native-player device output. Reflections/pathing and console qualification remain unfinished.
 
 ## Dear ImGui (optional native editor)
 

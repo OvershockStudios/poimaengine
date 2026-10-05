@@ -53,7 +53,8 @@ public sealed class NativeHost : IDisposable
         {
             var state = Read(Native.Poll(handle));
             var selected = state["selected"]?.ToString();
-            var changed = state["world_changed"]?.GetValue<bool>() == true || state["runtime_changed"]?.GetValue<bool>() == true || selected != lastSelected;
+            var changed = state["world_changed"]?.GetValue<bool>() == true || state["runtime_changed"]?.GetValue<bool>() == true || selected != lastSelected
+                || !JsonNode.DeepEquals(State["playback"], state["playback"]) || !JsonNode.DeepEquals(State["view"], state["view"]);
             State = state; lastSelected = selected;
             if (attached != IntPtr.Zero && !graphicsFailed)
             {
@@ -93,6 +94,12 @@ public sealed class NativeHost : IDisposable
             if (notifiedError != LastError)
             { notifiedError = LastError; StateChanged?.Invoke(this, EventArgs.Empty); }
         }
+    }
+    public void RefreshState()
+    {
+        // Inspect is read-only and never advances the native playback clock.
+        State = Call("desktop.inspect"); lastSelected = State["selected"]?.ToString();
+        StateChanged?.Invoke(this, EventArgs.Empty);
     }
     internal void Attach(IntPtr window)
     {
@@ -139,7 +146,7 @@ public sealed class VulkanView(NativeHost host, SceneNavigation navigation) : Na
         try
         {
             host.Attach(child.Handle);
-            input = new ViewportInput(child.Handle, navigation.Handle);
+            input = new ViewportInput(child.Handle, navigation.Handle, qualificationInput: Program.Options.Script is not null);
             navigation.Attach(input, child.Handle); return child;
         }
         catch { input?.Dispose(); input = null; host.Detach(child.Handle); base.DestroyNativeControlCore(child); throw; }

@@ -5,6 +5,7 @@
 #include "poima/hosted_viewport.hpp"
 #include "poima/animation.hpp"
 #include "poima/editor_gizmo.hpp"
+#include "poima/player.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -14,6 +15,7 @@
 #include <limits>
 #include <mutex>
 #include <optional>
+#include <random>
 #include <set>
 #include <thread>
 #include <unordered_map>
@@ -72,7 +74,7 @@ struct Camera {
     }
 };
 struct Capture {
-    std::uint64_t id=0,revision=0,tick=0,camera_revision=0,gizmo_generation=0;std::string path,session,state="queued",detail;int code=0;bool runtime=false;
+    std::uint64_t id=0,revision=0,tick=0,camera_revision=0,gizmo_generation=0,view_revision=0;std::string path,session,state="queued",detail;int code=0;bool runtime=false;
     Clock::time_point deadline;Json result=Json::object();
     Json json() const {
         Json out={{"capture_id",id},{"state",state},{"revision",revision},{"path",path}};
@@ -224,6 +226,10 @@ struct Bridge {
     std::uint64_t gizmo_generation=0,next_drag=1;
     std::optional<GizmoGesture> gesture;
     Json committed_gesture=nullptr;
+    PlayerClock play_clock;Clock::time_point play_last=Clock::now();
+    std::string play_session,play_error,view_mode="scene",view_camera;
+    std::uint64_t play_tick=0,view_revision=0;
+    bool playing=false,capture_hold=false;
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
@@ -250,6 +256,93 @@ struct Bridge {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
             {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
     }
+    void sync_playback() {
+        const auto state=world->runtime_status();
+        if(!state.active || state.session_id!=play_session) {
+            playing=false;play_session=state.active ? state.session_id : std::string{};play_tick=state.active ? state.tick : 0;
+            play_clock=PlayerClock{};play_last=Clock::now();capture_hold=false;play_error.clear();
+        } else if(state.tick!=play_tick) {
+            if(playing) { playing=false;play_error="Runtime advanced outside the desktop playback clock; resume explicitly."; }
+            play_tick=state.tick;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false;
+        }
+    }
+    Json playback_json() const {
+        return {{"state",play_session.empty() ? "stopped" : playing ? "playing" : "paused"},
+            {"session_id",play_session.empty() ? Json(nullptr) : Json(play_session)},{"tick",play_session.empty() ? Json(nullptr) : Json(play_tick)},
+            {"fixed_dt",Runtime::fixed_dt},{"max_ticks_per_poll",8},{"dropped_seconds",play_clock.dropped_seconds()},
+            {"last_error",play_error.empty() ? Json(nullptr) : Json(play_error)},
+            {"suspended",playing && capture && capture->state=="queued" ? Json("capture") : Json(nullptr)}};
+    }
+    Json play_command(const std::string& method,const Json& params) {
+        sync_playback();
+        if(method=="desktop.play.inspect") { fields(params,{});return playback_json(); }
+        if(method=="desktop.play.start") {
+            fields(params,{"revision","session_id","paused"},{"revision","session_id"});
+            integer(params.at("revision"));identifier(params.at("session_id"));require(!params.contains("paused") || params.at("paused").is_boolean(),"Paused must be boolean.");
+            const bool fresh=!world->runtime_status().active;Parents hierarchy;if(fresh)hierarchy=parents();
+            const auto started=world_call("runtime.start",{{"revision",params.at("revision")},{"session_id",params.at("session_id")}});
+            if(fresh) { runtime_parents=std::move(hierarchy);runtime_parent_session=started.at("session_id"); }
+            sync_playback();
+            // Replaying start must not resume a runtime that was later paused.
+            if(!started.at("replayed").get<bool>()) { playing=!params.value("paused",false);play_last=Clock::now(); }
+            expire_gizmo();expire_capture();return playback_json();
+        }
+        if(method=="desktop.play.stop") {
+            fields(params,{"session_id"},{"session_id"});identifier(params.at("session_id"));world_call("runtime.stop",params);sync_playback();expire_capture();return playback_json();
+        }
+        if(method=="desktop.play.step") {
+            require(!playing,"Pause desktop playback before stepping.",-32009);
+            const auto result=world_call("runtime.step",params);sync_playback();expire_capture();return result;
+        }
+        require(method=="desktop.play.pause" || method=="desktop.play.resume","Unknown desktop playback method.",-32601);
+        fields(params,{"session_id"},{"session_id"});const auto id=identifier(params.at("session_id"));
+        require(!play_session.empty() && id==play_session,"Runtime session conflict.",-32009);
+        const bool next=method=="desktop.play.resume";
+        if(next!=playing) { playing=next;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false; }
+        if(next)play_error.clear();return playback_json();
+    }
+    void pump_playback() {
+        sync_playback();expire_capture();const auto now=Clock::now();
+        const double elapsed=std::chrono::duration<double>(now-play_last).count();play_last=now;
+        const bool held=capture && capture->state=="queued";
+        if(!playing || held || capture_hold) { play_clock.advance(0,false);capture_hold=held;return; }
+        try {
+            const auto ticks=play_clock.advance(elapsed,true);if(!ticks)return;
+            std::random_device random;std::string receipt(32,'0');constexpr char hex[]="0123456789abcdef";
+            for(auto& digit:receipt)digit=hex[random()&15];
+            const auto result=world_call("runtime.step",{{"session_id",play_session},{"request_id",receipt},{"expected_tick",play_tick},{"ticks",ticks}});
+            play_tick=result.at("tick");
+        }catch(const std::exception& failure) {
+            playing=false;play_clock.advance(0,false);capture_hold=false;
+            const auto state=world->runtime_status();play_tick=state.active ? state.tick : 0;
+            play_error=failure.what();
+        }
+    }
+    Json view_json() const { return {{"mode",view_mode},{"camera",view_camera.empty() ? Json(nullptr) : Json(view_camera)}}; }
+    Json cameras_json() {
+        const auto runtime=world->runtime_status();Json cameras=Json::array();
+        for(const auto& item:world->cameras(runtime.active))cameras.push_back({{"id",item.id},{"vertical_fov",item.vertical_fov},{"near",item.near_plane},{"far",item.far_plane}});
+        return {{"source",runtime.active ? "runtime" : "authored"},{"revision",revision()},
+            {"session_id",runtime.active ? Json(runtime.session_id) : Json(nullptr)},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"cameras",cameras}};
+    }
+    Json set_view(const Json& params) {
+        fields(params,{"mode","camera"},{"mode"});require(params.at("mode").is_string(),"View mode must be a string.");
+        const auto mode=params.at("mode").get<std::string>();require(mode=="scene" || mode=="game","View mode must be scene or game.");
+        std::string id;
+        if(mode=="game") {
+            require(params.contains("camera"),"Game view requires a Camera entity.");id=identifier(params.at("camera"));
+            const auto runtime=world->runtime_status();
+            // Prepare before changing selection: invalid lenses, absent cameras,
+            // missing assets or nonrigid hierarchies preserve the current view.
+            (void)(runtime.active ? world->runtime_camera_snapshot(id) : world->authored_camera_snapshot(id));
+        } else require(!params.contains("camera"),"Scene view uses the inspection camera; omit camera.");
+        if(mode!=view_mode || id!=view_camera) {
+            require(view_revision<max_integer,"View revision exhausted.");cancel_gizmo();view_mode=mode;view_camera=std::move(id);++view_revision;
+            fail_capture(-32009,"Viewport camera changed before capture presentation.");
+        }
+        return view_json();
+    }
+    void scene_view_required() const { require(view_mode=="scene","Switch to Scene view to navigate or manipulate authored entities.",-32009); }
     void fail_capture(int code,const std::string& detail) {
         if(capture && capture->state=="queued") { capture->state="error";capture->code=code;capture->detail=detail; }
     }
@@ -257,7 +350,7 @@ struct Bridge {
         if(!capture || capture->state!="queued")return;
         if(Clock::now()>=capture->deadline) { fail_capture(-32003,"Capture timed out waiting for a drawable native viewport.");return; }
         const auto state=world->runtime_status();
-        if(revision()!=capture->revision || camera_revision!=capture->camera_revision || gizmo_generation!=capture->gizmo_generation || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick)))
+        if(revision()!=capture->revision || camera_revision!=capture->camera_revision || gizmo_generation!=capture->gizmo_generation || view_revision!=capture->view_revision || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick)))
             fail_capture(-32009,"World, runtime tick, or camera changed before capture presentation.");
     }
     std::string capture_path(const Json& value) const {
@@ -310,7 +403,7 @@ struct Bridge {
         return basis;
     }
     EditorGizmo gizmo_geometry(std::uint32_t width,std::uint32_t height) {
-        if(gizmo_mode=="none" || selected.empty() || world->runtime_status().active)return {};
+        if(view_mode!="scene" || gizmo_mode=="none" || selected.empty() || world->runtime_status().active)return {};
         Matrix4 matrix;Json transform;
         if(gesture)matrix=multiply(gesture->parent,transform_matrix(gesture->transform));
         else {
@@ -335,6 +428,7 @@ struct Bridge {
         return gizmo_state();
     }
     Json gizmo_begin(const Json& params) {
+        scene_view_required();
         fields(params,{"revision","width","height","x","y"},{"revision","width","height","x","y"});
         const auto expected=integer(params.at("revision"));const auto size=gizmo_extent(params);
         const double x=number(params.at("x"),0,size[0],"Gizmo x is outside the viewport."),y=number(params.at("y"),0,size[1],"Gizmo y is outside the viewport.");
@@ -388,13 +482,14 @@ struct Bridge {
         committed_gesture={{"drag_id",id},{"request_id",receipt},{"result",result}};cancel_gizmo();return result;
     }
     Json inspect() {
-        expire_gizmo();expire_capture();return {{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        sync_playback();expire_gizmo();expire_capture();return {{"playback",playback_json()},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
             {"endpoint",endpoint.empty() ? Json(nullptr) : Json(endpoint)}};
     }
     Json pick(const Json& params) {
+        scene_view_required();
         fields(params,{"revision","x","y","aspect"},{"revision","x","y","aspect"});
         const auto expected=integer(params.at("revision"));
         const double x=number(params.at("x"),0,1,"Pick x must be in [0,1]."),y=number(params.at("y"),0,1,"Pick y must be in [0,1].");
@@ -413,6 +508,7 @@ struct Bridge {
             {"revision",expected},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)}};
     }
     Json frame(const Json& params) {
+        scene_view_required();
         fields(params,{"revision","id","aspect"},{"revision","aspect"});const auto expected=integer(params.at("revision"));
         const double aspect=number(params.at("aspect"),.01,100,"Viewport aspect must be in [0.01,100].");
         const auto id=params.contains("id") ? identifier(params.at("id")) : selected;require(!id.empty(),"Select an entity or supply id to frame.");
@@ -447,10 +543,17 @@ struct Bridge {
         if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");cancel_gizmo();camera=candidate;++camera_revision; }
         expire_capture();return {{"camera",camera.json()},{"target",target},{"distance",distance}};
     }
-    Json describe() const {
+    Json describe() {
         auto object=[](Json properties,Json required=Json::array()) { return Json{{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; };
         const Json integer_schema={{"type","integer"},{"minimum",0},{"maximum",max_integer}};
         Json methods=Json::object();methods["desktop.describe"]=object(Json::object());methods["desktop.inspect"]=object(Json::object());
+        const Json id_schema={{"type","string"},{"pattern","^[0-9a-f]{32}$"}};
+        methods["desktop.play.start"]=object({{"revision",integer_schema},{"session_id",id_schema},{"paused",{{"type","boolean"}}}},{"revision","session_id"});
+        for(const auto* name:{"desktop.play.pause","desktop.play.resume","desktop.play.stop"})methods[name]=object({{"session_id",id_schema}},{"session_id"});
+        methods["desktop.play.inspect"]=object(Json::object());
+        methods["desktop.play.step"]=world_call("world.describe").at("methods").at("runtime.step");
+        methods["desktop.cameras"]=object(Json::object());
+        methods["desktop.view"]={{"oneOf",Json::array({object({{"mode",{{"const","scene"}}}},{"mode"}),object({{"mode",{{"const","game"}}},{"camera",id_schema}},{"mode","camera"})})}};
         methods["desktop.select"]=object({{"id",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{32}$"}}}},{"id"});
         const Json aspect_schema={{"type","number"},{"minimum",.01},{"maximum",100}},unit_schema={{"type","number"},{"minimum",0},{"maximum",1}};
         methods["desktop.pick"]=object({{"revision",integer_schema},{"x",unit_schema},{"y",unit_schema},{"aspect",aspect_schema}},{"revision","x","y","aspect"});
@@ -468,6 +571,11 @@ struct Bridge {
         methods["desktop.capture"]=object({{"revision",integer_schema},{"path",{{"type","string"},{"minLength",1}}}},{"revision","path"});
         methods["desktop.capture.status"]=object({{"capture_id",{{"type","integer"},{"minimum",1},{"maximum",max_integer}}}},{"capture_id"});
         return {{"methods",methods},{"world_methods","world.describe"},{"capture",{{"completion","Asynchronous: queue returns capture_id/state; inspect status after poll/draw."},{"capacity",1},{"retained_results",1},{"timeout_ms",2000},{"guards","Authored revision, camera, gizmo/selection generation, runtime session and tick; pause edits/stepping while queued."},{"format","BMP; native viewport only; exclusive new path"}}},
+            {"playback",{{"clock","Owner poll only; fixed 60 Hz; at most 8 catch-up ticks/poll; excess wall time is dropped and reported. Inspect, draw and capture never step."},
+                {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits; Stop discards runtime without authored writes."},
+                {"capture","A queued capture holds automatic ticking until completion/error; resume discards the held wall-time interval."},
+                {"background","Playback continues while the owner polls, including hidden/detached viewports; no focus gate. Gameplay device input and editor audio playback are not connected in this slice."}}},
+            {"views",{{"scene","Free inspection camera; authored or runtime world."},{"game","Explicit Camera entity, authored when stopped, frozen runtime lens and live pose while active. No automatic camera replacement if a camera is absent after Stop; choose another camera or Scene."}}},
             {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
             {"gizmo",{{"coordinates","Physical client pixels, top-left; attached extent must match. begin hit-tests handles. World/local axes; default move/world."},
                 {"preview","update changes only presentation, including child transforms, lights and skin palettes. commit produces one guarded world transaction; cancel writes nothing."},
@@ -484,6 +592,9 @@ struct Bridge {
             if(message.contains("id")) { id=message.at("id");require(id.is_null() || id.is_string() || id.is_number_integer(),"Invalid JSON-RPC ID.",-32600); }else notification=true;
             const auto method=message.at("method").get<std::string>();
             if(!method.starts_with("desktop.")) {
+                sync_playback();
+                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.edit"))
+                    throw Failure(-32009,"Pause desktop playback before manual runtime mutation.");
                 const bool starting=method=="runtime.start" && !world->runtime_status().active;
                 Parents starting_parents;if(starting)starting_parents=parents();
                 auto response=world->request(bytes,WorldRequestScope::shared_editor);
@@ -493,11 +604,14 @@ struct Bridge {
                     if(value.contains("result"))value["result"]["editor_discovery"]="desktop.describe";
                     response=value.dump();
                 }
-                expire_gizmo();return response;
+                sync_playback();expire_gizmo();expire_capture();return response;
             }
             fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});const auto params=message.value("params",Json::object());Json result;
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
+            else if(method.starts_with("desktop.play."))result=play_command(method,params);
+            else if(method=="desktop.view")result=set_view(params);
+            else if(method=="desktop.cameras") { fields(params,{});result=cameras_json(); }
             else if(method=="desktop.gizmo.configure")result=gizmo_configure(params);
             else if(method=="desktop.gizmo.inspect")result=gizmo_inspect(params);
             else if(method=="desktop.gizmo.begin")result=gizmo_begin(params);
@@ -507,6 +621,7 @@ struct Bridge {
             else if(method=="desktop.pick")result=pick(params);
             else if(method=="desktop.frame")result=frame(params);
             else if(method=="desktop.camera") {
+                scene_view_required();
                 Camera candidate=camera;candidate.update(params);
                 if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");cancel_gizmo();camera=candidate;++camera_revision; }
                 expire_capture();result=camera.json();
@@ -516,7 +631,7 @@ struct Bridge {
             }else if(method=="desktop.capture") {
                 fields(params,{"revision","path"},{"revision","path"});expire_capture();require(viewport && !faulted,"A working attached native viewport is required.",-32003);require(!capture || capture->state!="queued","One capture is already pending.",-32009);
                 const auto expected=integer(params.at("revision"));require(expected==revision(),"Authored revision conflict.",-32009);const auto path=capture_path(params.at("path"));require(next_capture<=max_integer,"Capture identity limit reached.");const auto state=world->runtime_status();
-                Capture candidate;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);result=capture->json();
+                Capture candidate;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;result=capture->json();
             }else if(method=="desktop.capture.status") {
                 fields(params,{"capture_id"},{"capture_id"});const auto value=integer(params.at("capture_id"));require(capture && capture->id==value,"Capture result is absent or was superseded.",-32004);expire_capture();result=capture->json();
             }else throw Failure(-32601,"Unknown desktop method.");
@@ -527,16 +642,18 @@ struct Bridge {
     }
     Json poll() {
         if(server)for(const auto& incoming:server->poll())server->reply(incoming.token,request(incoming.payload));
-        auto state=inspect();const auto current=state.at("revision").get<std::uint64_t>();const auto runtime=state.at("runtime");
+        pump_playback();auto state=inspect();const auto current=state.at("revision").get<std::uint64_t>();const auto runtime=state.at("runtime");
         state["world_changed"]=!observed_revision || *observed_revision!=current;state["runtime_changed"]=observed_runtime!=runtime;
         observed_revision=current;observed_runtime=runtime;return state;
     }
     SceneSnapshot snapshot() {
         const auto runtime=world->runtime_status();
-        const Json key={{"revision",revision()},{"camera",camera_revision},{"active",runtime.active},
+        const Json key={{"revision",revision()},{"camera",camera_revision},{"view",view_revision},{"active",runtime.active},
             {"session",runtime.active ? runtime.session_id : std::string{}},{"tick",runtime.active ? runtime.tick : 0}};
         if(!cached_snapshot || key!=snapshot_key) {
-            auto candidate=runtime.active ? world->runtime_snapshot(camera.native()) : world->authored_snapshot(camera.native());
+            auto candidate=view_mode=="game"
+                ? (runtime.active ? world->runtime_camera_snapshot(view_camera) : world->authored_camera_snapshot(view_camera))
+                : (runtime.active ? world->runtime_snapshot(camera.native()) : world->authored_snapshot(camera.native()));
             cached_snapshot=std::move(candidate);snapshot_key=key;
         }
         return *cached_snapshot;
@@ -554,7 +671,14 @@ struct Bridge {
     }
     int draw() {
         expire_gizmo();expire_capture();if(!viewport)return 0;require(!faulted,"Graphics failed; detach and attach the viewport to recover.",-32003);
-        const auto scene=gesture && gesture->preview ? *gesture->preview : snapshot();const auto runtime=world->runtime_status();bool presented=false;
+        const auto scene=[&] {
+            try { return gesture && gesture->preview ? *gesture->preview : snapshot(); }
+            catch(const std::exception& error_value) {
+                // Snapshot preparation cannot poison the GPU. Fail an awaiting
+                // capture promptly, retaining the source error for the caller.
+                fail_capture(-32003,error_value.what());throw;
+            }
+        }();const auto runtime=world->runtime_status();bool presented=false;
         const auto extent=viewport->extent();viewport->set_overlay(gizmo_geometry(extent[0],extent[1]).triangles);
         // Destination changes invalidate only the capture job. This preflight
         // has not touched GPU state and must not disable a healthy viewport.
@@ -574,7 +698,7 @@ struct Bridge {
         if(!presented)return 0;
         ++presented_frames;presented_revision=scene.revision;presented_tick=runtime.active ? std::optional<std::uint64_t>(runtime.tick) : std::nullopt;
         if(capture && capture->state=="queued") {
-            const auto& report=*last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",presented_frames},{"gizmo",gizmo_state()},{"preview",bool(gesture && gesture->preview)},{"render",render_json()}};
+            const auto& report=*last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",presented_frames},{"gizmo",gizmo_state()},{"view",view_json()},{"camera_world",scene.camera_world},{"lens",{{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},{"preview",bool(gesture && gesture->preview)},{"render",render_json()}};
         }
         return 1;
     }

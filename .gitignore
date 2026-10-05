@@ -19,3 +19,11 @@ __pycache__/
 /projects/desktop-sandbox/
 /desktop/**/bin/
 /desktop/**/obj/
+
+# Private research and planning remain local, outside the public source tree.
+/docs/research/
+/docs/ENGINE_PLAN.md
+/docs/PRODUCT_BRIEF.md
+/docs/VALIDATION_PLAN.md
+/docs/SETTINGS_INPUT.md
+/docs/SAVE_SYSTEM.md

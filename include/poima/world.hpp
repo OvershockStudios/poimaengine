@@ -24,6 +24,10 @@ struct EditorCamera {
     Matrix4 world=identity_matrix();
     double vertical_fov=60,near_plane=.1,far_plane=1000;
 };
+struct WorldCameraInfo {
+    std::string id;
+    double vertical_fov=60,near_plane=.1,far_plane=1000;
+};
 // One synchronous shared authoring/runtime session. Owns the cooperative writer
 // lock; callers serialize access. Snapshots own presentation data, not GUI state.
 class WorldSession {
@@ -41,6 +45,12 @@ public:
     WorldPackageContent package_content() const;
     SceneSnapshot authored_snapshot(const EditorCamera& camera) const;
     SceneSnapshot runtime_snapshot(const EditorCamera& camera) const;
+    // Camera metadata is sorted by ID. Live enumeration/snapshots require an
+    // active runtime and use its frozen camera components even after authoring
+    // edits or deletion. These queries never advance simulation or write storage.
+    std::vector<WorldCameraInfo> cameras(bool live) const;
+    SceneSnapshot authored_camera_snapshot(const std::string& camera_id) const;
+    SceneSnapshot runtime_camera_snapshot(const std::string& camera_id) const;
     // One transient local transform; rebuilds hierarchy, lights and skin palettes
     // without changing authored state, history, receipts or the normal cache.
     SceneSnapshot authored_preview(const EditorCamera& camera,const std::string& entity,

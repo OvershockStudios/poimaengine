@@ -12,11 +12,13 @@ public sealed record EntityRow(string Id, string Name, string? Parent, string[] 
         Components.Contains("AudioEmitter") ? "audio" : Components.Contains("AnimationRig") ? "rig" :
         Components.Any(x => x is "MeshRenderer" or "StaticMesh" or "SkinnedMesh") ? "cube" : "entity";
 }
+public sealed record CameraChoice(string Id, string Label);
 
 public sealed class EditorModel : IDisposable
 {
     public NativeHost Host { get; }
     public event EventHandler? Changed;
+    public event EventHandler? PlaybackChanged;
     public event Action? SceneChanging;
     public List<EntityRow> Entities { get; } = [];
     public List<string> Log { get; } = [];
@@ -32,7 +34,14 @@ public sealed class EditorModel : IDisposable
     public int RedoDepth { get; private set; }
     public string? RuntimeId { get; private set; }
     public long Tick { get; private set; }
-    public bool Paused { get; private set; } = true;
+    public string PlaybackState { get; private set; } = "stopped";
+    public bool Paused => PlaybackState == "paused";
+    public string? PlaybackError { get; private set; }
+    public string? PlaybackSuspended { get; private set; }
+    public string ViewMode { get; private set; } = "scene";
+    public string? GameCamera { get; private set; }
+    public IReadOnlyList<CameraChoice> Cameras { get; private set; } = [];
+    private string? cameraSource;
     private string baselineName = "";
     private JsonObject baseline = new();
     private bool refreshing;
@@ -50,7 +59,38 @@ public sealed class EditorModel : IDisposable
     public static string NewId() => Guid.NewGuid().ToString("N");
     public static JsonObject Clone(JsonObject value) => (JsonObject)value.DeepClone();
     public void Note(string text) { if (Log.Count >= 256) Log.RemoveAt(0); Log.Add(text); Changed?.Invoke(this, EventArgs.Empty); }
-    private void HostChanged(object? sender, EventArgs args) { Refresh(); }
+    private void HostChanged(object? sender, EventArgs args)
+    {
+        var authoredChanged = Host.State["revision"]?.GetValue<long>() != Revision;
+        var selectionChanged = Host.State["selected"]?.GetValue<string>() != observedSelection;
+        if (authoredChanged || selectionChanged) Refresh();
+        else { SyncPlayback(); RefreshCameras(); PlaybackChanged?.Invoke(this, EventArgs.Empty); }
+    }
+    private void SyncPlayback()
+    {
+        var runtime = Host.State["runtime"] as JsonObject;
+        var playback = Host.State["playback"] as JsonObject;
+        RuntimeId = runtime?["active"]?.GetValue<bool>() == true ? runtime["session_id"]?.GetValue<string>() : null;
+        Tick = runtime?["tick"]?.GetValue<long>() ?? 0;
+        PlaybackState = playback?["state"]?.GetValue<string>() ?? (RuntimeId is null ? "stopped" : "paused");
+        PlaybackError = playback?["last_error"]?.GetValue<string>();
+        PlaybackSuspended = playback?["suspended"]?.GetValue<string>();
+        ViewMode = Host.State["view"]?["mode"]?.GetValue<string>() ?? "scene";
+        GameCamera = Host.State["view"]?["camera"]?.GetValue<string>();
+    }
+    private void RefreshCameras()
+    {
+        var source = RuntimeId is null ? "authored:" + Revision : "runtime:" + RuntimeId;
+        if (cameraSource == source) return;
+        var cameras = Host.Call("desktop.cameras")["cameras"]!.AsArray();
+        Cameras = cameras.Select(camera =>
+        {
+            var id = camera!["id"]!.GetValue<string>();
+            var label = Entities.FirstOrDefault(entity => entity.Id == id)?.Name ?? id[..Math.Min(id.Length, 8)];
+            return new CameraChoice(id, label);
+        }).ToArray();
+        cameraSource = source;
+    }
     public void Refresh()
     {
         if (refreshing) return;
@@ -64,11 +104,7 @@ public sealed class EditorModel : IDisposable
                 if (!Dirty) Selected = nativeSelection;
                 observedSelection = nativeSelection;
             }
-            if (Host.State["runtime"] is JsonObject runtime)
-            {
-                RuntimeId = runtime["active"]?.GetValue<bool>() == true ? runtime["session_id"]?.GetValue<string>() : null;
-                Tick = runtime["tick"]?.GetValue<long>() ?? 0;
-            }
+            SyncPlayback();
             var found = new List<EntityRow>();
             var parameters = new JsonObject { ["revision"] = Revision, ["limit"] = 256 };
             do
@@ -80,6 +116,7 @@ public sealed class EditorModel : IDisposable
                 parameters["after"] = page["next_after"]?.DeepClone();
             } while (parameters["after"] is not null);
             Entities.Clear(); Entities.AddRange(found);
+            RefreshCameras();
             var history = Host.Call("world.history");
             UndoDepth = history["undo_count"]?.GetValue<int>() ?? 0;
             RedoDepth = history["redo_count"]?.GetValue<int>() ?? 0;
@@ -193,17 +230,33 @@ public sealed class EditorModel : IDisposable
     public void PlayStop()
     {
         SceneChanging?.Invoke();
-        if (RuntimeId is not null) { Host.Call("runtime.stop", new() { ["session_id"] = RuntimeId }); RuntimeId = null; Tick = 0; }
-        else { RequireClean(); var id = NewId(); Host.Call("runtime.start", new() { ["session_id"] = id, ["revision"] = Revision }); RuntimeId = id; Tick = 0; Paused = true; }
-        Changed?.Invoke(this, EventArgs.Empty);
+        if (RuntimeId is not null) Host.Call("desktop.play.stop", new() { ["session_id"] = RuntimeId });
+        else { RequireClean(); Host.Call("desktop.play.start", new() { ["session_id"] = NewId(), ["revision"] = Revision }); }
+        Host.RefreshState();
     }
-    public void Pause() { if (RuntimeId is null) return; Paused = !Paused; Changed?.Invoke(this, EventArgs.Empty); }
+    public void Pause()
+    {
+        if (RuntimeId is null) throw new InvalidOperationException("Start playback first.");
+        Host.Call(Paused ? "desktop.play.resume" : "desktop.play.pause", new() { ["session_id"] = RuntimeId });
+        Host.RefreshState();
+    }
     public void Step(int ticks = 1)
     {
-        if (RuntimeId is null) return;
-        Tick = Host.Call("runtime.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["ticks"] = ticks })["tick"]!.GetValue<long>();
-        Changed?.Invoke(this, EventArgs.Empty);
+        if (RuntimeId is null || !Paused) throw new InvalidOperationException("Pause playback before stepping.");
+        Host.Call("desktop.play.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["ticks"] = ticks });
+        Host.RefreshState();
     }
+    public void SetView(string mode, string? camera = null)
+    {
+        SceneChanging?.Invoke();
+        var parameters = new JsonObject { ["mode"] = mode };
+        if (mode == "game") parameters["camera"] = camera ?? GameCamera ?? Cameras.FirstOrDefault()?.Id
+            ?? throw new InvalidOperationException("Create a Camera before opening Game preview.");
+        Host.Call("desktop.view", parameters); Host.RefreshState();
+    }
+    public JsonObject InspectPlayback() => new() { ["state"] = PlaybackState, ["session_id"] = RuntimeId, ["tick"] = Tick,
+        ["paused"] = Paused, ["suspended"] = PlaybackSuspended, ["last_error"] = PlaybackError,
+        ["view"] = ViewMode, ["camera"] = GameCamera, ["draft_generation"] = DraftGeneration };
     public JsonObject InspectDraft() => new() { ["entity"] = Selected, ["name"] = DraftName, ["components"] = DraftComponents.DeepClone(), ["invalid_fields"] = new JsonArray(invalid.Order().Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()), ["dirty"] = Dirty, ["conflict"] = Conflict, ["base_revision"] = BaseRevision, ["revision"] = Revision };
     public void Dispose() { Host.StateChanged -= HostChanged; SceneChanging = null; }
 }
