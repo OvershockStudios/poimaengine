@@ -503,8 +503,17 @@ struct Bridge : ViewportState {
                 applied={{"first_tick",play_tick+1},{"ticks",ticks},{"input",std::move(input)}};
             }
             const auto result=world_call("runtime.step",parameters);
-            play_tick=result.at("tick");
+            if(result.at("runtime_replaced").get<bool>()) {
+                // The committed source tick is not the restored world's tick.
+                // Synchronization pauses and releases old input before another
+                // callback can touch the replacement.
+                sync_playback();expire_gizmo();expire_capture();play_last=Clock::now();return;
+            }
+            play_tick=result.at("current_tick");
             if(apply) { game_input->consume(input_controller);last_input_applied=std::move(applied); }
+            // Synchronous storage must not become catch-up simulation work.
+            // Keep ordinary stepping time in the clock when no save was serviced.
+            if(result.at("save_serviced").get<bool>())play_last=Clock::now();
         }catch(const std::exception& failure) {
             playing=false;release_input();play_clock.advance(0,false);capture_hold=false;
             const auto state=world->runtime_status();play_tick=state.active ? state.tick : 0;

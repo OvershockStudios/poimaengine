@@ -1571,10 +1571,11 @@ EditorViewportResources EditorViewport::resources() const {
 }
 #endif
 
-PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
+PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
     PlayerReport result;
     auto& report=result.render;
-    result.initial_tick=runtime.inspect().tick;
+    result.initial_tick=session.tick();
+    result.initial_session=result.final_session=session.identity();
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
@@ -1584,10 +1585,11 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
     std::unique_ptr<PlayerAudio> audio;
     try {
-        snapshot=runtime.snapshot(options.camera);
+        require(session.controller_valid(options.controller),"Player requires an active CharacterController entity.");
+        snapshot=session.snapshot(options.camera);
         context.initialize(options.render,&snapshot,true);
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
-        if(options.audio)audio=std::make_unique<PlayerAudio>(runtime,options.camera);
+        if(options.audio)audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera));
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
         bool captured=!options.replay && focused;
         bool active=captured;
@@ -1597,6 +1599,28 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
         std::size_t segment=0;
         std::uint32_t offset=0;
         auto previous=SDL_GetTicksNS();
+        auto after_advance=[&](bool save_serviced) {
+            if(save_serviced)previous=SDL_GetTicksNS();
+            const auto current=session.identity();
+            if(current==result.final_session) {
+                if(audio)audio->advance(session.audio_state(options.camera));
+                return false;
+            }
+            result.final_session=current;++result.runtime_replacements;
+            // Runtime ownership changed only after the committed owner advance.
+            // Never reuse catch-up ticks, pending edges or DSP from that timeline.
+            captured=false;active=false;input.clear();
+            if(gamepads)gamepads->activate(false);
+            require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
+            clock.advance(0,false);previous=SDL_GetTicksNS();
+            if(audio)audio->discard_pending();
+            require(session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
+            snapshot=session.snapshot(options.camera);
+            if(audio)audio->reset(session.audio_state(options.camera));
+            if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
+            else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
+            return true;
+        };
         while(!quit) {
             SDL_Event event;
             while(SDL_PollEvent(&event)) {
@@ -1657,22 +1681,26 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
                 if(segment==options.sequence.size()) { result.stop_reason="replay_complete"; break; }
                 auto control=options.sequence[segment].input;
                 if(offset!=0) { control.look={0,0}; control.jump=false;control.use=false; }
-                runtime.step(1,{control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{},offset==0 ? options.sequence[segment].sounds : std::vector<SoundCommand>{});
-                if(audio)audio->advance(runtime,options.camera);
+                const bool save_serviced=session.advance({control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{},offset==0 ? options.sequence[segment].sounds : std::vector<SoundCommand>{});
                 if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
+                after_advance(save_serviced);
             } else {
                 const auto ticks=clock.advance(elapsed,focused && active);
-                for(std::uint32_t tick=0;tick<ticks;++tick) { runtime.step(1,{input.peek(options.controller)});input.consume(options.controller);if(audio)audio->advance(runtime,options.camera); }
+                for(std::uint32_t tick=0;tick<ticks;++tick) {
+                    const bool save_serviced=session.advance({input.peek(options.controller)});
+                    if(after_advance(save_serviced))break;
+                    input.consume(options.controller);
+                }
             }
-            snapshot=runtime.snapshot(options.camera); context.update_scene();
+            snapshot=session.snapshot(options.camera); context.update_scene();
             if(context.frame(false)) ++report.frames_presented;
-            if(options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
+            if(!quit && options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
         }
-        if(audio)audio->finish(runtime,options.camera);
+        if(audio)audio->finish(session.audio_state(options.camera));
         if(!options.render.capture.empty()) {
             // Final artifact observes the exact final tick without simulating an
             // extra tick. Rebuild once if the surface changed during shutdown.
-            snapshot=runtime.snapshot(options.camera); context.update_scene();
+            snapshot=session.snapshot(options.camera); context.update_scene();
             bool drawn=context.frame(true);
             if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
             require(drawn,"Surface kept changing during final player capture.");
@@ -1685,7 +1713,7 @@ PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
     }
     if(gamepads)result.gamepad_json=gamepads->status_json();
     if(audio)result.audio=audio->report();
-    result.final_tick=runtime.inspect().tick; result.dropped_seconds=clock.dropped_seconds();
+    result.final_tick=session.tick();result.final_session=session.identity(); result.dropped_seconds=clock.dropped_seconds();
     report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;
     report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
     return result;

@@ -35,6 +35,29 @@ public readonly record struct AnimationTransition(ulong StartTick,uint DurationT
     bool SourceFrozen,int? SourceClip,double? SourceTime,double? SourceSpeed,bool? SourceLoop,bool? SourcePlaying);
 public readonly record struct AnimationState(EntityId Entity,int? Clip,double Time,double Speed,bool Loop,bool Playing,
     double Duration,AnimationTransition? Transition);
+// Epoch words are opaque signed bit patterns, allowing a ticket to be stored
+// explicitly in three existing long state fields. SaveTicket itself is not a
+// registered nested state-field type and is never an EntityId.
+[StructLayout(LayoutKind.Sequential)]
+public readonly record struct SaveTicket(long EpochHigh,long EpochLow,long Sequence)
+{
+    public bool IsValid => (EpochHigh!=0 || EpochLow!=0) && Sequence is >0 and <=9007199254740991L;
+}
+public readonly record struct SaveEpoch(long High,long Low);
+public enum SaveKind : uint { None=0,Save=1,Load=2 }
+public enum SaveOperationState : uint { Expired=0,Queued=1,Resolving=2,Succeeded=3,Failed=4 }
+public enum SaveRequestRejection : uint { None=0,Disabled=1,Busy=2,Invalid=3,Exhausted=4 }
+public readonly record struct SaveRequestResult(SaveTicket Ticket,SaveRequestRejection Rejection)
+{ public bool Accepted => Rejection==SaveRequestRejection.None; }
+public sealed class SaveRequestException(SaveRequestRejection rejection) : InvalidOperationException($"Gameplay save request rejected: {rejection}.")
+{ public SaveRequestRejection Rejection { get; }=rejection; }
+public readonly record struct SaveRestoreInfo(SaveTicket? InitiatingTicket,SaveEpoch DestinationEpoch,
+    ulong CommittedSourceTick,ulong RestoredTick,ulong Generation,bool Recovered);
+public readonly record struct SaveCapabilities(bool Enabled,SaveEpoch Epoch,ulong ConfigurationGeneration,SaveRestoreInfo? LastRestore);
+public readonly record struct SaveOperationResult(SaveTicket Ticket,SaveKind Kind,SaveOperationState State,
+    ulong RequestedTick,ulong CommittedTick,ulong Generation,bool Recovered,int ErrorCode,string Diagnostic,
+    SaveEpoch? RestoredEpoch,ulong? RestoredTick)
+{ public bool IsTerminal => State is SaveOperationState.Succeeded or SaveOperationState.Failed or SaveOperationState.Expired; }
 public enum GameAction : uint { Jump=1, Use=2 }
 [StructLayout(LayoutKind.Sequential)]
 public struct GameInput
@@ -82,6 +105,20 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public uint Present,Loop,Playing,TransitionPresent,Reserved;public NativeAnimationTransition Transition;
 }
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeError { public fixed byte Text[2048]; }
+[StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeSaveRequest
+{ public uint Kind,SlotBytes;public byte* Slot;public ulong ExpectedGeneration;public uint HasExpectedGeneration,AllowRecovery; }
+[StructLayout(LayoutKind.Sequential)] internal struct NativeSaveEnqueue
+{ public SaveTicket Ticket;public uint Rejection,Reserved; }
+[StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeSaveResult
+{
+    public SaveTicket Ticket;public uint Kind,State;public ulong RequestedTick,CommittedTick,Generation;
+    public uint Recovered;public int ErrorCode;public ulong RestoredHigh,RestoredLow,RestoredTick;public fixed byte Diagnostic[256];
+}
+[StructLayout(LayoutKind.Sequential)] internal struct NativeSaveInfo
+{
+    public ulong High,Low,ConfigurationGeneration;public uint Enabled,RestorePresent;public SaveTicket InitiatingTicket;
+    public ulong DestinationHigh,DestinationLow,CommittedSourceTick,RestoredTick,Generation;public uint Recovered,Reserved;
+}
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeServices
 {
     public uint Version,Bytes;public void* Context;
@@ -91,6 +128,22 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public delegate* unmanaged[Cdecl]<void*,NativeSound*,ulong*,NativeError*,int> Sound;
     public delegate* unmanaged[Cdecl]<void*,EntityId*,NativeAnimationState*,NativeError*,int> AnimationGet;
     public delegate* unmanaged[Cdecl]<void*,NativeAnimationCommand*,NativeError*,int> AnimationSet;
+    public delegate* unmanaged[Cdecl]<void*,NativeSaveInfo*,NativeError*,int> SaveInfo;
+    public delegate* unmanaged[Cdecl]<void*,NativeSaveRequest*,NativeSaveEnqueue*,NativeError*,int> SaveRequest;
+    public delegate* unmanaged[Cdecl]<void*,SaveTicket*,NativeSaveResult*,NativeError*,int> SaveResult;
+}
+internal static unsafe class SaveAbiLayout
+{
+    // Address differences also work in NativeAOT without reflection metadata.
+    internal static bool Valid()
+    {
+        NativeServices s=default;NativeSaveRequest r=default;NativeSaveEnqueue e=default;NativeSaveResult o=default;NativeSaveInfo i=default;
+        return sizeof(SaveTicket)==24 && sizeof(NativeSaveRequest)==32 && sizeof(NativeSaveEnqueue)==32 && sizeof(NativeSaveResult)==344 && sizeof(NativeSaveInfo)==104 &&
+            (byte*)&s.SaveInfo-(byte*)&s==64 && (byte*)&s.SaveRequest-(byte*)&s==72 && (byte*)&s.SaveResult-(byte*)&s==80 &&
+            (byte*)&r.Slot-(byte*)&r==8 && (byte*)&r.ExpectedGeneration-(byte*)&r==16 && (byte*)&r.AllowRecovery-(byte*)&r==28 &&
+            (byte*)&e.Rejection-(byte*)&e==24 && (byte*)&o.RequestedTick-(byte*)&o==32 && (byte*)&o.ErrorCode-(byte*)&o==60 && o.Diagnostic-(byte*)&o==88 &&
+            (byte*)&i.InitiatingTicket-(byte*)&i==32 && (byte*)&i.DestinationHigh-(byte*)&i==56 && (byte*)&i.Recovered-(byte*)&i==96;
+    }
 }
 public readonly unsafe ref struct GameContext
 {
@@ -103,6 +156,58 @@ public readonly unsafe ref struct GameContext
     { this.services=services;this.inputs=new(inputs,count);Tick=tick; }
     private static void Check(int code,NativeError* error)
     { if(code!=0)throw new InvalidOperationException(Marshal.PtrToStringUTF8((nint)error->Text) ?? "Native gameplay service failed."); }
+    public SaveCapabilities Saves
+    {
+        get
+        {
+            NativeSaveInfo info=default;NativeError error=default;
+            Check(services->SaveInfo(services->Context,&info,&error),&error);
+            SaveRestoreInfo? restored=info.RestorePresent==0 ? null : new(
+                info.InitiatingTicket==default ? null : info.InitiatingTicket,
+                new(unchecked((long)info.DestinationHigh),unchecked((long)info.DestinationLow)),
+                info.CommittedSourceTick,info.RestoredTick,info.Generation,info.Recovered!=0);
+            return new(info.Enabled!=0,new(unchecked((long)info.High),unchecked((long)info.Low)),info.ConfigurationGeneration,restored);
+        }
+    }
+    // Requests stage copied intents only. Storage is serviced after the entire
+    // native batch commits; a later Tick failure rolls the request back too.
+    // Resolving means publication is uncertain, not a failed write to repeat.
+    public SaveRequestResult TryRequestSave(string slot,long? expectedGeneration=null) => TryRequest(SaveKind.Save,slot,expectedGeneration,false);
+    public SaveRequestResult TryRequestLoad(string slot,long? expectedGeneration=null,bool allowRecovery=false) => TryRequest(SaveKind.Load,slot,expectedGeneration,allowRecovery);
+    public SaveTicket RequestSave(string slot,long? expectedGeneration=null) => RequireAccepted(TryRequestSave(slot,expectedGeneration));
+    public SaveTicket RequestLoad(string slot,long? expectedGeneration=null,bool allowRecovery=false) => RequireAccepted(TryRequestLoad(slot,expectedGeneration,allowRecovery));
+    private static SaveTicket RequireAccepted(SaveRequestResult result) => result.Accepted ? result.Ticket : throw new SaveRequestException(result.Rejection);
+    private SaveRequestResult TryRequest(SaveKind kind,string slot,long? expected,bool recovery)
+    {
+        if(slot is null || slot.Length is <1 or >64 || expected is <0 or >9007199254740991L)
+            return new(default,SaveRequestRejection.Invalid);
+        byte* bytes=stackalloc byte[64];
+        for(int i=0;i<slot.Length;++i)
+        {
+            char c=slot[i];
+            if(!((c>='a' && c<='z') || (c>='0' && c<='9') || c=='-' || c=='_'))return new(default,SaveRequestRejection.Invalid);
+            bytes[i]=(byte)c;
+        }
+        NativeSaveRequest request=new(){Kind=(uint)kind,SlotBytes=(uint)slot.Length,Slot=bytes,
+            ExpectedGeneration=(ulong)(expected ?? 0),HasExpectedGeneration=expected.HasValue ? 1u : 0u,AllowRecovery=recovery ? 1u : 0u};
+        NativeSaveEnqueue result=default;NativeError error=default;
+        Check(services->SaveRequest(services->Context,&request,&result,&error),&error);
+        return new(result.Ticket,(SaveRequestRejection)result.Rejection);
+    }
+    // Memory only; reads neither consume results nor touch save storage. Old
+    // process/evicted tickets expire, allowing restored pending flags to clear.
+    public SaveOperationResult GetSaveResult(SaveTicket ticket)
+    {
+        NativeSaveResult result=default;NativeError error=default;
+        Check(services->SaveResult(services->Context,&ticket,&result,&error),&error);
+        int length=0;while(length<256 && result.Diagnostic[length]!=0)++length;
+        string diagnostic=System.Text.Encoding.UTF8.GetString(new ReadOnlySpan<byte>(result.Diagnostic,length));
+        bool restored=result.State==(uint)SaveOperationState.Succeeded && result.Kind==(uint)SaveKind.Load;
+        return new(result.Ticket,(SaveKind)result.Kind,(SaveOperationState)result.State,result.RequestedTick,result.CommittedTick,
+            result.Generation,result.Recovered!=0,result.ErrorCode,diagnostic,
+            restored ? new SaveEpoch(unchecked((long)result.RestoredHigh),unchecked((long)result.RestoredLow)) : null,
+            restored ? result.RestoredTick : null);
+    }
     public EntitySnapshot Get(EntityId entity)
     { EntitySnapshot result=default;NativeError error=default;Check(services->Entity(services->Context,&entity,&result,&error),&error);return result; }
     // Queries observe current native state, including explicit caller commands,

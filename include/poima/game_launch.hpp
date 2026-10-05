@@ -4,7 +4,7 @@
 #include <string>
 namespace poima {
 struct GameLaunchOptions {
-    std::string manifest,replay,report;
+    std::string manifest,replay,report,save_root;
     RenderOptions render;
     std::uint32_t max_frames=0;
 };

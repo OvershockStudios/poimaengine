@@ -361,7 +361,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 27}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 28}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -418,6 +418,8 @@ Json describe() {
         {"path","request_id","expected_revision","profile"});
     methods["runtime.start"]=object_schema({{"session_id",id},{"revision",rev}},{"session_id","revision"});
     methods["runtime.status"]=object_schema(Json::object());
+    methods["runtime.save.status"]=object_schema({{"session_id",id}},{"session_id"});
+    methods["runtime.save.result"]=object_schema({{"epoch",id},{"sequence",{{"type","integer"},{"minimum",1},{"maximum",max_revision}}}},{"epoch","sequence"});
     for(const auto* method:{"runtime.inspect","runtime.stop"}) methods[method]=object_schema({{"session_id",id}},{"session_id"});
     methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
     methods["runtime.gameplay.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"include_schema",{{"type","boolean"},{"default",false}}},{"fields",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",{{"type","string"}}}}}},{"session_id"});
@@ -539,6 +541,14 @@ Json describe() {
         {"retry","Write receipts persist per slot; configure/load retain the latest32 session-local receipts. Exact retries do not repeat mutations. Forgotten IDs beyond retention are new requests subject to guards."},
         {"recovery","Inspect reports verified previous-generation fallback. Load requires allow_recovery:true; writes after payload fallback require acknowledge_recovery:true. Manifest recovery permits reads only."},
         {"limitations","Synchronous bounded64MiB save, exact gameplay backend/image/schema, fixed entity set. No general migrations, autosave scheduler, platform/cloud adapters or power-loss qualification."}};
+    result["gameplay_saves"]={
+        {"services_abi",4},{"kinds",{{"none",0},{"save",1},{"load",2}}},
+        {"states",{{"expired",0},{"queued",1},{"resolving",2},{"succeeded",3},{"failed",4}}},
+        {"request_rejections",{{"none",0},{"disabled",1},{"busy",2},{"invalid",3},{"exhausted",4}}},
+        {"boundary","One runtime request, serviced only after the complete atomic batch commits. Requested tick and committed tick may differ. Failed batches perform no save I/O."},
+        {"observation","runtime.save.status/result are memory-only. 64 owner terminal results; unknown and evicted tickets expire. Resolving retains uncertain write identity and blocks another batch until receipt verification succeeds."},
+        {"step_result","session_id/tick/stepped and sound_events describe the source batch; current_session_id/current_tick/runtime_replaced describe the active world. Exact advance retries survive replacement, stop and restart within the32 receipt owner history."},
+        {"load","Fresh epoch/session; saved pending tickets are data, not commands. LastRestore precedes the replacement first Tick. Desktop and interactive player pause/clear old input; recorded player/audio replay stop at replacement."}};
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -645,6 +655,7 @@ class World {
     Json doc_;
     std::string disk_;
     bool exists_ = false;
+    GameplaySaveLedger gameplay_save_ledger_;
     std::unique_ptr<Runtime> runtime_;
     std::shared_ptr<GamepadHost> gamepad_host_;
     RuntimeDefinition runtime_definition_;
@@ -659,6 +670,22 @@ class World {
     std::set<std::string> used_runtime_ids_;
     Json runtime_start_params_, runtime_start_result_;
     Json runtime_receipts_=Json::array();
+    Json playback_receipts_=Json::array();
+    // Owner requests survive replacement; callbacks mutate only runtime queues.
+    struct PendingGameplayWrite {
+        fs::path path;std::string operation,hash;std::uint64_t expected_generation=0;std::int32_t error_code=-32070;std::array<char,256> diagnostic{};
+    };
+    std::optional<PendingGameplayWrite> pending_gameplay_write_;
+    struct RuntimeAdvance {
+        GameplaySaveEpoch source,current;
+        std::uint64_t previous_tick=0,committed_tick=0,current_tick=0,first_voice=0,next_voice=0;
+        std::uint32_t stepped=0;bool replaced=false,save_serviced=false;
+        std::optional<GameplaySaveResult> operation;
+    };
+    struct AdvanceReceipt { Json params;RuntimeAdvance outcome; };
+    std::array<std::unique_ptr<AdvanceReceipt>,32> advance_receipts_;
+    std::size_t advance_receipt_next_=0;
+
     mutable ModelCache model_cache_;
     mutable std::optional<SceneSnapshot> authored_cache_;
     struct Edit { Json before,after;std::size_t bytes;std::string request_id; };
@@ -1510,6 +1537,12 @@ public:
     void runtime_guard(const Json& params) const {
         const auto id=identifier(params.at("session_id"));
         require(runtime_ && id==runtime_id_,"Runtime session is absent or does not match.",-32030);
+        if(params.contains("request_id"))for(const auto& receipt:playback_receipts_)
+            require(receipt.at("params").at("session_id")!=id || receipt.at("params").at("request_id")!=params.at("request_id"),
+                "Runtime request ID was already used by playback.",-32010);
+        if(params.contains("request_id"))for(const auto& receipt:advance_receipts_)
+            require(!receipt || receipt->params.at("session_id")!=id || receipt->params.at("request_id")!=params.at("request_id"),
+                "Runtime request ID was already used by a step.",-32010);
     }
     void validate_animation_document(const Json& document) const {
         // Resolve rig ownership in headless authoring too. Unrelated static
@@ -1590,6 +1623,7 @@ public:
         return result;
     }
 #include "world_save.inc"
+#include "world_gameplay_save.inc"
     Json runtime_summary() const {
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
@@ -1694,10 +1728,11 @@ public:
     }
     Json audio_replay(const Json& params) {
         fields(params,{"session_id","request_id","expected_tick","listener","path","sequence"},{"session_id","request_id","expected_tick","listener","path","sequence"});
-        runtime_guard(params);identifier(params.at("request_id"));auto normalized=params;normalized["method"]="runtime.audio.replay";
-        for(const auto& receipt:runtime_receipts_)if(receipt["params"]["request_id"]==params.at("request_id")) {
+        identifier(params.at("session_id"));identifier(params.at("request_id"));revision(params.at("expected_tick"));auto normalized=params;normalized["method"]="runtime.audio.replay";
+        for(const auto& receipt:playback_receipts_)if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);auto result=receipt["result"];result["replayed"]=true;return result;
         }
+        runtime_guard(params);
         const auto expected=revision(params.at("expected_tick"));require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(audio_available(),"Audio replay is not built. Configure POIMA_ENABLE_AUDIO=ON.",-32003);
         const auto listener=identifier(params.at("listener"));const auto output=render_options(Json{{"path",params.at("path")}}).capture;
@@ -1711,29 +1746,37 @@ public:
         }
         std::unique_ptr<AudioStream> stream;try { stream=std::make_unique<AudioStream>(expected,runtime_->audio_snapshot(listener)); }catch(const std::exception& e) { throw Error(-32070,e.what()); }
         std::vector<float> pcm;pcm.reserve(static_cast<std::size_t>(total*audio_tick_frames*2));
-        auto receipts=runtime_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",Json::object()}});
+        auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",Json::object()}});
         Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"listener",listener},{"replayed",false},{"success",false},{"capture",nullptr}};
         try {
             auto append=[&](bool finish=false) { auto block=stream->advance(runtime_->inspect().tick,runtime_->audio_snapshot(listener),runtime_->sound_state().voices(),finish);pcm.insert(pcm.end(),block.begin(),block.end()); };
-            for(auto& segment:segments)for(std::uint32_t i=0;i<segment.ticks;++i) {
-                runtime_->step(1,segment.inputs,i==0 ? segment.motions : std::vector<KinematicTarget>{},i==0 ? segment.sounds : std::vector<SoundCommand>{});append();
+            bool replaced=false;
+            for(auto& segment:segments) {
+              for(std::uint32_t i=0;i<segment.ticks;++i) {
+                const auto advanced=advance_runtime(1,segment.inputs,i==0 ? segment.motions : std::vector<KinematicTarget>{},i==0 ? segment.sounds : std::vector<SoundCommand>{});
+                if(advanced.replaced) { replaced=true;result["stop_reason"]="runtime_replaced";break; }
+                append();
                 for(auto& input:segment.inputs) { input.look={0,0};input.jump=false;input.use=false; }
             }
-            append(true);const auto bytes=audio_wave(pcm,2);write_flushed(fs::path(std::u8string(output.begin(),output.end())),bytes);
+              if(replaced)break;
+            }
+            if(!replaced)append(true);
+            const auto bytes=audio_wave(pcm,2);write_flushed(fs::path(std::u8string(output.begin(),output.end())),bytes);
             result["capture"]={{"path",output},{"sha256",content_hash(bytes)},{"frames",pcm.size()/2},{"channels",2},{"sample_rate",audio_rate},{"format","WAV IEEE float32"}};result["success"]=true;result["detail"]="Committed simulation recorded with persistent direct/HRTF voices; no audio device.";
         }catch(const std::exception& e) { result["detail"]=e.what(); }
-        const auto stats=stream->stats();result["tick"]=runtime_->inspect().tick;result["stream"]={{"frames",stats.frames},{"blocks",stats.blocks},{"voices_started",stats.voices_started},{"path_updates",stats.path_updates},{"peak",stats.peak},{"over_range_samples",stats.over_range_samples},{"dsp_ms",stats.dsp_ms}};
-        receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
+        result["current_session_id"]=runtime_id_;const auto stats=stream->stats();result["tick"]=runtime_->inspect().tick;result["stream"]={{"frames",stats.frames},{"blocks",stats.blocks},{"voices_started",stats.voices_started},{"path_updates",stats.path_updates},{"peak",stats.peak},{"over_range_samples",stats.over_range_samples},{"dsp_ms",stats.dsp_ms}};
+        receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
         fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision","gamepad"},
             {"session_id","request_id","expected_tick","controller","camera","mode"});
-        runtime_guard(params); identifier(params.at("request_id"));
+        identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";
-        for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
+        for(const auto& receipt:playback_receipts_) if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
             auto result=receipt["result"]; result["replayed"]=true; return result;
         }
+        runtime_guard(params);
         const auto expected=revision(params.at("expected_tick"));
         require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(!params.contains("audio") || params.at("audio").is_boolean(),"audio must be Boolean.");
@@ -1795,11 +1838,26 @@ public:
 
         // Reserve the retry slot before entering an operation that may advance
         // state. A failed/closed player reports its actual tick and is cached too.
-        auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
+        auto receipts=playback_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
         receipts.push_back({{"params",normalized},{"result",Json::object()}});
-        const auto report=run_player(options,*runtime_);
+        struct Session final : PlayerSession {
+            World& owner;explicit Session(World& value):owner(value) {}
+            std::string identity() const override { return owner.runtime_id_; }
+            std::uint64_t tick() const override { return owner.runtime_->inspect().tick; }
+            bool controller_valid(const std::string& id) const override {
+                try { return owner.runtime_->entity(id).is_character; }catch(const std::exception&) { return false; }
+            }
+            SceneSnapshot snapshot(const std::string& camera) const override { return owner.runtime_->snapshot(camera); }
+            PlayerAudioState audio_state(const std::string& listener) const override {
+                return {tick(),owner.runtime_->audio_snapshot(listener),owner.runtime_->sound_state().voices()};
+            }
+            bool advance(const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds) override {
+                return owner.advance_runtime(1,inputs,motions,sounds).save_serviced;
+            }
+        } session(*this);
+        const auto report=run_player(options,session);
         require(report.render.available,report.render.detail,-32003);
-        const auto camera=runtime_->snapshot(options.camera);
+        std::optional<SceneSnapshot> camera;try { camera=runtime_->snapshot(options.camera); }catch(const std::exception&) {}
         Json result={{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"revision",runtime_definition_.authored_revision},
             {"previous_tick",report.initial_tick},{"tick",report.final_tick},{"mode",params.at("mode")},{"replayed",false},
             {"success",report.render.success},{"stop_reason",report.stop_reason},{"detail",report.render.detail},
@@ -1807,10 +1865,11 @@ public:
             {"dropped_wall_seconds",report.dropped_seconds},{"gpu",report.render.gpu_name},{"hardware",report.render.hardware},
             {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
             {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
-            {"camera",options.camera},{"camera_world",camera.camera_world},{"lighting",lighting_json(camera.lighting)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",POIMA_VERSION}};
+            {"camera",options.camera},{"camera_world",camera ? Json(camera->camera_world) : Json(nullptr)},{"lighting",camera ? lighting_json(camera->lighting) : Json(nullptr)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",POIMA_VERSION}};
+        result["initial_session_id"]=report.initial_session;result["current_session_id"]=report.final_session;result["runtime_replacements"]=report.runtime_replacements;
         result["input_profile"]=input_info;result["gamepad"]=Json::parse(report.gamepad_json);
-        const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
-        receipts.back()["result"]=result; runtime_receipts_.swap(receipts);
+        const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
+        receipts.back()["result"]=result; playback_receipts_.swap(receipts);
         return result;
     }
     Json gameplay_info() const {
@@ -1881,6 +1940,20 @@ public:
             return {{"available",s.available},{"active",s.active},{"session_id",s.active ? Json(s.session_id) : Json(nullptr)},
                     {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
         }
+        if(method=="runtime.save.status") {
+            fields(params,{"session_id"},{"session_id"});runtime_guard(params);const auto& queue=runtime_->gameplay_saves();
+            Json result={{"epoch",epoch_text(queue.epoch())},{"enabled",queue.enabled()},{"configuration_generation",queue.configuration_generation()},
+                {"pending",queue.pending() ? gameplay_save_json(queue.query(queue.pending()->ticket,&gameplay_save_ledger_)) : Json(nullptr)},{"last_restore",nullptr}};
+            if(const auto restored=gameplay_save_ledger_.last_restore(queue.epoch()))result["last_restore"]={
+                {"initiating_epoch",epoch_text(restored->initiating_ticket.epoch)},{"initiating_sequence",restored->initiating_ticket.sequence},
+                {"source_tick",restored->committed_source_tick},{"restored_tick",restored->restored_tick},{"generation",restored->generation},{"recovered",restored->recovered}};
+            return result;
+        }
+        if(method=="runtime.save.result") {
+            fields(params,{"epoch","sequence"},{"epoch","sequence"});GameplaySaveTicket ticket{save_epoch(identifier(params.at("epoch"))),revision(params.at("sequence"))};
+            require(ticket.valid(),"Save ticket must have a nonzero epoch and positive sequence.");
+            return gameplay_save_json(runtime_ ? runtime_->gameplay_saves().query(ticket,&gameplay_save_ledger_) : GameplaySaveQueue{}.query(ticket,&gameplay_save_ledger_));
+        }
         if(method=="runtime.audio.voices")return sound_voices(params);
         if(method=="runtime.audio.replay")return audio_replay(params);
         if(method=="runtime.audio.inspect" || method=="runtime.audio.capture")return audio_dispatch(method,params,true);
@@ -1901,6 +1974,7 @@ public:
             std::unique_ptr<Runtime> candidate;
             try { candidate=std::make_unique<Runtime>(definition); }
             catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+            configure_runtime_saves(*candidate);
             Json result={{"session_id",id},{"authored_revision",definition.authored_revision},{"tick",0},{"started",true},{"replayed",false}};
             auto start_params=params,start_result=result;auto session_id=id;auto used=used_runtime_ids_;used.insert(id);Json receipts=Json::array();
             runtime_start_params_.swap(start_params);runtime_start_result_.swap(start_result);runtime_id_.swap(session_id);
@@ -1910,7 +1984,7 @@ public:
         if(method=="runtime.stop") {
             fields(params,{"session_id"},{"session_id"}); const auto id=identifier(params.at("session_id"));
             if(!runtime_ && stopped_runtime_id_==id) return {{"session_id",id},{"stopped",true},{"replayed",true}};
-            runtime_guard(params); stopped_runtime_id_=id; runtime_.reset();runtime_gameplay_config_.reset(); runtime_receipts_.clear();
+            runtime_guard(params);require(!runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before stopping the runtime.",-32070); stopped_runtime_id_=id; runtime_.reset();runtime_gameplay_config_.reset(); runtime_receipts_.clear();
             return {{"session_id",id},{"stopped",true},{"replayed",false}};
         }
         if(method=="runtime.inspect") { fields(params,{"session_id"},{"session_id"}); runtime_guard(params); return runtime_summary(); }
@@ -1949,7 +2023,7 @@ public:
         }
         if(method=="runtime.step") {
             fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations"},{"session_id","request_id","expected_tick","ticks"});
-            runtime_guard(params); identifier(params.at("request_id"));
+            identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
             if(normalized["animations"].is_array())for(auto& command:normalized["animations"])if(command.is_object()) {
@@ -1958,11 +2032,7 @@ public:
                 // integer field before receipt matching, including retries.
                 require(revision(command.at("blend_ticks"))<=3600,"Animation blend_ticks must be within 0..3600.");
             }
-            for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
-                require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
-                auto result=receipt["result"]; result["replayed"]=true; return result;
-            }
-            const auto expected=revision(params.at("expected_tick")); require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            const auto expected=revision(params.at("expected_tick"));
             const auto ticks=revision(params.at("ticks")); require(ticks>=1 && ticks<=600 && expected+ticks<=max_revision,"Runtime step must contain 1..600 ticks within the tick range.");
             const auto& raw=normalized.at("inputs"); require(raw.is_array() && raw.size()<=32,"Runtime inputs must be an array of at most 32 characters.");
             std::vector<RuntimeInput> inputs;
@@ -1972,14 +2042,19 @@ public:
             }
             const auto motions=parse_motions(normalized.at("motions"));const auto sounds=parse_sounds(normalized.at("sounds"));
             const auto animations=parse_animations(normalized.at("animations"));
-            const auto first_voice=runtime_->sound_state().next_id();
-            Json result={{"session_id",runtime_id_},{"previous_tick",expected},{"tick",expected+ticks},{"stepped",ticks},{"replayed",false}};
-            auto receipts=runtime_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
-            receipts.push_back({{"params",normalized},{"result",result}});
-            try { runtime_->step(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations); }
-            catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
-            result["sound_events"]={{"first_voice",first_voice},{"next_voice",runtime_->sound_state().next_id()}};receipts.back()["result"]=result;
-            runtime_receipts_.swap(receipts); return result;
+            for(const auto& receipt:advance_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id")) {
+                require(receipt->params==normalized,"Runtime request ID reused with different parameters.",-32010);return advance_json(receipt->outcome,true);
+            }
+            runtime_guard(params);
+            for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
+                require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
+                auto result=receipt["result"]; result["replayed"]=true; return result;
+            }
+            require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
+            receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations);
+            const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();
+            return advance_json(advance_receipts_[index]->outcome);
         }
         throw Error(-32601,"Unknown runtime method.");
     }

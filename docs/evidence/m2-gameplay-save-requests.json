@@ -1,0 +1,598 @@
+{
+  "milestone": "Typed gameplay save/load and safe native player replacement",
+  "date": "2026-10-05",
+  "engine_version": "0.0.36",
+  "source_base": "5da0b0ca59e02ce4c80f350549442fb2c9676c51",
+  "gameplay_services_abi": {
+    "version": 4,
+    "bytes": 88
+  },
+  "source_sha256": {
+    ".gitignore": "db77653f650549cfec21db6614da1d55ba598837f17051b1a2a8a4d03a658de8",
+    "CMakeLists.txt": "18ac6f707404dfee939a481de3e1ec4ef6e05da922a6e2017bc49f2859a42553",
+    "cmake/runtime.json.in": "b0106d54286d54bd463d9f357d4c8306e320fb3ccbc2de0fabd771f533ebb32b",
+    "include/poima/game_launch.hpp": "58aa988eab4912dd5be37ba938b5f83795b9086304bcd5ef57aa303a298bda82",
+    "include/poima/gameplay_abi.h": "9e6ccbd2a0e6dd7e8adbd9195193c471a01db9ca2fcf0f673db24e2fac544b56",
+    "include/poima/gameplay_save.hpp": "fb112c130fea2eda06544b787f778f07af40970a1cbf48359c661f906238f9ab",
+    "include/poima/player.hpp": "fdf059514bb9f8335fe2813eb3e54dcb88112126ad7b92fa46bc44c2795812fb",
+    "include/poima/runtime.hpp": "17f3af750674d0e9de0d3a27905f186bb78dad19c9a433e6ce9d5d86be9651dd",
+    "include/poima/save_store.hpp": "1389b077a887175f3b50467a76306805b8d3b7864fbac556c9c514f4b78adb75",
+    "managed/Poima.Gameplay/Gameplay.cs": "e91795482855dacc05f4372df7cae268a038380216225618127efead79b7a517",
+    "managed/Poima.ManagedBridge/Entry.cs": "c7a4affb591e1a91ca7f77d340f3042e3178e541244a0e381823f222ccd4f93b",
+    "managed/Poima.NativeGame/Entry.cs": "176ab5c30f0267cbac700a16e28607083cb1309286971ec586234f0fa606e788",
+    "scripts/publish_native_gameplay.py": "1c394c0984d818d9b6d1fd0b99166917f45f22d4654c55e06ecd2ca2515b90bc",
+    "src/core.cpp": "7b61daaa978b817d75cbd9fce0100b441f0ec5d69d576207d1f757089eb738ee",
+    "src/desktop_bridge.cpp": "5ac5fc64dec916c5a7e7865b037bf30e4fabe07229bc5fe01c7b05dc5339f7a8",
+    "src/editor.cpp": "6d6c9cf6c8098884dc15ac059a672cdd253f27a2b2ec713b3f25578fe137a1f6",
+    "src/game_launch.cpp": "9fd9ca6c1ccdd66508f9888ccb1bdde34216bb20d200ab6e775277798a89443e",
+    "src/gameplay_save.cpp": "55c9113fd21a3f1b9f4f8e9742755c4ed9b527b2398d688ccad08001758a6b5f",
+    "src/main.cpp": "370be1c9d48e2d60247f039d367ffc75c8320c123cd3018de9f84999cac82029",
+    "src/native_gameplay_artifact.cpp": "2b6714af4bcfdbb75fa9b1ab770d2aafac48e0909ed75aed38a71078bc41398a",
+    "src/player_audio.hpp": "f96b5ad3f18e2745f6b6110428cafdbcae9bb8c7be18a6b51bedda98ea8609d1",
+    "src/project.cpp": "7cd0cefb72ef6119be3ede6fbe01115349ca58d349bd31d5a688d40c87529085",
+    "src/render_smoke.cpp": "290daf0b3e63e34fa3ba3c2c2e5fa62d0a711eed73ee0430c1ed30b1624e8535",
+    "src/render_smoke_disabled.cpp": "c5785d83beec2a077fed139c5d06d138825c5ad92e9d20fc2b1c0dcb8f0f52ac",
+    "src/runtime.cpp": "d410d6191867caab5084e2f5e3c770f4cf7abb01f1cb2a868be1085cca4b2991",
+    "src/runtime_disabled.cpp": "471f695e629323aa7da676a11178505293cfc1fc741f28d3b01c4c18eac09df0",
+    "src/save_store.cpp": "b921507f9da872d2d432292ba8add8074c66c04c833bf16c49b3dcd78e9e50ee",
+    "src/world.cpp": "6aaa1d601d319607304f4829ca5b29645a8a87fa204900d9d11a68f9e7e2fb06",
+    "src/world_gameplay_save.inc": "24292d43f461d9852bd3a426cc103b6d641a14b44f01ab478886d4d059f16753",
+    "src/world_save.inc": "188f28dc9dc3aa9c9814655726b26109598b4d8da98ce431a5eb8b020d6b2ad0",
+    "tests/desktop_gameplay_save_requests.py": "aafa076fa6f2b9495780f5822253bbaa62df945ef84d2dd7cd1f14263ba4ad09",
+    "tests/gameplay-save/Poima.GameplaySaveProbe.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/gameplay-save/SaveRequests.cs": "b7b8e17d7efc7a7c4ddf3363c1ba54852b1123a6e5e120eef25d67b196e6834b",
+    "tests/gameplay_save.cpp": "e2c8fcb806b6ea23dfc45ad53aff07e668a752f1f80c5d3451f862119cc94454",
+    "tests/gameplay_save_bundle.py": "1591f5fe50ebcc80ddd1e58431289ebfa190ca88dd3ff9100b7e455c22dbcd07",
+    "tests/gameplay_save_player.py": "6cf85dd228efaeb788801538f7dfeffd633cae8a9e9e601e28259c516a81b082",
+    "tests/gameplay_save_requests.py": "48581a33d20d68bcae1ab56c7ad16faa9d2569aff855fbaf89c6d67d97e0f759",
+    "tests/managed_service_abi/Program.cs": "c904dca1c422c90042ee8808fbc15dd7c187793e62538484f537bd0ce9296170",
+    "tests/player_replacement.cpp": "fb3497b653459279b6e2abfcf7db9f1f336934d24046c0856b47000eefd770e6",
+    "tests/project_contract.py": "165b6f12f2a9a1c35eb83f675a93089c2464f6007469b44ab9da2a3eed1a8a9e",
+    "tests/project_gameplay_contract.py": "55d4975044084085eb31035f20cb4a2611f2f21573d641cbf111e5d0c2557b63",
+    "tests/save_store_native.cpp": "e40a3392892ed7766e1da47cca31f12baf28347025182df61870cd030f8f5237",
+    "tests/world_session_native.cpp": "9674919fafee9dc6034689a40602bab38b8131bfcb779510c7a7d8e780ec23e9"
+  },
+  "package": {
+    "manifest": {
+      "path": "build/desktop-gameplay-saves-reviewable/poima-desktop-build.json",
+      "sha256": "00e78124c56c6af343fda176009309071bf683fee4d4ddf33ae4635bff7483a3",
+      "bytes": 55753
+    },
+    "files": 362,
+    "dependency_records": 36,
+    "runtime_packs": 2,
+    "native": {
+      "path": "build/desktop-gameplay-saves-reviewable/poima.exe",
+      "sha256": "94b17c0cc7a373f3953bca50969e06f810dd807f08682624b84d2e918817e972",
+      "bytes": 132637696
+    },
+    "bridge": {
+      "path": "build/desktop-gameplay-saves-reviewable/poima_desktop.dll",
+      "sha256": "18a7896a2600a6f4efdbf956a9d3bf72fd64a3204f8b12333a49a1ec80008f86",
+      "bytes": 123843584
+    },
+    "editor": {
+      "path": "build/desktop-gameplay-saves-reviewable/Poima.Editor.dll",
+      "sha256": "a636e79f8fb2c69b1a9bdeb7c419047727706d789f40e18c7d78aca989da75a5",
+      "bytes": 1146880
+    },
+    "inventory": {
+      "path": "build/desktop-gameplay-saves-inventory-verified.json",
+      "sha256": "f92123d2fcd3db8f4c6d21d60fe493a8433de77144cb8e363347be29a722bdb9",
+      "bytes": 56872
+    }
+  },
+  "implemented": [
+    "Bounded allocation-free gameplay request queue and terminal ledger; memory-only capability/result queries.",
+    "C# Tick enqueues typed save/load requests; native owner services only after a committed simulation batch. Later-tick failure rolls back requests without disk writes.",
+    "Load stages a trusted replacement with fresh session/epoch, preserving source result and retry identities across replacement.",
+    "Uncertain write publication resolves through retained durable receipts; unresolved outcomes block new simulation and preserve operation identity.",
+    "Player queries current owner state without retaining a replaced Runtime reference; reset input, clock and audio at replacement.",
+    "Desktop automatic playback supports gameplay requests and pauses after load. Standalone bundles accept explicit external --save-root.",
+    "Services ABI 4 is required by both managed hosts, native artifacts and gameplay bundle runtime metadata."
+  ],
+  "qualification": {
+    "real_gameplay_requests": [
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-coreclr-linux-final/5bb3338a8a0148bcbc8d4f9fe3ecb3a9/evidence.json",
+          "sha256": "6798e42b4275ed0809d3ac532751580efbda9aea246d765c18c6325db90fb551",
+          "bytes": 335912
+        },
+        "configuration": "Linux CoreCLR",
+        "groups": 6,
+        "rpc_count": 85,
+        "checks": [
+          "Disabled and invalid requests reject in actual gameplay without storage writes.",
+          "Save queues within Tick, captures whole-batch boundary, reports completion next Tick; memory-only queries work with absent storage and exact retry does not rewrite.",
+          "Storage CAS and missing-load errors leave committed simulation active and report failed operations.",
+          "Gameplay load replaces epoch/session; old advance retry survives load, stop and restart; saved pending token resolves without reenqueue.",
+          "Fresh-process restore expires saved old ticket and continues without a pending loop or new save.",
+          "Later Tick failure rolls back state, queue and ticket allocation with zero slot files; retry commits exactly one save."
+        ],
+        "binary_sha256": "23f31e568e844ec35b054ba71aa4e771fc0357801382fe44ffbfcee171968969",
+        "backend": "coreclr"
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-native-linux-final/65c7d5aa947744f69bbe774b62b91596/evidence.json",
+          "sha256": "7da3db9e4e4d8ae51623612e4ff4e5e01fd8dce226f43c2a8815cdd68ce00963",
+          "bytes": 338111
+        },
+        "configuration": "Linux Native AOT",
+        "groups": 6,
+        "rpc_count": 85,
+        "checks": [
+          "Disabled and invalid requests reject in actual gameplay without storage writes.",
+          "Save queues within Tick, captures whole-batch boundary, reports completion next Tick; memory-only queries work with absent storage and exact retry does not rewrite.",
+          "Storage CAS and missing-load errors leave committed simulation active and report failed operations.",
+          "Gameplay load replaces epoch/session; old advance retry survives load, stop and restart; saved pending token resolves without reenqueue.",
+          "Fresh-process restore expires saved old ticket and continues without a pending loop or new save.",
+          "Later Tick failure rolls back state, queue and ticket allocation with zero slot files; retry commits exactly one save."
+        ],
+        "binary_sha256": "23f31e568e844ec35b054ba71aa4e771fc0357801382fe44ffbfcee171968969",
+        "backend": "native_aot"
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-windows-coreclr-package-final/e05932001b2f42bf8be4178ba3a39a64/evidence.json",
+          "sha256": "98476e427817f4d713161d9c3042f8a2f049f9df497448fd18acbce31834cd8d",
+          "bytes": 336099
+        },
+        "configuration": "Windows packaged CoreCLR",
+        "groups": 6,
+        "rpc_count": 85,
+        "checks": [
+          "Disabled and invalid requests reject in actual gameplay without storage writes.",
+          "Save queues within Tick, captures whole-batch boundary, reports completion next Tick; memory-only queries work with absent storage and exact retry does not rewrite.",
+          "Storage CAS and missing-load errors leave committed simulation active and report failed operations.",
+          "Gameplay load replaces epoch/session; old advance retry survives load, stop and restart; saved pending token resolves without reenqueue.",
+          "Fresh-process restore expires saved old ticket and continues without a pending loop or new save.",
+          "Later Tick failure rolls back state, queue and ticket allocation with zero slot files; retry commits exactly one save."
+        ],
+        "binary_sha256": "94b17c0cc7a373f3953bca50969e06f810dd807f08682624b84d2e918817e972",
+        "backend": "coreclr"
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-windows-native-package-final/033e69b1b6fc44ba96e485a41d920beb/evidence.json",
+          "sha256": "f7aa8c61b581cd5d87cd832baae7e76a23dc3bf5093ab7687331897358e07b70",
+          "bytes": 338155
+        },
+        "configuration": "Windows packaged Native AOT",
+        "groups": 6,
+        "rpc_count": 85,
+        "checks": [
+          "Disabled and invalid requests reject in actual gameplay without storage writes.",
+          "Save queues within Tick, captures whole-batch boundary, reports completion next Tick; memory-only queries work with absent storage and exact retry does not rewrite.",
+          "Storage CAS and missing-load errors leave committed simulation active and report failed operations.",
+          "Gameplay load replaces epoch/session; old advance retry survives load, stop and restart; saved pending token resolves without reenqueue.",
+          "Fresh-process restore expires saved old ticket and continues without a pending loop or new save.",
+          "Later Tick failure rolls back state, queue and ticket allocation with zero slot files; retry commits exactly one save."
+        ],
+        "binary_sha256": "94b17c0cc7a373f3953bca50969e06f810dd807f08682624b84d2e918817e972",
+        "backend": "native_aot"
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-native-only-final/f4b69518a954435b8a99ab4d3a438047/evidence.json",
+          "sha256": "e55ee30eaeefbda8f2f8f636f3dc3aaa4ec2521dea8b86d10038a8e097e9fea6",
+          "bytes": 338041
+        },
+        "configuration": "Linux Native AOT with CoreCLR disabled",
+        "groups": 6,
+        "rpc_count": 85,
+        "checks": [
+          "Disabled and invalid requests reject in actual gameplay without storage writes.",
+          "Save queues within Tick, captures whole-batch boundary, reports completion next Tick; memory-only queries work with absent storage and exact retry does not rewrite.",
+          "Storage CAS and missing-load errors leave committed simulation active and report failed operations.",
+          "Gameplay load replaces epoch/session; old advance retry survives load, stop and restart; saved pending token resolves without reenqueue.",
+          "Fresh-process restore expires saved old ticket and continues without a pending loop or new save.",
+          "Later Tick failure rolls back state, queue and ticket allocation with zero slot files; retry commits exactly one save."
+        ],
+        "binary_sha256": "5ed169c41d21eaddbcf23aa0558b321537faa011a2f7a9efe7af164c2460e679",
+        "backend": "native_aot"
+      }
+    ],
+    "native_only_build_provenance": {
+      "path": "build/gameplay-save-native-only-final/build-provenance.json",
+      "sha256": "71e22239bd1d937f6b47aa1840026635066ccb967f599c79f0d7eed2398b76bf",
+      "bytes": 921
+    },
+    "ctest": [
+      {
+        "configuration": "runtime",
+        "passed": 42,
+        "log": {
+          "path": "build/gameplay-save-runtime-final-ctest.log",
+          "sha256": "41f412dffcca2c2fc6789b1a3303fe7e2eacc50054e405e8c0a8e845080bd836",
+          "bytes": 4735
+        },
+        "xml": {
+          "path": "build/gameplay-save-runtime-final-ctest.xml",
+          "sha256": "f0d6c17540e087155d5f0095b28e0ee603b5ac809f644367227f3bfa99ae369a",
+          "bytes": 29146
+        }
+      },
+      {
+        "configuration": "authoring",
+        "passed": 34,
+        "log": {
+          "path": "build/gameplay-save-authoring-final-ctest.log",
+          "sha256": "dbab23cb51472e94fd1af3755fad7f96813e76988ace90676187743e547e6224",
+          "bytes": 3844
+        },
+        "xml": {
+          "path": "build/gameplay-save-authoring-final-ctest.xml",
+          "sha256": "09469653cac73476551f7354d4ca47753623b62465bb8c7381592e586195a986",
+          "bytes": 25695
+        }
+      }
+    ],
+    "service_abi": [
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-managed/abi-evidence.json",
+          "sha256": "527e18808d7104f1d40089b13207f577297bb35afe064df3e6d7c8d0e87e12c0",
+          "bytes": 1009
+        },
+        "checks": [
+          "null services rejected before Tick",
+          "services 2/48 rejected before Tick",
+          "services 3/64 rejected before Tick",
+          "services 3/88 rejected before Tick",
+          "services 4/64 rejected before Tick",
+          "services 4/87 rejected before Tick",
+          "services 4/89 rejected before Tick",
+          "services 5/88 rejected before Tick",
+          "services 4/0 rejected before Tick",
+          "null animation get rejected",
+          "null animation set rejected",
+          "null prefix callback rejected",
+          "null save info rejected",
+          "null save request rejected",
+          "null save result rejected",
+          "matching v4 transfers animation, typed save requests/results, uncertainty, restore metadata and rejection correctly",
+          "animation fixture collectible context released"
+        ],
+        "count": 17,
+        "platform": "Kali GNU/Linux Rolling"
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-managed/abi-evidence-windows.json",
+          "sha256": "19801b093cfe92a7d19ba8d4013f251131ebc47f9488125411744d0e82540665",
+          "bytes": 1039
+        },
+        "checks": [
+          "null services rejected before Tick",
+          "services 2/48 rejected before Tick",
+          "services 3/64 rejected before Tick",
+          "services 3/88 rejected before Tick",
+          "services 4/64 rejected before Tick",
+          "services 4/87 rejected before Tick",
+          "services 4/89 rejected before Tick",
+          "services 5/88 rejected before Tick",
+          "services 4/0 rejected before Tick",
+          "null animation get rejected",
+          "null animation set rejected",
+          "null prefix callback rejected",
+          "null save info rejected",
+          "null save request rejected",
+          "null save result rejected",
+          "matching v4 transfers animation, typed save requests/results, uncertainty, restore metadata and rejection correctly",
+          "animation fixture collectible context released"
+        ],
+        "count": 17,
+        "platform": "Microsoft Windows 10.0.26220"
+      }
+    ],
+    "windows_native_queue_and_store": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/gameplay-save-native-windows-final-evidence.json",
+        "sha256": "9e1718dc212e0d41bd31c1f3d05eeca25a38adc40c018686f7d64ba007bf3eeb",
+        "bytes": 1443
+      },
+      "hashes": {
+        "tests/gameplay_save.cpp": "e2c8fcb806b6ea23dfc45ad53aff07e668a752f1f80c5d3451f862119cc94454",
+        "tests/save_store_native.cpp": "e40a3392892ed7766e1da47cca31f12baf28347025182df61870cd030f8f5237",
+        "src/gameplay_save.cpp": "55c9113fd21a3f1b9f4f8e9742755c4ed9b527b2398d688ccad08001758a6b5f",
+        "include/poima/gameplay_save.hpp": "fb112c130fea2eda06544b787f778f07af40970a1cbf48359c661f906238f9ab",
+        "src/save_store.cpp": "b921507f9da872d2d432292ba8add8074c66c04c833bf16c49b3dcd78e9e50ee",
+        "include/poima/save_store.hpp": "1389b077a887175f3b50467a76306805b8d3b7864fbac556c9c514f4b78adb75",
+        "build/windows-runtime/poima-gameplay-save-test.exe": "1359dd62b9e38d54e70f15fd82d19aadec87f87a78efb3c749f4864dc3c47e2c",
+        "build/windows-runtime/poima-save-store-test.exe": "b58f87fd885fe52cab6786806b0ba1f1ca8accdb0fd9e131d8e04ed3ebb56773"
+      },
+      "limitations": [
+        "Windows symlink fixture skipped: required privilege unavailable.",
+        "Nine exception and nine process-crash boundaries per store run; no power-loss qualification."
+      ]
+    },
+    "coreclr_regression": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/gameplay-save-reload-linux-final/evidence.json",
+        "sha256": "14a6f909c2660990a98ab0db8199fad5183efd0579c18c53b9826764a7fbfb07",
+        "bytes": 606534
+      },
+      "reloads": 100,
+      "groups": 14,
+      "rpc_count": 276,
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "binary_sha256": "23f31e568e844ec35b054ba71aa4e771fc0357801382fe44ffbfcee171968969"
+    },
+    "packaged_desktop_clock": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/desktop-gameplay-save-requests-package-final/84b3bbe724924bdc81c8c6d0499b3670/evidence.json",
+        "sha256": "35636926d0526024c3ceccee3134278fce36cd5450d288b4a4cb97cc5d52d66a",
+        "bytes": 164474
+      },
+      "groups": 5,
+      "rpc_count": 43,
+      "checks": [
+        "Automatic playback executes real Tick save after its bounded whole batch; memory result identifies requested and committed ticks.",
+        "External save mutations remain rejected while playing through both direct C ABI and local IPC.",
+        "A later real game callback observes terminal completion and clears its pending state without repeating the write.",
+        "Automatic game load adopts a fresh paused session, clears native input/clock/module caches and leaves authoring and save bytes unchanged.",
+        "Paused step exposes source/current replacement metadata; exact old-session retry is inert and restored saved tokens do not reenact commands."
+      ],
+      "hashes": {
+        "bridge": "18a7896a2600a6f4efdbf956a9d3bf72fd64a3204f8b12333a49a1ec80008f86",
+        "binary": "94b17c0cc7a373f3953bca50969e06f810dd807f08682624b84d2e918817e972",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "gameplay_bridge": "8afad36ed8e8cad93174681ee715780f47e6de520ce25c15859b6585da180420",
+        "assembly": "5037003389dc20be537965165215cd350b570a8348ee31afc0749a47aee95eaf"
+      }
+    },
+    "packaged_full_editor": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/gameplay-saves-full-frontend/d41051cf9ce247ed8fbb41a6ca7f556d/evidence.json",
+        "sha256": "cb3306cb6d87a380f3fd1a63c4426cd56fdbaa0362b221629973d12dc549b789",
+        "bytes": 977824
+      },
+      "actions": 232,
+      "restart_actions": 4,
+      "checks": [
+        "actual Avalonia Vulkan backend with native child Scene",
+        "shared CLI connection",
+        "dirty draft preserved; stale Apply rejects; Reload explicit",
+        "undo/redo and fixed-tick runtime",
+        "invalid raw field survives floating/reset; dirty close cancelled",
+        "missing-asset Scene error recovers after authoring repair without reattachment",
+        "actual Inspector and Scene floating windows; reset and continued presentation",
+        "native HWND look/fly/frame/click messages; input released cleanly",
+        "saved floating layout restores its panel structure and bounds, including a fresh process",
+        "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+        "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+        "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+        "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+        "independent Game HWND gestures preserve Scene camera; both panes render in one shared session",
+        "paused Game capture and Stop preserve authored transforms/revision/history",
+        "revision-guarded native viewport capture",
+        "bounded process exit",
+        "window screenshot unavailable; semantic GUI and native Scene capture qualified separately"
+      ],
+      "os_screenshot_available": false
+    },
+    "packaged_save_window": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/gameplay-saves-window-frontend/9742007d45944584827fb8dc07f92e5e/evidence.json",
+        "sha256": "c74fd741e4b692ef945ecc8bd7d5656ee954ddd62379ad9fb1b76488b9971579",
+        "bytes": 280885
+      },
+      "actions": 129,
+      "editor_processes": 3,
+      "checks": [
+        "Actual Save-window controls preserve dirty and stale observations.",
+        "Exact pending mutation retry survives explicit observation refresh.",
+        "Saved typed C# state and mid-motion door restore in the same and fresh editor processes.",
+        "Implicit recovery is refused; explicit load and acknowledged write preserve quarantined payload.",
+        "Authored world bytes remain unchanged throughout all phases."
+      ],
+      "os_screenshot_available": false
+    },
+    "native_player_replacement": [
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/player-replacement-gpu0/evidence.json",
+          "sha256": "d0102740b565afdf1c755edda76a41c4b13bc316d8402a524e932e7659f06d40",
+          "bytes": 1557
+        },
+        "adapter_index": 0,
+        "hashes": {
+          "build/windows-runtime/poima.exe": "a2a6c9ec8b5db45312c87ecf3153c710013f2c84e1abcfcd9879d5df2106c603",
+          "build/windows-runtime/poima_desktop.dll": "f5f41d399d26a3cf30437a2045378a4b7707f9255d754c3e705ccb6dd05e778e",
+          "build/windows-runtime/poima-player-replacement-test.exe": "6ef0f05a66add9e39926e84f065dd7223bc3114ade4375ea0122fe970e1b9f44",
+          "tests/player_replacement.cpp": "fb3497b653459279b6e2abfcf7db9f1f336934d24046c0856b47000eefd770e6",
+          "include/poima/player.hpp": "fdf059514bb9f8335fe2813eb3e54dcb88112126ad7b92fa46bc44c2795812fb",
+          "src/render_smoke.cpp": "290daf0b3e63e34fa3ba3c2c2e5fa62d0a711eed73ee0430c1ed30b1624e8535",
+          "src/player_audio.hpp": "f96b5ad3f18e2745f6b6110428cafdbcae9bb8c7be18a6b51bedda98ea8609d1"
+        },
+        "capture_sha256": "14c9956ca768f287106160038fe70fc9f32457a51c2effd73d375ea2c688af1b",
+        "physical_input_qualified": false,
+        "checks": [
+          "Actual runtime destruction and restore at tick 32 to 8.",
+          "One window/device survives replacement; old input clears, explicit synthetic SDL resume precedes new movement.",
+          "Audio timeline resets; missing selected camera/controller fail in a controlled manner."
+        ],
+        "binary_scope": "Pre-final executable; subsequent changes only add discovery/runtime packaging metadata. Player implementation source hashes remain unchanged."
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/player-replacement-gpu1/evidence.json",
+          "sha256": "2568d216e973862968c531241a36afc3791c8e6dea10f98f47d7b93cb9473429",
+          "bytes": 1569
+        },
+        "adapter_index": 1,
+        "hashes": {
+          "build/windows-runtime/poima.exe": "a2a6c9ec8b5db45312c87ecf3153c710013f2c84e1abcfcd9879d5df2106c603",
+          "build/windows-runtime/poima_desktop.dll": "f5f41d399d26a3cf30437a2045378a4b7707f9255d754c3e705ccb6dd05e778e",
+          "build/windows-runtime/poima-player-replacement-test.exe": "6ef0f05a66add9e39926e84f065dd7223bc3114ade4375ea0122fe970e1b9f44",
+          "tests/player_replacement.cpp": "fb3497b653459279b6e2abfcf7db9f1f336934d24046c0856b47000eefd770e6",
+          "include/poima/player.hpp": "fdf059514bb9f8335fe2813eb3e54dcb88112126ad7b92fa46bc44c2795812fb",
+          "src/render_smoke.cpp": "290daf0b3e63e34fa3ba3c2c2e5fa62d0a711eed73ee0430c1ed30b1624e8535",
+          "src/player_audio.hpp": "f96b5ad3f18e2745f6b6110428cafdbcae9bb8c7be18a6b51bedda98ea8609d1"
+        },
+        "capture_sha256": "ca181109e92641b6254a488f1886ed3b90e100c086f47f7338cb8ba5273d0894",
+        "physical_input_qualified": false,
+        "checks": [
+          "Actual runtime destruction and restore at tick 32 to 8.",
+          "One window/device survives replacement; old input clears, explicit synthetic SDL resume precedes new movement.",
+          "Audio timeline resets; missing selected camera/controller fail in a controlled manner."
+        ],
+        "binary_scope": "Pre-final executable; subsequent changes only add discovery/runtime packaging metadata. Player implementation source hashes remain unchanged."
+      }
+    ],
+    "world_player_replay": [
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-world-player-native-gpu0/82d44e44af6247ffbbcc888b3f3fef23/evidence.json",
+          "sha256": "e590928adce623b6f689f042e6a11cbbdd9292d81df0d752290e0d27ce83c780",
+          "bytes": 145667
+        },
+        "configuration": "Native AOT GPU0",
+        "groups": 3,
+        "rpc_count": 31,
+        "checks": [
+          "Actual World player adapter restores from Tick, stops replay, preserves source/current identities and retry receipt, and the replacement advances afterward.",
+          "Audio replay services the real gameplay load, records the complete 512-frame blocks from two source ticks before replacement, and old-source retries neither rewrite nor advance.",
+          "Authored world and checkpoint bytes stay unchanged during player/audio loads and exact retries."
+        ],
+        "binary_sha256": "a2a6c9ec8b5db45312c87ecf3153c710013f2c84e1abcfcd9879d5df2106c603",
+        "binary_scope": "Before final discovery/runtime packaging metadata update; player source unchanged."
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-world-player-native-gpu1/b335fa02ecfa46d4ba43a58e349142b6/evidence.json",
+          "sha256": "9fc5b48a1c5cf789361e4a0fa5adefab04fb1d2c650a2579326b011c668f21e6",
+          "bytes": 145736
+        },
+        "configuration": "Native AOT GPU1",
+        "groups": 3,
+        "rpc_count": 31,
+        "checks": [
+          "Actual World player adapter restores from Tick, stops replay, preserves source/current identities and retry receipt, and the replacement advances afterward.",
+          "Audio replay services the real gameplay load, records the complete 512-frame blocks from two source ticks before replacement, and old-source retries neither rewrite nor advance.",
+          "Authored world and checkpoint bytes stay unchanged during player/audio loads and exact retries."
+        ],
+        "binary_sha256": "a2a6c9ec8b5db45312c87ecf3153c710013f2c84e1abcfcd9879d5df2106c603",
+        "binary_scope": "Before final discovery/runtime packaging metadata update; player source unchanged."
+      },
+      {
+        "passed": true,
+        "raw_evidence": {
+          "path": "build/gameplay-save-world-player-coreclr-gpu1/290e159c82d94b92bb0f35567829d93a/evidence.json",
+          "sha256": "b5d84e28a86cf04c206beaf26a7618c7ee0db48e57d547265b5ab0c0798967b1",
+          "bytes": 145090
+        },
+        "configuration": "CoreCLR GPU1",
+        "groups": 3,
+        "rpc_count": 31,
+        "checks": [
+          "Actual World player adapter restores from Tick, stops replay, preserves source/current identities and retry receipt, and the replacement advances afterward.",
+          "Audio replay services the real gameplay load, records the complete 512-frame blocks from two source ticks before replacement, and old-source retries neither rewrite nor advance.",
+          "Authored world and checkpoint bytes stay unchanged during player/audio loads and exact retries."
+        ],
+        "binary_sha256": "a2a6c9ec8b5db45312c87ecf3153c710013f2c84e1abcfcd9879d5df2106c603",
+        "binary_scope": "Before final discovery/runtime packaging metadata update; player source unchanged."
+      }
+    ],
+    "relocated_native_game": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/gameplay-save-bundle-windows/8294777c2e54474db7cdf74048eaf601/evidence.json",
+        "sha256": "7c26ee33815c8022439ab3ce556f17f7c52c166d0f1573840025c01e5f164b3c",
+        "bytes": 46566
+      },
+      "checks": [
+        "Relocated actual native bundle saves from Tick to explicit external storage; final tick3 observes successful generation1 captured at tick1.",
+        "Save root inside the bundle is rejected before play; complete bundle inventory remains unchanged."
+      ],
+      "artifact_payloads": 7,
+      "bundled_files": 39,
+      "capture_sha256": "10ade9b666dcbdf73a1ad633e67f51e6295fe8fce7936c38ad8f0adef76d3bec",
+      "limitations": [
+        "This Windows host has .NET installed; not a clean-machine test.",
+        "Actual packaged NativeAOT Tick, storage and finite Vulkan replay; not physical input, subjective audio or power-loss qualification."
+      ]
+    },
+    "windows_bundle_contract": {
+      "passed": true,
+      "raw_evidence": {
+        "path": "build/gameplay-save-project-contract-windows.json",
+        "sha256": "dd86db7e011aafb284e55b3607d2eb1033f37c9d0e368f84d3c28f57d0db8622",
+        "bytes": 113374
+      },
+      "tests": 10,
+      "skipped": 1,
+      "real_artifact_supplied": true,
+      "synthetic_artifacts_are_metadata_only": true
+    }
+  },
+  "review_fixes": [
+    "Removed post-publication success-path allocations before no-throw runtime activation.",
+    "Kept receipt result and retained-generation observations under one slot lock.",
+    "Added explicit services ABI to packaged runtime metadata to reject mismatched same-version engines.",
+    "Audio replay oracle corrected from 1600 to 1536 frames: three complete 512-frame blocks, with the old partial tail discarded at replacement. No engine change for that correction."
+  ],
+  "earlier_failures": [
+    {
+      "kind": "fixture oracle",
+      "artifact": {
+        "path": "build/gameplay-save-world-player-native-gpu0/a1fb281a327449ad8553eb8b236ab1eb/evidence.json",
+        "sha256": "a41e87b6cfa621ec76c825460324df82e06ec0ecbba2351397f1f4d25e61fd24",
+        "bytes": 126289
+      }
+    },
+    {
+      "kind": "initial interface/include build integration",
+      "logs": [
+        {
+          "path": "build/gameplay-save-initial-build.log",
+          "sha256": "a15545252253c53af008bfe7d4408ecd0a7828d0acbd129c83dc20688a09b5b1",
+          "bytes": 5718
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Experimental fixed-entity logical snapshots with exact external content/module/schema binding; no arbitrary object serialization or general migrations.",
+    "Storage is synchronous and may hitch. Excluding serviced time from catch-up is not background I/O.",
+    "In-memory operation/retry histories and durable receipt history are bounded; unresolved publication can block progress.",
+    "Windows was locked: semantic/HWND and synthetic SDL tests do not qualify physical input, OS screenshots, general DPI/IME/accessibility or subjective audio.",
+    "Both laptop GPUs were exercised, not a broad device matrix; these small fixtures do not establish production performance.",
+    "Windows symlink tests skipped without required privilege. Exception/process-exit tests do not establish device power-loss durability.",
+    "Native-only Linux build passes; Windows host has .NET installed, so clean-machine native deployment is not qualified.",
+    "Console SDKs and production console execution remain unqualified."
+  ]
+}

@@ -13,10 +13,11 @@ RenderReport run_render_smoke(const RenderOptions&) {
 RenderReport run_render_scene(const RenderOptions& options, const SceneSnapshot&) {
     return run_render_smoke(options);
 }
-PlayerReport run_player(const PlayerOptions& options, Runtime& runtime) {
+PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
     PlayerReport report;
     report.render=run_render_smoke(options.render);
-    report.initial_tick=report.final_tick=runtime.inspect().tick;
+    report.initial_tick=report.final_tick=session.tick();
+    report.initial_session=report.final_session=session.identity();
     report.stop_reason="unavailable";
     return report;
 }

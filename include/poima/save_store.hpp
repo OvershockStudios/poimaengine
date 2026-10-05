@@ -37,6 +37,13 @@ struct WriteResult {
     bool replayed=false;
     bool cleanup_pending=false;
 };
+struct ReceiptObservation {
+    std::optional<WriteResult> receipt;
+    // These describe the same locked manifest as receipt. Zero/zero denotes
+    // no committed manifest. Absence outside this contiguous retained window
+    // cannot prove that an uncertain write never committed.
+    std::uint64_t current_generation=0,oldest_retained_generation=0;
+};
 enum class Boundary {
     payload_flushed,payload_directory_flushed,
     backup_flushed,backup_replaced,backup_directory_flushed,
@@ -56,6 +63,7 @@ public:
     explicit Store(std::filesystem::path root,FaultHook fault={});
     Status inspect() const;
     ReadResult read() const;
+    ReceiptObservation observe_receipt(const std::string& operation_id,const std::string& request_sha256) const;
     std::optional<WriteResult> lookup(const std::string& operation_id,const std::string& request_sha256) const;
     WriteResult write(std::uint64_t expected_generation,const std::string& operation_id,
                       const std::string& bytes,bool acknowledge_recovery=false,

@@ -76,6 +76,13 @@ Reply run_game(const GameLaunchOptions& options) {
         if(!options.render.capture.empty() && !options.report.empty())require(!world_detail::same_path_name(normalized(options.render.capture),normalized(options.report)),"Game capture and report must differ.");
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
         WorldSession world(game.world,WorldOpenMode::read_only_runtime,game.root);const auto session=id();
+        if(!options.save_root.empty()) {
+            require(options.save_root.find('\0')==std::string::npos,"Save root must be NUL-free.");
+            // CLI-relative paths resolve against the launch working directory.
+            // Do not canonicalize away aliases before the native storage checks.
+            const auto root=text_of(fs::absolute(path_of(options.save_root)).lexically_normal());
+            call(world,"save.configure",{{"request_id",id()},{"expected_generation",0},{"root",root}});
+        }
         call(world,"runtime.start",{{"session_id",session},{"revision",game.revision}});
         if(!game.gameplay_descriptor.empty())call(world,"runtime.gameplay.load_native",{
             {"session_id",session},{"request_id",id()},{"expected_tick",0},{"expected_revision",0},
@@ -89,12 +96,15 @@ Reply run_game(const GameLaunchOptions& options) {
         if(!options.replay.empty())params["sequence"]=std::move(sequence);else params["max_frames"]=options.max_frames;
         if(!game.input_profile.empty())params["input_profile"]=game.input_profile;
         const auto play=call(world,"runtime.play",std::move(params));
+        const auto current=world.runtime_status();
+        require(current.active,"Player finished without an active runtime to report.");
+        const auto& final_session=current.session_id;
         result={{"game",{{"name",game.name},{"manifest",text_of(normalized(options.manifest))}}},{"play",play},
-            {"runtime",call(world,"runtime.inspect",{{"session_id",session}})},
-            {"entities",{{game.controller,call(world,"runtime.entity",{{"session_id",session},{"id",game.controller}})},
-                         {game.camera,call(world,"runtime.entity",{{"session_id",session},{"id",game.camera}})}}}};
+            {"runtime",call(world,"runtime.inspect",{{"session_id",final_session}})},
+            {"entities",{{game.controller,call(world,"runtime.entity",{{"session_id",final_session},{"id",game.controller}})},
+                         {game.camera,call(world,"runtime.entity",{{"session_id",final_session},{"id",game.camera}})}}}};
         success=play.value("success",false);result["success"]=success;
-        if(!game.gameplay_descriptor.empty())result["gameplay"]=call(world,"runtime.gameplay.inspect",{{"session_id",session},{"include_schema",true}});
+        if(!game.gameplay_descriptor.empty())result["gameplay"]=call(world,"runtime.gameplay.inspect",{{"session_id",final_session},{"include_schema",true}});
         if(!success)diagnostics.push_back({{"code","game.play_failed"},{"message","Player stopped with an engine error; inspect result.play."}});
         output_path(options.report,game,options.replay);write_report(options.report,result);
     }catch(const std::exception& error) { success=false;diagnostics.push_back({{"code","game.failed"},{"message",error.what()}}); }

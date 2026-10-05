@@ -10,6 +10,7 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import struct
@@ -71,7 +72,7 @@ class GameplayProjects(unittest.TestCase):
         self.artifact = self.project / 'gameplay'
         self.artifact.mkdir()
         self.descriptor = self.artifact / 'native-gameplay.json'
-        self.target = json.loads((ARGS.runtime / 'runtime.json').read_text())['target_os'] if ARGS.runtime else 'Linux'
+        self.target = json.loads((ARGS.runtime / 'runtime.json').read_text())['target_os'] if ARGS.runtime else ('Windows' if ARGS.windows_interop or os.name == 'nt' else 'Linux')
 
     def tearDown(self):
         self.temp.cleanup()
@@ -100,7 +101,7 @@ class GameplayProjects(unittest.TestCase):
             {'name': 'Distance', 'kind': 'float64', 'offset': 8, 'bytes': 8},
             {'name': 'Rig', 'kind': 'entity', 'offset': 16, 'bytes': 16}]}
         descriptor = {'format': 'poima.native-gameplay', 'version': 1, 'engine_version': self.version,
-            'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 3,
+            'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 4,
             'entry': 'poima_gameplay_entry', 'library': name, 'identity': identity, 'type': 'Poima.Test.NativeMetadata',
             'schema': schema, 'files': [{'path': p.name, 'size': p.stat().st_size, 'sha256': digest(p), 'role': role}
                                       for p, role in [(library, 'library'), (notice, 'notice')]]}
@@ -134,7 +135,7 @@ class GameplayProjects(unittest.TestCase):
         good = self.artifact_fixture()
         variants = []
         for field, value in [('engine_version', '0.0.0'), ('version', 2), ('call_version', 2),
-                             ('services_version', 2), ('call_version', 1.0), ('services_version', True),
+                             ('services_version', 3), ('call_version', 1.0), ('services_version', True),
                              ('entry', 'other_export'), ('target_arch', 'arm64'), ('target_os', 'Other'),
                              ('type', ''), ('identity', 'different')]:
             value_doc = copy.deepcopy(good)
@@ -256,6 +257,7 @@ class GameplayProjects(unittest.TestCase):
         output = self.root / 'Wrong target'
         self.cli('project', 'build', native(self.manifest), '--runtime', native(ARGS.runtime), '--output', native(output), success=False)
         self.assertFalse(output.exists())
+
         # Metadata-only runtime fixture: no executable is loaded during export preflight.
         metadata_runtime = self.root / 'No native feature'
         metadata_runtime.mkdir()
@@ -267,6 +269,50 @@ class GameplayProjects(unittest.TestCase):
         self.artifact_fixture()
         self.cli('project', 'build', native(self.manifest), '--runtime', native(metadata_runtime), '--output', native(output), success=False)
         self.assertFalse(output.exists())
+
+    def test_native_runtime_services_abi_matches_at_export_and_bundle_inspection(self):
+        self.artifact_fixture()
+        runtime = self.root/'Metadata runtime'
+        (runtime/'bin').mkdir(parents=True)
+        notices = runtime/'share/poima'; notices.mkdir(parents=True)
+        for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
+            (notices/name).write_text('Original metadata-only test fixture.\n')
+        executable = 'bin/poima.exe' if self.target == 'Windows' else 'bin/poima'
+        (runtime/executable).write_bytes(b'Metadata-only runtime fixture; never executed.\n')
+        (runtime/executable).chmod(0o755)
+        spec = dict(format='poima.runtime', version=1, engine_version=self.version,
+                    target_os=self.target, target_arch='x86_64', executable=executable,
+                    gameplay_services_version=4,
+                    features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
+        path = runtime/'runtime.json'
+        path.write_text(json.dumps(spec))
+        source = tree(self.project)
+        bundle = self.root/'Matching ABI'
+        self.cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
+        self.cli('game', 'inspect', native(bundle/'game.json'))
+        game = json.loads((bundle/'game.json').read_text())
+        for index, value in enumerate([None, 3, 5, '4', True, 4.0, 0]):
+            with self.subTest(services_version=value):
+                changed = copy.deepcopy(spec)
+                if value is None: changed.pop('gameplay_services_version')
+                else: changed['gameplay_services_version'] = value
+                path.write_text(json.dumps(changed))
+                before = tree(runtime)
+                destination = self.root/f'ABI mismatch {index}'
+                self.cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(destination), success=False)
+                self.assertFalse(destination.exists(), 'ABI rejection published a bundle.')
+                self.assertEqual(tree(runtime), before)
+                # Recompute inventory to prove this is the semantic ABI guard,
+                # not ordinary tamper detection. No fixture binary executes.
+                bundled = bundle/'runtime/runtime.json'; bundled.write_bytes(path.read_bytes())
+                changed_game = copy.deepcopy(game)
+                entry = next(item for item in changed_game['files'] if item['path'] == 'runtime/runtime.json')
+                entry.update(size=bundled.stat().st_size, sha256=digest(bundled))
+                (bundle/'game.json').write_text(json.dumps(changed_game))
+                before_bundle = tree(bundle)
+                self.cli('game', 'inspect', native(bundle/'game.json'), success=False)
+                self.assertEqual(tree(bundle), before_bundle)
+        self.assertEqual(tree(self.project), source)
 
     @unittest.skipUnless(ARGS.runtime and ARGS.artifact, 'Requires a real published Native AOT artifact and installed runtime.')
     def test_real_published_artifact_exports_without_development_paths(self):

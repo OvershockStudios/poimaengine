@@ -5,6 +5,7 @@ import argparse
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -181,6 +182,32 @@ class ProjectContract(unittest.TestCase):
         self.run_cli('project', 'build', native(self.manifest), '--output', native(destination), '--runtime', native(runtime), success=False)
         self.assertEqual(tree(self.project), before)
         self.assertFalse(destination.exists(), 'Failed preflight published a partial game bundle.')
+
+    def test_legacy_runtime_descriptor_remains_usable_without_gameplay(self):
+        # Metadata-only runtime, never executed: this checks the no-gameplay
+        # compatibility branch independently of a developer's installed build.
+        runtime = self.root/'Legacy runtime'
+        (runtime/'bin').mkdir(parents=True)
+        notices = runtime/'share/poima'; notices.mkdir(parents=True)
+        for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
+            (notices/name).write_text('Original metadata-only test fixture.\n')
+        target = 'Windows' if args.windows_interop or os.name == 'nt' else 'Linux'
+        executable = 'bin/poima.exe' if target == 'Windows' else 'bin/poima'
+        (runtime/executable).write_bytes(b'Metadata-only runtime fixture; never executed.\n')
+        (runtime/executable).chmod(0o755)
+        spec = dict(format='poima.runtime', version=1, engine_version=self.run_cli('version')['version'],
+                    target_os=target, target_arch='x86_64', executable=executable,
+                    features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False))
+        source = tree(self.project)
+        for abi in (None, 3):
+            if abi is not None: spec['gameplay_services_version'] = abi
+            (runtime/'runtime.json').write_text(json.dumps(spec))
+            original = tree(runtime)
+            bundle = self.root/('No gameplay ABI '+str(abi))
+            self.run_cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
+            self.run_cli('game', 'inspect', native(bundle/'game.json'))
+            self.assertEqual(tree(runtime), original)
+        self.assertEqual(tree(self.project), source)
 
     @unittest.skipUnless(args.runtime, 'Requires explicit installed runtime root.')
     def test_export_inventory_inspection_tamper_and_source_unchanged(self):

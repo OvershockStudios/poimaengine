@@ -13,6 +13,9 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition&,const s
 void Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&, const std::vector<KinematicTarget>&,const std::vector<SoundCommand>&,const std::vector<AnimationCommand>&) { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
+void Runtime::gameplay_save_host(GameplaySaveEpoch,const GameplaySaveLedger*) { throw std::runtime_error("Simulation is not built."); }
+GameplaySaveQueue& Runtime::gameplay_saves() { throw std::runtime_error("Simulation is not built."); }
+const GameplaySaveQueue& Runtime::gameplay_saves() const { throw std::runtime_error("Simulation is not built."); }
 std::uint64_t Runtime::gameplay_revision() const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::gameplay_inspect() const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::gameplay_load(const GameplayConfig&,const std::string&) { throw std::runtime_error("Simulation is not built."); }

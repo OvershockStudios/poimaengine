@@ -29,3 +29,6 @@ __pycache__/
 /docs/VALIDATION_PLAN.md
 /docs/SETTINGS_INPUT.md
 /docs/SAVE_SYSTEM.md
+
+/tests/gameplay-save/bin/
+/tests/gameplay-save/obj/

@@ -49,12 +49,12 @@ poima::Reply run(int argc, char** argv) {
         poima::GameLaunchOptions options;options.manifest=argv[3];std::set<std::string_view> seen;
         for(int i=4;i<argc;++i) {
             const std::string_view key=argv[i];
-            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--width" && key!="--height" && key!="--samples"))return poima::usage_error("Unknown or repeated game run argument.");
+            if(!seen.insert(key).second || (key!="--gpu" && key!="--frames" && key!="--replay" && key!="--capture" && key!="--report" && key!="--save-root" && key!="--width" && key!="--height" && key!="--samples"))return poima::usage_error("Unknown or repeated game run argument.");
             if(++i>=argc)return poima::usage_error("Missing game run argument value.");
             const std::string_view value=argv[i];
-            if(key=="--replay" || key=="--capture" || key=="--report") {
+            if(key=="--replay" || key=="--capture" || key=="--report" || key=="--save-root") {
                 if(value.empty() || value.starts_with("--"))return poima::usage_error("Game file arguments need nonempty paths.");
-                if(key=="--replay")options.replay=value;else if(key=="--capture")options.render.capture=value;else options.report=value;continue;
+                if(key=="--replay")options.replay=value;else if(key=="--capture")options.render.capture=value;else if(key=="--save-root")options.save_root=value;else options.report=value;continue;
             }
             unsigned n=0;const auto parsed=std::from_chars(value.data(),value.data()+value.size(),n);
             if(parsed.ec!=std::errc{} || parsed.ptr!=value.data()+value.size())return poima::usage_error("Game numeric arguments require unsigned decimal integers.");

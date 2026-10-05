@@ -95,6 +95,46 @@
             return true;
         });
     }
+    std::string runtime_save_bytes() const {
+        const Json save={{"format","poima.world-save"},{"version",1},{"document",runtime_document_},{"snapshot",Json::parse(runtime_->save_snapshot(runtime_content_hash_))}};
+        auto bytes=save.dump();require(bytes.size()<=saves::maximum_checkpoint_bytes,"World save exceeds 64 MiB.",-32070);return bytes;
+    }
+    struct PreparedLoad {
+        FrozenContent frozen;
+        std::unique_ptr<Runtime> runtime;
+        std::optional<GameplayConfig> gameplay;
+        saves::Status storage;
+        std::string session;
+        std::set<std::string> used;
+        Json empty_receipts=Json::array(),start_params,start_result;
+    };
+    PreparedLoad prepare_runtime_load(const std::string& slot,std::uint64_t generation,bool allow_recovery,
+        std::string session,std::optional<GameplayConfig> config) {
+        require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
+        require(!used_runtime_ids_.contains(session),"Runtime replacement ID was already used.",-32010);
+        require(used_runtime_ids_.size()<10000,"Runtime session count limit reached; reopen the authoring process.");
+        auto stored=saves::Store(save_store_path(slot)).read();
+        require(stored.status.generation==generation,"Save slot generation conflict.",-32009);
+        require(!stored.status.recovered || allow_recovery,"Save recovery requires allow_recovery:true after inspection.",-32070);
+        PreparedLoad result;Json save;
+        try {
+            save=parse_world_save(stored.bytes);fields(save,{"format","version","document","snapshot"},{"format","version","document","snapshot"});
+            require(save.at("format")=="poima.world-save" && revision(save.at("version"))==1,"Unsupported world save format/version.",-32070);
+            const auto& document=save.at("document");require(document.dump().size()<=max_document_bytes,"Saved authored definition exceeds 16 MiB.",-32070);validate(document);
+            require(document.at("world_id")==doc_.at("world_id"),"Save belongs to a different world.",-32070);
+            result.frozen=freeze_content(document);
+        }catch(const std::exception& error) { throw Error(-32070,error.what()); }
+        result.runtime=Runtime::from_snapshot(result.frozen.definition,result.frozen.hash,save.at("snapshot").dump(),config);
+        configure_runtime_saves(*result.runtime);
+        result.gameplay=std::move(config);result.storage=std::move(stored.status);result.session=std::move(session);
+        result.used=used_runtime_ids_;result.used.insert(result.session);return result;
+    }
+    void activate_runtime_load(PreparedLoad& load) noexcept {
+        runtime_.swap(load.runtime);runtime_id_.swap(load.session);runtime_definition_=std::move(load.frozen.definition);
+        runtime_document_.swap(load.frozen.document);runtime_content_hash_.swap(load.frozen.hash);
+        runtime_gameplay_config_=std::move(load.gameplay);used_runtime_ids_.swap(load.used);
+        runtime_receipts_.swap(load.empty_receipts);runtime_start_params_.swap(load.start_params);runtime_start_result_.swap(load.start_result);
+    }
     Json save_dispatch(const std::string& method,const Json& params) {
         try { return save_operation(method,params); }
         catch(const Error&) { throw; }
@@ -108,6 +148,7 @@
         if(method=="save.configure") {
             fields(params,{"request_id","expected_generation","root"},{"request_id","expected_generation","root"});identifier(params.at("request_id"));revision(params.at("expected_generation"));
             auto normalized=params;normalized["method"]=method;if(auto replay=save_retry(normalized))return *replay;
+            require(!runtime_ || !runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before reconfiguring storage.",-32070);
             require(params.at("expected_generation")==save_configuration_generation_,"Save configuration generation conflict.",-32009);
             require(save_configuration_generation_<max_revision,"Save configuration generation limit reached.");fs::path root;
             if(!params.at("root").is_null()) {
@@ -119,7 +160,9 @@
                 require(!read_only_ || !save_inside(root,protected_root_),"Save root must be outside the immutable game bundle.",-32070);
             }
             Json result={{"generation",save_configuration_generation_+1},{"root",root.empty() ? Json(nullptr) : Json(path_text(root))},{"replayed",false}};
-            auto receipts=prepare_save_receipt(normalized,result);save_root_.swap(root);++save_configuration_generation_;save_receipts_.swap(receipts);return result;
+            auto receipts=prepare_save_receipt(normalized,result);save_root_.swap(root);++save_configuration_generation_;save_receipts_.swap(receipts);
+            if(runtime_)runtime_->gameplay_saves().configure(!save_root_.empty(),save_configuration_generation_);
+            return result;
         }
         if(method=="save.inspect") {
             fields(params,{"slot"},{"slot"});const auto slot=save_slot(params.at("slot"));save_configured();return save_status(saves::Store(save_store_path(slot)).inspect(),slot);
@@ -139,8 +182,8 @@
             if(const auto receipt=store.lookup(request,request_hash))return saved_write_result(*receipt,slot);
             require(runtime_ && params.at("session_id")==runtime_id_,"Save runtime session conflict.",-32009);require(params.at("expected_tick")==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             require(params.at("expected_gameplay_revision")==runtime_->gameplay_revision(),"Gameplay revision conflict.",-32009);
-            const Json save={{"format","poima.world-save"},{"version",1},{"document",runtime_document_},{"snapshot",Json::parse(runtime_->save_snapshot(runtime_content_hash_))}};
-            const auto bytes=save.dump();require(bytes.size()<=saves::maximum_checkpoint_bytes,"World save exceeds 64 MiB.",-32070);
+            require(!runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before an external write.",-32070);
+            const auto bytes=runtime_save_bytes();
             return saved_write_result(store.write(revision(params.at("expected_generation")),request,bytes,normalized.at("acknowledge_recovery"),request_hash),slot);
         }
         if(method=="save.load") {
@@ -155,31 +198,22 @@
                 require(!params.at("expected_session_id").is_null() && identifier(params.at("expected_session_id"))==runtime_id_,"Runtime replacement session conflict.",-32009);
                 require(revision(params.at("expected_tick"))==runtime_->inspect().tick && revision(params.at("expected_gameplay_revision"))==runtime_->gameplay_revision(),"Runtime replacement clock/revision conflict.",-32009);
             } else require(params.at("expected_session_id").is_null() && params.at("expected_tick").is_null() && params.at("expected_gameplay_revision").is_null(),"Stopped restore requires null current runtime guards.",-32009);
-            require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
-            require(!used_runtime_ids_.contains(new_id),"Runtime replacement ID was already used.",-32010);
-            require(used_runtime_ids_.size()<10000,"Runtime session count limit reached; reopen the authoring process.");
-            const auto stored=saves::Store(save_store_path(slot)).read();
-            require(stored.status.generation==revision(params.at("expected_generation")),"Save slot generation conflict.",-32009);
-            require(!stored.status.recovered || normalized.at("allow_recovery").get<bool>(),"Save recovery requires allow_recovery:true after inspection.",-32070);
-            Json save;FrozenContent frozen;
-            try {
-                save=parse_world_save(stored.bytes);fields(save,{"format","version","document","snapshot"},{"format","version","document","snapshot"});
-                require(save.at("format")=="poima.world-save" && revision(save.at("version"))==1,"Unsupported world save format/version.",-32070);
-                const auto& document=save.at("document");require(document.dump().size()<=max_document_bytes,"Saved authored definition exceeds 16 MiB.",-32070);validate(document);
-                require(document.at("world_id")==doc_.at("world_id"),"Save belongs to a different world.",-32070);
-                frozen=freeze_content(document);
-            }catch(const std::exception& error) { throw Error(-32070,error.what()); }
+            require(!runtime_ || !runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before external replacement.",-32070);
             auto config=runtime_gameplay_config_;
             if(params.contains("gameplay")) { if(params.at("gameplay").is_null())config.reset();else config=save_gameplay(params.at("gameplay")); }
-            auto candidate=Runtime::from_snapshot(frozen.definition,frozen.hash,save.at("snapshot").dump(),config);
-            Json result={{"session_id",new_id},{"tick",candidate->inspect().tick},{"authored_revision",frozen.definition.authored_revision},{"current_authored_revision",doc_.at("revision")},
+            auto prepared=prepare_runtime_load(slot,revision(params.at("expected_generation")),normalized.at("allow_recovery"),new_id,std::move(config));
+            const auto& frozen=prepared.frozen;const auto& stored=prepared.storage;
+            Json result={{"session_id",new_id},{"tick",prepared.runtime->inspect().tick},{"authored_revision",frozen.definition.authored_revision},{"current_authored_revision",doc_.at("revision")},
                 {"source_stale",frozen.document.at("revision")!=doc_.at("revision") || frozen.document.at("entities")!=doc_.at("entities")},
-                {"slot",slot},{"generation",stored.status.generation},{"selected_generation",stored.status.selected->generation},{"recovered",stored.status.recovered},
-                {"recovery_reason",stored.status.recovery_reason},{"replayed",false}};
-            auto receipts=prepare_save_receipt(normalized,result);auto used=used_runtime_ids_;used.insert(new_id);Json empty=Json::array(),start_params,start_result;
+                {"slot",slot},{"generation",stored.generation},{"selected_generation",stored.selected->generation},{"recovered",stored.recovered},
+                {"recovery_reason",stored.recovery_reason},{"replayed",false}};
+            auto receipts=prepare_save_receipt(normalized,result);
             // Every allocation/validation precedes the no-throw activation.
-            runtime_.swap(candidate);runtime_id_.swap(new_id);runtime_definition_=std::move(frozen.definition);runtime_document_.swap(frozen.document);runtime_content_hash_.swap(frozen.hash);
-            runtime_gameplay_config_=std::move(config);used_runtime_ids_.swap(used);runtime_receipts_.swap(empty);runtime_start_params_.swap(start_params);runtime_start_result_.swap(start_result);save_receipts_.swap(receipts);
+            GameplaySaveRestore restored;restored.destination_epoch=prepared.runtime->gameplay_saves().epoch();
+            restored.committed_source_tick=runtime_ ? runtime_->inspect().tick : 0;restored.restored_tick=prepared.runtime->inspect().tick;
+            restored.generation=stored.selected->generation;restored.recovered=stored.recovered;
+            if(!gameplay_save_ledger_.set_restore(restored))throw Error(-32070,"Cannot publish restore metadata.");
+            activate_runtime_load(prepared);save_receipts_.swap(receipts);
             return result;
         }
         throw Error(-32601,"Unknown save method.");

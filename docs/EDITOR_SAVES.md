@@ -31,6 +31,6 @@ Changing the selected root/slot or inspecting a new observation clears recovery 
 
 ## Current limits
 
-The window operates on named slots; it does not yet provide a slot browser, thumbnails, autosave scheduling, persistent root preferences or cloud/platform storage. Saves and loads are synchronous and require paused editor playback. The current format binds a fixed supported entity set and external assets, with a 64 MiB total bound. It is not an arbitrary-object serializer or a guarantee of identical future physics trajectories. Typed save/load requests from gameplay callbacks remain separate work.
+The window operates on named slots; it does not yet provide a slot browser, thumbnails, autosave scheduling, persistent root preferences or cloud/platform storage. Saves and loads are synchronous and require paused editor playback. The current format binds a fixed supported entity set and external assets, with a 64 MiB total bound. It is not an arbitrary-object serializer or a guarantee of identical future physics trajectories. [Typed gameplay requests](GAMEPLAY_SAVES.md) can also save after committed ticks; gameplay loads pause the editor and clear old input.
 
 Qualification uses actual editor textboxes and routed button events, fresh editor processes, real C# state and deliberately damaged test-owned files. Visual-content captures render the attached Avalonia window; they do not qualify OS chrome, a desktop compositor, physical input or general accessibility. [Recorded evidence](evidence/m2-editor-saves.json).

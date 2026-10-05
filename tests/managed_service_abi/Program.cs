@@ -21,7 +21,17 @@ using Poima.ManagedBridge;
     public nint Entity, Raycast, Move, Sound;
     public delegate* unmanaged[Cdecl]<void*, Id*, Animation*, void*, int> Get;
     public delegate* unmanaged[Cdecl]<void*, Command*, void*, int> Set;
+    public delegate* unmanaged[Cdecl]<void*, SaveInfo*, void*, int> SaveInfo;
+    public delegate* unmanaged[Cdecl]<void*, SaveRequest*, SaveEnqueue*, void*, int> SaveRequest;
+    public delegate* unmanaged[Cdecl]<void*, Ticket*, SaveResult*, void*, int> SaveResult;
 }
+[StructLayout(LayoutKind.Sequential)] struct Ticket { public ulong High,Low,Sequence; }
+[StructLayout(LayoutKind.Sequential)] unsafe struct SaveRequest { public uint Kind,SlotBytes;public byte* Slot;public ulong Expected;public uint HasExpected,Recovery; }
+[StructLayout(LayoutKind.Sequential)] struct SaveEnqueue { public Ticket Ticket;public uint Rejection,Reserved; }
+[StructLayout(LayoutKind.Sequential)] unsafe struct SaveResult
+{ public Ticket Ticket;public uint Kind,State;public ulong Requested,Committed,Generation;public uint Recovered;public int Error;public ulong High,Low,Tick;public fixed byte Diagnostic[256]; }
+[StructLayout(LayoutKind.Sequential)] struct SaveInfo
+{ public ulong High,Low,Configuration;public uint Enabled,RestorePresent;public Ticket Ticket;public ulong DestinationHigh,DestinationLow,SourceTick,RestoredTick,Generation;public uint Recovered,Reserved; }
 [StructLayout(LayoutKind.Sequential)] struct Id { public ulong High, Low; }
 [StructLayout(LayoutKind.Sequential)] struct Command
 { public Id Entity; public double Time, Speed; public int Clip; public uint Loop, Playing, BlendTicks; }
@@ -36,7 +46,7 @@ using Poima.ManagedBridge;
     public uint Present, Loop, Playing, TransitionPresent, Reserved; public Transition Transition;
 }
 [StructLayout(LayoutKind.Sequential)] public struct ProbeState { public int Count; }
-[GameModule("poima-test-services-v3")]
+[GameModule("poima-test-services-v4")]
 public sealed class ProbeGame : Game<ProbeState>
 {
     public override void Initialize(ref ProbeState state) { state.Count=7; }
@@ -56,11 +66,33 @@ public sealed class ProbeGame : Game<ProbeState>
             throw new Exception("Frozen source must hide clock metadata.");
         if(context.GetAnimation(new(11,24))!=null)throw new Exception("Non-rig must be null.");
         context.SetAnimation(new(11,22),null,.375,1.5,false,true,17);
+        var saves=context.Saves;
+        if(!saves.Enabled || saves.Epoch!=new SaveEpoch(-1,22) || saves.ConfigurationGeneration!=19 || saves.LastRestore is not {} restore ||
+            restore.InitiatingTicket!=new SaveTicket(long.MinValue,21,6) || restore.DestinationEpoch!=new SaveEpoch(-1,22) ||
+            restore.CommittedSourceTick!=80 || restore.RestoredTick!=14 || restore.Generation!=3 || !restore.Recovered)
+            throw new Exception("Save capability/restore ABI mismatch.");
+        var complete=context.GetSaveResult(new(-1,22,7));
+        if(complete.Ticket!=new SaveTicket(-1,22,7) || complete.Kind!=SaveKind.Load || complete.State!=SaveOperationState.Succeeded ||
+            complete.RequestedTick!=22 || complete.CommittedTick!=27 || complete.Generation!=5 || !complete.Recovered || complete.ErrorCode!=0 ||
+            complete.RestoredEpoch!=new SaveEpoch(long.MinValue,33) || complete.RestoredTick!=12 || complete.Diagnostic!="restored" || !complete.IsTerminal)
+            throw new Exception("Save result ABI mismatch.");
+        var uncertain=context.GetSaveResult(new(-1,22,8));
+        if(uncertain.State!=SaveOperationState.Resolving || uncertain.ErrorCode!=-32070 || uncertain.Diagnostic!="uncertain" || uncertain.IsTerminal || uncertain.RestoredEpoch!=null || uncertain.RestoredTick!=null)
+            throw new Exception("Uncertain save became terminal.");
+        if(context.GetSaveResult(default).State!=SaveOperationState.Expired)throw new Exception("Unknown save token did not expire.");
+        if(context.RequestSave("quick",42)!=new SaveTicket(-1,22,101))throw new Exception("Save enqueue mismatch.");
+        var queued=context.TryRequestLoad("chapter-1",null,true);
+        if(!queued.Accepted || queued.Ticket!=new SaveTicket(-1,22,102))throw new Exception("Load enqueue mismatch.");
+        if(context.TryRequestSave("bad/path").Rejection!=SaveRequestRejection.Invalid || context.TryRequestLoad("quick",-1).Accepted)
+            throw new Exception("Invalid request escaped SDK bounds.");
+        bool rejected=false;
+        try { context.RequestLoad("busy"); }catch(SaveRequestException error) { rejected=error.Rejection==SaveRequestRejection.Busy; }
+        if(!rejected)throw new Exception("Rejected request lost its typed reason.");
     }
 }
 static unsafe class Program
 {
-    static int gets, sets;
+    static int gets, sets,infos,requests,results;
     static bool badPayload;
     [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
     static int Unused() => -1;
@@ -80,6 +112,45 @@ static unsafe class Program
             value->Time!=.375 || value->Speed!=1.5 || value->Loop!=0 || value->Playing!=1 || value->BlendTicks!=17)badPayload=true;
         return 0;
     }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Info(void* context,SaveInfo* output,void* error)
+    {
+        ++infos;if((nint)context!=0x1234)badPayload=true;
+        *output=new(){High=ulong.MaxValue,Low=22,Configuration=19,Enabled=1,RestorePresent=1,
+            Ticket=new(){High=1UL<<63,Low=21,Sequence=6},DestinationHigh=ulong.MaxValue,DestinationLow=22,SourceTick=80,RestoredTick=14,Generation=3,Recovered=1};
+        return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Request(void* context,SaveRequest* request,SaveEnqueue* output,void* error)
+    {
+        ++requests;if((nint)context!=0x1234 || request->SlotBytes>64) {badPayload=true;return -1;}
+        string slot=Encoding.UTF8.GetString(new ReadOnlySpan<byte>(request->Slot,(int)request->SlotBytes));
+        if(slot=="quick") {
+            if(request->Kind!=1 || request->Expected!=42 || request->HasExpected!=1 || request->Recovery!=0)badPayload=true;
+            *output=new(){Ticket=new(){High=ulong.MaxValue,Low=22,Sequence=101}};
+        } else if(slot=="chapter-1") {
+            if(request->Kind!=2 || request->Expected!=0 || request->HasExpected!=0 || request->Recovery!=1)badPayload=true;
+            *output=new(){Ticket=new(){High=ulong.MaxValue,Low=22,Sequence=102}};
+        } else if(slot=="busy")*output=new(){Rejection=2};
+        else {badPayload=true;return -1;}
+        return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Result(void* context,Ticket* ticket,SaveResult* output,void* error)
+    {
+        ++results;if((nint)context!=0x1234)badPayload=true;
+        *output=new(){Ticket=*ticket};
+        if(ticket->Sequence==0)return 0;
+        if(ticket->High!=ulong.MaxValue || ticket->Low!=22)badPayload=true;
+        if(ticket->Sequence==7) {
+            output->Kind=2;output->State=3;output->Requested=22;output->Committed=27;output->Generation=5;output->Recovered=1;output->High=1UL<<63;output->Low=33;output->Tick=12;
+            Encoding.UTF8.GetBytes("restored",new Span<byte>(output->Diagnostic,256));
+        }else if(ticket->Sequence==8) {
+            output->Kind=1;output->State=2;output->Error=-32070;
+            Encoding.UTF8.GetBytes("uncertain",new Span<byte>(output->Diagnostic,256));
+        }else badPayload=true;
+        return 0;
+    }
     static void Check(bool condition,string message) { if(!condition)throw new Exception(message); }
     static string Output(byte* output) => Marshal.PtrToStringUTF8((nint)output)!;
     static void Reject(Call* call,List<string> checks,string name,Services candidate,bool nullServices=false)
@@ -88,7 +159,7 @@ static unsafe class Program
         int before=((ProbeState*)call->State)->Count;
         Check(Entry.Invoke((nint)call,sizeof(Call))!=0,$"{name} unexpectedly accepted.");
         Check(Output(call->Output).Contains("Gameplay service"),$"{name}: wrong error {Output(call->Output)}");
-        Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0,$"{name} invoked gameplay or callbacks.");
+        Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0 && infos==0 && requests==0 && results==0,$"{name} invoked gameplay or callbacks.");
         checks.Add(name);
     }
     static int Main(string[] args)
@@ -96,7 +167,8 @@ static unsafe class Program
         var checks=new List<string>();
         try
         {
-            Check(sizeof(Call)==80 && sizeof(Services)==64 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120,"Independent ABI sizes.");
+            Check(sizeof(Call)==80 && sizeof(Services)==88 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
+                sizeof(Ticket)==24 && sizeof(SaveRequest)==32 && sizeof(SaveEnqueue)==32 && sizeof(SaveResult)==344 && sizeof(SaveInfo)==104,"Independent ABI sizes.");
             byte* output=stackalloc byte[65536]; byte* state=stackalloc byte[sizeof(ProbeState)];
             var request=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(ProbeGame).FullName})+"\0");
             Call call=new(){Version=1,Operation=1,Output=output,OutputCapacity=65536};
@@ -109,18 +181,21 @@ static unsafe class Program
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             Check(((ProbeState*)state)->Count==7,"Initialize state.");
             nint unused=(nint)(delegate* unmanaged[Cdecl]<int>)&Unused;
-            Services good=new(){Version=3,Bytes=64,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set};
+            Services good=new(){Version=4,Bytes=88,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result};
             call.Operation=3;call.Tick=123;
             Reject(&call,checks,"null services rejected before Tick",good,true);
-            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(2,64),(3,48),(3,63),(3,65),(4,64),(3,0)})
+            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,89),(5,88),(4,0)})
             { var candidate=good;candidate.Version=pair.Version;candidate.Bytes=pair.Bytes;Reject(&call,checks,$"services {pair.Version}/{pair.Bytes} rejected before Tick",candidate); }
             var missing=good;missing.Get=null;Reject(&call,checks,"null animation get rejected",missing);
             missing=good;missing.Set=null;Reject(&call,checks,"null animation set rejected",missing);
             missing=good;missing.Sound=0;Reject(&call,checks,"null prefix callback rejected",missing);
+            missing=good;missing.SaveInfo=null;Reject(&call,checks,"null save info rejected",missing);
+            missing=good;missing.SaveRequest=null;Reject(&call,checks,"null save request rejected",missing);
+            missing=good;missing.SaveResult=null;Reject(&call,checks,"null save result rejected",missing);
             call.Services=&good;
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
-            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && !badPayload,"Successful v3 invocation payload/state mismatch.");
-            checks.Add("matching v3 transfers state, transition, nullable rest, frozen metadata and command correctly");
+            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && !badPayload,"Successful v4 invocation payload/state mismatch.");
+            checks.Add("matching v4 transfers animation, typed save requests/results, uncertainty, restore metadata and rejection correctly");
             call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             call.Operation=5;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             using var collected=JsonDocument.Parse(Output(output));

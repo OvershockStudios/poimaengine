@@ -90,6 +90,8 @@ int main(int argc,char** argv) {
         Workspace workspace(base);const auto path=workspace.root/"basic";Store store(path);
         check(!store.inspect().exists && !fs::exists(path),"Inspect created a missing save slot.");
         check(!store.lookup(id(1),hash("A")) && !fs::exists(path),"Lookup created a missing save slot.");
+        const auto absent=store.observe_receipt(id(1),hash("A"));
+        check(!absent.receipt && absent.current_generation==0 && absent.oldest_retained_generation==0 && !fs::exists(path),"Missing receipt observation created storage or a manifest window.");
         rejects([&]{store.read();},ErrorKind::io);
         rejects([&]{store.write(0,"bad","A");},ErrorKind::invalid);
         check(!fs::exists(path),"Invalid request created slot storage.");
@@ -98,6 +100,8 @@ int main(int argc,char** argv) {
         check(first.committed.generation==1 && first.committed.verified && !first.replayed && payloads(path)==1,"Initial save metadata differs.");
         check(store.read().bytes==binary,"Opaque binary checkpoint bytes changed.");
         check(store.lookup(id(1),request)->replayed,"Persisted request lookup failed.");
+        const auto first_observation=store.observe_receipt(id(1),request);
+        check(first_observation.receipt && first_observation.current_generation==1 && first_observation.oldest_retained_generation==1,"First receipt window differs from locked manifest.");
         rejects([&]{store.lookup(id(1),hash("different"));},ErrorKind::reused_id);
         check(store.write(0,id(1),binary,false,request).replayed,"Exact write retry was not recognized.");
         rejects([&]{store.write(0,id(1),"changed",false,request);},ErrorKind::reused_id);
@@ -127,13 +131,25 @@ int main(int argc,char** argv) {
         const auto fallback=manifest_store.read();check(fallback.bytes=="A" && fallback.status.manifest_recovered && fallback.status.recovered,"Previous committed manifest recovery failed.");
         rejects([&]{manifest_store.write(1,id(3),"C",true);},ErrorKind::recovery_required);
         rejects([&]{manifest_store.lookup(id(3),hash("C"));},ErrorKind::recovery_required);
+        rejects([&]{manifest_store.observe_receipt(id(3),hash("C"));},ErrorKind::recovery_required);
         check(manifest_store.lookup(id(1),hash("A"))->replayed,"Known prior receipt was lost during read-only manifest recovery.");
+        const auto recovered_receipt=manifest_store.observe_receipt(id(1),hash("A"));
+        check(recovered_receipt.receipt && recovered_receipt.receipt->status.manifest_recovered && recovered_receipt.current_generation==1 && recovered_receipt.oldest_retained_generation==1,"Recovered manifest lost its known receipt/window.");
         check(read_file(manifest_path/"current.json")==corrupted,"Manifest recovery overwrote damaged evidence.");
         overwrite(manifest_path/"previous.json","also broken");rejects([&]{manifest_store.read();},ErrorKind::corrupt);
 
         const auto receipt_path=workspace.root/"receipts";Store receipt_store(receipt_path);
         for(unsigned i=0;i<35;++i)receipt_store.write(i,id(i+1),std::to_string(i));
         check(!receipt_store.lookup(id(1),hash("0")),"Receipt ring exceeded its bounded history.");
+        const auto evicted=receipt_store.observe_receipt(id(1),hash("0"));
+        check(!evicted.receipt && evicted.current_generation==35 && evicted.oldest_retained_generation==4,"Evicted receipt lost its retained-window bounds.");
+        const auto retained=receipt_store.observe_receipt(id(4),hash("3"));
+        check(retained.receipt && retained.receipt->committed.generation==4 && retained.current_generation==35 && retained.oldest_retained_generation==4,"Oldest retained receipt observation is inconsistent.");
+        const auto missing=receipt_store.observe_receipt(id(400),hash("never written"));
+        check(!missing.receipt && missing.current_generation==35 && missing.oldest_retained_generation==4,"Absent receipt did not expose a trustworthy window.");
+        // A possible commit at generation 1 has been evicted; a possible commit
+        // at 35 is covered, so its absence proves no such operation committed.
+        check(1<evicted.oldest_retained_generation && 35>=missing.oldest_retained_generation,"Uncertain write retention decision cannot distinguish eviction from known absence.");
         rejects([&]{receipt_store.write(0,id(1),"0");},ErrorKind::conflict);
         check(receipt_store.lookup(id(4),hash("3"))->committed.generation==4 && payloads(receipt_path)==2,"Bounded receipt tail or payload retention differs.");
         rejects([&]{receipt_store.write(35,id(36),std::string(maximum_checkpoint_bytes+1,'x'));},ErrorKind::invalid);
@@ -157,7 +173,7 @@ int main(int argc,char** argv) {
             failure_boundary(workspace.root/("exception-"+std::to_string(i)),boundaries[i],false);
             failure_boundary(workspace.root/("crash-"+std::to_string(i)),boundaries[i],true);
         }
-        std::cout<<"Save store passed: binary round-trip, generation/retry guards, 32 receipts, two payloads, corruption recovery, links/locking, 9 exception and 9 process-crash boundaries. No power-loss qualification claimed.\n";
+        std::cout<<"Save store passed: binary round-trip, generation/retry guards, 32 receipts with locked observation/eviction bounds, two payloads, corruption recovery, links/locking, 9 exception and 9 process-crash boundaries. No power-loss qualification claimed.\n";
         return 0;
     }catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }

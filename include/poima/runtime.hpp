@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include "poima/gameplay.hpp"
+#include "poima/gameplay_save.hpp"
 #include "poima/audio.hpp"
 #include <memory>
 #include <optional>
@@ -157,6 +158,12 @@ public:
     void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    // The serialized owner installs a fresh epoch and a ledger that outlives
+    // this runtime. Direct runtimes start with saving disabled. Pending intents
+    // are part of whole-batch rollback; storage is serviced only by the owner.
+    void gameplay_save_host(GameplaySaveEpoch epoch,const GameplaySaveLedger* ledger);
+    GameplaySaveQueue& gameplay_saves();
+    const GameplaySaveQueue& gameplay_saves() const;
     std::uint64_t gameplay_revision() const;
     std::string gameplay_inspect() const;
     void gameplay_load(const GameplayConfig& config,const std::string& values="{}");

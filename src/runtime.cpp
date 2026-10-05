@@ -122,6 +122,8 @@ struct Runtime::Impl {
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
     std::uint64_t game_revision=0;
+    GameplaySaveQueue save_queue;
+    const GameplaySaveLedger* save_ledger=nullptr;
     std::vector<KinematicTarget> game_commands;
     std::vector<AnimationCommand> game_animation_commands;
     SoundState sounds;
@@ -361,6 +363,44 @@ struct Runtime::Impl {
     template<class F> static int32_t callback(PoimaGameError* error,F&& f) noexcept {
         try { f();return 0; }catch(const std::exception& e) { std::snprintf(error->text,sizeof(error->text),"%s",e.what());return -1; }catch(...) { std::snprintf(error->text,sizeof(error->text),"Native gameplay callback failed.");return -1; }
     }
+    static PoimaGameSaveTicket save_ticket(GameplaySaveTicket ticket) noexcept {
+        return {ticket.epoch.high,ticket.epoch.low,ticket.sequence};
+    }
+    static int32_t POIMA_CALL save_info(void* context,PoimaGameSaveInfo* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(output,"Save capability output is absent.");auto& self=*static_cast<Impl*>(context);*output={};
+            const auto epoch=self.save_queue.epoch();output->high=epoch.high;output->low=epoch.low;
+            output->enabled=self.save_queue.enabled();output->configuration_generation=self.save_queue.configuration_generation();
+            if(self.save_ledger)if(const auto restored=self.save_ledger->last_restore(epoch)) {
+                output->restore_present=1;output->initiating_ticket=save_ticket(restored->initiating_ticket);
+                output->destination_high=restored->destination_epoch.high;output->destination_low=restored->destination_epoch.low;
+                output->committed_source_tick=restored->committed_source_tick;output->restored_tick=restored->restored_tick;
+                output->generation=restored->generation;output->recovered=restored->recovered;
+            }
+        });
+    }
+    static int32_t POIMA_CALL save_request(void* context,const PoimaGameSaveRequest* request,PoimaGameSaveEnqueue* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(request && output,"Save request/output is absent.");*output={};
+            if(!request->slot || request->slot_bytes<1 || request->slot_bytes>64 || request->has_expected_generation>1 || request->allow_recovery>1 ||
+                (!request->has_expected_generation && request->expected_generation!=0)) { output->rejection=static_cast<uint32_t>(GameplaySaveRejection::invalid);return; }
+            auto& self=*static_cast<Impl*>(context);
+            const auto accepted=self.save_queue.enqueue(static_cast<GameplaySaveKind>(request->kind),std::string_view(request->slot,request->slot_bytes),
+                request->has_expected_generation ? std::optional<std::uint64_t>(request->expected_generation) : std::nullopt,request->allow_recovery!=0,self.tick);
+            output->ticket=save_ticket(accepted.ticket);output->rejection=static_cast<uint32_t>(accepted.rejection);
+        });
+    }
+    static int32_t POIMA_CALL save_result(void* context,const PoimaGameSaveTicket* ticket,PoimaGameSaveResult* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(ticket && output,"Save result ticket/output is absent.");auto& self=*static_cast<Impl*>(context);*output={};
+            const auto result=self.save_queue.query({{ticket->high,ticket->low},ticket->sequence},self.save_ledger);
+            output->ticket=save_ticket(result.request.ticket);output->kind=static_cast<uint32_t>(result.request.kind);output->state=static_cast<uint32_t>(result.state);
+            output->requested_tick=result.request.requested_tick;output->committed_tick=result.request.committed_tick;
+            output->generation=result.completion.generation;output->recovered=result.completion.recovered;output->error_code=result.completion.error_code;
+            output->restored_high=result.completion.restored_epoch.high;output->restored_low=result.completion.restored_epoch.low;output->restored_tick=result.completion.restored_tick;
+            std::copy(result.completion.diagnostic.begin(),result.completion.diagnostic.end(),output->diagnostic);
+        });
+    }
     static int32_t POIMA_CALL get_entity(void* context,const PoimaEntityId* id,PoimaGameEntity* output,PoimaGameError* error) {
         return callback(error,[&] {
             const auto state=static_cast<Impl*>(context)->owner->entity(gameplay_id(*id));
@@ -450,6 +490,8 @@ struct Runtime::Impl {
         for(auto e:characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({c.yaw,c.pitch}); }
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
+        require(!save_queue.pending() || !save_queue.pending()->committed,"Resolve the pending save operation before another simulation batch.");
+        const auto save_checkpoint=save_queue;
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;
         auto animation_checkpoint=animations->checkpoint();
@@ -488,7 +530,7 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    const PoimaGameServices services{3,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation};
+                    const PoimaGameServices services{4,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result};
                     game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                     auto commands=prepare_motions(game_commands);
                     for(auto& [e,motion]:commands) {
@@ -525,7 +567,9 @@ struct Runtime::Impl {
                 ++tick;animation_locals();sync();
             }
             sync();
+            require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
         } catch(...) {
+            save_queue=save_checkpoint;
             animations->restore(animation_checkpoint);
             for(std::size_t i=0;i<order.size();++i)registry.get<Node>(order[i]).local=local_checkpoint[i];
             sounds=std::move(sound_checkpoint);
@@ -621,14 +665,23 @@ std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     }
     return result;
 }
+void Runtime::gameplay_save_host(GameplaySaveEpoch epoch,const GameplaySaveLedger* ledger) {
+    require(epoch.valid() && ledger,"Gameplay save host requires a nonempty epoch and owner ledger.");
+    require(!impl_->save_queue.pending(),"Cannot replace a save host while an operation is pending.");
+    impl_->save_queue=GameplaySaveQueue(epoch);impl_->save_ledger=ledger;
+}
+GameplaySaveQueue& Runtime::gameplay_saves() { return impl_->save_queue; }
+const GameplaySaveQueue& Runtime::gameplay_saves() const { return impl_->save_queue; }
 std::uint64_t Runtime::gameplay_revision() const { return impl_->game_revision; }
 std::string Runtime::gameplay_inspect() const { return impl_->game ? impl_->game->inspect() : "null"; }
 void Runtime::gameplay_load(const GameplayConfig& config,const std::string& values) {
+    require(!impl_->save_queue.pending(),"Resolve pending gameplay save before code reload.");
     require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     if(config.native_aot)validate_gameplay_values(config.native_schema,values);
     auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);impl_->game.swap(candidate);++impl_->game_revision;
 }
 void Runtime::gameplay_edit(const std::string& values) {
+    require(!impl_->save_queue.pending(),"Resolve pending gameplay save before field editing.");
     require(impl_->game!=nullptr,"No gameplay module is loaded.");require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     impl_->game->edit(values);++impl_->game_revision;
 }

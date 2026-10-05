@@ -8,7 +8,8 @@
 #include <stdexcept>
 namespace poima {
 class PlayerAudio {
-    AudioStream mixer_;
+    std::unique_ptr<AudioStream> mixer_;
+    AudioStreamStats retired_;
     SDL_AudioStream* device_=nullptr;
     PlayerAudioReport report_;
     bool paused_=true,started_=false;
@@ -32,7 +33,7 @@ class PlayerAudio {
         if(!started_ && queued()>=2048*8) { check(SDL_ResumeAudioStreamDevice(device_));started_=true;paused_=false; }
     }
 public:
-    PlayerAudio(Runtime& runtime,const std::string& listener):mixer_(runtime.inspect().tick,runtime.audio_snapshot(listener)) {
+    explicit PlayerAudio(const PlayerAudioState& state):mixer_(std::make_unique<AudioStream>(state.tick,state.snapshot)) {
         check(SDL_InitSubSystem(SDL_INIT_AUDIO));SDL_AudioSpec spec{SDL_AUDIO_F32,2,static_cast<int>(audio_rate)};
         device_=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
         if(!device_) { const std::string error=SDL_GetError();SDL_QuitSubSystem(SDL_INIT_AUDIO);throw std::runtime_error(error); }
@@ -44,12 +45,28 @@ public:
         if(active && paused_) { check(SDL_ResumeAudioStreamDevice(device_));paused_=false; }
         else if(!active && !paused_) { check(SDL_PauseAudioStreamDevice(device_));paused_=true; }
     }
-    void advance(Runtime& runtime,const std::string& listener) {
-        submit(mixer_.advance(runtime.inspect().tick,runtime.audio_snapshot(listener),runtime.sound_state().voices()));
+    void discard_pending() {
+        check(SDL_PauseAudioStreamDevice(device_));paused_=true;
+        check(SDL_ClearAudioStream(device_));started_=false;
     }
-    void finish(Runtime& runtime,const std::string& listener) {
+    void reset(const PlayerAudioState& state) {
+        // Never play or drain old-world PCM after a load. The audio device and
+        // Vulkan window remain alive; only the timeline's DSP is reconstructed.
+        discard_pending();
+        auto replacement=std::make_unique<AudioStream>(state.tick,state.snapshot);
+        const auto previous=mixer_->stats();
+        retired_.frames+=previous.frames;retired_.blocks+=previous.blocks;
+        retired_.voices_started+=previous.voices_started;retired_.path_updates+=previous.path_updates;
+        retired_.peak=std::max(retired_.peak,previous.peak);retired_.dsp_ms+=previous.dsp_ms;
+        retired_.over_range_samples+=previous.over_range_samples;
+        mixer_=std::move(replacement);++report_.timeline_resets;report_.stream_drained=false;
+    }
+    void advance(const PlayerAudioState& state) {
+        submit(mixer_->advance(state.tick,state.snapshot,state.voices));
+    }
+    void finish(const PlayerAudioState& state) {
         active(true);
-        submit(mixer_.advance(runtime.inspect().tick,runtime.audio_snapshot(listener),runtime.sound_state().voices(),true));
+        submit(mixer_->advance(state.tick,state.snapshot,state.voices,true));
         check(SDL_FlushAudioStream(device_));check(SDL_ResumeAudioStreamDevice(device_));paused_=false;
         const auto start=SDL_GetTicksNS();
         while(queued()>0 || available()>0) {
@@ -58,6 +75,12 @@ public:
         }
         report_.stream_drained=true;
     }
-    PlayerAudioReport report() const { auto result=report_;result.stream=mixer_.stats();return result; }
+    PlayerAudioReport report() const {
+        auto result=report_;result.stream=mixer_->stats();
+        result.stream.frames+=retired_.frames;result.stream.blocks+=retired_.blocks;
+        result.stream.voices_started+=retired_.voices_started;result.stream.path_updates+=retired_.path_updates;
+        result.stream.peak=std::max(result.stream.peak,retired_.peak);result.stream.dsp_ms+=retired_.dsp_ms;
+        result.stream.over_range_samples+=retired_.over_range_samples;return result;
+    }
 };
 }

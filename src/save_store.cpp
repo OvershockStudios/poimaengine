@@ -325,13 +325,20 @@ ReadResult Store::read() const {
     require(state.status.selected.has_value(),ErrorKind::io,"Save slot has no committed generation.");return {std::move(state.status),std::move(state.bytes)};
 }
 std::optional<WriteResult> Store::lookup(const std::string& operation_id,const std::string& request_sha256) const {
+    return observe_receipt(operation_id,request_sha256).receipt;
+}
+ReceiptObservation Store::observe_receipt(const std::string& operation_id,const std::string& request_sha256) const {
     require(hex(operation_id,32) && hex(request_sha256,64),ErrorKind::invalid,"Save operation/request identity is malformed.");
-    if(!slot_exists(root_))return std::nullopt;
+    if(!slot_exists(root_))return {};
     Slot slot(root_,false);auto state=load(slot);
+    ReceiptObservation result;
+    result.current_generation=state.status.generation;
+    if(!state.document.is_null())result.oldest_retained_generation=integer(state.document.at("payload").at("receipts").front().at("generation"));
     if(const auto* item=receipt(state,operation_id)) {
-        require(item->at("request_sha256")==request_sha256,ErrorKind::reused_id,"Save operation ID was reused with a different request.");return replay(state,*item);
+        require(item->at("request_sha256")==request_sha256,ErrorKind::reused_id,"Save operation ID was reused with a different request.");
+        result.receipt=replay(state,*item);return result;
     }
-    require(!state.status.manifest_recovered,ErrorKind::recovery_required,"Manifest recovery cannot establish missing operation history; use a new slot/manual repair.");return std::nullopt;
+    require(!state.status.manifest_recovered,ErrorKind::recovery_required,"Manifest recovery cannot establish missing operation history; use a new slot/manual repair.");return result;
 }
 WriteResult Store::write(std::uint64_t expected_generation,const std::string& operation_id,const std::string& bytes,bool acknowledge_recovery,const std::string& request_sha256) const {
     require(expected_generation<max_generation && hex(operation_id,32) && bytes.size()<=maximum_checkpoint_bytes,ErrorKind::invalid,"Invalid save generation, operation ID or checkpoint size.");

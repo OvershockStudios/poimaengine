@@ -115,7 +115,7 @@ NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename
     check(spec.at("format")=="poima.native-gameplay" && integer(spec.at("version"),1)==1,"Unsupported native gameplay artifact format.");
     check(spec.at("engine_version")==POIMA_VERSION,"Native gameplay engine version must match exactly.");
     check((spec.at("target_os")=="Windows" || spec.at("target_os")=="Linux") && spec.at("target_arch")=="x86_64","Unsupported native gameplay target.");
-    check(integer(spec.at("call_version"),1)==1 && integer(spec.at("services_version"),3)==3 && spec.at("entry")=="poima_gameplay_entry","Native gameplay ABI/export mismatch.");
+    check(integer(spec.at("call_version"),1)==1 && integer(spec.at("services_version"),4)==4 && spec.at("entry")=="poima_gameplay_entry","Native gameplay ABI/export mismatch.");
     NativeGameplayArtifact result;result.descriptor=text(path);result.descriptor_sha256=hash(bytes);result.root=text(root);result.target_os=spec.at("target_os");result.target_arch=spec.at("target_arch");
     check(spec.at("identity").is_string() && spec.at("type").is_string(),"Native gameplay identity/type must be text.");
     result.identity=spec.at("identity");result.type=spec.at("type");

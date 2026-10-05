@@ -109,7 +109,13 @@ public:
         if(op=="select") { require(std::any_of(entities.begin(),entities.end(),[&](const Json& e){return e.at("id")==id;}),"Selected entity does not exist.");selected=id;refresh();return {{"selected",selected}}; }
         if(op=="play") { require(!playing,"Already playing.");const auto session_id=uid();auto r=call("runtime.start",{{"session_id",session_id},{"revision",revision}});runtime_id=session_id;playing=true;paused=false;tick=0;return r; }
         if(op=="pause") { require(playing,"Play must be running.");paused=a.value("paused",!paused);return {{"paused",paused},{"tick",tick}}; }
-        if(op=="step") { require(playing,"Play must be running.");auto r=call("runtime.step",{{"session_id",runtime_id},{"request_id",uid()},{"expected_tick",tick},{"ticks",a.value("ticks",1)}});tick=r.at("tick");return r; }
+        if(op=="step") {
+            require(playing,"Play must be running.");
+            auto r=call("runtime.step",{{"session_id",runtime_id},{"request_id",uid()},{"expected_tick",tick},{"ticks",a.value("ticks",1)}});
+            runtime_id=r.at("current_session_id").get<std::string>();tick=r.at("current_tick");
+            if(r.at("runtime_replaced").get<bool>())paused=true;
+            return r;
+        }
         if(op=="stop") { require(playing,"Play is not running.");auto r=call("runtime.stop",{{"session_id",runtime_id}});playing=false;paused=false;tick=0;runtime_id.clear();return r; }
         require(!playing,"Stop Play before editing authored state.");
         if(op=="create") {
@@ -406,6 +412,10 @@ Reply run_editor(const EditorOptions& options) {
             else if(op=="frame_selected") { auto s=model.playing ? model.session.runtime_snapshot(camera.camera()) : model.session.authored_snapshot(camera.camera());frame_selected(model,camera,s);result={{"position",camera.position}}; }
             else if(op=="camera") { if(a.contains("position"))camera.position=a["position"].get<std::array<double,3>>();camera.yaw=a.value("yaw",camera.yaw);camera.pitch=a.value("pitch",camera.pitch);require(std::isfinite(camera.yaw) && std::isfinite(camera.pitch),"Camera angles must be finite.");for(auto v:camera.position)require(std::isfinite(v) && std::abs(v)<=1e9,"Camera position must be finite and bounded.");camera.pitch=std::clamp(camera.pitch,-89.0,89.0);result={{"position",camera.position},{"yaw",camera.yaw},{"pitch",camera.pitch}}; }
             else { result=model.action(a);if(!draft.dirty() && (op=="select" || op=="create" || op=="delete" || op=="undo" || op=="redo" || op=="instantiate_asset"))draft.reload_pending=true; }
+            if(op=="step") {
+                if(result.at("runtime_replaced").get<bool>())accumulator=0;
+                if(result.at("save_serviced").get<bool>())last=std::chrono::steady_clock::now();
+            }
             if(report["actions"].size()<512)report["actions"].push_back({{"frame",frame},{"op",op},{"result",result}});return result;
         };
         auto ui_act=[&](Json a) { try { act(a); }catch(const std::exception& e) { model.note(e.what()); } };
@@ -415,8 +425,12 @@ Reply run_editor(const EditorOptions& options) {
         auto sync_remote=[&] {
             const auto revision=model.call("world.inspect").at("revision").get<std::uint64_t>();if(revision!=model.revision)model.refresh(draft.dirty());
             const auto state=model.session.runtime_status();
-            if(state.active) { if(!model.playing || model.runtime_id!=state.session_id)model.paused=true;model.playing=true;model.runtime_id=state.session_id;model.tick=state.tick; }
-            else { model.playing=false;model.paused=false;model.runtime_id.clear();model.tick=0; }
+            if(state.active) {
+                if(!model.playing || model.runtime_id!=state.session_id || model.tick!=state.tick) {
+                    model.paused=true;accumulator=0;last=std::chrono::steady_clock::now();
+                }
+                model.playing=true;model.runtime_id=state.session_id;model.tick=state.tick;
+            } else { model.playing=false;model.paused=false;model.runtime_id.clear();model.tick=0;accumulator=0;last=std::chrono::steady_clock::now(); }
             draft.sync(model);
         };
         auto editor_inspect=[&] {
@@ -494,7 +508,11 @@ Reply run_editor(const EditorOptions& options) {
                 try { act(action); }catch(const std::exception& e) { if(!expected)throw;failed=true;if(report["actions"].size()<512)report["actions"].push_back({{"frame",frame},{"op",action.at("op")},{"expected_error",true},{"error",e.what()}}); }
                 require(!expected || failed,"Script action unexpectedly succeeded despite expected_error.");
             }
-            if(model.playing && !model.paused && (options.script.empty() || host)) { accumulator+=dt;const auto ticks=static_cast<int>(accumulator*60);if(ticks) { try { model.action({{"op","step"},{"ticks",ticks}});accumulator-=ticks/60.0; }catch(const std::exception& e) { model.paused=true;accumulator=0;model.note(std::string("Play paused: ")+e.what()); } } }else accumulator=0;
+            if(model.playing && !model.paused && (options.script.empty() || host)) { accumulator+=dt;const auto ticks=static_cast<int>(accumulator*60);if(ticks) { try {
+                const auto stepped=model.action({{"op","step"},{"ticks",ticks}});
+                if(stepped.at("runtime_replaced").get<bool>())accumulator=0;else accumulator-=ticks/60.0;
+                if(stepped.at("save_serviced").get<bool>())last=std::chrono::steady_clock::now();
+            }catch(const std::exception& e) { model.paused=true;accumulator=0;model.note(std::string("Play paused: ")+e.what()); } } }else accumulator=0;
             ImGui_ImplSDL3_NewFrame();ImGui::NewFrame();auto& io=ImGui::GetIO();const auto* main_viewport=ImGui::GetMainViewport();
             const auto origin=main_viewport->Pos;const float width=main_viewport->Size.x,height=main_viewport->Size.y;
             float menu_height=ImGui::GetFrameHeight();
