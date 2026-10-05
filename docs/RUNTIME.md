@@ -110,3 +110,36 @@ Poima 0.0.15 adds [native acoustic snapshot observation](AUDIO.md) at a guarded 
 ## Runtime animation
 
 Version 0.0.21 adds editable rig bindings and fixed-tick clip playback. `runtime.step` accepts an optional `animations` array of full playback commands, committed or rolled back together with physics, gameplay and audio state. `runtime.entity` includes the current `local_transform` and optional rig `animation` state. [Runtime animation](RUNTIME_ANIMATION.md) documents bindings, seek/pause/loop/rest semantics, authored baselines, rendering and ownership limits.
+
+## Portable runtime snapshot foundation
+
+The C++ runtime has an experimental logical checkpoint API. This is the first part of game-save support: **there is no save-slot service, durable storage protocol, C# save command or editor save/load workflow yet**. Stopping an ordinary editor/player session still discards its runtime state.
+
+```cpp
+// frozen_definition and content_sha256 come from the trusted host/content system.
+const auto bytes = runtime.save_snapshot(content_sha256);
+auto staged = poima::Runtime::from_snapshot(frozen_definition, content_sha256, bytes);
+// A host may activate staged only after its own session/presentation preparation.
+```
+
+For a world with gameplay, pass the trusted `GameplayConfig` as the fourth argument. The snapshot contains no executable paths. Restore requires the same backend, assembly image hash, type and complete schema; there is no automatic migration, CoreCLR-to-Native-AOT interchange or renamed-field compatibility in this format. All registered values are restored by name and type, including decimal-string `int64` values. Entity fields must resolve in this world or be the all-zero null handle. Gameplay `Initialize` is skipped on restore. Loading the host-selected module still invokes its ordinary constructors/static initialization, whose external side effects are outside the world transaction.
+
+The host supplies the lowercase SHA-256 of its **complete frozen authored content and referenced asset closure**, and supplies the original `RuntimeDefinition`. This low-level API compares that identity; it does not compute or independently verify the supplied content closure. Reusing a digest for changed content violates the API contract. The original definition preserves authored animation baselines and camera orientation. World identity, authored revision, exact entity membership/parents and component classifications are also checked.
+
+| State | Checkpoint behavior |
+| --- | --- |
+| World | Fixed tick, stable string entity IDs and frozen authored revision; the current runtime has no spawn/despawn. |
+| Physics | World poses, linear/angular velocities and awake/asleep state; geometry and material settings come from the frozen definition. |
+| Character | Pose, velocity, yaw and pitch; ground support is queried again after all bodies are restored. |
+| Kinematic motion | Original start/target poses, total duration and elapsed ticks; loading does not restart an in-progress door movement. |
+| Animation | Original clock anchors, source/destination controls and interrupted-fade local poses, including immutable frozen sources. |
+| Sound | Logical voices, IDs, allocator, start/stop times and gains; clips resolve against trusted emitter content hashes. |
+| Gameplay | Exact module/schema binding, complete supported scalar/entity values and gameplay revision. |
+
+`from_snapshot` constructs a separate runtime and returns it only after validation. Failures destroy the candidate and leave an existing runtime untouched. It does not deserialize bytes through Jolt's internal recorder. Physics solver warm starts, contact caches, sleep timers, rendering resources and audio DSP history are rebuilt, rather than persisted. Future contact trajectories need not be bit-identical after loading. A host activating the candidate must separately reset presentation/audio streams, input, session IDs and retry receipts; this function does not replace a `WorldSession` or editor session itself.
+
+The version-1 diagnostic JSON envelope carries a SHA-256 of its canonical payload. Checksums detect corruption, not deliberate save editing or authenticity. Decode rejects duplicate/unknown fields, incomplete entity/field sets, invalid references and numbers, mismatched content, excessive nesting and oversized data. Whole snapshots are limited to 64 MiB, 32 nesting levels and two million parser events; animation state is additionally limited to 16 MiB and sound state to 512 KiB. Counts retain the runtime's existing limits. Snapshot IDs contain 1–256 UTF-8 bytes without NUL (authored worlds already enforce their stricter 32-hex identities). Live state outside the supported save bounds is rejected during export instead of producing an unusable checkpoint.
+
+This synchronous implementation allocates JSON and a staged runtime; it is not a hitch-free asynchronous save system. It has no persistence policy for unimplemented general components, inventories, spawn/despawn, streamed regions or future environmental systems. File generations, recovery, migrations, cancellation, performance budgets and platform storage adapters remain separate work.
+
+Native tests cover motion/character continuation, interrupted animation, sound, corrupt data and content binding. `poima-runtime-save-test --write-fixture PATH` and a separate `--read-fixture PATH` process qualify an explicit test file round trip; those test-only file operations do not implement engine save slots. The separate `poima-runtime-save-gameplay-test HOSTFXR BRIDGE ASSEMBLY TYPE` (or `--native DESCRIPTOR` for Native AOT) uses the checked-in managed fixture to exercise real C# tick continuation and collectible module lifetimes. [Snapshot evidence](evidence/m2-runtime-snapshot.json) records the qualified configurations and limits.

@@ -1,0 +1,160 @@
+{
+  "milestone": "native runtime snapshot foundation",
+  "date": "2026-10-05",
+  "engine_version": "0.0.36",
+  "source_base": "62b8d668200f71b81a4182546f37d300ff0638ad",
+  "scope": "Experimental synchronous C++ logical snapshot and staged reconstruction; no durable slot storage, service activation, CLI/C# save API or GUI save workflow.",
+  "implemented": [
+    "Strict bounded version1 checksummed JSON, exact trusted world/content/schema binding and explicit unsupported state rejection.",
+    "Separate candidate runtime preserves the existing world on decode/validation failure.",
+    "Body pose, linear/angular velocity, active state; reconstructed character support and view state; original in-flight kinematic clock/endpoints.",
+    "Animation clocks and advancing/frozen interrupted transitions.",
+    "Logical sound voice allocator/events, exact sample strings and trusted clip content resolution.",
+    "Complete named typed gameplay values, exact module binding and Initialize bypass; trusted constructors/statics still execute."
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "1290a4d1cf4c1561656d67d9e15bd2a717f57b859126a9002f7749fad1fdfd42",
+    "include/poima/audio.hpp": "b7b307875c85f0b73e568722f0341671b846133bb0e39046d628cbaa8a118b8a",
+    "include/poima/gameplay.hpp": "f7a04729ecc26e6bfa56c1c2d07ebcc525cb04133921644c4e9dc8de23fcec18",
+    "include/poima/runtime.hpp": "a9b6de5ce1f0c848cc684536a5f664954bb7d33a7426352ade51f67a33cf4885",
+    "include/poima/runtime_animation.hpp": "ef1406899105076ac3b13fefc9844b251b5cf5d188c3c879f288d64090abe5f9",
+    "src/audio_events.cpp": "dc5a462b1b2a544ddfb56eb62ef3cb84d149e56030cdf2276bf0ef9610a7bb95",
+    "src/gameplay.cpp": "688fb73eb128e150cb541ed1deb8a093b08ca71fa4b10c35f429cb36fe504411",
+    "src/runtime.cpp": "2ea9f2bb5fca84110869278d0075a90594caff45fe9c3f028759a8277372ef93",
+    "src/runtime_animation.cpp": "afe46edf4b5cffe6a88f8753261a4cff048dc9af0ab2866096bd90b02a571c6a",
+    "src/runtime_disabled.cpp": "4701c11999bdba98f5837c69df1924aa1b5aacc59d754e259fc640ea4e72164f",
+    "src/runtime_save.inc": "5944b002d75c124949fe00961039f619687e1cc3446572081985180e0d5a36f1",
+    "tests/audio_save_native.cpp": "13aef47ff08ce344279f234c52f67790541fbf927c599da1706bdf99f72e2dc3",
+    "tests/fixtures/runtime_save_gameplay/Poima.RuntimeSaveProbe.csproj": "32e5ac546670bc3348426e1de55b5a83f2c8409f0fd91587f1ec49da7ceac1ed",
+    "tests/fixtures/runtime_save_gameplay/SaveProbe.cs": "9200b36afb31d6e691dab84d3e9d777f745b624944e01ddf40a18d122a010662",
+    "tests/fixtures/runtime_snapshot_v1.json": "42c8743185a136f5ac48269125886dc6c02f4c82f0bf370ed3458a50a91bbcc9",
+    "tests/runtime_animation_save_native.cpp": "2b7af49c9efe57b81353f178e6331fbfa926f96afab575fe3dcc0a173c46b329",
+    "tests/runtime_save_gameplay_native.cpp": "50f173f8bc830fe660558a511cfb326c42de2ed9e56fea316ebd56e10808d9db",
+    "tests/runtime_save_native.cpp": "ee8ff696ecaba3f4d9161dbe861a1203e2720de86d45e158bbdb084019b1a421"
+  },
+  "binary_sha256": {
+    "linux": {
+      "poima-runtime-save-test": "1caad0ab91fe35309c8d9998f6718ad2a6d11763819f4fd15e35808e516f675d",
+      "poima-runtime-animation-save-test": "ba5bc7c4d337f909af566d80e5ec193ec122aec9b794895e82cff7fc8c92085c",
+      "poima-audio-save-test": "3314f39cc7e0986d40f688247cbb6b0b217f5e9c982abfea214f223415986a09",
+      "poima-runtime-save-gameplay-test": "9f94f39ea24db83c3e2eb7671dcfa21fdbdfaee798ccb7d976f3335a9ccc8637"
+    },
+    "windows": {
+      "poima-runtime-save-test": "578fccbbecfb385c89b4dbb61ee7b03a402be92f91c6aeb011c81172c056a653",
+      "poima-runtime-animation-save-test": "f6f67517a2b60c6a28a245e4277a0812c9dd87e2fefa626b844721c4b27101af",
+      "poima-audio-save-test": "501f2d99a92f5d7c8a4f48b376289548aaeb5c9b816c2fa4ea3492f4d76cb23c",
+      "poima-runtime-save-gameplay-test": "f7d420f42392756c86e6459ff36e1ad7358fa051b0e7d2c4dd3203e5dc628c89"
+    }
+  },
+  "linux_full_runtime_regression": {
+    "passed": 36,
+    "report_sha256": "330e303e1714e1da0d9b11dc9f3437ca301885e5120c5473558643fdfd7a878f"
+  },
+  "linux_full_authoring_regression": {
+    "passed": 30,
+    "report_sha256": "f79afc5a62eaeefbe3edce2e6762819ffb194797bdcbf8cfe458a41d75ed8fc9"
+  },
+  "linux_final_snapshot_suites_and_version1_fixture": {
+    "passed": 4,
+    "report_sha256": "64533ecce6a167b9bf3e69b58b4a8b056b1022c6ff12b73021217f2dc280474e"
+  },
+  "windows_final_snapshot_suites": {
+    "report_sha256": "e55a54ce5dcce3c322ec7f5a3d2c60756f30aac18dd8baf9e4309f2460fc4bc9",
+    "runs": [
+      {
+        "target": "poima-audio-save-test",
+        "code": 0,
+        "stdout": "Audio save contract passed: round-trip, trusted content, continuation, pruning, chronology, limits; 39 atomic rejection cases.\n",
+        "stderr": ""
+      },
+      {
+        "target": "poima-runtime-animation-save-test",
+        "code": 0,
+        "stdout": "Animation save roundtrip and validation passed.\n",
+        "stderr": ""
+      },
+      {
+        "target": "poima-runtime-save-test",
+        "code": 0,
+        "stdout": "Runtime snapshot moving door/child, airborne/angular dynamics and sleep, reconstructed character jump, future contact tolerance, outgoing/frozen animation fades, logical sound continuation, export bounds/yaw/IDs, repeated staging and malformed/binding rejection passed.\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "gameplay_linux": {
+    "report_sha256": "6484e00721f58be3073ceac561e272dfdc18a4ca02330d31df2bac20649d6a98",
+    "runs": [
+      {
+        "backend": "coreclr",
+        "code": 0,
+        "stdout": "CoreCLR runtime snapshot passed: complete typed values, Initialize bypass, exact tick continuation, trusted binding, 16 resealed rejection cases and 40 collectible restores.\n",
+        "stderr": ""
+      },
+      {
+        "backend": "native_aot",
+        "code": 0,
+        "stdout": "NativeAOT runtime snapshot passed: complete typed values, Initialize bypass, exact tick continuation, trusted binding, 16 resealed rejection cases and 40 released native instances.\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "gameplay_windows": {
+    "report_sha256": "6484e00721f58be3073ceac561e272dfdc18a4ca02330d31df2bac20649d6a98",
+    "runs": [
+      {
+        "backend": "coreclr",
+        "code": 0,
+        "stdout": "CoreCLR runtime snapshot passed: complete typed values, Initialize bypass, exact tick continuation, trusted binding, 16 resealed rejection cases and 40 collectible restores.\n",
+        "stderr": ""
+      },
+      {
+        "backend": "native_aot",
+        "code": 0,
+        "stdout": "NativeAOT runtime snapshot passed: complete typed values, Initialize bypass, exact tick continuation, trusted binding, 16 resealed rejection cases and 40 released native instances.\n",
+        "stderr": ""
+      }
+    ]
+  },
+  "fresh_process_and_cross_os": {
+    "tick": 154,
+    "bytes": 4012,
+    "fixture": "tests/fixtures/runtime_snapshot_v1.json",
+    "sha256": "42c8743185a136f5ac48269125886dc6c02f4c82f0bf370ed3458a50a91bbcc9",
+    "checks": [
+      "Linux write/read in separate processes",
+      "Windows write/read in separate processes",
+      "Windows read Linux fixture",
+      "Linux read Windows fixture"
+    ],
+    "result": "All passed; exact canonical re-serialization and continued entity/animation/sound state in this small fixture.",
+    "report_sha256": "5d23f3d0fccd943c1070dd2da74cb300dd80069088162bf75f3a394459827078"
+  },
+  "managed_fixture_sha256": "eb5290ba1cd68a9594d6de7b2a91145c4b6192f80f438e3685fcc1087d7ed964",
+  "native_artifacts": {
+    "linux": {
+      "descriptor_sha256": "4ed170f4db071ec7da12f05a6b6ebe919eb00422c21e422a11c3cbf1562632f5",
+      "schema_fields": 8,
+      "state_bytes": 80
+    },
+    "windows": {
+      "descriptor_sha256": "c86f48f2f87412ce2cf95c0b15dd8a8c2d7d6fc2ed2688bf03ff728c1e8abc48",
+      "schema_fields": 8,
+      "state_bytes": 80
+    }
+  },
+  "corrected_issues": [
+    "Export originally could produce out-of-bound physics state that import rejected. Export now rejects unsupported state, and inclusive position/180-degree yaw boundaries are tested.",
+    "Restoration originally would execute new-game Initialize. Explicit restore construction skips it; actual initialization-marker rejection verifies this on both gameplay backends.",
+    "The first CoreCLR qualification used a late native environment change that the hosted runtime did not observe. A test-owned file marker configured before runtime startup replaced that harness assumption."
+  ],
+  "limitations": [
+    "The host supplies and is responsible for verifying the full frozen content digest and original definition.",
+    "No automatic schema migration or dev/shipping-backend save interchange; exact module image/type/schema required.",
+    "Solver/contact caches, sleep timers, DSP buffers and presentation state are reconstructed, not persisted; no general bit-identical physics trajectory claim.",
+    "Caller-owned executable configuration can run trusted constructors/statics; external effects are outside the staged-world transaction.",
+    "Existing immutable entity set only; general component graphs, spawn/despawn, inventories, streamed regions and environmental subsystems are not qualified.",
+    "JSON capture is synchronous and allocates; no production pause/memory/throughput budget qualified.",
+    "Test-only file exchange is not a durable write protocol, power-loss qualification or recovery/slot system.",
+    "No GUI change or graphics qualification in this milestone; the existing verified editor package remains active."
+  ]
+}

@@ -164,7 +164,8 @@ struct Gameplay::Impl {
 };
 bool Gameplay::available() { return POIMA_MANAGED_GAMEPLAY!=0; }
 bool Gameplay::native_available() { return POIMA_NATIVE_GAMEPLAY!=0; }
-Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous):impl_(std::make_unique<Impl>()) {
+Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,GameplayInitialization initialization):impl_(std::make_unique<Impl>()) {
+    check(initialization==GameplayInitialization::defaults || !previous,"Restored gameplay cannot migrate a previous live module.");
     if(previous && (config.native_aot || previous->impl_->config.native_aot))
         throw std::runtime_error("Native gameplay replacement is unsupported; restart the runtime with the same artifact, or restart the process for a different artifact.");
     if(config.native_aot) {
@@ -201,7 +202,10 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous):impl_(
         if(field.at("kind")=="float32" || field.at("kind")=="float64")impl_->floating_fields.emplace_back(offset,field.at("kind")=="float32");
         for(std::size_t k=offset;k<offset+size;++k) { check(!used[k],"Overlapping gameplay fields.");used[k]=true; }
     }
-    impl_->storage.resize((impl_->bytes+7)/8);call={};call.operation=2;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;(void)invoke(impl_->entry,call);
+    impl_->storage.resize((impl_->bytes+7)/8);
+    if(initialization==GameplayInitialization::defaults) {
+        call={};call.operation=2;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;(void)invoke(impl_->entry,call);
+    }
     Json added=Json::array(),removed=Json::array(),preserved=Json::array();
     std::map<std::string,Json> old_fields;
     if(previous) {

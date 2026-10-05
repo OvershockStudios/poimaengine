@@ -38,6 +38,9 @@ public:
     std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick) const;
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick);
+    // Bounded diagnostic state only; caller binds the exact definition/assets.
+    std::string save_state(std::uint64_t tick) const;
+    void load_state(const std::string& state,std::uint64_t tick);
     std::vector<Clock> checkpoint() const { return clocks_; }
     void restore(std::vector<Clock>& checkpoint) noexcept { clocks_.swap(checkpoint); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;

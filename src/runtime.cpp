@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
 #include "poima/runtime_animation.hpp"
+#include "poima/assets.hpp"
+#include <nlohmann/json.hpp>
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>
@@ -540,6 +542,8 @@ struct Runtime::Impl {
         }
     }
 };
+
+#include "runtime_save.inc"
 
 bool Runtime::available() { return true; }
 Runtime::Runtime(const RuntimeDefinition& definition) {

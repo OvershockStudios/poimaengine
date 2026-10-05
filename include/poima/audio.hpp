@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include <span>
+#include <map>
 
 namespace poima {
 inline constexpr std::uint32_t audio_rate=48000, audio_block=512, max_audio_clip_frames=60*audio_rate;
@@ -76,6 +77,9 @@ public:
     void stop(std::uint64_t voice,std::uint64_t tick);
     const std::vector<SoundVoice>& voices() const { return voices_; }
     std::uint64_t next_id() const { return next_; }
+    // Portable logical state only; presentation must reset its DSP after restore.
+    std::string save_state(std::uint64_t tick) const;
+    void load_state(const std::string& state,std::uint64_t tick,const std::map<std::string,AudioEmitter>& emitters);
 };
 struct AudioStreamStats {
     std::uint64_t frames=0,blocks=0,voices_started=0,path_updates=0;

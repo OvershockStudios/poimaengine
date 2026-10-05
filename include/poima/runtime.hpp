@@ -146,6 +146,14 @@ public:
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
     RuntimeEntityState entity(const std::string& id) const;
+    // Portable, bounded logical checkpoint. The trusted host supplies the SHA-256
+    // of the complete frozen authored content, including referenced assets.
+    // Loading stages a separate world; it never modifies an existing Runtime.
+    // Solver/contact caches and presentation resources are reconstructed.
+    std::string save_snapshot(const std::string& content_sha256) const;
+    static std::unique_ptr<Runtime> from_snapshot(const RuntimeDefinition& definition,
+        const std::string& content_sha256,const std::string& bytes,
+        const std::optional<GameplayConfig>& gameplay=std::nullopt);
     void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;

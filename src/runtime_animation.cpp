@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <nlohmann/json.hpp>
 #include <stdexcept>
 
 namespace poima {
@@ -219,6 +220,122 @@ std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) 
     // sampled successfully. The batch checkpoint still owns any rollback copy.
     for(auto& clock:clocks_)if(clock.transition && !active(*clock.transition,tick))clock.transition.reset();
     return result;
+}
+namespace {
+using StateJson=nlohmann::json;
+constexpr std::size_t animation_state_bytes=16*1024*1024;
+constexpr std::uint64_t animation_state_max_tick=9007199254740991ULL;
+void state_fields(const StateJson& value,std::initializer_list<const char*> fields) {
+    check(value.is_object() && value.size()==fields.size(),"Invalid animation state object fields.");
+    for(const auto* field:fields)check(value.contains(field),"Missing animation state field.");
+}
+std::uint64_t state_uint(const StateJson& value,std::uint64_t maximum) {
+    check(value.is_number_integer() && value>=0 && value<=maximum,"Animation state integer is out of range.");
+    return value.get<std::uint64_t>();
+}
+double state_number(const StateJson& value) {
+    check(value.is_number(),"Animation state value must be numeric.");
+    const auto result=value.get<double>();check(std::isfinite(result),"Animation state value must be finite.");return result;
+}
+bool state_bool(const StateJson& value) {
+    check(value.is_boolean(),"Animation state flag must be boolean.");return value.get<bool>();
+}
+StateJson state_control(const AnimationCommand& value) {
+    return {{"clip",value.clip ? StateJson(*value.clip) : StateJson(nullptr)}, {"time",value.time},{"speed",value.speed},
+        {"loop",value.loop},{"playing",value.playing},{"blend_ticks",value.blend_ticks}};
+}
+AnimationCommand read_control(const StateJson& value,const std::string& entity,const ModelAsset& model) {
+    state_fields(value,{"clip","time","speed","loop","playing","blend_ticks"});
+    AnimationCommand control;control.entity=entity;
+    if(!value.at("clip").is_null())control.clip=static_cast<std::uint32_t>(state_uint(value.at("clip"),UINT32_MAX));
+    control.time=state_number(value.at("time"));control.speed=state_number(value.at("speed"));
+    control.loop=state_bool(value.at("loop"));control.playing=state_bool(value.at("playing"));
+    control.blend_ticks=static_cast<std::uint32_t>(state_uint(value.at("blend_ticks"),3600));
+    check(control.clip || (control.time==0 && !control.playing),"Rest animation state must have zero time and not play.");
+    return normalized(control,model);
+}
+template<std::size_t N> std::array<double,N> state_vector(const StateJson& value) {
+    check(value.is_array() && value.size()==N,"Animation state vector has incorrect length.");
+    std::array<double,N> result;for(std::size_t i=0;i<N;++i)result[i]=state_number(value[i]);return result;
+}
+}
+std::string RuntimeAnimations::save_state(std::uint64_t tick) const {
+    check(tick<=animation_state_max_tick,"Animation save tick is out of range.");
+    StateJson records=StateJson::array();
+    for(const auto& [entity,index]:indices_) {
+        const auto& clock=clocks_[index];
+        // Also refuse exporting a state that cannot currently be evaluated.
+        (void)evaluate(index,clock,tick);
+        StateJson transition=nullptr;
+        if(clock.transition && active(*clock.transition,tick)) {
+            const auto& fade=*clock.transition;StateJson source=nullptr,frozen=nullptr;
+            if(fade.frozen_source) {
+                frozen=StateJson::array();
+                for(const auto& pose:*fade.frozen_source)frozen.push_back({{"position",pose.position},{"rotation",pose.rotation},{"scale",pose.scale}});
+            } else source={{"control",state_control(fade.source)},{"anchor_tick",fade.source_anchor_tick}};
+            transition={{"start_tick",fade.start_tick},{"duration_ticks",fade.duration_ticks},{"source",source},{"frozen_source",frozen}};
+        }
+        records.push_back({{"entity",entity},{"control",state_control(clock.control)},{"anchor_tick",clock.anchor_tick},{"transition",transition}});
+    }
+    auto result=StateJson{{"format","poima.animation-state"},{"version",1},{"tick",tick},{"rigs",records}}.dump();
+    check(result.size()<=animation_state_bytes,"Animation state exceeds 16 MiB.");return result;
+}
+void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
+    check(tick<=animation_state_max_tick,"Animation load tick is out of range.");
+    check(text.size()<=animation_state_bytes,"Animation state exceeds 16 MiB.");
+    // Reject duplicate keys and excessive nesting instead of allowing ambiguous
+    // records or allocating an unbounded recursive object tree.
+    std::vector<std::set<std::string>> keys;
+    auto callback=[&](int depth,StateJson::parse_event_t event,StateJson& value) {
+        check(depth<=32,"Animation state JSON nesting exceeds 32.");
+        if(event==StateJson::parse_event_t::object_start)keys.emplace_back();
+        else if(event==StateJson::parse_event_t::object_end)keys.pop_back();
+        else if(event==StateJson::parse_event_t::key)check(keys.back().insert(value.get<std::string>()).second,"Duplicate animation state JSON field.");
+        return true;
+    };
+    const auto document=StateJson::parse(text,callback);
+    state_fields(document,{"format","version","tick","rigs"});
+    check(document.at("format")=="poima.animation-state" && state_uint(document.at("version"),1)==1,"Unsupported animation state format/version.");
+    check(state_uint(document.at("tick"),animation_state_max_tick)==tick,"Animation state tick differs from restore boundary.");
+    const auto& records=document.at("rigs");check(records.is_array() && records.size()==rigs_.size(),"Animation state must contain every current rig exactly once.");
+    auto candidate=clocks_;std::set<std::string> seen;
+    for(const auto& record:records) {
+        state_fields(record,{"entity","control","anchor_tick","transition"});
+        check(record.at("entity").is_string(),"Animation state rig identity must be a string.");
+        const auto entity=record.at("entity").get<std::string>();const auto found=indices_.find(entity);
+        check(found!=indices_.end() && seen.insert(entity).second,"Unknown or duplicate animation state rig.");
+        const auto index=found->second;const auto& rig=rigs_[index];Clock next;
+        next.control=read_control(record.at("control"),entity,*rig.model);
+        next.anchor_tick=state_uint(record.at("anchor_tick"),tick);
+        const auto& transition=record.at("transition");
+        if(!transition.is_null()) {
+            state_fields(transition,{"start_tick","duration_ticks","source","frozen_source"});
+            Transition fade;fade.start_tick=state_uint(transition.at("start_tick"),tick);
+            fade.duration_ticks=static_cast<std::uint32_t>(state_uint(transition.at("duration_ticks"),3600));
+            check(fade.duration_ticks>0 && tick-fade.start_tick<fade.duration_ticks,"Animation state transition must be active.");
+            check(next.anchor_tick==fade.start_tick && next.control.blend_ticks==fade.duration_ticks,"Animation state destination and transition anchors/duration differ.");
+            const auto& source=transition.at("source");const auto& frozen=transition.at("frozen_source");
+            check(source.is_null()!=frozen.is_null(),"Animation state transition requires exactly one source kind.");
+            if(!source.is_null()) {
+                state_fields(source,{"control","anchor_tick"});fade.source=read_control(source.at("control"),entity,*rig.model);
+                fade.source_anchor_tick=state_uint(source.at("anchor_tick"),fade.start_tick);
+            } else {
+                check(frozen.is_array() && frozen.size()==rig.nodes.size(),"Frozen animation state node count differs from current rig.");
+                std::vector<NodePose> poses;poses.reserve(frozen.size());
+                for(const auto& pose:frozen) {
+                    state_fields(pose,{"position","rotation","scale"});
+                    poses.push_back({state_vector<3>(pose.at("position")),state_vector<3>(pose.at("scale")),state_vector<4>(pose.at("rotation"))});
+                }
+                // Evaluate() validates the blended result; validate the frozen
+                // source separately so a positive blend cannot mask bad scales.
+                (void)rig.compiled->sample({},0,false,poses);
+                fade.frozen_source=std::make_shared<const std::vector<NodePose>>(std::move(poses));
+            }
+            next.transition=std::move(fade);
+        }
+        (void)evaluate(index,next,tick);candidate[index]=std::move(next);
+    }
+    clocks_.swap(candidate);
 }
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {
     const auto found=skins_.find(entity);if(found==skins_.end())return {};

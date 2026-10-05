@@ -39,6 +39,8 @@ These are bounded implementations with subsystem-specific limits, not finished v
 
 [Native C# gameplay](docs/NATIVE_GAMEPLAY.md) uses the same supported game source and native services as the CoreCLR development path. Native libraries stay loaded for the player process; changing the compiled library requires a restart. [Recorded evidence](docs/evidence/m2-native-gameplay.json) covers both operating systems, backend state comparisons and relocated Windows game replay.
 
+The experimental [runtime snapshot foundation](docs/RUNTIME.md#portable-runtime-snapshot-foundation) preserves the supported physics, animation, sound and typed gameplay state through a native C++ API. Durable save slots and CLI/C#/editor save workflows remain unfinished.
+
 Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
 
 ## Build the headless engine
