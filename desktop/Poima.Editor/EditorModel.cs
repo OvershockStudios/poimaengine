@@ -8,7 +8,7 @@ namespace Poima.Editor;
 
 public sealed record EntityRow(string Id, string Name, string? Parent, string[] Components)
 {
-    public string Icon => Components.Contains("Camera") ? "camera" : Components.Contains("Light") ? "light" :
+    public string Icon => Components.Contains("Camera") ? "camera" : (Components.Contains("Light") || Components.Contains("LightingEnvironment")) ? "light" :
         Components.Contains("AudioEmitter") ? "audio" : Components.Contains("AnimationRig") ? "rig" :
         Components.Any(x => x is "MeshRenderer" or "StaticMesh" or "SkinnedMesh") ? "cube" : "entity";
 }
@@ -187,8 +187,10 @@ public sealed class EditorModel : IDisposable
         Host.Call("world.transact", new() { ["request_id"] = NewId(), ["base_revision"] = Revision, ["ops"] = ops });
         Refresh();
     }
+    public JsonObject SkyDefaults() => Clone(Host.Call("world.describe")["components"]!["LightingEnvironment"]!["properties"]!["sky"]!["default"]!.AsObject());
     public string Create(string kind)
     {
+        if (kind == "Environment") return CreateEnvironment();
         var id = NewId();
         var ops = new JsonArray
         {
@@ -204,6 +206,25 @@ public sealed class EditorModel : IDisposable
         };
         if (type.Length != 0) ops.Add(new JsonObject { ["op"] = "component.set", ["id"] = id, ["type"] = type, ["value"] = JsonNode.Parse(value) });
         Transact(ops); Select(id); return id;
+    }
+    private string CreateEnvironment()
+    {
+        RequireStopped(); RequireClean();
+        var existing = Entities.FirstOrDefault(entity => entity.Components.Contains("LightingEnvironment"));
+        if (existing is not null) { Select(existing.Id); return existing.Id; }
+        var environment = NewId(); var sun = NewId();
+        var sky = SkyDefaults(); sky["enabled"] = true; sky["sun"] = sun;
+        var pitch = -155 * Math.PI / 360; var yaw = -20 * Math.PI / 360;
+        JsonObject Transform(JsonArray rotation) => new() { ["position"] = new JsonArray(0, 0, 0), ["rotation"] = rotation, ["scale"] = new JsonArray(1, 1, 1) };
+        JsonObject Component(string id, string type, JsonObject value) => new() { ["op"] = "component.set", ["id"] = id, ["type"] = type, ["value"] = value };
+        Transact(new JsonArray(
+            new JsonObject { ["op"] = "entity.create", ["id"] = environment, ["name"] = "Environment" },
+            Component(environment, "Transform", Transform(new JsonArray(0, 0, 0, 1))),
+            Component(environment, "LightingEnvironment", new JsonObject { ["ambient"] = new JsonArray(.12, .14, .18), ["exposure"] = 1, ["sky"] = sky }),
+            new JsonObject { ["op"] = "entity.create", ["id"] = sun, ["name"] = "Sun" },
+            Component(sun, "Transform", Transform(new JsonArray(Math.Sin(pitch)*Math.Cos(yaw), Math.Cos(pitch)*Math.Sin(yaw), -Math.Sin(pitch)*Math.Sin(yaw), Math.Cos(pitch)*Math.Cos(yaw)))),
+            Component(sun, "Light", new JsonObject { ["kind"] = "directional", ["color"] = new JsonArray(1, .95, .85), ["intensity"] = 3.5, ["enabled"] = true, ["shadow"] = new JsonObject { ["enabled"] = true } })));
+        Select(environment); return environment;
     }
     public void Delete()
     {

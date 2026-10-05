@@ -47,6 +47,8 @@ Successful capture and all returned player reports include `render_diagnostics`:
 | `shadow_draws`, `shadow_culled` | Submitted and rejected object/view pairs; their sum equals `shadow_candidates`. |
 | `shadow_triangles` | Triangles submitted across all active shadow views. |
 
+Draw counters describe scene objects; the optional fullscreen sky triangle is excluded. Its GPU work is included in `opaque`.
+
 Each timing summary contains `samples`, `min_ms`, `mean_ms`, `max_ms` and `last_ms`. An unsampled timing has zero samples and null values, not a fabricated zero duration. Summaries are bounded aggregates; the response does not emit a per-frame trace.
 
 ## Timing boundaries and limitations
@@ -64,7 +66,7 @@ GPU intervals:
 | Summary | Approximate included work |
 | --- | --- |
 | `shadows` | Start of command buffer through frame-uniform upload, shadow clears/draws and transition to sampling. With no shadows this still includes setup. |
-| `opaque` | Main target/depth clears and opaque draws. |
+| `opaque` | Main target/depth clears, optional procedural sky, and opaque draws. |
 | `post` | MSAA resolve, optional image readback copy, and transition for presentation. Capture frames include a copy that ordinary player frames lack. |
 | `total` | The complete timestamp span, excluding swapchain acquire, presentation completion, CPU simulation and file writing. |
 

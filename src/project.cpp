@@ -294,7 +294,7 @@ VerifiedGame verify_game(const std::string& filename) {
 
 Reply create_project(const std::string& directory,const std::string& name) {
     return operation("project.create",[&] {
-        name_value(name);Stage stage(directory);const auto project_id=new_id(),floor=std::string(31,'0')+"1",controller=std::string(31,'0')+"2",camera=std::string(31,'0')+"3";
+        name_value(name);Stage stage(directory);const auto project_id=new_id(),floor=std::string(31,'0')+"1",controller=std::string(31,'0')+"2",camera=std::string(31,'0')+"3",environment=std::string(31,'0')+"4",sun=std::string(31,'0')+"5";
         Json ops=Json::array();auto entity=[&](const std::string& entity_id,const char* label,Json parent=nullptr){ops.push_back({{"op","entity.create"},{"id",entity_id},{"name",label},{"parent",parent}});};
         auto component=[&](const std::string& entity_id,const char* type,const Json& value){ops.push_back({{"op","component.set"},{"id",entity_id},{"type",type},{"value",value}});};
         auto transform=[](Json position,Json scale=Json::array({1,1,1})){return Json{{"position",position},{"rotation",{0,0,0,1}},{"scale",scale}};};
@@ -302,6 +302,15 @@ Reply create_project(const std::string& directory,const std::string& name) {
         component(floor,"BoxCollider",{{"half_extents",{.5,.5,.5}},{"motion","static"},{"mass",10},{"friction",.5},{"restitution",0}});
         entity(controller,"Player");component(controller,"Transform",transform({0,1,2}));component(controller,"CharacterController",{{"radius",.3},{"height",1.8},{"speed",4},{"jump_speed",5},{"camera",camera}});
         entity(camera,"Player camera",controller);component(camera,"Transform",transform({0,1.6,0}));component(camera,"Camera",{{"vertical_fov",70},{"near",.1},{"far",200}});
+        entity(environment,"Environment");component(environment,"Transform",transform({0,0,0}));
+        component(environment,"LightingEnvironment",{{"ambient",{.12,.14,.18}},{"exposure",1},{"sky",{
+            {"enabled",true},{"zenith",{.06,.22,.55}},{"horizon",{.55,.70,.85}},{"ground",{.12,.10,.08}},
+            {"horizon_falloff",.35},{"sun",sun},{"sun_size_degrees",.53},{"sun_intensity",20}}}});
+        entity(sun,"Sun");auto sun_transform=transform({0,0,0});
+        // A 25-degree elevation and 20-degree azimuth put the disk in the starter camera's view.
+        const auto radians=std::acos(-1.)/180.,pitch=-155.*radians/2,yaw=-20.*radians/2;
+        sun_transform["rotation"]={std::sin(pitch)*std::cos(yaw),std::cos(pitch)*std::sin(yaw),-std::sin(pitch)*std::sin(yaw),std::cos(pitch)*std::cos(yaw)};
+        component(sun,"Transform",sun_transform);component(sun,"Light",{{"kind","directional"},{"color",{1,.95,.85}},{"intensity",3.5},{"enabled",true},{"shadow",{{"enabled",true}}}});
         { WorldSession world(text(stage.path/"world.json"));call(world,"world.transact",{{"request_id",new_id()},{"base_revision",0},{"ops",ops}}); }
         fs::remove(stage.path/"world.json.lock");fs::create_directory(stage.path/"settings");const auto profile=stage.path/"settings/default.poima-input.json";
         input_profiles::transact(profile,{{"request_id",new_id()},{"expected_revision",0},{"profile",input_profiles::profile_json(default_gamepad_input_profile())},{"preview",false}});fs::remove(fs::path(profile).concat(".lock"));

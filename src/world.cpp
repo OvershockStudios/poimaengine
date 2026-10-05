@@ -102,12 +102,37 @@ Light light_value(const Json& value) {
     }
     try { validate_light(light); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }return light;
 }
+Json sky_json(const SkySettings& sky) {
+    return {{"enabled",sky.enabled},{"zenith",sky.zenith},{"horizon",sky.horizon},{"ground",sky.ground},
+        {"horizon_falloff",sky.horizon_falloff},{"sun",sky.sun.empty() ? Json(nullptr) : Json(sky.sun)},
+        {"sun_size_degrees",sky.sun_size_degrees},{"sun_intensity",sky.sun_intensity}};
+}
+SkySettings sky_value(const Json& value) {
+    fields(value,{"enabled","zenith","horizon","ground","horizon_falloff","sun","sun_size_degrees","sun_intensity"},
+        {"enabled","zenith","horizon","ground","horizon_falloff","sun","sun_size_degrees","sun_intensity"});
+    require(value.at("enabled").is_boolean(),"Sky enabled must be Boolean.");
+    SkySettings result;result.enabled=value.at("enabled").get<bool>();
+    for(const auto* key:{"zenith","horizon","ground"}) {
+        const auto& color=value.at(key);require(color.is_array() && color.size()==3,"Sky colors require three values.");
+        for(const auto& channel:color)require(channel.is_number() && std::isfinite(channel.get<double>()) && channel>=0 && channel<=1,"Sky color must be in [0,1].");
+    }
+    result.zenith=value.at("zenith").get<std::array<float,3>>();result.horizon=value.at("horizon").get<std::array<float,3>>();result.ground=value.at("ground").get<std::array<float,3>>();
+    auto number=[&](const char* key,double minimum,double maximum) {
+        const auto& v=value.at(key);require(v.is_number() && std::isfinite(v.get<double>()) && v>=minimum && v<=maximum,std::string("Sky ")+key+" is out of bounds.");return v.get<float>();
+    };
+    result.horizon_falloff=number("horizon_falloff",.1,16);result.sun_size_degrees=number("sun_size_degrees",.1,20);result.sun_intensity=number("sun_intensity",0,1e6);
+    if(!value.at("sun").is_null())result.sun=identifier(value.at("sun"));
+    return result;
+}
 LightingEnvironment environment_value(const Json& value) {
-    fields(value,{"ambient","exposure","shadow_resolution"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
+    fields(value,{"ambient","exposure","shadow_resolution","sky"},{"ambient","exposure"});require(value.at("ambient").is_array() && value.at("ambient").size()==3,"Ambient fill needs three values.");
     for(const auto& x:value.at("ambient"))require(x.is_number() && std::isfinite(x.get<double>()) && x>=0 && x<=1e6,"Ambient fill must be in [0,1e6].");
     require(value.at("exposure").is_number() && std::isfinite(value.at("exposure").get<double>()) && value.at("exposure")>=0 && value.at("exposure")<=1e6,"Exposure must be in [0,1e6].");
     if(value.contains("shadow_resolution"))require(value.at("shadow_resolution").is_number_integer() && (value.at("shadow_resolution")==256 || value.at("shadow_resolution")==512 || value.at("shadow_resolution")==1024 || value.at("shadow_resolution")==2048),"Shadow resolution must be 256, 512, 1024 or 2048.");
-    return {value.at("ambient").get<std::array<float,3>>(),value.at("exposure").get<float>(),value.value("shadow_resolution",1024u)};
+    LightingEnvironment result;result.ambient=value.at("ambient").get<std::array<float,3>>();result.exposure=value.at("exposure").get<float>();result.shadow_resolution=value.value("shadow_resolution",1024u);
+    if(value.contains("sky"))result.sky=sky_value(value.at("sky"));
+    try { validate_environment(result); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+    return result;
 }
 AcousticMaterial acoustic_value(const Json& v) {
     fields(v,{"absorption","transmission","scattering","enabled"},{"absorption","transmission","scattering","enabled"});
@@ -300,8 +325,14 @@ Json describe() {
         }
         light_variants.push_back(object_schema(props,{"kind","color","intensity","enabled"}));
     }
+    const auto sky_defaults=sky_json(SkySettings{});
+    Json sky_properties={{"enabled",{{"type","boolean"}}},{"zenith",vector(unit,3)},{"horizon",vector(unit,3)},{"ground",vector(unit,3)},
+        {"horizon_falloff",{{"type","number"},{"minimum",.1},{"maximum",16}}},{"sun",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{32}$"}}},
+        {"sun_size_degrees",{{"type","number"},{"minimum",.1},{"maximum",20}}},{"sun_intensity",{{"type","number"},{"minimum",0},{"maximum",1e6}}}};
+    for(const auto& [key,value]:sky_defaults.items())sky_properties[key]["default"]=value;
+    auto sky=object_schema(sky_properties,{"enabled","zenith","horizon","ground","horizon_falloff","sun","sun_size_degrees","sun_intensity"});sky["default"]=sky_defaults;
     const Json lighting_environment=object_schema({{"ambient",vector({{"type","number"},{"minimum",0},{"maximum",1e6}},3)},
-        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}}}, {"ambient","exposure"});
+        {"exposure",{{"type","number"},{"minimum",0},{"maximum",1e6}}},{"shadow_resolution",{{"enum",{256,512,1024,2048}},{"default",1024}}},{"sky",sky}}, {"ambient","exposure"});
     const Json acoustic=object_schema({{"absorption",vector(unit,3)},{"transmission",vector(unit,3)},{"scattering",unit},{"enabled",{{"type","boolean"}}}}, {"absorption","transmission","scattering","enabled"});
     const Json emitter=object_schema({{"asset",asset_id},{"gain",{{"type","number"},{"minimum",0},{"maximum",4}}},{"loop",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}}, {"asset","gain","loop","enabled"});
     const Json components = {{"Transform", transform}, {"Camera", camera}, {"MeshRenderer", mesh}, {"BoxCollider",collider}, {"CharacterController",character},{"StaticMesh",static_mesh},{"SkinnedMesh",skinned_mesh},{"AnimationRig",animation_rig},{"RigNode",rig_node},{"PbrMaterial",pbr},{"PbrTextures",textures},{"Light",{{"oneOf",light_variants}}},{"LightingEnvironment",lighting_environment},{"AcousticMaterial",acoustic},{"AudioEmitter",emitter}};
@@ -318,7 +349,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 22}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 23}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -423,6 +454,7 @@ Json describe() {
     methods["runtime.play"]=play;
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
     result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
+    result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs, origin-inside hits have no surface normal.");
@@ -520,7 +552,14 @@ void validate(const Json& doc) {
         const auto& components=e.at("components");
         if(components.contains("Light") && components.at("Light").at("enabled")==true)++light_count;
         if(components.contains("Light"))shadow_count+=shadow_view_count(light_value(components.at("Light")));
-        if(components.contains("LightingEnvironment")) { ++environment_count;shadow_resolution=environment_value(components.at("LightingEnvironment")).shadow_resolution; }
+        if(components.contains("LightingEnvironment")) {
+            ++environment_count;const auto environment=environment_value(components.at("LightingEnvironment"));shadow_resolution=environment.shadow_resolution;
+            if(!environment.sky.sun.empty()) {
+                require(entities.contains(environment.sky.sun),"Sky sun entity does not exist.");
+                const auto& sun=entities.at(environment.sky.sun).at("components");
+                require(sun.contains("Light") && sun.at("Light").at("kind")=="directional","Sky sun must reference a directional Light.");
+            }
+        }
     }
     require(light_count<=max_scene_lights && environment_count<=1,"World permits at most 64 enabled lights and one LightingEnvironment.");
     try { validate_shadow_budget(shadow_count,shadow_resolution); }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
@@ -857,7 +896,13 @@ public:
                 {"position",source.position},{"direction",source.direction},{"color",l.color},{"intensity",l.intensity},{"range",l.range},{"inner_angle",l.inner_angle},{"outer_angle",l.outer_angle},
                 {"intensity_unit",l.kind==LightKind::directional ? "lux" : "candela"},{"shadow",{{"enabled",l.shadow.enabled},{"near",l.shadow.near_plane},{"distance",l.shadow.distance},{"bias",l.shadow.bias},{"normal_bias",l.shadow.normal_bias}}}});
         }
-        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4}};
+        Json sun=nullptr;const auto& sky=lighting.environment.sky;
+        if(sky.enabled && !sky.sun.empty())for(const auto& light:lighting.lights)if(light.entity_id==sky.sun && light.light.kind==LightKind::directional && light.light.enabled) {
+            std::array<double,3> direction=light.direction;for(auto& value:direction)value=-value;
+            sun={{"id",light.entity_id},{"direction",direction},{"color",light.light.color},{"intensity",light.light.intensity}};break;
+        }
+        return {{"preview_fallback",lighting.preview},{"lights",lights},{"ambient",lighting.environment.ambient},{"exposure",lighting.environment.exposure},{"shadow_resolution",lighting.environment.shadow_resolution},{"shadow_views",shadow_count},{"shadow_bytes",shadow_count*lighting.environment.shadow_resolution*lighting.environment.shadow_resolution*4},
+            {"sky",sky_json(sky)},{"sky_sun",sun}};
     }
     SceneLighting authored_lighting(const std::map<std::string,Matrix4>& matrices) const {
         SceneLighting result;

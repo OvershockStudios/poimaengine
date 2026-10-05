@@ -66,7 +66,7 @@ public sealed class MainWindow : Window
         var toolbar = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto,*"), Background = EditorTheme.Brush("#222327") };
         var left = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, Margin = new Thickness(5, 3) };
         var create = ToolButton("Create object", () => {}, "plus");
-        create.ContextMenu = new ContextMenu { ItemsSource = new[] { CreateItem("Empty object", "Entity"), CreateItem("Cube", "Cube"), CreateItem("Camera", "Camera"), CreateItem("Point light", "Light") } };
+        create.ContextMenu = new ContextMenu { ItemsSource = new[] { CreateItem("Empty object", "Entity"), CreateItem("Cube", "Cube"), CreateItem("Camera", "Camera"), CreateItem("Point light", "Light"), CreateItem("Environment and sky", "Environment") } };
         create.Click += (_, _) => create.ContextMenu.Open(create);
         left.Children.Add(create);
         left.Children.Add(new Border { Width = 1, Height = 16, Margin = new Thickness(5, 2), Background = EditorTheme.Brush("#3B3C42") });
@@ -218,7 +218,7 @@ public sealed class MainWindow : Window
         {
             new MenuItem { Header = "_File", ItemsSource = new[] { Item("Import model…", () => _ = PickModel()), Item("Refresh", Model.Refresh), Item("Close", Close) } },
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
-            new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")) } },
+            new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")), Item("Environment and Sky", () => Model.Create("Environment")) } },
             new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Reset layout", ResetLayout) } },
             new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Click a player's Game view to control it; Escape or Tab releases input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
@@ -390,7 +390,7 @@ public sealed class MainWindow : Window
                 if (pair.Value is not JsonObject component) continue;
                 var section = new StackPanel { Spacing = 2, Margin = new Thickness(8, 5, 8, 7) };
                 if (pair.Key == "Transform") BuildTransform(section, component, Banner);
-                else if (pair.Key is "Camera" or "MeshRenderer" or "PbrMaterial" or "Light") BuildTypedComponent(section, pair.Key, component, Banner);
+                else if (pair.Key is "Camera" or "MeshRenderer" or "PbrMaterial" or "Light" or "LightingEnvironment") BuildTypedComponent(section, pair.Key, component, Banner);
                 else
                 {
                     var json = new TextBox { Text = Model.FieldText(pair.Key, component.ToJsonString(new JsonSerializerOptions { WriteIndented = true })), AcceptsReturn = true, FontSize = 12, MinHeight = 80, FontFamily = new FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
@@ -406,9 +406,9 @@ public sealed class MainWindow : Window
                     section.Children.Add(Label("Component data · JSON", true)); section.Children.Add(json);
                 }
                 var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-                title.Children.Add(EditorIcons.Make(pair.Key switch { "Transform" => "transform", "Camera" => "camera", "Light" => "light", "MeshRenderer" => "cube", _ => "entity" }, 13));
-                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", _ => pair.Key }));
-                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "PbrMaterial" or "Light", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
+                title.Children.Add(EditorIcons.Make(pair.Key switch { "Transform" => "transform", "Camera" => "camera", "Light" or "LightingEnvironment" => "light", "MeshRenderer" => "cube", _ => "entity" }, 13));
+                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
+                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
             }
         }
         Observe(root, Model, Refresh); Refresh(); return root;
@@ -477,6 +477,7 @@ public sealed class MainWindow : Window
             panel.Children.Add(row);
         }
     }
+    private sealed record SunChoice(string? Id, string Label) { public override string ToString() => Label; }
     private void BuildTypedComponent(StackPanel panel, string type, JsonObject source, Action changed)
     {
         // Edit a complete copy: optional fields remain absent until explicitly
@@ -515,7 +516,7 @@ public sealed class MainWindow : Window
         }
         TextBox Numeric(string label, string key, double current, double min, double max, Action<double> set)
         {
-            var edit = new TextBox { Text = Model.FieldText(type + ".input." + key, current.ToString("G9", CultureInfo.InvariantCulture)), FontSize = 12, MinWidth = 35 };
+            var edit = new TextBox { Text = Model.FieldText(type + ".input." + key, current.ToString(type == "LightingEnvironment" ? "G6" : "G9", CultureInfo.InvariantCulture)), FontSize = 12, MinWidth = 35 };
             edit.BorderBrush = EditorTheme.Brush(Model.HasInvalid(type + ".input." + key) ? "#BA6B60" : "#191919");
             AutomationProperties.SetName(edit, type + " " + label);
             ToolTip.SetTip(edit, $"{label}: {min:G} to {max:G}");
@@ -548,24 +549,25 @@ public sealed class MainWindow : Window
             };
             panel.Children.Add(Row(label, control));
         }
-        void ColorField(string label, string key)
+        void ColorField(string label, string key, JsonObject? owner = null, string prefix = "", double maximum = 1)
         {
-            var channels = value[key]!.AsArray().Select(n => n!.GetValue<double>()).ToArray();
+            var target = owner ?? value;
+            var channels = target[key]!.AsArray().Select(n => n!.GetValue<double>()).ToArray();
             var swatch = new Border { Height = 18, CornerRadius = new CornerRadius(2), BorderThickness = new Thickness(1), BorderBrush = EditorTheme.Brush("#181818"), Margin = new Thickness(0, 1) };
             void UpdateSwatch()
             {
-                byte Encode(double linear) => (byte)Math.Round(255 * (linear <= .0031308 ? linear * 12.92 : 1.055 * Math.Pow(linear, 1/2.4) - .055));
+                byte Encode(double linear) { linear = Math.Clamp(linear, 0, 1); return (byte)Math.Round(255 * (linear <= .0031308 ? linear * 12.92 : 1.055 * Math.Pow(linear, 1/2.4) - .055)); }
                 swatch.Background = new SolidColorBrush(Color.FromRgb(Encode(channels[0]), Encode(channels[1]), Encode(channels[2])));
             }
-            UpdateSwatch(); ToolTip.SetTip(swatch, "sRGB preview of the linear RGB values below"); panel.Children.Add(Row(label, swatch));
+            UpdateSwatch(); ToolTip.SetTip(swatch, "sRGB preview of linear RGB; values above 1 are clipped in this swatch only"); panel.Children.Add(Row(label, swatch));
             var rgb = new Grid { ColumnDefinitions = new ColumnDefinitions("112,*,*,*"), ColumnSpacing = 5 }; rgb.Children.Add(Label("Linear RGB", true));
             for (int axis = 0; axis < 3; ++axis)
             {
                 var index = axis;
-                var input = Numeric(label + " " + "RGB"[axis], key + axis, channels[axis], 0, 1, n =>
+                var input = Numeric(label + " " + "RGB"[axis], prefix + key + axis, channels[axis], 0, maximum, n =>
                 {
                     channels[index] = n;
-                    value[key] = new JsonArray(channels.Select(c => (JsonNode?)JsonValue.Create(c)).ToArray()); UpdateSwatch();
+                    target[key] = new JsonArray(channels.Select(c => (JsonNode?)JsonValue.Create(c)).ToArray()); UpdateSwatch();
                 });
                 Grid.SetColumn(input, axis + 1); rgb.Children.Add(input);
             }
@@ -588,6 +590,52 @@ public sealed class MainWindow : Window
                 case "PbrMaterial":
                     ColorField("Base color", "base_color"); Scalar("Metallic", "metallic", 0, 1); Scalar("Roughness", "roughness", 0, 1);
                     ColorField("Emission", "emissive"); Toggle("Double sided", "double_sided");
+                    break;
+                case "LightingEnvironment":
+                    ColorField("Ambient", "ambient", maximum: 1e6);
+                    Scalar("Exposure", "exposure", 0, 1e6);
+                    var resolution = new ComboBox { ItemsSource = new[] { 256, 512, 1024, 2048 }, SelectedItem = value["shadow_resolution"]?.GetValue<int>() ?? 1024, HorizontalAlignment = HorizontalAlignment.Stretch };
+                    AutomationProperties.SetName(resolution, "LightingEnvironment Shadow resolution");
+                    resolution.SelectionChanged += (_, _) =>
+                    {
+                        if (!CurrentDraft() || resolution.SelectedItem is not int selected || selected == (value["shadow_resolution"]?.GetValue<int>() ?? 1024)) return;
+                        value["shadow_resolution"] = selected; Commit();
+                    };
+                    panel.Children.Add(Row("Shadow pixels", resolution));
+                    if (value["sky"] is JsonObject sky)
+                    {
+                        Toggle("Sky enabled", "enabled", sky);
+                        ColorField("Zenith", "zenith", sky, "sky."); ColorField("Horizon", "horizon", sky, "sky."); ColorField("Ground", "ground", sky, "sky.");
+                        Scalar("Horizon falloff", "horizon_falloff", .1, 16, .35, sky, "sky.");
+                        var sunChoices = new List<SunChoice> { new(null, "None") };
+                        foreach (var entity in Model.Entities.Where(entity => entity.Components.Contains("Light")))
+                        {
+                            var light = Model.Host.Call("entity.get", new() { ["id"] = entity.Id })["value"]!["components"]!["Light"]!;
+                            if (light["kind"]?.GetValue<string>() == "directional") sunChoices.Add(new(entity.Id, entity.Name + " · " + entity.Id[..8]));
+                        }
+                        var sun = new ComboBox { ItemsSource = sunChoices, SelectedItem = sunChoices.FirstOrDefault(choice => choice.Id == sky["sun"]?.GetValue<string>()), HorizontalAlignment = HorizontalAlignment.Stretch };
+                        AutomationProperties.SetName(sun, "LightingEnvironment Sun");
+                        ToolTip.SetTip(sun, "Directional light controlling the sun disk direction and color. A disabled light hides the disk.");
+                        sun.SelectionChanged += (_, _) =>
+                        {
+                            if (!CurrentDraft() || sun.SelectedItem is not SunChoice selected || selected.Id == sky["sun"]?.GetValue<string>()) return;
+                            sky["sun"] = selected.Id; Commit();
+                        };
+                        panel.Children.Add(Row("Sun light", sun));
+                        Scalar("Sun diameter (°)", "sun_size_degrees", .1, 20, .53, sky, "sky.");
+                        Scalar("Sun radiance", "sun_intensity", 0, 1e6, 20, sky, "sky.");
+                        panel.Children.Add(Label("Sky is a background. Ambient and lights illuminate objects.", true));
+                    }
+                    else
+                    {
+                        var configure = Button("Configure sky", () =>
+                        {
+                            if (!CurrentDraft()) return;
+                            if (Model.HasInvalid(type + ".input.")) throw new InvalidOperationException("Fix invalid environment fields first.");
+                            value["sky"] = Model.SkyDefaults(); Commit(); Draw();
+                        });
+                        AutomationProperties.SetName(configure, "LightingEnvironment Configure sky"); panel.Children.Add(configure);
+                    }
                     break;
                 case "Light":
                     var currentKind = value["kind"]!.GetValue<string>();

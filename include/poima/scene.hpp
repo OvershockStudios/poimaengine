@@ -26,7 +26,14 @@ struct Light {
     bool enabled=true;
     ShadowSettings shadow;
 };
-struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024; };
+struct SkySettings {
+    bool enabled=false;
+    std::array<float,3> zenith{.06f,.22f,.55f},horizon{.55f,.70f,.85f},ground{.12f,.10f,.08f};
+    float horizon_falloff=.35f;
+    std::string sun; // Empty means no sun disk; otherwise an authored directional Light ID.
+    float sun_size_degrees=.53f,sun_intensity=20; // Angular diameter; background radiance multiplier.
+};
+struct LightingEnvironment { std::array<float,3> ambient{};float exposure=1;std::uint32_t shadow_resolution=1024;SkySettings sky; };
 struct SceneLight { std::string entity_id;Light light;std::array<double,3> position{},direction{0,0,-1}; };
 struct SceneLighting {
     std::vector<SceneLight> lights;

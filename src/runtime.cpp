@@ -196,7 +196,21 @@ struct Runtime::Impl {
             require(!(d.collider && d.character),"An entity cannot combine BoxCollider and CharacterController.");
         }
         std::size_t lights=0,environments=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
-        for(const auto& d:definitions) { if(d.light && d.light->enabled)++lights;if(d.light)shadow_count+=shadow_view_count(*d.light);if(d.environment) { ++environments;shadow_resolution=d.environment->shadow_resolution; } }
+        for(const auto& d:definitions) {
+            if(d.light && d.light->enabled)++lights;
+            if(d.light)shadow_count+=shadow_view_count(*d.light);
+            if(d.environment) {
+                ++environments;shadow_resolution=d.environment->shadow_resolution;
+                const auto& sun=d.environment->sky.sun;
+                if(!sun.empty()) {
+                    require(sun.size()==32 && sun.find_first_not_of("0123456789abcdef")==std::string::npos,"Runtime sky sun needs a 32-character lowercase hexadecimal identity.");
+                    const auto found=identities.find(sun);
+                    require(found!=identities.end(),"Runtime sky sun entity does not exist.");
+                    const auto* light=registry.try_get<Light>(found->second);
+                    require(light && light->kind==LightKind::directional,"Runtime sky sun must reference a directional Light.");
+                }
+            }
+        }
         require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
         validate_shadow_budget(shadow_count,shadow_resolution);
         require(body_count<=4096,"Runtime physics body limit exceeded.");

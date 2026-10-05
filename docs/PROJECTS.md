@@ -13,7 +13,7 @@ The parent directory must already exist. Creation requires a new directory, incl
 ./build/headless/poima project inspect build/MyRoom/project.json
 ```
 
-The starter contains `project.json`, `world.json`, and `settings/default.poima-input.json`. Its world has a solid floor, a capsule character and a child camera. The persisted v2 input profile supplies keyboard/mouse and gamepad defaults. Creation removes its own writer-lock sidecars before publication.
+The starter contains `project.json`, `world.json`, and `settings/default.poima-input.json`. Its world has a solid floor, a capsule character, a child camera, and an Environment with a procedural sky and shadow-casting directional Sun. Sky defaults apply to new projects; existing worlds are unchanged. The persisted v2 input profile supplies keyboard/mouse and gamepad defaults. Creation removes its own writer-lock sidecars before publication.
 
 Project inspection validates the world and every referenced cooked asset without creating writer sidecars or repairing files. It reports the project identity, entry entities, authored revision, dependencies, audio requirement and optional input profile. Missing worlds are errors; inspection never creates a blank replacement.
 
@@ -55,6 +55,8 @@ cmake --install build/windows-runtime --prefix build/runtime-windows
   --output build/MyRoom-game --runtime build/runtime-windows
 ./build/headless/poima game inspect build/MyRoom-game/game.json
 ```
+
+The exporter accepts only `runtime.json`, `bin/`, `lib/` and `share/poima/` in its runtime root. A desktop-enabled CMake install also contains the development header `include/poima/desktop_bridge.h`; stage a separate runtime directory excluding `include/` before export.
 
 The exporting headless executable and installed runtime must have the same exact engine version. The runtime descriptor, generated and installed by CMake, is `runtime.json`:
 

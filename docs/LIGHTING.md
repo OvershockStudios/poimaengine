@@ -1,10 +1,10 @@
 # Authored lighting
 
-Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure to the native world service, Vulkan capture and player. Agents can author these through the same atomic transactions as meshes and materials, then inspect the resolved poses without a GPU. This is direct lighting; Poima 0.0.11 adds optional [shadow maps](SHADOWS.md). Sky/IBL, GI, volumetric lighting and production light culling remain outstanding.
+Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure to the native world service, Vulkan capture and player. Agents can author these through the same atomic transactions as meshes and materials, then inspect the resolved poses without a GPU. This is direct lighting; Poima 0.0.11 adds optional [shadow maps](SHADOWS.md). Poima 0.0.30 adds an asset-free procedural sky background. Environment reflections, GI, volumetric lighting and production light culling remain outstanding.
 
 ## Components and units
 
-Use `component.set` on an existing entity. `world.describe` schema revision 13 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
+Use `component.set` on an existing entity. `world.describe` schema revision 23 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
 
 ```json
 {"op":"component.set","id":"00000000000000000000000000000002","type":"Light","value":{"kind":"spot","color":[1,0.65,0.3],"intensity":100,"enabled":true,"range":12,"inner_angle":15,"outer_angle":40}}
@@ -28,7 +28,34 @@ One optional `LightingEnvironment` may exist anywhere in a world. Its transform 
 {"op":"component.set","id":"00000000000000000000000000000003","type":"LightingEnvironment","value":{"ambient":[0.015,0.02,0.03],"exposure":1}}
 ```
 
-Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. Background clear color is currently independent of exposure. There is no auto-exposure or photometrically calibrated camera.
+Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. The procedural sky follows exposure; the legacy flat background remains independent of exposure. There is no auto-exposure or photometrically calibrated camera.
+
+## Procedural sky
+
+New projects include an Environment with a blue sky, horizon and ground gradient, plus a directional Sun. The Sun illuminates geometry, casts shadows and sets the sky disk's direction and color. Rotate its Transform to move the disk. Existing worlds retain their flat background unless a sky is explicitly enabled.
+
+`LightingEnvironment.sky` is optional. When provided, it must contain all eight fields:
+
+```json
+{
+  "enabled": true,
+  "zenith": [0.06, 0.22, 0.55],
+  "horizon": [0.55, 0.70, 0.85],
+  "ground": [0.12, 0.10, 0.08],
+  "horizon_falloff": 0.35,
+  "sun": null,
+  "sun_size_degrees": 0.53,
+  "sun_intensity": 20
+}
+```
+
+Colors are linear RGB in [0,1]. `horizon_falloff` is in [0.1,16]; larger values extend the horizon color farther toward the poles. `sun_size_degrees` is the disk's angular **diameter**, in [0.1,20]. `sun_intensity` is its independent background radiance multiplier, in [0,1e6], not the Light's illuminance. `sun` is null or an existing directional Light's 32-character entity ID. A disabled linked Light hides the disk. The reference remains valid even when sky is disabled: deleting or changing that Light requires clearing/changing the reference in the same transaction.
+
+The sky follows camera rotation and FOV, ignores camera translation, and stays behind scene geometry. Its gradient and derivative-smoothed disk use the same exposure, Reinhard mapping and sRGB output as materials, with 1×/4× MSAA support. It is an artistic background; it does not provide atmospheric scattering, reflections, indirect illumination, clouds or a day/night simulation.
+
+`world.describe` exposes the complete sky defaults, disabled by default for compatibility. `world.lighting` and `runtime.lighting` return `sky` plus `sky_sun`: null when absent/disabled, otherwise the linked enabled light's ID, direction **toward** the disk, color and authored Light intensity. Runtime freezes sky settings and the reference while following the Sun's live pose.
+
+![Default procedural sky and Environment Inspector in the actual Windows editor](evidence/m2-procedural-sky-editor.png)
 
 ## Explicit fallback and inspection
 
@@ -78,3 +105,12 @@ python3 tests/player_contract.py build/windows-runtime/poima.exe --windows-inter
 The headless suite exercises discovery, preview/fallback, retry/persistence, transformed lights, invalid data, global limits and atomic rejection. The optional runtime case checks frozen settings and a light following a falling parent. GPU tests compare numerical references with actual captured pixels for direct lights, distance/range/cone falloff, colored accumulation, ambient/exposure, the last of 64 uniform slots, a moving runtime light, primitive defaults and emission. The authored-light player variant attaches lamps to a falling body and a moving camera, then compares final light poses and pixels after 371 ticks against independent headless stepping. See [recorded evidence](evidence/m2-lighting.json) for the builds, GPU results and current qualification limits.
 
 ![Actual NVIDIA Vulkan capture with warm/cool local lights and a top spotlight](evidence/m2-lighting-grid.png)
+
+Sky qualification uses actual hardware captures and independent pixel/projection checks:
+
+```sh
+python3 tests/sky_capture.py build/windows-runtime/poima.exe --windows-interop --output build/sky-gpu1 --gpu 1
+python3 tests/sky_capture.py build/windows-runtime/poima.exe --windows-interop --output build/sky-gpu0 --gpu 0
+```
+
+The [0.0.30 sky record](evidence/m2-procedural-sky.json) includes 44 captures per GPU at 1×/4× MSAA, legacy/disabled and translation equality, exposure, camera orientation/FOV, Sun position/size, geometry occlusion, frozen runtime settings, live Sun pose and exact player/capture parity. Comparisons between authored double-precision and physics float-precision rotations permit one display-byte difference; identical-state comparisons remain exact. The desktop additionally passes 59 semantic actions per GPU, including actual Inspector handlers, draft preservation, invalid edits, undo/redo, environment creation, floating/reset layout and Scene/Game captures. These tests qualify small-scene correctness, not physical-input usability or production frame rates.

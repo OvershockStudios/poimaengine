@@ -1,0 +1,472 @@
+{
+  "milestone": "M2 procedural sky and Environment Inspector",
+  "version": "0.0.30",
+  "date": "2026-10-04",
+  "source_base": "fbab7bf4baa79c3d972928e4daa515e54c40494e",
+  "sources": {
+    "CMakeLists.txt": "7915a3392dc7cb83b9f5d0427a66f2314a37340cf1ec9a2107ceb2e720e8dd81",
+    "cmake/render_smoke.cmake": "9b343e94ee8a659f5331142213a086f77f0f539ef2a58c05a83b28fdf78636e8",
+    "desktop/Poima.Editor/DesktopScript.cs": "af31f0b95c9e4d864bdf654af890ca97f0b44878b64915209b98fb92b5a0cf83",
+    "desktop/Poima.Editor/EditorModel.cs": "972b610b459cc7188314beaef4e751244c68a2747c4187d85afa1b1fb6f5c987",
+    "desktop/Poima.Editor/MainWindow.cs": "bddc5cfc8778aa81475b90a01735c69c98a6ba987c01ef3b58a4019c161102b1",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "873f6c9728dfcdd497aa62ea7b8c802a7fdbd8812b2a3f5768b0d5b5c8bb7314",
+    "include/poima/scene.hpp": "2ed8e11c54c99d6671cba060c99443c8df167ea5d7bcf8ad9c7fe819e55b464f",
+    "shaders/sky.hlsl": "261bf1b11a70c9bd75109454af673676ce7837955bdd7e62ec81fa3adb0e1801",
+    "src/lighting.cpp": "dd871e29776067fafc97bd4a9a1c9562c82d39e85ce3ffc7a43e4c06609fd02b",
+    "src/project.cpp": "8f4c466d2d27dc3b9b3124a6e81372540ddebea7e4b769e25b4b11dfd24c3602",
+    "src/render_smoke.cpp": "cfd2176d9d724076b5675641af89cba5b5056bafe86ff6cebca81e022e7960ef",
+    "src/runtime.cpp": "75a8b967bcde16eb68af5a72cfadf57d2aa034004b33b39f2e9bfe81dce6daa6",
+    "src/world.cpp": "4b8ed8222556b11674751dd542453bc1056e9e97e14816685a2c04c22b6cb90c",
+    "tests/desktop_sky.py": "ac4bf052dbf6f257758072ce54cab11d902c3bc5205accf1c9be8ed5077596f9",
+    "tests/lighting_contract.py": "374aab175df00933e2702b6cd2a2f4ce38ef93c35ccdbd57b6a0361ee2d01a38",
+    "tests/project_contract.py": "b5da44e69580a4d8a821499f30cc4ca0a6107e21eb860e1e9eedb49302a3ec41",
+    "tests/sky_capture.py": "075cfd13821e599bbbbfde5486bf6544bb72d243c7f1b435049d2319a358f4b2",
+    "tests/world_session_native.cpp": "96df2143ee4a6e3eb9bd88028159609d045aaa2a11134618534860045d6f9a7f"
+  },
+  "binaries": {
+    "build/windows-runtime/poima.exe": "302cda60f1d30e539a2c00535e94ea5531cf5fecba2950c9d10ddfa38041697d",
+    "build/windows-runtime/poima_desktop.dll": "b831f36b56b3c85693bf43e190c44772783bc726988353c9c614f3d280bc2745",
+    "build/runtime-headless/poima": "488f509e500da7a79507fb513ab0036d91e4e6b0e5b0243d828ab2045d35e3ea",
+    "build/desktop-sky/Poima.Editor.dll": "fc871e653a4902330ab4369ce149e6596bee6ba1b7f93a73ee5cbd5a86c78960"
+  },
+  "gpu": [
+    {
+      "index": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "captures": 44,
+      "samples": [
+        1,
+        4
+      ],
+      "nvrhi_errors": 0,
+      "checks": {
+        "1": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 0,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 1,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        },
+        "4": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 0,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 1,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        }
+      },
+      "raw": {
+        "path": "build/sky-gpu1/gpu-1.json",
+        "sha256": "3171c58520328b4f8074f9403af196c9b60a393f531a9314376b08b6ad7dbb97"
+      },
+      "pose_precision": {
+        "path": "build/sky-gpu1/pose-comparison.json",
+        "sha256": "6912f8615e7ed8b7c761ee423f0fc821849fc2e909e312102b3ab8263ba9d0df"
+      }
+    },
+    {
+      "index": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "captures": 44,
+      "samples": [
+        1,
+        4
+      ],
+      "nvrhi_errors": 0,
+      "checks": {
+        "1": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 0,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 0,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        },
+        "4": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 0,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 0,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        }
+      },
+      "raw": {
+        "path": "build/sky-gpu0/gpu-0.json",
+        "sha256": "70fb30a9acc54caf065c149949572b42d50ae46055a4d1b8321abcc431dc120f"
+      },
+      "pose_precision": {
+        "path": "build/sky-gpu0/pose-comparison.json",
+        "sha256": "c89c38011b8dd55930247b5d317c7cc9ca215bd14ee818245b8c6ecaa1941430"
+      }
+    }
+  ],
+  "desktop": [
+    {
+      "index": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "actions": 59,
+      "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "nvrhi_errors": 0,
+      "window_capture": "captured",
+      "capture_sha256": {
+        "scene.bmp": "93bf8710ac331d05a02c34389514d3acfea3964ddecd3c11e4e4a15dc06bf9da",
+        "game.bmp": "89bb34abe5dd6b1bf6ef40e1c440869961919bfc01f4aa4dc46bb79156978287",
+        "window.png": "ec6031c92848359719e47f6f92a154dc01a0b31807b8485397f24e6ad75d18cf"
+      },
+      "raw": {
+        "path": "build/desktop-sky-final-ui-gpu1/c2b8e604081c4165ae47a5b922731301/evidence.json",
+        "sha256": "c47379c83f961dc756870e0e382560aad37689b6719bcb5edb054b27b09b43f5"
+      }
+    },
+    {
+      "index": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "actions": 59,
+      "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "nvrhi_errors": 0,
+      "window_capture": "captured",
+      "capture_sha256": {
+        "scene.bmp": "961c78b6035d7bcb8883d65746ea812b9034da2745a636d0ac7ad6d3bee495c1",
+        "game.bmp": "8aa75042aef6d93d111d4fca89863e3e72fc6cde8c265983ae5e027aa626033a",
+        "window.png": "4cb9297de0a955a6eaa0b7742f9520b913628d2b92a744c57ef072d231d91e1a"
+      },
+      "raw": {
+        "path": "build/desktop-sky-final-ui-gpu0/ef7c58386da14c30b58aa2c808db0d76/evidence.json",
+        "sha256": "60e15503c6995cd790e80c03bb78219d6c7b994824c7943dad55b7c239411733"
+      }
+    }
+  ],
+  "headless": {
+    "linux_ctest": {
+      "passed": 29,
+      "failed": 0,
+      "raw": {
+        "path": "build/sky-headless-ctest.xml",
+        "sha256": "db42fdb709341ef35c3397af5b7da11ed3d7ae624405d6b641bd17612dacd236"
+      }
+    },
+    "windows_lighting": {
+      "passed": 8,
+      "log": {
+        "path": "build/sky-lighting-windows.log",
+        "sha256": "a797637d648fb035359759a19a40304938f28d6fb3002ad2e28f38b17de196e9"
+      }
+    },
+    "windows_projects": {
+      "passed": 11,
+      "skipped": 0,
+      "raw": {
+        "path": "build/sky-project-windows.json",
+        "sha256": "e6bc3bd6eedec8848fab3078b03e2487c45dba16e3aa37043abbedda07f6d53d"
+      },
+      "runtime_staging": "CMake-installed runtime, excluding the desktop development header include/poima/desktop_bridge.h."
+    }
+  },
+  "screenshot": {
+    "path": "docs/evidence/m2-procedural-sky-editor.png",
+    "sha256": "ec6031c92848359719e47f6f92a154dc01a0b31807b8485397f24e6ad75d18cf"
+  },
+  "limitations": [
+    "Artistic background, not atmospheric scattering, GI, environment reflections, clouds or day/night simulation.",
+    "Small fixtures on one laptop with two GPUs; no production performance or broad-driver claim.",
+    "Desktop controls use semantic handlers and owned-window observation; physical input/accessibility is not qualified.",
+    "NVRHI error checks are not full Vulkan validation.",
+    "Raw artifacts under build/ are local ignored evidence, not shipped repository files.",
+    "Hosted CI and clean-machine distribution were not run."
+  ]
+}

@@ -161,6 +161,27 @@ internal sealed class DesktopScript
                     case "select": window.SelectEntity(Text("id")); break;
                     case "create": result["id"] = model.Create(Text("kind")); break;
                     case "draft_name": model.SetName(Text("name")); break;
+                    case "click_control":
+                    case "check_control":
+                    case "choose_control":
+                        var controlLifetime = (IClassicDesktopStyleApplicationLifetime)Avalonia.Application.Current!.ApplicationLifetime!;
+                        var controls = controlLifetime.Windows.Where(w => w.IsVisible).SelectMany(w => w.GetVisualDescendants()).OfType<Control>()
+                            .Where(control => control.IsVisible && AutomationProperties.GetName(control) == Text("control")).ToArray();
+                        if (controls.Length != 1 || !controls[0].IsEnabled) throw new InvalidOperationException("Expected one enabled visible control: " + Text("control"));
+                        if (op == "click_control" && controls[0] is Button button)
+                            button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                        else if (op == "check_control" && controls[0] is CheckBox check)
+                        { check.IsChecked = action["checked"]!.GetValue<bool>(); result["checked"] = check.IsChecked; }
+                        else if (op == "choose_control" && controls[0] is ComboBox combo)
+                        {
+                            var options = combo.Items.Cast<object>().Select(item => item.ToString() ?? "").ToArray();
+                            result["options"] = new JsonArray(options.Select(option => (JsonNode?)JsonValue.Create(option)).ToArray());
+                            var matches = options.Select((label,index) => (label,index)).Where(item => item.label == Text("choice")).ToArray();
+                            if (matches.Length != 1) throw new InvalidOperationException("Combo option must match exactly one item: " + Text("choice"));
+                            combo.SelectedIndex = matches[0].index; result["selected"] = combo.SelectedItem?.ToString();
+                        }
+                        else throw new InvalidOperationException("Control type does not support " + op);
+                        break;
                     case "wait_text":
                     case "assert_text":
                     case "set_text":

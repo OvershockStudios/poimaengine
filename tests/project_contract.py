@@ -85,6 +85,14 @@ class ProjectContract(unittest.TestCase):
         world = json.loads((self.project/doc['entry']['world']).read_text(encoding='utf-8'))
         self.assertIn('CharacterController', world['entities'][doc['entry']['controller']]['components'])
         self.assertIn('Camera', world['entities'][doc['entry']['camera']]['components'])
+        environments = [e['components']['LightingEnvironment'] for e in world['entities'].values()
+                        if 'LightingEnvironment' in e['components']]
+        self.assertEqual(len(environments), 1)
+        sky = environments[0]['sky']
+        self.assertTrue(sky['enabled'])
+        sun = world['entities'][sky['sun']]['components']['Light']
+        self.assertEqual(sun['kind'], 'directional')
+        self.assertTrue(sun['enabled'])
         inspected = self.inspect()
         self.assertEqual(inspected['revision'], world['revision'])
         self.assertEqual(inspected['project_id'], doc['project_id'])

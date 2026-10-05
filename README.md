@@ -4,7 +4,7 @@ Poima is an experimental 3D game engine built around a native, headless authorin
 
 The core and player are C++20. The 3D renderer uses Vulkan. The optional Windows editor uses C#/Avalonia with a native Vulkan viewport, and an experimental C# gameplay integration supports development-time reloads.
 
-**Status: early development, version 0.0.29.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. The desktop now connects keyboard/mouse gameplay controls to its Game view, sharing native bindings and input inspection with agents. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.30.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. New projects now include an editable procedural sky and Sun; desktop Game-view controls and scene settings share the native API with agents. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor prototype](docs/evidence/m2-desktop-playback-editor.png)
 

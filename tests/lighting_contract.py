@@ -17,6 +17,10 @@ def transform(n,p=(0,0,0),q=(0,0,0,1),s=(1,1,1)):
     return component(n,'Transform',{'position':list(p),'rotation':list(q),'scale':list(s)})
 def light(n,kind='point',**kw):return component(n,'Light',{'kind':kind,'color':[1,1,1],'intensity':1,'enabled':True,**kw})
 def environment(n,ambient=(0,0,0),exposure=1):return component(n,'LightingEnvironment',{'ambient':list(ambient),'exposure':exposure})
+def sky(**changes):
+    return {'enabled':True,'zenith':[.06,.22,.55],'horizon':[.55,.70,.85],'ground':[.12,.10,.08],
+            'horizon_falloff':.35,'sun':None,'sun_size_degrees':.53,'sun_intensity':20,**changes}
+def sky_environment(n,value):return component(n,'LightingEnvironment',{'ambient':[0,0,0],'exposure':1,'sky':value})
 
 
 class LightingContract(unittest.TestCase):
@@ -103,6 +107,71 @@ class LightingContract(unittest.TestCase):
         self.assertEqual(c.rpc('world.lighting')['lights'][0]['intensity'],99)
         c.rpc('runtime.stop',{'session_id':session})
         c.rpc('runtime.start',{'session_id':uid(902),'revision':2});self.assertEqual(c.rpc('runtime.lighting',{'session_id':uid(902)})['exposure'],4)
+    def test_sky_discovery_defaults_strict_validation_and_persistence(self):
+        c=self.open();d=c.rpc('world.describe');self.assertGreaterEqual(d['schema_revision'],23)
+        schema=d['components']['LightingEnvironment']['properties']['sky']
+        self.assertEqual(set(schema['required']),set(sky()))
+        self.assertEqual(set(schema['default']),set(sky()))
+        self.assertFalse(schema['default']['enabled']);self.assertIsNone(schema['default']['sun'])
+        for key,value in schema['default'].items():self.assertEqual(schema['properties'][key]['default'],value)
+        original=c.rpc('world.lighting');self.assertFalse(original['sky']['enabled']);self.assertIsNone(original['sky_sun'])
+        c.txn(0,[create(1),environment(1)]);self.assertFalse(c.rpc('world.lighting')['sky']['enabled'])
+        invalid=[None,[],{},sky(enabled=1),sky(extra=True),sky(sun='sun'),sky(sun=3),sky(sun='A'*32),
+                 sky(zenith=[1,0]),sky(horizon=[0,True,0]),sky(ground=[0,-.001,0]),sky(zenith=[1.000000001,0,0]),
+                 sky(horizon_falloff=.099999999),sky(horizon_falloff=16.000001),sky(horizon_falloff='1'),
+                 sky(sun_size_degrees=.099999999),sky(sun_size_degrees=20.000001),sky(sun_size_degrees=True),
+                 sky(sun_intensity=-.001),sky(sun_intensity=1000000.001),sky(sun_intensity=None)]
+        for key in sky():
+            missing=sky();missing.pop(key);invalid.append(missing)
+        before=self.path.read_bytes();history=c.rpc('world.history')
+        for value in invalid:
+            c.txn(1,[transform(1,(99,0,0)),sky_environment(1,value)],error=-32602)
+            self.assertEqual(self.path.read_bytes(),before);self.assertEqual(c.rpc('world.history'),history)
+        for bad in (float('nan'),float('inf'),-float('inf')):
+            reply=c.raw(json.dumps({'jsonrpc':'2.0','id':1,'method':'world.transact','params':{'base_revision':1,'request_id':uuid.uuid4().hex,'ops':[sky_environment(1,sky(sun_intensity=bad))]}}))
+            self.assertEqual(reply['error']['code'],-32700);self.assertEqual(self.path.read_bytes(),before)
+        c.txn(1,[sky_environment(1,sky(horizon_falloff=.1,sun_size_degrees=20,sun_intensity=1e6))])
+        current=c.rpc('world.lighting');self.assertTrue(current['sky']['enabled']);self.assertIsNone(current['sky_sun'])
+        self.assertAlmostEqual(current['sky']['horizon_falloff'],.1);self.assertEqual(current['sky']['sun_size_degrees'],20)
+        c.close();c=self.open();self.assertEqual(c.rpc('world.lighting'),current)
+    def test_sky_sun_reference_transactions_resolve_and_undo(self):
+        c=self.open();half=math.sqrt(.5)
+        c.txn(0,[create(1),create(2),transform(2,q=(0,half,0,half)),light(2,'directional',intensity=8),sky_environment(1,sky(sun=uid(2))),create(3),light(3,'point')])
+        initial=c.rpc('world.lighting');self.assertEqual(initial['sky_sun']['id'],uid(2));self.assertEqual(initial['sky_sun']['intensity'],8)
+        for actual,expected in zip(initial['sky_sun']['direction'],[1,0,0]):self.assertAlmostEqual(actual,expected)
+        before=self.path.read_bytes();history=c.rpc('world.history')
+        for ops in ([{'op':'entity.delete','id':uid(2),'recursive':True}], [remove(2,'Light')], [light(2,'point')],
+                    [sky_environment(1,sky(sun=uid(999)))],[sky_environment(1,sky(sun=uid(1)))],
+                    [sky_environment(1,sky(sun=uid(3),enabled=False))]):
+            c.txn(1,ops,error=-32602);self.assertEqual(self.path.read_bytes(),before);self.assertEqual(c.rpc('world.history'),history)
+        c.txn(1,[light(2,'directional',enabled=False)])
+        self.assertEqual(c.rpc('world.lighting')['sky']['sun'],uid(2));self.assertIsNone(c.rpc('world.lighting')['sky_sun'])
+        c.txn(2,[light(2,'directional'),sky_environment(1,sky(sun=uid(2),enabled=False))]);self.assertIsNone(c.rpc('world.lighting')['sky_sun'])
+        # Final-state reference validation allows an atomic clear + removal.
+        c.txn(3,[{'op':'entity.delete','id':uid(2),'recursive':True},sky_environment(1,sky())])
+        self.assertIsNone(c.rpc('world.lighting')['sky']['sun'])
+        c.rpc('world.undo',{'base_revision':4,'request_id':uuid.uuid4().hex})
+        self.assertEqual(c.rpc('world.lighting')['sky']['sun'],uid(2));self.assertEqual(c.rpc('entity.get',{'id':uid(2)})['value']['components']['Light']['kind'],'directional')
+        c.rpc('world.redo',{'base_revision':5,'request_id':uuid.uuid4().hex});self.assertIsNone(c.rpc('world.lighting')['sky']['sun'])
+    def test_runtime_sky_settings_are_frozen_but_sun_pose_is_live(self):
+        cap=json.loads(subprocess.check_output([BINARY,'capabilities'],text=True))
+        if not cap['result']['features']['simulation']:self.skipTest('Simulation disabled in this build')
+        c=self.open();session=uid(950)
+        c.txn(0,[create(1),transform(1,(0,3,0)),component(1,'CharacterController',{'radius':.3,'height':1.8,'speed':4,'jump_speed':5,'camera':uid(2)}),
+                 create(2,uid(1)),component(2,'Camera',{'vertical_fov':60,'near':.1,'far':100}),
+                 create(3),sky_environment(3,sky(sun=uid(4))),create(4,uid(1)),light(4,'directional',intensity=8)])
+        c.rpc('runtime.start',{'session_id':session,'revision':1});before=c.rpc('runtime.lighting',{'session_id':session})
+        c.txn(1,[sky_environment(3,sky(enabled=False,sun_intensity=0,zenith=[1,0,0])),{'op':'entity.delete','id':uid(4),'recursive':True}])
+        self.assertEqual(c.rpc('runtime.lighting',{'session_id':session}),before)
+        self.assertFalse(c.rpc('world.lighting')['sky']['enabled'])
+        c.rpc('runtime.step',{'session_id':session,'request_id':uuid.uuid4().hex,'expected_tick':0,'ticks':1,'inputs':[{'entity':uid(1),'look':[45,0]}]})
+        after=c.rpc('runtime.lighting',{'session_id':session,'tick':1})
+        self.assertEqual(after['sky'],before['sky']);self.assertEqual(after['sky_sun']['id'],uid(4));self.assertEqual(after['sky_sun']['intensity'],8)
+        self.assertNotEqual(after['sky_sun']['direction'],before['sky_sun']['direction'])
+        matrix=c.rpc('runtime.entity',{'session_id':session,'id':uid(4),'tick':1})['world_matrix']
+        for actual,expected in zip(after['sky_sun']['direction'],matrix[8:11]):self.assertAlmostEqual(actual,expected)
+        c.rpc('runtime.stop',{'session_id':session});c.rpc('runtime.start',{'session_id':uid(951),'revision':2})
+        self.assertFalse(c.rpc('runtime.lighting',{'session_id':uid(951)})['sky']['enabled'])
 
 
 if __name__=='__main__':unittest.main(argv=['lighting_contract'],verbosity=2)

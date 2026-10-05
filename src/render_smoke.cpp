@@ -19,6 +19,8 @@
 #include <map>
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
+#include "poima/sky_vs.hpp"
+#include "poima/sky_ps.hpp"
 #include "poima/shadow_vs.hpp"
 #include "poima/smoke_vs.hpp"
 #include "poima/smoke_ps.hpp"
@@ -127,6 +129,11 @@ struct DrawConstants {
     float emissive_roughness[4];
 };
 static_assert(sizeof(DrawConstants)==128);
+struct SkyConstants {
+    float right_tan[4],up_tan[4],forward_srgb[4],zenith_exposure[4];
+    float horizon_falloff[4],ground_radius[4],sun_intensity[4],sun_color[4];
+};
+static_assert(sizeof(SkyConstants)==128);
 struct GpuLight { float position_kind[4],direction_range[4],color_intensity[4],cone[4],shadow[4]; };
 struct GpuShadow { float view_projection[16],splits[4]; };
 struct FrameConstants { float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];GpuLight lights[max_scene_lights];GpuShadow shadows[max_shadow_views]; };
@@ -207,6 +214,12 @@ struct Context {
     std::vector<DrawItem> draws;
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
+    SkyConstants sky_constants{};
+    bool sky_enabled=false;
+    nvrhi::ShaderHandle sky_vs,sky_ps;
+    nvrhi::BindingLayoutHandle sky_layout;
+    nvrhi::BindingSetHandle sky_bindings;
+    nvrhi::GraphicsPipelineHandle sky_pipeline;
     nvrhi::TextureHandle shadow_texture;
     std::vector<nvrhi::FramebufferHandle> shadow_framebuffers;
     nvrhi::ShaderHandle shadow_shader;
@@ -286,6 +299,7 @@ struct Context {
         skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
         shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
+        sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         vertex_shader = nullptr;
         pixel_shader = nullptr;
         staging = nullptr;
@@ -756,6 +770,31 @@ struct Context {
         texture_bytes=0;
         for(const auto& [image,unused]:texture_cache) { (void)unused;for(const auto& mip:image_owners.at(image)->mips)texture_bytes+=mip.rgba.size(); }
     }
+    void prepare_sky() {
+        if(!sky_layout) {
+            sky_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_sky_vs);
+            sky_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_sky_ps);
+            sky_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SkyConstants))));
+            require(sky_vs && sky_ps && sky_layout,"Procedural sky shader/layout creation failed.");
+            sky_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(SkyConstants))),sky_layout);
+            require(bool(sky_bindings),"Procedural sky bindings creation failed.");
+        }
+        if(!sky_pipeline) {
+            nvrhi::GraphicsPipelineDesc description;description.VS=sky_vs;description.PS=sky_ps;description.bindingLayouts.push_back(sky_layout);
+            description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
+            description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;description.renderState.rasterState.scissorEnable=true;
+            sky_pipeline=checked->createGraphicsPipeline(description,framebuffers.front()->getFramebufferInfo());
+            require(bool(sky_pipeline),"Procedural sky pipeline creation failed.");
+        }
+    }
+    void render_sky(std::uint32_t image_index) {
+        if(!scene || !scene_visible || !sky_enabled)return;
+        nvrhi::GraphicsState state;state.pipeline=sky_pipeline;state.framebuffer=framebuffers.at(image_index);state.bindings.push_back(sky_bindings);
+        state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height))));
+        commands->setGraphicsState(state);commands->setPushConstants(&sky_constants,sizeof(sky_constants));
+        commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+    }
     void update_scene() {
         const auto started=SteadyClock::now();draws.clear();pending_draws={};
         retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
@@ -767,6 +806,31 @@ struct Context {
         for(std::size_t k=0;k<16;++k)frame_constants.view_projection[k]=number(vp[k]);
         for(std::size_t k=0;k<3;++k)frame_constants.camera[k]=number(scene->camera_world[12+k]);
         frame_constants.camera[3]=(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f;
+        const auto& sky=lighting.environment.sky;sky_enabled=sky.enabled;sky_constants={};
+        if(sky_enabled) {
+            require(rigid_transform(scene->camera_world),"Procedural sky requires a rigid camera transform.");
+            prepare_sky();
+            for(std::size_t k=0;k<3;++k) {
+                sky_constants.right_tan[k]=number(scene->camera_world[k]);
+                sky_constants.up_tan[k]=number(scene->camera_world[4+k]);
+                sky_constants.forward_srgb[k]=number(-scene->camera_world[8+k]);
+                sky_constants.zenith_exposure[k]=sky.zenith[k];sky_constants.horizon_falloff[k]=sky.horizon[k];sky_constants.ground_radius[k]=sky.ground[k];
+            }
+            const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
+            sky_constants.right_tan[3]=number(tan_y*aspect);sky_constants.up_tan[3]=number(tan_y);
+            sky_constants.forward_srgb[3]=frame_constants.camera[3];sky_constants.zenith_exposure[3]=lighting.environment.exposure;
+            sky_constants.horizon_falloff[3]=sky.horizon_falloff;
+            sky_constants.ground_radius[3]=static_cast<float>(2*std::sin(sky.sun_size_degrees*0.0043633231299858239423));
+            // A deterministic reference, never whichever directional light happens
+            // to sort first. Runtime snapshots supply the live light orientation.
+            for(const auto& light:lighting.lights)if(!sky.sun.empty() && light.entity_id==sky.sun && light.light.enabled && light.light.kind==LightKind::directional) {
+                const double length=std::hypot(light.direction[0],light.direction[1],light.direction[2]);
+                require(std::isfinite(length) && length>0,"Sky sun direction is degenerate.");
+                validate_light(light.light);
+                for(std::size_t k=0;k<3;++k) { sky_constants.sun_intensity[k]=number(-light.direction[k]/length);sky_constants.sun_color[k]=light.light.color[k]; }
+                sky_constants.sun_intensity[3]=sky.sun_intensity;break;
+            }
+        }
         for(std::size_t k=0;k<3;++k)frame_constants.ambient_exposure[k]=lighting.environment.ambient[k];
         frame_constants.ambient_exposure[3]=lighting.environment.exposure;
         frame_constants.light_count[0]=static_cast<std::uint32_t>(lighting.lights.size());
@@ -840,6 +904,7 @@ struct Context {
         swapchain_dirty=true;
         device.waitIdle();
         commands=nullptr;
+        sky_pipeline=nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
 #if POIMA_EDITOR
         ui_framebuffers.clear();ui_scene_bindings=nullptr;
@@ -1194,6 +1259,9 @@ struct Context {
 #endif
         commands->clearTextureFloat(multisample_color ? multisample_color.Get() : scene_target, nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));
         if (depth) commands->clearDepthStencilTexture(depth, nvrhi::AllSubresources, true, 1.0f, false, 0);
+        // Sky covers only the actual Scene viewport. It leaves depth untouched,
+        // so opaque geometry and its MSAA edge samples naturally cover it.
+        render_sky(index);
         nvrhi::GraphicsState state;
         state.pipeline = pipeline;
         state.framebuffer = framebuffers[index];

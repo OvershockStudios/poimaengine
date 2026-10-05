@@ -28,6 +28,11 @@ void validate_environment(const LightingEnvironment& e) {
     for(auto x:e.ambient)require(std::isfinite(x) && x>=0 && x<=1e6f,"Ambient fill must be in [0,1e6].");
     require(std::isfinite(e.exposure) && e.exposure>=0 && e.exposure<=1e6f,"Exposure multiplier must be in [0,1e6].");
     require(e.shadow_resolution==256 || e.shadow_resolution==512 || e.shadow_resolution==1024 || e.shadow_resolution==2048,"Shadow resolution must be 256, 512, 1024 or 2048.");
+    for(const auto& color:{e.sky.zenith,e.sky.horizon,e.sky.ground})
+        for(auto x:color)require(std::isfinite(x) && x>=0 && x<=1,"Sky colors must be finite linear RGB in [0,1].");
+    require(std::isfinite(e.sky.horizon_falloff) && e.sky.horizon_falloff>=.1f && e.sky.horizon_falloff<=16,"Sky horizon falloff must be in [0.1,16].");
+    require(std::isfinite(e.sky.sun_size_degrees) && e.sky.sun_size_degrees>=.1f && e.sky.sun_size_degrees<=20,"Sky sun angular diameter must be in [0.1,20] degrees.");
+    require(std::isfinite(e.sky.sun_intensity) && e.sky.sun_intensity>=0 && e.sky.sun_intensity<=1e6f,"Sky sun intensity must be in [0,1e6].");
 }
 std::size_t shadow_view_count(const Light& l) { return l.enabled && l.shadow.enabled ? (l.kind==LightKind::directional ? 4 : l.kind==LightKind::point ? 6 : 1) : 0; }
 void validate_shadow_budget(std::size_t views,std::uint32_t resolution) {
