@@ -87,8 +87,100 @@ void edited_hierarchy_overflow() {
     rejects([&] { r.step(1,{}, {}, {}, {command()}); });
     check(r.inspect().tick==0 && r.entity("meshnode").world==before && !r.animation("rig")->clip,"Edited hierarchy overflow escaped rollback.");
 }
+RuntimeDefinition blend_definition() {
+    auto d=definition();auto m=model();
+    m->animations.push_back({"Target",2,{
+        {1,AnimationPath::translation,AnimationInterpolation::linear,{0,2},{{10,4,0,0},{14,4,0,0}}},
+        {1,AnimationPath::scale,AnimationInterpolation::linear,{0,2},{{3,3,3,0},{3,3,3,0}}}}});
+    m->animations.push_back({"Interrupt",2,{{1,AnimationPath::translation,AnimationInterpolation::linear,{0,2},{{20,6,0,0},{20,6,0,0}}}}});
+    const float y=static_cast<float>(std::sin(85*std::acos(-1.0)/180)),w=static_cast<float>(std::cos(85*std::acos(-1.0)/180));
+    for(auto q:{std::array<float,4>{0,y,0,w},std::array<float,4>{0,-y,0,w},std::array<float,4>{0,-y,0,-w}})
+        m->animations.push_back({"Rotation "+std::to_string(m->animations.size()),2,{{1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},{q,q}}}});
+    d.entities[0].animation_rig->model=m;d.entities[4].mesh->mesh=m->primitives[0];return d;
+}
+AnimationCommand fade(std::optional<std::uint32_t> clip,std::uint32_t ticks,double time=0,bool playing=true,double speed=1) {
+    auto c=command(clip,time,playing,false,speed);c.blend_ticks=ticks;return c;
+}
+RuntimeTransform tip_pose(RuntimeAnimations& animations,std::uint64_t tick) {
+    for(const auto& pose:animations.sample(tick))if(pose.entity=="tip")return pose.local;
+    throw std::runtime_error("Blend fixture tip is absent.");
+}
+void blend_clocks_and_interruption() {
+    RuntimeAnimations animations(blend_definition());animations.apply({fade(0,0)},0);
+    near(tip_pose(animations,30).position[0],1);
+    animations.apply({fade(2,60,0,true,2)},30);
+    const auto initial=animations.state("rig",30);check(initial->transition.has_value(),"Fade missing at weight zero.");
+    near(initial->transition->weight,0);near(initial->transition->source_time,.5);check(!initial->transition->source_frozen && initial->transition->source_clip==0,"First fade froze its advancing source.");
+    near(tip_pose(animations,30).position[0],1);
+    // Source advances to x=2; target advances at speed2 to x=12. The blend
+    // weight is still 0.5, independent of either clip's playback speed.
+    const auto half=tip_pose(animations,60);near(half.position[0],7);near(half.position[1],3);near(half.scale[0],2);
+    const auto state=animations.state("rig",60);near(state->time,1);near(state->transition->source_time,1);near(state->transition->weight,.5);
+    check(state->transition->source_speed==1 && !state->transition->source_loop && state->transition->source_playing,"Outgoing clock inspection differs.");
+    animations.apply({fade(3,60)},60);const auto frozen=animations.checkpoint();
+    check(frozen[0].transition && frozen[0].transition->frozen_source,"Interruption did not retain an immutable local pose.");
+    const auto frozen_positions=(*frozen[0].transition->frozen_source)[1].position;
+    const auto boundary=tip_pose(animations,60);check(boundary.position==half.position && boundary.scale==half.scale && boundary.rotation==half.rotation,"Interruption is discontinuous at its command tick.");
+    near(tip_pose(animations,90).position[0],13.5);near(tip_pose(animations,90).scale[0],1.5);
+    check(animations.state("rig",90)->transition->source_frozen,"Interrupted fade resumed an outgoing clip.");
+    auto invalid=fade(0,3601);rejects([&]{ animations.apply({invalid},90); });
+    check(animations.checkpoint()[0].transition->frozen_source==frozen[0].transition->frozen_source,"Rejected command replaced frozen source.");
+    auto late_invalid=fade(2,0);late_invalid.entity="absent";
+    rejects([&]{ animations.apply({fade(0,0),late_invalid},90); });
+    near(tip_pose(animations,90).position[0],13.5);
+    const auto completed=tip_pose(animations,120);near(completed.position[0],20);near(completed.scale[0],1);
+    check(!animations.state("rig",120)->transition && !animations.checkpoint()[0].transition,"Completed fade retained active state or its buffer.");
+    check((*frozen[0].transition->frozen_source)[1].position==frozen_positions,"Completed fade mutated checkpoint-owned source pose.");
+    animations.apply({fade(0,60)},120);animations.apply({fade(3,0)},120);
+    check(!animations.state("rig",120)->transition,"Immediate replacement did not cancel fade.");near(tip_pose(animations,120).position[0],20);
+}
+void blend_rest_and_rotations() {
+    auto d=blend_definition();d.entities[2].transform.position={8,2,0};d.entities[2].transform.scale={2,2,2};
+    RuntimeAnimations animations(d);animations.apply({fade(0,60,0,false)},0);
+    const auto initial=animations.state("rig",0);check(initial->transition && !initial->transition->source_frozen && !initial->transition->source_clip && initial->transition->source_time==0,"Rest source metadata differs.");
+    near(tip_pose(animations,30).position[0],4);near(tip_pose(animations,30).scale[0],2);
+    near(tip_pose(animations,60).position[0],0);
+    animations.apply({fade({},60)},60);near(tip_pose(animations,90).position[0],4);near(tip_pose(animations,120).position[0],8);
+    check(!animations.state("rig",120)->playing && !animations.state("rig",120)->transition,"Transition to rest did not finish.");
+    // Missing channels always use the authored baseline, never the previous
+    // clip's scale. Rotation follows the short path 170 -> 190 degrees.
+    animations.apply({fade(4,0,0,false)},120);animations.apply({fade(5,60,0,false)},120);
+    const auto middle=tip_pose(animations,150);near(std::abs(middle.rotation[1]),1,1e-6);near(middle.rotation[3],0,1e-6);near(middle.scale[0],2);
+    animations.apply({fade(6,0,0,false)},150);const auto source=tip_pose(animations,150);
+    animations.apply({fade(4,60,0,false)},150);const auto equivalent=tip_pose(animations,180);
+    double dot=0,norm=0;for(std::size_t k=0;k<4;++k) { dot+=source.rotation[k]*equivalent.rotation[k];norm+=equivalent.rotation[k]*equivalent.rotation[k]; }
+    near(std::abs(dot),1);near(norm,1);
+    const auto target=CompiledAnimation(*d.entities[0].animation_rig->model).sample(4,0,false);
+    check(tip_pose(animations,210).rotation==target.local[1].rotation,"Completion did not return the exact destination quaternion.");
+}
+void blend_partition_and_rollback() {
+    const auto d=blend_definition();Runtime a(d),b(d);
+    a.step(30,{}, {}, {},{fade(0,0)});b.step(10,{}, {}, {},{fade(0,0)});b.step(20,{});
+    a.step(45,{}, {}, {},{fade(2,120,0,true,2)});b.step(1,{}, {}, {},{fade(2,120,0,true,2)});b.step(44,{});
+    a.step(15,{}, {}, {},{fade(3,90)});b.step(5,{}, {}, {},{fade(3,90)});b.step(10,{});
+    check(a.entity("tip").world==b.entity("tip").world && a.entity("body").world==b.entity("body").world,"Interrupted blend depends on batch partitioning.");
+    const auto before=a.animation("rig");const auto body=a.entity("body"),tip=a.entity("tip");const auto snapshot=a.snapshot("camera");const auto palette=snapshot.objects[0].skin->palette;
+    rejects([&]{ a.step(60,{}, {}, {},{fade(1,60)}); });
+    const auto after=a.animation("rig");check(after->clip==before->clip && after->time==before->time && after->transition->source_frozen && after->transition->start_tick==before->transition->start_tick && after->transition->weight==before->transition->weight,"Failed target replaced an active frozen transition.");
+    check(a.inspect().tick==b.inspect().tick && a.entity("tip").world==tip.world && a.entity("body").world==body.world && a.entity("body").velocity==body.velocity,"Failed blend did not roll back physics/local poses.");
+    check(a.snapshot("camera").objects[0].skin->palette==palette,"Failed blend changed skin palette.");
+    a.step(100,{});b.step(20,{});b.step(80,{});
+    check(a.entity("tip").world==b.entity("tip").world && a.entity("body").world==b.entity("body").world && !a.animation("rig")->transition,"Retried interrupted blend differs or did not complete.");
+    check(snapshot.objects[0].skin->palette==palette,"Subsequent blend mutated an earlier snapshot.");
+    // Active outgoing invalid curves reject before blending can conceal their
+    // negative scale. Once a short transition ends, that source is irrelevant.
+    Runtime source(d);source.step(1,{}, {}, {},{fade(1,0)});const auto valid=source.entity("tip");
+    rejects([&]{ source.step(60,{}, {}, {},{fade(3,120)}); });
+    check(source.inspect().tick==1 && source.entity("tip").world==valid.world && !source.animation("rig")->transition,"Invalid outgoing curve escaped rollback.");
+    source.step(120,{}, {}, {},{fade(3,1)});check(!source.animation("rig")->transition,"Expired invalid source was evaluated after completion.");
+    // A rejected direct native apply must not publish any replacement clocks.
+    RuntimeAnimations direct(d);direct.apply({fade(2,60)},0);const auto control=direct.state("rig",0);
+    rejects([&]{ direct.apply({fade(1,60,1,false)},0); });
+    check(direct.state("rig",0)->clip==control->clip && direct.state("rig",0)->transition->start_tick==control->transition->start_tick,"Invalid command-time sample mutated direct native clocks.");
+}
+
 }
 int main() {
-    try { playback();partition_and_instances();authored_baseline_and_rollback();invalid_bindings();edited_hierarchy_overflow();std::cout<<"Runtime animation analytic poses, immutable palettes, clocks, instances, ownership and physics rollback passed.\n"; }
+    try { playback();partition_and_instances();authored_baseline_and_rollback();invalid_bindings();edited_hierarchy_overflow();blend_clocks_and_interruption();blend_rest_and_rotations();blend_partition_and_rollback();std::cout<<"Runtime animation analytic poses, immutable palettes, clocks, instances, ownership, fixed-tick crossfades, interruptions and physics rollback passed.\n"; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

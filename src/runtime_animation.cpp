@@ -13,7 +13,37 @@ AnimationCommand normalized(const AnimationCommand& source,const ModelAsset& mod
     check(std::isfinite(result.time) && result.time>=0 && result.time<=1e9,"Animation time must be within 0..1e9 seconds.");
     check(std::isfinite(result.speed) && result.speed>=0 && result.speed<=8,"Animation speed must be within 0..8.");
     check(!result.clip || *result.clip<model.animations.size(),"Animation clip index is invalid for the rig.");
+    check(result.blend_ticks<=3600,"Animation blend duration must be 0..3600 ticks.");
     if(!result.clip) { result.time=0;result.playing=false; }
+    return result;
+}
+RuntimeAnimationState clock_state(const AnimationCommand& control,std::uint64_t anchor_tick,std::uint64_t tick,const ModelAsset& model) {
+    check(tick>=anchor_tick,"Animation clock predates its command.");
+    RuntimeAnimationState result{control.entity,control.clip,control.time,control.speed,control.loop,control.playing,0,{}};
+    if(!control.clip) { result.time=0;result.playing=false;return result; }
+    result.duration=model.animations[*control.clip].duration;
+    if(control.playing)result.time+=double(tick-anchor_tick)*Runtime::fixed_dt*control.speed;
+    if(result.duration==0) { result.time=0;result.playing=false; }
+    else if(control.loop)result.time=std::fmod(result.time,result.duration);
+    else if(result.time>=result.duration) { result.time=result.duration;result.playing=false; }
+    return result;
+}
+bool active(const RuntimeAnimations::Transition& transition,std::uint64_t tick) {
+    check(tick>=transition.start_tick,"Animation transition predates its command.");
+    return tick-transition.start_tick<transition.duration_ticks;
+}
+std::array<double,4> blend_rotation(const std::array<double,4>& source,std::array<double,4> target,double weight) {
+    double dot=0;for(std::size_t k=0;k<4;++k)dot+=source[k]*target[k];
+    if(dot<0) { for(auto& value:target)value=-value;dot=-dot; }
+    double a=1-weight,b=weight;
+    if(dot<.9995) {
+        const double angle=std::acos(std::clamp(dot,0.0,1.0)),denominator=std::sin(angle);
+        a=std::sin((1-weight)*angle)/denominator;b=std::sin(weight*angle)/denominator;
+    }
+    std::array<double,4> result;double norm=0;
+    for(std::size_t k=0;k<4;++k) { result[k]=a*source[k]+b*target[k];norm+=result[k]*result[k]; }
+    check(std::isfinite(norm) && norm>1e-24,"Animation blend quaternion is invalid.");
+    for(auto& value:result)value/=std::sqrt(norm);
     return result;
 }
 bool identity(const RuntimeTransform& value) {
@@ -100,7 +130,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition) {
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
         rig.compiled=compiled.at(rig.model.get());rig.nodes.resize(rig.model->nodes.size());rig.baseline.resize(rig.nodes.size());
         indices_.emplace(entity.id,rigs_.size());rigs_.push_back(std::move(rig));
-        clocks_.push_back({normalized({entity.id,source.clip,source.time,source.speed,source.loop,source.playing},*source.model),0});
+        clocks_.push_back({normalized({entity.id,source.clip,source.time,source.speed,source.loop,source.playing},*source.model),0,{}});
     }
     for(const auto& entity:definition.entities) {
         if(entity.rig_node) {
@@ -112,16 +142,52 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition) {
 }
 std::optional<RuntimeAnimationState> RuntimeAnimations::state(const std::string& entity,std::uint64_t tick) const {
     const auto found=indices_.find(entity);if(found==indices_.end())return {};
-    const auto index=found->second;const auto& clock=clocks_[index];const auto& control=clock.control;
-    check(tick>=clock.anchor_tick,"Animation clock predates its command.");
-    RuntimeAnimationState result{control.entity,control.clip,control.time,control.speed,control.loop,control.playing,0};
-    if(!control.clip) { result.time=0;result.playing=false;return result; }
-    result.duration=rigs_[index].model->animations[*control.clip].duration;
-    if(control.playing)result.time+=double(tick-clock.anchor_tick)*Runtime::fixed_dt*control.speed;
-    if(result.duration==0) { result.time=0;result.playing=false; }
-    else if(control.loop)result.time=std::fmod(result.time,result.duration);
-    else if(result.time>=result.duration) { result.time=result.duration;result.playing=false; }
+    const auto index=found->second;const auto& clock=clocks_[index];const auto& model=*rigs_[index].model;
+    auto result=clock_state(clock.control,clock.anchor_tick,tick,model);
+    if(clock.transition && active(*clock.transition,tick)) {
+        const auto& fade=*clock.transition;RuntimeAnimationTransition transition;
+        transition.start_tick=fade.start_tick;transition.duration_ticks=fade.duration_ticks;
+        transition.elapsed_ticks=static_cast<std::uint32_t>(tick-fade.start_tick);
+        transition.weight=double(transition.elapsed_ticks)/fade.duration_ticks;
+        transition.source_frozen=bool(fade.frozen_source);
+        if(!fade.frozen_source) {
+            const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,model);
+            transition.source_clip=source.clip;transition.source_time=source.time;transition.source_speed=source.speed;
+            transition.source_loop=source.loop;transition.source_playing=source.playing;
+        }
+        result.transition=transition;
+    }
     return result;
+}
+ModelPose RuntimeAnimations::evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const {
+    const auto& rig=rigs_[index];const auto target=clock_state(clock.control,clock.anchor_tick,tick,*rig.model);
+    auto pose=rig.compiled->sample(target.clip,target.time,false,rig.baseline);
+    // Expired sources must never be evaluated: an outgoing clip may become
+    // invalid after the transition has finished, with no effect on its target.
+    if(!clock.transition || !active(*clock.transition,tick))return pose;
+    const auto& fade=*clock.transition;
+    std::vector<NodePose> outgoing;
+    if(fade.frozen_source)outgoing=*fade.frozen_source;
+    else {
+        const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,*rig.model);
+        outgoing=rig.compiled->sample(source.clip,source.time,false,rig.baseline).local;
+    }
+    check(outgoing.size()==pose.local.size(),"Animation transition local pose count differs.");
+    const double weight=double(tick-fade.start_tick)/fade.duration_ticks;
+    // Preserve the exact source at the command boundary. The target has still
+    // been sampled/validated above, so weight zero cannot hide invalid content.
+    if(weight==0)return rig.compiled->sample({},0,false,outgoing);
+    for(std::size_t node=0;node<pose.local.size();++node) {
+        auto& to=pose.local[node];const auto& from=outgoing[node];
+        for(std::size_t axis=0;axis<3;++axis) {
+            to.position[axis]=std::lerp(from.position[axis],to.position[axis],weight);
+            to.scale[axis]=std::lerp(from.scale[axis],to.scale[axis],weight);
+        }
+        to.rotation=blend_rotation(from.rotation,to.rotation,weight);
+    }
+    // The same sampler validation applies to interpolated local TRS and its
+    // composed source hierarchy. Runtime additionally checks edited hierarchies.
+    return rig.compiled->sample({},0,false,pose.local);
 }
 void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick) {
     check(commands.size()<=64,"At most 64 animation commands per batch.");
@@ -129,16 +195,29 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
     for(const auto& command:commands) {
         const auto found=indices_.find(command.entity);check(found!=indices_.end(),"Animation command requires an AnimationRig entity.");
         check(seen.insert(command.entity).second,"Duplicate animation command entity.");
-        candidate[found->second]={normalized(command,*rigs_[found->second].model),tick};
+        const auto index=found->second;const auto& previous=clocks_[index];
+        Clock next{normalized(command,*rigs_[index].model),tick,{}};
+        if(command.blend_ticks>0) {
+            Transition fade;fade.start_tick=tick;fade.duration_ticks=command.blend_ticks;
+            if(previous.transition && active(*previous.transition,tick))
+                fade.frozen_source=std::make_shared<const std::vector<NodePose>>(evaluate(index,previous,tick).local);
+            else { fade.source=previous.control;fade.source_anchor_tick=previous.anchor_tick; }
+            next.transition=std::move(fade);
+        }
+        // Candidate-only sampling makes failed direct native apply atomic too.
+        (void)evaluate(index,next,tick);candidate[index]=std::move(next);
     }
     clocks_.swap(candidate);
 }
-std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) const {
+std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) {
     std::vector<RuntimeAnimationPose> result;
-    for(const auto& rig:rigs_) {
-        const auto current=*state(rig.entity,tick);const auto pose=rig.compiled->sample(current.clip,current.time,false,rig.baseline);
+    for(std::size_t index=0;index<rigs_.size();++index) {
+        const auto& rig=rigs_[index];const auto pose=evaluate(index,clocks_[index],tick);
         for(std::size_t i=0;i<rig.nodes.size();++i) { const auto& local=pose.local[i];result.push_back({rig.nodes[i],{local.position,local.rotation,local.scale}}); }
     }
+    // Release completed immutable interruption buffers only after every rig
+    // sampled successfully. The batch checkpoint still owns any rollback copy.
+    for(auto& clock:clocks_)if(clock.transition && !active(*clock.transition,tick))clock.transition.reset();
     return result;
 }
 std::shared_ptr<const SkinPose> RuntimeAnimations::skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const {

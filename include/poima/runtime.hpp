@@ -47,6 +47,16 @@ struct AnimationCommand {
     std::optional<std::uint32_t> clip;
     double time=0,speed=1;
     bool loop=true,playing=false;
+    std::uint32_t blend_ticks=0;
+};
+struct RuntimeAnimationTransition {
+    std::uint64_t start_tick=0;
+    std::uint32_t duration_ticks=0,elapsed_ticks=0;
+    double weight=0;
+    bool source_frozen=false;
+    std::optional<std::uint32_t> source_clip;
+    double source_time=0,source_speed=1;
+    bool source_loop=true,source_playing=false;
 };
 struct RuntimeAnimationState {
     std::string entity;
@@ -54,6 +64,7 @@ struct RuntimeAnimationState {
     double time=0,speed=1;
     bool loop=true,playing=false;
     double duration=0;
+    std::optional<RuntimeAnimationTransition> transition;
 };
 struct RuntimeEntityDefinition {
     std::string id, parent;

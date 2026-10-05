@@ -1,0 +1,525 @@
+{
+  "milestone": "M2 native animation crossfades and typed editor controls",
+  "version": "0.0.33",
+  "date": "2026-10-05",
+  "source_base": "e8447603fcda936585c87b513bea632bfed12392",
+  "sources": {
+    "CMakeLists.txt": "d67ff5d8b73a00a450d3d248cd5f60aa4829e809a5577021eb10c9a56744e1d6",
+    "include/poima/runtime.hpp": "f7b9c3498ea7ccd66e0b3875e6c9515ffbc84434ad4aae5dbbe8846e3e18c4ce",
+    "include/poima/runtime_animation.hpp": "a2e1fa8591fad09e4fc1d000797cd691f866f604ade4566193ec1fdaaa03e6d7",
+    "src/runtime_animation.cpp": "4e34a9c09dceb92c333344926ad101bff5526fc3e870649d5ca8d20c43844f2d",
+    "src/world.cpp": "9b132835cd74446aee015f62cd55a035475feae1b458b6fea2ba163d99deda94",
+    "desktop/Poima.Editor/EditorModel.cs": "be00cf72ba85d8d8adb99ca81531ebb33ac31c73797f1b34297530dc09b4193b",
+    "desktop/Poima.Editor/MainWindow.cs": "7c6363379e5977a6187a07583ab0255835f9c13860047586175f305be5cda9c5",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "588a9f4e72d9bde68a1209d263c46ad90a5aea087783a31349e443a21dcbd5e3",
+    "tests/runtime_animation_native.cpp": "03a5ec3d11e6c095d306e06870ab9dd1ff8adfc35e5419dc8a3606b2695af1e0",
+    "tests/world_session_native.cpp": "85b059c36302ba21a82ffe18632b4e4224143f389216a297d21e112295dd1ba8",
+    "tests/runtime_animation_blend_contract.py": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+    "tests/runtime_animation_blend_capture.py": "b20d2ca939bf4b5d4fb6ecd52ebb0aef6c5c53cb2dfbab3079f195558a0fd1c6",
+    "tests/desktop_animation_controls.py": "f4a1c66ef87b6bc334564178e78fd99a7e10f72d0524967dc2c347f76d7f610e"
+  },
+  "binaries": {
+    "build/windows-runtime/poima.exe": "f29c1bc5310340de396f41fb8349d24380be47ee525bbaedb01a706a8fc15308",
+    "build/windows-runtime/poima_desktop.dll": "747f14f88ca94fe64c3379504eeb1ae0f859505f8e9e8cfdc529e0db46590eeb",
+    "build/windows-runtime/poima-runtime-animation-test.exe": "1e79d654be7e2a950c872875fa7a42534f47886a483723672fefb53fe7272900",
+    "build/desktop-animation-blend-final/Poima.Editor.exe": "f8416c07b4c2510718fc1719772f10007e1e7bcd4975fe35945b9803629c55ba",
+    "build/desktop-animation-blend-final/Poima.Editor.dll": "81b189faaa775b6fac3c6081d160bb9b8cd65e42b69dcbee66ab991992b8e376"
+  },
+  "linux_ctest": [
+    {
+      "configuration": "runtime",
+      "report_sha256": "c21d9da358debb4384d95fd1845ae10e221c4cdfaed3828974f3d42ce3ba2497",
+      "tests": 32,
+      "failures": 0,
+      "skipped": 0,
+      "junit_seconds": 95.0
+    },
+    {
+      "configuration": "authoring_only",
+      "report_sha256": "2a348414c92e8910410406b9cc07df4aed67f2007d382fbb7ab3375e51c21111",
+      "tests": 27,
+      "failures": 0,
+      "skipped": 0,
+      "junit_seconds": 61.0
+    }
+  ],
+  "protocol": [
+    {
+      "name": "linux_crossfades",
+      "report_sha256": "ae337e3290b0f1dea67a78f06ce61e83e636f2097a0f1aedb056bcd969e0220d",
+      "passed": true,
+      "tests": 7,
+      "skipped": 0,
+      "runtime": true,
+      "binary_sha256": "bcce216517e127e279fbad7f480c31652c3c8a42d020782f276ab6a6a037236e",
+      "test_sha256": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e"
+    },
+    {
+      "name": "windows_crossfades",
+      "report_sha256": "8d0e697387b2d65907124743ea5a48dfbb448e29b55b6a695e24f53267c79051",
+      "passed": true,
+      "tests": 7,
+      "skipped": 0,
+      "runtime": true,
+      "binary_sha256": "f29c1bc5310340de396f41fb8349d24380be47ee525bbaedb01a706a8fc15308",
+      "test_sha256": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e"
+    },
+    {
+      "name": "windows_animation_regression",
+      "report_sha256": "9887aac4df3708cbf34a341d35e49ae3687842e18af073434f731cb68a907ca5",
+      "passed": true,
+      "tests": 11,
+      "skipped": 0,
+      "runtime": true,
+      "binary_sha256": "f29c1bc5310340de396f41fb8349d24380be47ee525bbaedb01a706a8fc15308",
+      "test_sha256": "00dff517caf8845ee390513962ede5a70c37d046d44b1fccdba2837ed9aa8243"
+    },
+    {
+      "name": "windows_mesh_collision_regression",
+      "report_sha256": "193c4f5817c7210ff79fea6232654a4e3afad2dc4b53df5f2ea4eac78d8f987b",
+      "passed": true,
+      "tests": 9,
+      "skipped": 0,
+      "runtime": true,
+      "binary_sha256": "f29c1bc5310340de396f41fb8349d24380be47ee525bbaedb01a706a8fc15308",
+      "test_sha256": "1c7d3bf4b469feef42401c11e632686f8a6c67788024bb8c485c346d6295f8b5"
+    }
+  ],
+  "windows_native": {
+    "passed": true,
+    "log_sha256": "67bcfa94baf781913aac8382605639381997d058778bad63d27172b8976d3bd8",
+    "checks": "Analytic poses, immutable palettes/checkpoints, independent clocks/instances, shortest-arc rotation, rest/baseline fallback, crossfade endpoints/interruption, expired-source cleanup, atomic invalid samples and physics rollback."
+  },
+  "gpu": [
+    {
+      "report_sha256": "7111288a4c5718888e19e4dbfeda16938c9504c446af8f672c04c852e081b552",
+      "passed": true,
+      "gpu": 1,
+      "binary_sha256": "f29c1bc5310340de396f41fb8349d24380be47ee525bbaedb01a706a8fc15308",
+      "test_sha256": "b20d2ca939bf4b5d4fb6ecd52ebb0aef6c5c53cb2dfbab3079f195558a0fd1c6",
+      "fixture_sha256": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+      "capture_count": 24,
+      "motion_pixels": {
+        "1": 23064,
+        "4": 23437
+      },
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "d07f6553ff4e3d18ce0ccb20ac24f4f77f216644c3968552839fded0540294ee",
+          "authored_sha256": "d07f6553ff4e3d18ce0ccb20ac24f4f77f216644c3968552839fded0540294ee"
+        },
+        {
+          "samples": 1,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "767cc087c2518f7e033c055cee785ae3f4ee2498094a33b26cb2fea46f3387a4",
+          "authored_sha256": "767cc087c2518f7e033c055cee785ae3f4ee2498094a33b26cb2fea46f3387a4"
+        },
+        {
+          "samples": 1,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "d880133fb6b158ac4b882777ce2c455de5bf3fc882dab5ed1f3e742112ddb3b9",
+          "authored_sha256": "d880133fb6b158ac4b882777ce2c455de5bf3fc882dab5ed1f3e742112ddb3b9"
+        },
+        {
+          "samples": 1,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "71d0169f2dcfbdc7a2e020ce7fb3cfa733fa56081e9dec9a831c83b38d901451",
+          "authored_sha256": "71d0169f2dcfbdc7a2e020ce7fb3cfa733fa56081e9dec9a831c83b38d901451"
+        },
+        {
+          "samples": 1,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "42cd68363a65bc0513f96243ccfbaed46d4aae693608b622c27dfeb93c905e08",
+          "authored_sha256": "42cd68363a65bc0513f96243ccfbaed46d4aae693608b622c27dfeb93c905e08"
+        },
+        {
+          "samples": 1,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "bbe8a6d56554a83e23a1042b21bba2da92581812486d373f26e3ce119ec97ad1",
+          "authored_sha256": "bbe8a6d56554a83e23a1042b21bba2da92581812486d373f26e3ce119ec97ad1"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "407caa5ef3b295ae4b1b138c0b2a17ab7a816e0407b5218f8b5cb9fa79f04b19",
+          "authored_sha256": "407caa5ef3b295ae4b1b138c0b2a17ab7a816e0407b5218f8b5cb9fa79f04b19"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "d43eab3122e5ccb650e9288c04f78aac085a18114c469ac965a35bbfa439b6f9",
+          "authored_sha256": "d43eab3122e5ccb650e9288c04f78aac085a18114c469ac965a35bbfa439b6f9"
+        },
+        {
+          "samples": 4,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "70e72bc69d86663ab9027e9b7c811d46dd1911cb37a055cd2bad8a5b7af85995",
+          "authored_sha256": "70e72bc69d86663ab9027e9b7c811d46dd1911cb37a055cd2bad8a5b7af85995"
+        },
+        {
+          "samples": 4,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "f3269f499862af396ad5dcc0bb11f9fe4dc038ef4695716af6e10d926949b752",
+          "authored_sha256": "f3269f499862af396ad5dcc0bb11f9fe4dc038ef4695716af6e10d926949b752"
+        },
+        {
+          "samples": 4,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "e363549f6c4e8410a55136aa09954f696fef1072196f1ca140bce410d5df5bdb",
+          "authored_sha256": "e363549f6c4e8410a55136aa09954f696fef1072196f1ca140bce410d5df5bdb"
+        },
+        {
+          "samples": 4,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "fdc54a1fa3e85871b1b5bd6713300c3fc65c26310e4ee62c12d66bb00764662f",
+          "authored_sha256": "fdc54a1fa3e85871b1b5bd6713300c3fc65c26310e4ee62c12d66bb00764662f"
+        }
+      ],
+      "oracle": "Live blended rig versus independently authored reference bone TRS; six states at 1x and 4x MSAA."
+    },
+    {
+      "report_sha256": "c3e2458b17d1125e73295323e06cb824f6d1c4ff9b38e04d75fa5c3746706db9",
+      "passed": true,
+      "gpu": 0,
+      "binary_sha256": "f29c1bc5310340de396f41fb8349d24380be47ee525bbaedb01a706a8fc15308",
+      "test_sha256": "b20d2ca939bf4b5d4fb6ecd52ebb0aef6c5c53cb2dfbab3079f195558a0fd1c6",
+      "fixture_sha256": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+      "capture_count": 24,
+      "motion_pixels": {
+        "1": 23064,
+        "4": 23437
+      },
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "78c78a67b55de6ac5601cb53b52b5fd88d9a72c168d3da9159e123422b6864f0",
+          "authored_sha256": "78c78a67b55de6ac5601cb53b52b5fd88d9a72c168d3da9159e123422b6864f0"
+        },
+        {
+          "samples": 1,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "65d1a40a04ec3dc8db940578fc55c1faf6cb0074c19d2cefd48702de3a90f11f",
+          "authored_sha256": "65d1a40a04ec3dc8db940578fc55c1faf6cb0074c19d2cefd48702de3a90f11f"
+        },
+        {
+          "samples": 1,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "cacc432f52767f96d510b29d9761a54209470240d618c8880a82eae6ed8ba618",
+          "authored_sha256": "cacc432f52767f96d510b29d9761a54209470240d618c8880a82eae6ed8ba618"
+        },
+        {
+          "samples": 1,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "71d0169f2dcfbdc7a2e020ce7fb3cfa733fa56081e9dec9a831c83b38d901451",
+          "authored_sha256": "71d0169f2dcfbdc7a2e020ce7fb3cfa733fa56081e9dec9a831c83b38d901451"
+        },
+        {
+          "samples": 1,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "f47ed59a769e28c7198dd2b7014fddf4ae786cf8539d243d90b933121edb9137",
+          "authored_sha256": "f47ed59a769e28c7198dd2b7014fddf4ae786cf8539d243d90b933121edb9137"
+        },
+        {
+          "samples": 1,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "c2a3ed842e9cf2f8369543004af447560ebbbf82769842f6fa4971e3e5673183",
+          "authored_sha256": "c2a3ed842e9cf2f8369543004af447560ebbbf82769842f6fa4971e3e5673183"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "808208b897092b033ba3d12d45bedb16881b640377b877a5f1dc8bd327469270",
+          "authored_sha256": "808208b897092b033ba3d12d45bedb16881b640377b877a5f1dc8bd327469270"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3db446e37c071139b5a755c66ed558bdc2f0bb89797e5932718f84995a09cdc4",
+          "authored_sha256": "3db446e37c071139b5a755c66ed558bdc2f0bb89797e5932718f84995a09cdc4"
+        },
+        {
+          "samples": 4,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b22114473bbdbe4c3fcb195daef790c47f9e3265caef50ea6acf3a60491b911d",
+          "authored_sha256": "b22114473bbdbe4c3fcb195daef790c47f9e3265caef50ea6acf3a60491b911d"
+        },
+        {
+          "samples": 4,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "d18b9f2f9776ad89735e6c40cb49b76e55d02f54a20fc4d490740647964c00c1",
+          "authored_sha256": "d18b9f2f9776ad89735e6c40cb49b76e55d02f54a20fc4d490740647964c00c1"
+        },
+        {
+          "samples": 4,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "993893e64f03dc9db5eabc9807e8f99e411e0aa540d56b2ce2a56aaf3c966b84",
+          "authored_sha256": "993893e64f03dc9db5eabc9807e8f99e411e0aa540d56b2ce2a56aaf3c966b84"
+        },
+        {
+          "samples": 4,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "c49a72d3c65828e6c1a46466e670f89114d498292971602ee422afe6ec000ab4",
+          "authored_sha256": "c49a72d3c65828e6c1a46466e670f89114d498292971602ee422afe6ec000ab4"
+        }
+      ],
+      "oracle": "Live blended rig versus independently authored reference bone TRS; six states at 1x and 4x MSAA."
+    }
+  ],
+  "desktop": [
+    {
+      "report_sha256": "da803dc38b2fe30bbb354336fe7a7cdef84de9657faa7c6def26f8e11ffb1f41",
+      "passed": true,
+      "gpu": 1,
+      "source_sha256": "f4a1c66ef87b6bc334564178e78fd99a7e10f72d0524967dc2c347f76d7f610e",
+      "editor_sha256": "81b189faaa775b6fac3c6081d160bb9b8cd65e42b69dcbee66ab991992b8e376",
+      "input": "Accessible control semantic actions; physical input is not qualified.",
+      "window_capture": {
+        "status": "unavailable",
+        "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+      },
+      "exit_code": 0,
+      "captures": {
+        "scene.bmp": "e592790a1dcb49bd73d5061aae4bdb2889c7c60575d50b1f3780e227385e1f05",
+        "game.bmp": "4a8bd45d004a3520327bff0f33848e8e952cf14dd718c319e8e18379a8aa912f"
+      },
+      "actions": 101,
+      "frontend": "Avalonia 12.1.3 / Dock 12.1.0.6",
+      "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "render_scaling": 1.25,
+      "font_resolved": "Inter",
+      "native_capture": {
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 4,
+        "width": 1027,
+        "height": 763,
+        "success": true
+      }
+    },
+    {
+      "report_sha256": "355efd5a9a2eb37311122ea408bcd4a145b52a908ffa0068c2c03c9f91ac1925",
+      "passed": true,
+      "gpu": 0,
+      "source_sha256": "f4a1c66ef87b6bc334564178e78fd99a7e10f72d0524967dc2c347f76d7f610e",
+      "editor_sha256": "81b189faaa775b6fac3c6081d160bb9b8cd65e42b69dcbee66ab991992b8e376",
+      "input": "Accessible control semantic actions; physical input is not qualified.",
+      "window_capture": {
+        "status": "unavailable",
+        "reason": "Current session is locked, disconnected or unknown (level 1, state 0, flags 0)."
+      },
+      "exit_code": 0,
+      "captures": {
+        "scene.bmp": "0b8fccc30bb967a37a8f24a5a83078a19ea2140c299198c0efe039784dc861af",
+        "game.bmp": "7203d05e1de5c00fcaa9d9202d8eae2f2f8c5b2ac52e08eb1a264789cba62b25"
+      },
+      "actions": 101,
+      "frontend": "Avalonia 12.1.3 / Dock 12.1.0.6",
+      "ui_backend_actual": "Avalonia.Vulkan.VulkanPlatformGraphics",
+      "render_scaling": 1.25,
+      "font_resolved": "Inter",
+      "native_capture": {
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "nvrhi_errors": 0,
+        "samples": 4,
+        "width": 1027,
+        "height": 763,
+        "success": true
+      }
+    }
+  ],
+  "desktop_checks": [
+    "Typed named authored clips and rest pose; Apply/Undo/Redo; invalid drafts and revision conflicts.",
+    "Paused live seek/hold, play and crossfade; numeric pose oracle, source clocks, speed-zero state and interruptions.",
+    "Stale observed-tick rejection, dirty authored-draft guard, controls disabled during continuous playback, Stop/restart preserves authored state."
+  ],
+  "resolved_findings": [
+    "Validate blend_ticks integer type and range before receipt matching: JSON equality otherwise treats 0 and 0.0 as equal. Fresh and reused malformed float commands are rejected.",
+    "Report an outgoing speed-zero playback clock as held in the Inspector. Final packaged editor reran on both GPUs after the label correction."
+  ],
+  "limitations": [
+    "Synthetic ribbon fixtures qualify these operations, not a complete Mixamo/FBX or production character workflow.",
+    "Scripted accessible-control actions do not qualify physical input. Windows was locked, so a fresh full-window editor screenshot and visual review of the new controls remain unavailable.",
+    "Crossfade interruption preserves pose, not velocity continuity, locomotion phase or foot contact.",
+    "C# gameplay animation controls, layers, blend spaces, state graphs, events, IK, retargeting and root motion remain unfinished.",
+    "No crowd-throughput, frame-time, cross-platform bitwise determinism, native Linux graphics or console qualification.",
+    "Transactional runtime checkpoints do not constitute persistent game saves or a retained timeline."
+  ],
+  "image": {
+    "path": "m2-animation-blending.png",
+    "sha256": "98526d63fc70c59260026573a74443d6788a3b583f9f07decdc343c15a50de4f",
+    "description": "Native NVIDIA 4x MSAA interrupted-crossfade ribbon fixture, visually reviewed. This is not a desktop UI screenshot."
+  }
+}

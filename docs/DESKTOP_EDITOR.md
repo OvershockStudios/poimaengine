@@ -185,10 +185,20 @@ The isolated Avalonia Vulkan-only startup probe observed `Avalonia.Vulkan.Vulkan
 
 `--frames N --report <new.json>` bounds a qualification run; frames count dispatcher pumps, not guaranteed presentations. The report path must be outside the world's directory. `--script <file>` additionally accepts bounded semantic actions and requires an explicit frame limit. It is a qualification helper, not physical pointer/keyboard evidence or the general agent interface. Use shared JSON-RPC for normal agent work. Explicit bounded qualification runs exit at their limit even if a fixture leaves a draft; the ordinary human close guard does not override that requested limit.
 
-Multiselect, drag imports, editor gamepad/audio output, rendered asset previews, material/texture pickers and dedicated animation/VFX authoring are not implemented. ImGui editor shortcuts and capabilities are not inherited merely because both frontends share the native service.
+Multiselect, drag imports, editor gamepad/audio output, rendered asset previews, material/texture pickers and complete animation/VFX authoring tools are not implemented. ImGui editor shortcuts and capabilities are not inherited merely because both frontends share the native service.
 
 The build packages native engine notices, package-provided license/third-party files, pinned upstream license texts for expression-only NuGet packages, Inter licensing (plus Source Sans notices for the older ImGui frontend) and notices from the resolved .NET runtime/apphost packs. The manifest records payload hashes and provenance. Packaging checks cover the locked dependency inventory; they are not a complete source-level legal audit. See [desktop notice provenance](../third_party/desktop_notices/provenance.json).
 
 ## Static mesh collision authoring
 
 An imported StaticMesh exposes **Add static collision**, an explicit undoable action copying the selected asset and primitive. The Mesh Collider Inspector edits that reference and contact material and offers removal. Attach/remove require stopped playback and clean drafts, preserve stale-edit conflicts, and reject objects that already have a box collider or character controller. Runtime ray queries use the resulting triangle mesh, including actual door/fence openings. See [the mesh collision contract](MESH_COLLISION.md) for static-only restrictions, front-face contacts and two-sided rays.
+
+## Animation authoring and paused preview
+
+The **Animation Rig · Initial state** Inspector exposes named clips from the imported model, a Rest pose choice, time, speed, looping and initial playback. These fields use the normal draft, Apply, conflict and Undo workflow. They configure the next runtime start; changing them does not retime an existing running rig.
+
+During Play, selecting a rig adds **Live animation** controls above the authored fields. Pause the simulation, load its current state, and edit destination clip index (blank selects rest), time, speed and looping. **Seek / hold · +1 tick** immediately holds the requested pose, **Play · +1 tick** immediately starts the requested playback, and **Crossfade · +1 tick** uses the chosen destination-playing flag and blend duration. A duration of 60 ticks is one second; zero switches immediately. Each action advances the entire paused simulation by one tick, including physics, and does not commit authored changes.
+
+The live summary shows destination time and active fade weight, duration and outgoing clip or frozen-pose source. It updates as the runtime changes while command fields retain their draft. **Load live state** explicitly refreshes those fields and their observed tick. After an external step or other clock change, a stale command rejects; load again before resubmitting. Dirty authored drafts also block a live command. Changing selection or runtime replaces the live panel.
+
+These controls use `runtime.entity` and `desktop.play.step`, the same guarded operations available to agents. They are a playback/transition tool, not a graph editor, animation timeline, IK authoring suite or game-save system. See [runtime animation](RUNTIME_ANIMATION.md) for clock, interruption and rollback behavior.

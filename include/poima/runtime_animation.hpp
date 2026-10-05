@@ -16,17 +16,28 @@ class RuntimeAnimations {
         std::vector<std::string> nodes;
     };
 public:
-    struct Clock { AnimationCommand control;std::uint64_t anchor_tick=0; };
+    struct Transition {
+        AnimationCommand source;
+        std::uint64_t source_anchor_tick=0,start_tick=0;
+        std::uint32_t duration_ticks=0;
+        std::shared_ptr<const std::vector<NodePose>> frozen_source;
+    };
+    struct Clock {
+        AnimationCommand control;
+        std::uint64_t anchor_tick=0;
+        std::optional<Transition> transition;
+    };
 private:
     std::vector<Rig> rigs_;
     std::map<std::string,std::size_t> indices_;
     std::map<std::string,RuntimeSkinnedMesh> skins_;
     std::vector<Clock> clocks_;
+    ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
 public:
     explicit RuntimeAnimations(const RuntimeDefinition& definition);
     std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick) const;
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
-    std::vector<RuntimeAnimationPose> sample(std::uint64_t tick) const;
+    std::vector<RuntimeAnimationPose> sample(std::uint64_t tick);
     std::vector<Clock> checkpoint() const { return clocks_; }
     void restore(std::vector<Clock>& checkpoint) noexcept { clocks_.swap(checkpoint); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;

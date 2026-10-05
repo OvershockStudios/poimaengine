@@ -13,6 +13,10 @@ public sealed record EntityRow(string Id, string Name, string? Parent, string[] 
         Components.Any(x => x is "MeshRenderer" or "StaticMesh" or "SkinnedMesh") ? "cube" : "entity";
 }
 public sealed record CameraChoice(string Id, string Label);
+public sealed record AnimationClipChoice(int? Index, string Label)
+{
+    public override string ToString() => Label;
+}
 
 public sealed class EditorModel : IDisposable
 {
@@ -295,6 +299,38 @@ public sealed class EditorModel : IDisposable
     {
         if (RuntimeId is null || !Paused) throw new InvalidOperationException("Pause playback before stepping.");
         Host.Call("desktop.play.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["ticks"] = ticks });
+        Host.RefreshState();
+    }
+    public JsonObject InspectSelectedAnimation()
+    {
+        if (RuntimeId is null || Selected is null) throw new InvalidOperationException("Select a rig in a running simulation first.");
+        return Host.Call("runtime.entity", new() { ["session_id"] = RuntimeId, ["id"] = Selected, ["tick"] = Tick });
+    }
+    public IReadOnlyList<AnimationClipChoice> AnimationClips(string asset)
+    {
+        var result = new List<AnimationClipChoice> { new(null, "Rest pose") };
+        var parameters = new JsonObject { ["asset"] = asset, ["section"] = "animations", ["limit"] = 64 };
+        do
+        {
+            var page = Host.Call("asset.inspect", parameters);
+            foreach (var clip in page["items"]!.AsArray())
+            {
+                var index = clip!["index"]!.GetValue<int>();
+                result.Add(new(index, $"{index} · {clip["name"]!.GetValue<string>()}"));
+            }
+            parameters["offset"] = page["next_offset"]?.DeepClone();
+        } while (parameters["offset"] is not null);
+        return result;
+    }
+    public void StepAnimation(string entity, string session, long observedTick, JsonObject command, int blendTicks)
+    {
+        RequireClean();
+        if (Selected != entity || RuntimeId != session) throw new InvalidOperationException("Animation selection or runtime changed. Load live state again.");
+        if (!Paused) throw new InvalidOperationException("Pause playback before changing live animation.");
+        if (blendTicks < 0 || blendTicks > 3600) throw new ArgumentOutOfRangeException(nameof(blendTicks));
+        var value = Clone(command); value["entity"] = entity; value["blend_ticks"] = blendTicks;
+        Host.Call("desktop.play.step", new() { ["session_id"] = session, ["request_id"] = NewId(),
+            ["expected_tick"] = observedTick, ["ticks"] = 1, ["animations"] = new JsonArray(value) });
         Host.RefreshState();
     }
     public void SetGameCamera(string? camera)

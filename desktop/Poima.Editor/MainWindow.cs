@@ -378,13 +378,24 @@ public sealed class MainWindow : Window
     private Control BuildInspector()
     {
         var root = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
-        var fields = new StackPanel { Spacing = 0 }; root.Children.Add(new ScrollViewer { Content = fields, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
+        var fields = new StackPanel { Spacing = 0 };
+        var live = new StackPanel { Spacing = 0 };
+        var content = new StackPanel(); content.Children.Add(live); content.Children.Add(fields);
+        root.Children.Add(new ScrollViewer { Content = content, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
         var footer = new StackPanel { Spacing = 5, Margin = new Thickness(8) };
         var message = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
         actions.Children.Add(Button("Apply", Model.Apply)); actions.Children.Add(Button("Reload", Model.Reload));
         footer.Children.Add(message); footer.Children.Add(actions); Grid.SetRow(footer, 1); root.Children.Add(footer);
-        string last = "";
+        string last = "", liveKey = "";
+        void RefreshLive()
+        {
+            var key = $"{Model.Selected}:{Model.RuntimeId}";
+            if (key == liveKey) return;
+            liveKey = key; live.Children.Clear();
+            if (Model.Selected is not null && Model.RuntimeId is not null && Model.DraftComponents.ContainsKey("AnimationRig"))
+                live.Children.Add(BuildLiveAnimation());
+        }
         void Banner()
         {
             footer.IsVisible = Model.Dirty || Model.Conflict;
@@ -393,7 +404,7 @@ public sealed class MainWindow : Window
         }
         void Refresh()
         {
-            Banner();
+            Banner(); RefreshLive();
             var key = $"{Model.Selected}:{Model.DraftGeneration}";
             if (key == last) return; last = key; fields.Children.Clear();
             if (Model.Selected is null) { fields.Children.Add(new TextBlock { Text = "Select an object to inspect its components.", Margin = new Thickness(16), Foreground = EditorTheme.Brush("#939393"), TextWrapping = TextWrapping.Wrap }); return; }
@@ -407,7 +418,7 @@ public sealed class MainWindow : Window
                 if (pair.Value is not JsonObject component) continue;
                 var section = new StackPanel { Spacing = 2, Margin = new Thickness(8, 5, 8, 7) };
                 if (pair.Key == "Transform") BuildTransform(section, component, Banner);
-                else if (pair.Key is "Camera" or "MeshRenderer" or "MeshCollider" or "PbrMaterial" or "Light" or "LightingEnvironment") BuildTypedComponent(section, pair.Key, component, Banner);
+                else if (pair.Key is "Camera" or "MeshRenderer" or "MeshCollider" or "AnimationRig" or "PbrMaterial" or "Light" or "LightingEnvironment") BuildTypedComponent(section, pair.Key, component, Banner);
                 else
                 {
                     var json = new TextBox { Text = Model.FieldText(pair.Key, component.ToJsonString(new JsonSerializerOptions { WriteIndented = true })), AcceptsReturn = true, FontSize = 12, MinHeight = 80, FontFamily = new FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
@@ -438,11 +449,94 @@ public sealed class MainWindow : Window
                 }
                 var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
                 title.Children.Add(EditorIcons.Make(pair.Key switch { "Transform" => "transform", "Camera" => "camera", "Light" or "LightingEnvironment" => "light", "MeshRenderer" => "cube", _ => "entity" }, 13));
-                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "MeshCollider" => "Mesh Collider · Static", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
-                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "StaticMesh" or "MeshCollider" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
+                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "MeshCollider" => "Mesh Collider · Static", "AnimationRig" => "Animation Rig · Initial state", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
+                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "StaticMesh" or "MeshCollider" or "AnimationRig" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
             }
         }
+        EventHandler playback = (_, _) => RefreshLive();
+        root.AttachedToVisualTree += (_, _) => { Model.PlaybackChanged += playback; RefreshLive(); };
+        root.DetachedFromVisualTree += (_, _) => Model.PlaybackChanged -= playback;
         Observe(root, Model, Refresh); Refresh(); return root;
+    }
+    private Control BuildLiveAnimation()
+    {
+        var entity = Model.Selected!; var session = Model.RuntimeId!;
+        var panel = new StackPanel { Spacing = 4, Margin = new Thickness(8) };
+        panel.Children.Add(Label("Live animation · " + Model.DraftName));
+        var status = new TextBox { IsReadOnly = true, TextWrapping = TextWrapping.Wrap, FontSize = 12 };
+        AutomationProperties.SetName(status, "AnimationRig Live status"); panel.Children.Add(status);
+        var note = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
+        panel.Children.Add(note);
+        TextBox Field(string label, string text)
+        {
+            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("112,*"), ColumnSpacing = 5 };
+            row.Children.Add(Label(label.StartsWith("Clip", StringComparison.Ordinal) ? "Clip (blank: rest)" : label, true));
+            var edit = new TextBox { Text = text, FontSize = 12, MinWidth = 35 };
+            AutomationProperties.SetName(edit, "AnimationRig Live " + label); Grid.SetColumn(edit, 1); row.Children.Add(edit); panel.Children.Add(row); return edit;
+        }
+        var clip = Field("Clip index (blank = rest)", "");
+        var time = Field("Time (s)", ""); var speed = Field("Speed", "");
+        var loop = new CheckBox { Content = "Loop", MinHeight = 22 };
+        var playing = new CheckBox { Content = "Destination playing", MinHeight = 22 };
+        AutomationProperties.SetName(loop, "AnimationRig Live Loop"); AutomationProperties.SetName(playing, "AnimationRig Live Destination playing");
+        panel.Children.Add(loop); panel.Children.Add(playing);
+        var blend = Field("Blend ticks", "12"); ToolTip.SetTip(blend, "0–3600 fixed ticks; 60 ticks = 1 second. Zero switches immediately.");
+        long? observedTick = null;
+        bool Current() => Model.Selected == entity && Model.RuntimeId == session;
+        string Number(JsonNode? node) => node is JsonValue number && number.TryGetValue<double>(out var value) ? value.ToString("G6", CultureInfo.InvariantCulture) : node?.ToJsonString() ?? "rest";
+        void Show(JsonObject observation)
+        {
+            var animation = observation["animation"] as JsonObject ?? throw new InvalidOperationException("Selected runtime entity is not an animation rig.");
+            var summary = $"{(Model.Paused ? "Paused" : "Playing")} · Tick {observation["tick"]} · Clip {Number(animation["clip"])} · Time {Number(animation["time"])} s\nSpeed {Number(animation["speed"])} · {(animation["playing"]!.GetValue<bool>() ? "playing" : "held")}";
+            if (animation["transition"] is JsonObject transition)
+                summary += $"\nBlend {Number(transition["weight"])} · {transition["elapsed_ticks"]}/{transition["duration_ticks"]} ticks\nSource: " +
+                    (transition["source_frozen"]!.GetValue<bool>() ? "frozen pose" : $"clip {Number(transition["source_clip"])} at {Number(transition["source_time"])} s ({(transition["source_playing"]!.GetValue<bool>() && transition["source_speed"]!.GetValue<double>() > 0 ? "advancing" : "held")})");
+            else summary += "\nNo active transition";
+            status.Text = summary;
+            note.Text = observedTick is long tick ? $"Observed tick {tick}. Load live state to refresh command fields." : "Load live state to prepare a command.";
+        }
+        void Load()
+        {
+            if (!Current()) return;
+            var observation = Model.InspectSelectedAnimation();
+            var state = observation["animation"] as JsonObject ?? throw new InvalidOperationException("Selected runtime entity is not an animation rig.");
+            clip.Text = state["clip"]?.ToJsonString() ?? ""; time.Text = state["time"]!.ToJsonString(); speed.Text = state["speed"]!.ToJsonString();
+            loop.IsChecked = state["loop"]!.GetValue<bool>(); playing.IsChecked = state["playing"]!.GetValue<bool>();
+            foreach (var field in new[] { clip, time, speed }) field.BorderBrush = EditorTheme.Brush("#191919");
+            observedTick = observation["tick"]!.GetValue<long>(); Show(observation);
+        }
+        double Read(TextBox field, double minimum, double maximum, bool integer = false)
+        {
+            var valid = double.TryParse(field.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && double.IsFinite(value) && value >= minimum && value <= maximum && (!integer || value == Math.Truncate(value));
+            field.BorderBrush = EditorTheme.Brush(valid ? "#191919" : "#BA6B60");
+            if (!valid) throw new InvalidOperationException($"{AutomationProperties.GetName(field)} must be {(integer ? "a whole number " : "")}within {minimum}–{maximum}.");
+            return value;
+        }
+        void Submit(bool? play, bool crossfade)
+        {
+            if (!Current()) return;
+            if (observedTick is not long tick) throw new InvalidOperationException("Load live state before issuing an animation command.");
+            int? clipIndex = string.IsNullOrWhiteSpace(clip.Text) ? null : (int)Read(clip, 0, 255, true);
+            var command = new JsonObject { ["clip"] = clipIndex, ["time"] = Read(time, 0, 1e9), ["speed"] = Read(speed, 0, 8),
+                ["loop"] = loop.IsChecked == true, ["playing"] = play ?? (playing.IsChecked == true) };
+            Model.StepAnimation(entity, session, tick, command, crossfade ? (int)Read(blend, 0, 3600, true) : 0);
+        }
+        var load = Button("Load live state", Load); AutomationProperties.SetName(load, "AnimationRig Load live state"); panel.Children.Add(load);
+        var buttons = new[] { Button("Seek / hold · +1 tick", () => Submit(false, false)), Button("Play · +1 tick", () => Submit(true, false)), Button("Crossfade · +1 tick", () => Submit(null, true)) };
+        foreach (var (button, name) in buttons.Zip(new[] { "Seek hold", "Play", "Crossfade" }))
+        { AutomationProperties.SetName(button, "AnimationRig Live " + name); ToolTip.SetTip(button, "Advances the entire paused simulation by one fixed tick. Does not edit authored settings."); panel.Children.Add(button); }
+        void Refresh()
+        {
+            if (!Current()) return;
+            foreach (var button in buttons) button.IsEnabled = Model.Paused;
+            try { Show(Model.InspectSelectedAnimation()); }
+            catch (Exception error) { status.Text = error.Message; }
+        }
+        EventHandler listener = (_, _) => Refresh();
+        panel.AttachedToVisualTree += (_, _) => { Model.PlaybackChanged += listener; Model.Changed += listener; Refresh(); };
+        panel.DetachedFromVisualTree += (_, _) => { Model.PlaybackChanged -= listener; Model.Changed -= listener; };
+        try { Load(); } catch (Exception error) { status.Text = error.Message; }
+        Refresh(); return panel;
     }
     private static void AdaptTripleRow(Grid row, double labelWidth)
     {
@@ -634,6 +728,29 @@ public sealed class MainWindow : Window
                     break;
                 case "MeshRenderer":
                     panel.Children.Add(Row("Mesh", Label("Box"))); Toggle("Visible", "visible"); ColorField("Albedo", "albedo");
+                    break;
+                case "AnimationRig":
+                    panel.Children.Add(new TextBlock { Text = "Initial state for the next Play session.", TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+                    var model = new TextBox { Text = value["asset"]!.GetValue<string>(), IsReadOnly = true, FontSize = 12 };
+                    AutomationProperties.SetName(model, "AnimationRig Model asset");
+                    ToolTip.SetTip(model, "The imported model owns this rig's nodes and clips."); panel.Children.Add(model);
+                    IReadOnlyList<AnimationClipChoice> choices;
+                    try { choices = Model.AnimationClips(value["asset"]!.GetValue<string>()); }
+                    catch (Exception error)
+                    {
+                        choices = [new(value["clip"]?.GetValue<int>(), "Unavailable clip metadata")];
+                        panel.Children.Add(new TextBlock { Text = error.Message, TextWrapping = TextWrapping.Wrap, FontSize = 12 });
+                    }
+                    var initialClip = new ComboBox { ItemsSource = choices, SelectedItem = choices.FirstOrDefault(choice => choice.Index == value["clip"]?.GetValue<int>()), HorizontalAlignment = HorizontalAlignment.Stretch };
+                    AutomationProperties.SetName(initialClip, "AnimationRig Initial clip");
+                    initialClip.SelectionChanged += (_, _) =>
+                    {
+                        if (!CurrentDraft() || initialClip.SelectedItem is not AnimationClipChoice choice || choice.Index == value["clip"]?.GetValue<int>()) return;
+                        value["clip"] = choice.Index; Commit();
+                    };
+                    panel.Children.Add(Row("Initial clip", initialClip));
+                    Scalar("Time (s)", "time", 0, 1e9); Scalar("Speed", "speed", 0, 8);
+                    Toggle("Loop", "loop"); Toggle("Playing", "playing");
                     break;
                 case "MeshCollider":
                     panel.Children.Add(new TextBlock { Text = "Static triangle collision. No motion or mass.", TextWrapping = TextWrapping.Wrap, FontSize = 12 });

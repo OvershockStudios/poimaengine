@@ -359,7 +359,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 24}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 25}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -446,9 +446,11 @@ Json describe() {
         {"ticks",{{"type","integer"},{"minimum",1},{"maximum",600}}},
         {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}},{"motions",motions},{"sounds",sounds}}, {"session_id","request_id","expected_tick","ticks"});
     auto animation_command=animation_fields;animation_command["entity"]=id;
+    animation_command["blend_ticks"]={{"type","integer"},{"minimum",0},{"maximum",3600},{"default",0}};
     methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},
         {"items",object_schema(animation_command,{"entity","clip","time","speed","loop","playing"})}};
     result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
+    result["invariants"].push_back("Animation commands optionally accept blend_ticks (0..3600, default 0). Zero switches immediately; positive values blend the outgoing and destination local poses over fixed ticks, independently of playback speed. Both clip clocks advance during an ordinary fade. Interrupting a fade freezes its evaluated local pose as the new source; no nested blend tree is retained. runtime.entity animation.transition reports active weights/clocks and is null on completion. Transition state and frozen source poses join batch rollback.");
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
@@ -1559,15 +1561,30 @@ public:
         return {{"entity",m.entity},{"position",m.position},{"rotation",m.rotation},{"duration_ticks",m.duration_ticks}};
     }
     static Json animation_json(const RuntimeAnimationState& state) {
+        Json transition=nullptr;
+        if(state.transition) {
+            const auto& t=*state.transition;
+            transition={{"start_tick",t.start_tick},{"duration_ticks",t.duration_ticks},{"elapsed_ticks",t.elapsed_ticks},
+                {"weight",t.weight},{"source_frozen",t.source_frozen},
+                {"source_clip",!t.source_frozen && t.source_clip ? Json(*t.source_clip) : Json(nullptr)},
+                {"source_time",t.source_frozen ? Json(nullptr) : Json(t.source_time)},
+                {"source_speed",t.source_frozen ? Json(nullptr) : Json(t.source_speed)},
+                {"source_loop",t.source_frozen ? Json(nullptr) : Json(t.source_loop)},
+                {"source_playing",t.source_frozen ? Json(nullptr) : Json(t.source_playing)}};
+        }
         return {{"clip",state.clip ? Json(*state.clip) : Json(nullptr)},{"time",state.time},{"speed",state.speed},
-            {"loop",state.loop},{"playing",state.playing},{"duration",state.duration}};
+            {"loop",state.loop},{"playing",state.playing},{"duration",state.duration},{"transition",transition}};
     }
     static std::vector<AnimationCommand> parse_animations(const Json& raw) {
         require(raw.is_array() && raw.size()<=64,"Animations must be an array of at most 64 complete playback commands.");
         std::vector<AnimationCommand> result;std::set<std::string> seen;
         for(const auto& value:raw) {
-            fields(value,{"entity","clip","time","speed","loop","playing"},{"entity","clip","time","speed","loop","playing"});
+            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks"},{"entity","clip","time","speed","loop","playing"});
             auto command=animation_value(value);command.entity=identifier(value.at("entity"));
+            if(value.contains("blend_ticks")) {
+                const auto ticks=revision(value.at("blend_ticks"));require(ticks<=3600,"Animation blend_ticks must be within 0..3600.");
+                command.blend_ticks=static_cast<std::uint32_t>(ticks);
+            }
             require(seen.insert(command.entity).second,"Duplicate animation command entity.");result.push_back(std::move(command));
         }
         return result;
@@ -1864,6 +1881,12 @@ public:
             runtime_guard(params); identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
+            if(normalized["animations"].is_array())for(auto& command:normalized["animations"])if(command.is_object()) {
+                if(!command.contains("blend_ticks"))command["blend_ticks"]=0;
+                // JSON numeric equality treats 0 and 0.0 alike. Validate this
+                // integer field before receipt matching, including retries.
+                require(revision(command.at("blend_ticks"))<=3600,"Animation blend_ticks must be within 0..3600.");
+            }
             for(const auto& receipt:runtime_receipts_) if(receipt["params"]["request_id"]==params.at("request_id")) {
                 require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
                 auto result=receipt["result"]; result["replayed"]=true; return result;

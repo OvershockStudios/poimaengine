@@ -4,11 +4,11 @@ Poima is an experimental 3D game engine designed for humans and development agen
 
 The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and an experimental C# gameplay integration supports development-time reloads. Headless deployments can run without the editor or its managed runtime.
 
-**Status: early development, version 0.0.32.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Static mesh collision preserves geometric openings and has explicit Inspector authoring. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.33.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades now support advancing clips, interruption and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor with independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
-*The desktop editor shares world state with CLI clients. Scene and Game can be docked or floated independently; the editor remains an early implementation.*
+*Earlier desktop checkpoint: the editor shares world state with CLI clients. Scene and Game can be docked or floated independently; the editor remains an early implementation.*
 
 ## Why a headless core?
 
@@ -22,16 +22,18 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | --- | --- |
 | Authoring | Persistent entity hierarchy, typed component operations, atomic transactions, revision guards, durable retry receipts, bounded undo/redo and shared local sessions. |
 | Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, procedural sky, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
-| Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, static triangle mesh collision, raycasts with mesh triangle identities, moving kinematic objects, editable rigs and animation playback. |
+| Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, static triangle mesh collision, raycasts with mesh triangle identities, moving kinematic objects, editable rigs and interruptible animation crossfades. |
 | Input and player | Native continuous player, keyboard/mouse bindings, gamepad profiles and deterministic scripted input replay. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events and native-player device output. |
-| Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields, Project browser, native navigation and transform gizmos; one clocked simulation with keyboard/mouse Game controls. |
+| Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields and animation controls, Project browser, native navigation and transform gizmos; one clocked simulation with keyboard/mouse Game controls. |
 | Packaging | Project manifests and native game bundles with validated content, runtime files, integrity checks and read-only game launch. |
 
 These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse control, while editor gamepad input and audio output remain unfinished; the separate native player supplies those paths. C# hot reload covers the documented gameplay module, not arbitrary engine-code replacement or a finished console/AOT deployment path.
 
 [Static mesh collision](docs/MESH_COLLISION.md) uses explicit imported geometry; texture transparency does not create collision holes. Moving/deforming mesh colliders and separate movement/weapon-query channels remain unfinished. [Recorded collision evidence](docs/evidence/m2-mesh-collision.json) covers synthetic native, protocol and Inspector fixtures, not game-scale performance.
+
+[Animation crossfades](docs/RUNTIME_ANIMATION.md) blend local poses over fixed ticks and expose their source, destination and weight. Interruptions preserve the current pose, without guaranteeing continuous velocity. The Inspector provides named authored clips and guarded live commands that advance a paused runtime by one tick. Blend layers, state machines, IK, root motion, retargeting and C# gameplay animation controls remain unfinished. [Recorded animation evidence](docs/evidence/m2-animation-blending.json) covers native/protocol checks and GPU captures against independently authored reference poses; it does not establish character-production readiness or crowd performance.
 
 Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
 
