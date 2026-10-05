@@ -10,6 +10,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
 Reply inspect_game(const std::string& manifest);
 struct GameDefinition {
     std::string root,world,camera,controller,input_profile,name,target_os,target_arch;
+    std::string gameplay_descriptor,gameplay_descriptor_sha256,gameplay_values="{}";
     std::uint64_t revision=0;
     bool audio=false;
 };

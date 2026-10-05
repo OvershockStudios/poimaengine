@@ -1,6 +1,6 @@
 # Projects and native game bundles
 
-Poima 0.0.24 adds a project manifest, a first-person starter, read-only project inspection, and export into a self-contained content directory with an installed native Poima runtime. The same compiled API serves the CLI. This is the first distribution path for the existing native simulation/player; a package manager, game-code deployment and a finished shipping pipeline remain future work.
+Poima 0.0.24 adds a project manifest, a first-person starter, read-only project inspection, and export into a self-contained content directory with an installed native Poima runtime. The same compiled API serves the CLI. This is the first distribution path for the existing native simulation/player; a package manager and a finished production shipping pipeline remain future work. Version 0.0.35 adds [native compiled C# gameplay](NATIVE_GAMEPLAY.md) through project/game manifest v2.
 
 [Checkpoint evidence](evidence/m2-projects-editor-docking.json) records 11 project/export checks on both Linux and Windows, 24 headless and 28 simulation checks, and relocated native replay on both laptop GPUs. The relocated replay reproduces source pixels and final state with unchanged bundle contents; platform and deployment limits below still apply.
 
@@ -35,7 +35,7 @@ A project manifest has this shape; actual generated identities differ:
 }
 ```
 
-`input_profile` is optional; `audio` is optional and defaults to `false`. Unknown fields, duplicate JSON keys, unsupported versions and incorrect types are rejected. There is no managed-gameplay manifest field in this version.
+`input_profile` is optional; `audio` is optional and defaults to `false`. Unknown fields, duplicate JSON keys, unsupported versions and incorrect types are rejected. Version 1 has no gameplay field. Version 2 requires `gameplay: {"descriptor":"gameplay/native-gameplay.json","values":{}}`, where `values` is optional. The descriptor names an inventoried native compiled game artifact; development IL and hostfxr are not shipped by this route. See [native gameplay](NATIVE_GAMEPLAY.md) for schema, target and module lifetime rules.
 
 Paths resolve relative to the manifest's directory, independently of the process working directory. Relative content paths use `/` separators and ASCII letters, digits, spaces, `_`, `-` and `.`. Absolute paths, backslashes, traversal components, Windows device names, trailing dots/spaces, symlinks and content-path junctions are rejected. Display names and the containing project directory can use UTF-8. Relative paths are bounded to 1,024 bytes and components to 128 bytes; project manifests are bounded to 64 KiB.
 
@@ -64,7 +64,7 @@ The exporting headless executable and installed runtime must have the same exact
 {
   "format": "poima.runtime",
   "version": 1,
-  "engine_version": "0.0.24",
+  "engine_version": "0.0.35",
   "target_os": "Windows",
   "target_arch": "x86_64",
   "executable": "bin/poima.exe",
@@ -73,12 +73,13 @@ The exporting headless executable and installed runtime must have the same exact
     "renderer": true,
     "audio": false,
     "managed": false,
+    "native_gameplay": true,
     "editor": false
   }
 }
 ```
 
-Actual feature values come from that build. A Linux descriptor uses `target_os: "Linux"` and `bin/poima`. Both targets currently require `x86_64`. Simulation and renderer must be enabled; an audio-enabled runtime is required when the world dependency inspection or project audio flag requires it. On Linux, the runtime executable must retain owner-execute permission. Windows-to-Linux export is rejected because executable-mode preservation has not been qualified.
+Actual feature values come from that build. A Linux descriptor uses `target_os: "Linux"` and `bin/poima`. Both targets currently require `x86_64`. Simulation and renderer must be enabled; gameplay projects additionally require `native_gameplay: true` (an absent feature defaults to false); an audio-enabled runtime is required when the world dependency inspection or project audio flag requires it. On Linux, the runtime executable must retain owner-execute permission. Windows-to-Linux export is rejected because executable-mode preservation has not been qualified.
 
 The installed tree includes the executable and dependency notices under `share/poima/`. Audio builds also install `bin/phonon.dll` on Windows or `lib/libphonon.so` on Linux. SDL, NVRHI, Jolt and the Windows compiler runtime are statically linked in the existing configuration. The graphics shaders are embedded; the bundle does not need shader sources or DXC. Windows still needs its supported OS/UCRT components and system Vulkan loader/driver. These system dependencies are not copied out of the development machine.
 
@@ -161,8 +162,10 @@ Replay files are bounded to 1 MiB and 1–256 segments. Each segment uses the [p
 
 [`poima/project.hpp`](../include/poima/project.hpp) exposes `create_project`, `inspect_project`, `build_project`, `inspect_game` and `load_game`. The first four return structured `Reply` values; `load_game` verifies the bundle and returns a `GameDefinition` with resolved paths, or throws. [`poima/game_launch.hpp`](../include/poima/game_launch.hpp) exposes `run_game`. Discover CLI argument shapes using `poima schema project` and `poima schema game`.
 
-Exact engine-version equality is deliberate in this first format. There is no bundle migration, package resolver, incremental patcher, signing or installer integration. Export copies an existing native runtime; it does not compile game code. No C# game assembly, CoreCLR deployment, managed module manifest or production AOT integration is packaged yet, even if the supplied runtime binary was built with managed-host capability. Existing [C# authoring](MANAGED_GAMEPLAY.md) and shipping experiments are separate.
+Exact engine-version equality is deliberate in this first format. There is no bundle migration, package resolver, incremental patcher, signing or installer integration. Export copies an existing native runtime; it does not compile game code. Version 2 packages an already published native C# gameplay artifact and validates its target, schema, initial values and inventory. CoreCLR development assemblies and hostfxr are not copied by this route. [Native gameplay](NATIVE_GAMEPLAY.md) describes its process lifetime and qualification limits; [CoreCLR authoring](MANAGED_GAMEPLAY.md) remains the reloadable development path.
 
 A relative Linux library layout does not establish broad Linux binary compatibility. CMake installation rewrites the audio runtime's build-tree search path to `$ORIGIN/../lib`; the raw build executable should not be distributed in its place. One inspected development build required GLIBC 2.38 and GLIBCXX 3.4.32. A supported distribution baseline and clean-machine Linux graphics launch remain qualification work.
 
 Tests are supplied in `tests/project_contract.py` and `tests/game_bundle_capture.py`. They target source preservation, malformed manifests, dependency inventories, relocation, clean working-directory/environment launch, exact replay images and final state. The linked checkpoint evidence records their successful runs and remaining qualification limits.
+
+Version 0.0.35 additionally uses `tests/project_gameplay_contract.py`, `scripts/verify_native_gameplay.py`, `scripts/verify_native_gameplay_parity.py` and `scripts/verify_native_game_bundle.py` to check actual compiled game modules, native/development correspondence, v2 inventories and relocated Vulkan game launch. [Native gameplay evidence](evidence/m2-native-gameplay.json).

@@ -44,3 +44,5 @@ Fresh schema-1 AOT publishing took **70.7 s** and schema-2 **40.2 s**, including
 These measurements used a Windows-mounted filesystem through WSL, SDK 10.0.401/runtime 10.0.12 and Clang 21.1.8 for the AOT native link. They do not update the earlier Windows development-reload timing qualification, which used another SDK and filesystem arrangement.
 
 Windows toolchain/package execution, an older-distribution Linux compatibility floor, representative gameplay dependencies and allocation/latency workloads, generated SDK coverage, and console runtime integration remain unqualified. Linux collectible reload/native hosting also remains separate from this directly launched CoreCLR fixture. Native AOT libraries must never be unloaded through the development reload loop. [Native library limitations](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/libraries)
+
+The separate lab above retains its original scope and evidence. As of 0.0.35, the actual engine has a distinct [Native AOT gameplay and bundle integration](NATIVE_GAMEPLAY.md), with its own [execution and deployment evidence](evidence/m2-native-gameplay.json).

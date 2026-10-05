@@ -2,9 +2,9 @@
 
 Poima is an experimental 3D game engine designed for humans and development agents. Its desktop editor and CLI are first-class interfaces to the same native core: both inspect, edit and run the same world through a documented API.
 
-The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and an experimental C# gameplay integration supports development-time reloads. Headless deployments can run without the editor or its managed runtime.
+The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and C# gameplay supports development-time reloads and a bounded native AOT game-bundle route. Headless deployments can run without the editor or its managed runtime.
 
-**Status: early development, version 0.0.34.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.35.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor with independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
@@ -27,13 +27,15 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events and native-player device output. |
 | Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields and animation controls, Project browser, native navigation and transform gizmos; one clocked simulation with keyboard/mouse Game controls. |
-| Packaging | Project manifests and native game bundles with validated content, runtime files, integrity checks and read-only game launch. |
+| Packaging | Project manifests and native game bundles with validated content, runtime files, compiled C# gameplay artifacts, integrity checks and read-only game launch. |
 
-These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse control, while editor gamepad input and audio output remain unfinished; the separate native player supplies those paths. C# hot reload covers the documented gameplay module, not arbitrary engine-code replacement or a finished console/AOT deployment path.
+These are bounded implementations with subsystem-specific limits, not finished versions of every feature. For example, Game view supports keyboard/mouse control, while editor gamepad input and audio output remain unfinished; the separate native player supplies those paths. C# hot reload covers the documented gameplay module. Native AOT compiles that module for Linux/Windows, with a tested relocated Windows game bundle; arbitrary engine-code replacement, consoles and clean-machine production deployment remain unqualified.
 
 [Static mesh collision](docs/MESH_COLLISION.md) uses explicit imported geometry; texture transparency does not create collision holes. Moving/deforming mesh colliders and separate movement/weapon-query channels remain unfinished. [Recorded collision evidence](docs/evidence/m2-mesh-collision.json) covers synthetic native, protocol and Inspector fixtures, not game-scale performance.
 
 [Animation crossfades](docs/RUNTIME_ANIMATION.md) blend local poses over fixed ticks and expose their source, destination and weight. Interruptions preserve the current pose, without guaranteeing continuous velocity. The Inspector provides named authored clips and guarded live commands that advance a paused runtime by one tick. C# gameplay can inspect playback and queue the same native transitions. Blend layers, state machines, IK, root motion and retargeting remain unfinished. [Recorded animation evidence](docs/evidence/m2-animation-blending.json) covers native/protocol checks and GPU captures against independently authored reference poses; it does not establish character-production readiness or crowd performance.
+
+[Native C# gameplay](docs/NATIVE_GAMEPLAY.md) uses the same supported game source and native services as the CoreCLR development path. Native libraries stay loaded for the player process; changing the compiled library requires a restart. [Recorded evidence](docs/evidence/m2-native-gameplay.json) covers both operating systems, backend state comparisons and relocated Windows game replay.
 
 Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
 

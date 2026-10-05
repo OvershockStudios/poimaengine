@@ -2,7 +2,7 @@
 
 Poima can load handwritten C# into its native EnTT/Jolt runtime, inspect and edit typed gameplay fields, and replace game code while retaining compatible state. The example uses the same native collider queries and kinematic motion as the CLI: press **E** while looking at the sliding door to open it. Agents can submit the same `use` action through headless steps or Vulkan replay.
 
-This is the first integrated gameplay SDK subset: one `Game<TState>` module per runtime, with input, entity observation, raycasts, kinematic movement, sound events and animation control. C++20 remains the engine language. CoreCLR supplies JIT compilation and garbage collection during development. Production native AOT, general per-entity gameplay components and the complete SDK remain unfinished.
+This is the first integrated gameplay SDK subset: one `Game<TState>` module per runtime, with input, entity observation, raycasts, kinematic movement, sound events and animation control. C++20 remains the engine language. CoreCLR supplies JIT compilation and garbage collection during development. A bounded [Native AOT distribution route](NATIVE_GAMEPLAY.md) compiles the same game source for Linux and Windows. General per-entity gameplay components, production deployment qualification and the complete SDK remain unfinished.
 
 ## Build
 
@@ -152,6 +152,10 @@ For the animation extension, run `scripts/verify_gameplay_animation.py` with the
 | --- | --- |
 | ![Closed door](evidence/m2-csharp-door-closed.png) | ![Open door](evidence/m2-csharp-door-open.png) |
 
-These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. General component registration, generated bindings, general events/jobs, spawn/despawn, animation graphs/layers, complete audio/environmental controls, VFX, UI, game saves, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
+These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. General component registration and bindings, general events/jobs, spawn/despawn, animation graphs/layers, complete audio/environmental controls, VFX, UI, game saves, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
 
 Sound callbacks are retained in the service-table prefix. Animation callbacks extend the table to ABI version 3 (64 bytes); the outer call remains version 1 (80 bytes). Rebuild Poima.Gameplay, Poima.ManagedBridge and game assemblies together when upgrading to 0.0.34. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
+
+## Native compiled game distribution
+
+The same bounded `Game<TState>` source can be compiled into a native shared library through the [Native AOT artifact route](NATIVE_GAMEPLAY.md). That route statically binds its game/state types, uses the same native services and rollback state, and packages through project/game manifest v2. Native library replacement requires restarting the player process; compatible collectible reload remains a CoreCLR development feature. Native AOT still includes runtime services such as garbage collection.

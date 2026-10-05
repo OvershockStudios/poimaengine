@@ -117,6 +117,7 @@ Reply capabilities() {
         ",\"kinematic_motion\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"managed_gameplay\":" + boolean(POIMA_MANAGED_GAMEPLAY != 0) +
         ",\"gameplay_reload\":" + boolean(POIMA_MANAGED_GAMEPLAY != 0) +
+        ",\"native_aot_gameplay\":" + boolean(POIMA_NATIVE_GAMEPLAY != 0) +
         ",\"simulation\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"player_viewport\":" + boolean(POIMA_SIMULATION != 0 && POIMA_RENDER_SMOKE != 0) +
         ",\"scene_capture\":" + boolean(POIMA_RENDER_SMOKE != 0) +

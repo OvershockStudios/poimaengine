@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""Historical 0.0.30 single-viewport desktop qualification.
+"""Full desktop authoring, animation-independent playback and Game-input regression.
 
-This harness targets the former Scene/Game mode switch. For 0.0.31 and
-later use desktop_dual_frontend.py and desktop_sky.py; independent viewports
-intentionally replace the mode restrictions asserted here.
-
-Real Windows desktop + shared service/semantic model qualification.
+Independent Scene/Game windows share the authoritative native session. This
+retains the prior broad GUI regression while explicitly routing each gesture
+and capture to its intended viewport.
 
 Only the owned window is raised for its screenshot, then its topmost state is
 restored. No global input injection. Semantic actions do not qualify physical
@@ -118,7 +116,7 @@ action(70, 'rpc', method='world.transact', params={'base_revision': revision+5, 
        'ops': [{'op': 'component.remove', 'id': entity, 'type': 'StaticMesh'},
                {'op': 'component.set', 'id': entity, 'type': 'MeshRenderer', 'value': mesh}]})
 action(75, 'wait_scene_error', expected=False)
-action(80, 'rpc', method='desktop.capture', params={'revision': revision+6, 'path': str(run/'viewport.bmp')})
+action(80, 'rpc', method='desktop.capture', params={'view': 'scene', 'revision': revision+6, 'path': str(run/'viewport.bmp')})
 action(85, 'inspect')
 action(95, 'scene_frame')
 action(97, 'inspect')
@@ -213,7 +211,7 @@ action(216, 'scene_input', message='right_up')
 action(218, 'gizmo_configure', mode='move', space='world')
 action(220, 'scene_frame')
 action(222, 'gizmo_inspect', tag='final_handles')
-action(224, 'rpc', method='desktop.capture', params={'revision': revision+10, 'path': str(run/'gizmo-final.bmp')})
+action(224, 'rpc', method='desktop.capture', params={'view': 'scene', 'revision': revision+10, 'path': str(run/'gizmo-final.bmp')})
 action(227, 'inspect', tag='gizmo_final')
 action(230, 'save_layout')
 # Real-time playback shares the native clock with agent commands. Use tick
@@ -229,15 +227,18 @@ action(252, 'inspect', tag='playback_paused')
 action(258, 'inspect', tag='playback_still_paused')
 action(259, 'step')
 action(260, 'inspect', tag='playback_stepped')
-action(261, 'view', mode='game')
+action(261, 'reset_layout', split_views=True)
+action(261, 'game_camera', camera=f'{3:032x}')
+action(262, 'wait_scene_error', expected=False, view='scene')
+action(262, 'wait_scene_error', expected=False, view='game')
 action(263, 'inspect', tag='game_preview')
-action(264, 'scene_input', message='right_down')
-action(264, 'scene_input', message='move', x=.65, y=.35)
-action(265, 'scene_input', message='right_up')
+action(264, 'game_input', message='right_down')
+action(264, 'game_input', message='move', x=.65, y=.35)
+action(265, 'game_input', message='right_up')
 action(266, 'inspect', tag='game_navigation_blocked')
-action(267, 'rpc', method='desktop.capture', params={'revision': revision+10, 'path': str(run/'game-preview.bmp')})
+action(267, 'rpc', method='desktop.capture', params={'view': 'game', 'revision': revision+10, 'path': str(run/'game-preview.bmp')})
 action(270, 'inspect', tag='game_capture')
-action(271, 'view', mode='scene')
+action(271, 'show_panel', panel='Scene')
 action(272, 'inspect', tag='scene_restored')
 action(273, 'runtime_rpc', command='resume')
 action(278, 'inspect', tag='playback_external_resume')
@@ -260,64 +261,66 @@ profile_reply = cli(['world', world], json.dumps({'jsonrpc': '2.0', 'id': 1, 'me
 assert 'result' in profile_reply, profile_reply
 
 def acquire_game(frame):
-    action(frame, 'scene_input', message='left_down')
-    action(frame, 'scene_input', message='left_up')
+    action(frame, 'game_input', message='left_down')
+    action(frame, 'game_input', message='left_up')
 
 action(300, 'runtime_toggle')
-action(301, 'view', mode='game', camera=game_camera)
+action(301, 'game_camera', camera=game_camera)
+action(301, 'show_panel', panel='Game')
 acquire_game(302)
 action(304, 'inspect', tag='input_acquired')
 action(310, 'runtime_entity', id=game_controller, tag='input_before')
 # Deliberately use logical A with physical W scan code: binding is physical.
-action(311, 'scene_input', message='key_down', key=65, scan=0x11, tag='input_key_down')
-action(312, 'scene_input', message='key_down', key=65, scan=0x11, repeat=True, tag='input_key_repeat')
+action(311, 'game_input', message='key_down', key=65, scan=0x11, tag='input_key_down')
+action(312, 'game_input', message='key_down', key=65, scan=0x11, repeat=True, tag='input_key_repeat')
 action(313, 'game_motion', dx=30, dy=-20)
-action(325, 'scene_input', message='key_up', key=65, scan=0x11)
+action(325, 'game_input', message='key_up', key=65, scan=0x11)
 action(328, 'runtime_entity', id=game_controller, tag='input_moved')
 action(328, 'inspect', tag='input_key_released')
-action(330, 'scene_input', message='key_down', key=32, scan=0x39, tag='input_jump_press')
-action(330, 'scene_input', message='key_down', key=69, scan=0x12, tag='input_use_press')
+action(330, 'game_input', message='key_down', key=32, scan=0x39, tag='input_jump_press')
+action(330, 'game_input', message='key_down', key=69, scan=0x12, tag='input_use_press')
 action(331, 'runtime_entity', id=game_controller, tag='input_jumped')
-action(332, 'scene_input', message='key_up', key=32, scan=0x39)
-action(332, 'scene_input', message='key_up', key=69, scan=0x12)
-action(335, 'scene_input', message='key_down', key=87, scan=0x11)
-action(335, 'scene_input', message='focus_lost')
+action(332, 'game_input', message='key_up', key=32, scan=0x39)
+action(332, 'game_input', message='key_up', key=69, scan=0x12)
+action(335, 'game_input', message='key_down', key=87, scan=0x11)
+action(335, 'game_input', message='focus_lost')
 action(336, 'inspect', tag='input_focus_lost')
 action(337, 'runtime_entity', id=game_controller, tag='input_cleared_position')
 action(345, 'runtime_entity', id=game_controller, tag='input_still_position')
 acquire_game(346)
-action(347, 'scene_input', message='key_down', key=87, scan=0x11)
-action(348, 'scene_input', message='key_down', key=27, scan=0x01)
+action(347, 'game_input', message='key_down', key=87, scan=0x11)
+action(348, 'game_input', message='key_down', key=27, scan=0x01)
 action(349, 'inspect', tag='input_escape')
 acquire_game(350)
-action(351, 'scene_input', message='key_down', key=87, scan=0x11)
+action(351, 'game_input', message='key_down', key=87, scan=0x11)
 action(352, 'runtime_pause')
 action(353, 'inspect', tag='input_paused')
 action(354, 'runtime_pause')
 acquire_game(355)
-action(356, 'scene_input', message='key_down', key=87, scan=0x11)
-action(357, 'view', mode='scene')
+action(356, 'game_input', message='key_down', key=87, scan=0x11)
+action(357, 'scene_input', message='right_down')
+action(357, 'scene_input', message='right_up')
 action(358, 'inspect', tag='input_scene_release')
-action(359, 'view', mode='game', camera=game_camera)
+action(359, 'show_panel', panel='Game')
 acquire_game(360)
-action(361, 'scene_input', message='key_down', key=87, scan=0x11)
-action(362, 'float', panel='Scene')
+action(361, 'game_input', message='key_down', key=87, scan=0x11)
+action(362, 'float', panel='Game')
 action(370, 'inspect', tag='input_detached_release')
 action(372, 'game_profile', path=str(game_profile))
 acquire_game(374)
 action(375, 'inspect', tag='input_rebound_acquired')
 action(376, 'runtime_entity', id=game_controller, tag='input_rebound_before')
-action(377, 'scene_input', message='key_down', key=87, scan=0x11)
-action(383, 'scene_input', message='key_up', key=87, scan=0x11)
+action(377, 'game_input', message='key_down', key=87, scan=0x11)
+action(383, 'game_input', message='key_up', key=87, scan=0x11)
 action(384, 'runtime_entity', id=game_controller, tag='input_old_binding_inert')
-action(385, 'scene_input', message='key_down', key=38, scan=0x48, extended=True)
+action(385, 'game_input', message='key_down', key=38, scan=0x48, extended=True)
 action(386, 'game_motion', dx=4, dy=0)
-action(397, 'scene_input', message='key_up', key=38, scan=0x48, extended=True)
+action(397, 'game_input', message='key_up', key=38, scan=0x48, extended=True)
 action(400, 'runtime_entity', id=game_controller, tag='input_rebound_moved')
-action(401, 'scene_input', message='key_down', key=38, scan=0x48, extended=True)
+action(401, 'game_input', message='key_down', key=38, scan=0x48, extended=True)
 action(402, 'runtime_toggle')
 action(404, 'inspect', tag='input_stopped')
-action(406, 'view', mode='scene')
+action(406, 'show_panel', panel='Scene')
 script = run/'actions.json'; script.write_text(json.dumps({'actions': actions}, indent=2))
 report = run/'report.json'
 u = c.WinDLL('user32', use_last_error=True)
@@ -468,7 +471,7 @@ try:
         assert not evidence['state']['runtime']['active']
         recovery = [item for item in evidence['actions'] if item['op'] in ('assert_scene_error', 'wait_scene_error')]
         assert recovery[1]['native']['frames_presented'] > recovery[0]['native']['frames_presented']
-        assert recovery[1]['native']['presented_revision'] == recovery[1]['native']['revision']
+        assert recovery[1]['native']['views']['scene']['presented_revision'] == recovery[1]['native']['revision']
         assert evidence['draft']['name'] == 'Courtyard pillar' and not evidence['draft']['dirty']
         baseline, preview, committed = (stages[name] for name in ('gizmo_baseline', 'gizmo_preview', 'gizmo_committed'))
         original_transform = baseline['draft']['components']['Transform']
@@ -502,13 +505,14 @@ try:
         assert stages['ctrl_hotkey_blocked']['gizmo']['mode'] == 'scale'
         assert stages['alt_hotkey_blocked']['gizmo']['mode'] == 'scale'
         for spec, result in zip(actions, evidence['actions']):
-            if spec['op'] == 'scene_input':
+            if spec['op'] in ('scene_input', 'game_input'):
                 expected_modifiers = (1 if spec.get('shift') else 0) | (2 if spec.get('control') else 0) | (4 if spec.get('alt') else 0)
                 assert result['requested_modifiers'] == result['thread_modifiers'] == result['delivered_modifiers'] == expected_modifiers, (spec, result)
-                assert result['navigation']['qualification_input'], result
+                delivered = result['game_input' if spec['op'] == 'game_input' else 'navigation']
+                assert delivered['qualification_input'], result
                 if spec['message'] in ('left_down', 'left_up', 'right_down', 'right_up', 'middle_down', 'middle_up', 'move', 'wheel'):
-                    assert result['navigation']['last_input_x'] == result['requested_pointer_x'], (spec, result)
-                    assert result['navigation']['last_input_y'] == result['requested_pointer_y'], (spec, result)
+                    assert delivered['last_input_x'] == result['requested_pointer_x'], (spec, result)
+                    assert delivered['last_input_y'] == result['requested_pointer_y'], (spec, result)
         assert stages['space_local']['gizmo']['space'] == 'local'
         assert stages['rmb_modes']['native']['gizmo']['mode'] == 'rotate' and stages['rmb_modes']['navigation']['drag'] == 'Right'
         final = stages['gizmo_final']
@@ -531,12 +535,16 @@ try:
             assert stage['playback']['draft_generation'] == before_play['playback']['draft_generation'], stage
             assert stage['draft']['components'] == before_play['draft']['components'] and not stage['draft']['dirty']
         game_view = stages['game_preview']
-        assert game_view['native']['view']['mode'] == game_view['playback']['view'] == 'game'
-        assert game_view['native']['view']['camera'] and game_view['playback']['camera'] == game_view['native']['view']['camera']
+        assert game_view['native']['binding_mode'] == 'explicit'
+        assert game_view['native']['views']['game']['camera'] == game_view['playback']['camera'] == game_camera
+        assert all(game_view['native']['views'][view]['attached'] for view in ('scene', 'game'))
+        assert game_view['scene_window']['hwnd'] != game_view['game_window']['hwnd']
+        assert all(game_view['native']['views'][view]['frames_presented'] > 0 for view in ('scene', 'game'))
         assert stages['game_navigation_blocked']['native']['camera'] == game_view['native']['camera']
         assert stages['game_navigation_blocked']['navigation']['drag'] == 'None'
         assert stages['game_capture']['native']['capture']['state'] == 'complete' and (run/'game-preview.bmp').is_file()
-        assert stages['scene_restored']['native']['view']['mode'] == 'scene'
+        assert stages['scene_restored']['native']['views']['scene']['attached']
+        assert stages['scene_restored']['native']['views']['game']['camera'] == game_camera
         assert stages['scene_restored']['native']['camera'] == before_play['native']['camera']
         resumed = stages['playback_external_resume']
         assert resumed['native']['playback']['state'] == resumed['playback']['state'] == 'playing'
@@ -552,7 +560,7 @@ try:
         assert stopped['native']['revision'] == before_play['native']['revision']
         assert stopped['draft']['components'] == before_play['draft']['components'] and not stopped['draft']['dirty']
         assert stages['playback_history_after']['result'] == stages['playback_history_before']['result']
-        def game_state(name): return stages[name]['navigation']['game_input']
+        def game_state(name): return stages[name]['game_input']
         def game_entity(name): return stages[name]['result']
         def xz(value): return [value['world_matrix'][12], value['world_matrix'][14]]
         zero_input = {'move': [0, 0], 'look': [0, 0], 'jump': False, 'use': False}
@@ -585,7 +593,7 @@ try:
         assert not game_state('input_stopped')['native']['configured']
         record['game_input_qualification'] = {'owned_hwnd_routing': True, 'relative_motion': 'Explicit script injection; not raw hardware packets.',
             'physical_input_qualified': False, 'actual_character_movement_and_jump': True, 'physical_scan_mapping': True,
-            'repeat_suppressed': True, 'profile_rebound': True, 'focus_escape_pause_scene_detach_stop_clear': True,
+            'repeat_suppressed': True, 'profile_rebound': True, 'focus_escape_pause_scene_focus_game_detach_stop_clear': True,
             'acquisition_click_swallowed': True}
         assert shared and capture_ready and captured and (run/'viewport.bmp').is_file() and (run/'gizmo-final.bmp').is_file()
         assert record['window_capture']['status'] in ('captured', 'unavailable'), record['window_capture']
@@ -624,7 +632,7 @@ try:
                               'dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews',
                               'Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible',
                               'native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild',
-                              'Game camera preview blocks Scene gestures; switching back preserves inspection camera',
+                              'independent Game HWND gestures preserve Scene camera; both panes render in one shared session',
                               'paused Game capture and Stop preserve authored transforms/revision/history',
                               'revision-guarded native viewport capture', 'bounded process exit',
                               'owned desktop client-area screenshot' if record['window_capture']['status'] == 'captured'

@@ -5,6 +5,7 @@
 #include "poima/runtime.hpp"
 #include "poima/player.hpp"
 #include "poima/build_info.hpp"
+#include "poima/native_gameplay_artifact.hpp"
 #include "world_storage.hpp"
 #include "asset_store.hpp"
 #include "input_profile_store.hpp"
@@ -359,7 +360,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 25}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 26}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -427,6 +428,11 @@ Json describe() {
     for(const auto* key:{"hostfxr","bridge","assembly","type"})game_load["properties"][key]={{"type","string"},{"minLength",1},{"maxLength",4096}};
     game_load["required"]={"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"};
     methods["runtime.gameplay.load"]=game_load;
+    auto native_load=game_edit;
+    native_load["properties"]["descriptor"]={{"type","string"},{"minLength",1},{"maxLength",4096}};
+    native_load["properties"]["expected_descriptor_sha256"]={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
+    native_load["required"]={"session_id","request_id","expected_tick","expected_revision","descriptor"};
+    methods["runtime.gameplay.load_native"]=native_load;
     auto input=object_schema({{"entity",id},{"move",vector({{"type","number"},{"minimum",-1},{"maximum",1}},2)},
         {"look",vector({{"type","number"},{"minimum",-180},{"maximum",180}},2)},{"jump",{{"type","boolean"}}},{"use",{{"type","boolean"}}}}, {"entity"});
     const auto motion=object_schema({{"entity",id},{"position",vector({{"type","number"},{"minimum",-1e6},{"maximum",1e6}},3)},
@@ -1779,11 +1785,13 @@ public:
             return result;
         }
         if(method=="runtime.gameplay.collect") {
-            fields(params,{"session_id"},{"session_id"});require(Gameplay::available(),"Managed gameplay is not built.",-32003);
+            fields(params,{"session_id"},{"session_id"});require(Gameplay::available() || Gameplay::native_available(),"Gameplay support is not built.",-32003);
             try { return Json::parse(Gameplay::collect()); }catch(const std::exception& e) { throw Error(-32060,e.what()); }
         }
-        const bool load=method=="runtime.gameplay.load";require(load || method=="runtime.gameplay.edit","Unknown gameplay method.",-32601);
-        if(load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
+        const bool managed_load=method=="runtime.gameplay.load",native_load=method=="runtime.gameplay.load_native",load=managed_load || native_load;
+        require(load || method=="runtime.gameplay.edit","Unknown gameplay method.",-32601);
+        if(managed_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
+        else if(native_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","descriptor","expected_descriptor_sha256","values"},{"session_id","request_id","expected_tick","expected_revision","descriptor"});
         else fields(params,{"session_id","request_id","expected_tick","expected_revision","values"},{"session_id","request_id","expected_tick","expected_revision","values"});
         identifier(params.at("request_id"));auto normalized=params;normalized["method"]=method;
         if(!normalized.contains("values"))normalized["values"]=Json::object();
@@ -1793,15 +1801,31 @@ public:
         }
         require(revision(params.at("expected_tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(revision(params.at("expected_revision"))==runtime_->gameplay_revision(),"Gameplay revision conflict.",-32009);
-        require(Gameplay::available(),"Managed gameplay is not built. Configure POIMA_ENABLE_MANAGED_GAMEPLAY=ON.",-32003);
+        require(managed_load ? Gameplay::available() : native_load ? Gameplay::native_available() : (Gameplay::available() || Gameplay::native_available()),
+            native_load ? "Native gameplay is not built. Configure POIMA_ENABLE_NATIVE_GAMEPLAY=ON." : "Requested gameplay support is not built.",-32003);
         GameplayConfig config;
-        if(load) {
+        auto path=[&](const char* key) { const auto text=params.at(key).get<std::string>();auto value=fs::path(std::u8string(text.begin(),text.end()));if(value.is_relative())value=path_.parent_path()/value;const auto bytes=fs::absolute(value).lexically_normal().u8string();return std::string(bytes.begin(),bytes.end()); };
+        if(managed_load) {
             for(const auto* key:{"hostfxr","bridge","assembly","type"})require(params.at(key).is_string() && !params.at(key).get_ref<const std::string&>().empty() && params.at(key).get_ref<const std::string&>().size()<=4096,"Gameplay paths/type must contain 1..4096 UTF-8 bytes.");
-            auto path=[&](const char* key) { const auto text=params.at(key).get<std::string>();auto value=fs::path(std::u8string(text.begin(),text.end()));if(value.is_relative())value=path_.parent_path()/value;const auto bytes=fs::absolute(value).lexically_normal().u8string();return std::string(bytes.begin(),bytes.end()); };
-            config={path("hostfxr"),path("bridge"),path("assembly"),params.at("type").get<std::string>()};
+            config.hostfxr=path("hostfxr");config.bridge=path("bridge");config.assembly=path("assembly");config.type=params.at("type").get<std::string>();
+        }
+        if(native_load)require(params.at("descriptor").is_string() && !params.at("descriptor").get_ref<const std::string&>().empty() && params.at("descriptor").get_ref<const std::string&>().size()<=4096,"Gameplay descriptor must contain 1..4096 UTF-8 bytes.");
+        if(native_load && params.contains("expected_descriptor_sha256")) {
+            const auto& hash=params.at("expected_descriptor_sha256");
+            require(hash.is_string() && hash.get_ref<const std::string&>().size()==64 && hash.get_ref<const std::string&>().find_first_not_of("0123456789abcdef")==std::string::npos,"Expected descriptor hash must be 64 lowercase hexadecimal characters.");
         }
         auto receipts=runtime_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",normalized},{"result",nullptr}});
-        try { if(load)runtime_->gameplay_load(config,normalized.at("values").dump());else runtime_->gameplay_edit(normalized.at("values").dump()); }
+        try {
+            if(native_load) {
+                const auto artifact=load_native_gameplay_artifact(path("descriptor"));
+                if(params.contains("expected_descriptor_sha256") && params.at("expected_descriptor_sha256").get<std::string>()!=artifact.descriptor_sha256)throw std::runtime_error("Native gameplay descriptor differs from its previously verified hash.");
+                if(artifact.target_os!=POIMA_BUILD_SYSTEM || artifact.target_arch!=POIMA_BUILD_ARCH)throw std::runtime_error("Native gameplay target differs from this runtime.");
+                config.native_aot=true;config.native_library=artifact.library;config.native_sha256=artifact.library_sha256;
+                config.native_schema=artifact.schema;config.type=artifact.type;
+                validate_gameplay_values(config.native_schema,normalized.at("values").dump());
+            }
+            if(load)runtime_->gameplay_load(config,normalized.at("values").dump());else runtime_->gameplay_edit(normalized.at("values").dump());
+        }
         catch(const std::exception& e) { throw Error(-32060,e.what()); }
         auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
     }

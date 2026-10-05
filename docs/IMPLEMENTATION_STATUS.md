@@ -1,6 +1,6 @@
 # Implementation status
 
-Updated 2026-10-05 for **0.0.34**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-05 for **0.0.35**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
 
@@ -17,6 +17,8 @@ Runtime collision supports boxes, capsule controllers and explicit [static trian
 Animation supports bounded two-pose crossfades with fixed-tick weights. Interrupting a fade freezes its current local pose; this preserves pose continuity, not velocity continuity. Blend layers, state machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
 
 ## Implemented
+
+- **0.0.35 native compiled C# gameplay:** a build-time generator binds the existing `Game<TState>` source into a Native AOT shared library. The engine verifies its inventory, target and generated schema, then uses the existing state/service/rollback contracts. Project/game manifest v2 packages the native artifact; v1 remains unchanged. Ten real-module groups and 12 exact CoreCLR/native comparison checkpoints pass on each OS. A separate Linux build with CoreCLR disabled passes the native suite. A relocated Windows bundle reproduces a 480-tick replay's gameplay state and exact pixels with all 38 files unchanged. CoreCLR regression passes 100 reloads per OS. All 33 Linux runtime and 28 authoring-only CTest suites pass. The final packaged editor passes 232 actions with an inspected screenshot. One earlier GUI run lost input capture while other Windows tests were active; an unchanged isolated rerun passed, and the cause remains an inference. Native library replacement requires a process restart. Clean-machine deployment, Linux graphics and consoles remain unqualified. [Contract](NATIVE_GAMEPLAY.md) and [evidence](evidence/m2-native-gameplay.json).
 
 - **0.0.34 unlocked visual follow-up:** the AnimationRig editor fixture passed 101 semantic actions on NVIDIA, with an inspected full-window screenshot at 125% scale. Controls were readable in Modified Tall layout. This closes the previously unavailable capture for that fixture; physical input and general DPI/accessibility coverage remain unqualified. [Visual evidence](evidence/m2-managed-animation-visual.json) and [screenshot](evidence/m2-managed-animation-visual.png).
 
@@ -94,7 +96,7 @@ The [managed gameplay lab](MANAGED_GAMEPLAY_LAB.md) tests C# development inside 
 
 These results describe one small 1,000-entity development fixture, not a game performance target or a complete C# SDK. The measured hot loop allocated zero managed bytes, but staging/snapshots/JSON transport allocate outside that interval. The separate [Linux shipping experiment](MANAGED_SHIPPING_LAB.md) now passes full-state CoreCLR/Native AOT equality, save/resume and schema migration, malformed-input rejection and twenty process restarts per runtime. The native executable reports no JIT support. [Shipping evidence](evidence/m0-managed-shipping.json)
 
-The integrated module qualifies Linux collectible reload for its small fixture. Complex jobs, general event lifetimes, Windows AOT and console C# support remain unqualified. Native AOT libraries must not use the unloadable native DLL lab; see the [shipping experiment and native-library limitations](MANAGED_SHIPPING_LAB.md).
+The integrated 0.0.35 native gameplay route qualifies bounded Linux/Windows fixtures and a relocated Windows Vulkan replay. Complex jobs, general event lifetimes, clean-machine production deployment and console C# support remain unqualified. Native AOT game libraries remain process-lived; see the [native gameplay contract](NATIVE_GAMEPLAY.md).
 
 ## Qualification boundaries
 

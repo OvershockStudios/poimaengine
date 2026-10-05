@@ -10,6 +10,7 @@
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,
     "managed": @POIMA_RUNTIME_MANAGED_GAMEPLAY@,
+    "native_gameplay": @POIMA_RUNTIME_NATIVE_GAMEPLAY@,
     "editor": @POIMA_RUNTIME_EDITOR@
   }
 }

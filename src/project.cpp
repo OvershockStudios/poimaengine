@@ -3,6 +3,8 @@
 #include "poima/assets.hpp"
 #include "poima/build_info.hpp"
 #include "poima/world.hpp"
+#include "poima/native_gameplay_artifact.hpp"
+#include "poima/gameplay.hpp"
 #include "input_profile_store.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -12,6 +14,7 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <optional>
 #include <random>
 #include <set>
 #include <stdexcept>
@@ -198,12 +201,17 @@ void entry_validate(const Json& entry,const Json& document) {
 }
 struct Project {
     fs::path manifest,root,world,profile;Json spec;std::string manifest_bytes,world_bytes,profile_bytes;WorldPackageContent content;
+    std::optional<NativeGameplayArtifact> gameplay;
+    std::string gameplay_bytes;
+    Json gameplay_values=Json::object();
 };
 Project project(const std::string& filename) {
     Project p;p.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(p.manifest);p.manifest=fs::canonical(p.manifest);p.root=p.manifest.parent_path();require(fs::symlink_status(p.root/".poima-incomplete").type()==fs::file_type::not_found,"Project publication is incomplete; retry with a new destination.");
     p.manifest_bytes=read(p.manifest,65536);p.spec=parse(p.manifest_bytes);
-    fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio"},{"format","version","project_id","name","entry"});
-    require(p.spec.at("format")=="poima.project" && integer(p.spec.at("version"))==1,"Unsupported project format/version.");id(p.spec.at("project_id"));name_value(p.spec.at("name"));
+    fields(p.spec,{"format","version","project_id","name","entry","input_profile","audio","gameplay"},{"format","version","project_id","name","entry"});
+    const auto version=integer(p.spec.at("version"));
+    require(p.spec.at("format")=="poima.project" && (version==1 || version==2),"Unsupported project format/version.");
+    require(p.spec.contains("gameplay")== (version==2),"Project version 2 requires gameplay; version 1 has no gameplay field.");id(p.spec.at("project_id"));name_value(p.spec.at("name"));
     require(!p.spec.contains("audio") || p.spec.at("audio").is_boolean(),"audio must be Boolean.");
     fields(p.spec.at("entry"),{"world","camera","controller"},{"world","camera","controller"});p.world=contained(p.root,relative_path(p.spec.at("entry").at("world")));
     require(p.world!=p.manifest,"World path overlaps project manifest.");p.world_bytes=read(p.world,16*1024*1024);
@@ -212,6 +220,14 @@ Project project(const std::string& filename) {
     if(p.spec.contains("input_profile")) {
         p.profile=contained(p.root,relative_path(p.spec.at("input_profile")));require(p.profile!=p.world && p.profile!=p.manifest,"Input profile path overlaps project/world.");p.profile_bytes=read(p.profile,16*1024*1024);input_profiles::load_read_only(p.profile);
     }
+    if(p.spec.contains("gameplay")) {
+        const auto& config=p.spec.at("gameplay");fields(config,{"descriptor","values"},{"descriptor"});
+        const auto descriptor=contained(p.root,relative_path(config.at("descriptor")));
+        require(descriptor!=p.manifest && descriptor!=p.world && descriptor!=p.profile,"Gameplay descriptor overlaps project content.");
+        p.gameplay_bytes=read(descriptor,1024*1024);p.gameplay=load_native_gameplay_artifact(text(descriptor));
+        p.gameplay_values=parse(validate_gameplay_values(p.gameplay->schema,config.value("values",Json::object()).dump()));
+        require(read(descriptor,1024*1024)==p.gameplay_bytes,"Native gameplay descriptor changed while inspecting.");
+    }
     for(const auto& asset:p.content.assets)contained(p.root,relative_path(p.spec.at("entry").at("world"))+".assets/"+asset.filename);
     require(read(p.manifest,65536)==p.manifest_bytes && read(p.world,16*1024*1024)==p.world_bytes,"Project/world changed while inspecting; retry.");
     if(!p.profile.empty())require(read(p.profile,16*1024*1024)==p.profile_bytes,"Input profile changed while inspecting; retry.");
@@ -219,14 +235,16 @@ Project project(const std::string& filename) {
 }
 Json project_summary(const Project& p) {
     Json assets=Json::array();for(const auto& asset:p.content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
-    return {{"manifest",text(p.manifest)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
+    Json result={{"manifest",text(p.manifest)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
+    if(p.gameplay)result["gameplay"]={{"backend","native_aot"},{"descriptor",p.spec.at("gameplay").at("descriptor")},{"identity",p.gameplay->identity},{"type",p.gameplay->type},{"target_os",p.gameplay->target_os},{"target_arch",p.gameplay->target_arch},{"library_sha256",p.gameplay->library_sha256},{"values",p.gameplay_values}};
+    return result;
 }
 Json runtime_spec(const std::string& bytes) {
     const auto value=parse(bytes);fields(value,{"format","version","engine_version","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
     require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");require(value.at("engine_version")==POIMA_VERSION,"Runtime engine version must exactly match the exporting engine.");
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
-    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
+    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
@@ -257,8 +275,9 @@ struct VerifiedGame { GameDefinition definition;Json spec;fs::path manifest; };
 VerifiedGame verify_game(const std::string& filename) {
     VerifiedGame result;result.manifest=fs::absolute(path_of(filename)).lexically_normal();regular(result.manifest);result.manifest=fs::canonical(result.manifest);require(result.manifest.filename()=="game.json","Game bundle manifest must be named game.json.");const auto root=result.manifest.parent_path();require(fs::symlink_status(root/".poima-incomplete").type()==fs::file_type::not_found,"Game publication is incomplete.");
     const auto manifest_bytes=read(result.manifest,4*1024*1024);result.spec=parse(manifest_bytes);const auto& spec=result.spec;
-    fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files"},{"format","version","project_id","name","engine","entry","audio","source","files"});
-    require(spec.at("format")=="poima.game" && integer(spec.at("version"))==1,"Unsupported game bundle format/version.");id(spec.at("project_id"));name_value(spec.at("name"));require(spec.at("audio").is_boolean(),"Game audio flag must be Boolean.");
+    fields(spec,{"format","version","project_id","name","engine","entry","audio","input_profile","source","files","gameplay"},{"format","version","project_id","name","engine","entry","audio","source","files"});
+    const auto version=integer(spec.at("version"));require(spec.at("format")=="poima.game" && (version==1 || version==2),"Unsupported game bundle format/version.");
+    require(spec.contains("gameplay")== (version==2),"Game version 2 requires gameplay; version 1 has no gameplay field.");id(spec.at("project_id"));name_value(spec.at("name"));require(spec.at("audio").is_boolean(),"Game audio flag must be Boolean.");
     const auto& engine=spec.at("engine");fields(engine,{"version","target_os","target_arch","executable"},{"version","target_os","target_arch","executable"});
     fields(spec.at("source"),{"revision","world_sha256"},{"revision","world_sha256"});const auto revision=integer(spec.at("source").at("revision"));require(spec.at("source").at("world_sha256").is_string() && hexadecimal(spec.at("source").at("world_sha256").get<std::string>(),64),"Invalid source world hash.");
     require(spec.at("files").is_array() && !spec.at("files").empty() && spec.at("files").size()<=count_limit,"Invalid bundle inventory.");
@@ -280,9 +299,26 @@ VerifiedGame verify_game(const std::string& filename) {
     require(content.revision==revision,"Bundle source revision differs from world revision.");entry_validate(spec.at("entry"),parse(content.document));
     std::set<std::string> required_assets;for(const auto& asset:content.assets) { const auto path="content/world.json.assets/"+asset.filename;expect(path,"asset");require(inventory.at(path).at("sha256")==asset.sha256 && inventory.at(path).at("size")==asset.bytes,"Asset closure differs from inventory.");required_assets.insert(path); }
     if(spec.contains("input_profile")) { require(spec.at("input_profile")=="content/default.poima-input.json","Unexpected bundle input profile path.");expect(spec.at("input_profile"),"input");const auto path=contained(root,spec.at("input_profile"));input_profiles::load_read_only(path);result.definition.input_profile=text(path); }
+    std::map<std::string,std::string> gameplay_paths;
+    if(spec.contains("gameplay")) {
+        const auto& config=spec.at("gameplay");fields(config,{"descriptor","values"},{"descriptor","values"});
+        require(config.at("descriptor")=="gameplay/native-gameplay.json","Unexpected bundled gameplay descriptor path.");
+        const auto descriptor=contained(root,"gameplay/native-gameplay.json");expect("gameplay/native-gameplay.json","gameplay_descriptor");
+        const auto artifact=load_native_gameplay_artifact(text(descriptor));
+        require(artifact.descriptor_sha256==inventory.at("gameplay/native-gameplay.json").at("sha256").get<std::string>(),"Gameplay descriptor changed since inventory verification.");
+        require(runtime.at("features").value("native_gameplay",false),"Game requires a native-gameplay runtime.");
+        require(artifact.target_os==runtime.at("target_os").get<std::string>() && artifact.target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay target differs from runtime target.");
+        result.definition.gameplay_values=validate_gameplay_values(artifact.schema,config.at("values").dump());
+        result.definition.gameplay_descriptor=text(descriptor);result.definition.gameplay_descriptor_sha256=artifact.descriptor_sha256;gameplay_paths.emplace("gameplay/native-gameplay.json","gameplay_descriptor");
+        for(const auto& file:artifact.files) {
+            const auto path="gameplay/"+file.path,role="gameplay_"+file.role;expect(path,role);
+            require(inventory.at(path).at("sha256")==file.sha256 && inventory.at(path).at("size")==file.size,"Gameplay closure differs from bundle inventory.");
+            gameplay_paths.emplace(path,role);
+        }
+    }
     const auto launcher=runtime.at("target_os")=="Windows" ? "launch.cmd" : "launch.sh";expect(launcher,"launcher");executable_mode(contained(root,launcher),runtime.at("target_os"));
     for(const auto& [path,item]:inventory) {
-        const auto role=item.at("role").get<std::string>();require((role=="runtime" && (path=="runtime/runtime.json" || path.starts_with("runtime/bin/") || path.starts_with("runtime/lib/") || path.starts_with("runtime/share/poima/"))) || (role=="world" && path=="content/world.json") || (role=="asset" && required_assets.contains(path)) || (role=="input" && spec.contains("input_profile") && path==spec.at("input_profile").get<std::string>()) || (role=="launcher" && path==launcher),"Unexpected payload role/path: "+path);
+        const auto role=item.at("role").get<std::string>();require((role=="runtime" && (path=="runtime/runtime.json" || path.starts_with("runtime/bin/") || path.starts_with("runtime/lib/") || path.starts_with("runtime/share/poima/"))) || (role=="world" && path=="content/world.json") || (role=="asset" && required_assets.contains(path)) || (role=="input" && spec.contains("input_profile") && path==spec.at("input_profile").get<std::string>()) || (role=="launcher" && path==launcher) || (gameplay_paths.contains(path) && gameplay_paths.at(path)==role),"Unexpected payload role/path: "+path);
     }
     require(!(content.needs_audio || spec.at("audio").get<bool>()) || runtime.at("features").at("audio")==true,"Game needs an audio-enabled runtime.");if(runtime.at("features").at("audio")==true)expect(runtime.at("target_os")=="Windows" ? "runtime/bin/phonon.dll" : "runtime/lib/libphonon.so","runtime");
     require(read(result.manifest,4*1024*1024)==manifest_bytes,"Game manifest changed during verification.");
@@ -323,6 +359,10 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
     return operation("project.build",[&] {
         const auto p=project(manifest);require(fs::is_directory(fs::symlink_status(path_of(runtime_root))),"Runtime root must be a directory without symlink.");const auto runtime_path=fs::canonical(path_of(runtime_root));const auto descriptor=read(contained(runtime_path,"runtime.json"),65536);const auto runtime=runtime_spec(descriptor);
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
+        if(p.gameplay) {
+            require(runtime.at("features").value("native_gameplay",false),"Project requires a native-gameplay runtime.");
+            require(p.gameplay->target_os==runtime.at("target_os").get<std::string>() && p.gameplay->target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay artifact target differs from installed runtime.");
+        }
 #ifdef _WIN32
         require(runtime.at("target_os")!="Linux","Windows-to-Linux export cannot preserve qualified executable modes; export on Linux.");
 #endif
@@ -336,20 +376,37 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         inventory.add("content/world.json",p.content.document,"world");
         for(const auto& asset:p.content.assets) { const auto source=contained(p.root,relative_path(p.spec.at("entry").at("world"))+".assets/"+asset.filename);const auto bytes=read(source);require(bytes.size()==asset.bytes && hash(bytes)==asset.sha256,"Source asset changed while exporting.");inventory.add("content/world.json.assets/"+asset.filename,bytes,"asset");require(read(source)==bytes,"Source asset changed while exporting."); }
         if(!p.profile.empty())inventory.add("content/default.poima-input.json",p.profile_bytes,"input");
+        if(p.gameplay) {
+            inventory.add("gameplay/native-gameplay.json",p.gameplay_bytes,"gameplay_descriptor");
+            const auto relative_root=fs::path(relative_path(p.spec.at("gameplay").at("descriptor"))).parent_path();
+            for(const auto& file:p.gameplay->files) {
+                const auto source=contained(p.root,text(relative_root/fs::path(file.path)));const auto bytes=read(source);
+                require(bytes.size()==file.size && hash(bytes)==file.sha256,"Gameplay payload changed while exporting.");
+                inventory.add("gameplay/"+file.path,bytes,"gameplay_"+file.role,fs::status(source).permissions());
+                require(read(source)==bytes,"Gameplay payload changed while exporting.");
+            }
+        }
         const bool windows=runtime.at("target_os")=="Windows";
         if(windows)inventory.add("launch.cmd","@echo off\r\nsetlocal DisableDelayedExpansion\r\n\"%~dp0runtime\\bin\\poima.exe\" game run \"%~dp0game.json\"\r\nexit /b %errorlevel%\r\n","launcher");
         else inventory.add("launch.sh","#!/bin/sh\nset -eu\nroot=$(CDPATH= cd -- \"$(dirname -- \"$0\")\" && pwd)\nexec \"$root/runtime/bin/poima\" game run \"$root/game.json\"\n","launcher",fs::perms::owner_all|fs::perms::group_read|fs::perms::group_exec|fs::perms::others_read|fs::perms::others_exec);
         inventory.sort();Json spec={{"format","poima.game"},{"version",1},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"engine",{{"version",runtime.at("engine_version")},{"target_os",runtime.at("target_os")},{"target_arch",runtime.at("target_arch")},{"executable","runtime/"+runtime.at("executable").get<std::string>()}}},{"entry",{{"world","content/world.json"},{"camera",p.spec.at("entry").at("camera")},{"controller",p.spec.at("entry").at("controller")}}},{"audio",p.spec.value("audio",false)},{"source",{{"revision",p.content.revision},{"world_sha256",hash(p.world_bytes)}}},{"files",inventory.files}};
         if(!p.profile.empty())spec["input_profile"]="content/default.poima-input.json";
+        if(p.gameplay) { spec["version"]=2;spec["gameplay"]={{"descriptor","gameplay/native-gameplay.json"},{"values",p.gameplay_values}}; }
         exclusive_write(stage.path/"game.json",spec.dump(2)+"\n");verify_game(text(stage.path/"game.json"));
         require(read(p.manifest,65536)==p.manifest_bytes && read(p.world,16*1024*1024)==p.world_bytes,"Project/world changed during export; no bundle was published.");if(!p.profile.empty())require(read(p.profile,16*1024*1024)==p.profile_bytes,"Input profile changed during export.");require(read(contained(runtime_path,"runtime.json"),65536)==descriptor && file_tree(runtime_path)==runtime_files,"Runtime distribution changed during export.");
         for(const auto& item:inventory.files)if(item.at("role")=="runtime") { const auto path=item.at("path").get<std::string>().substr(8);const auto bytes=read(contained(runtime_path,path));require(bytes.size()==item.at("size") && hash(bytes)==item.at("sha256").get<std::string>(),"Runtime distribution payload changed during export."); }
         for(const auto& asset:p.content.assets) { const auto bytes=read(contained(p.root,relative_path(p.spec.at("entry").at("world"))+".assets/"+asset.filename));require(bytes.size()==asset.bytes && hash(bytes)==asset.sha256,"Source asset changed during export."); }
+        if(p.gameplay) {
+            const auto source=contained(p.root,relative_path(p.spec.at("gameplay").at("descriptor")));
+            require(read(source,1024*1024)==p.gameplay_bytes,"Gameplay descriptor changed during export.");
+            const auto current=load_native_gameplay_artifact(text(source));
+            require(current.library_sha256==p.gameplay->library_sha256,"Gameplay artifact changed during export.");
+        }
         stage.publish();return Json{{"output",text(stage.destination)},{"game_manifest",text(stage.destination/"game.json")},{"publication",stage.publication},{"file_count",inventory.files.size()},{"bytes",inventory.total},{"revision",p.content.revision},{"project_id",p.spec.at("project_id")}};
     });
 }
 GameDefinition load_game(const std::string& manifest) { return verify_game(manifest).definition; }
 Reply inspect_game(const std::string& manifest) {
-    return operation("game.inspect",[&] { const auto game=verify_game(manifest);return Json{{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"files",game.spec.at("files")}}; });
+    return operation("game.inspect",[&] { const auto game=verify_game(manifest);Json result={{"manifest",text(game.manifest)},{"name",game.definition.name},{"project_id",game.spec.at("project_id")},{"revision",game.definition.revision},{"target_os",game.definition.target_os},{"target_arch",game.definition.target_arch},{"entry",game.spec.at("entry")},{"audio",game.definition.audio},{"files",game.spec.at("files")}};if(game.spec.contains("gameplay"))result["gameplay"]=game.spec.at("gameplay");return result; });
 }
 }

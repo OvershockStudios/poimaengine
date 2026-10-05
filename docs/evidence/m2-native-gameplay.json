@@ -1,0 +1,1610 @@
+{
+  "milestone": "M2 integrated native C# gameplay and portable game bundles",
+  "version": "0.0.35",
+  "date": "2026-10-05",
+  "source_base": "fd3feec192c28e1d8a2b800ec3b361b20b34ce0b",
+  "sources": {
+    "CMakeLists.txt": "1d7583aec93420d19dc6417dffaf4eac661e0783311c797c30402f4b02c04fcc",
+    "cmake/runtime.json.in": "bba9931cc03e4f1fdc5dd53353ebc5a6375add610aa12cdd77032a93f2d72ac8",
+    "include/poima/gameplay.hpp": "5fe5f462d52fbd6e0cb0797cffcbf6adf6f1a01fd60a7cf8ddf292f2c4b72608",
+    "include/poima/native_gameplay_artifact.hpp": "5f798e70f863898f94ed3ea108438c4fd2ac9eeb8e676a7cd6b833243465b1de",
+    "include/poima/project.hpp": "29bb4ffbc18c71d71004a1fb5192a38e5975f0f17d17f6fe23fd50fcad158372",
+    "src/core.cpp": "ec12788fb08ce53b1f467c2713f03fe9c209ea571e47c495a326dd0ce831eb2c",
+    "src/gameplay.cpp": "e3e4e6540439501e34cec41e2eb7fa6899ec5f571aa6f49b9faeafaaf206a052",
+    "src/native_gameplay_artifact.cpp": "83a7794c7f03a70d314b8d9beccbda03892459d88c640067bea9d8d74db01132",
+    "src/project.cpp": "21dd4508e466441fc2c7c4c3dd7c596c4c7bdf0c2f15c19b19deedfd9ca6e385",
+    "src/game_launch.cpp": "d9b4589fddd2a40642a48bcec11d9cda73d6a051d0e0495927cd606f5505d1d7",
+    "src/world.cpp": "87845b62ecf25be05d184d79def30f066533c046df5f3482b16d23d0d6fccd61",
+    "src/runtime.cpp": "00bc71a5e3339cc61066f13ded188a4e74245ad83e08da41318cf1b53faa0d94",
+    "managed/Poima.Gameplay/Gameplay.cs": "2974e83edff10599537b6b932783a00e360dee530ba0839a9d3609fb4e644e01",
+    "managed/Poima.NativeGame/Entry.cs": "fdd4a394ef2fed1d8d35775edf9c8de7a196d6497f2b5bdbdd3dfe2d0200c77b",
+    "managed/Poima.NativeGame.Generator/Program.cs": "0cf239aebc0751d132331561ac2641ae1c7e26fc38f4a4c235b94c056e32a7cf",
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": "4a828b7c9f9ea8285280e7fb3c6ea565e3b3d3a6b22cc6282aabb96bbcd2f861",
+    "scripts/publish_native_gameplay.py": "f9e8e1397100f274d9dcbde26b02d36f7a2a191af7949f442371f07458d1b6c8",
+    "scripts/verify_native_gameplay.py": "4004230a96f473da7b37891b9520ac0ed9d05f79d8ac401a6d74a2e643ea6988",
+    "scripts/verify_native_gameplay_parity.py": "74a57fe3335cce977531b0a9a86acc2fb805ce7edbfd05f584926f96df866bd1",
+    "scripts/verify_native_game_bundle.py": "468225d57c1a7443a37f2aaffea57a420c8404df5d4b986e0b621fa0af82ebca",
+    "tests/project_contract.py": "7154fa6efad03b186b404ecafad30f67c5427a89ddf708ab2d78e271d1e3bf71",
+    "tests/project_gameplay_contract.py": "aab67ada34073cb641c6b92d8d667dfde40ae9871c0b11b52229e783dfd3ffd7",
+    "tests/world_session_native.cpp": "498deec4731d8d1d3048ef254c1bd7123b7a5f4778fe725714a6658398709049",
+    "tests/desktop_frontend.py": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "642f88b41f1a8f7697cf208a698976c0159fe7bb6f82f436f29e265ed47b3860"
+  },
+  "binaries": {
+    "build/runtime-headless/poima": "899d96ef1307e4eb598017339e249dba7770b1ff6507c59988c3562132adc75d",
+    "build/native-gameplay-only/poima": "bf4ddf70c0a9e2441f159f7ea53c1a10eca034fb909940fc06ee9ddf23d5a31b",
+    "build/headless/poima": "c2367e7dd98ff8f2c798b55eb58885d467052516b440a6310c9e2d87a8ea7c90",
+    "build/windows-runtime/poima.exe": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+    "build/windows-runtime/poima_desktop.dll": "e19956b1ff969a969b9ca5b988a18cc126e785792ed699055f61590e340a726a",
+    "build/native-gameplay-managed-bridge/Poima.ManagedBridge.dll": "1251e72fd652f6a27c271d47d603b908fe03a7d2b45bfca5a8b3eec6a426ae58",
+    "build/native-gameplay-managed-bridge/Poima.Gameplay.dll": "50b4cea8c5754dfdec0e06a892608c69c1b5c88741e486b916dd898a501e53a7",
+    "build/desktop-native-gameplay-final/Poima.Editor.dll": "3a8d6aaeee2e70fbb6437f8f23d7f00ac31e4ca7f7110f8196a6f3360ed57ee7",
+    "build/desktop-native-gameplay-final/Poima.Editor.exe": "98a2c4da1eff7adfdca5ef5b7d59739e69620e77253ba071382c801a5a2f3e05"
+  },
+  "native_execution": {
+    "Linux": {
+      "artifact": "build/native-gameplay-validation-final/a68fc46fa221435282b122e1c1afc2e8/evidence.json",
+      "sha256": "a476381d39bd090dcf7ddb926a3150dc248823558735a39e2fcfd043d1a58155",
+      "passed": true,
+      "binary_sha256": "899d96ef1307e4eb598017339e249dba7770b1ff6507c59988c3562132adc75d",
+      "test_sha256": "4004230a96f473da7b37891b9520ac0ed9d05f79d8ac401a6d74a2e643ea6988",
+      "checks": {
+        "stale_descriptor_and_invalid_values_reject_before_module_execution": true,
+        "unchanged_door_native_queries_and_kinematic_motion": true,
+        "state_edit_receipt_retry_and_replacement_refused": true,
+        "fresh_instance_independence_and_process_module_pin": true,
+        "unchanged_animation_queries_crossfades_and_frozen_interruption": true,
+        "invalid_native_game_command_rolls_back_state_pose_and_physics": true,
+        "native_game_fixed_tick_partition_and_authoring_immutability": true,
+        "later_native_exception_restores_frozen_fade_state_physics_audio_and_queue": true,
+        "native_services_duplicate_rejection_nonrig_query_and_unknown_entity": true,
+        "actual_generated_schema_comparison_and_failed_instance_release": true
+      },
+      "rpc_calls": 146
+    },
+    "Windows": {
+      "artifact": "build/native-gameplay-windows-validation/1ecfdd97effb456a97e96c2b27b95109/evidence.json",
+      "sha256": "9fa863d62e055a6bba963f50a78476bb6b52442b3ca0607031fd5d205de01551",
+      "passed": true,
+      "binary_sha256": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+      "test_sha256": "4004230a96f473da7b37891b9520ac0ed9d05f79d8ac401a6d74a2e643ea6988",
+      "checks": {
+        "stale_descriptor_and_invalid_values_reject_before_module_execution": true,
+        "unchanged_door_native_queries_and_kinematic_motion": true,
+        "state_edit_receipt_retry_and_replacement_refused": true,
+        "fresh_instance_independence_and_process_module_pin": true,
+        "unchanged_animation_queries_crossfades_and_frozen_interruption": true,
+        "invalid_native_game_command_rolls_back_state_pose_and_physics": true,
+        "native_game_fixed_tick_partition_and_authoring_immutability": true,
+        "later_native_exception_restores_frozen_fade_state_physics_audio_and_queue": true,
+        "native_services_duplicate_rejection_nonrig_query_and_unknown_entity": true,
+        "actual_generated_schema_comparison_and_failed_instance_release": true
+      },
+      "rpc_calls": 146
+    },
+    "Linux_without_CoreCLR": {
+      "artifact": "build/native-gameplay-only-validation-final/9325d61dc362492d9ca0d8378f2f5de4/evidence.json",
+      "sha256": "4ae7665be974744817663f05f9b70124bfb1914b42a0b72289848b798c41071d",
+      "passed": true,
+      "binary_sha256": "bf4ddf70c0a9e2441f159f7ea53c1a10eca034fb909940fc06ee9ddf23d5a31b",
+      "test_sha256": "4004230a96f473da7b37891b9520ac0ed9d05f79d8ac401a6d74a2e643ea6988",
+      "checks": {
+        "stale_descriptor_and_invalid_values_reject_before_module_execution": true,
+        "unchanged_door_native_queries_and_kinematic_motion": true,
+        "state_edit_receipt_retry_and_replacement_refused": true,
+        "fresh_instance_independence_and_process_module_pin": true,
+        "unchanged_animation_queries_crossfades_and_frozen_interruption": true,
+        "invalid_native_game_command_rolls_back_state_pose_and_physics": true,
+        "native_game_fixed_tick_partition_and_authoring_immutability": true,
+        "later_native_exception_restores_frozen_fade_state_physics_audio_and_queue": true,
+        "native_services_duplicate_rejection_nonrig_query_and_unknown_entity": true,
+        "actual_generated_schema_comparison_and_failed_instance_release": true
+      },
+      "rpc_calls": 146
+    }
+  },
+  "native_only_configuration": {
+    "simulation": true,
+    "native_gameplay": true,
+    "managed_gameplay": false,
+    "dotnet_host_headers": "",
+    "renderer": false,
+    "audio": false,
+    "build_type": "Release",
+    "cxx_flags": "-O1 -DNDEBUG",
+    "performance_qualified": false
+  },
+  "backend_parity": {
+    "Linux": {
+      "artifact": "build/native-gameplay-parity-linux/e816ee7f42ae4bdc8785ff3f8755b070/evidence.json",
+      "sha256": "c6b26e106c24cd5427109c1fafce879e52346899a7c18f00f7e04d780096db42",
+      "passed": true,
+      "hashes": {
+        "binary": "899d96ef1307e4eb598017339e249dba7770b1ff6507c59988c3562132adc75d",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "1251e72fd652f6a27c271d47d603b908fe03a7d2b45bfca5a8b3eec6a426ae58",
+        "door_descriptor": "e880a57cf87934113be07b15925cf0a8c5a897f8fcc551cffcbd3802f8ed33ae",
+        "animation_descriptor": "2e99c9f7fa78adc1e9a60ce765d48bad335e9c966eee53c805d9d9a0ad8d9e49",
+        "door_assembly": "048dd729ea9326e9d1fbdaca60b4f2c7a50c28083620b1eb4b3c0c8df12f4583",
+        "animation_assembly": "664a936fdc651a0cc856363012cd4331331743e15d68a8a5e17b1666f4235d93",
+        "harness": "74a57fe3335cce977531b0a9a86acc2fb805ce7edbfd05f584926f96df866bd1",
+        "reused_harness": "4004230a96f473da7b37891b9520ac0ed9d05f79d8ac401a6d74a2e643ea6988",
+        "fixture": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+        "door_source": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+        "animation_source": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+        "door_native_library": "7bfeebab61a54e195371e964d66d950e3b98a891feb4b77d4cdd50d2bada3ef0",
+        "animation_native_library": "1e0d13d6ce2e519482a433c73e0d0947f92057df7d9f69b3dc848eb2e25630f6"
+      },
+      "comparison": "Exact schema, complete values, ticks and complete runtime entities except session_id; no numeric tolerance.",
+      "checks": {
+        "door/typed_initial_values": true,
+        "door/approached_door": true,
+        "door/use_moves_kinematic_door": true,
+        "door/typed_state_edit": true,
+        "animation/typed_initial_values": true,
+        "animation/first_crossfade": true,
+        "animation/advancing_crossfade": true,
+        "animation/frozen_interruption": true,
+        "animation/before_invalid_tick": true,
+        "animation/after_invalid_tick": true,
+        "animation/exact_fade_completion": true,
+        "animation/recovery_command": true
+      },
+      "rpc_calls": 190
+    },
+    "Windows": {
+      "artifact": "build/native-gameplay-parity-windows/913f56a4d99b44359c1f1f70907f4cfb/evidence.json",
+      "sha256": "2c19d93fb9e08c3deee973607d2fc157900f2cbed3ec04d0ed488460e3dca6b1",
+      "passed": true,
+      "hashes": {
+        "binary": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "bridge": "1251e72fd652f6a27c271d47d603b908fe03a7d2b45bfca5a8b3eec6a426ae58",
+        "door_descriptor": "d1ed22bc3d78983c9f789de8d3cf935d30c37e400165f6fd34724520e56a7c44",
+        "animation_descriptor": "48385497be312148b5e3472195a688d23af74534c42a9685208ba873d93fb586",
+        "door_assembly": "87eb0ca10bdca5ee8968a4a8915b12d331a83876ec090947679d3762cae74b59",
+        "animation_assembly": "32c0f9c5f744b5dacd582036f78b9b9dbe4220b03446481c4d3cce5b8c6afe5d",
+        "harness": "74a57fe3335cce977531b0a9a86acc2fb805ce7edbfd05f584926f96df866bd1",
+        "reused_harness": "4004230a96f473da7b37891b9520ac0ed9d05f79d8ac401a6d74a2e643ea6988",
+        "fixture": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+        "door_source": "d450c5fd56b37211080939cce75b7c5c0e9d59ca36e1ae1f1bb8d368d7fad9c4",
+        "animation_source": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+        "door_native_library": "e00deb0672dbf610d4a76902d3867bd95318e02247185e74934bd1fe224b6103",
+        "animation_native_library": "5ecc30069dcaf0db182cd70569245b2af87084f9a5448a4bf012d949bc9ad839"
+      },
+      "comparison": "Exact schema, complete values, ticks and complete runtime entities except session_id; no numeric tolerance.",
+      "checks": {
+        "door/typed_initial_values": true,
+        "door/approached_door": true,
+        "door/use_moves_kinematic_door": true,
+        "door/typed_state_edit": true,
+        "animation/typed_initial_values": true,
+        "animation/first_crossfade": true,
+        "animation/advancing_crossfade": true,
+        "animation/frozen_interruption": true,
+        "animation/before_invalid_tick": true,
+        "animation/after_invalid_tick": true,
+        "animation/exact_fade_completion": true,
+        "animation/recovery_command": true
+      },
+      "rpc_calls": 190
+    }
+  },
+  "artifacts": {
+    "linux_door": {
+      "artifact": "build/native-aot-door-final/native-gameplay.json",
+      "sha256": "e880a57cf87934113be07b15925cf0a8c5a897f8fcc551cffcbd3802f8ed33ae",
+      "target_os": "Linux",
+      "engine_version": "0.0.35",
+      "schema": {
+        "identity": "poima.example.sliding-door",
+        "bytes": 72,
+        "fields": [
+          {
+            "name": "Activations",
+            "kind": "int32",
+            "offset": 68,
+            "bytes": 4
+          },
+          {
+            "name": "Camera",
+            "kind": "entity",
+            "offset": 16,
+            "bytes": 16
+          },
+          {
+            "name": "Door",
+            "kind": "entity",
+            "offset": 32,
+            "bytes": 16
+          },
+          {
+            "name": "Open",
+            "kind": "int32",
+            "offset": 64,
+            "bytes": 4
+          },
+          {
+            "name": "OpenX",
+            "kind": "float64",
+            "offset": 48,
+            "bytes": 8
+          },
+          {
+            "name": "Player",
+            "kind": "entity",
+            "offset": 0,
+            "bytes": 16
+          },
+          {
+            "name": "UseDistance",
+            "kind": "float64",
+            "offset": 56,
+            "bytes": 8
+          }
+        ]
+      },
+      "type": "Poima.Examples.DoorGame",
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1562248,
+          "sha256": "7bfeebab61a54e195371e964d66d950e3b98a891feb4b77d4cdd50d2bada3ef0",
+          "role": "library"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 12007,
+          "sha256": "d5ac6daddc846914fbe84d048912826995104c52cd0c6c8a1bc3d836891ef7e9",
+          "role": "notice"
+        }
+      ],
+      "call_version": 1,
+      "services_version": 3
+    },
+    "linux_animation": {
+      "artifact": "build/native-aot-animation-final/native-gameplay.json",
+      "sha256": "2e99c9f7fa78adc1e9a60ce765d48bad335e9c966eee53c805d9d9a0ad8d9e49",
+      "target_os": "Linux",
+      "engine_version": "0.0.35",
+      "schema": {
+        "identity": "poima.example.animation-switching",
+        "bytes": 64,
+        "fields": [
+          {
+            "name": "BlendWeight",
+            "kind": "float64",
+            "offset": 56,
+            "bytes": 8
+          },
+          {
+            "name": "Changes",
+            "kind": "int32",
+            "offset": 36,
+            "bytes": 4
+          },
+          {
+            "name": "NextClip",
+            "kind": "int32",
+            "offset": 32,
+            "bytes": 4
+          },
+          {
+            "name": "ObservedClip",
+            "kind": "int32",
+            "offset": 40,
+            "bytes": 4
+          },
+          {
+            "name": "ObservedTime",
+            "kind": "float64",
+            "offset": 48,
+            "bytes": 8
+          },
+          {
+            "name": "Player",
+            "kind": "entity",
+            "offset": 0,
+            "bytes": 16
+          },
+          {
+            "name": "Rig",
+            "kind": "entity",
+            "offset": 16,
+            "bytes": 16
+          }
+        ]
+      },
+      "type": "Poima.Examples.AnimationGame",
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1558152,
+          "sha256": "1e0d13d6ce2e519482a433c73e0d0947f92057df7d9f69b3dc848eb2e25630f6",
+          "role": "library"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 12007,
+          "sha256": "d5ac6daddc846914fbe84d048912826995104c52cd0c6c8a1bc3d836891ef7e9",
+          "role": "notice"
+        }
+      ],
+      "call_version": 1,
+      "services_version": 3
+    },
+    "linux_probe": {
+      "artifact": "build/native-aot-probe-final/native-gameplay.json",
+      "sha256": "9432c486960617ecd41a056c4e3a5395de629ac5549a4b3db878b7e2abfd5e4c",
+      "target_os": "Linux",
+      "engine_version": "0.0.35",
+      "schema": {
+        "identity": "poima.verification.animation-services",
+        "bytes": 248,
+        "fields": [
+          {
+            "name": "AppliedSerial",
+            "kind": "int32",
+            "offset": 72,
+            "bytes": 4
+          },
+          {
+            "name": "BlendTicks",
+            "kind": "int32",
+            "offset": 88,
+            "bytes": 4
+          },
+          {
+            "name": "Body",
+            "kind": "entity",
+            "offset": 32,
+            "bytes": 16
+          },
+          {
+            "name": "Clip",
+            "kind": "int32",
+            "offset": 76,
+            "bytes": 4
+          },
+          {
+            "name": "Count",
+            "kind": "int32",
+            "offset": 92,
+            "bytes": 4
+          },
+          {
+            "name": "DelayUntil",
+            "kind": "int64",
+            "offset": 144,
+            "bytes": 8
+          },
+          {
+            "name": "Emitter",
+            "kind": "entity",
+            "offset": 48,
+            "bytes": 16
+          },
+          {
+            "name": "LastVoice",
+            "kind": "int64",
+            "offset": 128,
+            "bytes": 8
+          },
+          {
+            "name": "Loop",
+            "kind": "int32",
+            "offset": 80,
+            "bytes": 4
+          },
+          {
+            "name": "Mode",
+            "kind": "int32",
+            "offset": 64,
+            "bytes": 4
+          },
+          {
+            "name": "NullProbe",
+            "kind": "int32",
+            "offset": 100,
+            "bytes": 4
+          },
+          {
+            "name": "Plain",
+            "kind": "entity",
+            "offset": 16,
+            "bytes": 16
+          },
+          {
+            "name": "Playing",
+            "kind": "int32",
+            "offset": 84,
+            "bytes": 4
+          },
+          {
+            "name": "QClip",
+            "kind": "int32",
+            "offset": 152,
+            "bytes": 4
+          },
+          {
+            "name": "QDuration",
+            "kind": "float64",
+            "offset": 200,
+            "bytes": 8
+          },
+          {
+            "name": "QDurationTicks",
+            "kind": "int32",
+            "offset": 240,
+            "bytes": 4
+          },
+          {
+            "name": "QElapsedTicks",
+            "kind": "int32",
+            "offset": 244,
+            "bytes": 4
+          },
+          {
+            "name": "QHasTransition",
+            "kind": "int32",
+            "offset": 164,
+            "bytes": 4
+          },
+          {
+            "name": "QLoop",
+            "kind": "int32",
+            "offset": 156,
+            "bytes": 4
+          },
+          {
+            "name": "QPlaying",
+            "kind": "int32",
+            "offset": 160,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceClip",
+            "kind": "int32",
+            "offset": 172,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceFrozen",
+            "kind": "int32",
+            "offset": 168,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceLoop",
+            "kind": "int32",
+            "offset": 176,
+            "bytes": 4
+          },
+          {
+            "name": "QSourcePlaying",
+            "kind": "int32",
+            "offset": 180,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceSpeed",
+            "kind": "float64",
+            "offset": 224,
+            "bytes": 8
+          },
+          {
+            "name": "QSourceTime",
+            "kind": "float64",
+            "offset": 216,
+            "bytes": 8
+          },
+          {
+            "name": "QSpeed",
+            "kind": "float64",
+            "offset": 192,
+            "bytes": 8
+          },
+          {
+            "name": "QStartTick",
+            "kind": "int64",
+            "offset": 232,
+            "bytes": 8
+          },
+          {
+            "name": "QTime",
+            "kind": "float64",
+            "offset": 184,
+            "bytes": 8
+          },
+          {
+            "name": "QWeight",
+            "kind": "float64",
+            "offset": 208,
+            "bytes": 8
+          },
+          {
+            "name": "QueryTick",
+            "kind": "int64",
+            "offset": 136,
+            "bytes": 8
+          },
+          {
+            "name": "Rig",
+            "kind": "entity",
+            "offset": 0,
+            "bytes": 16
+          },
+          {
+            "name": "Serial",
+            "kind": "int32",
+            "offset": 68,
+            "bytes": 4
+          },
+          {
+            "name": "Speed",
+            "kind": "float64",
+            "offset": 112,
+            "bytes": 8
+          },
+          {
+            "name": "ThrowAt",
+            "kind": "int64",
+            "offset": 120,
+            "bytes": 8
+          },
+          {
+            "name": "Ticks",
+            "kind": "int32",
+            "offset": 96,
+            "bytes": 4
+          },
+          {
+            "name": "Time",
+            "kind": "float64",
+            "offset": 104,
+            "bytes": 8
+          }
+        ]
+      },
+      "type": "Poima.Verification.ProbeGame",
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1566344,
+          "sha256": "9e8593dacc4d6cff42c171aa36c6d7c7fec65e5c029130b76e4999d35e08e913",
+          "role": "library"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 12007,
+          "sha256": "d5ac6daddc846914fbe84d048912826995104c52cd0c6c8a1bc3d836891ef7e9",
+          "role": "notice"
+        }
+      ],
+      "call_version": 1,
+      "services_version": 3
+    },
+    "windows_door": {
+      "artifact": "build/native-aot-windows-door-final/native-gameplay.json",
+      "sha256": "d1ed22bc3d78983c9f789de8d3cf935d30c37e400165f6fd34724520e56a7c44",
+      "target_os": "Windows",
+      "engine_version": "0.0.35",
+      "schema": {
+        "identity": "poima.example.sliding-door",
+        "bytes": 72,
+        "fields": [
+          {
+            "name": "Activations",
+            "kind": "int32",
+            "offset": 68,
+            "bytes": 4
+          },
+          {
+            "name": "Camera",
+            "kind": "entity",
+            "offset": 16,
+            "bytes": 16
+          },
+          {
+            "name": "Door",
+            "kind": "entity",
+            "offset": 32,
+            "bytes": 16
+          },
+          {
+            "name": "Open",
+            "kind": "int32",
+            "offset": 64,
+            "bytes": 4
+          },
+          {
+            "name": "OpenX",
+            "kind": "float64",
+            "offset": 48,
+            "bytes": 8
+          },
+          {
+            "name": "Player",
+            "kind": "entity",
+            "offset": 0,
+            "bytes": 16
+          },
+          {
+            "name": "UseDistance",
+            "kind": "float64",
+            "offset": 56,
+            "bytes": 8
+          }
+        ]
+      },
+      "type": "Poima.Examples.DoorGame",
+      "files": [
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 12007,
+          "sha256": "d5ac6daddc846914fbe84d048912826995104c52cd0c6c8a1bc3d836891ef7e9",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1309696,
+          "sha256": "e00deb0672dbf610d4a76902d3867bd95318e02247185e74934bd1fe224b6103",
+          "role": "library"
+        }
+      ],
+      "call_version": 1,
+      "services_version": 3
+    },
+    "windows_animation": {
+      "artifact": "build/native-aot-windows-animation-final/native-gameplay.json",
+      "sha256": "48385497be312148b5e3472195a688d23af74534c42a9685208ba873d93fb586",
+      "target_os": "Windows",
+      "engine_version": "0.0.35",
+      "schema": {
+        "identity": "poima.example.animation-switching",
+        "bytes": 64,
+        "fields": [
+          {
+            "name": "BlendWeight",
+            "kind": "float64",
+            "offset": 56,
+            "bytes": 8
+          },
+          {
+            "name": "Changes",
+            "kind": "int32",
+            "offset": 36,
+            "bytes": 4
+          },
+          {
+            "name": "NextClip",
+            "kind": "int32",
+            "offset": 32,
+            "bytes": 4
+          },
+          {
+            "name": "ObservedClip",
+            "kind": "int32",
+            "offset": 40,
+            "bytes": 4
+          },
+          {
+            "name": "ObservedTime",
+            "kind": "float64",
+            "offset": 48,
+            "bytes": 8
+          },
+          {
+            "name": "Player",
+            "kind": "entity",
+            "offset": 0,
+            "bytes": 16
+          },
+          {
+            "name": "Rig",
+            "kind": "entity",
+            "offset": 16,
+            "bytes": 16
+          }
+        ]
+      },
+      "type": "Poima.Examples.AnimationGame",
+      "files": [
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 12007,
+          "sha256": "d5ac6daddc846914fbe84d048912826995104c52cd0c6c8a1bc3d836891ef7e9",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1308160,
+          "sha256": "5ecc30069dcaf0db182cd70569245b2af87084f9a5448a4bf012d949bc9ad839",
+          "role": "library"
+        }
+      ],
+      "call_version": 1,
+      "services_version": 3
+    },
+    "windows_probe": {
+      "artifact": "build/native-aot-windows-probe-final/native-gameplay.json",
+      "sha256": "24451d9b0af3861c65af541f8496b9b8fd0aa788b23da8e13039d45825c0f259",
+      "target_os": "Windows",
+      "engine_version": "0.0.35",
+      "schema": {
+        "identity": "poima.verification.animation-services",
+        "bytes": 248,
+        "fields": [
+          {
+            "name": "AppliedSerial",
+            "kind": "int32",
+            "offset": 72,
+            "bytes": 4
+          },
+          {
+            "name": "BlendTicks",
+            "kind": "int32",
+            "offset": 88,
+            "bytes": 4
+          },
+          {
+            "name": "Body",
+            "kind": "entity",
+            "offset": 32,
+            "bytes": 16
+          },
+          {
+            "name": "Clip",
+            "kind": "int32",
+            "offset": 76,
+            "bytes": 4
+          },
+          {
+            "name": "Count",
+            "kind": "int32",
+            "offset": 92,
+            "bytes": 4
+          },
+          {
+            "name": "DelayUntil",
+            "kind": "int64",
+            "offset": 144,
+            "bytes": 8
+          },
+          {
+            "name": "Emitter",
+            "kind": "entity",
+            "offset": 48,
+            "bytes": 16
+          },
+          {
+            "name": "LastVoice",
+            "kind": "int64",
+            "offset": 128,
+            "bytes": 8
+          },
+          {
+            "name": "Loop",
+            "kind": "int32",
+            "offset": 80,
+            "bytes": 4
+          },
+          {
+            "name": "Mode",
+            "kind": "int32",
+            "offset": 64,
+            "bytes": 4
+          },
+          {
+            "name": "NullProbe",
+            "kind": "int32",
+            "offset": 100,
+            "bytes": 4
+          },
+          {
+            "name": "Plain",
+            "kind": "entity",
+            "offset": 16,
+            "bytes": 16
+          },
+          {
+            "name": "Playing",
+            "kind": "int32",
+            "offset": 84,
+            "bytes": 4
+          },
+          {
+            "name": "QClip",
+            "kind": "int32",
+            "offset": 152,
+            "bytes": 4
+          },
+          {
+            "name": "QDuration",
+            "kind": "float64",
+            "offset": 200,
+            "bytes": 8
+          },
+          {
+            "name": "QDurationTicks",
+            "kind": "int32",
+            "offset": 240,
+            "bytes": 4
+          },
+          {
+            "name": "QElapsedTicks",
+            "kind": "int32",
+            "offset": 244,
+            "bytes": 4
+          },
+          {
+            "name": "QHasTransition",
+            "kind": "int32",
+            "offset": 164,
+            "bytes": 4
+          },
+          {
+            "name": "QLoop",
+            "kind": "int32",
+            "offset": 156,
+            "bytes": 4
+          },
+          {
+            "name": "QPlaying",
+            "kind": "int32",
+            "offset": 160,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceClip",
+            "kind": "int32",
+            "offset": 172,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceFrozen",
+            "kind": "int32",
+            "offset": 168,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceLoop",
+            "kind": "int32",
+            "offset": 176,
+            "bytes": 4
+          },
+          {
+            "name": "QSourcePlaying",
+            "kind": "int32",
+            "offset": 180,
+            "bytes": 4
+          },
+          {
+            "name": "QSourceSpeed",
+            "kind": "float64",
+            "offset": 224,
+            "bytes": 8
+          },
+          {
+            "name": "QSourceTime",
+            "kind": "float64",
+            "offset": 216,
+            "bytes": 8
+          },
+          {
+            "name": "QSpeed",
+            "kind": "float64",
+            "offset": 192,
+            "bytes": 8
+          },
+          {
+            "name": "QStartTick",
+            "kind": "int64",
+            "offset": 232,
+            "bytes": 8
+          },
+          {
+            "name": "QTime",
+            "kind": "float64",
+            "offset": 184,
+            "bytes": 8
+          },
+          {
+            "name": "QWeight",
+            "kind": "float64",
+            "offset": 208,
+            "bytes": 8
+          },
+          {
+            "name": "QueryTick",
+            "kind": "int64",
+            "offset": 136,
+            "bytes": 8
+          },
+          {
+            "name": "Rig",
+            "kind": "entity",
+            "offset": 0,
+            "bytes": 16
+          },
+          {
+            "name": "Serial",
+            "kind": "int32",
+            "offset": 68,
+            "bytes": 4
+          },
+          {
+            "name": "Speed",
+            "kind": "float64",
+            "offset": 112,
+            "bytes": 8
+          },
+          {
+            "name": "ThrowAt",
+            "kind": "int64",
+            "offset": 120,
+            "bytes": 8
+          },
+          {
+            "name": "Ticks",
+            "kind": "int32",
+            "offset": 96,
+            "bytes": 4
+          },
+          {
+            "name": "Time",
+            "kind": "float64",
+            "offset": 104,
+            "bytes": 8
+          }
+        ]
+      },
+      "type": "Poima.Verification.ProbeGame",
+      "files": [
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 12007,
+          "sha256": "d5ac6daddc846914fbe84d048912826995104c52cd0c6c8a1bc3d836891ef7e9",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1317888,
+          "sha256": "404504e115eb6153427539ad7d47070a8b222c9d4137dcaf30f614e07ffbeb28",
+          "role": "library"
+        }
+      ],
+      "call_version": 1,
+      "services_version": 3
+    }
+  },
+  "metadata_contract": {
+    "Linux": {
+      "artifact": "build/native-gameplay-metadata-linux-final.json",
+      "sha256": "fb893a8db16ad106b9992497d20a81c1079a798a4d2c8729a4b939d2f6ff21cd",
+      "passed": true,
+      "tests": 9,
+      "skipped": 3,
+      "binary_sha256": "899d96ef1307e4eb598017339e249dba7770b1ff6507c59988c3562132adc75d",
+      "test_sha256": "aab67ada34073cb641c6b92d8d667dfde40ae9871c0b11b52229e783dfd3ffd7",
+      "synthetic_artifacts_are_metadata_only": true,
+      "real_artifact_supplied": true
+    },
+    "Windows": {
+      "artifact": "build/native-gameplay-export-windows-final.json",
+      "sha256": "f190a2a2d71b3e2d2d4149e6034102b40e331c0bd4003fee62284d86083d993a",
+      "passed": true,
+      "tests": 9,
+      "skipped": 1,
+      "binary_sha256": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+      "test_sha256": "aab67ada34073cb641c6b92d8d667dfde40ae9871c0b11b52229e783dfd3ffd7",
+      "synthetic_artifacts_are_metadata_only": true,
+      "real_artifact_supplied": true
+    }
+  },
+  "ctest": {
+    "Linux_runtime": {
+      "artifact": "build/native-gameplay-runtime-ctest.xml",
+      "sha256": "0188a802ec9682ea9491aa1cd89f78193d47aafab822740c86d8ebda17d16710",
+      "tests": 33,
+      "failures": 0,
+      "skipped": 0,
+      "seconds": 140.0,
+      "cases": [
+        {
+          "name": "asset_hash",
+          "seconds": 0.051387
+        },
+        {
+          "name": "texture_native",
+          "seconds": 0.0474637
+        },
+        {
+          "name": "tangents_native",
+          "seconds": 0.04686
+        },
+        {
+          "name": "animation_native",
+          "seconds": 0.0604466
+        },
+        {
+          "name": "player_input",
+          "seconds": 0.0421282
+        },
+        {
+          "name": "editor_gizmo",
+          "seconds": 0.0453264
+        },
+        {
+          "name": "input_profile_native",
+          "seconds": 0.0467032
+        },
+        {
+          "name": "world_session_native",
+          "seconds": 1.06439
+        },
+        {
+          "name": "local_session_native",
+          "seconds": 0.27695
+        },
+        {
+          "name": "scene_math",
+          "seconds": 0.0560559
+        },
+        {
+          "name": "shadow_math",
+          "seconds": 0.050715
+        },
+        {
+          "name": "visibility_math",
+          "seconds": 0.0563404
+        },
+        {
+          "name": "runtime_native",
+          "seconds": 0.160522
+        },
+        {
+          "name": "interaction_native",
+          "seconds": 0.192714
+        },
+        {
+          "name": "runtime_animation_native",
+          "seconds": 0.101585
+        },
+        {
+          "name": "runtime_mesh_native",
+          "seconds": 0.228585
+        },
+        {
+          "name": "project_contract",
+          "seconds": 10.4356
+        },
+        {
+          "name": "project_gameplay_contract",
+          "seconds": 24.4228
+        },
+        {
+          "name": "shared_session_contract",
+          "seconds": 2.14038
+        },
+        {
+          "name": "world_history_contract",
+          "seconds": 6.07737
+        },
+        {
+          "name": "input_profile_contract",
+          "seconds": 17.1682
+        },
+        {
+          "name": "gamepad_contract",
+          "seconds": 16.7025
+        },
+        {
+          "name": "lighting_contract",
+          "seconds": 2.41952
+        },
+        {
+          "name": "audio_contract",
+          "seconds": 8.07172
+        },
+        {
+          "name": "asset_contract",
+          "seconds": 9.23704
+        },
+        {
+          "name": "animation_contract",
+          "seconds": 5.12261
+        },
+        {
+          "name": "runtime_animation_contract",
+          "seconds": 5.81695
+        },
+        {
+          "name": "runtime_animation_blend_contract",
+          "seconds": 1.44325
+        },
+        {
+          "name": "mesh_collision_contract",
+          "seconds": 6.80333
+        },
+        {
+          "name": "runtime_contract",
+          "seconds": 1.32935
+        },
+        {
+          "name": "cli_contract",
+          "seconds": 3.87998
+        },
+        {
+          "name": "world_contract",
+          "seconds": 4.11624
+        },
+        {
+          "name": "native_module_contract",
+          "seconds": 11.9761
+        }
+      ]
+    },
+    "Linux_authoring": {
+      "artifact": "build/native-gameplay-authoring-ctest.xml",
+      "sha256": "89cdb25778b494970cad7851a2795ce9edc90bbeccae18d3c3a87266120690bf",
+      "tests": 28,
+      "failures": 0,
+      "skipped": 0,
+      "seconds": 73.0,
+      "cases": [
+        {
+          "name": "asset_hash",
+          "seconds": 0.0173909
+        },
+        {
+          "name": "texture_native",
+          "seconds": 0.0124751
+        },
+        {
+          "name": "tangents_native",
+          "seconds": 0.0101225
+        },
+        {
+          "name": "animation_native",
+          "seconds": 0.0323258
+        },
+        {
+          "name": "player_input",
+          "seconds": 0.010176
+        },
+        {
+          "name": "editor_gizmo",
+          "seconds": 0.0115052
+        },
+        {
+          "name": "input_profile_native",
+          "seconds": 0.0116108
+        },
+        {
+          "name": "world_session_native",
+          "seconds": 0.837221
+        },
+        {
+          "name": "local_session_native",
+          "seconds": 0.259036
+        },
+        {
+          "name": "scene_math",
+          "seconds": 0.0138849
+        },
+        {
+          "name": "shadow_math",
+          "seconds": 0.0108681
+        },
+        {
+          "name": "visibility_math",
+          "seconds": 0.0126539
+        },
+        {
+          "name": "project_contract",
+          "seconds": 7.43458
+        },
+        {
+          "name": "project_gameplay_contract",
+          "seconds": 16.1452
+        },
+        {
+          "name": "shared_session_contract",
+          "seconds": 1.17325
+        },
+        {
+          "name": "world_history_contract",
+          "seconds": 4.02457
+        },
+        {
+          "name": "input_profile_contract",
+          "seconds": 11.8069
+        },
+        {
+          "name": "gamepad_contract",
+          "seconds": 6.12463
+        },
+        {
+          "name": "lighting_contract",
+          "seconds": 0.947116
+        },
+        {
+          "name": "audio_contract",
+          "seconds": 0.694127
+        },
+        {
+          "name": "asset_contract",
+          "seconds": 3.54553
+        },
+        {
+          "name": "animation_contract",
+          "seconds": 2.14126
+        },
+        {
+          "name": "runtime_animation_contract",
+          "seconds": 1.44935
+        },
+        {
+          "name": "runtime_animation_blend_contract",
+          "seconds": 0.200284
+        },
+        {
+          "name": "mesh_collision_contract",
+          "seconds": 2.51415
+        },
+        {
+          "name": "cli_contract",
+          "seconds": 0.841512
+        },
+        {
+          "name": "world_contract",
+          "seconds": 3.082
+        },
+        {
+          "name": "native_module_contract",
+          "seconds": 9.82034
+        }
+      ]
+    }
+  },
+  "development_regression": {
+    "linux": {
+      "artifact": "build/native-gameplay-coreclr-linux/evidence.json",
+      "sha256": "dca0b3117ea9b1af3a0d4a92e67dec6dfff83338d881d3326ad7e5fe078f80d0",
+      "passed": true,
+      "reloads": 100,
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "rpc_calls": 276,
+      "binary_sha256": "899d96ef1307e4eb598017339e249dba7770b1ff6507c59988c3562132adc75d",
+      "bridge_sha256": "1251e72fd652f6a27c271d47d603b908fe03a7d2b45bfca5a8b3eec6a426ae58"
+    },
+    "windows": {
+      "artifact": "build/native-gameplay-coreclr-windows/evidence.json",
+      "sha256": "2f6695eaca3a5df2e3bd23787a58d4bb9b5d8efc1f55fd12b503ddf77d1c9201",
+      "passed": true,
+      "reloads": 100,
+      "checks": {
+        "native_CSharp_door_interaction": true,
+        "use_edge_once_per_batch": true,
+        "same_tick_look_visible_to_gameplay": true,
+        "state_preserving_reload_and_added_field": true,
+        "new_code_executes": true,
+        "guards_and_retry_receipts": true,
+        "atomic_field_edit": true,
+        "float32_and_lossless_int64_fields": true,
+        "failed_build_load_layout_and_initialize_preserve_game": true,
+        "managed_tick_failure_rolls_back_physics_and_state": true,
+        "retired_contexts_collected": true,
+        "intentional_retention_detected": true,
+        "native_runtime_stop_releases_module": true,
+        "authored_world_unchanged": true
+      },
+      "rpc_calls": 276,
+      "binary_sha256": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+      "bridge_sha256": "1251e72fd652f6a27c271d47d603b908fe03a7d2b45bfca5a8b3eec6a426ae58"
+    }
+  },
+  "windows_relocated_bundle": {
+    "artifact": "build/native-gameplay-bundle-gpu1/6e962892826d4aa4b7dd8ded4fdccd9f/evidence.json",
+    "sha256": "cb12bc6f6e012298ce402d5aa57cb69717e929407b44e55789137bd2db7856ac",
+    "passed": true,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "ticks": 480,
+    "binary_sha256": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+    "relocated_binary_sha256": "f14f7778bc1bbe1b8190d5de986e8661c46c2f401dc8ed594ba1b3fda11c4faa",
+    "inventory_files": 38,
+    "checks": [
+      "v2 export includes real NativeAOT image and values; every PE has no CLI directory; no development IL or hostfxr inventory",
+      "relocated bundled executable runs with original project path absent, unrelated cwd and system-only PATH",
+      "480-tick native gameplay fields and player/camera states match direct reference",
+      "direct door opens to configured 2.4 units; final relocated pixels match exactly",
+      "inspect and launch leave every bundle and source file hash unchanged",
+      "tampered packaged gameplay descriptor rejected before output creation"
+    ],
+    "limitations": [
+      "Windows host has .NET installed; this is not a clean-machine qualification.",
+      "No physical input or audio-device qualification; deterministic replay uses native gameplay.",
+      "game.run exposes controller/camera states, not the door entity; bundle door behavior is compared through gameplay fields and pixels."
+    ],
+    "identical_bmp_sha256": "b97ab8a1b8b18bdba3e25225d4661c3d7bd4338245a178a3de5d8d16a1b12e4a",
+    "gameplay_values": {
+      "Activations": 1,
+      "Camera": "00000000000000000000000000000065",
+      "Door": "00000000000000000000000000000002",
+      "Open": 1,
+      "OpenX": 2.4,
+      "Player": "00000000000000000000000000000064",
+      "UseDistance": 3.0
+    },
+    "native_diagnostics": {
+      "dynamic_code_compiled": false,
+      "dynamic_code_supported": false
+    }
+  },
+  "final_desktop": {
+    "artifact": "build/native-gameplay-final-full-ui-gpu1/64be0216fdae446290e33909a96cb637/evidence.json",
+    "sha256": "8dad21e9dcf27394d1cbe4c6c5eac19a39b702c7692357618639846a65679e45",
+    "passed": true,
+    "actions": 232,
+    "test_sha256": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84",
+    "editor_sha256": "3a8d6aaeee2e70fbb6437f8f23d7f00ac31e4ca7f7110f8196a6f3360ed57ee7",
+    "checks": [
+      "actual Avalonia Vulkan backend with native child Scene",
+      "shared CLI connection",
+      "dirty draft preserved; stale Apply rejects; Reload explicit",
+      "undo/redo and fixed-tick runtime",
+      "invalid raw field survives floating/reset; dirty close cancelled",
+      "missing-asset Scene error recovers after authoring repair without reattachment",
+      "actual Inspector and Scene floating windows; reset and continued presentation",
+      "native HWND look/fly/frame/click messages; input released cleanly",
+      "saved floating layout restores its panel structure and bounds, including a fresh process",
+      "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+      "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+      "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+      "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+      "independent Game HWND gestures preserve Scene camera; both panes render in one shared session",
+      "paused Game capture and Stop preserve authored transforms/revision/history",
+      "revision-guarded native viewport capture",
+      "bounded process exit",
+      "owned desktop client-area screenshot"
+    ],
+    "game_input_qualification": {
+      "owned_hwnd_routing": true,
+      "relative_motion": "Explicit script injection; not raw hardware packets.",
+      "physical_input_qualified": false,
+      "actual_character_movement_and_jump": true,
+      "physical_scan_mapping": true,
+      "repeat_suppressed": true,
+      "profile_rebound": true,
+      "focus_escape_pause_scene_focus_game_detach_stop_clear": true,
+      "acquisition_click_swallowed": true
+    },
+    "screenshot": {
+      "path": "docs/evidence/m2-native-gameplay-editor.png",
+      "sha256": "544b2ef4d519d79a143c4874a7f0dd94557f4136ecdfb32ade4840597664d615",
+      "width": 1422,
+      "height": 873,
+      "reviewed": true
+    },
+    "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+    "render_scaling": 1.25
+  },
+  "retained_gui_failure": {
+    "artifact": "build/native-gameplay-final-full-ui-gpu1/c2a58f77514b461e9e03395207686705/evidence.json",
+    "sha256": "a5ddb60dad86418702dc43ff9ed6c86facd8bb354a35f56b3d4bfc5dd328df04",
+    "reason": "Game relative motion rejected after focus/capture was lost between scripted actions while concurrent Windows CLI checks were active.",
+    "assessment": "External interference is plausible, not proven. Same package and unchanged harness passed in an exclusive Windows interval; no assertion was weakened."
+  },
+  "publication_guards": {
+    "existing_output_preserved": true,
+    "foreign_target_rejected_before_build": true
+  },
+  "limitations": [
+    "One statically bound native library image/path per process; no NativeAOT unloading or code replacement.",
+    "C# module/state/service support remains bounded; NativeAOT retains GC/runtime services.",
+    "Exact backend comparisons cover fixtures on each OS, not arbitrary cross-platform determinism.",
+    "Windows deployment host has .NET installed; no clean-machine deployment claim.",
+    "Native Linux graphics, console publication, game-scale frame times and allocation budgets remain unqualified.",
+    "Final GUI inputs are semantic/synthetic; physical input and broad DPI/accessibility qualification remain separate.",
+    "Linux metadata fixture run omits installed-runtime export cases; Windows skips the unprivileged symlink fixture.",
+    "Read-only native headers/inventory validation does not execute code; actual module and bundle tests are recorded separately.",
+    "Path-based inspection and loading do not guarantee immunity to concurrent filesystem replacement.",
+    "Visual comparison uses a small door fixture; final door transform is directly asserted only in reference run, while bundle report exposes entry entities/gameplay fields and rendered pixels."
+  ]
+}

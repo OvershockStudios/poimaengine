@@ -621,6 +621,7 @@ std::uint64_t Runtime::gameplay_revision() const { return impl_->game_revision; 
 std::string Runtime::gameplay_inspect() const { return impl_->game ? impl_->game->inspect() : "null"; }
 void Runtime::gameplay_load(const GameplayConfig& config,const std::string& values) {
     require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
+    if(config.native_aot)validate_gameplay_values(config.native_schema,values);
     auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);impl_->game.swap(candidate);++impl_->game_revision;
 }
 void Runtime::gameplay_edit(const std::string& values) {

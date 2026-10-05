@@ -35,6 +35,12 @@ The dependency-free headless checks do not qualify simulation-enabled builds, Wi
 
 Use `runtime-headless` to build the EnTT/Jolt simulation without graphics, or `windows-runtime` for simulation plus the native Windows Vulkan preview. These presets enable `POIMA_ENABLE_SIMULATION` and fetch pinned Jolt/EnTT sources on first configuration. They keep two build workers and workspace-local caches. The original `headless` and `windows-render` presets retain simulation-disabled defaults. [Runtime commands, components and limits](RUNTIME.md). The Windows runtime also includes the [continuous player and replay operation](PLAYER.md). To enable C# in either runtime preset, explicitly configure `POIMA_ENABLE_MANAGED_GAMEPLAY=ON` and `POIMA_DOTNET_HOST_HEADERS`, build the managed bridge/game projects, and select an existing platform-matching hostfxr at load time. Follow the [complete managed build instructions](MANAGED_GAMEPLAY.md#build); managed gameplay is off by default.
 
+## Native compiled C# gameplay
+
+Simulation builds enable `POIMA_ENABLE_NATIVE_GAMEPLAY` by default on first configuration. This loader uses native shared libraries and requires no hostfxr headers or installed .NET runtime at play time. CoreCLR development support remains a separate option. `POIMA_ENABLE_NATIVE_GAMEPLAY=OFF` disables the native loader; read-only artifact inspection remains available to the dependency-free authoring build.
+
+Publishing a C# native library requires a matching-host .NET 10 SDK and native linker tools. It is a separate step from building the C++ engine. Follow [native gameplay publication and packaging](NATIVE_GAMEPLAY.md) for commands, platform prerequisites, process lifetime and current limits.
+
 ## Optional native audio
 
 Run `python3 scripts/bootstrap_tools.py --only audio`, then configure either runtime preset with `-DPOIMA_ENABLE_AUDIO=ON`. This pins Steam Audio 4.8.1. The [audio guide](AUDIO.md) covers SDK/library installation, authoring and the sample. WAV import and audio component editing also work in the ordinary dependency-free headless build; propagation/capture requires the optional backend. Device playback remains unfinished.

@@ -193,6 +193,9 @@ class ProjectContract(unittest.TestCase):
         self.assertEqual(tree(self.project), before)
         game = destination/'game.json'
         self.assertTrue(game.is_file())
+        game_document = json.loads(game.read_text(encoding='utf-8'))
+        self.assertEqual(game_document['version'], 1, 'Projects without gameplay retain v1 bundles.')
+        self.assertNotIn('gameplay', game_document)
         bundle = tree(destination)
         inspected = self.run_cli('game', 'inspect', native(game))
         self.assertEqual(inspected['project_id'], self.document['project_id'])

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Poima.ManagedBridge")]
+[assembly: InternalsVisibleTo("Poima.NativeGame")]
 namespace Poima;
 
 [StructLayout(LayoutKind.Sequential)]

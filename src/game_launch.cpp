@@ -77,6 +77,10 @@ Reply run_game(const GameLaunchOptions& options) {
         Json sequence;if(!options.replay.empty())sequence=replay_file(options.replay);
         WorldSession world(game.world,WorldOpenMode::read_only_runtime);const auto session=id();
         call(world,"runtime.start",{{"session_id",session},{"revision",game.revision}});
+        if(!game.gameplay_descriptor.empty())call(world,"runtime.gameplay.load_native",{
+            {"session_id",session},{"request_id",id()},{"expected_tick",0},{"expected_revision",0},
+            {"descriptor",game.gameplay_descriptor},{"expected_descriptor_sha256",game.gameplay_descriptor_sha256},
+            {"values",Json::parse(game.gameplay_values)}});
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};
@@ -90,6 +94,7 @@ Reply run_game(const GameLaunchOptions& options) {
             {"entities",{{game.controller,call(world,"runtime.entity",{{"session_id",session},{"id",game.controller}})},
                          {game.camera,call(world,"runtime.entity",{{"session_id",session},{"id",game.camera}})}}}};
         success=play.value("success",false);result["success"]=success;
+        if(!game.gameplay_descriptor.empty())result["gameplay"]=call(world,"runtime.gameplay.inspect",{{"session_id",session},{"include_schema",true}});
         if(!success)diagnostics.push_back({{"code","game.play_failed"},{"message","Player stopped with an engine error; inspect result.play."}});
         output_path(options.report,game,options.replay);write_report(options.report,result);
     }catch(const std::exception& error) { success=false;diagnostics.push_back({{"code","game.failed"},{"message",error.what()}}); }
