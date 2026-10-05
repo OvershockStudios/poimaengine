@@ -1,6 +1,8 @@
 # Poima Engine
 
-Poima is an experimental 3D game engine designed for humans and development agents. Its desktop editor and CLI are first-class interfaces to the same native core: both inspect, edit and run the same world through a documented API.
+**Agent-Native Game Engine**
+
+Poima is an experimental 3D game engine built around native agent workflows, with a desktop editor for human development. Its desktop editor and CLI are first-class interfaces to the same native core: both inspect, edit and run the same world through a documented API.
 
 The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and C# gameplay supports development-time reloads and a bounded native AOT game-bundle route. Headless deployments can run without the editor or its managed runtime.
 
