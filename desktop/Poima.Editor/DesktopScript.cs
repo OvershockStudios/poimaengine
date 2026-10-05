@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Text.Json.Nodes;
+using System.Runtime.InteropServices;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -10,6 +11,11 @@ namespace Poima.Editor;
 // Bounded semantic qualification. This does not simulate physical pointer/keyboard input.
 internal sealed class DesktopScript
 {
+    [DllImport("user32.dll", EntryPoint = "SendMessageW")]
+    private static extern nint SendMessage(nint hwnd, uint message, nuint wparam, nint lparam);
+    [StructLayout(LayoutKind.Sequential)] private struct NativePoint { public int X,Y; }
+    [DllImport("user32.dll")] [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool ClientToScreen(nint hwnd, ref NativePoint point);
     private readonly JsonArray actions;
     private int next, frameOffset;
     private int? deferredAt;
@@ -44,6 +50,33 @@ internal sealed class DesktopScript
             {
                 switch (op)
                 {
+                    case "save_layout": window.SaveLayout(); result["layout"] = window.InspectLayout(); break;
+                    case "load_layout": window.LoadLayout(); break;
+                    case "scene_frame": window.Navigation.FrameSelection(); break;
+                    case "scene_step": window.Navigation.Tick(action["seconds"]!.GetValue<double>()); break;
+                    case "scene_input":
+                        var hwnd = window.Navigation.Window;
+                        if (hwnd == IntPtr.Zero) throw new InvalidOperationException("Scene HWND is unavailable.");
+                        var message = Text("message"); result["message"] = message;
+                        var dimensions = window.Navigation.Inspect();
+                        var x = (int)((action["x"]?.GetValue<double>() ?? .5)*dimensions["width"]!.GetValue<int>());
+                        var y = (int)((action["y"]?.GetValue<double>() ?? .5)*dimensions["height"]!.GetValue<int>());
+                        var point = (nint)((uint)(ushort)x | ((uint)(ushort)y << 16));
+                        var code = message switch { "right_down" => 0x0204u, "right_up" => 0x0205u, "left_down" => 0x0201u, "left_up" => 0x0202u,
+                            "middle_down" => 0x0207u, "middle_up" => 0x0208u, "move" => 0x0200u,
+                            "key_down" => 0x0100u, "key_up" => 0x0101u, "cancel" => 0x001Fu, "wheel" => 0x020Au,
+                            _ => throw new ArgumentException("Unsupported local scene input message.") };
+                        nuint parameter = action["key"]?.GetValue<uint>() ?? 0;
+                        if (code == 0x020A)
+                        {
+                            var screen = new NativePoint { X=x,Y=y };
+                            if (!ClientToScreen(hwnd,ref screen)) throw new InvalidOperationException("Cannot map Scene input coordinates.");
+                            point = (nint)((uint)(ushort)screen.X | ((uint)(ushort)screen.Y << 16));
+                            parameter = (nuint)((uint)(ushort)(action["delta"]?.GetValue<int>() ?? 120) << 16);
+                        }
+                        SendMessage(hwnd,code,parameter,code is 0x0100u or 0x0101u ? 1 : point);
+                        result["navigation"] = window.Navigation.Inspect(); result["camera"] = model.Host.Call("desktop.inspect")["camera"]!.DeepClone();
+                        break;
                     case "select": window.SelectEntity(Text("id")); break;
                     case "create": result["id"] = model.Create(Text("kind")); break;
                     case "draft_name": model.SetName(Text("name")); break;
@@ -94,6 +127,7 @@ internal sealed class DesktopScript
                     case "reset_layout": window.ResetLayout(); break;
                     case "rpc": result["result"] = model.Host.Call(Text("method"), action["params"]?.AsObject()); break;
                     case "inspect":
+                        result["layout"] = window.InspectLayout(); result["navigation"] = window.Navigation.Inspect();
                         result["draft"] = window.InspectDraft(); result["native"] = model.Host.Call("desktop.inspect");
                         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                             result["windows"] = new JsonArray(desktop.Windows.Select(w => (JsonNode?)new JsonObject {

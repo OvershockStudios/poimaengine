@@ -22,6 +22,10 @@ namespace Poima.Editor;
 public sealed class MainWindow : Window
 {
     public EditorModel Model { get; }
+    public SceneNavigation Navigation { get; }
+    private readonly EditorLayoutStore layoutStore;
+    public string? LayoutError { get; private set; }
+    public string LayoutPath => layoutStore.FilePath;
     private readonly DockControl dock;
     private EditorDockFactory factory;
     private IRootDock layout;
@@ -31,7 +35,7 @@ public sealed class MainWindow : Window
     private readonly Dictionary<string, string> assetNames = new();
     private bool disposed;
     private bool qualificationClosing;
-    public MainWindow(NativeHost host)
+    public MainWindow(NativeHost host, string? layoutFile = null)
     {
         Title = $"{System.IO.Path.GetFileNameWithoutExtension(host.WorldPath)} — Poima";
         Width = 1440; Height = 900; MinWidth = 960; MinHeight = 620;
@@ -50,7 +54,11 @@ public sealed class MainWindow : Window
         Application.Current!.Styles.Add(new EditorTheme());
         Application.Current.DataTemplates.Add(new EditorPanelTemplate());
         Model = new EditorModel(host);
+        Navigation = new SceneNavigation(Model);
+        Navigation.Error += text => status.Text = text;
         projectRoot = FindProjectRoot(host.WorldPath);
+        layoutStore = new EditorLayoutStore(projectRoot, layoutFile);
+        Opened += (_, _) => { if (layoutStore.TryLoad(out var saved, out var error)) Run(() => RestoreLayout(saved!)); else if (error is not null) { LayoutError = error; Model.Note(error); } };
         factory = new EditorDockFactory(BuildPanel); layout = factory.CreateLayout(); factory.InitLayout(layout);
         dock = new DockControl { Factory = factory, Layout = layout, InitializeFactory = false, InitializeLayout = false };
         var root = new Grid { RowDefinitions = new RowDefinitions("22,30,*,20") };
@@ -81,6 +89,7 @@ public sealed class MainWindow : Window
         KeyDown += (_, e) =>
         {
             if (e.Source is TextBox) return;
+            if (e.Key == Key.F && e.KeyModifiers == KeyModifiers.None) { Run(Navigation.FrameSelection); e.Handled = true; }
             if (e.KeyModifiers == KeyModifiers.Control && e.Key is Key.Z or Key.Y)
             { Run(() => Model.History(e.Key == Key.Y)); e.Handled = true; }
         };
@@ -92,6 +101,7 @@ public sealed class MainWindow : Window
                 const string message = "Apply or Reload the Inspector changes before closing.";
                 Model.Note(message); status.Text = message;
             }
+            if (!e.Cancel) { try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
         };
         Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; CloseLayout(); Model.Dispose(); } };
     }
@@ -129,6 +139,33 @@ public sealed class MainWindow : Window
         CloseLayout(); factory = new EditorDockFactory(BuildPanel); layout = factory.CreateLayout(); factory.InitLayout(layout);
         dock.Factory = factory; dock.Layout = layout;
     }
+    public JsonObject InspectLayout() => EditorLayoutStore.Encode(factory.CaptureLayout(layout));
+    public void SaveLayout()
+    {
+        if (!layoutStore.TrySave(factory.CaptureLayout(layout), out var error)) { LayoutError = error; throw new IOException(error); }
+        LayoutError = null;
+    }
+    public void LoadLayout()
+    {
+        if (!layoutStore.TryLoad(out var saved, out var error)) { LayoutError = error; throw new IOException(error ?? "No saved layout exists yet."); }
+        RestoreLayout(saved!); LayoutError = null;
+    }
+    private EditorFloatBounds ClampFloating(EditorFloatBounds bounds)
+    {
+        var origin = new PixelPoint((int)bounds.X, (int)bounds.Y);
+        var screen = Screens.ScreenFromPoint(origin) ?? Screens.ScreenFromWindow(this) ?? Screens.Primary;
+        if (screen is null) return new EditorFloatBounds(Position.X+40,Position.Y+40,Math.Min(bounds.Width,800),Math.Min(bounds.Height,600));
+        var area = screen.WorkingArea; var scale = screen.Scaling;
+        var width = Math.Clamp(bounds.Width, Math.Min(240,area.Width/scale), area.Width/scale);
+        var height = Math.Clamp(bounds.Height, Math.Min(160,area.Height/scale), area.Height/scale);
+        return new EditorFloatBounds(Math.Clamp(bounds.X,area.X,Math.Max(area.X,area.Right-width*scale)),
+            Math.Clamp(bounds.Y,area.Y,Math.Max(area.Y,area.Bottom-height*scale)),width,height);
+    }
+    private void RestoreLayout(EditorLayoutDocument saved)
+    {
+        var next = new EditorDockFactory(BuildPanel); var restored = next.RestoreLayout(saved, ClampFloating);
+        CloseLayout(); factory = next; layout = restored; factory.InitLayout(layout); dock.Factory = factory; dock.Layout = layout;
+    }
     private void CloseLayout() { if (layout.Close.CanExecute(null)) layout.Close.Execute(null); }
     private void UpdateToolbar(object? sender, EventArgs args)
     {
@@ -160,9 +197,9 @@ public sealed class MainWindow : Window
         return new Menu { Background = EditorTheme.Brush("#222327"), ItemsSource = new[]
         {
             new MenuItem { Header = "_File", ItemsSource = new[] { Item("Import model…", () => _ = PickModel()), Item("Refresh", Model.Refresh), Item("Close", Close) } },
-            new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete) } },
+            new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")) } },
-            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Reset layout", ResetLayout) } },
+            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Reset layout", ResetLayout) } },
             new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Simulation starts paused; Step advances one tick. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
     }
@@ -180,9 +217,14 @@ public sealed class MainWindow : Window
     private Control BuildScene()
     {
         var grid = new Grid { RowDefinitions = new RowDefinitions("24,*") };
-        var bar = new Border { Background = EditorTheme.Brush("#28292D"), Padding = new Thickness(8, 2), Child = Label("Perspective", true) };
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        controls.Children.Add(Label("Perspective", true));
+        controls.Children.Add(Button("Frame", Navigation.FrameSelection));
+        var help = Label("RMB + WASD · MMB pan · Alt orbit · F frame", true); help.FontSize = 10;
+        controls.Children.Add(help);
+        var bar = new Border { Background = EditorTheme.Brush("#28292D"), Padding = new Thickness(8, 1), Child = controls };
         grid.Children.Add(bar);
-        var view = new VulkanView(Model.Host); Grid.SetRow(view, 1); grid.Children.Add(view); return grid;
+        var view = new VulkanView(Model.Host, Navigation); Grid.SetRow(view, 1); grid.Children.Add(view); return grid;
     }
     private sealed record HierarchyItem(EntityRow Entity, int Depth, int Index);
     private Control BuildHierarchy()

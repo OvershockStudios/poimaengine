@@ -2,11 +2,13 @@
 """Windows C ABI + optional real-HWND Vulkan qualification for the desktop host."""
 # SPDX-License-Identifier: Apache-2.0
 import argparse
+import base64
 from concurrent.futures import ThreadPoolExecutor
 import ctypes
 from ctypes import wintypes
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import struct
@@ -15,6 +17,7 @@ import sys
 import time
 import traceback
 import uuid
+from animation_fixture import ribbon
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--bridge', type=Path, required=True)
@@ -235,6 +238,131 @@ try:
     check(rpc('world.inspect')['revision'] == revision, 'Invalid attach closed the world.')
     checks.append('Camera patches validate before mutation; unavailable captures/invalid HWND preserve authoring.')
 
+    # These geometry/navigation contracts deliberately run without an HWND or GPU.
+    check({'desktop.pick', 'desktop.frame'} <= schema['methods'].keys(), 'Picking/framing are not discoverable.')
+    group, front, rear, hidden, rotated, triangle = [uuid.uuid4().hex for _ in range(6)]
+    def transform(position, rotation=None, scale=None):
+        return {'position': position, 'rotation': rotation or [0, 0, 0, 1], 'scale': scale or [1, 1, 1]}
+    def set_component(identity, kind, value):
+        return {'op': 'component.set', 'id': identity, 'type': kind, 'value': value}
+    def transact(ops):
+        global revision
+        revision = rpc('world.transact', {'base_revision': revision, 'request_id': uuid.uuid4().hex, 'ops': ops})['revision']
+    def create(identity, name, position, parent=None, visible=None, rotation=None):
+        result = [{'op': 'entity.create', 'id': identity, 'name': name, 'parent': parent},
+                  set_component(identity, 'Transform', transform(position, rotation))]
+        if visible is not None:
+            result.append(set_component(identity, 'MeshRenderer', {'primitive': 'box', 'albedo': [.5, .5, .5], 'visible': visible}))
+        return result
+    triangle_bytes = struct.pack('<9f', -1, -1, 0, 1, -1, 0, -1, 1, 0)
+    triangle_doc = {'asset': {'version': '2.0'},
+                    'buffers': [{'byteLength': len(triangle_bytes), 'uri': 'data:application/octet-stream;base64,'+base64.b64encode(triangle_bytes).decode()}],
+                    'bufferViews': [{'buffer': 0, 'byteLength': len(triangle_bytes)}],
+                    'accessors': [{'bufferView': 0, 'componentType': 5126, 'count': 3, 'type': 'VEC3', 'min': [-1, -1, 0], 'max': [1, 1, 0]}],
+                    'meshes': [{'primitives': [{'attributes': {'POSITION': 0}}]}],
+                    'nodes': [{'mesh': 0}], 'scenes': [{'nodes': [0]}], 'scene': 0}
+    triangle_path = run/'Pick triangle.gltf'
+    triangle_path.write_text(json.dumps(triangle_doc), encoding='utf-8')
+    imported = rpc('asset.import', {'source': str(triangle_path)})['asset']
+    transact(create(group, 'Framed group', [1000, 0, 0]) + create(front, 'Front', [0, 0, 0], group, True)
+             + create(rear, 'Rear', [0, 0, -3], group, True) + create(hidden, 'Hidden', [0, 0, 2], group, False)
+             + create(rotated, 'Rotated box', [1040, 0, 0], visible=True, rotation=[0, 0, math.sin(math.pi/8), math.cos(math.pi/8)])
+             + create(triangle, 'Actual triangle', [1020, 0, 0])
+             + [set_component(triangle, 'StaticMesh', {'asset': imported, 'primitive': 0, 'visible': True})])
+    rpc('desktop.camera', {'position': [1000, 0, 5], 'yaw': 0, 'pitch': 0, 'near': .1, 'far': 1000, 'vertical_fov': 60})
+    def pick(x=.5, y=.5, **overrides):
+        return rpc('desktop.pick', {'revision': revision, 'x': x, 'y': y, 'aspect': 1, **overrides})
+    unchanged = world.read_bytes()
+    before = rpc('desktop.inspect')
+    hit = pick()
+    check(hit['id'] == front and abs(hit['distance']-4.5) < 1e-9 and hit['source'] == 'authored' and hit['tick'] is None, hit)
+    check(pick(0, 0)['id'] is None, 'Empty ray selected an object.')
+    for method, params in [('desktop.pick', {'revision': revision-1, 'x': .5, 'y': .5, 'aspect': 1}),
+                           ('desktop.frame', {'revision': revision-1, 'id': group, 'aspect': 1})]:
+        rpc(method, params, expected_error=-32009)
+    for key, value in [('x', -1), ('y', 1.1), ('x', True), ('aspect', 0), ('aspect', 101), ('aspect', '1'), ('extra', 1)]:
+        rpc('desktop.pick', {'revision': revision, 'x': .5, 'y': .5, 'aspect': 1, key: value}, expected_error=-32602)
+    rpc('desktop.frame', {'revision': revision, 'id': uuid.uuid4().hex, 'aspect': 1}, expected_error=-32004)
+    rpc('desktop.frame', {'revision': revision, 'id': group, 'aspect': False}, expected_error=-32602)
+    check(rpc('desktop.inspect')['camera'] == before['camera'] and rpc('desktop.inspect')['selected'] == before['selected'], 'Query/error changed navigation state.')
+    check(world.read_bytes() == unchanged, 'Queries/errors rewrote the authored world.')
+    rpc('desktop.camera', {'near': 6})
+    check(pick()['id'] == rear, 'Near clipping did not exclude the front box.')
+    rpc('desktop.camera', {'near': .1, 'far': 4})
+    check(pick()['id'] is None, 'Far clipping selected an invisible box.')
+    rpc('desktop.camera', {'far': 1000, 'position': [1020, 0, 5]})
+    def projected(x, y):
+        return .5+x/(10*math.tan(math.pi/6)), .5-y/(10*math.tan(math.pi/6))
+    check(pick(*projected(.6, .6))['id'] is None, 'Triangle AABB empty corner was falsely selected.')
+    check(pick(*projected(-.5, -.5))['id'] == triangle, 'Triangle interior did not hit.')
+    rpc('desktop.camera', {'position': [1020, 0, -5], 'yaw': 180})
+    check(pick(*projected(.5, -.5))['id'] is None, 'Backface-only triangle was selected.')
+    rpc('desktop.camera', {'position': [1040, 0, 5], 'yaw': 0})
+    check(pick(*projected(.6, .6))['id'] is None and pick()['id'] == rotated, 'Rotated box used a world AABB instead of its actual shape.')
+    check(world.read_bytes() == unchanged, 'Picking rewrote world storage.')
+    checks.append('GPU-independent picking: nearest visible geometry, no-hit, top-left coordinates, true triangle/rotated-box intersections, clipping and strict atomic guards.')
+
+    rpc('desktop.select', {'id': group})
+    framed = rpc('desktop.frame', {'revision': revision, 'aspect': .5})
+    check(math.dist(framed['target'], [1000, 0, -1.5]) < 1e-4 and framed['distance'] > 0, framed)
+    check(framed['camera'] == rpc('desktop.inspect')['camera'] and framed['camera']['yaw'] == 0 and framed['camera']['pitch'] == 0, framed)
+    # Independently project all combined corners; padding keeps both axes inside.
+    for x in [999.5, 1000.5]:
+        for y in [-.5, .5]:
+            for z in [-3.5, .5]:
+                camera = framed['camera']; depth = camera['position'][2]-z
+                check(camera['near'] < depth < camera['far'], 'Framing clipped a corner in depth.')
+                check(abs(x-camera['position'][0]) < depth*math.tan(math.pi/6)*.5 and abs(y-camera['position'][1]) < depth*math.tan(math.pi/6), 'Framing does not fit the supplied aspect.')
+    empty_frame = rpc('desktop.frame', {'revision': revision, 'id': entity, 'aspect': 1})
+    check(empty_frame['target'] == [0, 0, 0], 'Non-rendered entity did not frame its world origin.')
+    rpc('desktop.select', {'id': None})
+    rpc('desktop.frame', {'revision': revision, 'aspect': 1}, expected_error=-32602)
+    check(world.read_bytes() == unchanged, 'Framing mutated authored bytes.')
+    checks.append('Framing combines visible descendants, respects aspect/clipping, preserves orientation, supports non-rendered entities and never edits world bytes.')
+
+    if rpc('desktop.inspect')['runtime']['available']:
+        navigation_session = uuid.uuid4().hex
+        rpc('runtime.start', {'session_id': navigation_session, 'revision': revision})
+        frozen_revision = revision
+        transact([{'op': 'entity.delete', 'id': front, 'recursive': True},
+                  {'op': 'entity.reparent', 'id': rear, 'parent': None, 'mode': 'keep_local'}])
+        rpc('desktop.camera', {'position': [1000, 0, 5], 'yaw': 0, 'pitch': 0})
+        live_hit = pick()
+        check(live_hit['id'] == front and live_hit['source'] == 'runtime' and live_hit['tick'] == 0 and live_hit['scene_revision'] == frozen_revision, live_hit)
+        live_frame = rpc('desktop.frame', {'revision': revision, 'id': group, 'aspect': 1})
+        check(math.dist(live_frame['target'], [1000, 0, -1.5]) < 1e-4, 'Runtime framing used the changed authored hierarchy.')
+        deleted_frame = rpc('desktop.frame', {'revision': revision, 'id': front, 'aspect': 1})
+        check(deleted_frame['target'] == [1000, 0, 0], 'Runtime-only entity could not be framed.')
+        check(rpc('runtime.inspect', {'session_id': navigation_session})['tick'] == 0, 'Navigation advanced simulation.')
+        rpc('runtime.stop', {'session_id': navigation_session})
+        revision = rpc('world.undo', {'base_revision': revision, 'request_id': uuid.uuid4().hex})['revision']
+        checks.append('Runtime picking/framing uses frozen geometry and hierarchy after authored deletion/reparenting without advancing ticks.')
+
+    # Analytic skin: editing the tip joint translates the top row by two metres;
+    # pick must follow the posed triangles, not the original vertices or bounds.
+    rig = uuid.uuid4().hex
+    skin_doc, skin_bytes = ribbon()
+    skin_doc['buffers'][0]['uri'] = 'data:application/octet-stream;base64,'+base64.b64encode(skin_bytes).decode()
+    skin_path = run/'Pick skin.gltf'
+    skin_path.write_text(json.dumps(skin_doc), encoding='utf-8')
+    skin_asset = rpc('asset.import', {'source': str(skin_path)})['asset']
+    transact([{'op': 'asset.instantiate', 'id': rig, 'asset': skin_asset, 'name': 'Pick skin'},
+              set_component(rig, 'Transform', transform([1060, 0, 0]))])
+    skin_entities = rpc('entity.query', {'revision': revision, 'component': 'SkinnedMesh', 'limit': 256})['entities']
+    skin_entity = next(e['id'] for e in skin_entities if rpc('entity.get', {'id': e['id']})['value']['components']['SkinnedMesh']['rig'] == rig)
+    rig_nodes = rpc('entity.query', {'revision': revision, 'component': 'RigNode', 'limit': 256})['entities']
+    tip = next(e['id'] for e in rig_nodes if rpc('entity.get', {'id': e['id']})['value']['components']['RigNode'] == {'rig': rig, 'node': 1})
+    rpc('desktop.camera', {'position': [1060, 1.8, 5], 'yaw': 0, 'pitch': 0})
+    check(pick()['id'] == skin_entity, 'Rest skin geometry did not hit.')
+    transact([set_component(tip, 'Transform', transform([2, 1, 0]))])
+    check(pick()['id'] is None, 'Posed skin picked its obsolete rest shape.')
+    rpc('desktop.camera', {'position': [1061.8, 1.8, 5]})
+    check(pick()['id'] == skin_entity, 'Posed skin triangle was not pickable at its deformed position.')
+    checks.append('GPU-independent skin picking follows edited joint poses and excludes obsolete rest geometry.')
+    transact([{'op': 'entity.delete', 'id': identity, 'recursive': True} for identity in [group, rotated, triangle, rig]])
+    rpc('desktop.select', {'id': entity})
+    rpc('desktop.camera', camera_before)
+
     if args.gpu is not None:
         parent, child = make_window()
         original_proc = user32.GetWindowLongPtrW(child, -4)
@@ -243,6 +371,15 @@ try:
         until(lambda status: status['frames_presented'] >= 2, draw=True, timeout=20)
         current = rpc('desktop.inspect')
         check(current['render']['hardware'] and current['render']['nvrhi_errors'] == 0, current)
+        framing_path = run/'Framing changed.bmp'
+        framing_job = rpc('desktop.capture', {'revision': revision, 'path': str(framing_path)})
+        pick()
+        check(rpc('desktop.capture.status', {'capture_id': framing_job['capture_id']})['state'] == 'queued', 'Pick invalidated a pending capture.')
+        rpc('desktop.frame', {'revision': revision, 'id': entity, 'aspect': 760/520})
+        framing_status = rpc('desktop.capture.status', {'capture_id': framing_job['capture_id']})
+        check(framing_status['state'] == 'error' and framing_status['error']['code'] == -32009 and not framing_path.exists(), framing_status)
+        rpc('desktop.camera', camera_before)
+        checks.append('Picking preserves pending capture; framing changes camera generation and rejects stale capture without a file.')
         rpc('desktop.capture', {'revision': revision-1, 'path': str(run/'Stale.bmp')}, expected_error=-32009)
         sentinel = run/'Existing.bmp'
         sentinel.write_bytes(b'preserve')

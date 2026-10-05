@@ -3,6 +3,7 @@
 #include "poima/world.hpp"
 #include "poima/local_session.hpp"
 #include "poima/hosted_viewport.hpp"
+#include "poima/animation.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -14,6 +15,7 @@
 #include <optional>
 #include <set>
 #include <thread>
+#include <unordered_map>
 #include <windows.h>
 namespace {
 using namespace poima;
@@ -78,6 +80,63 @@ struct Capture {
         return out;
     }
 };
+using Point=std::array<double,3>;
+using Parents=std::unordered_map<std::string,std::string>;
+double dot(const Point& a,const Point& b) { return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]; }
+Point subtract(const Point& a,const Point& b) { return {a[0]-b[0],a[1]-b[1],a[2]-b[2]}; }
+Point cross(const Point& a,const Point& b) { return {a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]}; }
+Point transformed(const Matrix4& matrix,const Point& p,double w) {
+    Point result{};for(std::size_t row=0;row<3;++row)result[row]=matrix[row]*p[0]+matrix[4+row]*p[1]+matrix[8+row]*p[2]+matrix[12+row]*w;return result;
+}
+double number(const Json& value,double low,double high,const char* message) {
+    require(value.is_number(),message);const double result=value;require(std::isfinite(result) && result>=low && result<=high,message);return result;
+}
+Bounds local_bounds(const SceneObject& object) {
+    return object.skin ? posed_bounds(skin_bounds(*object.mesh),object.skin->palette) : mesh_bounds(object.mesh.get());
+}
+std::optional<std::pair<double,double>> ray_bounds(const Bounds& bounds,const Point& origin,const Point& ray) {
+    double low=-std::numeric_limits<double>::infinity(),high=std::numeric_limits<double>::infinity();
+    for(std::size_t axis=0;axis<3;++axis) {
+        if(ray[axis]==0) { if(origin[axis]<bounds.minimum[axis] || origin[axis]>bounds.maximum[axis])return {}; }
+        else { auto a=(bounds.minimum[axis]-origin[axis])/ray[axis],b=(bounds.maximum[axis]-origin[axis])/ray[axis];if(a>b)std::swap(a,b);low=std::max(low,a);high=std::min(high,b); }
+    }
+    if(low>high)return {};return std::pair{low,high};
+}
+Point mesh_position(const SceneObject& object,std::uint32_t index) {
+    const auto& mesh=*object.mesh;const auto& position=mesh.vertices.at(index).position;
+    const Point p{position[0],position[1],position[2]};if(!object.skin)return p;
+    Point result{};const auto& influence=mesh.influences.at(index);
+    for(std::size_t i=0;i<4;++i) {
+        if(influence.weights[i]==0)continue;
+        const auto posed=transformed(object.skin->palette.at(influence.joints[i]),p,1);
+        for(std::size_t axis=0;axis<3;++axis)result[axis]+=influence.weights[i]*posed[axis];
+    }
+    return result;
+}
+std::optional<double> hit_object(const SceneObject& object,const Point& origin,const Point& ray,double near_distance,double far_distance,bool preview) {
+    const auto inverse=inverse_affine(object.world);const auto o=transformed(inverse,origin,1),d=transformed(inverse,ray,0);
+    const auto interval=ray_bounds(local_bounds(object),o,d);
+    if(!interval || interval->second<near_distance || interval->first>far_distance)return {};
+    const bool cull=object.material ? !object.material->double_sided : !preview;
+    if(!object.mesh) {
+        const double distance=interval->first>=near_distance ? interval->first : cull ? -1 : interval->second;
+        return distance>=near_distance && distance<=far_distance ? std::optional<double>(distance) : std::nullopt;
+    }
+    std::optional<double> nearest;
+    const auto& indices=object.mesh->indices;
+    for(std::size_t i=0;i+2<indices.size();i+=3) {
+        const auto a=mesh_position(object,indices[i]),b=mesh_position(object,indices[i+1]),c=mesh_position(object,indices[i+2]);
+        const auto e1=subtract(b,a),e2=subtract(c,a),p=cross(d,e2);const double determinant=dot(e1,p);
+        // Relative degeneracy tolerance also supports very small/large models.
+        const double tolerance=32*std::numeric_limits<double>::epsilon()*std::sqrt(dot(e1,e1)*dot(p,p));
+        if(cull ? determinant<=tolerance : std::abs(determinant)<=tolerance)continue;
+        const auto offset=subtract(o,a);const double u=dot(offset,p)/determinant;if(u<0 || u>1)continue;
+        const auto q=cross(offset,e1);const double v=dot(d,q)/determinant;if(v<0 || u+v>1)continue;
+        const double distance=dot(e2,q)/determinant;
+        if(std::isfinite(distance) && distance>=near_distance && distance<=far_distance && (!nearest || distance<*nearest))nearest=distance;
+    }
+    return nearest;
+}
 struct Bridge {
     std::thread::id owner=std::this_thread::get_id();
     std::unique_ptr<LocalSessionServer> server;
@@ -90,6 +149,8 @@ struct Bridge {
     Json observed_runtime;
     std::optional<SceneSnapshot> cached_snapshot;
     Json snapshot_key;
+    Parents runtime_parents;
+    std::string runtime_parent_session;
     std::optional<RenderReport> last_render;
     bool faulted=false;
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
@@ -105,6 +166,15 @@ struct Bridge {
         return response.at("result");
     }
     std::uint64_t revision() { return world_call("world.inspect").at("revision").get<std::uint64_t>(); }
+    Parents parents() {
+        Parents result;Json params={{"limit",256}};
+        do {
+            const auto page=world_call("entity.query",params);
+            for(const auto& entity:page.at("entities"))result.emplace(entity.at("id").get<std::string>(),entity.at("parent").is_null() ? std::string{} : entity.at("parent").get<std::string>());
+            params["after"]=page.at("next_after");
+        }while(!params.at("after").is_null());
+        return result;
+    }
     Json runtime_json() const {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
             {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
@@ -144,17 +214,75 @@ struct Bridge {
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
             {"endpoint",endpoint.empty() ? Json(nullptr) : Json(endpoint)}};
     }
+    Json pick(const Json& params) {
+        fields(params,{"revision","x","y","aspect"},{"revision","x","y","aspect"});
+        const auto expected=integer(params.at("revision"));
+        const double x=number(params.at("x"),0,1,"Pick x must be in [0,1]."),y=number(params.at("y"),0,1,"Pick y must be in [0,1].");
+        const double aspect=number(params.at("aspect"),.01,100,"Viewport aspect must be in [0.01,100].");
+        require(expected==revision(),"Authored revision conflict.",-32009);
+        const auto scene=snapshot();const auto runtime=world->runtime_status();
+        constexpr double pi=3.14159265358979323846;const double tangent=std::tan(scene.vertical_fov*pi/360);
+        const Point local{(2*x-1)*aspect*tangent,(1-2*y)*tangent,-1};const double length=std::sqrt(dot(local,local));
+        auto ray=transformed(scene.camera_world,local,0);for(auto& value:ray)value/=length;
+        const Point origin{scene.camera_world[12],scene.camera_world[13],scene.camera_world[14]};
+        const double near_distance=scene.near_plane*length;double nearest=scene.far_plane*length;std::string id;
+        for(const auto& object:scene.objects)if(const auto distance=hit_object(object,origin,ray,near_distance,nearest,scene.lighting.preview)) {
+            if(id.empty() || *distance<nearest || (*distance==nearest && object.entity_id<id)) { nearest=*distance;id=object.entity_id; }
+        }
+        return {{"id",id.empty() ? Json(nullptr) : Json(id)},{"distance",id.empty() ? Json(nullptr) : Json(nearest)},
+            {"revision",expected},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)}};
+    }
+    Json frame(const Json& params) {
+        fields(params,{"revision","id","aspect"},{"revision","aspect"});const auto expected=integer(params.at("revision"));
+        const double aspect=number(params.at("aspect"),.01,100,"Viewport aspect must be in [0.01,100].");
+        const auto id=params.contains("id") ? identifier(params.at("id")) : selected;require(!id.empty(),"Select an entity or supply id to frame.");
+        require(expected==revision(),"Authored revision conflict.",-32009);const auto runtime=world->runtime_status();
+        Matrix4 fallback;Parents hierarchy;
+        if(runtime.active) {
+            require(runtime_parent_session==runtime.session_id,"Runtime hierarchy is unavailable.",-32003);
+            fallback=world_call("runtime.entity",{{"session_id",runtime.session_id},{"id",id},{"tick",runtime.tick}}).at("world_matrix").get<Matrix4>();hierarchy=runtime_parents;
+        } else { fallback=world_call("entity.world_transform",{{"id",id}}).at("matrix").get<Matrix4>();hierarchy=parents(); }
+        std::unordered_map<std::string,std::vector<std::string>> children;
+        for(const auto& [child,parent]:hierarchy)children[parent].push_back(child);
+        std::set<std::string> descendants;std::vector<std::string> pending{id};
+        while(!pending.empty()) { auto current=std::move(pending.back());pending.pop_back();if(!descendants.insert(current).second)continue;for(const auto& child:children[current])pending.push_back(child); }
+        const auto scene=snapshot();std::optional<Bounds> combined;
+        for(const auto& object:scene.objects)if(descendants.contains(object.entity_id)) {
+            const auto bounds=transform_bounds(local_bounds(object),object.world);
+            if(!combined)combined=bounds;
+            else for(std::size_t axis=0;axis<3;++axis) { combined->minimum[axis]=std::min(combined->minimum[axis],bounds.minimum[axis]);combined->maximum[axis]=std::max(combined->maximum[axis],bounds.maximum[axis]); }
+        }
+        if(!combined) { combined=Bounds{};for(std::size_t axis=0;axis<3;++axis) { combined->minimum[axis]=fallback[12+axis]-.5;combined->maximum[axis]=fallback[12+axis]+.5; } }
+        Point target{};for(std::size_t axis=0;axis<3;++axis)target[axis]=(combined->minimum[axis]+combined->maximum[axis])*.5;
+        const auto basis=camera.native().world;const Point right{basis[0],basis[1],basis[2]},up{basis[4],basis[5],basis[6]},back{basis[8],basis[9],basis[10]};
+        constexpr double pi=3.14159265358979323846;const double tangent_y=std::tan(camera.fov*pi/360),tangent_x=tangent_y*aspect;
+        double distance=1,minimum_depth_offset=std::numeric_limits<double>::infinity();
+        for(unsigned mask=0;mask<8;++mask) {
+            Point corner{};for(std::size_t axis=0;axis<3;++axis)corner[axis]=((mask&(1U<<axis)) ? combined->maximum[axis] : combined->minimum[axis])-target[axis];
+            const double z=dot(corner,back);minimum_depth_offset=std::min(minimum_depth_offset,z);
+            distance=std::max({distance,z+std::abs(dot(corner,right))*1.1/tangent_x,z+std::abs(dot(corner,up))*1.1/tangent_y,z+camera.near_plane*1.1});
+        }
+        Point position{};for(std::size_t axis=0;axis<3;++axis)position[axis]=target[axis]+back[axis]*distance;
+        Camera candidate=camera;candidate.update({{"position",position},{"far",std::max(camera.far_plane,(distance-minimum_depth_offset)*1.1)}});
+        if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");camera=candidate;++camera_revision; }
+        expire_capture();return {{"camera",camera.json()},{"target",target},{"distance",distance}};
+    }
     Json describe() const {
         auto object=[](Json properties,Json required=Json::array()) { return Json{{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; };
         const Json integer_schema={{"type","integer"},{"minimum",0},{"maximum",max_integer}};
         Json methods=Json::object();methods["desktop.describe"]=object(Json::object());methods["desktop.inspect"]=object(Json::object());
         methods["desktop.select"]=object({{"id",{{"type",{"string","null"}},{"pattern","^[0-9a-f]{32}$"}}}},{"id"});
+        const Json aspect_schema={{"type","number"},{"minimum",.01},{"maximum",100}},unit_schema={{"type","number"},{"minimum",0},{"maximum",1}};
+        methods["desktop.pick"]=object({{"revision",integer_schema},{"x",unit_schema},{"y",unit_schema},{"aspect",aspect_schema}},{"revision","x","y","aspect"});
+        methods["desktop.frame"]=object({{"revision",integer_schema},{"id",{{"type","string"},{"pattern","^[0-9a-f]{32}$"}}},{"aspect",aspect_schema}},{"revision","aspect"});
         methods["desktop.camera"]=object({{"position",{{"type","array"},{"items",{{"type","number"},{"minimum",-1e9},{"maximum",1e9}}},{"minItems",3},{"maxItems",3}}},
             {"yaw",{{"type","number"},{"minimum",-1e9},{"maximum",1e9}}},{"pitch",{{"type","number"},{"minimum",-89},{"maximum",89}}},{"vertical_fov",{{"type","number"},{"minimum",5},{"maximum",150}}},
             {"near",{{"type","number"},{"minimum",.001}}},{"far",{{"type","number"},{"maximum",1e7}}}});
         methods["desktop.capture"]=object({{"revision",integer_schema},{"path",{{"type","string"},{"minLength",1}}}},{"revision","path"});
         methods["desktop.capture.status"]=object({{"capture_id",{{"type","integer"},{"minimum",1},{"maximum",max_integer}}}},{"capture_id"});
         return {{"methods",methods},{"world_methods","world.describe"},{"capture",{{"completion","Asynchronous: queue returns capture_id/state; inspect status after poll/draw."},{"capacity",1},{"retained_results",1},{"timeout_ms",2000},{"guards","Authored revision, camera revision, runtime session and tick; pause automatic stepping while queued."},{"format","BMP; native viewport only; exclusive new path"}}},
+            {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
+            {"framing",{{"result","camera, target, distance"},{"bounds","Visible entity/descendant bounds in authored or frozen runtime hierarchy; non-rendered entities use a unit bound at their current world position."}}},
             {"threading","One creating UI thread; draw does not advance simulation."},{"lifetime","Detach/re-attach preserves the world and IPC endpoint."}};
     }
     std::string request(const std::string& bytes) {
@@ -164,7 +292,10 @@ struct Bridge {
             if(message.contains("id")) { id=message.at("id");require(id.is_null() || id.is_string() || id.is_number_integer(),"Invalid JSON-RPC ID.",-32600); }else notification=true;
             const auto method=message.at("method").get<std::string>();
             if(!method.starts_with("desktop.")) {
+                const bool starting=method=="runtime.start" && !world->runtime_status().active;
+                Parents starting_parents;if(starting)starting_parents=parents();
                 auto response=world->request(bytes,WorldRequestScope::shared_editor);
+                if(starting) { const auto state=world->runtime_status();if(state.active) { runtime_parents=std::move(starting_parents);runtime_parent_session=state.session_id; } }
                 if(method=="world.describe" && !notification) {
                     auto value=Json::parse(response);
                     if(value.contains("result"))value["result"]["editor_discovery"]="desktop.describe";
@@ -175,6 +306,8 @@ struct Bridge {
             fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});const auto params=message.value("params",Json::object());Json result;
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
+            else if(method=="desktop.pick")result=pick(params);
+            else if(method=="desktop.frame")result=frame(params);
             else if(method=="desktop.camera") {
                 Camera candidate=camera;candidate.update(params);
                 if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");camera=candidate;++camera_revision; }

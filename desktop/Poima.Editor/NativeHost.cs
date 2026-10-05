@@ -130,16 +130,23 @@ public sealed class NativeHost : IDisposable
     }
 }
 
-public sealed class VulkanView(NativeHost host) : NativeControlHost
+public sealed class VulkanView(NativeHost host, SceneNavigation navigation) : NativeControlHost
 {
+    private ViewportInput? input;
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
         var child = base.CreateNativeControlCore(parent);
-        try { host.Attach(child.Handle); return child; }
-        catch { base.DestroyNativeControlCore(child); throw; }
+        try
+        {
+            host.Attach(child.Handle);
+            input = new ViewportInput(child.Handle, navigation.Handle);
+            navigation.Attach(input, child.Handle); return child;
+        }
+        catch { input?.Dispose(); input = null; host.Detach(child.Handle); base.DestroyNativeControlCore(child); throw; }
     }
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
+        if (input is not null) { navigation.Detach(input); input.Dispose(); input = null; }
         host.Detach(control.Handle); base.DestroyNativeControlCore(control);
     }
 }

@@ -104,6 +104,36 @@ action(70, 'rpc', method='world.transact', params={'base_revision': revision+5, 
 action(75, 'assert_scene_error', expected=False)
 action(80, 'rpc', method='desktop.capture', params={'revision': revision+6, 'path': str(run/'viewport.bmp')})
 action(85, 'inspect')
+action(95, 'scene_frame')
+action(97, 'inspect')
+action(98, 'scene_input', message='right_down', x=.5, y=.5)
+action(99, 'scene_input', message='move', x=.56, y=.46)
+action(100, 'scene_input', message='key_down', key=87)
+action(101, 'scene_step', seconds=.1)
+action(102, 'scene_input', message='key_up', key=87)
+action(103, 'scene_input', message='right_up', x=.56, y=.46)
+action(104, 'scene_input', message='middle_down')
+action(104, 'scene_input', message='move', x=.53, y=.5)
+action(104, 'scene_input', message='middle_up', x=.53, y=.5)
+action(104, 'scene_input', message='wheel', delta=120)
+action(105, 'inspect')
+action(106, 'scene_input', message='key_down', key=70)
+action(107, 'scene_input', message='key_up', key=70)
+action(109, 'scene_input', message='left_down')
+action(110, 'scene_input', message='left_up')
+action(112, 'assert_draft', expected={'entity': entity, 'dirty': False})
+action(115, 'float', panel='Inspector')
+action(120, 'save_layout')
+action(123, 'reset_layout')
+action(130, 'load_layout')
+action(135, 'wait_text', control='Position X', text='-4')
+action(138, 'inspect')
+action(142, 'reset_layout')
+action(150, 'scene_input', message='right_down')
+action(151, 'scene_input', message='key_down', key=87)
+action(152, 'scene_input', message='cancel')
+action(153, 'scene_step', seconds=.1)
+action(155, 'inspect')
 script = run/'actions.json'; script.write_text(json.dumps({'actions': actions}, indent=2))
 report = run/'report.json'
 u = c.WinDLL('user32', use_last_error=True)
@@ -122,7 +152,7 @@ process = None; raised = None; was_topmost = False
 try:
     with (run/'stdout.txt').open('w', encoding='utf-8') as out, (run/'stderr.txt').open('w', encoding='utf-8') as err:
         command = [str(a.editor.resolve()), str(world), '--gpu', str(a.gpu), '--endpoint', endpoint,
-                   '--script', str(script), '--frames', '220', '--report', str(report)]
+                   '--script', str(script), '--frames', '280', '--report', str(report), '--layout', str(run/'layout.json')]
         process = subprocess.Popen(command, stdout=out, stderr=err)
         start = time.monotonic(); captured = False; shared = False; next_status = 0; capture_ready = False
         while process.poll() is None and time.monotonic()-start < 45:
@@ -163,6 +193,17 @@ try:
         assert evidence['font_resolved'] == 'Inter', evidence
         assert len(evidence['actions']) == len(actions)
         inspections = [item for item in evidence['actions'] if item['op'] == 'inspect']
+        assert inspections[5]['native']['camera']['yaw'] != inspections[4]['native']['camera']['yaw']
+        assert inspections[5]['native']['camera']['position'] != inspections[4]['native']['camera']['position']
+        assert inspections[5]['navigation']['pressed_keys'] == 0 and inspections[5]['navigation']['drag'] == 'None'
+        assert len(inspections[6]['windows']) == 2
+        saved = next(item['layout'] for item in evidence['actions'] if item['op'] == 'save_layout')
+        assert inspections[6]['layout'] == saved, (saved, inspections[6]['layout'])
+        cancelled = next(item for item in evidence['actions'] if item.get('message') == 'cancel')
+        assert inspections[7]['native']['camera'] == cancelled['camera']
+        assert inspections[7]['navigation']['pressed_keys'] == 0 and inspections[7]['navigation']['drag'] == 'None'
+        assert evidence['navigation']['error_count'] == 0 and evidence['navigation']['input_error'] is None
+        assert evidence['layout_error'] is None
         assert len(inspections[0]['windows']) == 2 and len(inspections[1]['windows']) == 2, inspections
         assert inspections[1]['native']['frames_presented'] > inspections[0]['native']['frames_presented']
         assert inspections[2]['native']['runtime']['tick'] == 2
@@ -173,12 +214,32 @@ try:
         assert recovery[1]['native']['frames_presented'] > recovery[0]['native']['frames_presented']
         assert evidence['draft']['name'] == 'Courtyard pillar' and not evidence['draft']['dirty']
         assert shared and captured and (run/'viewport.bmp').is_file()
+        restart_layout = run/'restart-layout.json'
+        restart_layout.write_text(json.dumps(saved))
+        restart_script = run/'restart-actions.json'
+        restart_script.write_text(json.dumps({'actions': [
+            {'frame': 5, 'op': 'select', 'id': entity},
+            {'frame': 12, 'op': 'wait_text', 'control': 'Position X', 'text': '-4'},
+            {'frame': 18, 'op': 'scene_frame'}, {'frame': 25, 'op': 'inspect'}]}))
+        restart_report = run/'restart-report.json'
+        restart = subprocess.run([str(a.editor.resolve()), str(world), '--gpu', str(a.gpu),
+            '--endpoint', endpoint+'-restart', '--layout', str(restart_layout),
+            '--script', str(restart_script), '--frames', '60', '--report', str(restart_report)],
+            capture_output=True, text=True, encoding='utf-8', timeout=40)
+        assert restart_report.is_file(), restart.stderr
+        again = json.loads(restart_report.read_text()); record['desktop_restart'] = again
+        assert restart.returncode == 0 and again['success'] and again['layout_error'] is None, again
+        restored = next(item for item in again['actions'] if item['op'] == 'inspect')
+        assert len(restored['windows']) == 2 and restored['layout'] == saved, restored
+        assert restored['native']['frames_presented'] > 0 and restored['navigation']['attached']
         record.update(passed=True, screenshot_sha256=hashlib.sha256((run/'window.png').read_bytes()).hexdigest(),
                       checks=['actual Avalonia Vulkan backend with native child Scene', 'shared CLI connection',
                               'dirty draft preserved; stale Apply rejects; Reload explicit', 'undo/redo and fixed-tick runtime',
                               'invalid raw field survives floating/reset; dirty close cancelled',
                               'missing-asset Scene error recovers after authoring repair without reattachment',
                               'actual Inspector and Scene floating windows; reset and continued presentation',
+                              'native HWND look/fly/frame/click messages; input released cleanly',
+                              'saved floating layout restores its panel structure and bounds, including a fresh process',
                               'revision-guarded viewport capture', 'bounded process exit and actual desktop client-area screenshot'])
 finally:
     if raised: u.SetWindowPos(raised, w.HWND(-1 if was_topmost else -2), 0, 0, 0, 0, 0x13)

@@ -30,16 +30,19 @@ public sealed class App : Application
             var script = new DesktopScript(options.Script, options.Frames);
             var host = new NativeHost(options.World, options.Endpoint, options.Gpu, options.Samples);
             MainWindow window;
-            try { window = new MainWindow(host); }
+            try { window = new MainWindow(host, options.Layout); }
             catch { host.Dispose(); throw; }
             desktop.MainWindow = window; desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
             var frames = 0; var watch = Stopwatch.StartNew();
             var renderScaling = window.RenderScaling;
+            var previousTime = watch.Elapsed.TotalSeconds;
             timer.Tick += (_, _) =>
             {
                 renderScaling = window.RenderScaling;
-                host.Pump(); script.Tick(frames, window); ++frames;
+                host.Pump();
+                var now = watch.Elapsed.TotalSeconds; window.Navigation.Tick(now-previousTime); previousTime = now;
+                script.Tick(frames, window); ++frames;
                 if (script.Error != null || (options.Frames > 0 && frames >= options.Frames)) window.CloseQualification();
             };
             window.Opened += (_, _) => timer.Start();
@@ -59,6 +62,7 @@ public sealed class App : Application
                         ["elapsed_ms"] = watch.Elapsed.TotalMilliseconds, ["pump_frames"] = frames,
                         ["private_bytes"] = Process.GetCurrentProcess().PrivateMemorySize64, ["state"] = state,
                         ["world"] = options.World, ["endpoint"] = options.Endpoint,
+                        ["navigation"] = window.Navigation.Inspect(), ["layout_file"] = window.LayoutPath, ["layout_error"] = window.LayoutError,
                         ["actions"] = script.Results.DeepClone(), ["draft"] = window.InspectDraft(),
                         ["limitations"] = new JsonArray("Prototype: physical IME/accessibility and full Unity parity are not qualified.") };
                     if (options.Report != null)

@@ -4,14 +4,14 @@ using System.Text.Json.Nodes;
 
 namespace Poima.Editor;
 
-internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uint Samples, int Frames, string? Report, bool SoftwareUi, string? Script)
+internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uint Samples, int Frames, string? Report, bool SoftwareUi, string? Script, string? Layout)
 {
     public static LaunchOptions Parse(string[] args)
     {
         if (args.Length == 0 || args[0].StartsWith("--"))
-            throw new ArgumentException("Use: Poima.Editor <world.json> [--endpoint name] [--gpu N] [--samples 1|4] [--frames N] [--report new.json] [--script actions.json] [--software-ui]");
+            throw new ArgumentException("Use: Poima.Editor <world.json> [--endpoint name] [--gpu N] [--samples 1|4] [--frames N] [--report new.json] [--script actions.json] [--software-ui] [--layout preferences.json]");
         var world = Path.GetFullPath(args[0]); var endpoint = "poima-desktop"; var gpu = -1; uint samples = 4; var frames = 0;
-        string? report = null, script = null; var software = false; var seen = new HashSet<string>();
+        string? report = null, script = null, layout = null; var software = false; var seen = new HashSet<string>();
         for (var i = 1; i < args.Length; i++)
         {
             var key = args[i]; if (!seen.Add(key)) throw new ArgumentException("Repeated option: " + key);
@@ -26,6 +26,7 @@ internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uin
                 case "--frames": frames = int.Parse(value); if (frames is < 1 or > 36000) throw new ArgumentException("Frames must be 1..36000."); break;
                 case "--report": report = Path.GetFullPath(value); break;
                 case "--script": script = Path.GetFullPath(value); break;
+                case "--layout": layout = Path.GetFullPath(value); break;
                 default: throw new ArgumentException("Unknown option: " + key);
             }
         }
@@ -41,7 +42,7 @@ internal sealed record LaunchOptions(string World, string Endpoint, int Gpu, uin
         }
         if (script != null && (frames == 0 || !File.Exists(script)))
             throw new ArgumentException("A qualification script needs an existing file and an explicit --frames limit.");
-        return new(world, endpoint, gpu, samples, frames, report, software, script);
+        return new(world, endpoint, gpu, samples, frames, report, software, script, layout);
     }
 }
 
