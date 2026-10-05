@@ -1,8 +1,8 @@
-# Contributing to Poima
+# Development and change review
 
-Poima is an early game engine designed for humans and agents. Its desktop editor and programmatic tools are first-class clients of the same native authoring core. Contributions are most useful when they improve a concrete workflow and include a way to verify the result. Start with the [README](README.md), [implementation status](docs/IMPLEMENTATION_STATUS.md) and the relevant subsystem's contract documentation.
+Poima is an early game engine designed for humans and agents. Its desktop editor and programmatic tools are first-class clients of the same native authoring core. The [README](README.md), [implementation status](docs/IMPLEMENTATION_STATUS.md) and subsystem contracts describe the current development baseline.
 
-For substantial architecture changes or new dependencies, explain the intended behavior and tradeoffs in an issue or draft pull request before investing in a broad implementation. Research and roadmap entries are not promises that an interface is ready to extend.
+Architecture and dependency changes are reviewed against their intended behavior, tradeoffs and existing contracts. Roadmap entries describe planned development; they do not establish a stable extension interface.
 
 ## Set up and validate
 
@@ -30,7 +30,7 @@ Authoring behavior belongs in the native world service so people using the edito
 
 Follow the surrounding C++20 or C# style. Prefer a small, reviewable change over unrelated cleanup. Add regression tests for changed contracts or failure behavior; use an existing fixture where it meaningfully exercises the new behavior. Do not introduce tests that merely repeat implementation details.
 
-## Submit a reviewable change
+## Change records and review
 
 A pull request should state the problem, the resulting behavior, relevant limitations and how it was validated. Include a minimal reproducer for bug fixes. For editor or rendering changes, provide an actual capture from the modified application when possible; label mockups and untested behavior clearly.
 
@@ -38,4 +38,4 @@ Keep secrets, personal project content, downloaded SDK archives, local logs and 
 
 New dependencies need a reason, a pinned source/version, integrity verification where the existing build supports it, and preserved notices. Update [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and package notice collection when relevant. Do not assume an asset or SDK may be redistributed merely because it can be downloaded.
 
-When reporting a problem, include the engine version or commit, OS, build preset/options, reproduction steps and expected versus actual behavior. For graphics issues, also include the GPU/driver, selected Vulkan device and relevant diagnostics. Redact private paths and credentials. There is no required AI tool: contributions made with development agents should receive the same code review, licensing checks and verification as other contributions.
+When reporting a problem, include the engine version or commit, OS, build preset/options, reproduction steps and expected versus actual behavior. For graphics issues, also include the GPU/driver, selected Vulkan device and relevant diagnostics. Redact private paths and credentials. Agent-assisted changes follow the same review and verification standards as manually written changes.

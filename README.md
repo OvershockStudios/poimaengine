@@ -90,7 +90,7 @@ Start with the [Poima wiki](https://github.com/OvershockStudios/poimaengine/wiki
 - **Start here:** [build](docs/BUILD.md), [projects and exported games](docs/PROJECTS.md), [desktop editor](docs/DESKTOP_EDITOR.md), [native player](docs/PLAYER.md).
 - **Agent and tool integration:** [world API](docs/WORLD_SERVICE.md), [shared local sessions](docs/SHARED_SESSIONS.md), [runtime](docs/RUNTIME.md), [static mesh collision](docs/MESH_COLLISION.md), [C# gameplay](docs/MANAGED_GAMEPLAY.md).
 - **Content:** [assets](docs/ASSETS.md), [materials](docs/MATERIAL_AUTHORING.md), [lighting](docs/LIGHTING.md), [shadows](docs/SHADOWS.md), [animation](docs/RUNTIME_ANIMATION.md), [audio](docs/AUDIO_EVENTS.md), [input](docs/INPUT_PROFILES.md), [gamepads](docs/GAMEPADS.md).
-- **Engineering:** [implementation evidence](docs/IMPLEMENTATION_STATUS.md), [render diagnostics](docs/RENDER_DIAGNOSTICS.md), [contributing](CONTRIBUTING.md).
+- **Engineering:** [implementation evidence](docs/IMPLEMENTATION_STATUS.md), [render diagnostics](docs/RENDER_DIAGNOSTICS.md), [development conventions](CONTRIBUTING.md).
 
 Roadmap items describe intended systems. Use the current executable's `capabilities`, command schemas and `world.describe` to discover what a particular build exposes.
 
