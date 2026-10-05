@@ -1,0 +1,32 @@
+{
+  "milestone": "AnimationRig Inspector unlocked visual follow-up",
+  "version": "0.0.34",
+  "date": "2026-10-05",
+  "qualified_source_commit": "d0fb741a46e4f9c8f7be60a71178dd51829e2a9a",
+  "passed": true,
+  "raw_report_sha256": "331f23bed36ed931f9db4b9e16ec83b86d2dfd1cbe4eb28894377dbb8a816f07",
+  "test_sha256": "f4a1c66ef87b6bc334564178e78fd99a7e10f72d0524967dc2c347f76d7f610e",
+  "editor_sha256": "559c6d21b78bf429217fecbbff7c6ca7b7fca994fec9eef8333edc54408071ab",
+  "actions": 101,
+  "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+  "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+  "render_scaling": 1.25,
+  "window_capture": {
+    "path": "m2-managed-animation-visual.png",
+    "sha256": "6fa24a5371cae0fa2bd76c7f7db1c639fe9943d014f6404fce9ad789b6f8b461",
+    "width": 1422,
+    "height": 873,
+    "reviewed": true
+  },
+  "visual_observations": [
+    "Live AnimationRig status and numeric fields are readable in Modified Tall layout.",
+    "Game viewport contains the test ribbon, ground and sky.",
+    "Captured editor is visible; no lock screen or overlapping numeric rows."
+  ],
+  "limitations": [
+    "Single bounded fixture at 125% display scale on one GPU; no general DPI/accessibility coverage.",
+    "Semantic actions do not qualify physical input.",
+    "This does not rerun the full Game-input regression.",
+    "Previous locked-session evidence remains unchanged."
+  ]
+}
