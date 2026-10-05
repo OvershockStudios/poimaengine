@@ -1,6 +1,6 @@
 # Poima branding
 
-Poima™ is used as a trademark for this game engine by its creator under the Overshock Studios name.
+Poima™ is used as a trademark for this game engine by Divesh Gupta, publishing under the Overshock Studios name.
 
 The project's [Apache-2.0 license](LICENSE) does not grant a general right to use the Poima name as branding for another product or to imply official sponsorship or endorsement. See Section 6 of that license.
 
