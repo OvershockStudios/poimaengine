@@ -37,14 +37,18 @@ public sealed class App : Application
             catch { host.Dispose(); throw; }
             desktop.MainWindow = window; desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
-            var frames = 0; var watch = Stopwatch.StartNew();
+            var frames = 0; var closingPumps = 0; var watch = Stopwatch.StartNew();
             var renderScaling = window.RenderScaling;
             var previousTime = watch.Elapsed.TotalSeconds;
             timer.Tick += (_, _) =>
             {
                 renderScaling = window.RenderScaling;
-                window.Game.ValidateCapture();
+                if (!window.ClosingPending) window.Game.ValidateCapture();
                 host.Pump();
+                if (window.ClosingPending)
+                {
+                    ++closingPumps; window.CompleteCloseWhenReady(); return;
+                }
                 var now = watch.Elapsed.TotalSeconds; window.Navigation.Tick(now-previousTime); window.Game.Tick(); previousTime = now;
                 script.Tick(frames, window); ++frames;
                 if (script.Error != null || (options.Frames > 0 && frames >= options.Frames)) window.CloseQualification();
@@ -63,7 +67,8 @@ public sealed class App : Application
                         ["ui_backend_actual"] = PlatformGraphicsType(),
                         ["font_resolved"] = FontManager.Current.TryGetGlyphTypeface(new Typeface(window.FontFamily), out var glyphs) ? glyphs.FamilyName : null,
                         ["render_scaling"] = renderScaling, ["base_font_dip"] = window.FontSize,
-                        ["elapsed_ms"] = watch.Elapsed.TotalMilliseconds, ["pump_frames"] = frames,
+                        ["elapsed_ms"] = watch.Elapsed.TotalMilliseconds, ["pump_frames"] = frames, ["shutdown_pumps"] = closingPumps,
+                        ["audio_draft"] = window.Audio.Inspect(),
                         ["private_bytes"] = Process.GetCurrentProcess().PrivateMemorySize64, ["state"] = state,
                         ["world"] = options.World, ["endpoint"] = options.Endpoint,
                         ["navigation"] = window.Navigation.Inspect(), ["game_input"] = window.Game.Inspect(), ["layout_file"] = window.LayoutPath, ["layout_error"] = window.LayoutError,

@@ -906,6 +906,18 @@ public:
         const auto result=advance_runtime(1,inputs);
         return {result.committed_tick,result.current_tick,result.replaced,result.save_serviced};
     }
+    WorldAudioState audio_state(const std::string& expected_session,std::uint64_t expected_tick,const std::string& listener) const {
+        identifier(expected_session);identifier(listener);
+        require(expected_tick<=max_revision,"Runtime tick exceeds supported range.");
+        require(bool(runtime_),"No runtime is active.",-32030);
+        require(expected_session==runtime_id_,"Runtime session conflict.",-32031);
+        require(expected_tick==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto camera=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+            [&](const auto& entity){return entity.id==listener && entity.camera.has_value();});
+        require(camera!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
+        require(rigid_transform(runtime_->entity(listener).world),"Audio listener camera hierarchy must not scale or shear.");
+        return {runtime_id_,listener,expected_tick,runtime_->audio_snapshot(listener),runtime_->sound_state().voices()};
+    }
     WorldGameplayStatus gameplay_status() const {
         WorldGameplayStatus status;status.active=bool(runtime_);
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.revision=runtime_->gameplay_revision(); }
@@ -2399,6 +2411,13 @@ WorldTickAdvance WorldSession::advance_tick(const std::string& expected_session,
     require(!closed(),"World session is closed.",-32001);
     profiling::Binding trace(&impl_->world.profiler());
     return impl_->world.advance_tick(expected_session,expected_tick,inputs);
+}
+WorldAudioState WorldSession::audio_state(const std::string& expected_session,std::uint64_t expected_tick,
+    const std::string& listener) const {
+    require(!closed(),"World session is closed.",-32001);
+    profiling::Binding trace(&impl_->world.profiler());profiling::SessionScope session(expected_session);
+    profiling::Scope sample("world.audio.snapshot",expected_tick<=max_revision ? static_cast<std::int64_t>(expected_tick) : -1);
+    return impl_->world.audio_state(expected_session,expected_tick,listener);
 }
 std::vector<std::pair<std::string,std::string>> WorldSession::runtime_hierarchy() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_hierarchy();

@@ -30,6 +30,8 @@ public sealed partial class MainWindow : Window
     public SaveEditorModel Saves { get; }
     private SaveWindow? saveWindow;
     private GameInputWindow? gameInputWindow;
+    public AudioEditorModel Audio { get; }
+    private AudioWindow? audioWindow;
     public ProfilerModel Profiler { get; }
     private ProfilerWindow? profilerWindow;
     private readonly EditorLayoutStore layoutStore;
@@ -44,6 +46,8 @@ public sealed partial class MainWindow : Window
     private readonly Dictionary<string, string> assetNames = new();
     private bool disposed;
     private bool qualificationClosing;
+    private bool closingRequested, closeReady;
+    public bool ClosingPending => closingRequested || Model.Host.State["closing"]?.GetValue<bool>() == true;
     public MainWindow(NativeHost host, string? layoutFile = null)
     {
         Title = $"{System.IO.Path.GetFileNameWithoutExtension(host.WorldPath)} — Poima";
@@ -67,6 +71,7 @@ public sealed partial class MainWindow : Window
         Components = new ComponentEditorModel(Model); Model.Components = Components;
         Saves = new SaveEditorModel(Model);
         Profiler = new ProfilerModel(Model);
+        Audio = new AudioEditorModel(Model);
         Navigation = new SceneNavigation(Model);
         Game = new GameInput(Model);
         Game.Error += text => status.Text = text;
@@ -106,6 +111,7 @@ public sealed partial class MainWindow : Window
         Model.Changed += UpdateToolbar; Model.PlaybackChanged += UpdateToolbar; UpdateToolbar(null, EventArgs.Empty);
         KeyDown += (_, e) =>
         {
+            if (ClosingPending) return;
             if (e.Source is TextBox) return;
             if (!Game.Captured && e.Key == Key.F && e.KeyModifiers == KeyModifiers.None) { Run(Navigation.FrameSelection); e.Handled = true; }
             if (!Game.Captured && !Navigation.Flying && e.KeyModifiers == KeyModifiers.None && e.Key is Key.Q or Key.W or Key.E or Key.R)
@@ -118,16 +124,56 @@ public sealed partial class MainWindow : Window
         };
         Closing += (_, e) =>
         {
-            if (!qualificationClosing && (Model.Dirty || Gameplay.Dirty || Saves.Dirty || Components.Dirty))
+            if (!qualificationClosing && !ClosingPending && (Model.Dirty || Gameplay.Dirty || Saves.Dirty || Components.Dirty || Audio.Dirty))
             {
                 e.Cancel = true;
-                var message = Components.Dirty ? "Apply or explicitly reload/discard live component changes before closing." : Saves.Dirty ? "Resolve or explicitly discard Save window drafts and pending operations before closing." : Gameplay.Dirty ? "Apply or explicitly revert C# Gameplay drafts before closing." : "Apply or Reload the Inspector changes before closing.";
+                var message = Audio.Dirty ? "Apply or reload Audio changes and resolve pending requests before closing." : Components.Dirty ? "Apply or explicitly reload/discard live component changes before closing." : Saves.Dirty ? "Resolve or explicitly discard Save window drafts and pending operations before closing." : Gameplay.Dirty ? "Apply or explicitly revert C# Gameplay drafts before closing." : "Apply or Reload the Inspector changes before closing.";
                 Model.Note(message); status.Text = message;
             }
-            if (!e.Cancel) { gameInputWindow?.Close(); profilerWindow?.Close(); saveWindow?.CloseForOwner(); gameplayWindow?.CloseForOwner(); Navigation.Cancel(); Game.Release(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
+            if (e.Cancel) return;
+            if (!closeReady)
+            {
+                e.Cancel = true;
+                if (!closingRequested)
+                {
+                    try
+                    {
+                        Navigation.Cancel(); Game.Release();
+                        if (Model.Host.State["closing"]?.GetValue<bool>() != true) Model.Host.Call("desktop.close.begin");
+                        closingRequested = true;
+                        status.Text = "Closing audio output…";
+                        gameInputWindow?.Close(); profilerWindow?.Close(); audioWindow?.CloseForOwner();
+                        saveWindow?.CloseForOwner(); gameplayWindow?.CloseForOwner();
+                        if (Content is Control content) content.IsEnabled = false;
+                    }
+                    catch (Exception error) { Model.Note(error.Message); status.Text = error.Message; }
+                }
+                return;
+            }
+            try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; }
         };
-        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Profiler.Dispose(); Saves.Dispose(); Components.Dispose(); Gameplay.Dispose(); Model.Dispose(); } };
+        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Audio.Dispose(); Profiler.Dispose(); Saves.Dispose(); Components.Dispose(); Gameplay.Dispose(); Model.Dispose(); } };
     }
+    internal void CompleteCloseWhenReady()
+    {
+        if (!ClosingPending) return;
+        if (!closingRequested) { Close(); return; }
+        if (Model.Host.State["audio"]?["closed"]?.GetValue<bool>() != true)
+        {
+            status.Text = Model.Host.LastError ?? "Closing audio output…";
+            return;
+        }
+        closeReady = true; Close();
+    }
+    public void ShowAudio()
+    {
+        if (audioWindow is not null) { audioWindow.Activate(); return; }
+        audioWindow = new AudioWindow(Audio);
+        audioWindow.Closed += (_, _) => audioWindow = null;
+        audioWindow.Show(this);
+    }
+    public void CloseAudio() => audioWindow?.Close();
+    public JsonObject RenderAudio(string path) => (audioWindow ?? throw new InvalidOperationException("Open Audio first.")).RenderForQualification(path, projectRoot);
     public void ShowGameInput()
     {
         if (gameInputWindow is not null) { gameInputWindow.Activate(); return; }
@@ -257,6 +303,7 @@ public sealed partial class MainWindow : Window
     }
     private void Run(Action action)
     {
+        if (ClosingPending) return;
         try { action(); }
         catch (Exception e) { Model.Note(e.Message); status.Text = e.Message; }
     }
@@ -279,7 +326,7 @@ public sealed partial class MainWindow : Window
             new MenuItem { Header = "_File", ItemsSource = new[] { Item("Import model…", () => _ = PickModel()), Item("Runtime saves…", ShowSaves), Item("Refresh", Model.Refresh), Item("Close", Close) } },
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")), Item("Environment and Sky", () => Model.Create("Environment")) } },
-            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Profiler", ShowProfiler), Item("Saves", ShowSaves), Item("C# Gameplay", ShowGameplay), Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Modified Tall layout", ResetLayout), Item("Modified Tall with Scene and Game", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
+            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Profiler", ShowProfiler), Item("Audio", ShowAudio), Item("Saves", ShowSaves), Item("C# Gameplay", ShowGameplay), Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Modified Tall layout", ResetLayout), Item("Modified Tall with Scene and Game", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
             new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Click a player's Game view to control it; Escape or Tab releases input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
     }
@@ -330,13 +377,16 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(cameras, "Game camera");
         var bindings = ToolButton("Game input profile", () => {}, "settings");
         bindings.Click += (_, _) => ShowGameInput();
+        var mute = ToolButton("Game audio mute", () => Run(Audio.ToggleMute), "audio");
+        var audioMenu = new MenuItem { Header = "Audio settings…" }; audioMenu.Click += (_, _) => ShowAudio();
+        mute.ContextMenu = new ContextMenu { ItemsSource = new[] { audioMenu } };
         var message = Label("Camera preview", true); message.Margin = new Thickness(6, 3); AutomationProperties.SetName(message, "Game input status");
-        toolbar.Children.Add(cameras); toolbar.Children.Add(bindings); toolbar.Children.Add(message); grid.Children.Add(toolbar);
+        toolbar.Children.Add(cameras); toolbar.Children.Add(bindings); toolbar.Children.Add(mute); toolbar.Children.Add(message); grid.Children.Add(toolbar);
         var gameView = new VulkanView(Model.Host, "game", Game);
         var placeholder = new TextBlock { TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(24), Foreground = EditorTheme.Brush("#A0A0A5") };
         AutomationProperties.SetName(placeholder, "Game viewport placeholder");
         Grid.SetRow(gameView, 1); Grid.SetRow(placeholder, 1); grid.Children.Add(gameView); grid.Children.Add(placeholder);
-        IReadOnlyList<CameraChoice>? lastCameras = null; string? lastCamera = null; bool syncing = false;
+        IReadOnlyList<CameraChoice>? lastCameras = null; string? lastCamera = null; bool syncing = false; bool? lastMuted = null;
         cameras.SelectionChanged += (_, _) =>
         {
             if (!syncing && cameras.SelectedItem is CameraChoice choice && (choice.Id.Length == 0 ? null : choice.Id) != Model.GameCamera)
@@ -354,6 +404,13 @@ public sealed partial class MainWindow : Window
                     cameras.ItemsSource = choices; cameras.SelectedItem = choices.First(choice => choice.Id == (Model.GameCamera ?? ""));
                     lastCameras = Model.Cameras; lastCamera = Model.GameCamera;
                 }
+                var audioState = Model.Host.State["audio"];
+                var isMuted = audioState?["config"]?["muted"]?.GetValue<bool>() == true;
+                if (lastMuted != isMuted) { mute.Content = EditorIcons.Make(isMuted ? "audio_muted" : "audio"); lastMuted = isMuted; }
+                ToolTip.SetTip(mute, (isMuted ? "Unmute" : "Mute") + " Game audio · "
+                    + (audioState?["config"]?["enabled"]?.GetValue<bool>() == true ? audioState?["state"]?.ToString() : "output disabled")
+                    + (audioState?["error"]?.GetValue<string>() is string audioError ? "\n" + audioError : "")
+                    + "\nRight-click for Audio settings.");
                 message.Text = Model.GameCamera is null ? "Choose a camera to preview" : !Model.Cameras.Any(camera => camera.Id == Model.GameCamera) ? "Selected camera is unavailable"
                     : Game.Captured ? "Controls active · Esc to release" : Model.PlaybackState == "playing" ? "Click to control · Esc to release" : "Camera preview · press Play to control";
                 var preparationError = Model.Host.State["views"]?["game"]?["preparation_error"]?.GetValue<string>();

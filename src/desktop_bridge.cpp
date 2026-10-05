@@ -8,6 +8,7 @@
 #include "poima/player.hpp"
 #include "poima/input_profile.hpp"
 #include "poima/gamepad.hpp"
+#include "editor_audio.hpp"
 #include "input_profile_store.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
@@ -258,6 +259,11 @@ struct Bridge : ViewportState {
     std::string gameplay_cached_session;
     Json gameplay_profile=nullptr,gameplay_cached_module=nullptr;
     std::vector<Json> gameplay_receipts;
+    EditorAudioPresenter audio;
+    std::uint64_t audio_generation=0;
+    std::vector<Json> audio_receipts;
+    std::string audio_capture_error;
+    bool audio_seeded=false,closing=false,named_audio_camera=false;
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
@@ -457,13 +463,85 @@ struct Bridge : ViewportState {
         receipts.push_back({{"params",std::move(normalized)},{"result",result}});
         gameplay_profile=std::move(candidate);++gameplay_generation;gameplay_receipts.swap(receipts);return result;
     }
+    void suspend_audio() {
+        audio_seeded=false;
+        try { audio.suspend(); }catch(const std::exception& failure) { audio_capture_error=failure.what(); }
+    }
+    Json audio_json() const {
+        const auto value=audio.status();
+        const auto detail=audio_capture_error.empty() ? value.error : audio_capture_error;
+        const auto& listener=(explicit_views || named_audio_camera) ? game_camera : view_camera;
+        return {{"generation",audio_generation},{"available",EditorAudioPresenter::available()},
+            {"selected_listener",listener.empty() ? Json(nullptr) : Json(listener)},
+            {"config",{{"enabled",value.config.enabled},{"muted",value.config.muted},{"volume",value.config.volume}}},
+            {"state",!detail.empty() && !closing ? "fault" : value.state},{"active",value.active},{"closing",value.closing},{"closed",value.closed},
+            {"worker_started",value.worker_started},{"worker_busy",value.worker_busy},{"device_open",value.device_open},
+            {"epoch",value.epoch},{"last_submitted_tick",value.last_submitted_tick},{"processed_tick",value.processed_tick},
+            {"queued_ticks",value.jobs_queued},{"queued_frames",value.pcm_frames_queued},{"device_queued_frames",value.device_frames_queued},
+            {"submitted_frames",value.submitted_frames},{"dropped_frames",value.dropped_frames},{"dropped_ticks",value.dropped_ticks},
+            {"discontinuities",value.discontinuities},{"stale_results",value.stale_results},{"resets",value.resets},
+            {"session",value.session.empty() ? Json(nullptr) : Json(value.session)},{"listener",value.listener.empty() ? Json(nullptr) : Json(value.listener)},
+            {"driver",value.driver.empty() ? Json(nullptr) : Json(value.driver)},{"error",detail.empty() ? Json(nullptr) : Json(detail)},
+            {"stream",{{"frames",value.stream.frames},{"blocks",value.stream.blocks},{"voices_started",value.stream.voices_started},
+                {"path_updates",value.stream.path_updates},{"peak",value.stream.peak},{"dsp_ms",value.stream.dsp_ms},{"over_range_samples",value.stream.over_range_samples}}},
+            {"limits",{{"queued_ticks",EditorAudioPresenter::max_jobs},{"pcm_frames",EditorAudioPresenter::max_pcm_frames},{"metadata_bytes",EditorAudioPresenter::max_metadata_bytes}}}};
+    }
+    Json audio_command(const std::string& method,const Json& params) {
+        if(method=="desktop.audio.inspect") { fields(params,{});return audio_json(); }
+        if(method=="desktop.audio.retry") { fields(params,{});audio.retry();audio_seeded=false;audio_capture_error.clear();return audio_json(); }
+        require(method=="desktop.audio.configure","Unknown desktop audio method.",-32601);
+        fields(params,{"request_id","expected_generation","enabled","muted","volume"},{"request_id","expected_generation","enabled","muted","volume"});
+        identifier(params.at("request_id"));const auto expected=integer(params.at("expected_generation"));
+        require(params.at("enabled").is_boolean() && params.at("muted").is_boolean(),"Enabled and muted must be boolean.");
+        const auto volume=number(params.at("volume"),0,1,"Audio volume must be finite and in [0,1].");
+        for(const auto& receipt:audio_receipts)if(receipt.at("params").at("request_id")==params.at("request_id")) {
+            require(receipt.at("params")==params,"Audio request ID was used with different parameters.",-32009);
+            auto result=receipt.at("result");result["replayed"]=true;return result;
+        }
+        require(expected==audio_generation,"Audio configuration generation conflict.",-32009);
+        require(audio_generation<max_integer,"Audio configuration generation exhausted.");
+        const EditorAudioConfig config{params.at("enabled").get<bool>(),params.at("muted").get<bool>(),static_cast<float>(volume)};
+        require(!config.enabled || EditorAudioPresenter::available(),"Editor audio output is not built.",-32003);
+        const Json result={{"generation",audio_generation+1},{"config",{{"enabled",config.enabled},{"muted",config.muted},{"volume",config.volume}}},{"replayed",false}};
+        auto receipts=audio_receipts;if(receipts.size()==32)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
+        const bool enable_changed=audio.status().config.enabled!=config.enabled;
+        audio.configure(config);++audio_generation;audio_receipts.swap(receipts);
+        if(enable_changed) { audio_seeded=false;audio_capture_error.clear(); }
+        return result;
+    }
+    void submit_audio() {
+        const auto state=audio.status();
+        const auto& listener=(explicit_views || named_audio_camera) ? game_camera : view_camera;
+        if(closing || !state.config.enabled || !state.error.empty() || !audio_capture_error.empty() || listener.empty())return;
+        try {
+            profiling::Scope trace("editor.audio.snapshot",static_cast<std::int64_t>(play_tick));
+            auto frame=world->audio_state(play_session,play_tick,listener);
+            audio.submit({std::move(frame.session_id),std::move(frame.listener),frame.tick,std::move(frame.snapshot),std::move(frame.voices)});
+            audio_seeded=true;
+        }catch(const std::exception& failure) {
+            // Simulation already committed. Audio failure must not be reported
+            // as a failed tick or undo its accepted input.
+            suspend_audio();audio_capture_error=failure.what();
+        }
+    }
+    Json begin_close(const Json& params) {
+        fields(params,{});
+        if(!closing) {
+            closing=true;playing=false;release_input();cancel_gizmo();
+            fail_capture(-32003,"Desktop host is closing.");play_clock.advance(0,false);
+            audio_seeded=false;audio.begin_shutdown();
+        }
+        return inspect();
+    }
     void sync_playback() {
         const auto state=world->runtime_status();
         if((!state.active && !play_session.empty()) || (state.active && state.session_id!=play_session)) {
+            suspend_audio();audio_capture_error.clear();
             release_input(true);runtime_parents.clear();runtime_parent_session.clear();
             playing=false;play_session=state.active ? state.session_id : std::string{};play_tick=state.active ? state.tick : 0;
             play_clock=PlayerClock{};play_last=Clock::now();capture_hold=false;play_error.clear();
         } else if(state.tick!=play_tick) {
+            suspend_audio();
             if(playing) { playing=false;release_input();play_error="Runtime advanced outside the desktop playback clock; resume explicitly."; }
             play_tick=state.tick;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false;
         }
@@ -519,11 +597,12 @@ struct Bridge : ViewportState {
         fields(params,{"session_id"},{"session_id"});const auto id=identifier(params.at("session_id"));
         require(!play_session.empty() && id==play_session,"Runtime session conflict.",-32009);
         const bool next=method=="desktop.play.resume";
-        if(!next)release_input();
+        if(!next) { release_input();suspend_audio(); }
         if(next!=playing) { playing=next;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false; }
         if(next)play_error.clear();return playback_json();
     }
     void pump_playback() {
+        if(closing)return;
         sync_playback();expire_capture();const auto now=Clock::now();
         const double elapsed=std::chrono::duration<double>(now-play_last).count();play_last=now;
         const bool held=capture && capture->state=="queued";
@@ -537,7 +616,8 @@ struct Bridge : ViewportState {
         }catch(const std::exception& failure) {
             release_input();gamepad.stop();gamepad_error=failure.what();
         }
-        if(!playing || held || capture_hold) { play_clock.advance(0,false);capture_hold=held;return; }
+        if(closing || !playing || held || capture_hold) { suspend_audio();play_clock.advance(0,false);capture_hold=held;return; }
+        if(!audio_seeded)submit_audio();
         try {
             const auto ticks=play_clock.advance(elapsed,true);if(!ticks)return;
             const bool apply=game_input && input_focused;
@@ -562,6 +642,7 @@ struct Bridge : ViewportState {
                 }
                 play_tick=result.current_tick;
                 if(apply) { game_input->commit_tick();last_input_applied.swap(applied); }
+                submit_audio();
                 // Each automatic tick is its own commit. Earlier successful
                 // ticks survive a later failure; explicit RPC batches retain
                 // their existing all-or-nothing rollback contract.
@@ -569,6 +650,7 @@ struct Bridge : ViewportState {
                 if(result.save_serviced)play_last=Clock::now();
             }
         }catch(const std::exception& failure) {
+            suspend_audio();
             playing=false;release_input();play_clock.advance(0,false);capture_hold=false;
             const auto state=world->runtime_status();play_tick=state.active ? state.tick : 0;
             play_error=failure.what();
@@ -589,9 +671,9 @@ struct Bridge : ViewportState {
             next=identifier(params.at("camera"));const auto runtime=world->runtime_status();
             (void)(runtime.active ? world->runtime_camera_snapshot(next) : world->authored_camera_snapshot(next));
         }
-        if(next!=game_camera) {
+        if(next!=game_camera || !named_audio_camera) {
             require(game_camera_revision<max_integer,"Game camera revision exhausted.");
-            release_input();game_camera=std::move(next);++game_camera_revision;
+            release_input();suspend_audio();audio_capture_error.clear();named_audio_camera=true;game_camera=std::move(next);++game_camera_revision;
             game_view.cached_snapshot.reset();game_view.preparation_error.clear();
             fail_capture(-32009,"Game camera changed before capture presentation.","game");
         }
@@ -616,8 +698,8 @@ struct Bridge : ViewportState {
             // missing assets or nonrigid hierarchies preserve the current view.
             (void)(runtime.active ? world->runtime_camera_snapshot(id) : world->authored_camera_snapshot(id));
         } else require(!params.contains("camera"),"Scene view uses the inspection camera; omit camera.");
-        if(mode!=view_mode || id!=view_camera) {
-            require(view_revision<max_integer,"View revision exhausted.");release_input();cancel_gizmo();view_mode=mode;view_camera=std::move(id);++view_revision;
+        if(mode!=view_mode || id!=view_camera || named_audio_camera) {
+            require(view_revision<max_integer,"View revision exhausted.");suspend_audio();audio_capture_error.clear();release_input();cancel_gizmo();named_audio_camera=false;view_mode=mode;view_camera=std::move(id);++view_revision;
             fail_capture(-32009,"Viewport camera changed before capture presentation.");
         }
         return view_json();
@@ -779,7 +861,7 @@ struct Bridge : ViewportState {
     }
     Json inspect() {
         sync_playback();expire_gizmo();expire_capture();const auto saves=world->save_status();const auto components=world->component_status();
-        return {{"components",{{"active",components.active},{"session_id",components.active ? Json(components.session_id) : Json(nullptr)},{"tick",components.tick},{"revision",components.revision}}},{"saves",{{"generation",saves.generation},{"root",saves.root.empty() ? Json(nullptr) : Json(saves.root)}}},{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        return {{"closing",closing},{"audio",audio_json()},{"components",{{"active",components.active},{"session_id",components.active ? Json(components.session_id) : Json(nullptr)},{"tick",components.tick},{"revision",components.revision}}},{"saves",{{"generation",saves.generation},{"root",saves.root.empty() ? Json(nullptr) : Json(saves.root)}}},{"binding_mode",explicit_views ? "explicit" : "legacy"},{"views",views_json()},{"input",input_json()},{"playback",playback_json()},{"gameplay",gameplay_json(false)},{"view",view_json()},{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
@@ -851,6 +933,9 @@ struct Bridge : ViewportState {
             {"type",{{"type","string"},{"minLength",1},{"maxLength",512}}},{"values",{{"type","object"},{"maxProperties",128},{"additionalProperties",{{"type",{"number","string"}}}}}}},{"hostfxr","bridge","assembly","type"});
         methods["desktop.gameplay.configure"]=object({{"request_id",id_schema},{"expected_generation",integer_schema},{"profile",{{"oneOf",Json::array({gameplay_launch,Json{{"type","null"}}})}}}},{"request_id","expected_generation","profile"});
         methods["desktop.gameplay.inspect"]=object(Json::object());
+        methods["desktop.audio.configure"]=object({{"request_id",id_schema},{"expected_generation",integer_schema},{"enabled",{{"type","boolean"}}},
+            {"muted",{{"type","boolean"}}},{"volume",{{"type","number"},{"minimum",0},{"maximum",1}}}},{"request_id","expected_generation","enabled","muted","volume"});
+        for(const auto* name:{"desktop.audio.inspect","desktop.audio.retry","desktop.close.begin"})methods[name]=object(Json::object());
         for(const auto* name:{"desktop.play.pause","desktop.play.resume","desktop.play.stop"})methods[name]=object({{"session_id",id_schema}},{"session_id"});
         methods["desktop.play.inspect"]=object(Json::object());
         methods["desktop.play.step"]=world_call("world.describe").at("methods").at("runtime.step");
@@ -890,7 +975,12 @@ struct Bridge : ViewportState {
             {"playback",{{"clock","Owner poll only; fixed 60 Hz; at most 8 catch-up ticks/poll; each automatic tick commits independently. A failed tick pauses at the last successful tick. Explicit multi-tick runtime.step remains atomic. Excess wall time is dropped and reported. Inspect, draw and capture never step."},
                 {"ownership","desktop.play.start starts running unless paused:true. Direct runtime.start remains paused. Pause before manual runtime step/audio replay/gameplay edits and save.configure/save.write/save.load. Successful save.load opens a fresh paused session with cleared input. Stop discards runtime without authored writes."},
                 {"capture","A queued capture holds automatic ticking until completion/error; resume discards the held wall-time interval."},
-                {"background","Playback continues while the owner polls, including hidden/detached viewports. Gameplay input has a separate explicit focus gate; editor audio playback is not connected."}}},
+                {"background","Playback continues while the owner polls, including hidden/detached viewports. Gameplay input has a separate explicit focus gate. Enabled audio follows the selected Game camera independently of pane visibility/input capture."}}},
+            {"audio",{{"configuration","Session-local enabled/muted/volume; disabled initially. Complete guarded configurations retain 32 exact retry receipts. Enabling while stopped opens no device and starts no voice. Select a Game camera; existing gameplay sound events drive playback."},
+                {"ownership","Owner captures each committed automatic tick. DSP worker owns immutable snapshots; owner alone submits bounded PCM to SDL. Audio errors never roll back gameplay; inspect error and retry explicitly."},
+                {"reset","Pause, Stop, load, camera change and capture suspension clear queued output and invalidate old results. Resume rebases logical voice phase and resets DSP tails. Muting keeps DSP progression but clears/discards audible PCM. Hardware samples already delivered cannot be recalled."},
+                {"limits","Eight queued tick snapshots; bounded metadata and PCM queues, 4800 SDL stereo frames. Overload drops presentation and reports discontinuities; no waiting for DSP/output drain on poll. Direct acoustics may remain expensive."},
+                {"shutdown","desktop.close.begin stops presentation and starts worker retirement; continue owner poll until audio.closed before native destroy. Read-only inspection remains available; other requests reject. GUI follows this asynchronous close. Direct native destroy is a synchronous compatibility fallback with no SDK-call deadline."}}},
             {"gameplay",{{"configuration","Session-local CoreCLR launch profile; configure only while stopped. Paths resolve relative to the world and must name existing regular files; validation executes no code. Semantic type/field checks occur when Play loads the module."},
                 {"limits","Profile at most 64 KiB; paths 4096 UTF-8 bytes, type 512 bytes; at most 128 scalar fields with names at most 64 bytes. No source build or file watcher."},
                 {"receipts","Every accepted configuration increments generation. Latest 32 normalized exact request receipts replay before runtime, generation and file checks; changed request ID payload conflicts. Receipts and configuration do not persist after host destruction."},
@@ -920,6 +1010,8 @@ struct Bridge : ViewportState {
             const auto message=parse(bytes);require(message.is_object() && message.value("jsonrpc",Json())=="2.0" && message.contains("method") && message.at("method").is_string(),"Invalid JSON-RPC 2.0 request.",-32600);
             if(message.contains("id")) { id=message.at("id");require(id.is_null() || id.is_string() || id.is_number_integer(),"Invalid JSON-RPC ID.",-32600); }else notification=true;
             const auto method=message.at("method").get<std::string>();
+            require(!closing || method=="desktop.close.begin" || method=="desktop.inspect" || method=="desktop.describe" || method=="desktop.audio.inspect" || method=="world.inspect" || method=="world.describe",
+                "Desktop host is closing; only final inspection and close polling are available.",-32009);
             // The generic world service has a standalone device host. Route
             // discovery through the hosted owner as well, including this alias.
             if(method=="input.devices") {
@@ -943,6 +1035,8 @@ struct Bridge : ViewportState {
             fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});const auto params=message.value("params",Json::object());Json result;
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
+            else if(method=="desktop.close.begin")result=begin_close(params);
+            else if(method.starts_with("desktop.audio."))result=audio_command(method,params);
             else if(method.starts_with("desktop.play."))result=play_command(method,params);
             else if(method.starts_with("desktop.gameplay."))result=gameplay_command(method,params);
             else if(method.starts_with("desktop.input."))result=input_command(method,params);
@@ -977,7 +1071,7 @@ struct Bridge : ViewportState {
                 require(destination.viewport && !destination.faulted,"A working attached target viewport is required.",-32003);
                 require(!capture || capture->state!="queued","One capture is already pending.",-32009);
                 const auto expected=integer(params.at("revision"));require(expected==revision(),"Authored revision conflict.",-32009);const auto path=capture_path(params.at("path"));require(next_capture<=max_integer,"Capture identity limit reached.");const auto state=world->runtime_status();
-                Capture candidate;candidate.target=target;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=target=="game" ? game_camera_revision : camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;result=capture->json();
+                Capture candidate;candidate.target=target;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=target=="game" ? game_camera_revision : camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;suspend_audio();result=capture->json();
             }else if(method=="desktop.capture.status") {
                 fields(params,{"capture_id"},{"capture_id"});const auto value=integer(params.at("capture_id"));require(capture && capture->id==value,"Capture result is absent or was superseded.",-32004);expire_capture();result=capture->json();
             }else throw Failure(-32601,"Unknown desktop method.");
@@ -990,7 +1084,9 @@ struct Bridge : ViewportState {
         profiling::Binding trace_binding(&world->profiler(),profiling::Source::editor_poll);
         if(server)for(const auto& incoming:server->poll())server->reply(incoming.token,request(incoming.payload));
         profiling::Scope trace_poll("editor.poll");
-        pump_playback();auto state=inspect();const auto current=state.at("revision").get<std::uint64_t>();const auto runtime=state.at("runtime");
+        pump_playback();
+        { profiling::Scope scope("editor.audio.poll");audio.poll(); }
+        auto state=inspect();const auto current=state.at("revision").get<std::uint64_t>();const auto runtime=state.at("runtime");
         state["world_changed"]=!observed_revision || *observed_revision!=current;state["runtime_changed"]=observed_runtime!=runtime;
         observed_revision=current;observed_runtime=runtime;return state;
     }
@@ -1012,6 +1108,7 @@ struct Bridge : ViewportState {
         return *destination.cached_snapshot;
     }
     void attach_target(const std::string& target,void* handle) {
+        require(!closing,"Desktop host is closing.",-32009);
         auto& destination=slot(target);
         require(!destination.viewport,"Detach this viewport before attaching another HWND.");require(handle && IsWindow(static_cast<HWND>(handle)),"Attach requires a live HWND.");
         require(handle!=hwnd && handle!=game_view.hwnd,"Each viewport requires a distinct HWND.");
@@ -1028,7 +1125,7 @@ struct Bridge : ViewportState {
     void attach_view(const std::string& view,void* handle) {
         validate_view(view);require(explicit_views || !viewport,"Detach the legacy viewport before using named viewports.",-32009);
         const bool previous=explicit_views;
-        try { attach_target(view,handle);if(!explicit_views) { release_input();cancel_gizmo(); }explicit_views=true; }
+        try { attach_target(view,handle);if(!explicit_views) { release_input();cancel_gizmo();if(!named_audio_camera)suspend_audio(); }explicit_views=true; }
         catch(...) { explicit_views=previous;throw; }
     }
     void detach_target(const std::string& target) {
@@ -1043,6 +1140,7 @@ struct Bridge : ViewportState {
     void detach_view(const std::string& view) { validate_view(view);require(explicit_views || !viewport,"Legacy viewport ABI cannot be mixed with named viewports.",-32009);if(explicit_views)detach_target(view); }
     void detach_all() { if(explicit_views) { detach_target("game");detach_target("scene"); }else detach_target("legacy"); }
     int draw_target(const std::string& target) {
+        if(closing)return 0;
         profiling::Binding trace_binding(&world->profiler(),target=="game" ? profiling::Source::editor_game : profiling::Source::editor_scene);
         const auto traced_runtime=profiling::active() ? world->profiler_context() : WorldProfilerContext{};
         profiling::SessionScope trace_session(traced_runtime.session.data());

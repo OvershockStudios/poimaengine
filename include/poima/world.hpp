@@ -36,6 +36,13 @@ struct WorldProfilerContext {
     std::array<char,33> session{};
     std::int64_t tick=-1;
 };
+// Owned presentation values; immutable clip/mesh assets are retained by shared ownership.
+struct WorldAudioState {
+    std::string session_id,listener;
+    std::uint64_t tick=0;
+    AudioSnapshot snapshot;
+    std::vector<SoundVoice> voices;
+};
 struct WorldTickAdvance {
     std::uint64_t committed_tick=0,current_tick=0;
     bool replaced=false,save_serviced=false;
@@ -79,6 +86,10 @@ public:
     // must reacquire its identity and release old input before continuing.
     WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
         const std::vector<RuntimeInput>& inputs={});
+    // Owner-thread observation of one committed runtime boundary. Requires a
+    // rigid runtime Camera; no DSP, device work, simulation advance or file I/O.
+    WorldAudioState audio_state(const std::string& expected_session,std::uint64_t expected_tick,
+        const std::string& listener) const;
     // Counters only: does not serialize gameplay schema or field values.
     WorldGameplayStatus gameplay_status() const;
     WorldComponentStatus component_status() const;

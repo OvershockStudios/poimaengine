@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/audio.hpp"
+#include "audio_hrtf.hpp"
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -89,7 +90,7 @@ AudioStream::AudioStream(std::uint64_t tick,const AudioSnapshot& initial):impl_(
     check(audio_available(),"Audio stream is not built.");auto& s=*impl_;s.start=s.cursor=s.committed=tick*audio_tick_frames;s.snapshot=initial;s.paths=observe_audio(initial);s.stats.path_updates=1;
 #if POIMA_AUDIO
     IPLContextSettings settings{};settings.version=STEAMAUDIO_VERSION;settings.simdLevel=IPL_SIMDLEVEL_SSE2;Impl::status(iplContextCreate(&settings,&s.context));
-    IPLAudioSettings audio{audio_rate,audio_block};IPLHRTFSettings hrtf{};hrtf.type=IPL_HRTFTYPE_DEFAULT;hrtf.volume=1;Impl::status(iplHRTFCreate(s.context,&audio,&hrtf,&s.hrtf));
+    IPLAudioSettings audio{audio_rate,audio_block};IPLHRTFSettings hrtf{};hrtf.type=IPL_HRTFTYPE_DEFAULT;hrtf.volume=1;Impl::status(audio_detail::create_hrtf(s.context,&audio,&hrtf,&s.hrtf));
 #endif
 }
 AudioStream::~AudioStream()=default;

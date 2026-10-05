@@ -53,7 +53,7 @@ internal sealed class DesktopScript
     }
     public void Tick(int frame, MainWindow window)
     {
-        while (next < actions.Count && actions[next]!["frame"]!.GetValue<int>() + frameOffset <= frame && Error == null)
+        while (next < actions.Count && actions[next]!["frame"]!.GetValue<int>() + frameOffset <= frame && Error == null && !window.ClosingPending)
         {
             var action = actions[next++]!.AsObject();
             var op = action["op"]!.GetValue<string>(); var model = window.Model;
@@ -162,6 +162,26 @@ internal sealed class DesktopScript
                     case "game_motion":
                         ViewportInput.DispatchQualificationRelative(window.Game.Window, action["dx"]!.GetValue<int>(), action["dy"]!.GetValue<int>());
                         result["game_input"] = window.Game.Inspect(); break;
+                    case "open_audio": window.ShowAudio(); break;
+                    case "close_audio": window.CloseAudio(); break;
+                    case "inspect_audio": result["audio"] = window.Audio.Inspect(); break;
+                    case "wait_audio":
+                        var audioStatus = model.Host.State["audio"] ?? throw new InvalidOperationException("Native audio status is unavailable.");
+                        if (audioStatus["error"]?.GetValue<string>() is string audioFailure && audioFailure.Length != 0) throw new InvalidOperationException(audioFailure);
+                        var audioReady = (!action.ContainsKey("state") || audioStatus["state"]?.GetValue<string>() == Text("state"))
+                            && (!action.ContainsKey("active") || audioStatus["active"]?.GetValue<bool>() == action["active"]!.GetValue<bool>())
+                            && (!action.ContainsKey("device_open") || audioStatus["device_open"]?.GetValue<bool>() == action["device_open"]!.GetValue<bool>())
+                            && (!action.ContainsKey("submitted_frames") || (audioStatus["submitted_frames"]?.GetValue<long>() ?? 0) >= action["submitted_frames"]!.GetValue<long>());
+                        if (!audioReady)
+                        {
+                            if (deferredAt is null) { deferredAt = frame; deferredStarted = System.Diagnostics.Stopwatch.GetTimestamp(); }
+                            if (System.Diagnostics.Stopwatch.GetElapsedTime(deferredStarted).TotalSeconds < 5) { --next; return; }
+                            throw new InvalidOperationException("Audio status wait timed out: " + audioStatus.ToJsonString());
+                        }
+                        if (deferredAt is int audioStarted) { frameOffset += frame-audioStarted; deferredAt = null; }
+                        result["audio"] = window.Audio.Inspect(); break;
+                    case "render_audio": result["visual"] = window.RenderAudio(Text("path")); break;
+                    case "close_editor": window.CloseQualification(); break;
                     case "open_game_input": window.ShowGameInput(); break;
                     case "inspect_game_input": result["game_input_settings"] = window.InspectGameInput(); break;
                     case "render_game_input": result["visual"] = window.RenderGameInput(Text("path")); break;
@@ -331,6 +351,7 @@ internal sealed class DesktopScript
                         result["gameplay_draft"] = window.Gameplay.Inspect();
                         result["save_draft"] = window.Saves.Inspect();
                         result["component_draft"] = window.Components.Inspect();
+                        result["audio_draft"] = window.Audio.Inspect();
                         result["playback_controls"] = window.InspectPlaybackControls();
                         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                             result["windows"] = new JsonArray(desktop.Windows.Select(w => (JsonNode?)new JsonObject {

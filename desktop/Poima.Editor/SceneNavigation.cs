@@ -50,7 +50,7 @@ public sealed class SceneNavigation : IViewportInteraction
         {
             var active = gizmoDrag; gizmoDrag = null;
             drag = ViewportMouseButton.None; keys.Clear(); orbit = false; moved = false;
-            if (active is not null)
+            if (active is not null && model.Host.State["closing"]?.GetValue<bool>() != true)
                 try { model.Host.Call("desktop.gizmo.cancel"); }
                 catch (Exception error) { ++ErrorCount; model.Note(error.Message); Error?.Invoke(error.Message); }
             if (releaseCapture) input?.CancelCapture();
@@ -151,6 +151,7 @@ public sealed class SceneNavigation : IViewportInteraction
     }
     public void Handle(ViewportInputEvent e) => Guard(() =>
     {
+        if (model.Host.State["closing"]?.GetValue<bool>() == true) { Cancel(); return; }
         lastInputModifiers = e.Modifiers;
         lastInputX = e.X; lastInputY = e.Y;
         fast = e.Shift;

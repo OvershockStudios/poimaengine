@@ -110,7 +110,7 @@ public sealed class GameInput : IViewportInteraction
             var session = capturedSession; capturedSession = null;
             try
             {
-                if (session is not null && model.Host.Call("desktop.input.inspect")["session_id"]?.GetValue<string>() == session)
+                if (session is not null && model.Host.State["closing"]?.GetValue<bool>() != true && model.Host.Call("desktop.input.inspect")["session_id"]?.GetValue<string>() == session)
                     model.Host.Call("desktop.input.focus", new() { ["session_id"] = session, ["focused"] = false });
             }
             finally { viewport?.EndGameCapture(); }
@@ -151,6 +151,7 @@ public sealed class GameInput : IViewportInteraction
     public void Handle(ViewportInputEvent e) => Guard(() => HandleCore(e));
     private void HandleCore(ViewportInputEvent e)
     {
+        if (model.Host.State["closing"]?.GetValue<bool>() == true) { Release(); return; }
         lastModifiers = e.Modifiers; lastX = e.X; lastY = e.Y;
         if (e.Kind is ViewportInputKind.FocusLost or ViewportInputKind.CaptureLost or ViewportInputKind.Resized)
         { Release(); return; }
@@ -197,5 +198,5 @@ public sealed class GameInput : IViewportInteraction
         ["qualification_input"] = viewport?.QualificationInput ?? false, ["ignored_interactive_messages"] = viewport?.IgnoredInteractiveMessages ?? 0,
         ["captured"] = Captured, ["session_id"] = capturedSession,
         ["profile_path"] = profilePath, ["defaults"] = Defaults, ["gamepad_mode"] = GamepadMode, ["gamepad_id"] = GamepadId,
-        ["profile_format"] = ProfileFormat, ["configuration_pending"] = replaceProfile, ["native"] = model.Host.Call("desktop.input.inspect") };
+        ["profile_format"] = ProfileFormat, ["configuration_pending"] = replaceProfile, ["native"] = model.Host.State["closing"]?.GetValue<bool>() == true ? model.Host.State["input"]?.DeepClone() : model.Host.Call("desktop.input.inspect") };
 }

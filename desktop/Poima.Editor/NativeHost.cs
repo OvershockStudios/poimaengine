@@ -63,9 +63,11 @@ public sealed class NativeHost : IDisposable
                 || !JsonNode.DeepEquals(State["components"], state["components"])
                 || !JsonNode.DeepEquals(State["views"]?["game"]?["camera"], state["views"]?["game"]?["camera"])
                 || !JsonNode.DeepEquals(State["input"], state["input"])
+                || !JsonNode.DeepEquals(State["audio"], state["audio"])
+                || !JsonNode.DeepEquals(State["closing"], state["closing"])
                 || !JsonNode.DeepEquals(State["views"]?["game"]?["preparation_error"], state["views"]?["game"]?["preparation_error"]);
             State = state; lastSelected = selected; sessionError = null;
-            foreach (var view in attached.Keys.ToArray())
+            foreach (var view in state["closing"]?.GetValue<bool>() == true ? Array.Empty<string>() : attached.Keys.ToArray())
             {
                 if (graphicsFailed.Contains(view)) continue;
                 var drawn = Native.DrawView(handle, view);

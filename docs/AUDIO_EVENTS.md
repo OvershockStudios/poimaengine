@@ -56,6 +56,10 @@ Output prebuffers 2,048 frames, uses bounded backpressure above 4,800 queued inp
 
 The player response's `audio` object reports driver, enabled state, submitted frames, maximum queued input frames, observed empty queues, backpressure time, stream-drained state, voice starts, peak, over-range samples and DSP time. An observed empty input queue is **not** a measured hardware underrun; queue length is **not** end-to-end output latency. Draining SDL's stream is not evidence that the final sample reached the speakers. Physical-device loopback, subjective listening, focus/device-loss stress and latency qualification remain separate gates.
 
+## Editor device output
+
+The desktop editor has a separate [bounded DSP worker and Audio window](EDITOR_AUDIO.md), with guarded enable/mute/volume controls, epoch invalidation and asynchronous shutdown. It follows automatic committed Play ticks and keeps SDL submissions on the owner thread. The synchronous standalone player adapter described above is unchanged.
+
 ## DSP and platform boundaries
 
 Logical events and cooked audio assets do not depend on Steam Audio types. Each presentation stream owns a persistent native context/HRTF and each voice retains direct and binaural filter state. At most 256 delayed/active/tail DSP voices may coexist; exceeding that presentation budget fails explicitly. Voice prioritization and virtualization remain unfinished.

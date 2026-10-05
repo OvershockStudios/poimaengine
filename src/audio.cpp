@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/audio.hpp"
+#include "audio_hrtf.hpp"
 #include "poima/assets.hpp"
 #include <algorithm>
 #include <chrono>
@@ -98,7 +99,7 @@ AudioReport observe_audio(const AudioSnapshot& s,std::uint32_t frames) {
     }
     if(frames==0)return report;
     mark=Clock::now();IPLAudioSettings audio_settings{audio_rate,audio_block};Handle<IPLHRTF,iplHRTFRelease> hrtf;
-    IPLHRTFSettings hrtf_settings{};hrtf_settings.type=IPL_HRTFTYPE_DEFAULT;hrtf_settings.volume=1;status(iplHRTFCreate(context.value,&audio_settings,&hrtf_settings,&hrtf.value));
+    IPLHRTFSettings hrtf_settings{};hrtf_settings.type=IPL_HRTFTYPE_DEFAULT;hrtf_settings.volume=1;status(audio_detail::create_hrtf(context.value,&audio_settings,&hrtf_settings,&hrtf.value));
     report.samples.resize(std::size_t(frames)*2);
     for(std::size_t i=0;i<s.sources.size();++i) {
         Handle<IPLDirectEffect,iplDirectEffectRelease> filter;IPLDirectEffectSettings filter_settings{1};status(iplDirectEffectCreate(context.value,&audio_settings,&filter_settings,&filter.value));

@@ -70,6 +70,8 @@ public sealed class EditorModel : IDisposable
     public void Note(string text) { if (Log.Count >= 256) Log.RemoveAt(0); Log.Add(text); Changed?.Invoke(this, EventArgs.Empty); }
     private void HostChanged(object? sender, EventArgs args)
     {
+        // Shutdown pumps must not trigger camera/entity RPCs or live Inspector queries.
+        if (Host.State["closing"]?.GetValue<bool>() == true) { SyncPlayback(); return; }
         var authoredChanged = Host.State["revision"]?.GetValue<long>() != Revision;
         var selectionChanged = Host.State["selected"]?.GetValue<string>() != observedSelection;
         if (authoredChanged || selectionChanged) Refresh();

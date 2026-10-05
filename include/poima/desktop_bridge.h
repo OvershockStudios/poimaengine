@@ -41,6 +41,9 @@ POIMA_DESKTOP_API void poima_desktop_detach(void* host);
 POIMA_DESKTOP_API int poima_desktop_attach_view(void* host,const char* view,void* hwnd);
 POIMA_DESKTOP_API int poima_desktop_draw_view(void* host,const char* view);
 POIMA_DESKTOP_API void poima_desktop_detach_view(void* host,const char* view);
+// GUI shutdown: call desktop.close.begin, keep polling until audio.closed, then
+// detach/destroy. This keeps the UI responsive while uncancellable acoustic DSP
+// retires. Direct destroy remains synchronous and can wait for an SDK call.
 POIMA_DESKTOP_API void poima_desktop_destroy(void* host);
 // Error text is owned by host (or thread-local for NULL/invalid host), not freed
 // by the caller. Exceptions never cross this ABI. There is no cross-thread API.

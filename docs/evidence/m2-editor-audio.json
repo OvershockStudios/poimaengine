@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "milestone": "0.0.39 editor audio",
+  "date": "2026-10-05",
+  "passed": true,
+  "package": {
+    "path": "build/desktop-audio-reviewable",
+    "inventory": {
+      "verified": true,
+      "files_including_manifest": 362,
+      "payload_files": 361,
+      "resolved_packages": 36,
+      "runtime_packs": 2
+    },
+    "artifacts": {
+      "build/desktop-audio-reviewable/poima.exe": "8e11e30390cb63dde1e750f55c906f723de6e47c2a3ac053aa423e07aaf6924b",
+      "build/desktop-audio-reviewable/poima_desktop.dll": "3cbb2ee95c671fac447e9baa5b328f2fece8541f9ff28988a4978c63e81844c7",
+      "build/desktop-audio-reviewable/Poima.Editor.dll": "05380102a43af0d076923375ea0f54cb3db541e92a537c04e9730871e0e58d97",
+      "build/desktop-audio-reviewable/gameplay/Poima.ManagedBridge.dll": "b06b5e216b71dcc3996902209e6c5457724ff2ba3d26b77fb9eac83e0a29a2a3",
+      "build/desktop-audio-reviewable/gameplay/Poima.Gameplay.dll": "aeefe4caf1b5531520c647071c329325f09f41bb888fde544fcc70077e1db4fa"
+    }
+  },
+  "linux": {
+    "runtime_suites": 51,
+    "authoring_only_suites": 42,
+    "logs": [
+      {
+        "path": "build/editor-audio-linux-tests-final.log",
+        "sha256": "9b6c7004bcaca4834eb592b9f9fcba2d171f5ff740a1b26823d002fe768165b0"
+      },
+      {
+        "path": "build/editor-audio-headless-tests-final.log",
+        "sha256": "682cd3f331360c9034fa9bde84ff7c4d4b1839671ce951e1c7acd6690d092679"
+      }
+    ]
+  },
+  "native_units": {
+    "real_audio_groups_per_os": 5,
+    "world_snapshot_lifetime": true,
+    "coverage": [
+      "Exact asynchronous/synchronous Steam Audio PCM",
+      "Concurrent HRTF creation",
+      "Owner-only sink and worker-only DSP",
+      "Blocked DSP shutdown and stale epoch rejection",
+      "Bounded queues, immutable asset closure and repeated replacement lifetime",
+      "DSP/device faults and retry",
+      "World snapshot guards, save replacement and post-destruction lifetime"
+    ]
+  },
+  "windows": {
+    "dummy": {
+      "path": "build/editor-audio-native-dummy/run-1eca635cc6fd49c7bcbcbd996fdf46fe/evidence.json",
+      "sha256": "d34cdeb3d973492497b4f2d638c2b36d42ca7f0209be32e4da57427056d14a92",
+      "groups": 7,
+      "calls": 65,
+      "passed": true
+    },
+    "actual_muted": {
+      "path": "build/editor-audio-native-actual/run-f70bb20ee19342da986df4ce0d74dbd8/evidence.json",
+      "sha256": "8b893d306585890c997eb16d05f80f1c33788ea475a2ea5cde53566839c15392",
+      "groups": 7,
+      "calls": 65,
+      "passed": true
+    },
+    "playback": {
+      "path": "build/editor-audio-playback-regression/run-ffa494c436904c768c9698a424b86a64/result.json",
+      "sha256": "fc1cb35cad25d665ef62d522b2aa143f32726772869dadc280ab50e83620b8ca",
+      "groups": 6,
+      "calls": 123,
+      "passed": true
+    },
+    "input": {
+      "path": "build/editor-audio-input-regression/run-ca75fe431674408399e5c816208093c6/result.json",
+      "sha256": "07eb22d9c4bc60476c552dbaf0b632f5ac6b62dfbb165fc8b4e9dda2bc8b61d4",
+      "groups": 8,
+      "calls": 306,
+      "passed": true
+    }
+  },
+  "editor": [
+    {
+      "path": "build/editor-audio-ui-gpu1/014e1067e7894b01847fe1a79dbe31fa/evidence.json",
+      "gpu": 1,
+      "actions": 67,
+      "groups": 8,
+      "passed": true,
+      "shutdown_pumps": 1,
+      "terminal_audio": {
+        "state": "closed",
+        "closed": true,
+        "driver": "wasapi",
+        "device_open": false,
+        "submitted_frames": 35840,
+        "queued_frames": 0,
+        "device_queued_frames": 0,
+        "error": null
+      },
+      "visual": "build/editor-audio-ui-gpu1/014e1067e7894b01847fe1a79dbe31fa/audio.png"
+    },
+    {
+      "path": "build/editor-audio-ui-gpu0/1d30c9d6b29042cdb9ccb08a8218cb4f/evidence.json",
+      "gpu": 0,
+      "actions": 67,
+      "groups": 8,
+      "passed": true,
+      "shutdown_pumps": 1,
+      "terminal_audio": {
+        "state": "closed",
+        "closed": true,
+        "driver": "wasapi",
+        "device_open": false,
+        "submitted_frames": 30208,
+        "queued_frames": 0,
+        "device_queued_frames": 0,
+        "error": null
+      },
+      "visual": "build/editor-audio-ui-gpu0/1d30c9d6b29042cdb9ccb08a8218cb4f/audio.png"
+    },
+    {
+      "path": "build/editor-audio-full-frontend/907b0b6602164c4c938286dbdc5177e7/evidence.json",
+      "gpu": 1,
+      "actions": 232,
+      "restart_actions": 4,
+      "passed": true,
+      "shutdown_pumps": 1
+    }
+  ],
+  "managed": {
+    "abi": {
+      "evidence": "build/editor-audio-managed-abi-windows.json",
+      "checks": 26,
+      "additional_collectible_module_lifetimes": 100,
+      "build_warnings": 0,
+      "build_errors": 0
+    },
+    "components": {
+      "evidence": "build/editor-audio-components-coreclr/4518891cf368463091cf39d7959f445c/evidence.json",
+      "groups": 6,
+      "rpc_calls": 408,
+      "coreclr_reloads": 100,
+      "hosting": "Installed .NET 10.0.12 shared-framework layout; exact packaged CLI, bridge and SDK."
+    }
+  },
+  "initial_failures": [
+    "World audio fixture requested motion above existing 100 m/s bound; corrected fixture to 60 m/s.",
+    "Windows test needed explicit <exception>; production code unchanged.",
+    "Native harness initially expected a second epoch increment on resume and the wrong existing camera error code; corrected assertions.",
+    "Flat editor hostfxr used with standalone native CLI lacks shared-framework layout; installed-hostfxr qualification passed with exact packaged bridge/SDK. Editor cohosting is a separate working path."
+  ],
+  "limitations": [
+    "First Windows actual-device open poll took 0.665895 seconds on a shared machine with builds active, followed by 0.557810 seconds dropped by the existing clock cap. SDL initialization is still synchronous; this is not a fully nonblocking or hard-latency audio system.",
+    "Tests used muted output or zero device volume; no subjective listening, loopback or physical input claim.",
+    "No full reflection/reverb, mixer buses, compressed streaming, virtualization or console audio implementation.",
+    "Native direct destruction may wait for an uncancellable SDK call; the GUI uses asynchronous retirement.",
+    "Worker timing totals are not owner-profiler worker-thread events. Queue counts are not hardware latency/underrun measurements.",
+    "Gameplay services ABI5 unchanged; no new NativeAOT artifact publication in this milestone."
+  ],
+  "qualification_artifacts": [
+    {
+      "path": "build/editor-audio-native-validation.json",
+      "sha256": "182b718a9b17f88fb0bb1a8fe01e38f7ed76b97df9333133788a664bf0a633d7"
+    },
+    {
+      "path": "build/editor-audio-desktop-validation.json",
+      "sha256": "ab98c302d60e1961c31502c296bdf742384a302c66a3e3a3cd55314a55bfb2a5"
+    },
+    {
+      "path": "build/editor-audio-managed-validation.json",
+      "sha256": "0329ec97daba76f170ad072c073d7953e8fb6b50a319d4778676bb7063bcef05"
+    }
+  ]
+}

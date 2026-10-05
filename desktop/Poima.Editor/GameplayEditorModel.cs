@@ -42,6 +42,7 @@ public sealed class GameplayEditorModel : IDisposable
     }
     private void HostChanged(object? sender, EventArgs args)
     {
+        if (editor.Host.State["closing"]?.GetValue<bool>() == true) return;
         if (CurrentGeneration != Generation && !Dirty) { RevertConfiguration(); return; }
         // Full schema/values are fetched only by explicit user actions. Tick
         // notifications update status without replacing text or allocating fields.
