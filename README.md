@@ -105,3 +105,5 @@ Start with the [Poima wiki](https://github.com/OvershockStudios/poimaengine/wiki
 Roadmap items describe intended systems. Use the current executable's `capabilities`, command schemas and `world.describe` to discover what a particular build exposes.
 
 Poima's code is licensed under [Apache-2.0](LICENSE). Dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md) and the notices included with built packages.
+
+The Poima name is covered separately by the [branding notice](TRADEMARKS.md).
