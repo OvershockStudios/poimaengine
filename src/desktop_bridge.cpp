@@ -4,6 +4,7 @@
 #include "poima/local_session.hpp"
 #include "poima/hosted_viewport.hpp"
 #include "poima/animation.hpp"
+#include "poima/editor_gizmo.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -71,7 +72,7 @@ struct Camera {
     }
 };
 struct Capture {
-    std::uint64_t id=0,revision=0,tick=0,camera_revision=0;std::string path,session,state="queued",detail;int code=0;bool runtime=false;
+    std::uint64_t id=0,revision=0,tick=0,camera_revision=0,gizmo_generation=0;std::string path,session,state="queued",detail;int code=0;bool runtime=false;
     Clock::time_point deadline;Json result=Json::object();
     Json json() const {
         Json out={{"capture_id",id},{"state",state},{"revision",revision},{"path",path}};
@@ -137,6 +138,72 @@ std::optional<double> hit_object(const SceneObject& object,const Point& origin,c
     }
     return nearest;
 }
+const char* axis_name(EditorGizmoAxis axis) { return axis==EditorGizmoAxis::x ? "x" : axis==EditorGizmoAxis::y ? "y" : "z"; }
+Matrix4 transform_matrix(const Json& value) {
+    return local_matrix(value.at("position").get<Point>(),value.at("rotation").get<std::array<double,4>>(),value.at("scale").get<Point>());
+}
+Json decompose_transform(const Matrix4& matrix) {
+    Point scale{};std::array<Point,3> columns;
+    for(std::size_t i=0;i<3;++i) {
+        columns[i]={matrix[i*4],matrix[i*4+1],matrix[i*4+2]};scale[i]=std::sqrt(dot(columns[i],columns[i]));
+        require(std::isfinite(scale[i]) && scale[i]>0,"Gizmo result has a singular scale.");
+        for(auto& x:columns[i])x/=scale[i];
+    }
+    require(std::abs(dot(columns[0],columns[1]))<1e-8 && std::abs(dot(columns[0],columns[2]))<1e-8 && std::abs(dot(columns[1],columns[2]))<1e-8 && dot(cross(columns[0],columns[1]),columns[2])>0,
+        "This world-space edit would introduce shear. Use Local space or change the parent scale.");
+    // Stable matrix-to-quaternion conversion; choose the largest diagonal when
+    // the trace is negative (including rotations near 180 degrees).
+    const double a=columns[0][0],b=columns[1][1],c=columns[2][2];std::array<double,4> q{};
+    if(a+b+c>0) { const auto t=2*std::sqrt(1+a+b+c);q={(columns[1][2]-columns[2][1])/t,(columns[2][0]-columns[0][2])/t,(columns[0][1]-columns[1][0])/t,t/4}; }
+    else if(a>b && a>c) { const auto t=2*std::sqrt(1+a-b-c);q={t/4,(columns[1][0]+columns[0][1])/t,(columns[2][0]+columns[0][2])/t,(columns[1][2]-columns[2][1])/t}; }
+    else if(b>c) { const auto t=2*std::sqrt(1+b-a-c);q={(columns[1][0]+columns[0][1])/t,t/4,(columns[2][1]+columns[1][2])/t,(columns[2][0]-columns[0][2])/t}; }
+    else { const auto t=2*std::sqrt(1+c-a-b);q={(columns[2][0]+columns[0][2])/t,(columns[2][1]+columns[1][2])/t,t/4,(columns[0][1]-columns[1][0])/t}; }
+    double length=0;for(auto x:q)length+=x*x;length=std::sqrt(length);for(auto& x:q)x/=length;
+    return {{"position",{matrix[12],matrix[13],matrix[14]}},{"rotation",q},{"scale",scale}};
+}
+struct GizmoGesture {
+    std::uint64_t id=0,revision=0,camera_revision=0;
+    std::uint32_t width=0,height=0;
+    std::string entity;
+    EditorGizmoDrag drag;
+    EditorGizmoMode mode=EditorGizmoMode::move;
+    bool local=false;
+    Matrix4 parent=identity_matrix(),world=identity_matrix();
+    std::array<Point,3> basis{};
+    Json original,transform;
+    std::optional<SceneSnapshot> preview;
+};
+Json gesture_transform(const GizmoGesture& gesture,double value) {
+    auto result=gesture.original;
+    const auto index=static_cast<std::size_t>(gesture.drag.axis);
+    const auto position=gesture.original.at("position").get<Point>();
+    const auto rotation=gesture.original.at("rotation").get<std::array<double,4>>();
+    auto scale=gesture.original.at("scale").get<Point>();
+    if(gesture.mode==EditorGizmoMode::move) {
+        if(value==0)return result;
+        auto axis=gesture.basis[index];const auto length=std::sqrt(dot(axis,axis));for(auto& x:axis)x=x/length*value;
+        const auto delta=transformed(inverse_affine(gesture.parent),axis,0);auto p=position;for(std::size_t i=0;i<3;++i)p[i]+=delta[i];result["position"]=p;
+    } else if(gesture.local) {
+        if(gesture.mode==EditorGizmoMode::scale) { if(value==1)return result;scale[index]*=value;result["scale"]=scale; }
+        else {
+            if(value==0)return result;
+            std::array<double,4> q{0,0,0,std::cos(value/2)};q[index]=std::sin(value/2);
+            const auto m=multiply(local_matrix(position,rotation,{1,1,1}),local_matrix({0,0,0},q,scale));result=decompose_transform(m);
+        }
+    } else {
+        if(value==(gesture.mode==EditorGizmoMode::scale ? 1 : 0))return result;
+        auto delta=identity_matrix();
+        if(gesture.mode==EditorGizmoMode::scale)delta[index*4+index]=value;
+        else { std::array<double,4> q{0,0,0,std::cos(value/2)};q[index]=std::sin(value/2);delta=local_matrix({0,0,0},q,{1,1,1}); }
+        const Point pivot{gesture.world[12],gesture.world[13],gesture.world[14]};const auto rotated=transformed(delta,pivot,0);
+        for(std::size_t i=0;i<3;++i)delta[12+i]=pivot[i]-rotated[i];
+        result=decompose_transform(multiply(inverse_affine(gesture.parent),multiply(delta,gesture.world)));
+    }
+    for(const auto* field:{"position","rotation","scale"})for(const auto& item:result.at(field)) {
+        const double v=item;require(std::isfinite(v) && std::abs(v)<=1e9 && (std::string_view(field)!="scale" || v>0),"Gizmo transform exceeds authored numeric limits.");
+    }
+    return result;
+}
 struct Bridge {
     std::thread::id owner=std::this_thread::get_id();
     std::unique_ptr<LocalSessionServer> server;
@@ -153,6 +220,10 @@ struct Bridge {
     std::string runtime_parent_session;
     std::optional<RenderReport> last_render;
     bool faulted=false;
+    std::string gizmo_mode="move",gizmo_space="world";
+    std::uint64_t gizmo_generation=0,next_drag=1;
+    std::optional<GizmoGesture> gesture;
+    Json committed_gesture=nullptr;
     Bridge(const std::string& path,const std::string& local_endpoint,int gpu,std::uint32_t samples):endpoint(local_endpoint) {
         require(gpu>=-1 && gpu<=4095 && (samples==1 || samples==4),"GPU must be -1..4095 and samples must be 1 or 4.");render.gpu=gpu;render.samples=samples;
         world_path=fs::weakly_canonical(fs::absolute(path_of(path)));
@@ -186,7 +257,7 @@ struct Bridge {
         if(!capture || capture->state!="queued")return;
         if(Clock::now()>=capture->deadline) { fail_capture(-32003,"Capture timed out waiting for a drawable native viewport.");return; }
         const auto state=world->runtime_status();
-        if(revision()!=capture->revision || camera_revision!=capture->camera_revision || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick)))
+        if(revision()!=capture->revision || camera_revision!=capture->camera_revision || gizmo_generation!=capture->gizmo_generation || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick)))
             fail_capture(-32009,"World, runtime tick, or camera changed before capture presentation.");
     }
     std::string capture_path(const Json& value) const {
@@ -207,8 +278,117 @@ struct Bridge {
         auto report=viewport->report();
         if(!last_render || !report.gpu_name.empty())last_render=std::move(report);
     }
+    void changed_gizmo() {
+        require(gizmo_generation<max_integer,"Gizmo generation exhausted.");++gizmo_generation;
+        fail_capture(-32009,"Gizmo or selection changed before capture presentation.");
+    }
+    void cancel_gizmo() { if(gesture) { gesture.reset();changed_gizmo(); } }
+    void expire_gizmo() {
+        if(!gesture)return;
+        bool changed=revision()!=gesture->revision || camera_revision!=gesture->camera_revision || selected!=gesture->entity || world->runtime_status().active;
+        if(viewport) { const auto size=viewport->extent();changed|=size[0]!=gesture->width || size[1]!=gesture->height; }
+        if(changed)cancel_gizmo();
+    }
+    Json gizmo_state() const {
+        Json active=nullptr;
+        if(gesture)active={{"drag_id",gesture->id},{"axis",axis_name(gesture->drag.axis)},{"transform",gesture->transform}};
+        return {{"mode",gizmo_mode},{"space",gizmo_space},{"generation",gizmo_generation},{"active",active}};
+    }
+    std::array<std::uint32_t,2> gizmo_extent(const Json& params) const {
+        const auto w=integer(params.at("width")),h=integer(params.at("height"));
+        require(w>=1 && h>=1 && w<=16384 && h<=16384,"Gizmo viewport dimensions must be 1..16384 physical pixels.");
+        if(viewport) { const auto actual=viewport->extent();require(w==actual[0] && h==actual[1],"Gizmo dimensions differ from attached viewport.",-32009); }
+        return {static_cast<std::uint32_t>(w),static_cast<std::uint32_t>(h)};
+    }
+    EditorGizmoMode gizmo_kind() const { return gizmo_mode=="rotate" ? EditorGizmoMode::rotate : gizmo_mode=="scale" ? EditorGizmoMode::scale : EditorGizmoMode::move; }
+    std::array<Point,3> gizmo_basis(const Matrix4& matrix,const Json* transform=nullptr) const {
+        if(gizmo_space=="world")return {Point{1,0,0},Point{0,1,0},Point{0,0,1}};
+        std::array<Point,3> basis{Point{matrix[0],matrix[1],matrix[2]},Point{matrix[4],matrix[5],matrix[6]},Point{matrix[8],matrix[9],matrix[10]}};
+        // A local rotation is parent*R*Q*S. Its ring follows parent*R, not
+        // the object's own scale S, which remains after the inserted Q.
+        if(gizmo_mode=="rotate" && transform)for(std::size_t i=0;i<3;++i)for(auto& x:basis[i])x/=transform->at("scale").at(i).get<double>();
+        return basis;
+    }
+    EditorGizmo gizmo_geometry(std::uint32_t width,std::uint32_t height) {
+        if(gizmo_mode=="none" || selected.empty() || world->runtime_status().active)return {};
+        Matrix4 matrix;Json transform;
+        if(gesture)matrix=multiply(gesture->parent,transform_matrix(gesture->transform));
+        else {
+            try { matrix=world_call("entity.world_transform",{{"id",selected}}).at("matrix").get<Matrix4>(); }
+            catch(const Failure& failure) { if(failure.code==-32004)return {};throw; }
+        }
+        if(gizmo_mode=="rotate" && gizmo_space=="local")transform=gesture ? gesture->transform : world_call("entity.get",{{"id",selected},{"component","Transform"}}).at("value");
+        SceneSnapshot scene;scene.camera_world=camera.native().world;scene.vertical_fov=camera.fov;scene.near_plane=camera.near_plane;scene.far_plane=camera.far_plane;
+        return make_editor_gizmo(scene,width,height,{matrix[12],matrix[13],matrix[14]},gizmo_basis(matrix,transform.is_null() ? nullptr : &transform),gizmo_kind(),gesture ? std::optional(gesture->drag.axis) : std::nullopt);
+    }
+    Json gizmo_inspect(const Json& params) {
+        fields(params,{"width","height"},{"width","height"});const auto size=gizmo_extent(params);expire_gizmo();
+        const auto geometry=gizmo_geometry(size[0],size[1]);auto result=gizmo_state();result["handles"]=Json::array();
+        for(std::size_t i=0;i<3;++i)result["handles"].push_back({{"axis",axis_name(static_cast<EditorGizmoAxis>(i))},{"visible",geometry.handles[i].visible},{"points",geometry.handles[i].screen_points}});
+        result["width"]=size[0];result["height"]=size[1];result["overlay_vertices"]=geometry.triangles.size();return result;
+    }
+    Json gizmo_configure(const Json& params) {
+        fields(params,{"mode","space"},{"mode","space"});require(params.at("mode").is_string() && params.at("space").is_string(),"Gizmo mode and space must be strings.");
+        const auto mode=params.at("mode").get<std::string>(),space=params.at("space").get<std::string>();
+        require(mode=="none" || mode=="move" || mode=="rotate" || mode=="scale","Unknown gizmo mode.");require(space=="world" || space=="local","Unknown gizmo space.");
+        if(mode!=gizmo_mode || space!=gizmo_space) { cancel_gizmo();gizmo_mode=mode;gizmo_space=space;changed_gizmo(); }
+        return gizmo_state();
+    }
+    Json gizmo_begin(const Json& params) {
+        fields(params,{"revision","width","height","x","y"},{"revision","width","height","x","y"});
+        const auto expected=integer(params.at("revision"));const auto size=gizmo_extent(params);
+        const double x=number(params.at("x"),0,size[0],"Gizmo x is outside the viewport."),y=number(params.at("y"),0,size[1],"Gizmo y is outside the viewport.");
+        expire_gizmo();require(expected==revision(),"Authored revision conflict.",-32009);require(!gesture,"A gizmo drag is already active.",-32009);
+        require(!world->runtime_status().active,"Stop runtime before editing transforms.",-32009);
+        const auto geometry=gizmo_geometry(size[0],size[1]);const auto axis=hit_test_editor_gizmo(geometry,x,y);
+        if(!axis)return {{"started",false}};
+        const auto drag=begin_editor_gizmo_drag(geometry,*axis,x,y);if(!drag)return {{"started",false}};
+        require(next_drag<=max_integer,"Gizmo identity limit reached.");GizmoGesture candidate;
+        candidate.id=next_drag;candidate.revision=expected;candidate.camera_revision=camera_revision;candidate.width=size[0];candidate.height=size[1];candidate.entity=selected;candidate.drag=*drag;
+        candidate.mode=gizmo_kind();candidate.local=gizmo_space=="local";
+        const auto entity=world_call("entity.get",{{"id",selected}}).at("value");candidate.original=entity.at("components").at("Transform");candidate.transform=candidate.original;
+        if(!entity.at("parent").is_null())candidate.parent=world_call("entity.world_transform",{{"id",entity.at("parent")}}).at("matrix").get<Matrix4>();
+        candidate.world=multiply(candidate.parent,transform_matrix(candidate.original));candidate.basis=gizmo_basis(candidate.world,&candidate.original);
+        changed_gizmo();gesture=std::move(candidate);++next_drag;
+        return {{"started",true},{"drag_id",gesture->id},{"axis",axis_name(*axis)}};
+    }
+    GizmoGesture& guarded_gesture(const Json& params) {
+        const auto id=integer(params.at("drag_id"));expire_gizmo();require(gesture && gesture->id==id,"Gizmo drag is absent or invalidated.",-32009);return *gesture;
+    }
+    Json gizmo_update(const Json& params) {
+        fields(params,{"drag_id","x","y","snap"},{"drag_id","x","y"});
+        const double x=number(params.at("x"),-1e6,1e6,"Gizmo x is out of range."),y=number(params.at("y"),-1e6,1e6,"Gizmo y is out of range.");
+        require(!params.contains("snap") || params.at("snap").is_boolean(),"Gizmo snap must be boolean.");auto& current=guarded_gesture(params);auto drag=current.drag;
+        const auto delta=update_editor_gizmo_drag(drag,x,y);require(delta.has_value(),"Pointer cannot resolve a valid gizmo transform.");
+        double value=*delta;
+        if(params.value("snap",false)) {
+            if(current.mode==EditorGizmoMode::move)value=std::round(value/.25)*.25;
+            else if(current.mode==EditorGizmoMode::rotate) { constexpr double step=3.14159265358979323846/12;value=std::round(value/step)*step; }
+            else value=std::max(.1,1+std::round((value-1)/.1)*.1);
+        }
+        auto transform=gesture_transform(current,value);
+        if(transform!=current.transform) {
+            // Prepare the entire preview first. Failures retain the previous
+            // valid drag clock and snapshot; no authored state has been touched.
+            auto preview=world->authored_preview(camera.native(),current.entity,transform.at("position").get<Point>(),transform.at("rotation").get<std::array<double,4>>(),transform.at("scale").get<Point>());
+            changed_gizmo();current.transform=std::move(transform);current.preview=std::move(preview);
+        }
+        current.drag=std::move(drag);return {{"drag_id",current.id},{"transform",current.transform}};
+    }
+    Json gizmo_commit(const Json& params) {
+        fields(params,{"drag_id","request_id"},{"drag_id","request_id"});const auto id=integer(params.at("drag_id"));
+        const auto receipt=identifier(params.at("request_id"));
+        if(!committed_gesture.is_null() && committed_gesture.at("drag_id")==id) {
+            require(committed_gesture.at("request_id")==receipt,"Gizmo commit retry differs from its retained receipt.",-32009);return committed_gesture.at("result");
+        }
+        auto& current=guarded_gesture(params);
+        Json result={{"revision",current.revision},{"changed",false}};
+        if(current.transform!=current.original)result=world_call("world.transact",{{"base_revision",current.revision},{"request_id",receipt},
+            {"ops",Json::array({{{"op","component.set"},{"id",current.entity},{"type","Transform"},{"value",current.transform}}})}});
+        committed_gesture={{"drag_id",id},{"request_id",receipt},{"result",result}};cancel_gizmo();return result;
+    }
     Json inspect() {
-        expire_capture();return {{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
+        expire_gizmo();expire_capture();return {{"gizmo",gizmo_state()},{"revision",revision()},{"runtime",runtime_json()},{"selected",selected.empty() ? Json(nullptr) : Json(selected)},
             {"attached",bool(viewport)},{"graphics_error",graphics_error.empty() ? Json(nullptr) : Json(graphics_error)},{"camera",camera.json()},
             {"capture",capture ? capture->json() : Json(nullptr)},{"frames_presented",presented_frames},{"render",render_json()},
             {"presented_revision",presented_revision ? Json(*presented_revision) : Json(nullptr)},{"presented_tick",presented_tick ? Json(*presented_tick) : Json(nullptr)},
@@ -220,7 +400,7 @@ struct Bridge {
         const double x=number(params.at("x"),0,1,"Pick x must be in [0,1]."),y=number(params.at("y"),0,1,"Pick y must be in [0,1].");
         const double aspect=number(params.at("aspect"),.01,100,"Viewport aspect must be in [0.01,100].");
         require(expected==revision(),"Authored revision conflict.",-32009);
-        const auto scene=snapshot();const auto runtime=world->runtime_status();
+        expire_gizmo();const auto scene=gesture && gesture->preview ? *gesture->preview : snapshot();const auto runtime=world->runtime_status();
         constexpr double pi=3.14159265358979323846;const double tangent=std::tan(scene.vertical_fov*pi/360);
         const Point local{(2*x-1)*aspect*tangent,(1-2*y)*tangent,-1};const double length=std::sqrt(dot(local,local));
         auto ray=transformed(scene.camera_world,local,0);for(auto& value:ray)value/=length;
@@ -264,7 +444,7 @@ struct Bridge {
         }
         Point position{};for(std::size_t axis=0;axis<3;++axis)position[axis]=target[axis]+back[axis]*distance;
         Camera candidate=camera;candidate.update({{"position",position},{"far",std::max(camera.far_plane,(distance-minimum_depth_offset)*1.1)}});
-        if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");camera=candidate;++camera_revision; }
+        if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");cancel_gizmo();camera=candidate;++camera_revision; }
         expire_capture();return {{"camera",camera.json()},{"target",target},{"distance",distance}};
     }
     Json describe() const {
@@ -278,10 +458,22 @@ struct Bridge {
         methods["desktop.camera"]=object({{"position",{{"type","array"},{"items",{{"type","number"},{"minimum",-1e9},{"maximum",1e9}}},{"minItems",3},{"maxItems",3}}},
             {"yaw",{{"type","number"},{"minimum",-1e9},{"maximum",1e9}}},{"pitch",{{"type","number"},{"minimum",-89},{"maximum",89}}},{"vertical_fov",{{"type","number"},{"minimum",5},{"maximum",150}}},
             {"near",{{"type","number"},{"minimum",.001}}},{"far",{{"type","number"},{"maximum",1e7}}}});
+        const Json dimension={{"type","integer"},{"minimum",1},{"maximum",16384}},pixel={{"type","number"},{"minimum",-1e6},{"maximum",1e6}},receipt={{"type","string"},{"pattern","^[0-9a-f]{32}$"}};
+        methods["desktop.gizmo.configure"]=object({{"mode",{{"enum",{"none","move","rotate","scale"}}}},{"space",{{"enum",{"world","local"}}}}},{"mode","space"});
+        methods["desktop.gizmo.inspect"]=object({{"width",dimension},{"height",dimension}},{"width","height"});
+        methods["desktop.gizmo.begin"]=object({{"revision",integer_schema},{"width",dimension},{"height",dimension},{"x",{{"type","number"},{"minimum",0},{"maximum",16384}}},{"y",{{"type","number"},{"minimum",0},{"maximum",16384}}}},{"revision","width","height","x","y"});
+        methods["desktop.gizmo.update"]=object({{"drag_id",integer_schema},{"x",pixel},{"y",pixel},{"snap",{{"type","boolean"}}}},{"drag_id","x","y"});
+        methods["desktop.gizmo.commit"]=object({{"drag_id",integer_schema},{"request_id",receipt}},{"drag_id","request_id"});
+        methods["desktop.gizmo.cancel"]=object(Json::object());
         methods["desktop.capture"]=object({{"revision",integer_schema},{"path",{{"type","string"},{"minLength",1}}}},{"revision","path"});
         methods["desktop.capture.status"]=object({{"capture_id",{{"type","integer"},{"minimum",1},{"maximum",max_integer}}}},{"capture_id"});
-        return {{"methods",methods},{"world_methods","world.describe"},{"capture",{{"completion","Asynchronous: queue returns capture_id/state; inspect status after poll/draw."},{"capacity",1},{"retained_results",1},{"timeout_ms",2000},{"guards","Authored revision, camera revision, runtime session and tick; pause automatic stepping while queued."},{"format","BMP; native viewport only; exclusive new path"}}},
+        return {{"methods",methods},{"world_methods","world.describe"},{"capture",{{"completion","Asynchronous: queue returns capture_id/state; inspect status after poll/draw."},{"capacity",1},{"retained_results",1},{"timeout_ms",2000},{"guards","Authored revision, camera, gizmo/selection generation, runtime session and tick; pause edits/stepping while queued."},{"format","BMP; native viewport only; exclusive new path"}}},
             {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
+            {"gizmo",{{"coordinates","Physical client pixels, top-left; attached extent must match. begin hit-tests handles. World/local axes; default move/world."},
+                {"preview","update changes only presentation, including child transforms, lights and skin palettes. commit produces one guarded world transaction; cancel writes nothing."},
+                {"invalidation","Authored revision, camera, selection, mode/space, runtime start, attached resize or detach cancels active drag."},
+                {"snapping","Control: 0.25 world meters for move, 15 degrees for rotate, 0.1 scale ratio."},
+                {"limits","Positive TRS scales only; world edits that require shear reject and preserve previous preview. Rotation samples must be less than 180 degrees apart. One retained successful commit receipt permits exact retries."}}},
             {"framing",{{"result","camera, target, distance"},{"bounds","Visible entity/descendant bounds in authored or frozen runtime hierarchy; non-rendered entities use a unit bound at their current world position."}}},
             {"threading","One creating UI thread; draw does not advance simulation."},{"lifetime","Detach/re-attach preserves the world and IPC endpoint."}};
     }
@@ -301,24 +493,30 @@ struct Bridge {
                     if(value.contains("result"))value["result"]["editor_discovery"]="desktop.describe";
                     response=value.dump();
                 }
-                return response;
+                expire_gizmo();return response;
             }
             fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});const auto params=message.value("params",Json::object());Json result;
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
             else if(method=="desktop.inspect") { fields(params,{});result=inspect(); }
+            else if(method=="desktop.gizmo.configure")result=gizmo_configure(params);
+            else if(method=="desktop.gizmo.inspect")result=gizmo_inspect(params);
+            else if(method=="desktop.gizmo.begin")result=gizmo_begin(params);
+            else if(method=="desktop.gizmo.update")result=gizmo_update(params);
+            else if(method=="desktop.gizmo.commit")result=gizmo_commit(params);
+            else if(method=="desktop.gizmo.cancel") { fields(params,{});cancel_gizmo();result=gizmo_state(); }
             else if(method=="desktop.pick")result=pick(params);
             else if(method=="desktop.frame")result=frame(params);
             else if(method=="desktop.camera") {
                 Camera candidate=camera;candidate.update(params);
-                if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");camera=candidate;++camera_revision; }
+                if(candidate.json()!=camera.json()) { require(camera_revision<max_integer,"Camera revision exhausted.");cancel_gizmo();camera=candidate;++camera_revision; }
                 expire_capture();result=camera.json();
             }
             else if(method=="desktop.select") {
-                fields(params,{"id"},{"id"});std::string next;if(!params.at("id").is_null()) { next=identifier(params.at("id"));world_call("entity.get",{{"id",next}}); }selected=std::move(next);result={{"selected",selected.empty() ? Json(nullptr) : Json(selected)}};
+                fields(params,{"id"},{"id"});std::string next;if(!params.at("id").is_null()) { next=identifier(params.at("id"));world_call("entity.get",{{"id",next}}); }if(next!=selected) { cancel_gizmo();changed_gizmo(); }selected=std::move(next);result={{"selected",selected.empty() ? Json(nullptr) : Json(selected)}};
             }else if(method=="desktop.capture") {
                 fields(params,{"revision","path"},{"revision","path"});expire_capture();require(viewport && !faulted,"A working attached native viewport is required.",-32003);require(!capture || capture->state!="queued","One capture is already pending.",-32009);
                 const auto expected=integer(params.at("revision"));require(expected==revision(),"Authored revision conflict.",-32009);const auto path=capture_path(params.at("path"));require(next_capture<=max_integer,"Capture identity limit reached.");const auto state=world->runtime_status();
-                Capture candidate;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=camera_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);result=capture->json();
+                Capture candidate;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);result=capture->json();
             }else if(method=="desktop.capture.status") {
                 fields(params,{"capture_id"},{"capture_id"});const auto value=integer(params.at("capture_id"));require(capture && capture->id==value,"Capture result is absent or was superseded.",-32004);expire_capture();result=capture->json();
             }else throw Failure(-32601,"Unknown desktop method.");
@@ -349,13 +547,15 @@ struct Bridge {
         const auto scene=snapshot();auto candidate=std::make_unique<HostedViewport>(render,scene,handle);viewport=std::move(candidate);faulted=false;graphics_error.clear();presented_revision.reset();presented_tick.reset();
     }
     void detach() {
+        cancel_gizmo();
         fail_capture(-32003,"Viewport detached before capture completed.");
         remember_render();
         viewport.reset();faulted=false;graphics_error.clear();presented_revision.reset();presented_tick.reset();
     }
     int draw() {
-        expire_capture();if(!viewport)return 0;require(!faulted,"Graphics failed; detach and attach the viewport to recover.",-32003);
-        const auto scene=snapshot();const auto runtime=world->runtime_status();bool presented=false;
+        expire_gizmo();expire_capture();if(!viewport)return 0;require(!faulted,"Graphics failed; detach and attach the viewport to recover.",-32003);
+        const auto scene=gesture && gesture->preview ? *gesture->preview : snapshot();const auto runtime=world->runtime_status();bool presented=false;
+        const auto extent=viewport->extent();viewport->set_overlay(gizmo_geometry(extent[0],extent[1]).triangles);
         // Destination changes invalidate only the capture job. This preflight
         // has not touched GPU state and must not disable a healthy viewport.
         if(capture && capture->state=="queued") {
@@ -374,7 +574,7 @@ struct Bridge {
         if(!presented)return 0;
         ++presented_frames;presented_revision=scene.revision;presented_tick=runtime.active ? std::optional<std::uint64_t>(runtime.tick) : std::nullopt;
         if(capture && capture->state=="queued") {
-            const auto& report=*last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",presented_frames},{"render",render_json()}};
+            const auto& report=*last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",presented_frames},{"gizmo",gizmo_state()},{"preview",bool(gesture && gesture->preview)},{"render",render_json()}};
         }
         return 1;
     }

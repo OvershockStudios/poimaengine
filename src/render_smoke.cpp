@@ -13,6 +13,8 @@
 #include "poima/editor_ui_ps.hpp"
 #endif
 #include "poima/skinning_cs.hpp"
+#include "poima/editor_overlay_vs.hpp"
+#include "poima/editor_overlay_ps.hpp"
 #include <set>
 #include <map>
 #include "poima/scene_vs.hpp"
@@ -238,6 +240,14 @@ struct Context {
     bool shadow_ready=false,skin_pipeline_ready=false,renderer_fault=false;
     bool editor=false,hosted=false,scene_visible=true,capture_exclusive=false;
     std::optional<nvrhi::Viewport> scene_viewport;
+    std::vector<EditorOverlayVertex> overlay_data;
+    nvrhi::ShaderHandle overlay_vs,overlay_ps;
+    nvrhi::InputLayoutHandle overlay_input;
+    nvrhi::BindingLayoutHandle overlay_layout;
+    nvrhi::BindingSetHandle overlay_bindings;
+    nvrhi::GraphicsPipelineHandle overlay_pipeline;
+    nvrhi::BufferHandle overlay_vertices;
+    std::vector<nvrhi::FramebufferHandle> overlay_framebuffers;
 #if POIMA_EDITOR
     nvrhi::ShaderHandle ui_vs,ui_ps;
     nvrhi::InputLayoutHandle ui_input;
@@ -260,6 +270,8 @@ struct Context {
             try { device.waitIdle(); } catch (...) { /* Preserve the original diagnostic. */ }
         }
         commands = nullptr;
+        overlay_framebuffers.clear();overlay_pipeline=nullptr;overlay_bindings=nullptr;overlay_layout=nullptr;
+        overlay_vertices=nullptr;overlay_input=nullptr;overlay_vs=nullptr;overlay_ps=nullptr;
 #if POIMA_EDITOR
         if(ui_context && ImGui::GetCurrentContext()==ui_context) {
             auto& io=ImGui::GetIO();
@@ -828,6 +840,7 @@ struct Context {
         swapchain_dirty=true;
         device.waitIdle();
         commands=nullptr;
+        overlay_framebuffers.clear();overlay_pipeline=nullptr;
 #if POIMA_EDITOR
         ui_framebuffers.clear();ui_scene_bindings=nullptr;
 #endif
@@ -963,6 +976,10 @@ struct Context {
             auto framebuffer = checked->createFramebuffer(framebuffer_desc);
             require(static_cast<bool>(framebuffer), "NVRHI framebuffer creation failed.");
             framebuffers.push_back(framebuffer);
+            if(hosted) {
+                auto overlay_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(texture));
+                require(bool(overlay_framebuffer),"Hosted overlay framebuffer creation failed.");overlay_framebuffers.push_back(overlay_framebuffer);
+            }
 #if POIMA_EDITOR
             if(editor) {
                 auto ui_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(texture));
@@ -998,6 +1015,45 @@ struct Context {
         if (image) SDL_DestroySurface(image);
         checked->unmapStagingTexture(staging);
         require(saved, detail);
+    }
+
+    void prepare_overlay() {
+        if(!hosted || overlay_data.empty())return;
+        if(!overlay_vertices) {
+            overlay_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_editor_overlay_vs);
+            overlay_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_editor_overlay_ps);
+            const nvrhi::VertexAttributeDesc attributes[]={
+                nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(offsetof(EditorOverlayVertex,x)).setElementStride(sizeof(EditorOverlayVertex)),
+                nvrhi::VertexAttributeDesc().setName("COLOR").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(offsetof(EditorOverlayVertex,color)).setElementStride(sizeof(EditorOverlayVertex))};
+            overlay_input=checked->createInputLayout(attributes,2,overlay_vs);
+            overlay_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All).addItem(nvrhi::BindingLayoutItem::PushConstants(0,16)));
+            require(overlay_vs && overlay_ps && overlay_input && overlay_layout,"Hosted overlay shader/layout creation failed.");
+            overlay_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,16)),overlay_layout);
+            nvrhi::BufferDesc buffer;buffer.byteSize=max_editor_overlay_vertices*sizeof(EditorOverlayVertex);buffer.isVertexBuffer=true;
+            buffer.initialState=nvrhi::ResourceStates::VertexBuffer;buffer.keepInitialState=true;buffer.debugName="Hosted editor overlay vertices";
+            overlay_vertices=checked->createBuffer(buffer);
+            require(overlay_bindings && overlay_vertices,"Hosted overlay bindings/buffer creation failed.");
+        }
+        if(!overlay_pipeline) {
+            nvrhi::GraphicsPipelineDesc description;description.VS=overlay_vs;description.PS=overlay_ps;description.inputLayout=overlay_input;description.bindingLayouts.push_back(overlay_layout);
+            description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
+            description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;description.renderState.rasterState.scissorEnable=true;
+            auto& blend=description.renderState.blendState.targets[0];blend.blendEnable=true;
+            blend.srcBlend=nvrhi::BlendFactor::SrcAlpha;blend.destBlend=nvrhi::BlendFactor::InvSrcAlpha;
+            blend.srcBlendAlpha=nvrhi::BlendFactor::One;blend.destBlendAlpha=nvrhi::BlendFactor::InvSrcAlpha;
+            overlay_pipeline=checked->createGraphicsPipeline(description,overlay_framebuffers.front()->getFramebufferInfo());
+            require(bool(overlay_pipeline),"Hosted overlay pipeline creation failed.");
+        }
+    }
+    void render_overlay(std::uint32_t image_index) {
+        if(!hosted || overlay_data.empty())return;
+        commands->writeBuffer(overlay_vertices,overlay_data.data(),overlay_data.size()*sizeof(EditorOverlayVertex));
+        nvrhi::GraphicsState state;state.pipeline=overlay_pipeline;state.framebuffer=overlay_framebuffers.at(image_index);state.bindings.push_back(overlay_bindings);
+        state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(overlay_vertices));
+        state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+        const float constants[4]={(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,0,0,0};
+        commands->setGraphicsState(state);commands->setPushConstants(constants,sizeof(constants));
+        commands->draw(nvrhi::DrawArguments().setVertexCount(static_cast<std::uint32_t>(overlay_data.size())));
     }
 
 #if POIMA_EDITOR
@@ -1161,6 +1217,7 @@ struct Context {
         } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
         timestamp(3);
         if(scene && multisample_color)commands->resolveTexture(scene_target,nvrhi::AllSubresources,multisample_color,nvrhi::AllSubresources);
+        render_overlay(index);
 #if POIMA_EDITOR
         if(editor) {
             // Composite only through the Scene image command. Window/dock
@@ -1260,10 +1317,9 @@ struct HostedViewport::Impl {
 #endif
     }
     void check_thread() const { require(std::this_thread::get_id()==owner,"Hosted viewport calls require its creating thread."); }
-    std::array<std::uint32_t,2> drawable_extent() const {
+    std::array<std::uint32_t,2> client_extent() const {
 #ifdef _WIN32
         const auto window=static_cast<HWND>(hwnd);require(IsWindow(window),"Hosted HWND was destroyed before its viewport.");
-        if(!IsWindowVisible(window) || IsIconic(GetAncestor(window,GA_ROOT)))return {};
         RECT rectangle{};require(GetClientRect(window,&rectangle),"Cannot query hosted HWND client extent.");
         if(rectangle.right<=rectangle.left || rectangle.bottom<=rectangle.top)return {};
         const auto width=static_cast<std::uint32_t>(rectangle.right-rectangle.left),height=static_cast<std::uint32_t>(rectangle.bottom-rectangle.top);
@@ -1273,13 +1329,29 @@ struct HostedViewport::Impl {
         return {};
 #endif
     }
+    std::array<std::uint32_t,2> drawable_extent() const {
+#ifdef _WIN32
+        const auto window=static_cast<HWND>(hwnd);require(IsWindow(window),"Hosted HWND was destroyed before its viewport.");
+        if(!IsWindowVisible(window) || IsIconic(GetAncestor(window,GA_ROOT)))return {};
+#endif
+        return client_extent();
+    }
 };
 HostedViewport::HostedViewport(const RenderOptions& options,const SceneSnapshot& scene,void* hwnd):impl_(std::make_unique<Impl>(options,scene,hwnd)) {}
 HostedViewport::~HostedViewport()=default;
 std::array<std::uint32_t,2> HostedViewport::extent() const {
-    impl_->check_thread();return impl_->ready ? std::array<std::uint32_t,2>{impl_->context.extent.width,impl_->context.extent.height} : std::array<std::uint32_t,2>{};
+    impl_->check_thread();return impl_->client_extent();
 }
 void HostedViewport::resize() { impl_->check_thread();impl_->context.swapchain_dirty=true; }
+void HostedViewport::set_overlay(const std::vector<EditorOverlayVertex>& triangles) {
+    impl_->check_thread();
+    require(triangles.size()<=max_editor_overlay_vertices && triangles.size()%3==0,"Hosted overlay needs a triangle list with at most 65536 vertices.");
+    for(const auto& vertex:triangles) {
+        require(std::isfinite(vertex.x) && std::isfinite(vertex.y) && vertex.x>=0 && vertex.x<=1 && vertex.y>=0 && vertex.y<=1,"Hosted overlay coordinates must be finite and in [0,1].");
+        for(float channel:vertex.color)require(std::isfinite(channel) && channel>=0 && channel<=1,"Hosted overlay colors must be finite linear RGBA in [0,1].");
+    }
+    auto copy=triangles;impl_->context.overlay_data.swap(copy);
+}
 bool HostedViewport::draw(const SceneSnapshot& scene,bool capture) { return draw_frame(scene,capture ? &impl_->options.capture : nullptr); }
 bool HostedViewport::draw_capture(const SceneSnapshot& scene,const std::string& path) { return draw_frame(scene,&path); }
 bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* capture_path) {
@@ -1301,6 +1373,7 @@ bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* ca
                 if(!context.rebuild(options))return false;
             }
             context.update_scene();
+            context.prepare_overlay();
         } catch(...) { context.renderer_fault=true;throw; }
         if(!context.frame(capture_path!=nullptr))return false;
         ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;

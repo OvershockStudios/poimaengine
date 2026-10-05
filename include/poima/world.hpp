@@ -41,6 +41,11 @@ public:
     WorldPackageContent package_content() const;
     SceneSnapshot authored_snapshot(const EditorCamera& camera) const;
     SceneSnapshot runtime_snapshot(const EditorCamera& camera) const;
+    // One transient local transform; rebuilds hierarchy, lights and skin palettes
+    // without changing authored state, history, receipts or the normal cache.
+    SceneSnapshot authored_preview(const EditorCamera& camera,const std::string& entity,
+        const std::array<double,3>& position,const std::array<double,4>& rotation,
+        const std::array<double,3>& scale) const;
 };
 // Persistent authored-world service over newline-delimited JSON-RPC 2.0.
 // Simulation/renderer state is deliberately not stored in this document.

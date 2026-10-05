@@ -17,6 +17,7 @@ public sealed class EditorModel : IDisposable
 {
     public NativeHost Host { get; }
     public event EventHandler? Changed;
+    public event Action? SceneChanging;
     public List<EntityRow> Entities { get; } = [];
     public List<string> Log { get; } = [];
     public long Revision { get; private set; }
@@ -102,16 +103,17 @@ public sealed class EditorModel : IDisposable
         if (id == Selected) return;
         RequireClean();
         if (id is not null && !Entities.Any(x => x.Id == id)) throw new InvalidOperationException("Entity no longer exists.");
+        SceneChanging?.Invoke();
         Host.Call("desktop.select", new() { ["id"] = id });
         Selected = id; LoadSelected(); Changed?.Invoke(this, EventArgs.Empty);
     }
-    public void SetName(string name) { DraftName = name; }
-    public void SetComponent(string type, JsonObject value) { DraftComponents[type] = value.DeepClone(); }
+    public void SetName(string name) { SceneChanging?.Invoke(); DraftName = name; }
+    public void SetComponent(string type, JsonObject value) { SceneChanging?.Invoke(); DraftComponents[type] = value.DeepClone(); }
     public string FieldText(string field, string fallback) => rawFields.GetValueOrDefault(field, fallback);
     public void SetFieldText(string field, string text) { rawFields[field] = text; }
     public void SetInvalid(string field, bool value) { if (value) invalid.Add(field); else invalid.Remove(field); }
     public bool HasInvalid(string prefix) => invalid.Any(key => key.StartsWith(prefix, StringComparison.Ordinal));
-    public void Reload() { LoadSelected(); Changed?.Invoke(this, EventArgs.Empty); }
+    public void Reload() { SceneChanging?.Invoke(); LoadSelected(); Changed?.Invoke(this, EventArgs.Empty); }
     private void RequireClean()
     {
         if (Dirty) throw new InvalidOperationException("Apply or reload Inspector changes first.");
@@ -120,11 +122,19 @@ public sealed class EditorModel : IDisposable
     {
         if (RuntimeId is not null) throw new InvalidOperationException("Stop the runtime before changing authored entities.");
     }
+    public void RequireSceneEditable() { RequireStopped(); RequireClean(); }
+    public JsonObject CommitGizmo(long dragId)
+    {
+        RequireSceneEditable();
+        var result = Host.Call("desktop.gizmo.commit", new() { ["drag_id"] = dragId, ["request_id"] = NewId() });
+        return result;
+    }
     public void Apply()
     {
         RequireStopped();
         if (invalid.Count != 0) throw new InvalidOperationException("Fix invalid Inspector fields before applying.");
         if (!Dirty || Selected is null) return;
+        SceneChanging?.Invoke();
         var ops = new JsonArray();
         if (DraftName != baselineName) ops.Add(new JsonObject { ["op"] = "entity.rename", ["id"] = Selected, ["name"] = DraftName });
         foreach (var pair in DraftComponents)
@@ -136,6 +146,7 @@ public sealed class EditorModel : IDisposable
     private void Transact(JsonArray ops)
     {
         RequireStopped(); RequireClean();
+        SceneChanging?.Invoke();
         Host.Call("world.transact", new() { ["request_id"] = NewId(), ["base_revision"] = Revision, ["ops"] = ops });
         Refresh();
     }
@@ -165,6 +176,7 @@ public sealed class EditorModel : IDisposable
     public void History(bool redo)
     {
         RequireStopped(); RequireClean();
+        SceneChanging?.Invoke();
         Host.Call(redo ? "world.redo" : "world.undo", new() { ["request_id"] = NewId(), ["base_revision"] = Revision }); Refresh();
     }
     public JsonObject Import(string path)
@@ -180,6 +192,7 @@ public sealed class EditorModel : IDisposable
     }
     public void PlayStop()
     {
+        SceneChanging?.Invoke();
         if (RuntimeId is not null) { Host.Call("runtime.stop", new() { ["session_id"] = RuntimeId }); RuntimeId = null; Tick = 0; }
         else { RequireClean(); var id = NewId(); Host.Call("runtime.start", new() { ["session_id"] = id, ["revision"] = Revision }); RuntimeId = id; Tick = 0; Paused = true; }
         Changed?.Invoke(this, EventArgs.Empty);
@@ -192,5 +205,5 @@ public sealed class EditorModel : IDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
     public JsonObject InspectDraft() => new() { ["entity"] = Selected, ["name"] = DraftName, ["components"] = DraftComponents.DeepClone(), ["invalid_fields"] = new JsonArray(invalid.Order().Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()), ["dirty"] = Dirty, ["conflict"] = Conflict, ["base_revision"] = BaseRevision, ["revision"] = Revision };
-    public void Dispose() { Host.StateChanged -= HostChanged; }
+    public void Dispose() { Host.StateChanged -= HostChanged; SceneChanging = null; }
 }

@@ -30,9 +30,9 @@ project = run/'Courtyard'
 record = {'passed': False, 'gpu': a.gpu, 'input': 'Semantic C# editor actions and shared CLI commands; no physical input.',
           'source_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
           'editor_sha256': hashlib.sha256((a.editor.parent/'Poima.Editor.dll').read_bytes()).hexdigest()}
-def cli(arguments, data=None):
+def cli(arguments, data=None, timeout=30):
     value = subprocess.run([str(a.binary.resolve()), *map(str, arguments)], input=data, capture_output=True,
-                           text=True, encoding='utf-8', timeout=30)
+                           text=True, encoding='utf-8', timeout=timeout)
     assert value.returncode == 0, value.stdout+value.stderr
     return [json.loads(line) for line in value.stdout.splitlines()]
 cli(['project', 'create', project, '--name', 'Courtyard'])
@@ -134,6 +134,66 @@ action(151, 'scene_input', message='key_down', key=87)
 action(152, 'scene_input', message='cancel')
 action(153, 'scene_step', seconds=.1)
 action(155, 'inspect')
+# Keep the established authoring/layout checks above unchanged. These gestures
+# enter through this process's actual child HWND subclass, not a simulated
+# transform implementation. Named stages are matched to action results below.
+action(160, 'scene_frame')
+action(161, 'gizmo_configure', mode='move', space='world')
+action(162, 'inspect', tag='gizmo_baseline')
+action(162, 'rpc', method='world.history', tag='history_baseline')
+action(163, 'draft_name', name='Unapplied gizmo draft')
+action(164, 'gizmo_begin', axis='z', error_contains='Apply or reload Inspector', tag='dirty_gizmo')
+action(165, 'assert_draft', expected={'dirty': True, 'name': 'Unapplied gizmo draft'})
+action(166, 'reload')
+action(168, 'scene_input', message='left_down', axis='z', tag='gizmo_press')
+action(169, 'scene_input', message='move', gizmo_relative=True, dx=45, dy=-10)
+action(170, 'inspect', tag='gizmo_preview')
+action(170, 'rpc', method='entity.get', params={'id': entity}, tag='preview_authored_entity')
+action(171, 'scene_input', message='left_up', gizmo_relative=True, dx=45, dy=-10)
+action(172, 'inspect', tag='gizmo_committed')
+action(172, 'rpc', method='world.history', tag='history_committed')
+action(173, 'undo')
+action(174, 'inspect', tag='gizmo_undo')
+action(175, 'redo')
+action(176, 'inspect', tag='gizmo_redo')
+action(177, 'scene_frame')
+action(178, 'scene_input', message='left_down', axis='z')
+action(179, 'scene_input', message='move', gizmo_relative=True, dx=30, dy=15)
+action(180, 'inspect', tag='cancel_preview')
+action(181, 'scene_input', message='cancel')
+action(182, 'inspect', tag='gizmo_cancelled')
+action(183, 'scene_input', message='left_up', gizmo_relative=True, dx=30, dy=15)
+action(184, 'scene_input', message='left_down', axis='x')
+action(185, 'scene_input', message='move', gizmo_relative=True, dx=35, dy=0)
+action(186, 'scene_input', message='key_down', key=27)
+action(187, 'scene_input', message='key_up', key=27)
+action(188, 'inspect', tag='gizmo_escaped')
+action(190, 'scene_input', message='left_down', axis='z')
+action(191, 'scene_input', message='move', gizmo_relative=True, dx=25, dy=-10)
+action(192, 'rpc', method='world.transact', params={'base_revision': revision+9, 'request_id': uuid.uuid4().hex,
+       'ops': [{'op': 'entity.rename', 'id': f'{106:032x}', 'name': 'Externally named pillar foot'}]}, tag='gizmo_external_edit')
+action(194, 'inspect', tag='gizmo_invalidated')
+action(195, 'scene_input', message='left_up', gizmo_relative=True, dx=25, dy=-10)
+for frame, key, mode in ((196, 81, 'none'), (199, 87, 'move'), (202, 69, 'rotate'), (205, 82, 'scale')):
+    action(frame, 'scene_input', message='key_down', key=key)
+    action(frame+1, 'scene_input', message='key_up', key=key)
+    action(frame+2, 'gizmo_inspect', tag='hotkey_'+mode)
+action(208, 'gizmo_configure', mode='move', space='local')
+action(209, 'gizmo_inspect', tag='space_local')
+action(210, 'gizmo_configure', mode='rotate', space='world')
+action(211, 'scene_input', message='right_down')
+action(212, 'scene_input', message='key_down', key=87)
+action(213, 'scene_input', message='key_down', key=69)
+action(214, 'inspect', tag='rmb_modes')
+action(215, 'scene_input', message='key_up', key=87)
+action(215, 'scene_input', message='key_up', key=69)
+action(216, 'scene_input', message='right_up')
+action(218, 'gizmo_configure', mode='move', space='world')
+action(220, 'scene_frame')
+action(222, 'gizmo_inspect', tag='final_handles')
+action(224, 'rpc', method='desktop.capture', params={'revision': revision+10, 'path': str(run/'gizmo-final.bmp')})
+action(227, 'inspect', tag='gizmo_final')
+action(230, 'save_layout')
 script = run/'actions.json'; script.write_text(json.dumps({'actions': actions}, indent=2))
 report = run/'report.json'
 u = c.WinDLL('user32', use_last_error=True)
@@ -148,14 +208,61 @@ u.SetWindowPos.argtypes = [w.HWND, w.HWND, c.c_int, c.c_int, c.c_int, c.c_int, w
 u.GetWindowLongPtrW.argtypes = [w.HWND, c.c_int]; u.GetWindowLongPtrW.restype = c.c_ssize_t
 u.SetThreadDpiAwarenessContext.argtypes = [c.c_void_p]
 u.SetThreadDpiAwarenessContext(c.c_void_p(-4))
+u.OpenInputDesktop.argtypes = [w.DWORD, w.BOOL, w.DWORD]; u.OpenInputDesktop.restype = w.HANDLE
+u.GetUserObjectInformationW.argtypes = [w.HANDLE, c.c_int, c.c_void_p, w.DWORD, c.POINTER(w.DWORD)]
+u.GetUserObjectInformationW.restype = w.BOOL
+u.CloseDesktop.argtypes = [w.HANDLE]; u.CloseDesktop.restype = w.BOOL
+wts = c.WinDLL('wtsapi32', use_last_error=True)
+wts.WTSQuerySessionInformationW.argtypes = [w.HANDLE, w.DWORD, c.c_int, c.POINTER(c.c_void_p), c.POINTER(w.DWORD)]
+wts.WTSQuerySessionInformationW.restype = w.BOOL
+wts.WTSFreeMemory.argtypes = [c.c_void_p]
+class WtsSessionLevel1(c.Structure):
+    _fields_ = [('SessionId', w.DWORD), ('SessionState', c.c_int), ('SessionFlags', w.LONG),
+                ('WinStationName', w.WCHAR * 33), ('UserName', w.WCHAR * 21), ('DomainName', w.WCHAR * 18),
+                ('LogonTime', c.c_longlong), ('ConnectTime', c.c_longlong), ('DisconnectTime', c.c_longlong),
+                ('LastInputTime', c.c_longlong), ('CurrentTime', c.c_longlong),
+                ('IncomingBytes', w.DWORD), ('OutgoingBytes', w.DWORD),
+                ('IncomingFrames', w.DWORD), ('OutgoingFrames', w.DWORD),
+                ('IncomingCompressedBytes', w.DWORD), ('OutgoingCompressedBytes', w.DWORD)]
+class WtsSessionInfo(c.Structure):
+    _fields_ = [('Level', w.DWORD), ('Data', WtsSessionLevel1)]
+def input_desktop_available():
+    # Read-only check: never unlock, switch desktops or inject global input.
+    # Modern lock surfaces may coexist with an accessible Default desktop.
+    # Require an explicitly unlocked current session as well (Windows 10+).
+    # https://learn.microsoft.com/en-us/windows/win32/api/wtsapi32/ns-wtsapi32-wtsinfoex_level1_w
+    buffer = c.c_void_p(); size = w.DWORD()
+    if not wts.WTSQuerySessionInformationW(None, 0xFFFFFFFF, 25, c.byref(buffer), c.byref(size)):
+        return False, f'Cannot verify current session lock state (error {c.get_last_error()}).'
+    try:
+        if not buffer or size.value < c.sizeof(WtsSessionInfo):
+            return False, 'Current session lock-state response is incomplete.'
+        session = c.cast(buffer, c.POINTER(WtsSessionInfo)).contents
+        if session.Level != 1 or session.Data.SessionFlags != 1 or session.Data.SessionState != 0:
+            return False, f'Current session is locked, disconnected or unknown (level {session.Level}, state {session.Data.SessionState}, flags {session.Data.SessionFlags}).'
+    finally:
+        wts.WTSFreeMemory(buffer)
+    desktop = u.OpenInputDesktop(0, False, 0x0001)  # DESKTOP_READOBJECTS
+    if not desktop:
+        return False, f'Input desktop unavailable (OpenInputDesktop error {c.get_last_error()}); it may be locked.'
+    try:
+        name = c.create_unicode_buffer(256); needed = w.DWORD()
+        if not u.GetUserObjectInformationW(desktop, 2, name, c.sizeof(name), c.byref(needed)):  # UOI_NAME
+            return False, f'Cannot identify input desktop (error {c.get_last_error()}).'
+        if name.value.lower() != 'default':
+            return False, f'Input desktop is {name.value!r}, not Default; no window screenshot taken.'
+        return True, 'Default input desktop is available.'
+    finally:
+        u.CloseDesktop(desktop)
+record['window_capture'] = {'status': 'not_attempted'}
 process = None; raised = None; was_topmost = False
 try:
     with (run/'stdout.txt').open('w', encoding='utf-8') as out, (run/'stderr.txt').open('w', encoding='utf-8') as err:
         command = [str(a.editor.resolve()), str(world), '--gpu', str(a.gpu), '--endpoint', endpoint,
-                   '--script', str(script), '--frames', '280', '--report', str(report), '--layout', str(run/'layout.json')]
+                   '--script', str(script), '--frames', '420', '--report', str(report), '--layout', str(run/'layout.json')]
         process = subprocess.Popen(command, stdout=out, stderr=err)
         start = time.monotonic(); captured = False; shared = False; next_status = 0; capture_ready = False
-        while process.poll() is None and time.monotonic()-start < 45:
+        while process.poll() is None and time.monotonic()-start < 70:
             handles = []
             @callback
             def visit(hwnd, _):
@@ -165,26 +272,50 @@ try:
             u.EnumWindows(visit, 0)
             elapsed = time.monotonic()-start
             if handles and elapsed > 1 and not shared:
-                reply = cli(['connect', endpoint], '{"jsonrpc":"2.0","id":1,"method":"desktop.inspect"}\n')[0]
+                try:
+                    reply = cli(['connect', endpoint], '{"jsonrpc":"2.0","id":1,"method":"desktop.inspect"}\n', timeout=5)[0]
+                except (subprocess.TimeoutExpired, AssertionError):
+                    if process.poll() is not None: break  # Preserve the editor's actual failure report.
+                    raise
                 assert 'result' in reply, reply
                 record['shared_cli'] = reply['result']; shared = True
             if shared and elapsed > 5 and elapsed >= next_status and not captured:
                 next_status = elapsed + .5
-                state = cli(['connect', endpoint], '{"jsonrpc":"2.0","id":1,"method":"desktop.inspect"}\n')[0]['result']
-                capture_ready = (state.get('capture') or {}).get('state') == 'complete'
+                try:
+                    state = cli(['connect', endpoint], '{"jsonrpc":"2.0","id":1,"method":"desktop.inspect"}\n', timeout=5)[0]['result']
+                except (subprocess.TimeoutExpired, AssertionError):
+                    if process.poll() is not None: break
+                    raise
+                capture = state.get('capture') or {}
+                capture_ready = (capture.get('state') == 'complete'
+                                 and capture.get('path', '').lower().endswith('gizmo-final.bmp')
+                                 and state.get('selected') == entity
+                                 and state.get('gizmo', {}).get('mode') == 'move'
+                                 and state.get('gizmo', {}).get('active') is None)
             if len(handles) == 1 and capture_ready and not captured:
-                raised = handles[0]; was_topmost = bool(u.GetWindowLongPtrW(raised, -20) & 8)
-                u.SetWindowPos(raised, w.HWND(-1), 60, 40, 1440, 920, 0x10)
-                time.sleep(.35)
-                rectangle = w.RECT(); origin = w.POINT()
-                assert u.GetClientRect(raised, c.byref(rectangle)) and u.ClientToScreen(raised, c.byref(origin))
-                # Client bounds exclude OS-frame corners that could expose
-                # unrelated windows behind this owned editor window.
-                ImageGrab.grab(bbox=(origin.x, origin.y, origin.x+rectangle.right, origin.y+rectangle.bottom), all_screens=True).save(run/'window.png')
-                u.SetWindowPos(raised, w.HWND(-1 if was_topmost else -2), 0, 0, 0, 0, 0x13)
-                raised = None; captured = True
+                available, reason = input_desktop_available()
+                if available:
+                    raised = handles[0]; was_topmost = bool(u.GetWindowLongPtrW(raised, -20) & 8)
+                    assert u.SetWindowPos(raised, w.HWND(-1), 60, 40, 1440, 920, 0x10)
+                    time.sleep(.35)
+                    available, reason = input_desktop_available()
+                    if available:
+                        rectangle = w.RECT(); origin = w.POINT()
+                        assert u.GetClientRect(raised, c.byref(rectangle)) and u.ClientToScreen(raised, c.byref(origin))
+                        # Capture only the owned client bounds, excluding OS-frame
+                        # corners. Recheck before publication if the desktop locks.
+                        screenshot = ImageGrab.grab(bbox=(origin.x, origin.y, origin.x+rectangle.right, origin.y+rectangle.bottom), all_screens=True)
+                        available, reason = input_desktop_available()
+                        if available:
+                            screenshot.save(run/'window.png')
+                        screenshot.close()
+                    u.SetWindowPos(raised, w.HWND(-1 if was_topmost else -2), 0, 0, 0, 0, 0x13)
+                    raised = None
+                record['window_capture'] = ({'status': 'captured', 'path': 'window.png'} if available
+                                            else {'status': 'unavailable', 'reason': reason})
+                captured = True  # An explicit unavailable result is not a GUI screenshot.
             time.sleep(.05)
-        if process.poll() is None: raise AssertionError('Desktop process did not exit within 45 seconds.')
+        if process.poll() is None: raise AssertionError('Desktop process did not exit within 70 seconds.')
         record['exit_code'] = process.returncode
         assert report.is_file(), (run/'stderr.txt').read_text()
         evidence = json.loads(report.read_text()); record['desktop'] = evidence
@@ -192,6 +323,7 @@ try:
         assert evidence['ui_backend_actual'] == 'Avalonia.Vulkan.VulkanPlatformGraphics', evidence
         assert evidence['font_resolved'] == 'Inter', evidence
         assert len(evidence['actions']) == len(actions)
+        stages = {spec['tag']: result for spec, result in zip(actions, evidence['actions']) if 'tag' in spec}
         inspections = [item for item in evidence['actions'] if item['op'] == 'inspect']
         assert inspections[5]['native']['camera']['yaw'] != inspections[4]['native']['camera']['yaw']
         assert inspections[5]['native']['camera']['position'] != inspections[4]['native']['camera']['position']
@@ -209,11 +341,53 @@ try:
         assert inspections[2]['native']['runtime']['tick'] == 2
         assert inspections[3]['native']['capture']['state'] == 'complete'
         assert evidence['state']['render']['hardware'] and evidence['state']['render']['nvrhi_errors'] == 0
-        assert not evidence['state']['runtime']['active'] and evidence['state']['revision'] == revision+6
+        assert not evidence['state']['runtime']['active']
         recovery = [item for item in evidence['actions'] if item['op'] == 'assert_scene_error']
         assert recovery[1]['native']['frames_presented'] > recovery[0]['native']['frames_presented']
         assert evidence['draft']['name'] == 'Courtyard pillar' and not evidence['draft']['dirty']
-        assert shared and captured and (run/'viewport.bmp').is_file()
+        baseline, preview, committed = (stages[name] for name in ('gizmo_baseline', 'gizmo_preview', 'gizmo_committed'))
+        original_transform = baseline['draft']['components']['Transform']
+        assert stages['dirty_gizmo'].get('expected_error') and not baseline['draft']['dirty']
+        assert stages['gizmo_press']['navigation']['gizmo_drag_id'] is not None
+        assert preview['native']['revision'] == baseline['native']['revision'], preview
+        assert preview['draft']['components']['Transform'] == original_transform and not preview['draft']['dirty']
+        assert stages['preview_authored_entity']['result']['value']['components']['Transform'] == original_transform
+        active = preview['native']['gizmo']['active']
+        assert active and active['axis'] == 'z' and active['transform'] != original_transform, preview
+        changed_transform = committed['draft']['components']['Transform']
+        assert changed_transform == active['transform'] and committed['native']['revision'] == baseline['native']['revision']+1
+        assert committed['native']['gizmo']['active'] is None and committed['navigation']['gizmo_drag_id'] is None
+        assert committed['navigation']['drag'] == 'None' and not committed['draft']['dirty']
+        assert stages['history_committed']['result']['undo_count'] == stages['history_baseline']['result']['undo_count']+1
+        assert stages['gizmo_undo']['draft']['components']['Transform'] == original_transform
+        assert stages['gizmo_redo']['draft']['components']['Transform'] == changed_transform
+        assert stages['cancel_preview']['native']['gizmo']['active']['transform'] != changed_transform
+        stable_revision = stages['gizmo_redo']['native']['revision']
+        for name in ('gizmo_cancelled', 'gizmo_escaped'):
+            item = stages[name]
+            assert item['native']['revision'] == stable_revision and item['draft']['components']['Transform'] == changed_transform, item
+            assert item['native']['gizmo']['active'] is None and item['navigation']['gizmo_drag_id'] is None
+            assert item['navigation']['drag'] == 'None'
+        invalidated = stages['gizmo_invalidated']
+        assert invalidated['native']['revision'] == stages['gizmo_external_edit']['result']['revision'] == stable_revision+1
+        assert invalidated['native']['gizmo']['active'] is None and invalidated['navigation']['gizmo_drag_id'] is None
+        assert invalidated['draft']['components']['Transform'] == changed_transform and invalidated['navigation']['drag'] == 'None'
+        for mode in ('none', 'move', 'rotate', 'scale'):
+            assert stages['hotkey_'+mode]['gizmo']['mode'] == mode
+        assert stages['space_local']['gizmo']['space'] == 'local'
+        assert stages['rmb_modes']['native']['gizmo']['mode'] == 'rotate' and stages['rmb_modes']['navigation']['drag'] == 'Right'
+        final = stages['gizmo_final']
+        assert final['native']['selected'] == entity and final['native']['gizmo']['mode'] == 'move'
+        assert final['native']['gizmo']['space'] == 'world' and final['native']['gizmo']['active'] is None
+        assert sum(handle['visible'] for handle in stages['final_handles']['gizmo']['handles']) >= 2
+        assert evidence['state']['revision'] == invalidated['native']['revision'] and final['draft']['components']['Transform'] == changed_transform
+        assert shared and capture_ready and captured and (run/'viewport.bmp').is_file() and (run/'gizmo-final.bmp').is_file()
+        assert record['window_capture']['status'] in ('captured', 'unavailable'), record['window_capture']
+        if record['window_capture']['status'] == 'captured':
+            assert (run/'window.png').is_file()
+            record['screenshot_sha256'] = hashlib.sha256((run/'window.png').read_bytes()).hexdigest()
+        else:
+            assert record['window_capture']['reason'] and not (run/'window.png').exists()
         restart_layout = run/'restart-layout.json'
         restart_layout.write_text(json.dumps(saved))
         restart_script = run/'restart-actions.json'
@@ -232,7 +406,7 @@ try:
         restored = next(item for item in again['actions'] if item['op'] == 'inspect')
         assert len(restored['windows']) == 2 and restored['layout'] == saved, restored
         assert restored['native']['frames_presented'] > 0 and restored['navigation']['attached']
-        record.update(passed=True, screenshot_sha256=hashlib.sha256((run/'window.png').read_bytes()).hexdigest(),
+        record.update(passed=True,
                       checks=['actual Avalonia Vulkan backend with native child Scene', 'shared CLI connection',
                               'dirty draft preserved; stale Apply rejects; Reload explicit', 'undo/redo and fixed-tick runtime',
                               'invalid raw field survives floating/reset; dirty close cancelled',
@@ -240,7 +414,12 @@ try:
                               'actual Inspector and Scene floating windows; reset and continued presentation',
                               'native HWND look/fly/frame/click messages; input released cleanly',
                               'saved floating layout restores its panel structure and bounds, including a fresh process',
-                              'revision-guarded viewport capture', 'bounded process exit and actual desktop client-area screenshot'])
+                              'HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform',
+                              'dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews',
+                              'Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible',
+                              'revision-guarded native viewport capture', 'bounded process exit',
+                              'owned desktop client-area screenshot' if record['window_capture']['status'] == 'captured'
+                              else 'window screenshot unavailable; semantic GUI and native Scene capture qualified separately'])
 finally:
     if raised: u.SetWindowPos(raised, w.HWND(-1 if was_topmost else -2), 0, 0, 0, 0, 0x13)
     if process and process.poll() is None: process.kill(); process.wait()

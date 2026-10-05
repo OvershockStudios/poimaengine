@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
+#include "poima/editor_overlay.hpp"
 #include <array>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace poima {
 // Windows-first native child-window surface, independent of ImGui. The caller
@@ -19,8 +21,15 @@ public:
     ~HostedViewport();
     HostedViewport(const HostedViewport&)=delete;
     HostedViewport& operator=(const HostedViewport&)=delete;
+    // Current HWND client extent, including before graphics initialization or
+    // while hidden. report() retains the extent of the last presentation.
     std::array<std::uint32_t,2> extent() const;
     void resize();
+    // Retains a bounded copy without initializing graphics. Empty clears;
+    // otherwise count must be divisible by three and <=65536. Coordinates
+    // and linear RGBA must be finite and in [0,1]. Invalid input preserves the
+    // prior overlay. Drawn after scene resolve, included in viewport captures.
+    void set_overlay(const std::vector<EditorOverlayVertex>& triangles);
     // False means hidden, minimized, zero-size or temporarily unavailable.
     // Calls retain their own snapshot copy. Graphics failures throw and require
     // recreation; failure details remain available through report().

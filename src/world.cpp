@@ -680,20 +680,21 @@ public:
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision; }
         return status;
     }
-    SceneSnapshot editor_snapshot(const EditorCamera& camera,bool live) const {
+    SceneSnapshot editor_snapshot(const EditorCamera& camera,bool live,const Json* preview=nullptr) const {
+        const auto& document=preview ? *preview : doc_;
         for(double value:camera.world)require(std::isfinite(value) && std::abs(value)<=1e12,"Invalid editor camera matrix.");
         require(camera.world[3]==0 && camera.world[7]==0 && camera.world[11]==0 && camera.world[15]==1 && rigid_transform(camera.world),"Editor camera must be a rigid affine transform.");
         (void)perspective(camera.vertical_fov,1,camera.near_plane,camera.far_plane);
         if(live)require(bool(runtime_),"No runtime is active for the editor snapshot.",-32030);
         SceneSnapshot result;
-        if(!live && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
+        if(!live && !preview && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
         else {
             prune_model_cache();RuntimeDefinition authored;
-            if(!live)authored=runtime_definition(false,nullptr,true);
+            if(!live)authored=runtime_definition(false,preview,true);
             const auto& definition=live ? runtime_definition_ : authored;
             std::map<std::string,Matrix4> matrices;
             if(live)for(const auto& e:definition.entities)matrices.emplace(e.id,runtime_->entity(e.id).world);
-            else matrices=world_matrices(doc_.at("entities"));
+            else matrices=world_matrices(document.at("entities"));
             result.world_id=definition.world_id;result.revision=definition.authored_revision;
             result.lighting=live ? runtime_->lighting() : authored_lighting(matrices);
             std::map<std::string,const RuntimeEntityDefinition*> entities;
@@ -712,10 +713,17 @@ public:
                 }
                 result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin});
             }
-            if(!live)authored_cache_=result;
+            if(!live && !preview)authored_cache_=result;
         }
         result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
         return result;
+    }
+    SceneSnapshot editor_preview(const EditorCamera& camera,const std::string& id,const Json& transform) const {
+        require(!runtime_,"Stop runtime before editing transforms.",-32009);
+        require(doc_.at("entities").contains(id),"Preview entity does not exist.",-32004);
+        validate_transform(transform);
+        auto candidate=doc_;candidate["entities"][id]["components"]["Transform"]=transform;
+        return editor_snapshot(camera,false,&candidate);
     }
     Json dispatch(const std::string& method, const Json& params) {
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
@@ -1895,6 +1903,11 @@ WorldRuntimeStatus WorldSession::runtime_status() const {
 }
 SceneSnapshot WorldSession::authored_snapshot(const EditorCamera& camera) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,false);
+}
+SceneSnapshot WorldSession::authored_preview(const EditorCamera& camera,const std::string& entity,
+    const std::array<double,3>& position,const std::array<double,4>& rotation,const std::array<double,3>& scale) const {
+    require(!closed(),"World session is closed.",-32001);
+    return impl_->world.editor_preview(camera,entity,{{"position",position},{"rotation",rotation},{"scale",scale}});
 }
 SceneSnapshot WorldSession::runtime_snapshot(const EditorCamera& camera) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,true);

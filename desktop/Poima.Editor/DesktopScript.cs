@@ -20,6 +20,7 @@ internal sealed class DesktopScript
     private int next, frameOffset;
     private int? deferredAt;
     private long deferredStarted;
+    private double gizmoX, gizmoY;
     public JsonArray Results { get; } = [];
     public string? Error { get; private set; }
     public bool Completed => next == actions.Count && deferredAt is null;
@@ -54,6 +55,18 @@ internal sealed class DesktopScript
                     case "load_layout": window.LoadLayout(); break;
                     case "scene_frame": window.Navigation.FrameSelection(); break;
                     case "scene_step": window.Navigation.Tick(action["seconds"]!.GetValue<double>()); break;
+                    case "gizmo_configure": result["gizmo"] = window.Navigation.ConfigureGizmo(Text("mode"), action["space"]?.GetValue<string>()); break;
+                    case "gizmo_inspect": result["gizmo"] = window.Navigation.InspectGizmo(); break;
+                    case "gizmo_begin":
+                        (gizmoX, gizmoY) = GizmoPoint(action, window.Navigation);
+                        result["point"] = new JsonArray(gizmoX, gizmoY);
+                        result["gizmo"] = window.Navigation.BeginGizmo(gizmoX, gizmoY); break;
+                    case "gizmo_update":
+                        gizmoX = action["x"]?.GetValue<double>() ?? gizmoX+(action["dx"]?.GetValue<double>() ?? 0);
+                        gizmoY = action["y"]?.GetValue<double>() ?? gizmoY+(action["dy"]?.GetValue<double>() ?? 0);
+                        result["gizmo"] = window.Navigation.UpdateGizmo(gizmoX, gizmoY, action["snap"]?.GetValue<bool>() ?? false); break;
+                    case "gizmo_commit": result["result"] = window.Navigation.CommitGizmo(); break;
+                    case "gizmo_cancel": result["gizmo"] = window.Navigation.CancelGizmo(); break;
                     case "scene_input":
                         var hwnd = window.Navigation.Window;
                         if (hwnd == IntPtr.Zero) throw new InvalidOperationException("Scene HWND is unavailable.");
@@ -61,6 +74,15 @@ internal sealed class DesktopScript
                         var dimensions = window.Navigation.Inspect();
                         var x = (int)((action["x"]?.GetValue<double>() ?? .5)*dimensions["width"]!.GetValue<int>());
                         var y = (int)((action["y"]?.GetValue<double>() ?? .5)*dimensions["height"]!.GetValue<int>());
+                        if (action["axis"] is not null)
+                        {
+                            (gizmoX, gizmoY) = GizmoPoint(action, window.Navigation);
+                            x = (int)Math.Round(gizmoX); y = (int)Math.Round(gizmoY);
+                        }
+                        x = action["pixel_x"]?.GetValue<int>() ?? x;
+                        y = action["pixel_y"]?.GetValue<int>() ?? y;
+                        if (action["gizmo_relative"]?.GetValue<bool>() == true)
+                        { x = (int)Math.Round(gizmoX+(action["dx"]?.GetValue<double>() ?? 0)); y = (int)Math.Round(gizmoY+(action["dy"]?.GetValue<double>() ?? 0)); }
                         var point = (nint)((uint)(ushort)x | ((uint)(ushort)y << 16));
                         var code = message switch { "right_down" => 0x0204u, "right_up" => 0x0205u, "left_down" => 0x0201u, "left_up" => 0x0202u,
                             "middle_down" => 0x0207u, "middle_up" => 0x0208u, "move" => 0x0200u,
@@ -151,5 +173,24 @@ internal sealed class DesktopScript
             }
             Results.Add(result);
         }
+    }
+    private static (double X, double Y) GizmoPoint(JsonObject action, SceneNavigation navigation)
+    {
+        if (action["axis"] is not JsonValue axis) return (action["x"]!.GetValue<double>(), action["y"]!.GetValue<double>());
+        var geometry = navigation.InspectGizmo();
+        var handle = geometry["handles"]!.AsArray().SingleOrDefault(value => value?["axis"]?.GetValue<string>() == axis.GetValue<string>())?.AsObject()
+            ?? throw new InvalidOperationException("Requested gizmo axis is absent.");
+        if (handle["visible"]?.GetValue<bool>() != true) throw new InvalidOperationException("Requested gizmo axis is not visible.");
+        var points = handle["points"]!.AsArray();
+        if (points.Count < 2) throw new InvalidOperationException("Requested gizmo handle lacks a hit-test path.");
+        if (points.Count == 2 && action["point_index"] is null)
+        {
+            var first = points[0]!.AsArray(); var last = points[1]!.AsArray();
+            return (first[0]!.GetValue<double>()*.3+last[0]!.GetValue<double>()*.7,
+                    first[1]!.GetValue<double>()*.3+last[1]!.GetValue<double>()*.7);
+        }
+        var index = action["point_index"]?.GetValue<int>() ?? points.Count/4;
+        if (index < 0 || index >= points.Count) throw new ArgumentException("Gizmo point_index is outside the handle path.");
+        return (points[index]![0]!.GetValue<double>(), points[index]![1]!.GetValue<double>());
     }
 }

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <map>
+#include <cmath>
 
 namespace fs=std::filesystem;
 using Json=nlohmann::json;
@@ -22,6 +23,66 @@ std::string read(const fs::path& path) { std::ifstream f(path,std::ios::binary);
 void write(const fs::path& path,const std::string& bytes) { std::ofstream stream(path,std::ios::binary);stream.write(bytes.data(),static_cast<std::streamsize>(bytes.size()));check(bool(stream),"Fixture write failed."); }
 std::string hash(const std::string& bytes) { return poima::sha256(std::as_bytes(std::span(bytes.data(),bytes.size()))); }
 std::map<std::string,std::string> tree(const fs::path& root) { std::map<std::string,std::string> files;for(const auto& entry:fs::recursive_directory_iterator(root))if(entry.is_regular_file())files.emplace(entry.path().lexically_relative(root).generic_string(),read(entry.path()));return files; }
+void authored_preview_regression(const fs::path& directory) {
+    const auto path=directory/"preview.json",assets=fs::path(path).concat(".assets");fs::create_directory(assets);
+    // An analytic one-joint skin proves a bone preview rebuilds palettes, rather
+    // than merely translating the SceneObject matrix after snapshot construction.
+    auto mesh=std::make_shared<poima::MeshAsset>();mesh->vertices.resize(3);mesh->indices={0,1,2};
+    mesh->vertices[1].position={1,0,0};mesh->vertices[2].position={0,1,0};
+    // This untextured fixture has no UV0, so the cooked tangent sentinel is w=0.
+    for(auto& vertex:mesh->vertices) { vertex.normal={0,0,1};vertex.tangent={1,0,0,0}; }
+    mesh->influences.assign(3,poima::SkinWeight{{0,0,0,0},{1,0,0,0}});
+    poima::ModelAsset model;model.primitives={mesh};model.nodes.resize(2);model.roots={0,1};
+    model.nodes[0].name="Mesh";model.nodes[0].primitives={0};model.nodes[0].skin=0;
+    model.nodes[1].name="Joint";model.nodes[1].position={0,1,0};
+    auto inverse_bind=poima::identity_matrix();inverse_bind[13]=-1;
+    model.skins.push_back({"Joint skin",1,{1},{inverse_bind}});
+    const auto encoded=poima::encode_model(model),asset=hash(encoded);write(assets/(asset+".pmodel"),encoded);
+    const std::string parent(32,'1'),child(32,'2'),light(32,'3'),rig(32,'4');
+    const auto bone=hash("poima.instance.v1/"+rig+"/node/1").substr(0,32);
+    auto transform=[](Json position){return Json{{"position",position},{"rotation",{0,0,0,1}},{"scale",{1,1,1}}};};
+    poima::WorldSession session(path.string());
+    call(session,"world.transact",{{"request_id",std::string(32,'5')},{"base_revision",0},{"ops",Json::array({
+        {{"op","entity.create"},{"id",parent},{"name","Preview parent"}},
+        {{"op","entity.create"},{"id",child},{"name","Child mesh"},{"parent",parent}},
+        {{"op","component.set"},{"id",child},{"type","Transform"},{"value",transform({1,2,3})}},
+        {{"op","component.set"},{"id",child},{"type","MeshRenderer"},{"value",{{"primitive","box"},{"albedo",{1,0,0}},{"visible",true}}}},
+        {{"op","entity.create"},{"id",light},{"name","Child light"},{"parent",parent}},
+        {{"op","component.set"},{"id",light},{"type","Transform"},{"value",transform({0,1,0})}},
+        {{"op","component.set"},{"id",light},{"type","Light"},{"value",{{"kind","spot"},{"color",{1,1,1}},{"intensity",2},{"enabled",true},{"range",20}}}},
+        {{"op","asset.instantiate"},{"id",rig},{"name","Preview skin"},{"asset",asset},{"parent",parent}}
+    })}});
+    poima::EditorCamera camera;camera.world[14]=8;
+    const auto before=session.authored_snapshot(camera);
+    const auto inspected=call(session,"world.inspect"),history=call(session,"world.history");const auto files=tree(directory);
+    const auto object=[&](const poima::SceneSnapshot& scene,const std::string& id)->const poima::SceneObject& {
+        for(const auto& item:scene.objects)if(item.entity_id==id)return item;
+        throw std::runtime_error("Preview fixture object missing.");
+    };
+    const auto skin=[](const poima::SceneSnapshot& scene)->const poima::SkinPose& {
+        for(const auto& item:scene.objects)if(item.skin)return *item.skin;
+        throw std::runtime_error("Preview fixture skin missing.");
+    };
+    const auto close=[](double a,double b){check(std::isfinite(a)&&std::abs(a-b)<1e-8,"Preview analytic transform differs.");};
+    const auto saved_world=object(before,child).world;const auto saved_palette=skin(before).palette;
+    const double q=std::sqrt(.5);
+    const auto preview=session.authored_preview(camera,parent,{3,4,5},{0,q,0,q},{2,3,4});
+    check(preview.revision==before.revision&&preview.world_id==before.world_id,"Preview changed authored source identity.");
+    const auto& moved=object(preview,child).world;close(moved[12],15);close(moved[13],10);close(moved[14],3);
+    check(preview.lighting.lights.size()==1,"Preview lost authored light.");
+    const auto& lamp=preview.lighting.lights.front();close(lamp.position[0],3);close(lamp.position[1],7);close(lamp.position[2],5);
+    close(lamp.direction[0],-1);close(lamp.direction[1],0);close(lamp.direction[2],0);
+    const auto bone_preview=session.authored_preview(camera,bone,{0,3,0},{0,0,0,1},{1,1,1});
+    check(skin(bone_preview).palette.size()==1,"Preview skin joint count differs.");close(skin(bone_preview).palette[0][13],2);
+    check(skin(before).palette==saved_palette&&object(before,child).world==saved_world,"Preview mutated an earlier snapshot.");
+    const auto normal=session.authored_snapshot(camera);
+    check(object(normal,child).world==saved_world&&skin(normal).palette==saved_palette,"Preview poisoned normal snapshot cache.");
+    close(normal.lighting.lights.front().position[1],1);
+    bool rejected=false;try {(void)session.authored_preview(camera,parent,{0,0,0},{0,0,0,1},{0,1,1});}catch(const std::exception&){rejected=true;}
+    check(rejected,"Invalid preview scale accepted.");
+    check(call(session,"world.inspect")==inspected&&call(session,"world.history")==history&&tree(directory)==files,
+          "Transient preview changed authoring state, history, receipts or storage.");
+}
 int main() {
     const auto directory=fs::current_path()/("world-session-native-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     try {
@@ -152,6 +213,7 @@ int main() {
             document["entities"][entity]["components"]["PbrTextures"]["normal"]["image"]=1;write(package,document.dump());
             poima::WorldSession invalid(package.string(),poima::WorldOpenMode::read_only_runtime);failed=false;try { (void)invalid.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Invalid embedded texture index was bundled.");
         }
-        fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo and protocol adapter passed.\n";
+        authored_preview_regression(directory);
+        fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo, transient transform preview and protocol adapter passed.\n";
     }catch(const std::exception& error) { fs::remove_all(directory);std::cerr<<error.what()<<'\n';return 1; }
 }

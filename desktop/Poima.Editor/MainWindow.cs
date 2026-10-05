@@ -90,6 +90,11 @@ public sealed class MainWindow : Window
         {
             if (e.Source is TextBox) return;
             if (e.Key == Key.F && e.KeyModifiers == KeyModifiers.None) { Run(Navigation.FrameSelection); e.Handled = true; }
+            if (!Navigation.Flying && e.KeyModifiers == KeyModifiers.None && e.Key is Key.Q or Key.W or Key.E or Key.R)
+            {
+                Run(() => Navigation.ConfigureGizmo(e.Key switch { Key.Q => "none", Key.W => "move", Key.E => "rotate", _ => "scale" }));
+                e.Handled = true;
+            }
             if (e.KeyModifiers == KeyModifiers.Control && e.Key is Key.Z or Key.Y)
             { Run(() => Model.History(e.Key == Key.Y)); e.Handled = true; }
         };
@@ -101,7 +106,7 @@ public sealed class MainWindow : Window
                 const string message = "Apply or Reload the Inspector changes before closing.";
                 Model.Note(message); status.Text = message;
             }
-            if (!e.Cancel) { try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
+            if (!e.Cancel) { Navigation.Cancel(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
         };
         Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; CloseLayout(); Model.Dispose(); } };
     }
@@ -124,6 +129,7 @@ public sealed class MainWindow : Window
     public void FloatPanel(string name)
     {
         if (!factory.Panels.TryGetValue(name, out var panel)) throw new ArgumentException("Unknown editor panel.", nameof(name));
+        Navigation.Cancel();
         factory.FloatDockable(panel);
     }
     private static string FindProjectRoot(string world)
@@ -166,7 +172,7 @@ public sealed class MainWindow : Window
         var next = new EditorDockFactory(BuildPanel); var restored = next.RestoreLayout(saved, ClampFloating);
         CloseLayout(); factory = next; layout = restored; factory.InitLayout(layout); dock.Factory = factory; dock.Layout = layout;
     }
-    private void CloseLayout() { if (layout.Close.CanExecute(null)) layout.Close.Execute(null); }
+    private void CloseLayout() { Navigation.Cancel(); if (layout.Close.CanExecute(null)) layout.Close.Execute(null); }
     private void UpdateToolbar(object? sender, EventArgs args)
     {
         status.Text = Model.Host.LastError is string error ? "Scene: " + error : $"{(Model.RuntimeId is null ? "Ready" : $"Simulation paused · tick {Model.Tick}")}     ·     {Model.Entities.Count} objects     ·     Revision {Model.Revision}";
@@ -217,11 +223,28 @@ public sealed class MainWindow : Window
     private Control BuildScene()
     {
         var grid = new Grid { RowDefinitions = new RowDefinitions("24,*") };
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        controls.Children.Add(Label("Perspective", true));
+        var controls = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3 };
+        var modes = new Dictionary<string, Button>();
+        foreach (var (mode, title, key) in new[] { ("none", "Select", "Q"), ("move", "Move", "W"), ("rotate", "Rotate", "E"), ("scale", "Scale", "R") })
+        {
+            var button = Button(title, () => Navigation.ConfigureGizmo(mode));
+            AutomationProperties.SetName(button, "Scene "+title); ToolTip.SetTip(button, title+" tool ("+key+")");
+            modes.Add(mode, button); controls.Children.Add(button);
+        }
+        var space = Button("World", () => Navigation.ConfigureGizmo(Navigation.GizmoMode, Navigation.GizmoSpace == "world" ? "local" : "world"));
+        AutomationProperties.SetName(space, "Scene transform space"); ToolTip.SetTip(space, "Toggle world/local axes. Ctrl snaps: 0.25 units, 15 degrees, 0.1 scale.");
+        controls.Children.Add(space);
         controls.Children.Add(Button("Frame", Navigation.FrameSelection));
-        var help = Label("RMB + WASD · MMB pan · Alt orbit · F frame", true); help.FontSize = 10;
-        controls.Children.Add(help);
+        ToolTip.SetTip(controls, "Q select · W move · E rotate · R scale · Ctrl snap · RMB + WASD fly · MMB pan · Alt orbit · F frame");
+        void SyncTools(object? sender, EventArgs args)
+        {
+            foreach (var pair in modes)
+                pair.Value.Background = EditorTheme.Brush(pair.Key == Navigation.GizmoMode ? "#34547B" : "#28292D");
+            space.Content = Label(Navigation.GizmoSpace == "local" ? "Local" : "World");
+        }
+        Navigation.Changed += SyncTools; SyncTools(null, EventArgs.Empty);
+        grid.DetachedFromVisualTree += (_, _) => Navigation.Changed -= SyncTools;
+        grid.AttachedToVisualTree += (_, _) => { Navigation.Changed -= SyncTools; Navigation.Changed += SyncTools; SyncTools(null, EventArgs.Empty); };
         var bar = new Border { Background = EditorTheme.Brush("#28292D"), Padding = new Thickness(8, 1), Child = controls };
         grid.Children.Add(bar);
         var view = new VulkanView(Model.Host, Navigation); Grid.SetRow(view, 1); grid.Children.Add(view); return grid;
@@ -301,7 +324,7 @@ public sealed class MainWindow : Window
             if (Model.Selected is null) { fields.Children.Add(new TextBlock { Text = "Select an object to inspect its components.", Margin = new Thickness(16), Foreground = EditorTheme.Brush("#939393"), TextWrapping = TextWrapping.Wrap }); return; }
             var row = Model.Entities.FirstOrDefault(x => x.Id == Model.Selected);
             var name = new TextBox { Text = Model.DraftName, FontWeight = FontWeight.SemiBold };
-            AutomationProperties.SetName(name, "Object name"); name.TextChanged += (_, _) => { Model.SetName(name.Text ?? ""); Banner(); };
+            AutomationProperties.SetName(name, "Object name"); ObserveInspectorText(name, text => { Model.SetName(text); Banner(); });
             var header = new Grid { ColumnDefinitions = new ColumnDefinitions("28,*"), Margin = new Thickness(8, 10, 8, 10) };
             header.Children.Add(EditorIcons.Make(row?.Icon ?? "entity", 20)); Grid.SetColumn(name, 1); header.Children.Add(name); fields.Children.Add(header);
             foreach (var pair in Model.DraftComponents.OrderBy(x => x.Key == "Transform" ? "" : x.Key).ToArray())
@@ -315,13 +338,13 @@ public sealed class MainWindow : Window
                     var json = new TextBox { Text = Model.FieldText(pair.Key, component.ToJsonString(new JsonSerializerOptions { WriteIndented = true })), AcceptsReturn = true, FontSize = 12, MinHeight = 80, FontFamily = new FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
                     AutomationProperties.SetName(json, pair.Key + " component JSON");
                     var type = pair.Key;
-                    json.TextChanged += (_, _) =>
+                    ObserveInspectorText(json, text =>
                     {
-                        Model.SetFieldText(type, json.Text ?? "");
-                        try { var value = JsonNode.Parse(json.Text ?? "") as JsonObject ?? throw new FormatException(); Model.SetComponent(type, value); Model.SetInvalid(type, false); }
+                        Model.SetFieldText(type, text);
+                        try { var value = JsonNode.Parse(text) as JsonObject ?? throw new FormatException(); Model.SetComponent(type, value); Model.SetInvalid(type, false); }
                         catch (Exception) { Model.SetInvalid(type, true); }
                         Banner();
-                    };
+                    });
                     section.Children.Add(Label("Component data · JSON", true)); section.Children.Add(json);
                 }
                 var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
@@ -331,6 +354,25 @@ public sealed class MainWindow : Window
             }
         }
         Observe(root, Model, Refresh); Refresh(); return root;
+    }
+    private void ObserveInspectorText(TextBox control, Action<string> edited)
+    {
+        // Avalonia may deliver the initial TextChanged after this subscription.
+        // Display formatting must never round authored values, round-trip an
+        // untouched quaternion through Euler angles, or materialize defaults.
+        // Compare text rather than focus so paste, automation and invalid raw
+        // user edits follow the same path. Retired controls cannot edit a new draft.
+        var presented = control.Text ?? "";
+        var selected = Model.Selected;
+        var generation = Model.DraftGeneration;
+        control.TextChanged += (_, _) =>
+        {
+            if (Model.Selected != selected || Model.DraftGeneration != generation) return;
+            var text = control.Text ?? "";
+            if (string.Equals(text, presented, StringComparison.Ordinal)) return;
+            presented = text;
+            edited(text);
+        };
     }
     private void BuildTransform(StackPanel panel, JsonObject source, Action changed)
     {
@@ -349,11 +391,12 @@ public sealed class MainWindow : Window
                 var cell = new Grid { ColumnDefinitions = new ColumnDefinitions("11,*") };
                 cell.Children.Add(new TextBlock { Text = "XYZ"[axis].ToString(), Foreground = EditorTheme.Brush(new[] { "#CD8888", "#91B58A", "#8FA8CA" }[axis]), FontSize = 11, VerticalAlignment = VerticalAlignment.Center });
                 var edit = new TextBox { Text = Model.FieldText(field + index, values[axis].ToString("0.###", CultureInfo.InvariantCulture)), MinWidth = 32, FontSize = 12 };
+                edit.BorderBrush = EditorTheme.Brush(Model.HasInvalid(field + index) ? "#BA6B60" : "#3B3C42");
                 AutomationProperties.SetName(edit, $"{label} {"XYZ"[axis]}{(field == "rotation" ? " degrees" : "")}");
-                edit.TextChanged += (_, _) =>
+                ObserveInspectorText(edit, text =>
                 {
-                    Model.SetFieldText(field + index, edit.Text ?? "");
-                    var valid = double.TryParse(edit.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && double.IsFinite(value);
+                    Model.SetFieldText(field + index, text);
+                    var valid = double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && double.IsFinite(value);
                     Model.SetInvalid(field + index, !valid);
                     edit.BorderBrush = EditorTheme.Brush(valid ? "#3B3C42" : "#BA6B60");
                     if (valid)
@@ -370,7 +413,7 @@ public sealed class MainWindow : Window
                         Model.SetComponent("Transform", transform);
                     }
                     changed();
-                };
+                });
                 Grid.SetColumn(edit, 1); cell.Children.Add(edit); Grid.SetColumn(cell, axis+1); row.Children.Add(cell);
             }
             panel.Children.Add(row);
@@ -381,6 +424,9 @@ public sealed class MainWindow : Window
         // Edit a complete copy: optional fields remain absent until explicitly
         // edited, and unrelated values survive each typed field change.
         var value = EditorModel.Clone(source);
+        var selectedEntity = Model.Selected;
+        var draftGeneration = Model.DraftGeneration;
+        bool CurrentDraft() => Model.Selected == selectedEntity && Model.DraftGeneration == draftGeneration;
         double Number(JsonObject owner, string key, double fallback = 0) => owner[key]?.GetValue<double>() ?? fallback;
         void Commit()
         {
@@ -412,16 +458,17 @@ public sealed class MainWindow : Window
         TextBox Numeric(string label, string key, double current, double min, double max, Action<double> set)
         {
             var edit = new TextBox { Text = Model.FieldText(type + ".input." + key, current.ToString("G9", CultureInfo.InvariantCulture)), FontSize = 12, MinWidth = 35 };
+            edit.BorderBrush = EditorTheme.Brush(Model.HasInvalid(type + ".input." + key) ? "#BA6B60" : "#191919");
             AutomationProperties.SetName(edit, type + " " + label);
             ToolTip.SetTip(edit, $"{label}: {min:G} to {max:G}");
-            edit.TextChanged += (_, _) =>
+            ObserveInspectorText(edit, text =>
             {
-                Model.SetFieldText(type + ".input." + key, edit.Text ?? "");
-                var valid = double.TryParse(edit.Text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number) && number >= min && number <= max;
+                Model.SetFieldText(type + ".input." + key, text);
+                var valid = double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number) && double.IsFinite(number) && number >= min && number <= max;
                 Model.SetInvalid(type + ".input." + key, !valid);
                 edit.BorderBrush = EditorTheme.Brush(valid ? "#191919" : "#BA6B60");
                 if (valid) { set(number); Commit(); } else changed();
-            };
+            });
             return edit;
         }
         void Scalar(string label, string key, double min, double max, double fallback = 0, JsonObject? owner = null, string prefix = "")
@@ -434,7 +481,13 @@ public sealed class MainWindow : Window
             owner ??= value; var target = owner;
             var control = new CheckBox { IsChecked = target[key]?.GetValue<bool>() ?? false, MinHeight = 22, VerticalAlignment = VerticalAlignment.Center };
             AutomationProperties.SetName(control, type + " " + label);
-            control.IsCheckedChanged += (_, _) => { target[key] = control.IsChecked == true; Commit(); };
+            var presented = control.IsChecked == true;
+            control.IsCheckedChanged += (_, _) =>
+            {
+                var current = control.IsChecked == true;
+                if (!CurrentDraft() || current == presented) return;
+                presented = current; target[key] = current; Commit();
+            };
             panel.Children.Add(Row(label, control));
         }
         void ColorField(string label, string key)
@@ -484,7 +537,7 @@ public sealed class MainWindow : Window
                     AutomationProperties.SetName(kind, "Light type");
                     kind.SelectionChanged += (_, _) =>
                     {
-                        if (kind.SelectedItem is not string selected || selected == value["kind"]!.GetValue<string>()) return;
+                        if (!CurrentDraft() || kind.SelectedItem is not string selected || selected == value["kind"]!.GetValue<string>()) return;
                         if (Model.HasInvalid(type + ".input.")) { kind.SelectedItem = value["kind"]!.GetValue<string>(); Model.Note("Fix invalid Light fields before changing its type."); return; }
                         value["kind"] = selected;
                         if (selected == "directional") value.Remove("range");
