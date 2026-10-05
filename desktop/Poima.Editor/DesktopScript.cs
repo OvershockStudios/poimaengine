@@ -166,6 +166,32 @@ internal sealed class DesktopScript
                         window.Game.SelectProfile(action["path"]?.GetValue<string>());
                         result["game_input"] = window.Game.Inspect(); break;
                     case "show_gameplay": window.ShowGameplay(); break;
+                    case "open_profiler": window.ShowProfiler(); break;
+                    case "close_profiler": window.CloseProfiler(); break;
+                    case "profiler_external_start":
+                        // Native authority outside the GUI model, like another shared client.
+                        var observedProfiler = model.Host.Call("profiler.status");
+                        result["result"] = model.Host.Call("profiler.start", new() { ["capture_id"] = Text("capture_id"),
+                            ["expected_capture_id"] = observedProfiler["capture_id"]?.DeepClone(), ["capacity"] = action["capacity"]?.GetValue<int>() ?? 16384 });
+                        break;
+                    case "profiler_select_cpu":
+                        var selectableProfiler = window.Profiler.Events.OfType<JsonObject>().FirstOrDefault(value => value["kind"]?.GetValue<string>() == "cpu")
+                            ?? throw new InvalidOperationException("Loaded profiler capture has no CPU span.");
+                        window.Profiler.Select(selectableProfiler["id"]!.GetValue<long>()); result["profiler"] = window.Profiler.Inspect(); break;
+                    case "inspect_profiler": result["profiler"] = window.Profiler.Inspect(); break;
+                    case "wait_profiler":
+                        if (window.Profiler.Error is string profilerError) throw new InvalidOperationException(profilerError);
+                        if (window.Profiler.Loading || window.Profiler.LoadedCapture is null || window.Profiler.LoadedCapture != window.Profiler.Capture)
+                        {
+                            if (deferredAt is null) { deferredAt = frame; deferredStarted = System.Diagnostics.Stopwatch.GetTimestamp(); }
+                            if (System.Diagnostics.Stopwatch.GetElapsedTime(deferredStarted).TotalSeconds < 5) { --next; return; }
+                            throw new InvalidOperationException("Profiler capture load timed out: " + window.Profiler.Inspect());
+                        }
+                        if (deferredAt is int profilerStarted) { frameOffset += frame-profilerStarted; deferredAt = null; }
+                        result["profiler"] = window.Profiler.Inspect(); break;
+                    case "profiler_select": window.Profiler.Select(action["id"]!.GetValue<long>()); result["profiler"] = window.Profiler.Inspect(); break;
+                    case "profiler_export": result["export"] = window.Profiler.Export(Text("path")); break;
+                    case "render_profiler": result["visual"] = window.RenderProfiler(Text("path")); break;
                     case "open_saves": window.ShowSaves(); break;
                     case "close_saves": window.CloseSaves(); break;
                     case "inspect_saves": result["saves"] = window.Saves.Inspect(); break;

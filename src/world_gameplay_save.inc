@@ -42,6 +42,7 @@
         catch(...) { runtime_->gameplay_saves().mark_resolving(-32070,"Save receipt verification failed; operation retained."); }
     }
     void service_gameplay_save() noexcept {
+        profiling::Scope trace("save.service");
         const auto* pending=runtime_->gameplay_saves().pending();if(!pending || !pending->committed)return;
         const auto request=*pending;
         if(pending_gameplay_write_) { resolve_gameplay_write(request);return; }
@@ -94,6 +95,8 @@
     RuntimeAdvance advance_runtime(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={}) {
         require(bool(runtime_),"No runtime is active.",-32030);
+        profiling::SessionScope trace_session(runtime_id_);
+        profiling::Scope trace_advance("owner.advance",static_cast<std::int64_t>(runtime_->inspect().tick));
         const bool previously_pending=runtime_->gameplay_saves().pending()!=nullptr;
         std::optional<GameplaySaveResult> previous_operation;
         if(previously_pending) {

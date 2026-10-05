@@ -7,6 +7,7 @@
 #include "poima/animation.hpp"
 #include "poima/editor_viewport.hpp"
 #include "poima/hosted_viewport.hpp"
+#include "poima/profiler.hpp"
 #if POIMA_EDITOR
 #include <imgui.h>
 #include "poima/editor_ui_vs.hpp"
@@ -290,6 +291,7 @@ struct Context {
     RenderDiagnostics diagnostics;
     DrawCounts pending_draws;
     vk::QueryPool timestamp_pool;
+    bool timestamp_prepared=false,timestamp_recording=false;
     std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
     std::map<const TextureImage*,nvrhi::TextureHandle> texture_cache;
     std::map<std::array<int,4>,nvrhi::SamplerHandle> sampler_cache;
@@ -539,6 +541,8 @@ struct Context {
     }
 
     void prepare_timestamps() {
+        if(timestamp_prepared)return;
+        timestamp_prepared=true;
         const auto limits=physical.getProperties(dispatch).limits;
         diagnostics.timestamp_period_ns=limits.timestampPeriod;
         diagnostics.timestamp_valid_bits=physical.getQueueFamilyProperties(dispatch).at(queue_family).timestampValidBits;
@@ -555,19 +559,32 @@ struct Context {
         return vk::CommandBuffer(static_cast<VkCommandBuffer>(object.pointer));
     }
     void timestamp(std::uint32_t index) {
-        if(timestamp_pool)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index,dispatch);
+        if(timestamp_recording)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index,dispatch);
     }
     void collect_timestamps(double cpu_interval_ms) {
-        if(!timestamp_pool)return;
+        if(!timestamp_recording)return;
         std::array<std::uint64_t,5> values{};
         const auto status=device.getQueryPoolResults(timestamp_pool,0,5,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
-        if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) { ++diagnostics.gpu_samples_dropped;return; }
+        if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
+            ++diagnostics.gpu_samples_dropped;profiling::counter("gpu.samples_dropped",diagnostics.gpu_samples_dropped);return;
+        }
         const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
         auto ms=[&](std::size_t a,std::size_t b) { return static_cast<double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns*1e-6; };
-        timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.shadow_gpu,ms(1,2));timing_sample(diagnostics.opaque_gpu,ms(2,3));
-        timing_sample(diagnostics.post_gpu,ms(3,4));timing_sample(diagnostics.total_gpu,ms(0,4));
+        if(diagnostics.profile_requested) {
+            timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.shadow_gpu,ms(1,2));timing_sample(diagnostics.opaque_gpu,ms(2,3));
+            timing_sample(diagnostics.post_gpu,ms(3,4));timing_sample(diagnostics.total_gpu,ms(0,4));
+        }
+        // GPU values are queue durations observed after completion, not CPU
+        // timeline timestamps. Never fabricate cross-clock synchronization.
+        auto sample=[&](std::string_view name,std::size_t a,std::size_t b) {
+            const long double ns=static_cast<long double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns;
+            if(std::isfinite(ns) && ns>=0 && ns<static_cast<long double>(std::numeric_limits<std::uint64_t>::max()))
+                profiling::counter(name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
+        };
+        sample("gpu.skinning.ns",0,1);sample("gpu.shadows.ns",1,2);sample("gpu.opaque.ns",2,3);
+        sample("gpu.post.ns",3,4);sample("gpu.total.ns",0,4);
     }
 
     void prepare_shadows() {
@@ -839,6 +856,7 @@ struct Context {
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
     void update_scene() {
+        profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();pending_draws={};
         retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
         auto lighting=scene->lighting;finalize_lighting(lighting);
@@ -941,6 +959,17 @@ struct Context {
             if(!active_skins.contains(it->first)) { skin_bytes-=it->second.bytes;it=skin_instances.erase(it); }else ++it;
         }
         if(diagnostics.profile_requested)timing_sample(diagnostics.prepare_cpu,elapsed_ms(started));
+        profiling::counter("renderer.objects",pending_draws.objects);
+        profiling::counter("renderer.camera_draws",pending_draws.camera_draws);
+        profiling::counter("renderer.camera_triangles",pending_draws.camera_triangles);
+        profiling::counter("renderer.shadow_draws",pending_draws.shadow_draws);
+        profiling::counter("renderer.shadow_triangles",pending_draws.shadow_triangles);
+        profiling::counter("renderer.geometries",geometry_cache.size());
+        profiling::counter("renderer.materials",material_cache.size());
+        profiling::counter("renderer.images",texture_cache.size());
+        profiling::counter("renderer.skin_instances",skin_instances.size());
+        profiling::counter("renderer.texture_payload_bytes",texture_bytes);
+        profiling::counter("renderer.skin_buffer_bytes",skin_bytes);
     }
 
     bool rebuild(const RenderOptions& options) {
@@ -1107,6 +1136,7 @@ struct Context {
     }
 
     void capture(const std::string& path) {
+        profiling::Scope profile_scope("renderer.capture_readback_write");
         std::size_t row_pitch = 0;
         void* pixels = checked->mapStagingTexture(staging, {}, nvrhi::CpuAccessMode::Read, &row_pitch);
         require(pixels != nullptr, "GPU capture readback mapping failed.");
@@ -1267,12 +1297,17 @@ struct Context {
     }
 #endif
     bool frame(bool capture_frame) {
+        profiling::Scope profile_scope("render.frame");
         require(!renderer_fault,"Renderer synchronization failed; recreate the renderer session.");
         const auto frame_started=SteadyClock::now();
         if(!swapchain) { swapchain_dirty=true; return false; }
+        // Query storage belongs to this Context. Create it before acquiring an
+        // image; stopped traces leave it allocated but perform no query work.
+        if(profiling::active() && !timestamp_prepared)prepare_timestamps();
+        timestamp_recording=bool(timestamp_pool) && (diagnostics.profile_requested || profiling::active());
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,acquired,{},dispatch); }
+        try { profiling::Scope acquire_scope("render.acquire");next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,acquired,{},dispatch); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
         if((editor || hosted) && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
@@ -1287,8 +1322,11 @@ struct Context {
         const auto index = next.value;
         auto texture = images.at(index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
+        double record_ms=0;
+        {
+        profiling::Scope record_scope("render.record");
         const auto record_started=SteadyClock::now();commands->open();
-        if(timestamp_pool)native_commands().resetQueryPool(timestamp_pool,0,5,dispatch);
+        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,5,dispatch);
         timestamp(0);
         if(scene) { commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));dispatch_skinning(); }
         timestamp(1);
@@ -1341,9 +1379,13 @@ struct Context {
         commands->setTextureState(texture, nvrhi::AllSubresources, nvrhi::ResourceStates::Present);
         commands->commitBarriers();timestamp(4);
         commands->close();
-        const auto record_ms=elapsed_ms(record_started);
+        record_ms=elapsed_ms(record_started);
+        }
+        {
+        profiling::Scope submit_scope("render.submit");
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
         checked->executeCommandList(commands);
+        }
         vk::PresentInfoKHR present_info;
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = &finished[index];
@@ -1351,21 +1393,23 @@ struct Context {
         present_info.pSwapchains = &swapchain;
         present_info.pImageIndices = &index;
         vk::Result presented;
-        try { presented=queue.presentKHR(present_info,dispatch); }
+        try { profiling::Scope present_scope("render.present");presented=queue.presentKHR(present_info,dispatch); }
         catch(const vk::OutOfDateKHRError&) { presented=vk::Result::eErrorOutOfDateKHR; }
         swapchain_dirty = next.result==vk::Result::eSuboptimalKHR || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR;
         require(presented == vk::Result::eSuccess || presented == vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR,
             "Vulkan presentation failed.");
         initialized[index] = true;
         // Deliberately serialized for this correctness test, not a frame-time benchmark.
-        require(checked->waitForIdle(), "NVRHI device wait failed.");
+        { profiling::Scope wait_scope("render.wait");require(checked->waitForIdle(), "NVRHI device wait failed."); }
         validate_skin_dispatch();
         checked->runGarbageCollection();
         require(messages.errors == 0, "NVRHI reported a validation/backend error; inspect stderr.");
         ++diagnostics.completed_submissions;diagnostics.last_draws=pending_draws;
         if(diagnostics.profile_requested) {
-            const auto frame_ms=elapsed_ms(frame_started);timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,frame_ms);collect_timestamps(frame_ms);
+            const auto frame_ms=elapsed_ms(frame_started);timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,frame_ms);
         }
+        if(timestamp_recording)collect_timestamps(elapsed_ms(frame_started));
+        profiling::counter("renderer.completed_submissions",diagnostics.completed_submissions);
         failure.complete=true;
         return presented!=vk::Result::eErrorOutOfDateKHR;
     }
@@ -1572,6 +1616,8 @@ EditorViewportResources EditorViewport::resources() const {
 #endif
 
 PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
+    profiling::SourceScope player_source(profiling::Source::player);
+    profiling::Scope player_scope("player.run");
     PlayerReport result;
     auto& report=result.render;
     result.initial_tick=session.tick();
@@ -1602,6 +1648,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
         auto after_advance=[&](bool save_serviced) {
             if(save_serviced)previous=SDL_GetTicksNS();
             const auto current=session.identity();
+            profiling::SessionScope current_session(current);
             if(current==result.final_session) {
                 if(audio)audio->advance(session.audio_state(options.camera));
                 return false;
@@ -1622,6 +1669,8 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             return true;
         };
         while(!quit) {
+            profiling::SessionScope frame_session(result.final_session);
+            profiling::Scope frame_scope("player.frame",static_cast<std::int64_t>(session.tick()));
             SDL_Event event;
             while(SDL_PollEvent(&event)) {
                 if(event.type==SDL_EVENT_QUIT || event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) { quit=true; result.stop_reason="window_closed"; }
@@ -1692,12 +1741,17 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
                     input.consume(options.controller);
                 }
             }
+            profiling::SessionScope render_session(result.final_session);
+            profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
             snapshot=session.snapshot(options.camera); context.update_scene();
             if(context.frame(false)) ++report.frames_presented;
             if(!quit && options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
         }
+        profiling::SessionScope final_session(result.final_session);
         if(audio)audio->finish(session.audio_state(options.camera));
         if(!options.render.capture.empty()) {
+            profiling::SessionScope capture_session(result.final_session);
+            profiling::Scope capture_scope("player.final_capture",static_cast<std::int64_t>(session.tick()));
             // Final artifact observes the exact final tick without simulating an
             // extra tick. Rebuild once if the surface changed during shutdown.
             snapshot=session.snapshot(options.camera); context.update_scene();

@@ -1,0 +1,686 @@
+{
+  "milestone": "Bounded native profiler and shared editor timeline",
+  "date": "2026-10-05",
+  "engine_version": "0.0.36",
+  "source_base": "ab4ace690a24b612cf9a2e5ebdb0a2e5e3537f8f",
+  "source_sha256": {
+    "CMakeLists.txt": "bfec4478a4afe3c555039325b2b571319f20e2fcd5fc085e631cc9b229663bfd",
+    "desktop/Poima.Editor/DesktopScript.cs": "83c8b387c94ec74018e2adb62970f7e02425a6e086b85cb234fb8974a3f7a32d",
+    "desktop/Poima.Editor/MainWindow.cs": "c1aac7317dfb491389ec8d7352692196ff9b9aad8bda86e7956dee58cbd115f6",
+    "desktop/Poima.Editor/ProfilerModel.cs": "3908983c623b10fd959026c487cb4534c1298cadea86e4327757cfdd5d430b05",
+    "desktop/Poima.Editor/ProfilerWindow.cs": "713a06f74568bd27ffb56f7adeb358bb463d73c428e27c1bbf0d860207905939",
+    "include/poima/profiler.hpp": "cfcdb44b137a62f5c842215c62638087872e5b051c51383e14755e6c9d87dc13",
+    "include/poima/world.hpp": "6553085cebaf1511fc9ca3e3f47eda0a1210c12684276c98e5e2d4ff735c3198",
+    "src/desktop_bridge.cpp": "829a2d60ceda105131b88fdb510ab90f8ec224e3a3d61bc961a3403412371136",
+    "src/player_audio.hpp": "d356a0b07ef64eeacdbddce5c05e29b6f3df8d05d4fb0ced08f8d37f6dcc0681",
+    "src/profiler.cpp": "f9becb74d7c6822a726387f46ea940682c90386e83408ab0c6b2dd79d21e88b1",
+    "src/profiler_service.cpp": "392bc146987098d9cdadf75d10f329dfbd135477047f416ca46b6b703e4228b2",
+    "src/profiler_service.hpp": "21ac363f9935b3fdb0c350dec5f19b5f1a4eabb64d77b42f68558715ef2c9917",
+    "src/render_smoke.cpp": "2f55c6b71c39c1c79fcfbf9f9d3d81f3b5984cdce7420e4239911d4e567b3337",
+    "src/runtime.cpp": "8e2eff1896948c98b9db4c2c92e4aad330afd3dc9471f86d8cc166352ee4094a",
+    "src/world.cpp": "519ef22f6df0d2be2fff54261161210672e4188d9bb09d4d85d470ab80bf3adf",
+    "src/world_gameplay_save.inc": "d323be94aec98cab0230329dca3d5de237b59e66461da36ccbf822446103512e",
+    "src/world_save.inc": "8cfc34fef0e1b377f907167e39129fc1d64e498500b71811b9dde867978c3e07",
+    "tests/desktop_profiler_frontend.py": "6acecb4593f028104854c82d0fc092991f05bd02cc293034cf1491464088abc8",
+    "tests/profiler.cpp": "5adfb1c0138b5d2345734bebfc958b90e40f907ac6bcf4aa6fea749bd955c60b",
+    "tests/profiler_benchmark.cpp": "191b163a9ce7ef6ec1a1b349991b0413f2a1442820a44414971cef97345e714a",
+    "tests/profiler_capture.py": "ce53161563280d0b4af5756dba3d264445fa14859821e9f66c465dd1391b7698",
+    "tests/profiler_contract.py": "373c616ca0a864959b8ad75b5424a0f6eb355f9f4a50bb94c77e557696f6942b",
+    "tests/profiler_gameplay.py": "294c8e7e703bf1156486b05f3a1e696c85a8d89d62f8f606d4e30704f7ad40f5",
+    "tests/profiler_service.cpp": "88a34cbddaee6801d3a19e6a225d80eea788b25a9a057f3e3a0a53f3a0171c1d",
+    "tests/world_session_native.cpp": "c90aca9481099e7ace9c206086348c521421f1f0ea5dafc2751929c620af121d"
+  },
+  "package": {
+    "manifest": {
+      "path": "build/desktop-profiler-final/poima-desktop-build.json",
+      "sha256": "1cd7756a697b4c16c8ce3ca5225ed94751385720b47eaae0ebc84195fe9128ee",
+      "bytes": 55753
+    },
+    "files": 362,
+    "dependency_records": 36,
+    "runtime_packs": 2,
+    "native": {
+      "path": "build/desktop-profiler-final/poima.exe",
+      "sha256": "6dbf34427d0c77026fbcda753fe6ae85b3b59b03f828f5c6d8b9b6704821fca6",
+      "bytes": 134876672
+    },
+    "bridge": {
+      "path": "build/desktop-profiler-final/poima_desktop.dll",
+      "sha256": "a6ea609a36c791c9903929ec7193194a6cae4fb141a45e5a0c7795e33ec4ef09",
+      "bytes": 126072320
+    },
+    "editor": {
+      "path": "build/desktop-profiler-final/Poima.Editor.dll",
+      "sha256": "e641c336cfd2f421402f48bb131fecb52b4e39cdfcc6a456c485ee400330a53b",
+      "bytes": 1175552
+    }
+  },
+  "implemented": [
+    "Per-session opt-in fixed-capacity native recorder; event reservation and scope/counter recording allocate no memory and never throw.",
+    "Scoped native CPU phases, failure/rollback observations, capture-local parents and runtime session/tick labels survive owner replacement.",
+    "Guarded start/stop/status/paged-events/summary/export operations share one authority with the human editor; controls do not record themselves.",
+    "Overflow seals a retained prefix while open events complete; immutable paging, capture-ID lifetime guards and explicit loss/saturation metadata.",
+    "Editor CPU timeline, source filter, selection and cost summaries; partial resource counters use their actual units and latest values.",
+    "Renderer lazily enables GPU query collection for active captures; durations remain uncalibrated observations, never invented CPU-aligned spans.",
+    "Chrome trace-event export with complete CPU spans and separate GPU/counter observations."
+  ],
+  "qualification": {
+    "ctest": [
+      {
+        "configuration": "runtime",
+        "passed": 45,
+        "log": {
+          "path": "build/profiler-runtime-final-ctest.log",
+          "sha256": "360646af8201977f4db9d60e016498718243152f1036d04f0efc03b27c35b02b",
+          "bytes": 5056
+        },
+        "xml": {
+          "path": "build/profiler-runtime-final-ctest.xml",
+          "sha256": "2ff67506180fb8e9fa616a3d9aa58ed95eb56eaf6abb1c01b2f6ab2b6906ae2d",
+          "bytes": 29922
+        }
+      },
+      {
+        "configuration": "authoring",
+        "passed": 37,
+        "log": {
+          "path": "build/profiler-authoring-final-ctest.log",
+          "sha256": "541a018dff79f1eabc821195e3645663b63606a21fead3a65eee5fda7e28f701",
+          "bytes": 4165
+        },
+        "xml": {
+          "path": "build/profiler-authoring-final-ctest.xml",
+          "sha256": "bb6f76c94d2732e4faad91889887da6cbf30c1ce120e99290578ee10e7bd6c63",
+          "bytes": 26473
+        }
+      }
+    ],
+    "real_protocol_and_gameplay": [
+      {
+        "platform": "Windows",
+        "backend": null,
+        "groups": 3,
+        "rpc_count": 128,
+        "events": null,
+        "checks": [
+          "Discovery/guards/retries, independent owners, failed-operation spans and safe Unicode/NUL diagnostic names; profiler observation does not record itself.",
+          "Capacity overflow seals a retained prefix with one rejected reservation; paging remains stable, stale/reused capture IDs reject.",
+          "Actual 60-tick physics/controller replay is identical with profiling off/on; fixed-tick phases/session identity/nesting and failed input are recorded."
+        ],
+        "raw_evidence": {
+          "path": "build/profiler-contract-windows-final/424efb5708eb44feb87fc99d5da26a9a/evidence.json",
+          "sha256": "a2192031cd180453bd160cfeef493b4e18a5dd6cd160c8c3edddba438f84fbe3",
+          "bytes": 490229
+        }
+      },
+      {
+        "platform": "Windows",
+        "backend": "coreclr",
+        "groups": 5,
+        "rpc_count": 35,
+        "events": null,
+        "checks": [
+          "Actual later Tick exception rolls back staged save, all gameplay state and tick; no storage side effects.",
+          "Same failed request ID retries successfully; exactly one durable save and next-Tick completion.",
+          "Gameplay load replaces runtime identity; saved ticket resolves without reenqueuing or changing authored bytes.",
+          "Trace retains failed Tick and successful rollback; save phases and overlapping tick numbers remain distinguishable by source/destination session.",
+          "Sealed event pagination, aggregate failure counts and parseable Chrome trace agree without further storage/world mutations."
+        ],
+        "raw_evidence": {
+          "path": "build/profiler-gameplay-windows-coreclr-final/1c29aaec68bb44a3ad54e4a4b222d1d7/evidence.json",
+          "sha256": "1bccd0ebe5a85cb232b1dd8ae0a1e19cebfb96bcab0b01630d602a8ffa3ae07b",
+          "bytes": 322663
+        }
+      },
+      {
+        "platform": "Windows",
+        "backend": "native_aot",
+        "groups": 5,
+        "rpc_count": 35,
+        "events": null,
+        "checks": [
+          "Actual later Tick exception rolls back staged save, all gameplay state and tick; no storage side effects.",
+          "Same failed request ID retries successfully; exactly one durable save and next-Tick completion.",
+          "Gameplay load replaces runtime identity; saved ticket resolves without reenqueuing or changing authored bytes.",
+          "Trace retains failed Tick and successful rollback; save phases and overlapping tick numbers remain distinguishable by source/destination session.",
+          "Sealed event pagination, aggregate failure counts and parseable Chrome trace agree without further storage/world mutations."
+        ],
+        "raw_evidence": {
+          "path": "build/profiler-gameplay-windows-native-final/ee36960713b54c8cb783f19f24c2c4b6/evidence.json",
+          "sha256": "eac05f2c30b3325f1c51d246ccda237faaadff23c0681b515567edea725a8816",
+          "bytes": 323351
+        }
+      },
+      {
+        "platform": "Linux",
+        "backend": "coreclr",
+        "groups": 5,
+        "rpc_count": 35,
+        "events": null,
+        "checks": [
+          "Actual later Tick exception rolls back staged save, all gameplay state and tick; no storage side effects.",
+          "Same failed request ID retries successfully; exactly one durable save and next-Tick completion.",
+          "Gameplay load replaces runtime identity; saved ticket resolves without reenqueuing or changing authored bytes.",
+          "Trace retains failed Tick and successful rollback; save phases and overlapping tick numbers remain distinguishable by source/destination session.",
+          "Sealed event pagination, aggregate failure counts and parseable Chrome trace agree without further storage/world mutations."
+        ],
+        "raw_evidence": {
+          "path": "build/profiler-gameplay-coreclr-linux-final/b4dba59ade1c44318c71c77b4299b137/evidence.json",
+          "sha256": "c606b2f6096a669d5b6057fcd91e2464354f4057f2317eb4e101636f87d2df53",
+          "bytes": 323324
+        }
+      },
+      {
+        "platform": "Linux",
+        "backend": "native_aot",
+        "groups": 5,
+        "rpc_count": 35,
+        "events": null,
+        "checks": [
+          "Actual later Tick exception rolls back staged save, all gameplay state and tick; no storage side effects.",
+          "Same failed request ID retries successfully; exactly one durable save and next-Tick completion.",
+          "Gameplay load replaces runtime identity; saved ticket resolves without reenqueuing or changing authored bytes.",
+          "Trace retains failed Tick and successful rollback; save phases and overlapping tick numbers remain distinguishable by source/destination session.",
+          "Sealed event pagination, aggregate failure counts and parseable Chrome trace agree without further storage/world mutations."
+        ],
+        "raw_evidence": {
+          "path": "build/profiler-gameplay-native-linux-final/da052066719746b3960326f969ef1f56/evidence.json",
+          "sha256": "858c3752f7d1707e5402e31368eb9278fbcf704210c3045a6c1ec23a64ddd683",
+          "bytes": 324145
+        }
+      }
+    ],
+    "native_core_and_service": {
+      "linux": {
+        "path": "build/profiler-native-validation/final-native-service.log",
+        "sha256": "3d50a0fe054b0addcb041cef7ab146d2a187ff344e7e16bcea33283a72bb0465",
+        "bytes": 347
+      },
+      "windows_logs": [
+        {
+          "path": "build/profiler-native-windows.log",
+          "sha256": "b2e9855236e4762dea625b38c412593fb41c5ceb8d19b705350d9a42a05d0d46",
+          "bytes": 92
+        },
+        {
+          "path": "build/profiler-service-native-windows.log",
+          "sha256": "d89ad3e5c7cbd5300afebec81c071debe3a66110490e28c4c0335df9fe05ac8f",
+          "bytes": 88
+        }
+      ],
+      "checks": [
+        "No event-path heap allocation, nested scopes, exceptions, overflow/open closure, restart, context isolation and real elapsed-time observation.",
+        "Known 1..100 counter distribution independently checks nearest-rank percentiles; retry/stale/open-scope/read/export guards."
+      ]
+    },
+    "graphics": {
+      "runs": [
+        {
+          "adapter_index": 1,
+          "passed": true,
+          "checks": [
+            "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+            "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+            "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+            "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+          ],
+          "rpc_count": 48,
+          "image_pairs": [
+            {
+              "reference": "off-1.bmp",
+              "observed": "on-1.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "off-1.bmp",
+              "observed": "stopped-1.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "off-4.bmp",
+              "observed": "on-4.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "off-4.bmp",
+              "observed": "stopped-4.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "player-False.bmp",
+              "observed": "player-True.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            }
+          ],
+          "events_per_capture": [
+            38,
+            38,
+            704
+          ],
+          "gpu_observations": 110,
+          "raw_evidence": {
+            "path": "build/profiler-capture-gpu1/1eb764eff0384c4895d35e081781f681/evidence.json",
+            "sha256": "3dbfdfe60865e870d21f13890facc2821928f0b8e92ef63fd334a22698910219",
+            "bytes": 1097576
+          }
+        },
+        {
+          "adapter_index": 0,
+          "passed": true,
+          "checks": [
+            "1x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+            "4x MSAA exact pixels with off/on/stopped tracing and real lazy GPU queries",
+            "traced replay preserves exact controller/body state and final pixels; GPU records carry player session/tick",
+            "sealed pages, parent intervals, independently recomputed percentiles, GPU-duration export semantics"
+          ],
+          "rpc_count": 48,
+          "image_pairs": [
+            {
+              "reference": "off-1.bmp",
+              "observed": "on-1.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "off-1.bmp",
+              "observed": "stopped-1.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "off-4.bmp",
+              "observed": "on-4.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "off-4.bmp",
+              "observed": "stopped-4.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            },
+            {
+              "reference": "player-False.bmp",
+              "observed": "player-True.bmp",
+              "maximum_channel_difference": 0,
+              "changed_pixels": 0
+            }
+          ],
+          "events_per_capture": [
+            38,
+            38,
+            704
+          ],
+          "gpu_observations": 110,
+          "raw_evidence": {
+            "path": "build/profiler-capture-gpu0/ceb5833f2c0d40f09deaf7845b578576/evidence.json",
+            "sha256": "31510f7d5506de543ee68e976c762cb36da4a5cb1e7af00d7d34207a058b5fc2",
+            "bytes": 1100661
+          }
+        }
+      ],
+      "binary_sha256": "35940cc1a056a9ad20eccd0ba78ee0cd075ed5c562a99480a030683446a9090a",
+      "source_scope": "Graphics parity runs precede only fixed-size session metadata routing and CMake registration corrections. Renderer/audio implementation hashes remain identical. Final-package GUI and protocol/gameplay runs use the final binaries."
+    },
+    "final_editor": {
+      "passed": true,
+      "profiler_actions": 43,
+      "checks": [
+        "Actual controls record native fixed ticks and both viewport sources; summary percentiles, CPU selection and exact native export agree.",
+        "Stale Record preserves the loaded capture and pending request; empty/full/replaced captures load explicitly; closing the tool preserves native recording."
+      ],
+      "profiler_raw_evidence": {
+        "path": "build/profiler-final-gui-gpu1/dec383ad1c7f4dde82da85bca18a311e/evidence.json",
+        "sha256": "169028642c8225aab9387fdb9ef312b06ea1448bc2bd48cc737a1ddfc76b6ce6",
+        "bytes": 296597
+      },
+      "full_actions": 232,
+      "restart_actions": 4,
+      "full_raw_evidence": {
+        "path": "build/profiler-final-full-gui-gpu1/2883d98b54a84230b600e274c4f41c75/evidence.json",
+        "sha256": "5ed561b3aa4709df87976b97de499e497adb744620f91974c5e9d3a2da78649e",
+        "bytes": 977951
+      },
+      "visual": {
+        "path": "docs/evidence/m2-profiler-window.png",
+        "sha256": "df866b02c7e4cafc52afbb5b32dd438793574199efbbe021fe01f9118b0279e4",
+        "bytes": 148673
+      },
+      "visual_review": "Readable controls, source lanes, selection and cost summaries; intentional scrolling. Attached Avalonia content render, not OS screenshot.",
+      "os_screenshot_available": false
+    },
+    "overhead": {
+      "runs": [
+        {
+          "platform": "linux",
+          "workload": {
+            "cameras": 1,
+            "characters": 1,
+            "dynamic_boxes": 128,
+            "paired_trials": 10,
+            "profiler_capacity": 65536,
+            "static_floors": 1,
+            "ticks": 120,
+            "ticks_per_batch": 1,
+            "warmup_pairs": 1
+          },
+          "comparison": "Same instrumented binary, recorder disabled versus enabled; CPU-only fixture, not whole-game or GPU performance",
+          "timing": "steady-clock wall time for fixed-step batches only; initialization, capture allocation and snapshot serialization excluded",
+          "percentiles": "median midpoint; p95 nearest rank; signed paired overhead may be negative under scheduling noise; no performance pass threshold",
+          "disabled_ns": {
+            "max": 19129586.0,
+            "median": 17857462.5,
+            "min": 17745230.0,
+            "p95": 19129586.0
+          },
+          "enabled_ns": {
+            "max": 21916729.0,
+            "median": 18093020.0,
+            "min": 17922469.0,
+            "p95": 21916729.0
+          },
+          "paired_overhead_percent": {
+            "max": 18.288259158170316,
+            "median": 1.7726931887349195,
+            "min": -4.334819373508658,
+            "p95": 18.288259158170316
+          },
+          "trials": [
+            {
+              "disabled_ns": 17911377,
+              "enabled_ns": 18552291,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 3.5782508514002,
+              "storage_bytes": 10485760,
+              "trial": 0
+            },
+            {
+              "disabled_ns": 18007716,
+              "enabled_ns": 17936997,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": -0.39271498950783634,
+              "storage_bytes": 10485760,
+              "trial": 1
+            },
+            {
+              "disabled_ns": 18528237,
+              "enabled_ns": 21916729,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 18.288259158170316,
+              "storage_bytes": 10485760,
+              "trial": 2
+            },
+            {
+              "disabled_ns": 17745230,
+              "enabled_ns": 17922469,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 0.9987979868392838,
+              "storage_bytes": 10485760,
+              "trial": 3
+            },
+            {
+              "disabled_ns": 19129586,
+              "enabled_ns": 18300353,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": -4.334819373508658,
+              "storage_bytes": 10485760,
+              "trial": 4
+            },
+            {
+              "disabled_ns": 17756491,
+              "enabled_ns": 18084279,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 1.846017887205309,
+              "storage_bytes": 10485760,
+              "trial": 5
+            },
+            {
+              "disabled_ns": 18599620,
+              "enabled_ns": 17933139,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": -3.583304390089692,
+              "storage_bytes": 10485760,
+              "trial": 6
+            },
+            {
+              "disabled_ns": 17769094,
+              "enabled_ns": 18071154,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 1.699917846120913,
+              "storage_bytes": 10485760,
+              "trial": 7
+            },
+            {
+              "disabled_ns": 17803548,
+              "enabled_ns": 18722048,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 5.15908402078058,
+              "storage_bytes": 10485760,
+              "trial": 8
+            },
+            {
+              "disabled_ns": 17773752,
+              "enabled_ns": 18101761,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 1.845468531348926,
+              "storage_bytes": 10485760,
+              "trial": 9
+            }
+          ],
+          "raw_evidence": {
+            "path": "build/profiler-overhead-final/linux.json",
+            "sha256": "e2d249bc2d424f1eb13975045c305c3222fe4986199e7dcefb185279d7572285",
+            "bytes": 3658
+          }
+        },
+        {
+          "platform": "windows",
+          "workload": {
+            "cameras": 1,
+            "characters": 1,
+            "dynamic_boxes": 128,
+            "paired_trials": 10,
+            "profiler_capacity": 65536,
+            "static_floors": 1,
+            "ticks": 120,
+            "ticks_per_batch": 1,
+            "warmup_pairs": 1
+          },
+          "comparison": "Same instrumented binary, recorder disabled versus enabled; CPU-only fixture, not whole-game or GPU performance",
+          "timing": "steady-clock wall time for fixed-step batches only; initialization, capture allocation and snapshot serialization excluded",
+          "percentiles": "median midpoint; p95 nearest rank; signed paired overhead may be negative under scheduling noise; no performance pass threshold",
+          "disabled_ns": {
+            "max": 18408300.0,
+            "median": 17114300.0,
+            "min": 16961400.0,
+            "p95": 18408300.0
+          },
+          "enabled_ns": {
+            "max": 17911900.0,
+            "median": 17286300.0,
+            "min": 17041700.0,
+            "p95": 17911900.0
+          },
+          "paired_overhead_percent": {
+            "max": 5.047122506788337,
+            "median": 0.5128902579736749,
+            "min": -7.103317525246766,
+            "p95": 5.047122506788337
+          },
+          "trials": [
+            {
+              "disabled_ns": 17036900,
+              "enabled_ns": 17166200,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 0.7589408871332193,
+              "storage_bytes": 10485760,
+              "trial": 0
+            },
+            {
+              "disabled_ns": 17133100,
+              "enabled_ns": 17041700,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": -0.5334703001791841,
+              "storage_bytes": 10485760,
+              "trial": 1
+            },
+            {
+              "disabled_ns": 17149300,
+              "enabled_ns": 17188800,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 0.23033010093707063,
+              "storage_bytes": 10485760,
+              "trial": 2
+            },
+            {
+              "disabled_ns": 18408300,
+              "enabled_ns": 17100700,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": -7.103317525246766,
+              "storage_bytes": 10485760,
+              "trial": 3
+            },
+            {
+              "disabled_ns": 17576100,
+              "enabled_ns": 17623000,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 0.2668396288141306,
+              "storage_bytes": 10485760,
+              "trial": 4
+            },
+            {
+              "disabled_ns": 17041800,
+              "enabled_ns": 17383800,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 2.0068302644086877,
+              "storage_bytes": 10485760,
+              "trial": 5
+            },
+            {
+              "disabled_ns": 17320700,
+              "enabled_ns": 17188500,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": -0.7632485984977566,
+              "storage_bytes": 10485760,
+              "trial": 6
+            },
+            {
+              "disabled_ns": 17051300,
+              "enabled_ns": 17911900,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 5.047122506788337,
+              "storage_bytes": 10485760,
+              "trial": 7
+            },
+            {
+              "disabled_ns": 16961400,
+              "enabled_ns": 17754800,
+              "events": 1440,
+              "first": "disabled",
+              "logical_state_equal": true,
+              "overhead_percent": 4.677679908498122,
+              "storage_bytes": 10485760,
+              "trial": 8
+            },
+            {
+              "disabled_ns": 17095500,
+              "enabled_ns": 17899400,
+              "events": 1440,
+              "first": "enabled",
+              "logical_state_equal": true,
+              "overhead_percent": 4.702407066187009,
+              "storage_bytes": 10485760,
+              "trial": 9
+            }
+          ],
+          "raw_evidence": {
+            "path": "build/profiler-overhead-final/windows.json",
+            "sha256": "0f58995a9204f8a2107a493f55b1bf61b2d731580959927932b8381da613f1bb",
+            "bytes": 3800
+          }
+        }
+      ],
+      "provenance": {
+        "path": "build/profiler-overhead-final/provenance.json",
+        "sha256": "c9db1908c8668fea76ce20b7a71a2d2746617e74f881fa667a3c200d6e6e7b49",
+        "bytes": 6578
+      },
+      "limits": "Short 120-tick trials with normal background activity; same instrumented binary off/on, not compiled-out cost or game performance. Initialization, allocation and serialization excluded. Negative/noisy pairs and maxima retained."
+    }
+  },
+  "review_fixes": [
+    "Fixed-size session/tick metadata replaced per-request/per-draw session string allocations introduced by instrumentation.",
+    "Non-ASCII/control RPC names use a safe diagnostic label; long ASCII names report truncation, preserving valid export.",
+    "Counter units/last values replace misleading count labels and summed gauge values.",
+    "Moved Python discovery before profiler CTest registration after an initial Not Run; complete final regressions passed.",
+    "Corrected protocol fixture expected physics label to runtime.physics.update; engine behavior unchanged."
+  ],
+  "earlier_failures": {
+    "protocol_oracle_log": {
+      "path": "build/profiler-contract-linux.log",
+      "sha256": "554aa698be550a207c7e53c9aecbb78e19cf3aa958f913a6470d4bbf2e34f27d",
+      "bytes": 687
+    },
+    "ctest_registration_logs": [
+      {
+        "path": "build/profiler-runtime-ctest.log",
+        "sha256": "30a6c091f0c4b808ac822bf39e2d97d185a09548a1464417bdadafe6f233ed2e",
+        "bytes": 5373
+      },
+      {
+        "path": "build/profiler-authoring-ctest.log",
+        "sha256": "bfdce901a95092fd59d3676f3a5392f91b46fedc8354d2b25cfa62553aebc6c8",
+        "bytes": 4482
+      }
+    ]
+  },
+  "limitations": [
+    "Native owner-thread instrumentation only; no call-stack, worker-thread, managed GC/native allocation or process/VRAM profiler.",
+    "Inclusive CPU spans overlap; simulation tick, GPU duration and presented frame are different boundaries. No sustained frame-pacing or game-performance qualification.",
+    "GPU timestamps are approximate serialized graphics-queue durations without CPU clock calibration; resource bytes cover named subsets only.",
+    "Recorder storage is bounded; exports and GUI copies allocate separately. Full captures retain a prefix and report the first lost reservation, not every later omitted event.",
+    "Windows was locked: routed GUI/HWND and synthetic replay are not physical-input, OS screenshot, general DPI/IME/accessibility or subjective audio qualification.",
+    "Two GPUs on one laptop do not qualify a broad hardware matrix, Linux hardware rendering or console execution."
+  ]
+}

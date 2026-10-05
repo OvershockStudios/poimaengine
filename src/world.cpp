@@ -8,6 +8,7 @@
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/save_store.hpp"
 #include "world_storage.hpp"
+#include "profiler_service.hpp"
 #include "asset_store.hpp"
 #include "input_profile_store.hpp"
 #include <nlohmann/json.hpp>
@@ -361,7 +362,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 28}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 29}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -649,6 +650,7 @@ void validate(const Json& doc) {
 
 constexpr std::array authoring_methods{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"};
 class World {
+    profiling::Service profiler_;
     fs::path path_;
     bool read_only_=false;
     std::unique_ptr<WriterLock> lock_;
@@ -740,6 +742,12 @@ class World {
         exists_ = true;
     }
 public:
+    profiling::Recorder& profiler() noexcept { return profiler_.recorder(); }
+    WorldProfilerContext profiler_context() const {
+        WorldProfilerContext result;
+        if(runtime_) { std::copy(runtime_id_.begin(),runtime_id_.end(),result.session.begin());result.tick=static_cast<std::int64_t>(runtime_->inspect().tick); }
+        return result;
+    }
     explicit World(const std::string& utf8_path,WorldOpenMode mode,const std::string& protected_root) :
         path_(fs::weakly_canonical(fs::absolute(fs::path(std::u8string(utf8_path.begin(), utf8_path.end()))))),
         read_only_(mode==WorldOpenMode::read_only_runtime) {
@@ -908,10 +916,14 @@ public:
     Json dispatch(const std::string& method, const Json& params) {
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
         prune_model_cache();
+        if(method.starts_with("profiler.")) {
+            try { return profiler_.dispatch(method,params); }
+            catch(const profiling::ServiceError& error) { throw Error(error.code,error.what()); }
+        }
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") {
-            fields(params, {});auto result=describe();result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            fields(params, {});auto result=describe();result["methods"].update(profiling::Service::schemas());result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
         }
@@ -2185,6 +2197,8 @@ struct WorldSession::Impl {
 WorldSession::WorldSession(const std::string& path,WorldOpenMode mode,const std::string& protected_root):impl_(std::make_unique<Impl>(path,mode,protected_root)) {}
 WorldSession::~WorldSession()=default;
 bool WorldSession::closed() const { return impl_->closed; }
+profiling::Recorder& WorldSession::profiler() noexcept { return impl_->world.profiler(); }
+WorldProfilerContext WorldSession::profiler_context() const { return impl_->world.profiler_context(); }
 WorldPackageContent WorldSession::package_content() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.package_content();
 }
@@ -2201,6 +2215,7 @@ WorldSaveStatus WorldSession::save_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.save_configuration_status();
 }
 SceneSnapshot WorldSession::authored_snapshot(const EditorCamera& camera) const {
+    profiling::Binding trace(&impl_->world.profiler());profiling::Scope sample("world.snapshot");
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,false);
 }
 SceneSnapshot WorldSession::authored_preview(const EditorCamera& camera,const std::string& entity,
@@ -2209,6 +2224,7 @@ SceneSnapshot WorldSession::authored_preview(const EditorCamera& camera,const st
     return impl_->world.editor_preview(camera,entity,{{"position",position},{"rotation",rotation},{"scale",scale}});
 }
 SceneSnapshot WorldSession::runtime_snapshot(const EditorCamera& camera) const {
+    profiling::Binding trace(&impl_->world.profiler());profiling::Scope sample("world.snapshot");
     require(!closed(),"World session is closed.",-32001);return impl_->world.editor_snapshot(camera,true);
 }
 std::vector<WorldCameraInfo> WorldSession::cameras(bool live) const {
@@ -2218,9 +2234,11 @@ std::vector<WorldControllerInfo> WorldSession::controllers(bool live) const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.controllers(live);
 }
 SceneSnapshot WorldSession::authored_camera_snapshot(const std::string& id) const {
+    profiling::Binding trace(&impl_->world.profiler());profiling::Scope sample("world.snapshot");
     require(!closed(),"World session is closed.",-32001);return impl_->world.camera_snapshot(id,false);
 }
 SceneSnapshot WorldSession::runtime_camera_snapshot(const std::string& id) const {
+    profiling::Binding trace(&impl_->world.profiler());profiling::Scope sample("world.snapshot");
     require(!closed(),"World session is closed.",-32001);return impl_->world.camera_snapshot(id,true);
 }
 std::string WorldSession::request(std::string_view line,WorldRequestScope scope) {
@@ -2242,6 +2260,12 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             require(method!="world.capture" && method!="runtime.capture" && method!="asset.animation.capture" && method!="runtime.play",
                     "This operation creates a graphics lifetime; use editor.capture or the editor's runtime controls in a shared editor.",-32080);
         if(method=="host.shutdown")require(scope==WorldRequestScope::shared_headless,"Only a shared headless host supports host.shutdown.",-32080);
+        const bool trace=!method.starts_with("profiler.");
+        profiling::Binding trace_binding(trace ? &impl_->world.profiler() : nullptr,profiling::Source::request);
+        const auto runtime=trace && profiling::active() ? impl_->world.profiler_context() : WorldProfilerContext{};
+        profiling::SessionScope trace_session(runtime.session.data());
+        const bool trace_name_safe=std::all_of(method.begin(),method.end(),[](unsigned char c){return c>=32 && c<=126;});
+        profiling::Scope trace_request(trace_name_safe ? std::string_view(method) : std::string_view("request.invalid_name"),runtime.tick);
         auto result=impl_->world.dispatch(method=="host.shutdown" ? "session.close" : method,request.value("params",Json::object()));
         if(method=="world.describe" && shared) {
             result["session_scope"]=scope==WorldRequestScope::shared_editor ? "shared_editor" : "shared_headless";

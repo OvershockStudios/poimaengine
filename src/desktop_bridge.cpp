@@ -920,7 +920,9 @@ struct Bridge : ViewportState {
         catch(const std::exception& error_value) { return notification ? std::string{} : error_reply(id,-32000,error_value.what()); }
     }
     Json poll() {
+        profiling::Binding trace_binding(&world->profiler(),profiling::Source::editor_poll);
         if(server)for(const auto& incoming:server->poll())server->reply(incoming.token,request(incoming.payload));
+        profiling::Scope trace_poll("editor.poll");
         pump_playback();auto state=inspect();const auto current=state.at("revision").get<std::uint64_t>();const auto runtime=state.at("runtime");
         state["world_changed"]=!observed_revision || *observed_revision!=current;state["runtime_changed"]=observed_runtime!=runtime;
         observed_revision=current;observed_runtime=runtime;return state;
@@ -974,6 +976,10 @@ struct Bridge : ViewportState {
     void detach_view(const std::string& view) { validate_view(view);require(explicit_views || !viewport,"Legacy viewport ABI cannot be mixed with named viewports.",-32009);if(explicit_views)detach_target(view); }
     void detach_all() { if(explicit_views) { detach_target("game");detach_target("scene"); }else detach_target("legacy"); }
     int draw_target(const std::string& target) {
+        profiling::Binding trace_binding(&world->profiler(),target=="game" ? profiling::Source::editor_game : profiling::Source::editor_scene);
+        const auto traced_runtime=profiling::active() ? world->profiler_context() : WorldProfilerContext{};
+        profiling::SessionScope trace_session(traced_runtime.session.data());
+        profiling::Scope trace_draw(target=="game" ? "editor.game.draw" : "editor.scene.draw",traced_runtime.tick);
         expire_gizmo();expire_capture();auto& destination=slot(target);if(!destination.viewport)return 0;
         require(!destination.faulted,"Graphics failed; detach and attach this viewport to recover.",-32003);
         auto pending=[&] { return capture && capture->state=="queued" && capture->target==target; };

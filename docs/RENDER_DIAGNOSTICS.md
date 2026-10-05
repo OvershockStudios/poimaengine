@@ -2,6 +2,8 @@
 
 Poima 0.0.12 adds conservative CPU frustum culling for the camera and each shadow view, submitted-draw counters, and optional CPU/GPU timing. These are exposed through native capture/play operations so an agent can relate an image to the work that produced it. They do not establish a production frame-rate target.
 
+The later [native profiler](PROFILER.md) retains scoped CPU events and separate GPU duration observations for shared agent/editor inspection. The aggregate report below remains supported.
+
 ## Request controls
 
 `world.describe` schema revision 13 exposes two optional Boolean parameters on `world.capture`, `runtime.capture` and `runtime.play`:

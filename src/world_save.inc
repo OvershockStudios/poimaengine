@@ -96,6 +96,7 @@
         });
     }
     std::string runtime_save_bytes() const {
+        profiling::Scope trace("save.snapshot");
         const Json save={{"format","poima.world-save"},{"version",1},{"document",runtime_document_},{"snapshot",Json::parse(runtime_->save_snapshot(runtime_content_hash_))}};
         auto bytes=save.dump();require(bytes.size()<=saves::maximum_checkpoint_bytes,"World save exceeds 64 MiB.",-32070);return bytes;
     }
@@ -110,6 +111,7 @@
     };
     PreparedLoad prepare_runtime_load(const std::string& slot,std::uint64_t generation,bool allow_recovery,
         std::string session,std::optional<GameplayConfig> config) {
+        profiling::Scope trace("save.restore.prepare");
         require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
         require(!used_runtime_ids_.contains(session),"Runtime replacement ID was already used.",-32010);
         require(used_runtime_ids_.size()<10000,"Runtime session count limit reached; reopen the authoring process.");

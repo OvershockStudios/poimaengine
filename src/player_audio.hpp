@@ -3,6 +3,7 @@
 // Initial main-thread presentation adapter. Gameplay owns only logical voices;
 // SDL's device thread receives copied PCM and never calls the world or DSP.
 #include "poima/player.hpp"
+#include "poima/profiler.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
 #include <stdexcept>
@@ -18,18 +19,24 @@ class PlayerAudio {
     int available() const { const int bytes=SDL_GetAudioStreamAvailable(device_);check(bytes>=0);return bytes; }
     void submit(const std::vector<float>& pcm) {
         if(pcm.empty())return;
+        profiling::Scope submit_scope("audio.submit");
         auto bytes=queued();if(started_ && !paused_ && bytes==0)++report_.empty_queue_observations;
         const auto before=SDL_GetTicksNS();
         // Replay may produce ticks faster than wall time. Bounded backpressure
         // keeps queued audio under 120 ms instead of retaining the whole replay.
+        {
+        profiling::Scope queue_scope("audio.queue_wait");
         while(bytes>4800*8) {
             if(SDL_GetTicksNS()-before>500000000)throw std::runtime_error("Audio output queue did not drain within 500 ms.");
             SDL_Delay(1);bytes=queued();
+        }
         }
         report_.backpressure_ms+=double(SDL_GetTicksNS()-before)/1e6;
         check(SDL_PutAudioStreamData(device_,pcm.data(),static_cast<int>(pcm.size()*sizeof(float))));
         report_.submitted_frames+=pcm.size()/2;
         report_.max_queued_frames=std::max(report_.max_queued_frames,static_cast<std::uint64_t>(queued()/8));
+        profiling::counter("audio.submitted_frames",report_.submitted_frames);
+        profiling::counter("audio.queued_bytes_before_submit",static_cast<std::uint64_t>(bytes));
         if(!started_ && queued()>=2048*8) { check(SDL_ResumeAudioStreamDevice(device_));started_=true;paused_=false; }
     }
 public:
@@ -50,6 +57,7 @@ public:
         check(SDL_ClearAudioStream(device_));started_=false;
     }
     void reset(const PlayerAudioState& state) {
+        profiling::Scope reset_scope("audio.timeline_reset",static_cast<std::int64_t>(state.tick));
         // Never play or drain old-world PCM after a load. The audio device and
         // Vulkan window remain alive; only the timeline's DSP is reconstructed.
         discard_pending();
@@ -62,13 +70,18 @@ public:
         mixer_=std::move(replacement);++report_.timeline_resets;report_.stream_drained=false;
     }
     void advance(const PlayerAudioState& state) {
-        submit(mixer_->advance(state.tick,state.snapshot,state.voices));
+        profiling::Scope advance_scope("audio.advance",static_cast<std::int64_t>(state.tick));
+        const auto pcm=[&] { profiling::Scope dsp_scope("audio.dsp");return mixer_->advance(state.tick,state.snapshot,state.voices); }();
+        submit(pcm);
     }
     void finish(const PlayerAudioState& state) {
+        profiling::Scope finish_scope("audio.finish",static_cast<std::int64_t>(state.tick));
         active(true);
-        submit(mixer_->advance(state.tick,state.snapshot,state.voices,true));
+        const auto pcm=[&] { profiling::Scope dsp_scope("audio.dsp");return mixer_->advance(state.tick,state.snapshot,state.voices,true); }();
+        submit(pcm);
         check(SDL_FlushAudioStream(device_));check(SDL_ResumeAudioStreamDevice(device_));paused_=false;
         const auto start=SDL_GetTicksNS();
+        profiling::Scope drain_scope("audio.drain_wait");
         while(queued()>0 || available()>0) {
             if(SDL_GetTicksNS()-start>2000000000)throw std::runtime_error("Audio stream did not drain within two seconds.");
             SDL_Delay(2);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
+#include "poima/profiler.hpp"
 #include <memory>
 #include <string>
 #include <string_view>
@@ -24,6 +25,10 @@ struct WorldGameplayStatus {
     bool active=false;
     std::string session_id;
     std::uint64_t tick=0,revision=0;
+};
+struct WorldProfilerContext {
+    std::array<char,33> session{};
+    std::int64_t tick=-1;
 };
 struct WorldSaveStatus {
     std::uint64_t generation=0;
@@ -53,6 +58,9 @@ public:
     WorldSession& operator=(const WorldSession&)=delete;
     std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);
     bool closed() const;
+    // Owner-thread diagnostic recorder; borrowed only within this session lifetime.
+    profiling::Recorder& profiler() noexcept;
+    WorldProfilerContext profiler_context() const;
     WorldRuntimeStatus runtime_status() const;
     // Counters only: does not serialize gameplay schema or field values.
     WorldGameplayStatus gameplay_status() const;

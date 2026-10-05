@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
 #include "poima/runtime_animation.hpp"
+#include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
 #include <Jolt/Jolt.h>
@@ -146,6 +147,7 @@ struct Runtime::Impl {
         require(found!=identities.end(), "Runtime entity does not exist."); return found->second;
     }
     void world_matrices() {
+        profiling::Scope profile("runtime.hierarchy",static_cast<std::int64_t>(tick));
         for (auto e : hierarchy) {
             auto& n=registry.get<Node>(e);
             const auto local=local_matrix(n.local.position,n.local.rotation,n.local.scale);
@@ -154,9 +156,11 @@ struct Runtime::Impl {
         }
     }
     void animation_locals() {
+        profiling::Scope profile("runtime.animation.sample",static_cast<std::int64_t>(tick));
         for(const auto& pose:animations->sample(tick))registry.get<Node>(find(pose.entity)).local=pose.local;
     }
     void sync() {
+        profiling::Scope profile("runtime.sync",static_cast<std::int64_t>(tick));
         for (auto e : order) {
             auto& node=registry.get<Node>(e);
             if (auto* body=registry.try_get<Body>(e); body && body->motion!=BodyMotion::Static) {
@@ -471,6 +475,7 @@ struct Runtime::Impl {
         });
     }
     void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands) {
+        profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
         std::map<entt::entity,const RuntimeInput*> controls;
         for (const auto& input : inputs) {
@@ -483,8 +488,10 @@ struct Runtime::Impl {
         auto prepared=prepare_motions(motions);
         std::vector<std::optional<Motion>> previous_motions;previous_motions.reserve(kinematics.size());
         for(auto e:kinematics)previous_motions.push_back(registry.get<Body>(e).target);
-        // Internal, trusted rollback snapshot; never deserialize caller-controlled
-        // bytes through Jolt. Persistent simulation save format remains future work.
+        // Internal rollback remains distinct from the portable save format.
+        // Optional scope permits closing the region while keeping checkpoint
+        // objects alive through the whole transaction, without allocation.
+        std::optional<profiling::Scope> checkpoint_profile(std::in_place,"runtime.checkpoint",static_cast<std::int64_t>(tick));
         JPH::StateRecorderImpl checkpoint; physics.SaveState(checkpoint);
         std::vector<std::array<double,2>> angles;
         for(auto e:characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({c.yaw,c.pitch}); }
@@ -497,10 +504,12 @@ struct Runtime::Impl {
         auto animation_checkpoint=animations->checkpoint();
         std::vector<RuntimeTransform> local_checkpoint;local_checkpoint.reserve(order.size());
         for(auto e:order)local_checkpoint.push_back(registry.get<Node>(e).local);
+        checkpoint_profile.reset();
         try {
             animations->apply(animation_commands,tick);animation_locals();sync();
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
+                profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
                 for(auto e:characters) {
                     auto& c=registry.get<Controller>(e);
                     const RuntimeInput neutral;
@@ -531,7 +540,11 @@ struct Runtime::Impl {
                         frame_inputs[input_count++]=input;
                     }
                     const PoimaGameServices services{4,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result};
-                    game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                    {
+                        profiling::Scope gameplay_profile("runtime.gameplay.tick");
+                        game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                    }
+                    profiling::Scope commands_profile("runtime.gameplay.commands");
                     auto commands=prepare_motions(game_commands);
                     for(auto& [e,motion]:commands) {
                         require(frame!=0 || !prepared.contains(e),"Gameplay and caller targeted the same body in one tick.");
@@ -555,7 +568,10 @@ struct Runtime::Impl {
                     const auto rotation=m.start_rotation.SLERP(m.target_rotation,static_cast<float>(fraction));
                     physics.GetBodyInterface().MoveKinematic(body.id,m.start_position+(target-m.start_position)*fraction,rotation,1.0f/60.0f);
                 }
-                const auto error=physics.Update(1.0f/60.0f,1,&allocator,&jobs);
+                const auto error=[&] {
+                    profiling::Scope physics_profile("runtime.physics.update");
+                    return physics.Update(1.0f/60.0f,1,&allocator,&jobs);
+                }();
                 require(error==JPH::EPhysicsUpdateError::None,"Jolt physics capacity/update error; batch rolled back.");
                 for(auto e:characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
                 for(auto e:kinematics) {
@@ -569,6 +585,8 @@ struct Runtime::Impl {
             sync();
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
         } catch(...) {
+            {
+            profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             save_queue=save_checkpoint;
             animations->restore(animation_checkpoint);
             for(std::size_t i=0;i<order.size();++i)registry.get<Node>(order[i]).local=local_checkpoint[i];
@@ -582,7 +600,9 @@ struct Runtime::Impl {
                 auto& c=registry.get<Controller>(characters[k]); c.character->RestoreState(checkpoint); c.yaw=angles[k][0]; c.pitch=angles[k][1];
             }
             for(std::size_t k=0;k<kinematics.size();++k)registry.get<Body>(kinematics[k]).target=std::move(previous_motions[k]);
-            require(!checkpoint.IsFailed(),"Internal character rollback failed."); tick=previous_tick; sync(); throw;
+            require(!checkpoint.IsFailed(),"Internal character rollback failed."); tick=previous_tick; sync();
+            }
+            throw;
         }
     }
 };
