@@ -32,3 +32,6 @@ __pycache__/
 
 /tests/gameplay-save/bin/
 /tests/gameplay-save/obj/
+
+/tests/components_gameplay/**/bin/
+/tests/components_gameplay/**/obj/

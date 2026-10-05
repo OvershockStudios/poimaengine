@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
   <ItemGroup><ProjectReference Include="../Poima.Gameplay/Poima.Gameplay.csproj" /></ItemGroup>
+  <ItemGroup><Compile Include="../Shared/ComponentMetadata.cs" Link="ComponentMetadata.cs" /></ItemGroup>
 </Project>

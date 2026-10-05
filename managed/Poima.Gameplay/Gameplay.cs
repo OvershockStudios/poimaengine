@@ -131,6 +131,10 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public delegate* unmanaged[Cdecl]<void*,NativeSaveInfo*,NativeError*,int> SaveInfo;
     public delegate* unmanaged[Cdecl]<void*,NativeSaveRequest*,NativeSaveEnqueue*,NativeError*,int> SaveRequest;
     public delegate* unmanaged[Cdecl]<void*,SaveTicket*,NativeSaveResult*,NativeError*,int> SaveResult;
+    public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,EntityId*,EntityId*,uint,uint*,NativeError*,int> ComponentQuery;
+    public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,EntityId*,void*,uint,uint*,NativeError*,int> ComponentGet;
+    public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,EntityId*,void*,uint,NativeError*,int> ComponentSet;
+    public delegate* unmanaged[Cdecl]<void*,EntityId*,uint*,NativeError*,int> EntityAlive;
 }
 internal static unsafe class SaveAbiLayout
 {
@@ -145,7 +149,7 @@ internal static unsafe class SaveAbiLayout
             (byte*)&i.InitiatingTicket-(byte*)&i==32 && (byte*)&i.DestinationHigh-(byte*)&i==56 && (byte*)&i.Recovered-(byte*)&i==96;
     }
 }
-public readonly unsafe ref struct GameContext
+public readonly unsafe ref partial struct GameContext
 {
     private readonly NativeServices* services;
     private readonly ReadOnlySpan<GameInput> inputs;

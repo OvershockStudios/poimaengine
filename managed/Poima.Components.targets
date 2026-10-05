@@ -1,0 +1,6 @@
+<Project>
+  <!-- Import once in a game project using the matching pinned .NET SDK. -->
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Poima.Components.Generator/Poima.Components.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

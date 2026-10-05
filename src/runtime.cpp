@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
 #include "poima/runtime_animation.hpp"
+#include "runtime_components.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -122,6 +123,7 @@ struct Runtime::Impl {
     Runtime* owner=nullptr;
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
+    std::unique_ptr<RuntimeComponents> components;
     std::uint64_t game_revision=0;
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
@@ -338,6 +340,7 @@ struct Runtime::Impl {
                 body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
             }
         }
+        components=std::make_unique<RuntimeComponents>(registry,identities,definition);
         physics.OptimizeBroadPhase();
         for (auto e : characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
@@ -365,7 +368,30 @@ struct Runtime::Impl {
         return prepared;
     }
     template<class F> static int32_t callback(PoimaGameError* error,F&& f) noexcept {
-        try { f();return 0; }catch(const std::exception& e) { std::snprintf(error->text,sizeof(error->text),"%s",e.what());return -1; }catch(...) { std::snprintf(error->text,sizeof(error->text),"Native gameplay callback failed.");return -1; }
+        try { f();return 0; }catch(const std::exception& e) { if(error)std::snprintf(error->text,sizeof(error->text),"%s",e.what());return -1; }catch(...) { if(error)std::snprintf(error->text,sizeof(error->text),"Native gameplay callback failed.");return -1; }
+    }
+    static int32_t POIMA_CALL component_query(void* context,const PoimaGameComponentType* type,const PoimaEntityId* after,PoimaEntityId* output,uint32_t capacity,uint32_t* written,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(type && after && output && written && capacity>=1 && capacity<=256,"Invalid component query pointers/capacity.");*written=0;
+            *written=static_cast<Impl*>(context)->components->query(*type,*after,std::span(output,capacity));
+        });
+    }
+    static int32_t POIMA_CALL component_get(void* context,const PoimaGameComponentType* type,const PoimaEntityId* entity,void* output,uint32_t bytes,uint32_t* present,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(type && entity && output && present && bytes<=components::max_fields*components::cell_bytes,"Invalid component read pointers/size.");*present=0;
+            static_cast<Impl*>(context)->components->get(*type,*entity,std::span(static_cast<std::byte*>(output),bytes),*present);
+        });
+    }
+    static int32_t POIMA_CALL component_set(void* context,const PoimaGameComponentType* type,const PoimaEntityId* entity,const void* value,uint32_t bytes,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(type && entity && value && bytes<=components::max_fields*components::cell_bytes,"Invalid component write pointers/size.");
+            static_cast<Impl*>(context)->components->stage(*type,*entity,std::span(static_cast<const std::byte*>(value),bytes));
+        });
+    }
+    static int32_t POIMA_CALL entity_alive(void* context,const PoimaEntityId* entity,uint32_t* alive,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(entity && alive,"Invalid entity-liveness pointers.");*alive=static_cast<Impl*>(context)->components->alive(*entity) ? 1u : 0u;
+        });
     }
     static PoimaGameSaveTicket save_ticket(GameplaySaveTicket ticket) noexcept {
         return {ticket.epoch.high,ticket.epoch.low,ticket.sequence};
@@ -505,6 +531,7 @@ struct Runtime::Impl {
         std::vector<RuntimeTransform> local_checkpoint;local_checkpoint.reserve(order.size());
         for(auto e:order)local_checkpoint.push_back(registry.get<Node>(e).local);
         checkpoint_profile.reset();
+        components->begin_batch();
         try {
             animations->apply(animation_commands,tick);animation_locals();sync();
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
@@ -539,7 +566,7 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    const PoimaGameServices services{4,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result};
+                    const PoimaGameServices services{5,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive};
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
@@ -559,6 +586,7 @@ struct Runtime::Impl {
                     }
                     game_commands.clear();
                     game_animation_commands.clear();
+                    components->apply_tick();
                 }
                 for(auto e:kinematics) {
                     auto& body=registry.get<Body>(e);
@@ -584,9 +612,11 @@ struct Runtime::Impl {
             }
             sync();
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
+            components->commit_batch();
         } catch(...) {
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
+            components->rollback_batch();
             save_queue=save_checkpoint;
             animations->restore(animation_checkpoint);
             for(std::size_t i=0;i<order.size();++i)registry.get<Node>(order[i]).local=local_checkpoint[i];
@@ -698,12 +728,19 @@ void Runtime::gameplay_load(const GameplayConfig& config,const std::string& valu
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before code reload.");
     require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     if(config.native_aot)validate_gameplay_values(config.native_schema,values);
-    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);impl_->game.swap(candidate);++impl_->game_revision;
+    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);impl_->components->validate_module(candidate->component_schemas());impl_->game.swap(candidate);++impl_->game_revision;
 }
 void Runtime::gameplay_edit(const std::string& values) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before field editing.");
     require(impl_->game!=nullptr,"No gameplay module is loaded.");require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     impl_->game->edit(values);++impl_->game_revision;
+}
+const std::vector<components::Schema>& Runtime::component_schemas() const { return impl_->components->schemas(); }
+std::uint64_t Runtime::component_revision() const { return impl_->components->revision(); }
+std::optional<components::Payload> Runtime::component_read(const std::string& type,const std::string& entity) const { return impl_->components->read(type,entity); }
+std::vector<std::string> Runtime::component_query(const std::string& type,const std::string& after,std::uint32_t limit) const { return impl_->components->query(type,after,limit); }
+void Runtime::component_edit(const std::string& type,const std::string& entity,const components::Payload& value) {
+    require(!impl_->save_queue.pending(),"Resolve pending gameplay save before component editing.");impl_->components->edit(type,entity,value);
 }
 const SoundState& Runtime::sound_state() const { return impl_->sounds; }
 AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {

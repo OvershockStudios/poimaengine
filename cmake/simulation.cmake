@@ -35,7 +35,7 @@ FetchContent_Declare(entt
 FetchContent_MakeAvailable(entt)
 get_target_property(poima_jolt_includes Jolt INTERFACE_INCLUDE_DIRECTORIES)
 target_include_directories(poima_core SYSTEM PRIVATE ${poima_jolt_includes} "${entt_SOURCE_DIR}/src")
-target_sources(poima_core PRIVATE src/runtime.cpp)
+target_sources(poima_core PRIVATE src/runtime.cpp src/runtime_components.cpp)
 target_link_libraries(poima_core PRIVATE Jolt EnTT::EnTT)
 if(NOT MSVC)
     set_source_files_properties(src/runtime.cpp PROPERTIES COMPILE_OPTIONS "-ffp-contract=off")

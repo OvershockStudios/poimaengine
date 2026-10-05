@@ -4,7 +4,7 @@ Poima is an experimental 3D game engine designed for humans and development agen
 
 The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and C# gameplay supports development-time reloads and a bounded native AOT game-bundle route. Headless deployments can run without the editor or its managed runtime.
 
-**Status: early development, version 0.0.36.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.37.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor with independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
@@ -14,7 +14,7 @@ The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor u
 
 Poima's authoring operations live in the engine service, rather than depending on automation of editor widgets. Clients can discover schemas, query individual components, submit atomic edits, detect revision conflicts, retry acknowledged transactions and request rendered observations. The desktop editor and connected agents share the same authoritative session.
 
-No particular AI provider is required. Codex, Claude or another client can use the CLI and newline-delimited JSON-RPC. Other frontends can use the native service or local transport. This architecture is implemented for the current built-in components; a complete extensible gameplay/component SDK remains future work.
+No particular AI provider is required. Codex, Claude or another client can use the CLI and newline-delimited JSON-RPC. Other frontends can use the native service or local transport. Built-in components and custom scalar gameplay components use this shared authoring path. The broader gameplay SDK remains incomplete.
 
 ## What works today
 
@@ -24,6 +24,7 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, procedural sky, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
 | Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, static triangle mesh collision, raycasts with mesh triangle identities, moving kinematic objects, editable rigs and interruptible animation crossfades. |
 | Input and player | Native continuous player, keyboard/mouse bindings, gamepad profiles and deterministic scripted input replay. |
+| C# gameplay | [Native-owned custom components](docs/CUSTOM_COMPONENTS.md), generated typed accessors, compatible code reload, rollback and exact-schema saves; CoreCLR development and native AOT shipping. |
 | Profiling | [Shared native captures](docs/PROFILER.md), editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events and native-player device output. |

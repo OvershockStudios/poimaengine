@@ -20,6 +20,11 @@ std::uint64_t Runtime::gameplay_revision() const { throw std::runtime_error("Sim
 std::string Runtime::gameplay_inspect() const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::gameplay_load(const GameplayConfig&,const std::string&) { throw std::runtime_error("Simulation is not built."); }
 void Runtime::gameplay_edit(const std::string&) { throw std::runtime_error("Simulation is not built."); }
+const std::vector<components::Schema>& Runtime::component_schemas() const { throw std::runtime_error("Simulation is not built."); }
+std::uint64_t Runtime::component_revision() const { throw std::runtime_error("Simulation is not built."); }
+std::optional<components::Payload> Runtime::component_read(const std::string&,const std::string&) const { throw std::runtime_error("Simulation is not built."); }
+std::vector<std::string> Runtime::component_query(const std::string&,const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
+void Runtime::component_edit(const std::string&,const std::string&,const components::Payload&) { throw std::runtime_error("Simulation is not built."); }
 const SoundState& Runtime::sound_state() const { throw std::runtime_error("Simulation is not built."); }
 AudioSnapshot Runtime::audio_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneLighting Runtime::lighting() const { throw std::runtime_error("Simulation is not built."); }

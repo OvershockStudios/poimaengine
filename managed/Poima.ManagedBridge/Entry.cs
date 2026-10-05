@@ -6,6 +6,8 @@ using System.Runtime.Loader;
 using System.Text;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using Poima.Build;
 using Poima;
 namespace Poima.ManagedBridge;
 
@@ -26,7 +28,8 @@ internal sealed class GameLoadContext(string path) : AssemblyLoadContext(isColle
     }
 }
 internal sealed record FieldDescription(string name,string kind,int offset,int bytes);
-internal sealed record Manifest(ulong handle,string identity,string assembly_sha256,int bytes,FieldDescription[] fields);
+internal sealed record Manifest(ulong handle,string identity,string assembly_sha256,int bytes,FieldDescription[] fields,
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? components=null);
 internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes);
 public static unsafe class Entry
 {
@@ -41,8 +44,8 @@ public static unsafe class Entry
         call->Output[0]=0;
         try
         {
-            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=88 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
-                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid())
+            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=120 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid())
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -98,7 +101,7 @@ public static unsafe class Entry
         var context=new GameLoadContext(path);bool published=false;
         try
         {
-            byte[] image=File.ReadAllBytes(path);using var stream=new MemoryStream(image);var assembly=context.LoadFromStream(stream);
+            byte[] image=File.ReadAllBytes(path);var components=ComponentMetadata.ReadSchemas(image);using var stream=new MemoryStream(image);var assembly=context.LoadFromStream(stream);
             Type type=assembly.GetType(typeName,true)!;
             if(type.IsAbstract || !typeof(IGame).IsAssignableFrom(type))throw new ArgumentException("Type must derive from Game<TState>.");
             for(Type? current=type;current!=null;current=current.BaseType)
@@ -117,7 +120,7 @@ public static unsafe class Entry
                 var (kind,size)=field.FieldType==typeof(int) ? ("int32",4) : field.FieldType==typeof(long) ? ("int64",8) : field.FieldType==typeof(float) ? ("float32",4) : field.FieldType==typeof(double) ? ("float64",8) : field.FieldType==typeof(EntityId) ? ("entity",16) : throw new ArgumentException($"Unsupported state field {field.Name}: use int, long, float, double or EntityId.");
                 descriptions.Add(new(field.Name,kind,Marshal.OffsetOf(state,field.Name).ToInt32(),size));
             }
-            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray());
+            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components);
             string encoded=JsonSerializer.Serialize(manifest); // Stable bridge DTOs only; don't cache game Types in serialization.
             Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes));published=true;
         }
@@ -130,12 +133,12 @@ public static unsafe class Entry
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
-        // Check the stable header before reading any v4 tail pointer. An old
+        // Check the stable header before reading any v5 tail pointer. An old
         // engine/bridge pair must be rebuilt together, never partially invoked.
-        if(call->Services==null || call->Services->Version!=4 || call->Services->Bytes!=88 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
-            throw new ArgumentException("Gameplay service ABI mismatch: services v4/88 bytes required.");
+        if(call->Services==null || call->Services->Version!=5 || call->Services->Bytes!=120 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
+            throw new ArgumentException("Gameplay service ABI mismatch: services v5/120 bytes required.");
         if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null ||
-            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null)throw new ArgumentException("Gameplay service callback is absent.");
+            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null)throw new ArgumentException("Gameplay service callback is absent.");
         module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));
     }
     [MethodImpl(MethodImplOptions.NoInlining)]

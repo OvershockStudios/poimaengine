@@ -115,7 +115,7 @@ NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename
     check(spec.at("format")=="poima.native-gameplay" && integer(spec.at("version"),1)==1,"Unsupported native gameplay artifact format.");
     check(spec.at("engine_version")==POIMA_VERSION,"Native gameplay engine version must match exactly.");
     check((spec.at("target_os")=="Windows" || spec.at("target_os")=="Linux") && spec.at("target_arch")=="x86_64","Unsupported native gameplay target.");
-    check(integer(spec.at("call_version"),1)==1 && integer(spec.at("services_version"),4)==4 && spec.at("entry")=="poima_gameplay_entry","Native gameplay ABI/export mismatch.");
+    check(integer(spec.at("call_version"),1)==1 && integer(spec.at("services_version"),5)==5 && spec.at("entry")=="poima_gameplay_entry","Native gameplay ABI/export mismatch.");
     NativeGameplayArtifact result;result.descriptor=text(path);result.descriptor_sha256=hash(bytes);result.root=text(root);result.target_os=spec.at("target_os");result.target_arch=spec.at("target_arch");
     check(spec.at("identity").is_string() && spec.at("type").is_string(),"Native gameplay identity/type must be text.");
     result.identity=spec.at("identity");result.type=spec.at("type");
@@ -124,20 +124,28 @@ NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename
     check(spec.at("schema").at("identity")==spec.at("identity"),"Native gameplay descriptor/schema identity differs.");
     const auto library=relative(spec.at("library")),descriptor_name=relative(text(path.filename()));
     check(spec.at("files").is_array() && !spec.at("files").empty() && spec.at("files").size()<=256,"Native gameplay inventory must contain 1..256 files.");
-    std::set<std::string> expected{descriptor_name},names{folded(descriptor_name)};std::uint64_t total=0;unsigned libraries=0;
+    std::set<std::string> expected{descriptor_name},names{folded(descriptor_name)};std::uint64_t total=0;unsigned libraries=0,metadata=0;
     for(const auto& file:spec.at("files")) {
         fields(file,{"path","size","sha256","role"});NativeGameplayPayload payload;payload.path=relative(file.at("path"));payload.size=integer(file.at("size"),file_limit);
         check(file.at("sha256").is_string() && file.at("role").is_string(),"Native gameplay hash/role must be text.");payload.sha256=file.at("sha256");payload.role=file.at("role");
         check(payload.sha256.size()==64 && payload.sha256.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid native gameplay hash.");
-        check(payload.role=="library" || payload.role=="dependency" || payload.role=="notice","Invalid native gameplay payload role.");
+        check(payload.role=="library" || payload.role=="dependency" || payload.role=="notice" || payload.role=="metadata","Invalid native gameplay payload role.");
         check(names.insert(folded(payload.path)).second && expected.insert(payload.path).second,"Duplicate native gameplay path.");
         check(payload.size<=total_limit-total,"Native gameplay artifact exceeds 1 GiB.");total+=payload.size;
-        const auto file_path=contained(root,payload.path);const auto data=read(file_path);check(data.size()==payload.size && hash(data)==payload.sha256,"Native gameplay payload hash/size mismatch: "+payload.path);
+        const auto file_path=contained(root,payload.path);const auto data=read(file_path,payload.role=="metadata" ? components::max_manifest_bytes : file_limit);check(data.size()==payload.size && hash(data)==payload.sha256,"Native gameplay payload hash/size mismatch: "+payload.path);
         if(payload.role=="library") { ++libraries;check(payload.path==library,"Native gameplay library path/role differs.");native_image(data,result.target_os);result.library=text(file_path);result.library_sha256=payload.sha256; }
         if(payload.role=="dependency")native_image(data,result.target_os);
+        if(payload.role=="metadata") {
+            check(++metadata==1 && payload.path=="game.poima-components.json","Native gameplay component metadata path/count is invalid.");
+            check(spec.at("schema").contains("components") && !spec.at("schema").at("components").empty(),"Unexpected native gameplay component metadata.");
+            const auto declared=components::parse_manifest(Json{{"format","poima.components"},{"version",1},{"schemas",spec.at("schema").at("components")}}.dump());
+            check(components::manifest_json(components::parse_manifest(data))==components::manifest_json(declared),"Native gameplay component manifest differs from its descriptor.");
+        }
         result.files.push_back(std::move(payload));
     }
     check(libraries==1,"Native gameplay artifact requires exactly one library.");
+    const bool custom=spec.at("schema").contains("components") && !spec.at("schema").at("components").empty();
+    check(metadata==(custom ? 1u : 0u),"Native gameplay artifact requires its declared component metadata.");
     check(tree(root)==expected,"Native gameplay artifact contains missing or unlisted files.");
     check(read(path,1024*1024)==bytes,"Native gameplay descriptor changed during verification.");
     for(const auto& file:result.files) { const auto data=read(contained(root,file.path));check(data.size()==file.size && hash(data)==file.sha256,"Native gameplay payload changed during verification."); }

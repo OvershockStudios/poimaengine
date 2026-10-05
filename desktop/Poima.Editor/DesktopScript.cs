@@ -197,6 +197,8 @@ internal sealed class DesktopScript
                     case "inspect_saves": result["saves"] = window.Saves.Inspect(); break;
                     case "render_saves": result["visual"] = window.RenderSaves(Text("path")); break;
                     case "scroll_saves": window.ScrollSaves(Text("position")); break;
+                    case "render_inspector": result["visual"] = window.RenderInspector(Text("path")); break;
+                    case "scroll_inspector": window.ScrollInspector(Text("position")); break;
                     case "render_gameplay": result["visual"] = window.RenderGameplay(Text("path")); break;
                     case "scroll_gameplay": window.ScrollGameplay(Text("position")); break;
                     case "select": window.SelectEntity(Text("id")); break;
@@ -205,12 +207,15 @@ internal sealed class DesktopScript
                     case "click_control":
                     case "check_control":
                     case "choose_control":
+                    case "expand_control":
                         var controlLifetime = (IClassicDesktopStyleApplicationLifetime)Avalonia.Application.Current!.ApplicationLifetime!;
                         var controls = controlLifetime.Windows.Where(w => w.IsVisible).SelectMany(w => w.GetVisualDescendants()).OfType<Control>()
                             .Where(control => control.IsVisible && AutomationProperties.GetName(control) == Text("control")).ToArray();
                         if (controls.Length != 1 || !controls[0].IsEnabled) throw new InvalidOperationException("Expected one enabled visible control: " + Text("control"));
                         if (op == "click_control" && controls[0] is Button button)
                             button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                        else if (op == "expand_control" && controls[0] is Expander expander)
+                            expander.IsExpanded = action["expanded"]!.GetValue<bool>();
                         else if (op == "check_control" && controls[0] is CheckBox check)
                         { check.IsChecked = action["checked"]!.GetValue<bool>(); result["checked"] = check.IsChecked; }
                         else if (op == "choose_control" && controls[0] is ComboBox combo)
@@ -294,6 +299,17 @@ internal sealed class DesktopScript
                         // native poll must synchronize the visible controls.
                         result["result"] = model.Host.Call("desktop.play." + Text("command"), new() { ["session_id"] = model.RuntimeId });
                         break;
+                    case "wait_playback":
+                        var expectedPlayback = Text("state");
+                        if (expectedPlayback is not ("stopped" or "paused" or "playing")) throw new ArgumentException("Invalid playback state.");
+                        if (model.PlaybackState != expectedPlayback || (action["tick"] is JsonValue expectedTick && model.Tick != expectedTick.GetValue<long>()))
+                        {
+                            if (deferredAt is null) { deferredAt = frame; deferredStarted = System.Diagnostics.Stopwatch.GetTimestamp(); }
+                            if (System.Diagnostics.Stopwatch.GetElapsedTime(deferredStarted).TotalSeconds < 5) { --next; return; }
+                            throw new InvalidOperationException("Playback state wait timed out: " + model.InspectPlayback());
+                        }
+                        if (deferredAt is int playbackStarted) { frameOffset += frame-playbackStarted; deferredAt = null; }
+                        result["playback"] = model.InspectPlayback(); break;
                     case "runtime_entity":
                         result["result"] = model.Host.Call("runtime.entity", new() { ["session_id"] = model.RuntimeId, ["id"] = Text("id") });
                         break;
@@ -310,6 +326,7 @@ internal sealed class DesktopScript
                         result["playback"] = model.InspectPlayback();
                         result["gameplay_draft"] = window.Gameplay.Inspect();
                         result["save_draft"] = window.Saves.Inspect();
+                        result["component_draft"] = window.Components.Inspect();
                         result["playback_controls"] = window.InspectPlaybackControls();
                         if (Avalonia.Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
                             result["windows"] = new JsonArray(desktop.Windows.Select(w => (JsonNode?)new JsonObject {

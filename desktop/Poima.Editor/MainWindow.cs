@@ -19,12 +19,13 @@ using Dock.Model.Controls;
 
 namespace Poima.Editor;
 
-public sealed class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     public EditorModel Model { get; }
     public SceneNavigation Navigation { get; }
     public GameInput Game { get; }
     public GameplayEditorModel Gameplay { get; }
+    public ComponentEditorModel Components { get; }
     private GameplayWindow? gameplayWindow;
     public SaveEditorModel Saves { get; }
     private SaveWindow? saveWindow;
@@ -62,6 +63,7 @@ public sealed class MainWindow : Window
         Application.Current.DataTemplates.Add(new EditorPanelTemplate());
         Model = new EditorModel(host);
         Gameplay = new GameplayEditorModel(Model); Model.Gameplay = Gameplay;
+        Components = new ComponentEditorModel(Model); Model.Components = Components;
         Saves = new SaveEditorModel(Model);
         Profiler = new ProfilerModel(Model);
         Navigation = new SceneNavigation(Model);
@@ -115,15 +117,15 @@ public sealed class MainWindow : Window
         };
         Closing += (_, e) =>
         {
-            if (!qualificationClosing && (Model.Dirty || Gameplay.Dirty || Saves.Dirty))
+            if (!qualificationClosing && (Model.Dirty || Gameplay.Dirty || Saves.Dirty || Components.Dirty))
             {
                 e.Cancel = true;
-                var message = Saves.Dirty ? "Resolve or explicitly discard Save window drafts and pending operations before closing." : Gameplay.Dirty ? "Apply or explicitly revert C# Gameplay drafts before closing." : "Apply or Reload the Inspector changes before closing.";
+                var message = Components.Dirty ? "Apply or explicitly reload/discard live component changes before closing." : Saves.Dirty ? "Resolve or explicitly discard Save window drafts and pending operations before closing." : Gameplay.Dirty ? "Apply or explicitly revert C# Gameplay drafts before closing." : "Apply or Reload the Inspector changes before closing.";
                 Model.Note(message); status.Text = message;
             }
             if (!e.Cancel) { profilerWindow?.Close(); saveWindow?.CloseForOwner(); gameplayWindow?.CloseForOwner(); Navigation.Cancel(); Game.Release(); try { SaveLayout(); } catch (Exception error) { LayoutError = error.Message; } }
         };
-        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Profiler.Dispose(); Saves.Dispose(); Gameplay.Dispose(); Model.Dispose(); } };
+        Closed += (_, _) => { if (!disposed) { disposed = true; Model.Changed -= UpdateToolbar; Model.PlaybackChanged -= UpdateToolbar; CloseLayout(); Profiler.Dispose(); Saves.Dispose(); Components.Dispose(); Gameplay.Dispose(); Model.Dispose(); } };
     }
     public void ShowProfiler()
     {
@@ -415,14 +417,18 @@ public sealed class MainWindow : Window
     private Control BuildInspector()
     {
         var root = new Grid { RowDefinitions = new RowDefinitions("*,Auto") };
+        AutomationProperties.SetName(root, "Inspector contents");
         var fields = new StackPanel { Spacing = 0 };
         var live = new StackPanel { Spacing = 0 };
         var content = new StackPanel(); content.Children.Add(live); content.Children.Add(fields);
+        content.Children.Insert(0, BuildComponentTools());
         root.Children.Add(new ScrollViewer { Content = content, HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled });
         var footer = new StackPanel { Spacing = 5, Margin = new Thickness(8) };
         var message = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 5 };
-        actions.Children.Add(Button("Apply", Model.Apply)); actions.Children.Add(Button("Reload", Model.Reload));
+        var applyDraft = Button("Apply", Model.Apply); AutomationProperties.SetName(applyDraft, "Inspector Apply");
+        var reloadDraft = Button("Reload", Model.Reload); AutomationProperties.SetName(reloadDraft, "Inspector Reload");
+        actions.Children.Add(applyDraft); actions.Children.Add(reloadDraft);
         footer.Children.Add(message); footer.Children.Add(actions); Grid.SetRow(footer, 1); root.Children.Add(footer);
         string last = "", liveKey = "";
         void RefreshLive()
@@ -432,6 +438,7 @@ public sealed class MainWindow : Window
             liveKey = key; live.Children.Clear();
             if (Model.Selected is not null && Model.RuntimeId is not null && Model.DraftComponents.ContainsKey("AnimationRig"))
                 live.Children.Add(BuildLiveAnimation());
+            live.Children.Add(BuildLiveComponents());
         }
         void Banner()
         {
@@ -455,6 +462,7 @@ public sealed class MainWindow : Window
                 if (pair.Value is not JsonObject component) continue;
                 var section = new StackPanel { Spacing = 2, Margin = new Thickness(8, 5, 8, 7) };
                 if (pair.Key == "Transform") BuildTransform(section, component, Banner);
+                else if (pair.Key.StartsWith("game:", StringComparison.Ordinal) && Model.DraftSchemas[pair.Key[5..]] is JsonObject customSchema) BuildCustomComponent(section, pair.Key, component, customSchema, Banner);
                 else if (pair.Key is "Camera" or "MeshRenderer" or "MeshCollider" or "AnimationRig" or "PbrMaterial" or "Light" or "LightingEnvironment") BuildTypedComponent(section, pair.Key, component, Banner);
                 else
                 {
@@ -486,8 +494,8 @@ public sealed class MainWindow : Window
                 }
                 var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
                 title.Children.Add(EditorIcons.Make(pair.Key switch { "Transform" => "transform", "Camera" => "camera", "Light" or "LightingEnvironment" => "light", "MeshRenderer" => "cube", _ => "entity" }, 13));
-                title.Children.Add(Label(pair.Key switch { "MeshRenderer" => "Mesh Renderer", "MeshCollider" => "Mesh Collider · Static", "AnimationRig" => "Animation Rig · Initial state", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
-                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key is "Transform" or "Camera" or "MeshRenderer" or "StaticMesh" or "MeshCollider" or "AnimationRig" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
+                title.Children.Add(Label(pair.Key.StartsWith("game:", StringComparison.Ordinal) && Model.DraftSchemas[pair.Key[5..]] is JsonObject namedSchema ? namedSchema["name"]!.GetValue<string>() : pair.Key switch { "MeshRenderer" => "Mesh Renderer", "MeshCollider" => "Mesh Collider · Static", "AnimationRig" => "Animation Rig · Initial state", "PbrMaterial" => "Material", "PbrTextures" => "Material Textures", "LightingEnvironment" => "Lighting Environment", _ => pair.Key }));
+                fields.Children.Add(new Expander { Header = title, IsExpanded = pair.Key.StartsWith("game:", StringComparison.Ordinal) || pair.Key is "Transform" or "Camera" or "MeshRenderer" or "StaticMesh" or "MeshCollider" or "AnimationRig" or "PbrMaterial" or "Light" or "LightingEnvironment", Content = section, HorizontalAlignment = HorizontalAlignment.Stretch, Background = EditorTheme.Brush("#28292D"), BorderBrush = EditorTheme.Brush("#202125"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0) });
             }
         }
         EventHandler playback = (_, _) => RefreshLive();

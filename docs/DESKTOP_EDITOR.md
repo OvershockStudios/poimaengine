@@ -220,3 +220,7 @@ The [0.0.35 final-package regression](evidence/m2-native-gameplay.json) adapts t
 ## Runtime saves
 
 **Window > Saves** (also **File > Runtime saves**) configures an external checkpoint folder and saves/loads named slots through the native world service. Paused save/load uses explicitly observed guards; failed requests retain their IDs, recovery requires deliberate acknowledgement, and loading preserves the authored scene. See the [Save/Load workflow](EDITOR_SAVES.md) and its supported-state limits.
+
+## Custom gameplay components
+
+The Inspector imports generated component manifests, attaches and removes declared components, and edits typed authored values through the shared world transaction service. Paused live values use a separate draft guarded by runtime session, tick and component revision. See [custom component setup and limits](CUSTOM_COMPONENTS.md).

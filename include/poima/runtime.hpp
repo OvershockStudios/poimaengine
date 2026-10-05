@@ -4,6 +4,8 @@
 #include "poima/gameplay.hpp"
 #include "poima/gameplay_save.hpp"
 #include "poima/audio.hpp"
+#include "poima/components.hpp"
+#include <map>
 #include <memory>
 #include <optional>
 
@@ -82,11 +84,13 @@ struct RuntimeEntityDefinition {
     std::optional<RuntimeRigNode> rig_node;
     std::optional<RuntimeSkinnedMesh> skinned_mesh;
     std::optional<MeshCollider> mesh_collider;
+    std::map<std::string,components::Payload> components;
 };
 struct RuntimeDefinition {
     std::string world_id;
     std::uint64_t authored_revision=0;
     std::vector<RuntimeEntityDefinition> entities;
+    std::vector<components::Schema> component_schemas;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
@@ -157,6 +161,11 @@ public:
         const std::optional<GameplayConfig>& gameplay=std::nullopt);
     void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
+    const std::vector<components::Schema>& component_schemas() const;
+    std::uint64_t component_revision() const;
+    std::optional<components::Payload> component_read(const std::string& type,const std::string& entity) const;
+    std::vector<std::string> component_query(const std::string& type,const std::string& after,std::uint32_t limit) const;
+    void component_edit(const std::string& type,const std::string& entity,const components::Payload& value);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents

@@ -7,6 +7,8 @@ using System.Text;
 using System.Text.Json;
 using Poima;
 using Poima.ManagedBridge;
+using Poima.Tests;
+using System.Buffers.Binary;
 
 // Independent ABI declarations: do not link production internal POD types.
 [StructLayout(LayoutKind.Sequential)] unsafe struct Call
@@ -24,7 +26,12 @@ using Poima.ManagedBridge;
     public delegate* unmanaged[Cdecl]<void*, SaveInfo*, void*, int> SaveInfo;
     public delegate* unmanaged[Cdecl]<void*, SaveRequest*, SaveEnqueue*, void*, int> SaveRequest;
     public delegate* unmanaged[Cdecl]<void*, Ticket*, SaveResult*, void*, int> SaveResult;
+    public delegate* unmanaged[Cdecl]<void*, ComponentType*, Id*, Id*, uint, uint*, void*, int> Query;
+    public delegate* unmanaged[Cdecl]<void*, ComponentType*, Id*, void*, uint, uint*, void*, int> ComponentGet;
+    public delegate* unmanaged[Cdecl]<void*, ComponentType*, Id*, void*, uint, void*, int> ComponentSet;
+    public delegate* unmanaged[Cdecl]<void*, Id*, uint*, void*, int> Alive;
 }
+[StructLayout(LayoutKind.Sequential)] struct ComponentType { public Id Id;public ulong A,B,C,D;public uint Bytes,Reserved; }
 [StructLayout(LayoutKind.Sequential)] struct Ticket { public ulong High,Low,Sequence; }
 [StructLayout(LayoutKind.Sequential)] unsafe struct SaveRequest { public uint Kind,SlotBytes;public byte* Slot;public ulong Expected;public uint HasExpected,Recovery; }
 [StructLayout(LayoutKind.Sequential)] struct SaveEnqueue { public Ticket Ticket;public uint Rejection,Reserved; }
@@ -46,7 +53,7 @@ using Poima.ManagedBridge;
     public uint Present, Loop, Playing, TransitionPresent, Reserved; public Transition Transition;
 }
 [StructLayout(LayoutKind.Sequential)] public struct ProbeState { public int Count; }
-[GameModule("poima-test-services-v4")]
+[GameModule("poima-test-services-v5")]
 public sealed class ProbeGame : Game<ProbeState>
 {
     public override void Initialize(ref ProbeState state) { state.Count=7; }
@@ -88,11 +95,25 @@ public sealed class ProbeGame : Game<ProbeState>
         bool rejected=false;
         try { context.RequestLoad("busy"); }catch(SaveRequestException error) { rejected=error.Rejection==SaveRequestRejection.Busy; }
         if(!rejected)throw new Exception("Rejected request lost its typed reason.");
+        Span<EntityId> ids=stackalloc EntityId[2];
+        if(context.Query<Health>(ids)!=2 || ids[0]!=new EntityId(11,22) || ids[1]!=new EntityId(11,23) ||
+            context.Query<Health>(ids,ids[1])!=0)throw new Exception("Component query ABI mismatch.");
+        var health=context.Get<Health>(new(11,22));
+        if(health.Current!=12.5f || health.Maximum!=42 || health.Score!=long.MinValue)throw new Exception("Health wire decode mismatch.");
+        if(context.TryGet<Health>(new(11,24),out _))throw new Exception("Missing component was present.");
+        var interaction=context.Get<Interaction>(new(11,22));
+        if(interaction.Target!=new EntityId(ulong.MaxValue,1UL<<63) || interaction.Weight!=.125)throw new Exception("Interaction wire decode mismatch.");
+        health.Current=-0.0f;health.Maximum=-9;health.Score=long.MaxValue;context.Set(new(11,22),in health);
+        interaction.Weight=-0.0;context.Set(new(11,22),in interaction);
+        bool finiteRejected=false;health.Current=float.NaN;
+        try { context.Set(new(11,22),in health); }catch(ArgumentException){finiteRejected=true;}
+        if(!finiteRejected)throw new Exception("Nonfinite generated encode accepted.");
+        if(!context.IsAlive(new(11,22)) || context.IsAlive(default))throw new Exception("Liveness ABI mismatch.");
     }
 }
 static unsafe class Program
 {
-    static int gets, sets,infos,requests,results;
+    static int gets, sets,infos,requests,results,queries,componentGets,componentSets,aliveCalls;
     static bool badPayload;
     [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
     static int Unused() => -1;
@@ -151,6 +172,56 @@ static unsafe class Program
         }else badPayload=true;
         return 0;
     }
+    static bool Descriptor(ComponentType* d)
+    {
+        string hash=d->Id.High==0x1111111111111111UL
+            ?"119b6ed352389e9c18c1d60f29176870ac92f7b3cdaf8f85433a2de16a9718d6"
+            :"347a4b0f95256df320ce9a4b30ac6abc44d13a37178eda76b80693d114cb99d9";
+        return d->Id.High==d->Id.Low && (d->Id.High==0x1111111111111111UL || d->Id.High==0x2222222222222222UL) &&
+            d->Bytes==(d->Id.High==0x1111111111111111UL?48u:32u) && d->Reserved==0 &&
+            $"{d->A:x16}{d->B:x16}{d->C:x16}{d->D:x16}"==hash;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Query(void* context,ComponentType* descriptor,Id* after,Id* ids,uint capacity,uint* written,void* error)
+    {
+        ++queries;
+        if((nint)context!=0x1234 || !Descriptor(descriptor) || capacity!=2)badPayload=true;
+        *written=0;
+        if(after->High==0 && after->Low==0) { ids[0]=new(){High=11,Low=22};ids[1]=new(){High=11,Low=23};*written=2; }
+        else if(after->High!=11 || after->Low!=23)badPayload=true;
+        return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int ComponentGet(void* context,ComponentType* descriptor,Id* id,void* output,uint bytes,uint* present,void* error)
+    {
+        ++componentGets;
+        if((nint)context!=0x1234 || !Descriptor(descriptor) || id->High!=11 || bytes!=descriptor->Bytes)badPayload=true;
+        *present=id->Low==24?0u:1u;if(*present==0)return 0;
+        var wire=new Span<byte>(output,(int)bytes);wire.Clear();
+        if(bytes==48) {
+            BinaryPrimitives.WriteSingleLittleEndian(wire,12.5f);BinaryPrimitives.WriteInt32LittleEndian(wire[16..],42);
+            BinaryPrimitives.WriteInt64LittleEndian(wire[32..],long.MinValue);
+        } else {
+            BinaryPrimitives.WriteUInt64LittleEndian(wire,ulong.MaxValue);BinaryPrimitives.WriteUInt64LittleEndian(wire[8..],1UL<<63);
+            BinaryPrimitives.WriteDoubleLittleEndian(wire[16..],.125);
+        }
+        return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int ComponentSet(void* context,ComponentType* descriptor,Id* id,void* input,uint bytes,void* error)
+    {
+        ++componentSets;
+        if((nint)context!=0x1234 || !Descriptor(descriptor) || id->High!=11 || id->Low!=22 || bytes!=descriptor->Bytes)badPayload=true;
+        Span<byte> expected=stackalloc byte[(int)bytes];expected.Clear();
+        if(bytes==48) { BinaryPrimitives.WriteInt32LittleEndian(expected[16..],-9);BinaryPrimitives.WriteInt64LittleEndian(expected[32..],long.MaxValue); }
+        else { BinaryPrimitives.WriteUInt64LittleEndian(expected,ulong.MaxValue);BinaryPrimitives.WriteUInt64LittleEndian(expected[8..],1UL<<63); }
+        if(!expected.SequenceEqual(new ReadOnlySpan<byte>(input,(int)bytes)))badPayload=true;return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Alive(void* context,Id* id,uint* alive,void* error)
+    {
+        ++aliveCalls;if((nint)context!=0x1234)badPayload=true;*alive=id->High==11 && id->Low==22?1u:0u;return 0;
+    }
     static void Check(bool condition,string message) { if(!condition)throw new Exception(message); }
     static string Output(byte* output) => Marshal.PtrToStringUTF8((nint)output)!;
     static void Reject(Call* call,List<string> checks,string name,Services candidate,bool nullServices=false)
@@ -159,7 +230,7 @@ static unsafe class Program
         int before=((ProbeState*)call->State)->Count;
         Check(Entry.Invoke((nint)call,sizeof(Call))!=0,$"{name} unexpectedly accepted.");
         Check(Output(call->Output).Contains("Gameplay service"),$"{name}: wrong error {Output(call->Output)}");
-        Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0 && infos==0 && requests==0 && results==0,$"{name} invoked gameplay or callbacks.");
+        Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0 && infos==0 && requests==0 && results==0 && queries==0 && componentGets==0 && componentSets==0 && aliveCalls==0,$"{name} invoked gameplay or callbacks.");
         checks.Add(name);
     }
     static int Main(string[] args)
@@ -167,7 +238,7 @@ static unsafe class Program
         var checks=new List<string>();
         try
         {
-            Check(sizeof(Call)==80 && sizeof(Services)==88 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
+            Check(sizeof(Call)==80 && sizeof(Services)==120 && sizeof(ComponentType)==56 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
                 sizeof(Ticket)==24 && sizeof(SaveRequest)==32 && sizeof(SaveEnqueue)==32 && sizeof(SaveResult)==344 && sizeof(SaveInfo)==104,"Independent ABI sizes.");
             byte* output=stackalloc byte[65536]; byte* state=stackalloc byte[sizeof(ProbeState)];
             var request=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(ProbeGame).FullName})+"\0");
@@ -181,10 +252,10 @@ static unsafe class Program
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             Check(((ProbeState*)state)->Count==7,"Initialize state.");
             nint unused=(nint)(delegate* unmanaged[Cdecl]<int>)&Unused;
-            Services good=new(){Version=4,Bytes=88,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result};
+            Services good=new(){Version=5,Bytes=120,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result,Query=&Query,ComponentGet=&ComponentGet,ComponentSet=&ComponentSet,Alive=&Alive};
             call.Operation=3;call.Tick=123;
             Reject(&call,checks,"null services rejected before Tick",good,true);
-            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,89),(5,88),(4,0)})
+            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,121),(6,120),(5,0)})
             { var candidate=good;candidate.Version=pair.Version;candidate.Bytes=pair.Bytes;Reject(&call,checks,$"services {pair.Version}/{pair.Bytes} rejected before Tick",candidate); }
             var missing=good;missing.Get=null;Reject(&call,checks,"null animation get rejected",missing);
             missing=good;missing.Set=null;Reject(&call,checks,"null animation set rejected",missing);
@@ -192,15 +263,28 @@ static unsafe class Program
             missing=good;missing.SaveInfo=null;Reject(&call,checks,"null save info rejected",missing);
             missing=good;missing.SaveRequest=null;Reject(&call,checks,"null save request rejected",missing);
             missing=good;missing.SaveResult=null;Reject(&call,checks,"null save result rejected",missing);
+            missing=good;missing.Query=null;Reject(&call,checks,"null component query rejected",missing);
+            missing=good;missing.ComponentGet=null;Reject(&call,checks,"null component get rejected",missing);
+            missing=good;missing.ComponentSet=null;Reject(&call,checks,"null component set rejected",missing);
+            missing=good;missing.Alive=null;Reject(&call,checks,"null entity alive rejected",missing);
             call.Services=&good;
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
-            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && !badPayload,"Successful v4 invocation payload/state mismatch.");
-            checks.Add("matching v4 transfers animation, typed save requests/results, uncertainty, restore metadata and rejection correctly");
+            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && queries==2 && componentGets==3 && componentSets==2 && aliveCalls==2 && !badPayload,"Successful v5 invocation payload/state mismatch.");
+            checks.Add("matching v5 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation");
             call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+            for(int iteration=0;iteration<100;++iteration)
+            {
+                call.Operation=1;fixed(byte* text=request) { call.Text=text;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output)); }
+                using var next=JsonDocument.Parse(Output(output));call.Handle=next.RootElement.GetProperty("handle").GetUInt64();
+                call.Operation=2;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+                call.Operation=3;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+                call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+            }
+            checks.Add("100 additional generated-code module lifetimes invoke and retire without retained Type caches");
             call.Operation=5;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             using var collected=JsonDocument.Parse(Output(output));
             Check(collected.RootElement.GetProperty("active_modules").GetInt32()==0 && collected.RootElement.GetProperty("retired_alive").GetInt32()==0,"Fixture context retained after release.");
-            checks.Add("animation fixture collectible context released");
+            checks.Add("generated component and animation fixture collectible context released");
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
                 sdk_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Game<>).Assembly.Location)))},new JsonSerializerOptions{WriteIndented=true});

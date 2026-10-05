@@ -5,8 +5,18 @@ using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Text.Json;
 using Poima;
+using Poima.Build;
+if(args.Length==3 && args[0]=="--components")
+{
+    var path=Path.GetFullPath(args[1]);
+    if(new FileInfo(path).Length>64*1024*1024)throw new ArgumentException("Assembly exceeds 64 MiB.");
+    var image=File.ReadAllBytes(path);
+    File.WriteAllText(Path.GetFullPath(args[2]),ComponentMetadata.Manifest(ComponentMetadata.ReadSchemas(image)));return;
+}
 if(args.Length!=3)throw new ArgumentException("Expected assembly, fully qualified game type and generated output directory.");
 string assemblyPath=Path.GetFullPath(args[0]),output=Path.GetFullPath(args[2]);
+if(new FileInfo(assemblyPath).Length>64*1024*1024)throw new ArgumentException("Assembly exceeds 64 MiB.");
+var componentSchemas=ComponentMetadata.ReadSchemas(File.ReadAllBytes(assemblyPath));
 var resolver=new AssemblyDependencyResolver(assemblyPath);
 AssemblyLoadContext.Default.Resolving+=(_,name)=>name.Name==typeof(Game<>).Assembly.GetName().Name?typeof(Game<>).Assembly:resolver.ResolveAssemblyToPath(name) is { } path?AssemblyLoadContext.Default.LoadFromAssemblyPath(path):null;
 var assembly=AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
@@ -29,6 +39,7 @@ var schemaFields=fields.Select(f=> {
     return new {name=f.Name,kind,offset=Marshal.OffsetOf(state,f.Name).ToInt32(),bytes=size};
 }).ToArray();
 var schema=JsonSerializer.Serialize(new {identity,bytes,fields=schemaFields});
+if(componentSchemas is { } components)schema=schema[..^1]+",\"components\":"+components.GetRawText()+"}";
 string Name(Type type)=>"global::"+string.Join(".",type.FullName!.Replace('+','.').Split('.').Select(s=>"@"+s));
 string assertions=string.Join(" &&\n",schemaFields.Select(f=>$"(byte*)&state.@{f.name}-(byte*)&state=={f.offset}"));
 string source=$$"""
@@ -47,3 +58,4 @@ internal static unsafe class Binding
 """;
 Directory.CreateDirectory(output);File.WriteAllText(Path.Combine(output,"Binding.cs"),source);File.WriteAllText(Path.Combine(output,"schema.json"),schema);
 File.WriteAllText(Path.Combine(output,"game-type.txt"),game.FullName);
+File.WriteAllText(Path.Combine(output,"game.poima-components.json"),ComponentMetadata.Manifest(componentSchemas));

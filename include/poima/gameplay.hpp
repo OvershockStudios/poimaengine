@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/gameplay_abi.h"
+#include "poima/components.hpp"
 #include <memory>
 #include <cstdint>
 #include <span>
@@ -31,6 +32,7 @@ public:
     Gameplay(const Gameplay&)=delete;
     Gameplay& operator=(const Gameplay&)=delete;
     std::string inspect() const;
+    const std::vector<components::Schema>& component_schemas() const;
     void edit(const std::string& values);
     std::vector<std::uint64_t>& state();
     void tick(const PoimaGameServices&,std::span<const PoimaGameInput>,std::uint64_t tick);

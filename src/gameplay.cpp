@@ -121,7 +121,7 @@ NativeHost& native_host() { static NativeHost value;return value; }
 #endif
 std::string invoke(Entry entry,PoimaGameCall& call,bool large=false) {
     check(entry!=nullptr,"Requested gameplay backend has not been initialized or built.");
-    std::array<char,2048> small{};std::vector<char> big;if(large)big.resize(65536);
+    std::array<char,2048> small{};std::vector<char> big;if(large)big.resize(1024*1024);
     const std::span<char> buffer=large ? std::span<char>(big) : std::span<char>(small);call.version=1;call.output=buffer.data();call.output_capacity=static_cast<std::uint32_t>(buffer.size());
     const auto code=entry(&call,sizeof(call));buffer.back()=0;
     if(code!=0)throw std::runtime_error(std::string("C# gameplay: ")+buffer.data());
@@ -137,8 +137,9 @@ PoimaEntityId gameplay_id(const std::string& text) {
 }
 std::string gameplay_id(PoimaEntityId id) { std::ostringstream out;out<<std::hex<<std::setfill('0')<<std::setw(16)<<id.high<<std::setw(16)<<id.low;return out.str(); }
 void validate_gameplay_schema(const std::string& schema) {
-    check(schema.size()<=65536,"Gameplay schema exceeds 64 KiB.");const auto m=Json::parse(schema);
-    check(m.is_object() && m.size()==3 && m.contains("identity") && m.contains("bytes") && m.contains("fields"),"Invalid gameplay schema object.");
+    check(schema.size()<=1024*1024,"Gameplay schema exceeds 1 MiB.");const auto m=Json::parse(schema);
+    check(m.is_object() && (m.size()==3 || (m.size()==4 && m.contains("components"))) && m.contains("identity") && m.contains("bytes") && m.contains("fields"),"Invalid gameplay schema object.");
+    if(m.contains("components")) (void)components::parse_manifest(Json{{"format","poima.components"},{"version",1},{"schemas",m.at("components")}}.dump());
     check(m.at("identity").is_string(),"Gameplay identity must be a string.");const auto identity=m.at("identity").get<std::string>();
     check(!identity.empty() && identity.size()<=128 && identity.find('\0')==std::string::npos,"Invalid gameplay identity.");
     check(m.at("bytes").is_number_integer() && m.at("bytes")>0 && m.at("bytes")<=65536,"Invalid gameplay state size.");
@@ -155,6 +156,7 @@ void validate_gameplay_schema(const std::string& schema) {
 }
 struct Gameplay::Impl {
     Entry entry=nullptr;Json diagnostics=Json::object();
+    std::vector<components::Schema> component_schemas;
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     ~Impl() { if(handle)try { PoimaGameCall call{};call.operation=4;call.handle=handle;(void)invoke(entry,call); }catch(...) {} }
     void validate() const {
@@ -191,6 +193,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
         impl_->assembly_hash=config.native_sha256;
     } else { impl_->assembly_hash=impl_->manifest.at("assembly_sha256");impl_->manifest.erase("assembly_sha256"); }
     validate_gameplay_schema(impl_->manifest.dump());
+    if(impl_->manifest.contains("components"))impl_->component_schemas=components::parse_manifest(Json{{"format","poima.components"},{"version",1},{"schemas",impl_->manifest.at("components")}}.dump());
     const auto& metadata=impl_->manifest;impl_->bytes=metadata.at("bytes").get<std::uint32_t>();check(impl_->bytes>0 && impl_->bytes<=65536,"Invalid gameplay state size.");
     const auto& fields=metadata.at("fields");check(fields.is_array() && !fields.empty() && fields.size()<=128,"Invalid gameplay state fields.");
     std::vector<bool> used(impl_->bytes);std::map<std::string,std::size_t> sizes{{"int32",4},{"int64",8},{"float32",4},{"float64",8},{"entity",16}};
@@ -221,6 +224,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     impl_->migration={{"added",added},{"removed",removed},{"preserved",preserved}};impl_->validate();
 }
 Gameplay::~Gameplay()=default;
+const std::vector<components::Schema>& Gameplay::component_schemas() const { return impl_->component_schemas; }
 std::vector<std::uint64_t>& Gameplay::state() { return impl_->storage; }
 std::string Gameplay::inspect() const {
     Json values=Json::object();for(const auto& f:impl_->manifest.at("fields")) {

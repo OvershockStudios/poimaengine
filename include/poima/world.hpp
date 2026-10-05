@@ -27,6 +27,11 @@ struct WorldGameplayStatus {
     std::string session_id;
     std::uint64_t tick=0,revision=0;
 };
+struct WorldComponentStatus {
+    bool active=false;
+    std::string session_id;
+    std::uint64_t tick=0,revision=0;
+};
 struct WorldProfilerContext {
     std::array<char,33> session{};
     std::int64_t tick=-1;
@@ -76,6 +81,7 @@ public:
         const std::vector<RuntimeInput>& inputs={});
     // Counters only: does not serialize gameplay schema or field values.
     WorldGameplayStatus gameplay_status() const;
+    WorldComponentStatus component_status() const;
     // Session configuration only; does not inspect or create storage files.
     WorldSaveStatus save_status() const;
     std::vector<std::pair<std::string,std::string>> runtime_hierarchy() const;

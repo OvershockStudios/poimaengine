@@ -105,6 +105,8 @@ def main():
     stage = Path(tempfile.mkdtemp(prefix='.' + output.name + '-', dir=output.parent))
     try:
         shutil.copy2(library, stage / library_name)
+        if schema.get("components"):
+            shutil.copy2(generated / "game.poima-components.json", stage / "game.poima-components.json")
         notices = stage / 'notices'
         notices.mkdir()
         shutil.copy2(ROOT / 'LICENSE', notices / 'POIMA-LICENSE.txt')
@@ -135,10 +137,10 @@ def main():
         files = []
         for path in sorted(p for p in stage.rglob('*') if p.is_file()):
             payload = path.read_bytes()
-            files.append(dict(path=path.relative_to(stage).as_posix(), size=len(payload), sha256=hashlib.sha256(payload).hexdigest(), role='library' if path.name == library_name else 'notice'))
+            files.append(dict(path=path.relative_to(stage).as_posix(), size=len(payload), sha256=hashlib.sha256(payload).hexdigest(), role='library' if path.name == library_name else 'metadata' if path.name == 'game.poima-components.json' else 'notice'))
         descriptor = dict(format='poima.native-gameplay', version=1, engine_version=version,
                           target_os='Windows' if rid == 'win-x64' else 'Linux', target_arch='x86_64',
-                          call_version=1, services_version=4, entry='poima_gameplay_entry',
+                          call_version=1, services_version=5, entry='poima_gameplay_entry',
                           library=library_name, identity=schema['identity'], type=args.game_type,
                           schema=schema, files=files)
         (stage / 'native-gameplay.json').write_text(json.dumps(descriptor, indent=2) + '\n', encoding='utf-8')

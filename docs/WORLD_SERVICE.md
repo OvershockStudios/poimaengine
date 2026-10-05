@@ -50,7 +50,7 @@ Queries can filter by built-in component type. They default to 64 results, up to
 
 ## Storage and recovery
 
-The version-1 `poima.authored-world` JSON document contains entities, retired IDs and retry receipts. The service owns four sidecar names: `.lock`, `.pending`, `.previous` and `.previous.pending`. Do not edit or repurpose them while a session runs.
+The version-1 `poima.authored-world` JSON document contains entities, retired IDs and retry receipts. Importing [custom component schemas](CUSTOM_COMPONENTS.md) upgrades it to version 2 with a schema registry and retired type IDs; worlds without this operation retain version 1. The service owns four sidecar names: `.lock`, `.pending`, `.previous` and `.previous.pending`. Do not edit or repurpose them while a session runs.
 
 A cooperative OS lock allows one writer session per document. An empty `.lock` file can remain after closing; file existence does not indicate ownership. Windows and Linux locking were tested separately, not simultaneous cross-OS access through WSL. Direct external editors do not participate in the lock. The service checks file bytes before committing and rejects detected external changes, but does not promise synchronization against concurrent uncooperative writers or aliasing through hard links.
 

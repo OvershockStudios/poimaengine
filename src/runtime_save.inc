@@ -123,7 +123,9 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     SaveJson payload={{"content_sha256",content_sha256},{"world_id",s.world_id},{"authored_revision",s.revision},{"tick",s.tick},
         {"gameplay_revision",s.game_revision},{"entities",entities},{"animation",SaveJson::parse(s.animations->save_state(s.tick))},
         {"sound",SaveJson::parse(s.sounds.save_state(s.tick))},{"gameplay",game}};
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    const bool custom=!s.components->schemas().empty();
+    if(custom)payload["components"]=SaveJson::parse(s.components->save());
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -132,10 +134,12 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     const std::string& bytes,const std::optional<GameplayConfig>& gameplay) {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto envelope=save_parse(bytes);save_fields(envelope,{"format","version","sha256","payload"});
-    require(envelope.at("format")=="poima.runtime-snapshot" && save_integer(envelope.at("version"))==1,"Unsupported runtime snapshot format/version.");
+    const bool custom=!definition.component_schemas.empty();
+    require(envelope.at("format")=="poima.runtime-snapshot" && save_integer(envelope.at("version"))==(custom ? 2u : 1u),"Unsupported runtime snapshot format/version for this definition.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
+    if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
+    else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
     const auto tick=save_integer(data.at("tick")),game_revision=save_integer(data.at("gameplay_revision"));
@@ -145,6 +149,7 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
     auto candidate=std::make_unique<Runtime>(definition);auto& s=*candidate->impl_;s.tick=tick;
+    if(custom)s.components->load(data.at("components").dump());
     if(!data.at("gameplay").is_null())save_game_values(data.at("gameplay"),s.identities);
     s.animations->load_state(data.at("animation").dump(),tick);s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;
@@ -227,7 +232,7 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
         const auto& saved=data.at("gameplay");
         auto game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore);const auto current=SaveJson::parse(game->inspect());
         for(const auto* key:{"backend","assembly_sha256","type","schema"})require(current.at(key)==saved.at(key),"Snapshot gameplay module/schema differs from the trusted module.");
-        game->edit(saved.at("values").dump());s.game=std::move(game);s.game_revision=game_revision;
+        game->edit(saved.at("values").dump());s.components->validate_module(game->component_schemas());s.game=std::move(game);s.game_revision=game_revision;
     }
     return candidate;
 }

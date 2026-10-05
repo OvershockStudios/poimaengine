@@ -101,7 +101,7 @@ class GameplayProjects(unittest.TestCase):
             {'name': 'Distance', 'kind': 'float64', 'offset': 8, 'bytes': 8},
             {'name': 'Rig', 'kind': 'entity', 'offset': 16, 'bytes': 16}]}
         descriptor = {'format': 'poima.native-gameplay', 'version': 1, 'engine_version': self.version,
-            'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 4,
+            'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 5,
             'entry': 'poima_gameplay_entry', 'library': name, 'identity': identity, 'type': 'Poima.Test.NativeMetadata',
             'schema': schema, 'files': [{'path': p.name, 'size': p.stat().st_size, 'sha256': digest(p), 'role': role}
                                       for p, role in [(library, 'library'), (notice, 'notice')]]}
@@ -154,6 +154,54 @@ class GameplayProjects(unittest.TestCase):
                 self.inspect(False)
         self.descriptor.write_text(json.dumps(good))
         self.inspect()
+
+    def test_component_metadata_matches_descriptor_and_inventory(self):
+        good = self.artifact_fixture()
+        component = {'id': '1' * 32, 'name': 'Health', 'version': 1, 'fields': [
+            {'id': '2' * 32, 'name': 'Value', 'kind': 'int32', 'default': 100}]}
+        good['schema']['components'] = [component]
+        world_path = self.project / self.spec['entry']['world']
+        world = json.loads(world_path.read_text())
+        world.update(version=2, component_schemas={component['id']: component}, retired_component_schemas=[])
+        world['entities'][self.spec['entry']['controller']]['components']['game:'+component['id']] = {'2'*32: 100}
+        world_path.write_text(json.dumps(world))
+        metadata = self.artifact / 'game.poima-components.json'
+        manifest = {'format': 'poima.components', 'version': 1, 'schemas': [component]}
+
+        def install(doc, content):
+            metadata.write_text(json.dumps(content))
+            candidate = copy.deepcopy(doc)
+            candidate['files'].append({'path': metadata.name, 'size': metadata.stat().st_size,
+                                       'sha256': digest(metadata), 'role': 'metadata'})
+            self.descriptor.write_text(json.dumps(candidate))
+            return candidate
+
+        valid = install(good, manifest)
+        self.inspect()
+        original_world = copy.deepcopy(world)
+        changed_world = copy.deepcopy(world)
+        changed_world['component_schemas'][component['id']]['fields'][0]['default'] = 101
+        world_path.write_text(json.dumps(changed_world))
+        self.inspect(False)
+        world_path.write_text(json.dumps(original_world))
+        wrong = copy.deepcopy(manifest)
+        wrong['schemas'][0]['fields'][0]['default'] = 99
+        install(good, wrong)
+        self.inspect(False)
+        valid = install(good, manifest)
+        valid['files'][-1]['role'] = 'notice'
+        self.descriptor.write_text(json.dumps(valid))
+        self.inspect(False)
+        valid = install(good, manifest)
+        del valid['schema']['components']
+        self.descriptor.write_text(json.dumps(valid))
+        self.inspect(False)
+        valid = install(good, manifest)
+        other = self.artifact / 'other.poima-components.json'
+        metadata.rename(other)
+        valid['files'][-1]['path'] = other.name
+        self.descriptor.write_text(json.dumps(valid))
+        self.inspect(False)
 
     def test_typed_initial_values_and_portable_descriptor_paths(self):
         self.artifact_fixture()
@@ -282,7 +330,7 @@ class GameplayProjects(unittest.TestCase):
         (runtime/executable).chmod(0o755)
         spec = dict(format='poima.runtime', version=1, engine_version=self.version,
                     target_os=self.target, target_arch='x86_64', executable=executable,
-                    gameplay_services_version=4,
+                    gameplay_services_version=5,
                     features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
         path = runtime/'runtime.json'
         path.write_text(json.dumps(spec))
@@ -291,7 +339,7 @@ class GameplayProjects(unittest.TestCase):
         self.cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
         self.cli('game', 'inspect', native(bundle/'game.json'))
         game = json.loads((bundle/'game.json').read_text())
-        for index, value in enumerate([None, 3, 5, '4', True, 4.0, 0]):
+        for index, value in enumerate([None, 3, 4, 6, '5', True, 5.0, 0]):
             with self.subTest(services_version=value):
                 changed = copy.deepcopy(spec)
                 if value is None: changed.pop('gameplay_services_version')

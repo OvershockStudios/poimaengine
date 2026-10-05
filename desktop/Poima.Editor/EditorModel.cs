@@ -22,6 +22,9 @@ public sealed class EditorModel : IDisposable
 {
     public NativeHost Host { get; }
     public GameplayEditorModel? Gameplay { get; set; }
+    public ComponentEditorModel? Components { get; set; }
+    public JsonObject Schemas { get; private set; } = new();
+    public JsonObject DraftSchemas { get; private set; } = new();
     public event EventHandler? Changed;
     public event EventHandler? PlaybackChanged;
     public event Action? SceneChanging;
@@ -129,6 +132,9 @@ public sealed class EditorModel : IDisposable
                 parameters["after"] = page["next_after"]?.DeepClone();
             } while (parameters["after"] is not null);
             Entities.Clear(); Entities.AddRange(found);
+            var schemas = Host.Call("component.schemas")["schemas"]!.AsArray();
+            Schemas = new JsonObject();
+            foreach (var schema in schemas.OfType<JsonObject>()) Schemas[schema["id"]!.GetValue<string>()] = schema.DeepClone();
             RefreshCameras();
             var history = Host.Call("world.history");
             UndoDepth = history["undo_count"]?.GetValue<int>() ?? 0;
@@ -145,6 +151,7 @@ public sealed class EditorModel : IDisposable
         DraftName = value?["name"]?.GetValue<string>() ?? "";
         DraftComponents = value?["components"] is JsonObject components ? Clone(components) : new();
         baselineName = DraftName; baseline = Clone(DraftComponents); BaseRevision = Revision;
+        DraftSchemas = Clone(Schemas);
         invalid.Clear(); rawFields.Clear();
         ++DraftGeneration;
     }
@@ -164,10 +171,11 @@ public sealed class EditorModel : IDisposable
     public void SetInvalid(string field, bool value) { if (value) invalid.Add(field); else invalid.Remove(field); }
     public bool HasInvalid(string prefix) => invalid.Any(key => key.StartsWith(prefix, StringComparison.Ordinal));
     public void Reload() { SceneChanging?.Invoke(); LoadSelected(); Changed?.Invoke(this, EventArgs.Empty); }
-    private void RequireClean()
+    public void RequireAuthoredClean()
     {
         if (Dirty) throw new InvalidOperationException("Apply or reload Inspector changes first.");
     }
+    private void RequireClean() { RequireAuthoredClean(); Components?.RequireClean(); }
     public void RequireInspectorClean() => RequireClean();
     private void RequireStopped()
     {
@@ -182,12 +190,14 @@ public sealed class EditorModel : IDisposable
     }
     public void Apply()
     {
-        RequireStopped();
+        RequireStopped(); Components?.RequireClean();
         if (invalid.Count != 0) throw new InvalidOperationException("Fix invalid Inspector fields before applying.");
         if (!Dirty || Selected is null) return;
         SceneChanging?.Invoke();
         var ops = new JsonArray();
         if (DraftName != baselineName) ops.Add(new JsonObject { ["op"] = "entity.rename", ["id"] = Selected, ["name"] = DraftName });
+        foreach (var pair in baseline)
+            if (!DraftComponents.ContainsKey(pair.Key)) ops.Add(new JsonObject { ["op"] = "component.remove", ["id"] = Selected, ["type"] = pair.Key });
         foreach (var pair in DraftComponents)
             if (!JsonNode.DeepEquals(pair.Value, baseline[pair.Key]))
                 ops.Add(new JsonObject { ["op"] = "component.set", ["id"] = Selected, ["type"] = pair.Key, ["value"] = pair.Value?.DeepClone() });
@@ -200,6 +210,48 @@ public sealed class EditorModel : IDisposable
         SceneChanging?.Invoke();
         Host.Call("world.transact", new() { ["request_id"] = NewId(), ["base_revision"] = Revision, ["ops"] = ops });
         Refresh();
+    }
+    public void AddCustomComponent(string type)
+    {
+        RequireStopped(); Components?.RequireClean();
+        if (Selected is null || DraftSchemas[type] is not JsonObject schema) throw new InvalidOperationException("Select an object and an imported component schema first.");
+        var key = "game:" + type;
+        if (DraftComponents.ContainsKey(key)) throw new InvalidOperationException("This component is already attached.");
+        SceneChanging?.Invoke(); DraftComponents[key] = ComponentFields.Defaults(schema);
+        ++DraftGeneration; Changed?.Invoke(this, EventArgs.Empty);
+    }
+    public void RemoveCustomComponent(string type)
+    {
+        RequireStopped(); Components?.RequireClean();
+        var key = "game:" + type;
+        if (Selected is null || !DraftComponents.ContainsKey(key)) throw new InvalidOperationException("This component is not attached.");
+        SceneChanging?.Invoke(); DraftComponents.Remove(key);
+        invalid.RemoveWhere(field => field.StartsWith(key + ":", StringComparison.Ordinal));
+        foreach (var field in rawFields.Keys.Where(field => field.StartsWith(key + ":", StringComparison.Ordinal)).ToArray()) rawFields.Remove(field);
+        ++DraftGeneration; Changed?.Invoke(this, EventArgs.Empty);
+    }
+    public void ImportComponentManifest(string path)
+    {
+        RequireStopped(); RequireClean(); Gameplay?.RequireClean();
+        // Read the bounded bytes once: retry identity is the inline declaration, never a mutable filename.
+        using var input = new System.IO.FileStream(path, System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.Read);
+        using var bytes = new System.IO.MemoryStream();
+        var buffer = new byte[8192];
+        while (true) { var count = input.Read(buffer); if (count == 0) break; if (bytes.Length + count > 512 * 1024) throw new InvalidOperationException("Component manifest exceeds 512 KiB."); bytes.Write(buffer, 0, count); }
+        using var document = System.Text.Json.JsonDocument.Parse(bytes.ToArray(), new System.Text.Json.JsonDocumentOptions { MaxDepth = 32 });
+        static void Unique(System.Text.Json.JsonElement node)
+        {
+            if (node.ValueKind == System.Text.Json.JsonValueKind.Object)
+            {
+                var names = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var field in node.EnumerateObject()) { if (!names.Add(field.Name)) throw new InvalidOperationException("Component manifest contains duplicate JSON fields."); Unique(field.Value); }
+            }
+            else if (node.ValueKind == System.Text.Json.JsonValueKind.Array) foreach (var child in node.EnumerateArray()) Unique(child);
+        }
+        Unique(document.RootElement);
+        var manifest = JsonNode.Parse(document.RootElement.GetRawText()) as JsonObject ?? throw new InvalidOperationException("Component manifest must be an object.");
+        Host.Call("component.schema.import", new() { ["request_id"] = NewId(), ["base_revision"] = Revision, ["manifest"] = manifest });
+        Refresh(); Note("Imported component declarations. Add a component to an object in the Inspector.");
     }
     public void AttachMeshCollider()
     {
@@ -286,7 +338,7 @@ public sealed class EditorModel : IDisposable
     }
     public void PlayStop()
     {
-        Gameplay?.RequireClean();
+        Gameplay?.RequireClean(); Components?.RequireClean();
         SceneChanging?.Invoke();
         if (RuntimeId is not null) Host.Call("desktop.play.stop", new() { ["session_id"] = RuntimeId });
         else
@@ -300,12 +352,14 @@ public sealed class EditorModel : IDisposable
     }
     public void Pause()
     {
+        Components?.RequireClean();
         if (RuntimeId is null) throw new InvalidOperationException("Start playback first.");
         Host.Call(Paused ? "desktop.play.resume" : "desktop.play.pause", new() { ["session_id"] = RuntimeId });
         Host.RefreshState();
     }
     public void Step(int ticks = 1)
     {
+        Components?.RequireClean();
         if (RuntimeId is null || !Paused) throw new InvalidOperationException("Pause playback before stepping.");
         Host.Call("desktop.play.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["ticks"] = ticks });
         Host.RefreshState();

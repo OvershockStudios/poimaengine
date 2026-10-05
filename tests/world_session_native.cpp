@@ -23,6 +23,36 @@ std::string read(const fs::path& path) { std::ifstream f(path,std::ios::binary);
 void write(const fs::path& path,const std::string& bytes) { std::ofstream stream(path,std::ios::binary);stream.write(bytes.data(),static_cast<std::streamsize>(bytes.size()));check(bool(stream),"Fixture write failed."); }
 std::string hash(const std::string& bytes) { return poima::sha256(std::as_bytes(std::span(bytes.data(),bytes.size()))); }
 std::map<std::string,std::string> tree(const fs::path& root) { std::map<std::string,std::string> files;for(const auto& entry:fs::recursive_directory_iterator(root))if(entry.is_regular_file())files.emplace(entry.path().lexically_relative(root).generic_string(),read(entry.path()));return files; }
+void custom_read_only_regression(const fs::path& directory) {
+    const auto path=directory/"custom-read-only.json";const std::string type(32,'1'),field(32,'2'),entity(32,'3'),session_id(32,'4');
+    const Json schema={{"id",type},{"name","Health"},{"version",1},{"fields",Json::array({{{"id",field},{"name","Current"},{"kind","int64"},{"default","0"}}})}};
+    {
+        poima::WorldSession author(path.string());
+        call(author,"world.transact",{{"request_id",std::string(32,'5')},{"base_revision",0},{"ops",Json::array({
+            {{"op","component.schema.set"},{"schema",schema}},{{"op","entity.create"},{"id",entity},{"name","Readonly component"}},
+            {{"op","component.set"},{"id",entity},{"type","game:"+type},{"value",{{field,"9223372036854775807"}}}}
+        })}});
+    }
+    const auto before=tree(directory);
+    {
+        poima::WorldSession session(path.string(),poima::WorldOpenMode::read_only_runtime);
+        check(call(session,"component.schemas").at("schemas").size()==1,"Readonly v2 schema registry missing.");
+        const auto discovery=call(session,"world.describe");check(!discovery.at("methods").contains("component.schema.import"),"Readonly discovery advertises schema import.");
+        const auto rejected=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","component.schema.import"},{"params",Json::object()}}.dump()));
+        check(rejected.at("error").at("code")==-32081,"Readonly schema import reached validation or mutation.");
+        const auto content=session.package_content();const auto document=Json::parse(content.document);
+        check(document.at("version")==2 && document.at("component_schemas").contains(type) && document.at("retired_component_schemas").empty(),"Build-only v2 content lost schema registry or retirement sanitation.");
+        check(document.at("entities").at(entity).at("components").at("game:"+type).at(field)=="9223372036854775807","Build-only v2 Int64 payload lost precision.");
+        if(poima::Runtime::available()) {
+            call(session,"runtime.start",{{"session_id",session_id},{"revision",1}});
+            const auto status=session.component_status();check(status.active && status.session_id==session_id && status.tick==0 && status.revision==0,"Cheap component status differs from native state.");
+            call(session,"runtime.component.edit",{{"session_id",session_id},{"request_id",std::string(32,'6')},{"expected_tick",0},{"expected_revision",0},{"id",entity},{"type",type},{"values",{{field,"-9223372036854775808"}}}});
+            check(session.component_status().revision==1,"Cheap component revision did not observe paused write.");
+        }
+        check(tree(directory)==before,"Readonly custom runtime/build changed bundle files.");
+    }
+    check(tree(directory)==before,"Readonly custom teardown changed bundle files.");
+}
 void authored_preview_regression(const fs::path& directory) {
     const auto path=directory/"preview.json",assets=fs::path(path).concat(".assets");fs::create_directory(assets);
     // An analytic one-joint skin proves a bone preview rebuilds palettes, rather
@@ -223,7 +253,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==29,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==30,"Read-only discovery schema revision differs.");
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
                 const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",9},{"method",method},{"params",{{"source","missing"},{"path","forbidden.poima-input.json"}}}}.dump(),scope));
@@ -285,6 +315,7 @@ int main() {
             document["entities"][entity]["components"]["PbrTextures"]["normal"]["image"]=1;write(package,document.dump());
             poima::WorldSession invalid(package.string(),poima::WorldOpenMode::read_only_runtime);failed=false;try { (void)invalid.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Invalid embedded texture index was bundled.");
         }
+        custom_read_only_regression(directory);
         authored_preview_regression(directory);
         game_camera_regression(directory);
         fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo, transient transform preview and protocol adapter passed.\n";

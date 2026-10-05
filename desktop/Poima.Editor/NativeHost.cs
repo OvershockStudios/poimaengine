@@ -60,6 +60,7 @@ public sealed class NativeHost : IDisposable
                 || !JsonNode.DeepEquals(State["playback"], state["playback"])
                 || !JsonNode.DeepEquals(State["gameplay"], state["gameplay"])
                 || !JsonNode.DeepEquals(State["saves"], state["saves"])
+                || !JsonNode.DeepEquals(State["components"], state["components"])
                 || !JsonNode.DeepEquals(State["views"]?["game"]?["camera"], state["views"]?["game"]?["camera"])
                 || !JsonNode.DeepEquals(State["input"], state["input"])
                 || !JsonNode.DeepEquals(State["views"]?["game"]?["preparation_error"], state["views"]?["game"]?["preparation_error"]);

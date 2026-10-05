@@ -199,6 +199,19 @@ void entry_validate(const Json& entry,const Json& document) {
     const auto& t=c.at("components").at("Transform");for(const auto& v:t.at("scale"))require(std::abs(v.get<double>()-1)<1e-6,"Entry controller must be unscaled.");
     require(std::abs(t.at("rotation").at(0).get<double>())<1e-6 && std::abs(t.at("rotation").at(2).get<double>())<1e-6,"Entry controller may rotate only around Y.");
 }
+void component_bindings_validate(const std::string& document,const std::string& module_schema) {
+    const auto world=parse(document),module=parse(module_schema);std::map<std::string,components::Schema> schemas;
+    if(world.contains("component_schemas"))for(const auto& [key,value]:world.at("component_schemas").items())schemas.emplace(key,components::parse_schema(value.dump()));
+    std::set<std::string> declared;
+    const auto bindings=components::parse_manifest(Json{{"format","poima.components"},{"version",1},{"schemas",module.value("components",Json::array())}}.dump());
+    for(const auto& binding:bindings) {
+        require(schemas.contains(binding.id),"Gameplay component declaration is absent from the entry world.");
+        require(schemas.at(binding.id).fingerprint==binding.fingerprint,"Gameplay component declaration differs from the entry world schema.");declared.insert(binding.id);
+    }
+    for(const auto& entity:world.at("entities"))for(const auto& [key,value]:entity.at("components").items()) {
+        (void)value;if(key.starts_with("game:"))require(declared.contains(key.substr(5)),"Gameplay module does not declare an instantiated entry-world component.");
+    }
+}
 struct Project {
     fs::path manifest,root,world,profile;Json spec;std::string manifest_bytes,world_bytes,profile_bytes;WorldPackageContent content;
     std::optional<NativeGameplayArtifact> gameplay;
@@ -225,6 +238,7 @@ Project project(const std::string& filename) {
         const auto descriptor=contained(p.root,relative_path(config.at("descriptor")));
         require(descriptor!=p.manifest && descriptor!=p.world && descriptor!=p.profile,"Gameplay descriptor overlaps project content.");
         p.gameplay_bytes=read(descriptor,1024*1024);p.gameplay=load_native_gameplay_artifact(text(descriptor));
+        component_bindings_validate(p.content.document,p.gameplay->schema);
         p.gameplay_values=parse(validate_gameplay_values(p.gameplay->schema,config.value("values",Json::object()).dump()));
         require(read(descriptor,1024*1024)==p.gameplay_bytes,"Native gameplay descriptor changed while inspecting.");
     }
@@ -306,9 +320,10 @@ VerifiedGame verify_game(const std::string& filename) {
         require(config.at("descriptor")=="gameplay/native-gameplay.json","Unexpected bundled gameplay descriptor path.");
         const auto descriptor=contained(root,"gameplay/native-gameplay.json");expect("gameplay/native-gameplay.json","gameplay_descriptor");
         const auto artifact=load_native_gameplay_artifact(text(descriptor));
+        component_bindings_validate(content.document,artifact.schema);
         require(artifact.descriptor_sha256==inventory.at("gameplay/native-gameplay.json").at("sha256").get<std::string>(),"Gameplay descriptor changed since inventory verification.");
         require(runtime.at("features").value("native_gameplay",false),"Game requires a native-gameplay runtime.");
-        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==4,"Native gameplay requires runtime gameplay_services_version 4.");
+        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==5,"Native gameplay requires runtime gameplay_services_version 5.");
         require(artifact.target_os==runtime.at("target_os").get<std::string>() && artifact.target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay target differs from runtime target.");
         result.definition.gameplay_values=validate_gameplay_values(artifact.schema,config.at("values").dump());
         result.definition.gameplay_descriptor=text(descriptor);result.definition.gameplay_descriptor_sha256=artifact.descriptor_sha256;gameplay_paths.emplace("gameplay/native-gameplay.json","gameplay_descriptor");
@@ -363,7 +378,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
         if(p.gameplay) {
             require(runtime.at("features").value("native_gameplay",false),"Project requires a native-gameplay runtime.");
-            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==4,"Native gameplay requires runtime gameplay_services_version 4.");
+            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==5,"Native gameplay requires runtime gameplay_services_version 5.");
             require(p.gameplay->target_os==runtime.at("target_os").get<std::string>() && p.gameplay->target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay artifact target differs from installed runtime.");
         }
 #ifdef _WIN32
