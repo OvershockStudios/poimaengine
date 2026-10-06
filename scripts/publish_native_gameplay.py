@@ -49,7 +49,7 @@ def main():
     version = args.engine_version
     if not version:
         version = re.search(r'project\(poima\s+VERSION\s+([^\s)]+)', (ROOT / 'CMakeLists.txt').read_text(), re.I).group(1)
-    if not re.fullmatch(r'\d+\.\d+\.\d+', version):
+    if len(version)>128 or not re.fullmatch(r'\d+\.\d+\.\d+', version):
         raise ValueError('Engine version must use numeric major.minor.patch.')
     temporary = None
     if args.work:
@@ -138,9 +138,10 @@ def main():
         for path in sorted(p for p in stage.rglob('*') if p.is_file()):
             payload = path.read_bytes()
             files.append(dict(path=path.relative_to(stage).as_posix(), size=len(payload), sha256=hashlib.sha256(payload).hexdigest(), role='library' if path.name == library_name else 'metadata' if path.name == 'game.poima-components.json' else 'notice'))
-        descriptor = dict(format='poima.native-gameplay', version=1, engine_version=version,
+        descriptor = dict(format='poima.native-gameplay', version=2, engine_version=version,
                           target_os='Windows' if rid == 'win-x64' else 'Linux', target_arch='x86_64',
-                          call_version=1, services_version=7, entry='poima_gameplay_entry',
+                          call_version=1, call_bytes=80, services_version=7, minimum_services_bytes=176,
+                          required_features=['baseline_v7'], entry='poima_gameplay_entry',
                           library=library_name, identity=schema['identity'], type=args.game_type,
                           schema=schema, files=files)
         (stage / 'native-gameplay.json').write_text(json.dumps(descriptor, indent=2) + '\n', encoding='utf-8')

@@ -2,7 +2,6 @@
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/gameplay.hpp"
 #include "poima/assets.hpp"
-#include "poima/build_info.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <filesystem>
@@ -111,12 +110,36 @@ NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename
     check(!filename.empty() && filename.find('\0')==std::string::npos,"Native gameplay descriptor path is invalid.");
     auto path=fs::absolute(fs::path(std::u8string(filename.begin(),filename.end()))).lexically_normal();regular(path);path=fs::canonical(path);const auto root=path.parent_path();
     const auto bytes=read(path,1024*1024);const auto spec=parse(bytes);
-    fields(spec,{"format","version","engine_version","target_os","target_arch","call_version","services_version","entry","library","identity","type","schema","files"});
-    check(spec.at("format")=="poima.native-gameplay" && integer(spec.at("version"),1)==1,"Unsupported native gameplay artifact format.");
-    check(spec.at("engine_version")==POIMA_VERSION,"Native gameplay engine version must match exactly.");
+    check(spec.is_object() && spec.contains("version"),"Native gameplay descriptor requires a version.");
+    const auto version=integer(spec.at("version"),2);
+    check(spec.at("format")=="poima.native-gameplay" && (version==1 || version==2),"Unsupported native gameplay artifact format.");
+    if(version==1)fields(spec,{"format","version","engine_version","target_os","target_arch","call_version","services_version","entry","library","identity","type","schema","files"});
+    else fields(spec,{"format","version","engine_version","target_os","target_arch","call_version","call_bytes","services_version","minimum_services_bytes","required_features","entry","library","identity","type","schema","files"});
+    check(spec.at("engine_version").is_string(),"Native gameplay engine version must be diagnostic text.");
+    const auto engine_version=spec.at("engine_version").get<std::string>();
+    check(!engine_version.empty() && engine_version.size()<=128 && engine_version.find('\0')==std::string::npos,"Invalid native gameplay engine version text.");
+    if(version==1)check(engine_version=="0.0.39","Legacy native gameplay descriptors require the known 0.0.39 ABI-7 baseline.");
     check((spec.at("target_os")=="Windows" || spec.at("target_os")=="Linux") && spec.at("target_arch")=="x86_64","Unsupported native gameplay target.");
-    check(integer(spec.at("call_version"),1)==1 && integer(spec.at("services_version"),7)==7 && spec.at("entry")=="poima_gameplay_entry","Native gameplay ABI/export mismatch.");
-    NativeGameplayArtifact result;result.descriptor=text(path);result.descriptor_sha256=hash(bytes);result.root=text(root);result.target_os=spec.at("target_os");result.target_arch=spec.at("target_arch");
+    check(spec.at("entry")=="poima_gameplay_entry","Native gameplay export mismatch.");
+    NativeGameplayArtifact result;result.descriptor_version=static_cast<std::uint32_t>(version);
+    result.requirements.call_version=static_cast<std::uint32_t>(integer(spec.at("call_version"),UINT32_MAX));
+    result.requirements.services_version=static_cast<std::uint32_t>(integer(spec.at("services_version"),UINT32_MAX));
+    if(version==2) {
+        result.requirements.call_bytes=static_cast<std::uint32_t>(integer(spec.at("call_bytes"),UINT32_MAX));
+        result.requirements.services_bytes=static_cast<std::uint32_t>(integer(spec.at("minimum_services_bytes"),UINT32_MAX));
+        const auto& features=spec.at("required_features");
+        check(features.is_array() && features.size()<=64,"Native gameplay required_features must be a bounded array.");
+        result.requirements.features.clear();
+        for(const auto& feature:features) {
+            check(feature.is_string(),"Native gameplay required features must be text.");
+            const auto name=feature.get<std::string>();
+            check(!name.empty() && name.size()<=64 && name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_")==std::string::npos,"Malformed native gameplay required feature.");
+            result.requirements.features.push_back(name);
+        }
+    }
+    const auto compatibility=gameplay_abi::compatibility_error(result.requirements,gameplay_abi::Contract{});
+    check(compatibility.empty(),compatibility);
+    result.descriptor=text(path);result.descriptor_sha256=hash(bytes);result.root=text(root);result.target_os=spec.at("target_os");result.target_arch=spec.at("target_arch");
     check(spec.at("identity").is_string() && spec.at("type").is_string(),"Native gameplay identity/type must be text.");
     result.identity=spec.at("identity");result.type=spec.at("type");
     check(!result.type.empty() && result.type.size()<=512 && result.type.find('\0')==std::string::npos,"Invalid native gameplay type.");

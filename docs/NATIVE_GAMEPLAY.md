@@ -4,7 +4,7 @@ Poima's Native AOT route compiles one C# `Game<TState>` into a native shared lib
 
 The 0.0.35 integration has recorded Linux and Windows native execution, CoreCLR/native state comparisons and a relocated Windows Vulkan game replay. These are bounded fixture results; clean-machine deployment, consoles and production workloads remain unqualified. See the [checkpoint evidence](evidence/m2-native-gameplay.json) and [implementation status](IMPLEMENTATION_STATUS.md).
 
-The [custom component API](CUSTOM_COMPONENTS.md) requires rebuilding with services ABI 7. Older compiled artifacts must be republished.
+The development compatibility baseline is services epoch 7 with a 176-byte prefix. Earlier service epochs require rebuilding; the supported legacy artifact format is described below. Service compatibility does not migrate saved gameplay state.
 
 ## Publish
 
@@ -28,7 +28,11 @@ Native AOT includes runtime services, including garbage collection. It is native
 
 A dedicated artifact directory contains `native-gameplay.json`, one library, and the included dependency notices. Intermediate IL assemblies, debug symbols, generated source and build logs belong outside that directory.
 
-The descriptor declares the exact engine version, Linux/Windows x86_64 target, call ABI 1, services ABI 7, fixed `poima_gameplay_entry` export, game identity/type and complete state schema. Its payload inventory records relative paths, byte counts, SHA-256 hashes and roles (`library`, `dependency`, `notice`, `metadata`).
+The publisher emits descriptor version 2. `engine_version` records the producing build for diagnostics; compatibility instead requires call ABI 1/80 bytes, services epoch 7, `minimum_services_bytes:176` and `required_features:["baseline_v7"]`. The descriptor also declares the Linux/Windows x86_64 target, fixed `poima_gameplay_entry` export, game identity/type and complete state schema. Its payload inventory records relative paths, byte counts, SHA-256 hashes and roles (`library`, `dependency`, `notice`, `metadata`).
+
+Unknown required features, incompatible call/service epochs and requirements beyond the engine's available prefix reject before loading game code. A larger advertised runtime table can satisfy a smaller requirement. The current engine exposes only the baseline operations; metadata does not enable unimplemented extensions.
+
+Descriptor version 1 remains supported for the known 0.0.39 call-1/services-7 baseline. Current native calls provide the exact 176-byte view expected by those older compiled consumers, retaining callback pointers and context while excluding any host tail. New bridge/native entry code accepts at least that prefix and never reads unknown tail fields. This is a bounded service contract, not compatibility with all historical SDK versions or arbitrary changes to public C# APIs.
 
 Read-only inspection validates the schema, file inventory and native image headers without executing code. It accepts foreign-target metadata for export workflows. Actual loading additionally requires the running engine's platform, generated schema and native diagnostics to agree. Hashes check integrity against the supplied inventory; they are not signatures or an authenticity guarantee.
 
@@ -73,8 +77,18 @@ Project version 1 remains the format for projects without gameplay. Version 2 re
 
 Other project fields retain their existing contracts. Inspection validates initial values against the artifact schema. Export requires a matching target runtime with `features.native_gameplay: true`; older runtime descriptors lacking this feature are treated as false.
 
-Native gameplay export and bundle inspection also require `runtime.json` to declare `gameplay_services_version: 6`. Matching engine version alone is insufficient: an older services ABI cannot execute the new module. Legacy runtime descriptors without this field remain usable for bundles without gameplay.
+For version-2 gameplay artifacts, `runtime.json` must explicitly advertise `gameplay_call_version:1`, `gameplay_call_bytes:80`, `gameplay_services_version:7`, `gameplay_services_bytes:176` and `gameplay_features:["baseline_v7"]`. The new call/size/feature fields form one complete group. Project inspection exposes the artifact's descriptor version and requirements; export and bundle inspection use the same compatibility predicate.
+
+A legacy 0.0.39 runtime descriptor declaring only service version 7 can serve version-1 baseline artifacts. It cannot serve version-2 artifacts without an explicit contract. Legacy runtime descriptors remain usable for bundles without gameplay. The exporter and selected runtime still require an exact engine build version; that package-cohort check is separate from a game's service requirements. Saved-state schema/content/image checks also remain unchanged.
 
 Export copies the descriptor and exact payload closure into the bundle's `gameplay/` directory and emits game manifest version 2. Game launch verifies the bundle, starts its read-only runtime, loads the compiled module at tick zero, applies supplied values, then enters the player. Its result includes full gameplay inspection. Source projects, development IL and hostfxr are not part of this artifact route.
 
 A native-only engine configuration uses `POIMA_ENABLE_SIMULATION=ON`, `POIMA_ENABLE_NATIVE_GAMEPLAY=ON` and `POIMA_ENABLE_MANAGED_GAMEPLAY=OFF`; hostfxr headers are unnecessary. The native option defaults to the simulation option when first configuring a build. A graphical game bundle still requires the renderer and its platform dependencies. Path-based inspection and subsequent OS loading do not constitute a filesystem-race-free execution boundary.
+
+## Compatibility qualification
+
+`poima-gameplay-compatibility-test` checks the requirement predicate and bounded legacy view. With no arguments it checks policy only. To execute compiled callbacks, supply either `HOSTFXR BRIDGE ASSEMBLY` or `--native DESCRIPTOR`; the game fixture must be `Poima.Tests.ManagedUiGame` from `tests/managed_ui_gameplay`. The fixture verifies Tick/Control state, callback counts, rejection before mutation, and unchanged opaque host bytes.
+
+For an old-binary compatibility test, retain the old bridge/SDK/game closure and native descriptor/payload before rebuilding. Run the new harness against those exact bytes, then repeat with the old game and new bridge/SDK. Rebuilding the fixture from old source is not evidence that the original shipped bytes survived an upgrade. Record hashes before and after each run.
+
+The independent managed guard suite is documented in `tests/managed_service_abi/README.md`; package/export coverage lives in `tests/project_gameplay_contract.py`. [Recorded results](evidence/m2-gameplay-compatibility.json) distinguish actual Native AOT execution from production native-entry code exercised under CoreCLR.

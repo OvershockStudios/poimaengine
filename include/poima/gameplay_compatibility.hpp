@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: Apache-2.0
+#pragma once
+#include "poima/gameplay_abi.h"
+#include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+namespace poima::gameplay_abi {
+inline constexpr std::uint32_t call_version=1,call_bytes=80;
+inline constexpr std::uint32_t services_version=7,services_bytes=176;
+inline constexpr const char* baseline_feature="baseline_v7";
+
+// In a requirement, services_bytes is the minimum readable prefix. In an
+// availability declaration it is the provided extent. Epochs describe callback
+// semantics as well as layout; appending a tail does not change the epoch.
+struct Contract {
+    std::uint32_t call_version=gameplay_abi::call_version;
+    std::uint32_t call_bytes=gameplay_abi::call_bytes;
+    std::uint32_t services_version=gameplay_abi::services_version;
+    std::uint32_t services_bytes=gameplay_abi::services_bytes;
+    std::vector<std::string> features{baseline_feature};
+};
+
+// Existing compiled bridges/modules require exactly 176 bytes. Current engine
+// features use only this baseline, so expose a bounded view even when a host
+// appends opaque services. Never copy an unadvertised prefix or reinterpret a
+// different semantic epoch. A future module that requires a tail needs an
+// explicitly negotiated view rather than silently changing this legacy view.
+inline PoimaGameServices baseline_view(const PoimaGameServices& provided) {
+    static_assert(sizeof(PoimaGameServices)>=services_bytes);
+    if(provided.version!=services_version || provided.bytes<services_bytes)
+        throw std::runtime_error("Gameplay requires services epoch 7 and at least 176 bytes.");
+    PoimaGameServices view{};
+    std::memcpy(&view,&provided,services_bytes);
+    view.bytes=services_bytes;
+    return view;
+}
+
+// One policy for artifact inspection, runtime selection and package validation.
+// This does not validate executable integrity, target OS, saved state or build
+// cohort identity; those remain separate checks at their existing boundaries.
+inline std::string compatibility_error(const Contract& required,const Contract& available) {
+    if(required.call_version!=call_version || available.call_version!=call_version ||
+       required.call_bytes!=call_bytes || available.call_bytes!=call_bytes)
+        return "Gameplay requires call ABI 1 with 80 bytes.";
+    if(required.services_version!=services_version || available.services_version!=services_version)
+        return "Gameplay service compatibility epoch must be 7.";
+    if(required.services_bytes<services_bytes || available.services_bytes<services_bytes)
+        return "Gameplay service table is shorter than the 176-byte baseline.";
+    if(required.services_bytes>available.services_bytes)
+        return "Runtime does not provide the required gameplay service prefix.";
+    if(required.features.empty())return "Gameplay requirements must declare baseline_v7.";
+    for(std::size_t i=0;i<required.features.size();++i) {
+        const auto& feature=required.features[i];
+        if(feature!=baseline_feature)return "Unknown required gameplay feature: "+feature;
+        const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
+        if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
+            return "Duplicate required gameplay feature: "+feature;
+        if(std::find(available.features.begin(),available.features.end(),feature)==available.features.end())
+            return "Runtime lacks required gameplay feature: "+feature;
+    }
+    return {};
+}
+}

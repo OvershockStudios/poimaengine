@@ -250,13 +250,51 @@ Project project(const std::string& filename) {
 Json project_summary(const Project& p) {
     Json assets=Json::array();for(const auto& asset:p.content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
     Json result={{"manifest",text(p.manifest)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
-    if(p.gameplay)result["gameplay"]={{"backend","native_aot"},{"descriptor",p.spec.at("gameplay").at("descriptor")},{"identity",p.gameplay->identity},{"type",p.gameplay->type},{"target_os",p.gameplay->target_os},{"target_arch",p.gameplay->target_arch},{"library_sha256",p.gameplay->library_sha256},{"values",p.gameplay_values}};
+    if(p.gameplay) {
+        const auto& contract=p.gameplay->requirements;
+        result["gameplay"]={{"backend","native_aot"},{"descriptor",p.spec.at("gameplay").at("descriptor")},
+            {"descriptor_version",p.gameplay->descriptor_version},
+            {"requirements",{{"call_version",contract.call_version},{"call_bytes",contract.call_bytes},
+                {"services_version",contract.services_version},{"minimum_services_bytes",contract.services_bytes},{"required_features",contract.features}}},
+            {"identity",p.gameplay->identity},{"type",p.gameplay->type},{"target_os",p.gameplay->target_os},
+            {"target_arch",p.gameplay->target_arch},{"library_sha256",p.gameplay->library_sha256},{"values",p.gameplay_values}};
+    }
     return result;
 }
+gameplay_abi::Contract runtime_gameplay_contract(const Json& runtime) {
+    gameplay_abi::Contract result;
+    require(runtime.contains("gameplay_services_version"),"Native gameplay requires a runtime service compatibility epoch.");
+    result.services_version=static_cast<std::uint32_t>(integer(runtime.at("gameplay_services_version"),UINT32_MAX));
+    if(runtime.contains("gameplay_call_version")) {
+        result.call_version=static_cast<std::uint32_t>(integer(runtime.at("gameplay_call_version"),UINT32_MAX));
+        result.call_bytes=static_cast<std::uint32_t>(integer(runtime.at("gameplay_call_bytes"),UINT32_MAX));
+        result.services_bytes=static_cast<std::uint32_t>(integer(runtime.at("gameplay_services_bytes"),UINT32_MAX));
+        const auto& features=runtime.at("gameplay_features");
+        require(features.is_array() && features.size()<=64,"Runtime gameplay_features must be a bounded array.");
+        result.features.clear();
+        for(const auto& feature:features) {
+            require(feature.is_string(),"Runtime gameplay features must be text.");const auto name=feature.get<std::string>();
+            require(!name.empty() && name.size()<=64 && name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_")==std::string::npos,"Malformed runtime gameplay feature.");
+            require(std::find(result.features.begin(),result.features.end(),name)==result.features.end(),"Duplicate runtime gameplay feature.");
+            result.features.push_back(name);
+        }
+    }
+    return result;
+}
+void require_gameplay_contract(const NativeGameplayArtifact& artifact,const Json& runtime) {
+    if(!runtime.contains("gameplay_call_version"))
+        require(artifact.descriptor_version==1 && runtime.at("engine_version")=="0.0.39","Native gameplay v2 requires an explicit runtime compatibility contract.");
+    const auto error=gameplay_abi::compatibility_error(artifact.requirements,runtime_gameplay_contract(runtime));
+    require(error.empty(),error);
+}
 Json runtime_spec(const std::string& bytes) {
-    const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
+    const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
     require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");require(value.at("engine_version")==POIMA_VERSION,"Runtime engine version must exactly match the exporting engine.");
     if(value.contains("gameplay_services_version"))require(value.at("gameplay_services_version").is_number_integer() && integer(value.at("gameplay_services_version"))>0,"Runtime gameplay_services_version must be a positive integer.");
+    unsigned contract_fields=0;
+    for(const auto* name:{"gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features"})contract_fields+=value.contains(name) ? 1u : 0u;
+    require(contract_fields==0 || (contract_fields==4 && value.contains("gameplay_services_version")),"Runtime gameplay compatibility fields must be supplied together.");
+    if(contract_fields==4)(void)runtime_gameplay_contract(value);
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
     const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
@@ -324,7 +362,7 @@ VerifiedGame verify_game(const std::string& filename) {
         component_bindings_validate(content.document,artifact.schema);
         require(artifact.descriptor_sha256==inventory.at("gameplay/native-gameplay.json").at("sha256").get<std::string>(),"Gameplay descriptor changed since inventory verification.");
         require(runtime.at("features").value("native_gameplay",false),"Game requires a native-gameplay runtime.");
-        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==7,"Native gameplay requires runtime gameplay_services_version 7.");
+        require_gameplay_contract(artifact,runtime);
         require(artifact.target_os==runtime.at("target_os").get<std::string>() && artifact.target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay target differs from runtime target.");
         result.definition.gameplay_values=validate_gameplay_values(artifact.schema,config.at("values").dump());
         result.definition.gameplay_descriptor=text(descriptor);result.definition.gameplay_descriptor_sha256=artifact.descriptor_sha256;gameplay_paths.emplace("gameplay/native-gameplay.json","gameplay_descriptor");
@@ -380,7 +418,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         require(parse(p.content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Project requires a game-UI-enabled runtime.");
         if(p.gameplay) {
             require(runtime.at("features").value("native_gameplay",false),"Project requires a native-gameplay runtime.");
-            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==7,"Native gameplay requires runtime gameplay_services_version 7.");
+            require_gameplay_contract(*p.gameplay,runtime);
             require(p.gameplay->target_os==runtime.at("target_os").get<std::string>() && p.gameplay->target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay artifact target differs from installed runtime.");
         }
 #ifdef _WIN32

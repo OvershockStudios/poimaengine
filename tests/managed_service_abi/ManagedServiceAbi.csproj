@@ -9,6 +9,7 @@
     <Reference Include="Poima.ManagedBridge"><HintPath>$(BridgeDirectory)/Poima.ManagedBridge.dll</HintPath></Reference>
     <Reference Include="Poima.Gameplay"><HintPath>$(BridgeDirectory)/Poima.Gameplay.dll</HintPath></Reference>
   </ItemGroup>
+  <ItemGroup><Compile Remove="NativeEntry/**/*.cs" /><ProjectReference Include="NativeEntry/NativeEntry.csproj" /></ItemGroup>
   <ItemGroup><Compile Include="../components_gameplay/ComponentGame.cs" Link="ComponentGame.cs" /></ItemGroup>
   <Import Project="../../managed/Poima.Components.targets" />
 </Project>

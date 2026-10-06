@@ -44,8 +44,7 @@ public static unsafe class Entry
                     if(!modules.TryGetValue(call->Handle,out var instance))throw new ArgumentException("Unknown native game instance.");
                     if(call->State==null || call->StateBytes!=Binding.StateBytes)throw new ArgumentException("Gameplay state size mismatch.");
                     if(call->Operation==2) { Binding.InitializeObject(instance,call->State);break; }
-                    if(call->Services==null || call->Services->Version!=7 || call->Services->Bytes!=176 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))throw new ArgumentException("Gameplay service ABI mismatch: services v7/176 bytes required.");
-                    if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null || call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null || call->Services->Spawn==null || call->Services->Despawn==null || call->Services->TemplateComponentGet==null || call->Services->UiGet==null || call->Services->UiEdit==null || call->Services->ControlInfo==null || call->Services->ControlRequest==null)throw new ArgumentException("Gameplay service callback is absent.");
+                    ServiceAbi.Validate(call->Services,call->Inputs,call->InputCount);
                     if(call->Operation==6) {
                         if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
                         Binding.ControlObject(instance,call->State,new ControlContext(call->Services,call->Tick));

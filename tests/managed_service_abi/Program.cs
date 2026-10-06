@@ -343,6 +343,71 @@ static unsafe class Program
         Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0 && infos==0 && requests==0 && results==0 && queries==0 && componentGets==0 && componentSets==0 && aliveCalls==0 && spawns==0 && despawns==0 && templateGets==0,$"{name} invoked gameplay or callbacks.");
         checks.Add(name);
     }
+    static int InvokePrefix(Call* call,bool native,int bytes=80)
+    {
+        if(!native)return Entry.Invoke((nint)call,bytes);
+        delegate* unmanaged[Cdecl]<void*,int,int> invoke=&Poima.NativeGame.Entry.Invoke;
+        return invoke(call,bytes);
+    }
+    static int UiCallbacks()=>uiReads+uiWrites+controlReads+resumeCalls+pauseCalls;
+    static void PrefixContract(Call* call,Services good,List<string> checks,bool native)
+    {
+        var mode=native ? "linked production NativeGame entry" : "CoreCLR bridge";
+        using var guarded=new GuardedHeader();
+        byte* extended=stackalloc byte[256];new Span<byte>(extended,256).Fill(0xa5);
+        *(Services*)extended=good;
+        foreach(uint operation in new uint[]{3,6}) {
+            call->Operation=operation;call->InputCount=0;call->Inputs=null;
+            foreach(var header in new (uint Epoch,uint Bytes)[]{(7,0),(7,8),(7,175),(6,176),(8,4096)}) {
+                guarded.Header[0]=header.Epoch;guarded.Header[1]=header.Bytes;call->Services=(Services*)guarded.Header;
+                int before=((ProbeState*)call->State)->Count,callbacks=UiCallbacks();
+                Check(InvokePrefix(call,native)!=0 && Output(call->Output).Contains("Gameplay service ABI"),$"{mode}: guarded {header} accepted on {operation}.");
+                Check(((ProbeState*)call->State)->Count==before && UiCallbacks()==callbacks,$"{mode}: rejected header invoked game.");
+            }
+            call->Services=null;Check(InvokePrefix(call,native)!=0,$"{mode}: null services accepted.");
+            // Every required slot remains mandatory even when an extension exists.
+            for(int slot=0;slot<20;++slot) {
+                *(Services*)extended=good;((Services*)extended)->Bytes=256;((nint*)(extended+16))[slot]=0;call->Services=(Services*)extended;
+                int before=((ProbeState*)call->State)->Count,callbacks=UiCallbacks();
+                Check(InvokePrefix(call,native)!=0 && Output(call->Output).Contains("callback is absent"),$"{mode}: missing slot {slot} accepted.");
+                Check(((ProbeState*)call->State)->Count==before && UiCallbacks()==callbacks,$"{mode}: missing callback ran gameplay.");
+            }
+            *(Services*)extended=good;call->Services=(Services*)extended;
+            foreach(var invalid in new (uint Count,nint Inputs)[]{(33,0),(1,0)}) {
+                call->InputCount=invalid.Count;call->Inputs=(void*)invalid.Inputs;
+                int before=((ProbeState*)call->State)->Count,callbacks=UiCallbacks();
+                Check(InvokePrefix(call,native)!=0,$"{mode}: invalid input accepted.");
+                Check(((ProbeState*)call->State)->Count==before && UiCallbacks()==callbacks,$"{mode}: invalid input ran gameplay.");
+            }
+            call->InputCount=0;call->Inputs=null;
+            if(operation==6) {
+                call->Inputs=(void*)1;
+                Check(InvokePrefix(call,native)!=0 && Output(call->Output).Contains("cannot carry physics input"),$"{mode}: Control accepted input pointer.");
+                call->Inputs=null;
+            }
+            foreach(uint size in new uint[]{176,177,192,256}) {
+                ((Services*)extended)->Bytes=size;int before=((ProbeState*)call->State)->Count,callbacks=UiCallbacks();
+                Check(InvokePrefix(call,native)==0,$"{mode}: prefix {size} operation {operation}: {Output(call->Output)}");
+                Check(((ProbeState*)call->State)->Count==before+(native || operation==6 ? 1:0) && UiCallbacks()>callbacks,$"{mode}: extended prefix did not execute correct gameplay.");
+                Check(new ReadOnlySpan<byte>(extended+176,80).IndexOfAnyExcept((byte)0xa5)<0,$"{mode}: unknown extension was modified.");
+            }
+        }
+        call->Services=&good;call->Operation=3;
+        call->Version=2;Check(InvokePrefix(call,native)!=0,$"{mode}: wrong call epoch accepted.");call->Version=1;
+        Check(InvokePrefix(call,native,79)!=0 && InvokePrefix(call,native,81)!=0,$"{mode}: non-80-byte call accepted.");
+        call->Services=null;
+        checks.Add($"{mode}: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected");
+    }
+    static void NativePrefixContract(byte* output,byte* state,Services good,List<string> checks)
+    {
+        var request=Encoding.UTF8.GetBytes("{\"type\":\"PrefixProbe\"}\0");
+        Call call=new(){Version=1,Operation=1,Output=output,OutputCapacity=65536,State=state,StateBytes=4,Tick=123};
+        fixed(byte* text=request){call.Text=text;Check(InvokePrefix(&call,true)==0,Output(output));}
+        using(var manifest=JsonDocument.Parse(Output(output)))call.Handle=manifest.RootElement.GetProperty("handle").GetUInt64();
+        call.Operation=2;Check(InvokePrefix(&call,true)==0,Output(output));
+        PrefixContract(&call,good,checks,true);
+        call.Operation=4;Check(InvokePrefix(&call,true)==0,Output(output));
+    }
     static int Main(string[] args)
     {
         var checks=new List<string>();
@@ -377,7 +442,7 @@ static unsafe class Program
             Services good=new(){Version=7,Bytes=176,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result,Query=&Query,ComponentGet=&ComponentGet,ComponentSet=&ComponentSet,Alive=&Alive,Spawn=&Spawn,Despawn=&Despawn,TemplateGet=&TemplateGet,UiGet=&UiGet,UiEdit=&UiEdit,ControlInfo=&ControlInfo,ControlRequest=&ControlRequest};
             call.Operation=3;call.Tick=123;
             Reject(&call,checks,"null services rejected before Tick",good,true);
-            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,120),(5,121),(6,120),(6,136),(6,143),(6,144),(6,145),(7,144),(7,175),(7,177),(8,176),(6,0)})
+            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,120),(5,121),(6,120),(6,136),(6,143),(6,144),(6,145),(7,144),(7,175),(8,176),(6,0)})
             { var candidate=good;candidate.Version=pair.Version;candidate.Bytes=pair.Bytes;Reject(&call,checks,$"services {pair.Version}/{pair.Bytes} rejected before Tick",candidate); }
             var missing=good;missing.Get=null;Reject(&call,checks,"null animation get rejected",missing);
             missing=good;missing.Set=null;Reject(&call,checks,"null animation set rejected",missing);
@@ -423,6 +488,7 @@ static unsafe class Program
             call.Operation=6;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             Check(((ProbeState*)state)->Count==11 && uiReads==1 && uiWrites==2 && controlReads==1 && resumeCalls==1 && pauseCalls==1 && !badPayload,"UI control ABI payload/state mismatch.");
             call.Operation=3;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0 && uiWrites==3,"Tick UI SDK binding failed.");
+            PrefixContract(&call,good,checks,false);
             call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             checks.Add("op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too");
             var unsupported=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(UnsupportedTemplateGame).FullName})+"\0");
@@ -434,6 +500,7 @@ static unsafe class Program
             using var collected=JsonDocument.Parse(Output(output));
             Check(collected.RootElement.GetProperty("active_modules").GetInt32()==0 && collected.RootElement.GetProperty("retired_alive").GetInt32()==0,"Fixture context retained after release.");
             checks.Add("generated component and animation fixture collectible context released");
+            NativePrefixContract(output,state,good,checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
                 sdk_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Game<>).Assembly.Location)))},new JsonSerializerOptions{WriteIndented=true});

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/gameplay.hpp"
+#include "poima/gameplay_compatibility.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
 #include <array>
@@ -266,10 +267,12 @@ std::string validate_gameplay_values(const std::string& schema,const std::string
     return apply_values(metadata,storage,values).dump();
 }
 void Gameplay::control(const PoimaGameServices& services,std::uint64_t tick) {
-    PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&services;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+    const auto view=gameplay_abi::baseline_view(services);
+    PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&view;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
 }
 void Gameplay::tick(const PoimaGameServices& services,std::span<const PoimaGameInput> inputs,std::uint64_t tick) {
-    PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&services;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+    const auto view=gameplay_abi::baseline_view(services);
+    PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&view;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
 }
 std::string Gameplay::collect() {
     Json result={{"active_modules",0},{"retired_alive",0}};PoimaGameCall call{};call.operation=5;

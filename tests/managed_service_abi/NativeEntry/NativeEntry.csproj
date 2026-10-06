@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework><LangVersion>14.0</LangVersion><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks><TreatWarningsAsErrors>true</TreatWarningsAsErrors><AssemblyName>Poima.NativeGame</AssemblyName>
+    <BridgeDirectory Condition="'$(BridgeDirectory)' == ''">$(MSBuildThisFileDirectory)../../../managed/Poima.ManagedBridge/bin/Release/net10.0</BridgeDirectory>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Poima.Gameplay"><HintPath>$(BridgeDirectory)/Poima.Gameplay.dll</HintPath></Reference>
+    <Compile Include="../../../managed/Poima.NativeGame/Entry.cs" Link="Entry.cs" />
+  </ItemGroup>
+</Project>

@@ -100,7 +100,7 @@ class GameplayProjects(unittest.TestCase):
             {'name': 'Counter', 'kind': 'int32', 'offset': 0, 'bytes': 4},
             {'name': 'Distance', 'kind': 'float64', 'offset': 8, 'bytes': 8},
             {'name': 'Rig', 'kind': 'entity', 'offset': 16, 'bytes': 16}]}
-        descriptor = {'format': 'poima.native-gameplay', 'version': 1, 'engine_version': self.version,
+        descriptor = {'format': 'poima.native-gameplay', 'version': 1, 'engine_version': '0.0.39',
             'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 7,
             'entry': 'poima_gameplay_entry', 'library': name, 'identity': identity, 'type': 'Poima.Test.NativeMetadata',
             'schema': schema, 'files': [{'path': p.name, 'size': p.stat().st_size, 'sha256': digest(p), 'role': role}
@@ -125,6 +125,8 @@ class GameplayProjects(unittest.TestCase):
         self.artifact_fixture('Windows' if self.target == 'Linux' else 'Linux')
         result = self.inspect()
         self.assertEqual(result['gameplay']['backend'], 'native_aot')
+        self.assertEqual(result['gameplay']['descriptor_version'], 1)
+        self.assertEqual(result['gameplay']['requirements'], dict(call_version=1, call_bytes=80, services_version=7, minimum_services_bytes=176, required_features=['baseline_v7']))
         self.assertEqual(result['gameplay']['values'], self.spec['gameplay']['values'])
         self.assertEqual(result['gameplay']['identity'], 'poima.test.native-metadata')
         self.spec['version'] = 1
@@ -155,6 +157,76 @@ class GameplayProjects(unittest.TestCase):
                 self.inspect(False)
         self.descriptor.write_text(json.dumps(good))
         self.inspect()
+
+    def test_v2_explicit_requirements_and_diagnostic_engine_version(self):
+        good = self.artifact_fixture()
+        good.update(version=2, engine_version='different-build-diagnostic', call_bytes=80,
+                    minimum_services_bytes=176, required_features=['baseline_v7'])
+        self.descriptor.write_text(json.dumps(good))
+        observed=self.inspect()['gameplay']
+        self.assertEqual(observed['descriptor_version'], 2)
+        self.assertEqual(observed['requirements'], {key:good[key] for key in ['call_version','call_bytes','services_version','minimum_services_bytes','required_features']})
+        variants = []
+        for key, value in [('engine_version', ''), ('engine_version', 'x'*129), ('engine_version', 'bad\0text'),
+                           ('call_bytes', 79), ('call_bytes', 81), ('call_bytes', 80.0), ('call_bytes', True),
+                           ('call_version', 2), ('services_version', 8),
+                           ('minimum_services_bytes', 175), ('minimum_services_bytes', 177),
+                           ('minimum_services_bytes', 2**32), ('minimum_services_bytes', -1),
+                           ('required_features', []), ('required_features', ['unknown']),
+                           ('required_features', ['baseline_v7', 'baseline_v7']),
+                           ('required_features', ['baseline_v7', 1]), ('required_features', 'baseline_v7')]:
+            candidate = copy.deepcopy(good); candidate[key] = value; variants.append(candidate)
+        for key in ['call_bytes', 'minimum_services_bytes', 'required_features']:
+            candidate = copy.deepcopy(good); candidate.pop(key); variants.append(candidate)
+        for candidate in variants:
+            with self.subTest(candidate=candidate):
+                self.descriptor.write_text(json.dumps(candidate)); self.inspect(False)
+        self.descriptor.write_text(json.dumps(good)); self.inspect()
+
+    def test_explicit_runtime_contract_export_and_inspection_share_policy(self):
+        artifact = self.artifact_fixture()
+        artifact.update(version=2, engine_version='another-compatible-build', call_bytes=80,
+                        minimum_services_bytes=176, required_features=['baseline_v7'])
+        self.descriptor.write_text(json.dumps(artifact))
+        runtime = self.root/'Explicit runtime'; (runtime/'bin').mkdir(parents=True)
+        notices = runtime/'share/poima'; notices.mkdir(parents=True)
+        for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md']: (notices/name).write_text('Metadata fixture only.')
+        executable = 'bin/poima.exe' if self.target == 'Windows' else 'bin/poima'
+        (runtime/executable).write_bytes(b'Metadata-only runtime; never executed.'); (runtime/executable).chmod(0o755)
+        spec = dict(format='poima.runtime', version=1, engine_version=self.version,
+                    target_os=self.target, target_arch='x86_64', executable=executable,
+                    gameplay_services_version=7, gameplay_call_version=1, gameplay_call_bytes=80,
+                    gameplay_services_bytes=208, gameplay_features=['baseline_v7', 'future_optional'],
+                    features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
+        path = runtime/'runtime.json'; path.write_text(json.dumps(spec)); bundle = self.root/'Explicit bundle'
+        self.cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
+        self.cli('game', 'inspect', native(bundle/'game.json')); original_game=json.loads((bundle/'game.json').read_text())
+        variants=[]
+        for key, value in [('gameplay_services_bytes', 175), ('gameplay_services_bytes', True),
+                           ('gameplay_services_bytes', 2**32), ('gameplay_call_bytes', 81),
+                           ('gameplay_call_version', 2), ('gameplay_services_version', 8),
+                           ('gameplay_features', []), ('gameplay_features', ['unknown']),
+                           ('gameplay_features', ['baseline_v7', 'baseline_v7']),
+                           ('gameplay_features', [1]), ('gameplay_features', 'baseline_v7')]:
+            candidate=copy.deepcopy(spec);candidate[key]=value;variants.append(candidate)
+        new_fields=['gameplay_call_version','gameplay_call_bytes','gameplay_services_bytes','gameplay_features']
+        for key in new_fields+['gameplay_services_version']:
+            candidate=copy.deepcopy(spec);candidate.pop(key);variants.append(candidate)
+        legacy=copy.deepcopy(spec)
+        for key in new_fields:legacy.pop(key)
+        variants.append(legacy)  # A v2 artifact cannot infer a legacy runtime contract.
+        for index,candidate in enumerate(variants):
+            with self.subTest(candidate=candidate):
+                path.write_text(json.dumps(candidate)); destination=self.root/f'Reject explicit {index}'
+                before=tree(runtime)
+                self.cli('project','build',native(self.manifest),'--runtime',native(runtime),'--output',native(destination),success=False)
+                self.assertFalse(destination.exists());self.assertEqual(tree(runtime),before)
+                bundled=bundle/'runtime/runtime.json';bundled.write_bytes(path.read_bytes())
+                game=copy.deepcopy(original_game)
+                row=next(row for row in game['files'] if row['path']=='runtime/runtime.json')
+                row.update(size=bundled.stat().st_size,sha256=digest(bundled))
+                (bundle/'game.json').write_text(json.dumps(game));before=tree(bundle)
+                self.cli('game','inspect',native(bundle/'game.json'),success=False);self.assertEqual(tree(bundle),before)
 
     def test_component_metadata_matches_descriptor_and_inventory(self):
         good = self.artifact_fixture()
@@ -331,7 +403,8 @@ class GameplayProjects(unittest.TestCase):
         (runtime/executable).chmod(0o755)
         spec = dict(format='poima.runtime', version=1, engine_version=self.version,
                     target_os=self.target, target_arch='x86_64', executable=executable,
-                    gameplay_services_version=7,
+                    gameplay_services_version=7, gameplay_call_version=1, gameplay_call_bytes=80,
+                    gameplay_services_bytes=176, gameplay_features=['baseline_v7'],
                     features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
         path = runtime/'runtime.json'
         path.write_text(json.dumps(spec))
@@ -361,6 +434,14 @@ class GameplayProjects(unittest.TestCase):
                 before_bundle = tree(bundle)
                 self.cli('game', 'inspect', native(bundle/'game.json'), success=False)
                 self.assertEqual(tree(bundle), before_bundle)
+        # Legacy runtimes infer baseline services only for the known cohort.
+        legacy=copy.deepcopy(spec)
+        for field in ['gameplay_call_version','gameplay_call_bytes','gameplay_services_bytes','gameplay_features']:legacy.pop(field)
+        path.write_text(json.dumps(legacy));destination=self.root/'Legacy runtime baseline'
+        accepted=self.version=='0.0.39'
+        self.cli('project','build',native(self.manifest),'--runtime',native(runtime),'--output',native(destination),success=accepted)
+        self.assertEqual(destination.exists(),accepted)
+        if accepted:self.cli('game','inspect',native(destination/'game.json'))
         self.assertEqual(tree(self.project), source)
         # Services ABI constrains gameplay-bearing bundles, not legacy native
         # projects which never load a gameplay module.
@@ -370,7 +451,7 @@ class GameplayProjects(unittest.TestCase):
         source = tree(self.project)
         for index, value in enumerate([None, 5, 6, 7]):
             with self.subTest(no_gameplay_services_version=value):
-                changed = copy.deepcopy(spec)
+                changed = copy.deepcopy(legacy)
                 if value is None: changed.pop('gameplay_services_version')
                 else: changed['gameplay_services_version'] = value
                 path.write_text(json.dumps(changed))

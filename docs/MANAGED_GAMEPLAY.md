@@ -96,7 +96,7 @@ Calls made during `Tick` queue commands. Repeated queries in that callback obser
 
 Invalid commands, failed curve samples and managed exceptions restore animation clocks, interrupted-pose buffers, local poses, physics, sounds and native-owned gameplay fields to the start of the batch. This covers a failure several ticks into one step request. It cannot undo external side effects made by managed code. Compatible code reload leaves the native animation clocks and in-progress transitions intact.
 
-The native service ABI is now version 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md) [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Rebuild `Poima.ManagedBridge` and the gameplay SDK together when updating the engine. Incompatible bridge/service layouts reject before calling the new callbacks. This ABI change does not require a new world format. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
+The native service compatibility baseline is epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md) [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. The bridge and SDK remain a matched pair. Current entry points accept a larger epoch-7 table while reading only its known prefix; the engine supplies a canonical 176-byte view for older compiled consumers. Incompatible epochs, short tables and missing baseline callbacks reject before gameplay. See the [bounded compatibility contract](NATIVE_GAMEPLAY.md#artifact-contents). This ABI change does not require a new world format. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
 
 ## Load, inspect and edit
 
@@ -160,7 +160,7 @@ For the animation extension, run `scripts/verify_gameplay_animation.py` with the
 
 These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. Generated scalar component bindings and template-based root-prop spawning/removal are implemented. Arbitrary component membership changes, general events/jobs, removal of originally authored entities, animation graphs/layers, complete audio/environmental controls, VFX, UI, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
 
-Sound callbacks are retained in the service-table prefix. Animation, save, component, lifecycle and UI control callbacks extend the table to ABI version 7 (176 bytes); the outer call remains version 1 (80 bytes). Rebuild Poima.Gameplay, Poima.ManagedBridge and game assemblies together when upgrading the service ABI. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
+Sound callbacks are retained in the service-table prefix. Animation, save, component, lifecycle and UI control callbacks extend the table to ABI version 7 (176 bytes); the outer call remains version 1 (80 bytes). Changing the service compatibility epoch requires coordinated artifacts; compatible tail additions do not change existing callback layouts or meanings. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
 
 ## Native compiled game distribution
 
@@ -168,4 +168,4 @@ The same bounded `Game<TState>` source can be compiled into a native shared libr
 
 ## Create and remove runtime props
 
-The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) adds typed template handles, immediate ID reservation, same-Tick component initialization, frozen default inspection and spawned-prop removal. It requires a coordinated rebuild for services ABI 7 (176 bytes). Reads retain committed membership; all births, writes, removals and save intentions participate in outer-batch rollback.
+The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) adds typed template handles, immediate ID reservation, same-Tick component initialization, frozen default inspection and spawned-prop removal. It uses the services-7 baseline (176 bytes); moving from earlier epochs requires a coordinated rebuild. Reads retain committed membership; all births, writes, removals and save intentions participate in outer-batch rollback.

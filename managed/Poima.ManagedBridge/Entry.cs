@@ -134,12 +134,7 @@ public static unsafe class Entry
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
-        // Check the stable header before reading any v7 tail pointer. An old
-        // engine/bridge pair must be rebuilt together, never partially invoked.
-        if(call->Services==null || call->Services->Version!=7 || call->Services->Bytes!=176 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
-            throw new ArgumentException("Gameplay service ABI mismatch: services v7/176 bytes required.");
-        if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null ||
-            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null || call->Services->Spawn==null || call->Services->Despawn==null || call->Services->TemplateComponentGet==null || call->Services->UiGet==null || call->Services->UiEdit==null || call->Services->ControlInfo==null || call->Services->ControlRequest==null)throw new ArgumentException("Gameplay service callback is absent.");
+        ServiceAbi.Validate(call->Services,call->Inputs,call->InputCount);
         if(control) {
             if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
             module.Game.Control(state,new ControlContext(call->Services,call->Tick));

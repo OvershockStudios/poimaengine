@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-06",
+  "engine_version": "0.0.39-development",
+  "scope": "Gameplay service epoch 7 and native artifact compatibility; no general save migration.",
+  "contract": {
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "baseline_bytes": 176,
+    "required_feature": "baseline_v7",
+    "native_descriptor_version": 2,
+    "known_legacy_descriptor": "v1 from engine 0.0.39"
+  },
+  "sources": [
+    {
+      "path": "include/poima/native_gameplay_artifact.hpp",
+      "sha256": "e45c855c234e2e15f3cf0312ec7f378c33abf847842b22779d1bc84a2a3d2d27"
+    },
+    {
+      "path": "include/poima/gameplay_compatibility.hpp",
+      "sha256": "fc5bd78458d96fc83ba02c6b586959b177e5c0e63e9c43865dbc989a7acea622"
+    },
+    {
+      "path": "src/native_gameplay_artifact.cpp",
+      "sha256": "4e395e558977fe30622d81436f897a6bfc699cd8bc0cd6206af4ac8f78177fce"
+    },
+    {
+      "path": "src/project.cpp",
+      "sha256": "64d1db249d772e79c6ea7515d633a4870f3d3075632fad19ef765b02aa503a60"
+    },
+    {
+      "path": "cmake/runtime.json.in",
+      "sha256": "118c3c9a19dd06cc6ec13044234b9a932f9ff0c1b59a050e7ac49f6eb11f0b24"
+    },
+    {
+      "path": "scripts/publish_native_gameplay.py",
+      "sha256": "1986333990c050c1e975b034908cdadabc30cd6d30e74436649ce1ba14553018"
+    },
+    {
+      "path": "tests/project_gameplay_contract.py",
+      "sha256": "c236085f7019cd6737b5d2381d1c727f695aa5c8dc31322b46a12c56f00d8ac5"
+    },
+    {
+      "path": "CMakeLists.txt",
+      "sha256": "a3a9c9482df2b69ea9833f54178f2b36c491f9de6b1592f011dd1fe15f7f1bb5"
+    },
+    {
+      "path": "src/gameplay.cpp",
+      "sha256": "f6e0e1ed4a71966e281c4f45e23bfd2e5cfb5405640f385219ecf02182bdf055"
+    },
+    {
+      "path": "managed/Poima.Gameplay/ServiceAbi.cs",
+      "sha256": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e"
+    },
+    {
+      "path": "managed/Poima.ManagedBridge/Entry.cs",
+      "sha256": "ff20dcd7bb3cb0c8acfb49d334d9e77f3d47f04dd11876e39ec03cc78029e7f1"
+    },
+    {
+      "path": "managed/Poima.NativeGame/Entry.cs",
+      "sha256": "eafbd190bb72c599ba8f9ae52bbb4ca8169c1f36a6469fef1c122f985b318840"
+    },
+    {
+      "path": "tests/gameplay_compatibility_native.cpp",
+      "sha256": "5b76858a1994be0512ec0f1fbe53932f2c123092bdc4e3c9b54d79671a0229ef"
+    },
+    {
+      "path": "tests/managed_service_abi/Program.cs",
+      "sha256": "a34e1a91ebe850125b31f3bbae8139a59177c2b763004d29931e543f435956dd"
+    },
+    {
+      "path": "tests/managed_service_abi/GuardedHeader.cs",
+      "sha256": "b1092f5ebaef087789f9446e99470147f3171d3982a2d10b9e91539816274664"
+    },
+    {
+      "path": "tests/managed_service_abi/NativeEntry/Binding.cs",
+      "sha256": "6e1c4b98084b4b80a4d6fc966389c33302ff94e795b619a6b9b0c5eb017db03a"
+    },
+    {
+      "path": "tests/managed_service_abi/NativeEntry/NativeEntry.csproj",
+      "sha256": "f438ef5e5d28bb7c485fe4093ae73de587e85caca395e0821af56f1d68066e6e"
+    }
+  ],
+  "qualification": {
+    "windows_preserved_binaries": {
+      "passed": true,
+      "cases": 4,
+      "cases_description": [
+        "Policy and bounded view",
+        "Old bridge, SDK and game",
+        "Old NativeAOT module",
+        "Old game with new bridge and SDK"
+      ],
+      "host_extent_bytes": 240,
+      "module_view_bytes": 176,
+      "baseline_unchanged": true,
+      "harness_sha256": "97e47f5c697f85d8b660829bd96a45494adb69c8ffab9282dc66b79193ef69b0",
+      "old_game_sha256": "c5ad0197651e4e9b930a7435a0cf409a8932f9edb749499ac8bd84e8f38aedb1",
+      "old_native_sha256": "1ed874b02ebc61734bc451c8ccd4119399af00a19ec78d4787e24b35ce34376b"
+    },
+    "managed_validation": {
+      "platforms": [
+        "Windows",
+        "Linux"
+      ],
+      "passed": true,
+      "accepted_extents": [
+        176,
+        177,
+        192,
+        256
+      ],
+      "checks": "Tick and Control; guarded short headers; poisoned opaque tails; wrong epochs; missing callbacks; invalid inputs and call layouts; 100 collectible module lifetimes. Production NativeGame entry is linked into a CoreCLR fixture."
+    },
+    "windows_package_protocol": {
+      "passed": true,
+      "executed": 37,
+      "skipped": 2,
+      "scope": "Real v1/v2 inspection, initialization, rejection isolation, export and general project regression. Linux-only symlink checks skipped."
+    },
+    "windows_compiled_control": {
+      "passed": true,
+      "backends": [
+        "CoreCLR",
+        "NativeAOT"
+      ],
+      "groups_per_backend": 4,
+      "scope": "Actual compiled controls, same-tick reads/writes/intents, failure/save rollback, Tick atomicity, snapshots and optional handler. No GPU or physical input."
+    },
+    "linux_preserved_binaries": {
+      "passed": true,
+      "cases": 4,
+      "cases_description": [
+        "Policy and bounded view",
+        "Old bridge, SDK and game",
+        "Old NativeAOT module",
+        "Old game with new bridge and SDK"
+      ],
+      "host_extent_bytes": 240,
+      "module_view_bytes": 176,
+      "baseline_unchanged": true,
+      "harness_sha256": "afcd73e85e85f36c1ccffe2d7c510a6c16b0107a0179bc88263c91b4174e7cb2",
+      "old_game_sha256": "c5ad0197651e4e9b930a7435a0cf409a8932f9edb749499ac8bd84e8f38aedb1",
+      "old_native_sha256": "dd6d7f726d5d01e0c776d912f598e99520fc3b858014bfc7dafb8e38899e33ca",
+      "compiler": "GCC 16.2.0",
+      "toolchain_unchanged": true
+    }
+  },
+  "limitations": [
+    "Preserved binary coverage uses one small compiled UI game, not arbitrary existing games.",
+    "Current engine exposes only the baseline service view. Future tail-dependent operations require explicit negotiation and qualification.",
+    "Direct extended-table NativeGame entry tests run under CoreCLR; actual AOT integration uses the bounded native host view.",
+    "Saved image, schema and content checks remain exact. This is not save migration.",
+    "No new GUI, physical-device, console, performance or installed-package qualification."
+  ]
+}
