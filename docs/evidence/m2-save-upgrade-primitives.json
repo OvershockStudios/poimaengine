@@ -1,0 +1,64 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-06",
+  "checkpoint": "0.0.39-development",
+  "scope": "Pure scalar save mapping and explicit upgrade-plan parsing",
+  "platforms": {
+    "linux": {
+      "components": {
+        "passed": true,
+        "test": "Pure global/component scalar mapping passed rename/reorder/add/retire, canonical component order/padding, legacy explicit IDs, typed scalar preservation and 86 invalid cases. No whole-save migration claim.",
+        "binary_sha256": "51bdfb41f22f3283978edf9e3fd0d0c40e25253233eccf183d296e8b517d54cd",
+        "source_sha256": {
+          "include/poima/save_upgrade.hpp": "729b3cd6d486be4511abcdfd4ab84fe03f1c2448bf8ead5ee24072b9ae6957dc",
+          "src/save_upgrade.cpp": "eea071c30da637fef3eb3618d290e1162d4cbd5d0fbc938599754a6fe42f06d7",
+          "tests/save_upgrade_native.cpp": "69d9ac57605baeaec17cb076ed35c2475a15dde65c98f8ec155cef144e980968",
+          "src/gameplay.cpp": "eb158f618717944f5246b08907c30c31c4964968b7fd411b34092080a04d0235",
+          "src/components.cpp": "70b722bfd97e4ae242cf5a1116947f8e3663c7605244ea9cfbc7d81e86eabe43",
+          "include/poima/components.hpp": "29eb0a856aba8ff55d335fbc9d2d13588b614b4a1eceb94f1540cd9a276574a5"
+        }
+      },
+      "plan": {
+        "passed": true,
+        "test": "Save upgrade plan guards passed: 60 rejected cases; exact identities, byte digest and normalized mappings.",
+        "binary_sha256": "f3599aaf60b9222170d05a66eb6b8162c7270410bf7492030dd244747990f12f",
+        "source_sha256": {
+          "include/poima/save_upgrade_plan.hpp": "6fc23e2fa9db6a1e0c2b4802896af1196753e6398a2b3fa30adb55324b58f64a",
+          "src/save_upgrade_plan.cpp": "1eb4d2efd22d4a2df15e55d4670dfae5a571e7e586b3386691ec9e1d7998e3f0",
+          "tests/save_upgrade_plan_native.cpp": "26f5539779e2dd14cd32e17bc763414046b63dd046c30b8f45eb464d8772523b"
+        }
+      }
+    },
+    "windows": {
+      "components": {
+        "passed": true,
+        "test": "Pure global/component scalar mapping passed rename/reorder/add/retire, canonical component order/padding, legacy explicit IDs, typed scalar preservation and 86 invalid cases. No whole-save migration claim.",
+        "binary_sha256": "955269a4a0680e488894d77a1cb12afe0f66327acec90ea7a27ba48f247d734e",
+        "source_sha256": {
+          "include/poima/save_upgrade.hpp": "729b3cd6d486be4511abcdfd4ab84fe03f1c2448bf8ead5ee24072b9ae6957dc",
+          "src/save_upgrade.cpp": "eea071c30da637fef3eb3618d290e1162d4cbd5d0fbc938599754a6fe42f06d7",
+          "tests/save_upgrade_native.cpp": "69d9ac57605baeaec17cb076ed35c2475a15dde65c98f8ec155cef144e980968",
+          "src/gameplay.cpp": "eb158f618717944f5246b08907c30c31c4964968b7fd411b34092080a04d0235",
+          "src/components.cpp": "70b722bfd97e4ae242cf5a1116947f8e3663c7605244ea9cfbc7d81e86eabe43",
+          "include/poima/components.hpp": "29eb0a856aba8ff55d335fbc9d2d13588b614b4a1eceb94f1540cd9a276574a5"
+        }
+      },
+      "plan": {
+        "passed": true,
+        "test": "Save upgrade plan guards passed: 60 rejected cases; exact identities, byte digest and normalized mappings.",
+        "binary_sha256": "70d17e6d27e1bc2a43a6ea405fbfb8a6d7c48cce15dcc317a061ef9756cc0a98",
+        "source_sha256": {
+          "include/poima/save_upgrade_plan.hpp": "6fc23e2fa9db6a1e0c2b4802896af1196753e6398a2b3fa30adb55324b58f64a",
+          "src/save_upgrade_plan.cpp": "1eb4d2efd22d4a2df15e55d4670dfae5a571e7e586b3386691ec9e1d7998e3f0",
+          "tests/save_upgrade_plan_native.cpp": "26f5539779e2dd14cd32e17bc763414046b63dd046c30b8f45eb464d8772523b"
+        }
+      }
+    }
+  },
+  "limits": [
+    "Not integrated with save.load; ordinary restore still requires exact gameplay and content.",
+    "No whole-world migration, executable loading, slot writing, live activation or game-scale performance qualified.",
+    "Identity hashes require independent trusted-owner authorization and source/target validation."
+  ]
+}

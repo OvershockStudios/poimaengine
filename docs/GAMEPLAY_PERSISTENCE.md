@@ -50,9 +50,21 @@ Without `GameplayPersistence`, the emitted schema remains unchanged. Existing fi
 
 A Native AOT artifact carrying this object declares `gameplay_persistence_v1` in addition to `baseline_v7`. Runtime selection, export and bundle inspection check that requirement. This feature describes metadata support, not save-migration support. Service epoch 7, its 176-byte baseline and call ABI 1/80 bytes remain unchanged. An older runtime must reject an unsupported artifact rather than ignore its metadata.
 
-Explicit source-to-target upgrade plans, saved-field transformation and game-facing upgrade policy remain unfinished. Development reload continues to use its documented compatible-field rules; stable persistence IDs are not a new reload migration mechanism.
+Native field mapping and strict upgrade-plan parsing are implemented as development primitives. Connecting them to complete saved worlds and game-facing upgrade policy remains unfinished. Development reload continues to use its documented compatible-field rules; stable persistence IDs are not a new reload migration mechanism.
+
+## Native upgrade primitives
+
+`poima::save_upgrades::map_global_scalars` validates both gameplay schemas and complete source values, then maps explicitly preserved, retired and defaulted field IDs. Legacy sources require an explicit, complete old-name-to-ID mapping. Retained fields keep their values, including when names or declared defaults change. Scalar kinds cannot change.
+
+`map_component_scalars` applies the same policy to one existing component instance. It decodes compact values in the source schema's canonical field order and produces the target payload plus both compact and field-ID-keyed JSON. Component type IDs, retained kinds and retained units must match. Instance membership and live entity references require separate runtime validation.
+
+`parse_plan` accepts bounded `poima.save-upgrade` version 1 JSON and an expected SHA-256 of its exact bytes. The plan binds source and target world/content, backend, module identity/type, executable image and complete schema hashes. Source and target world, backend, module identity and type must match. Operations and component entries use sorted, unique stable IDs; duplicate JSON keys, unknown members, overlapping operations and excessive resource counts are rejected. `require_edge` compares all bound identities with independently obtained identities. A matching hash proves byte identity, not permission to load code.
+
+These APIs do not open files, execute gameplay, modify slots or activate a runtime. The owner must validate original source data, approved authored changes, actual source/target schemas and code, and the complete transformed target snapshot before activation. Component fingerprint equality alone is insufficient to establish unchanged authoring semantics because names and units are outside that fingerprint. Ordinary `save.load` remains exact; it does not yet accept upgrade plans.
 
 ## Qualification
+
+[Native primitive results](evidence/m2-save-upgrade-primitives.json) cover Windows and Linux field mapping (86 rejection cases per platform) and plan parsing (60 rejection cases per platform). Run `poima-save-upgrade-test` and `poima-save-upgrade-plan-test` for those focused checks. They do not exercise whole-world migration.
 
 [Recorded results](evidence/m2-gameplay-persistence-metadata.json) separate schema validation, compiled metadata, old-binary compatibility and package checks. `poima-gameplay-metadata-test` runs pure schema tests with no arguments; `--native DESCRIPTOR` runs the published compiled fixture. The CoreCLR form takes `HOSTFXR BRIDGE ASSEMBLY TYPE`. `PublishedPersistentGame` additionally checks exact snapshots and subsequent ticks; the trap fixtures check initialization separation.
 

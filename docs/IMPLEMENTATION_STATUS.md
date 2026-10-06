@@ -4,6 +4,8 @@ Updated 2026-10-06 for **0.0.39**. **Poima is an engine prototype.** Capability 
 
 ## Current limits
 
+[Explicit scalar save-upgrade primitives](GAMEPLAY_PERSISTENCE.md#native-upgrade-primitives) now map global/component fields by stable identity and parse bounded source-to-target plans. Windows and Linux pass focused mapping and plan guards. Whole-world transformation and guarded load integration remain unfinished; ordinary save restores still require exact compatibility. [Primitive evidence](evidence/m2-save-upgrade-primitives.json).
+
 The latest development [C# lifecycle checkpoint](GAMEPLAY_LIFECYCLE.md) passes five compiled integration groups under both CoreCLR and Native AOT on Linux and Windows. Agent-service tests cover guarded births, durable restoration and continued gameplay; the CoreCLR path also verifies compatible reload with spawned entities. This is root-prop support, not general entity/component lifecycle or a new installed editor package. [Qualification evidence](evidence/m2-managed-lifecycle.json).
 
 [Custom scalar components](CUSTOM_COMPONENTS.md) now provide native-owned per-entity data with stable IDs and generated C# accessors. Spawned root props can carry template-defined components during Play; collections, arbitrary component addition/removal on existing entities and general schema/save migrations remain unfinished. Services ABI 7 now has a bounded compatibility contract; upgrading from earlier epochs still requires matching rebuilt artifacts.
