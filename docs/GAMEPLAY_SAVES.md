@@ -70,7 +70,7 @@ Recorded player and audio replay stop at a successful replacement with `runtime_
 
 ## Agent observation and retries
 
-`runtime.save.status {session_id}` reports capability, epoch, pending work and last restore. `runtime.save.result {epoch, sequence}` queries the owner ledger even after a runtime stops. Both are memory-only. Discover exact schemas through `world.describe`, revision 28.
+`runtime.save.status {session_id}` reports capability, epoch, pending work and last restore. `runtime.save.result {epoch, sequence}` queries the owner ledger even after a runtime stops. Both are memory-only. Discover current schemas through `world.describe`.
 
 A `runtime.step` result preserves the source `session_id`, `previous_tick`, committed `tick` and `stepped` count. `current_session_id`, `current_tick` and `runtime_replaced` separately identify the world now active. `save_serviced` identifies synchronous owner work; `save_operation`, when present, describes its outcome. Sound-event handles belong to the source batch.
 
@@ -78,7 +78,7 @@ The owner retains 32 advance receipts across load, stop and restart. An exact re
 
 ## Limits
 
-Storage and snapshot work are synchronous and may hitch. The host excludes serviced storage time from subsequent simulation catch-up; this does not make file I/O asynchronous. Automatic user-storage selection, background workers, autosave policy, schema migrations, spawned/despawned entities and general object serialization remain unfinished. The existing 64 MiB snapshot limit, exact external-asset binding, reconstructed physics/audio state and storage durability limits still apply. Gameplay can opt into loading a verified prior payload; acknowledging a recovery write remains an explicit host/editor operation.
+Storage and snapshot work are synchronous and may hitch. The host excludes serviced storage time from subsequent simulation catch-up; this does not make file I/O asynchronous. Supported spawned root props and their scalar components persist in snapshots. Automatic user-storage selection, background workers, autosave policy, arbitrary object serialization and gameplay-selected migration policy remain unfinished. The external service has a development [explicit scalar upgrade path](SAVE_UPGRADES.md); C# load requests remain exact. The existing 64 MiB snapshot limit, exact external-asset binding, reconstructed physics/audio state and storage durability limits still apply. Gameplay can opt into loading a verified prior payload; acknowledging a recovery write remains an explicit host/editor operation.
 
 ## Qualification
 

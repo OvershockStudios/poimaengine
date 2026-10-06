@@ -353,13 +353,27 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision);
     const auto saved=SaveJson::parse(saved_gameplay);
     require(saved.is_null()==!gameplay.has_value(),"Snapshot gameplay needs a matching trusted host configuration.");
+    std::unique_ptr<Gameplay> game;
+    if(gameplay)game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore);
+    return bind_snapshot_gameplay(std::move(candidate),saved_gameplay,game_revision,std::move(game));
+}
+std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition& definition,const std::string& content_sha256,
+    const std::string& bytes,std::unique_ptr<Gameplay> game) {
+    std::string saved_gameplay;std::uint64_t game_revision=0;
+    auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision);
+    return bind_snapshot_gameplay(std::move(candidate),saved_gameplay,game_revision,std::move(game));
+}
+std::unique_ptr<Runtime> Runtime::bind_snapshot_gameplay(std::unique_ptr<Runtime> candidate,const std::string& saved_gameplay,
+    std::uint64_t game_revision,std::unique_ptr<Gameplay> game) {
+    const auto saved=SaveJson::parse(saved_gameplay);
+    require(saved.is_null()==!bool(game),"Snapshot gameplay needs a matching trusted host instance.");
     auto& s=*candidate->impl_;
     // Executable selection comes exclusively from the host. No path, type name
     // or constructor selected by the snapshot is ever invoked. Fresh game
     // constructors/statics may execute while registering the trusted module;
     // their external side effects cannot roll back. Initialize is skipped.
-    if(gameplay) {
-        auto game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore);const auto current=SaveJson::parse(game->inspect());
+    if(game) {
+        const auto current=SaveJson::parse(game->inspect());
         for(const auto* key:{"backend","assembly_sha256","type","schema"})require(current.at(key)==saved.at(key),"Snapshot gameplay module/schema differs from the trusted module.");
         game->edit(saved.at("values").dump());s.components->validate_module(game->component_schemas());
         game->validate_entity_references([](void* context,PoimaEntityId id) {

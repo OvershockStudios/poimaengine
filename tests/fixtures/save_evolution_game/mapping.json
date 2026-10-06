@@ -1,0 +1,83 @@
+{
+  "legacy_global_ids": [
+    {
+      "id": "0301b60f43cd80d8838b92ea546ad250",
+      "name": "Started"
+    },
+    {
+      "id": "1e172aaa01dab1a35ec7788f3ab63182",
+      "name": "Third"
+    },
+    {
+      "id": "3724b91c3375792fc360d716a35de67d",
+      "name": "Player"
+    },
+    {
+      "id": "4c5cb3a009563eb21f19541f53f21d6d",
+      "name": "Camera"
+    },
+    {
+      "id": "5e1b007e3411ac97be491647b33aee1f",
+      "name": "SaveSequence"
+    },
+    {
+      "id": "734786b151d812e9f00bd3b33042edff",
+      "name": "First"
+    },
+    {
+      "id": "774f695ea57dc29e1c5394a0332156aa",
+      "name": "SaveLow"
+    },
+    {
+      "id": "7e6e97769a026dbb667fce2f360b30b9",
+      "name": "Collected"
+    },
+    {
+      "id": "93e955df13abe412393f3b1c1a4059fe",
+      "name": "Status"
+    },
+    {
+      "id": "99c785bf684623e942724aca2b10dbe2",
+      "name": "Second"
+    },
+    {
+      "id": "a72612b6a90202860324135e796aec0b",
+      "name": "SavePending"
+    },
+    {
+      "id": "ee1e4bc818453f8020b51aec85078ba0",
+      "name": "SaveHigh"
+    }
+  ],
+  "global": {
+    "preserve": [
+      "0301b60f43cd80d8838b92ea546ad250",
+      "1e172aaa01dab1a35ec7788f3ab63182",
+      "3724b91c3375792fc360d716a35de67d",
+      "4c5cb3a009563eb21f19541f53f21d6d",
+      "5e1b007e3411ac97be491647b33aee1f",
+      "734786b151d812e9f00bd3b33042edff",
+      "774f695ea57dc29e1c5394a0332156aa",
+      "7e6e97769a026dbb667fce2f360b30b9",
+      "93e955df13abe412393f3b1c1a4059fe",
+      "99c785bf684623e942724aca2b10dbe2",
+      "a72612b6a90202860324135e796aec0b",
+      "ee1e4bc818453f8020b51aec85078ba0"
+    ],
+    "retire": [],
+    "default": [
+      "598c02252e61ba4bf2e9b33fdfef3f61"
+    ]
+  },
+  "new_field": {
+    "id": "598c02252e61ba4bf2e9b33fdfef3f61",
+    "name": "UpgradeSteps",
+    "kind": "int32",
+    "default": 731
+  },
+  "renamed_field": {
+    "id": "7e6e97769a026dbb667fce2f360b30b9",
+    "source_name": "Collected",
+    "target_name": "RecoveredCount"
+  }
+}

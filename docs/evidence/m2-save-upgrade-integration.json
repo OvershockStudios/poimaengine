@@ -1,0 +1,178 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-06",
+  "checkpoint": "0.0.39-development",
+  "scope": "Explicit scalar save upgrades through the world service, Linux CoreCLR",
+  "passed": true,
+  "schema_revision": 38,
+  "platform": "Linux x86_64 (WSL)",
+  "build": {
+    "configuration": "existing abi7-linux headless runtime build",
+    "parallel_jobs": 1,
+    "engine_sha256": "0524dd68a3c3d9ff494434f335f1335c495be88c4ee5f7826231eed873cb681d"
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "001f9cfe91d0dc5db6c304c18f4edeaa1415f16899b98266c267dcdb15045a1c",
+    "include/poima/runtime.hpp": "dd89df91a96957ddb586cfdbe1a6c197769f352be652e8d0c157174805ab1f94",
+    "src/runtime_save.inc": "c418f9077fc94bffb32b9228231c89926b093b57230aa5ead8139a86ffabfc3c",
+    "src/runtime_disabled.cpp": "49c82e95af2bae4057b4717a2d20336f2f608b9f5f5539f07232841b4b5e24c9",
+    "src/world.cpp": "f4dd200c62c4d5d075e925a407fbbdcf14d7e18465cff142ade533daab4e3d81",
+    "src/world_save.inc": "a59216b255d4869702a4c070684b8eeeefd2619a011f9f34d2c5ba936fc74104",
+    "src/world_save_upgrade.inc": "19a2208c00c0f275a8159788c88a66e86a8cffc76850c1bb38deebaf535bc93b",
+    "include/poima/save_upgrade_document.hpp": "e5035c9bc70b593166edb1fe368621f62bf5da8331628545a82631a8798387f8",
+    "src/save_upgrade_document.cpp": "368a7bcaadf5f17b3bd7b6a5f222b9136d62e581fcc6f533b927e1c1543aedb1",
+    "tests/save_upgrade_document_native.cpp": "7abc1f637dc197c940c8ecdf17a4a91e7ebb08cb780607185d84d2e99fcd80d5",
+    "include/poima/save_upgrade_snapshot.hpp": "f408fe32cad755cff65206d4588cce74d9a1662fdd30491a91999b6dc4376394",
+    "src/save_upgrade_snapshot.cpp": "15403b4409d438d2202823fd3daa6d1e6452c2d018f28af71483c9ca91f39caa",
+    "tests/save_upgrade_snapshot_native.cpp": "fee0032b006924a58a6c572cea5bc99ad9b86e644a75a21960f1a4fa03d67736",
+    "tests/runtime_save_gameplay_native.cpp": "820513a83e105e5313dcf30bdf5d6053bfdee7b0fc147f768630b5483ed4b86a",
+    "tests/runtime_save_contract.py": "2089408407db6bc74670b99bfef2da4ee8b9dfe3142493b2039f142d2d9693df",
+    "tests/world_ui_contract.py": "e384bc24465a5fa13f92af7a4688119e76dd035115d6bd2ef033d43244d42cfa",
+    "tests/world_components_contract.py": "e07c3bb2118abdc282f2dd017be1207d0415e4c431470dd56b058283d81c9a8b",
+    "tests/world_templates_contract.py": "fe7c19fea500b006899f3aa5b125fd4a414c4b3475d71afb6df99ed2a990a0f7",
+    "tests/profiler_contract.py": "bf94da5b5966a767fe5e20eb37022a20e7ef65131b804213d7d71c05b72a2196",
+    "tests/world_session_native.cpp": "5a6f9165d134729c1635ac266635e40d79c9d8962a941e19768b9462501bd579",
+    "tests/save_evolution_components.py": "891eab5f2cf1ae98b6db11778f98a8198bb98267f174aa3c1f09030f0d1b8473",
+    "tests/save_evolution_game.py": "a96038beb987ff363c95983516fa8bbdb4531fa33d5078b6b0f4012ed8e7dd9f"
+  },
+  "fixture_sha256": {
+    "tests/fixtures/save_evolution_game/CollectionGame.cs": "3225cfa5fe8b34589c4905ae21908e70bf06bccc3a9d881c5683499d31d47c33",
+    "tests/fixtures/save_evolution_game/derive_plan.py": "33bc0aaf7d7e3287f2b07036f11b8afc62ca4d8e0b62b579876e1fcddf1c4a35",
+    "tests/fixtures/save_evolution_game/mapping.json": "500ef4322ea59bf5064221d1886e97a2e196b18d97f528dbb23ae6a96c39e2a2",
+    "tests/fixtures/save_evolution_game/Poima.CollectionGame.csproj": "32e5ac546670bc3348426e1de55b5a83f2c8409f0fd91587f1ec49da7ceac1ed",
+    "tests/fixtures/save_evolution_components/source/Poima.SaveEvolutionGame.csproj": "46c6e465240777899bc9abccb8da435250711853234ccf90d75b83cc44dfbc36",
+    "tests/fixtures/save_evolution_components/source/SaveEvolutionGame.cs": "178e469676477b5f43ffee366b8a69c7412eb136fbbfa0dedcfa9be9ffe1a372",
+    "tests/fixtures/save_evolution_components/target/Poima.SaveEvolutionGame.csproj": "46c6e465240777899bc9abccb8da435250711853234ccf90d75b83cc44dfbc36",
+    "tests/fixtures/save_evolution_components/target/SaveEvolutionGame.cs": "0aad587ab36954141d076f0704b956529f10a6666153a78c731cdf324407b8e5"
+  },
+  "tests": [
+    {
+      "name": "save-upgrade",
+      "passed": true
+    },
+    {
+      "name": "save-upgrade-plan",
+      "passed": true
+    },
+    {
+      "name": "save-upgrade-document",
+      "passed": true
+    },
+    {
+      "name": "save-upgrade-snapshot",
+      "passed": true
+    },
+    {
+      "name": "world-session",
+      "passed": true
+    },
+    {
+      "name": "preselected-coreclr",
+      "passed": true
+    },
+    {
+      "name": "preselected-native",
+      "passed": true
+    },
+    {
+      "name": "runtime_save_contract",
+      "passed": true
+    },
+    {
+      "name": "world_ui_contract",
+      "passed": true
+    },
+    {
+      "name": "world_components_contract",
+      "passed": true
+    },
+    {
+      "name": "world_templates_contract",
+      "passed": true
+    },
+    {
+      "name": "profiler_contract",
+      "passed": true
+    },
+    {
+      "name": "component-evolution",
+      "passed": true
+    },
+    {
+      "name": "game-evolution",
+      "passed": true
+    }
+  ],
+  "primitive_rejections": {
+    "scalar_mapping": 86,
+    "plan": 60,
+    "authored_document": 32,
+    "snapshot": 28
+  },
+  "compiled_global_fixture": {
+    "backend": "coreclr",
+    "source_image_sha256": "c6ebd7cb70510433e1f6ddafd99cd53e195b514d4f703e43ce7bd3870795c555",
+    "target_image_sha256": "91939f5b26d1b58f6f5ca2dd4b151001ca93e0a56681e295cc81530b7746d426",
+    "source_tick": 3,
+    "final_tick": 246,
+    "recovered_count": 3,
+    "upgrade_steps": 975,
+    "original_slot_unchanged": true,
+    "checks": [
+      "preserved historical source baseline and genuine old save",
+      "renamed/reordered fields, explicit legacy IDs and added default",
+      "Initialize trap positive control",
+      "rejected live replacements preserve complete runtime snapshots",
+      "exact receipt retry after plan removal; conflicting retry and stale guards reject",
+      "real Control/Tick callbacks finish remaining collection gameplay",
+      "corrupt newest generation requires explicit recovery consent for older generation",
+      "explicit target save and exact fresh-process load followed by Tick"
+    ]
+  },
+  "compiled_component_fixture": {
+    "backend": "coreclr",
+    "rpc_calls": 49,
+    "cleanup_errors": [],
+    "fixture_sha256": {
+      "source/Poima.SaveEvolutionGame.csproj": "46c6e465240777899bc9abccb8da435250711853234ccf90d75b83cc44dfbc36",
+      "source/SaveEvolutionGame.cs": "178e469676477b5f43ffee366b8a69c7412eb136fbbfa0dedcfa9be9ffe1a372",
+      "target/Poima.SaveEvolutionGame.csproj": "46c6e465240777899bc9abccb8da435250711853234ccf90d75b83cc44dfbc36",
+      "target/SaveEvolutionGame.cs": "0aad587ab36954141d076f0704b956529f10a6666153a78c731cdf324407b8e5"
+    },
+    "checks": [
+      "distinct compiled source and target with extracted manifests",
+      "authored and template-spawned runtime values differ from authored defaults",
+      "stable field rename, explicit retirement and added default",
+      "int32/int64/float32/float64/entity values preserved",
+      "Initialize trap positive control",
+      "actual target callbacks read and write migrated component values",
+      "exact retry and unchanged original generation",
+      "new generation and exact fresh-process load followed by Tick"
+    ]
+  },
+  "regressions": {
+    "save_contract_tests": 7,
+    "ui_contract_tests": 6,
+    "component_contract_tests": 8,
+    "template_contract_tests": 10,
+    "profiler_rpc_calls": 128,
+    "preselected_restore": [
+      "CoreCLR exact restore: 16 resealed rejection cases, 40 collectible restores",
+      "Native AOT exact restore: 16 resealed rejection cases, 40 released instances; not an AOT upgrade test"
+    ]
+  },
+  "raw_evidence_sha256": {
+    "aggregate.json": "4c86c0be878502b20e852b6808976c7fd2517b6c4d4b535e4bab97676b0a9a72",
+    "components/evidence.json": "853a7c8942c70638f69339a62450cf34bdb426c4a4d8b351ae84fabf91e1872a",
+    "game/evidence.json": "32fe4338eb25c894040d93f6f99d8c51627a0fc3d335e22a18d36de13760d55e"
+  },
+  "limits": [
+    "Windows and Native AOT end-to-end save upgrades remain unqualified.",
+    "No GPU, GUI, physical-input or performance qualification; installed desktop package unchanged.",
+    "World service selects explicit plans; C# requests/editor controls do not yet select upgrades.",
+    "Only explicit scalar source-to-target mappings with unchanged topology/type membership; no conversions, chains, collections or arbitrary world rebasing.",
+    "Storage and snapshot work remain synchronous.",
+    "Historical baseline is retained separately; public fixture documents reproducing a new baseline without claiming historical provenance."
+  ]
+}

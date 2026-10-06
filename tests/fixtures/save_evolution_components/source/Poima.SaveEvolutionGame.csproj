@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../../../managed/Directory.Build.props" />
+  <ItemGroup><ProjectReference Include="../../../../managed/Poima.Gameplay/Poima.Gameplay.csproj" /></ItemGroup>
+  <Import Project="../../../../managed/Poima.Components.targets" />
+</Project>

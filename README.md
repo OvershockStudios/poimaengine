@@ -44,9 +44,9 @@ These are bounded implementations with subsystem-specific limits, not finished v
 
 [Native C# gameplay](docs/NATIVE_GAMEPLAY.md) uses the same supported game source and native services as the CoreCLR development path. Native libraries stay loaded for the player process; changing the compiled library requires a restart. [Recorded evidence](docs/evidence/m2-native-gameplay.json) covers both operating systems, backend state comparisons and relocated Windows game replay.
 
-The experimental [save-slot service](docs/RUNTIME.md#durable-save-slots) preserves supported physics, animation, sound and typed gameplay state with guarded writes, fresh-process loads and explicit corruption recovery. The CLI and [editor Save/Load window](docs/EDITOR_SAVES.md) share these operations. [Typed C# save/load requests](docs/GAMEPLAY_SAVES.md) run after committed simulation batches. General migrations and asynchronous saving remain unfinished.
+The experimental [save-slot service](docs/RUNTIME.md#durable-save-slots) preserves supported physics, animation, sound and typed gameplay state with guarded writes, fresh-process loads and explicit corruption recovery. The CLI and [editor Save/Load window](docs/EDITOR_SAVES.md) share these operations. [Typed C# save/load requests](docs/GAMEPLAY_SAVES.md) run after committed simulation batches. Explicit [scalar save upgrades](docs/SAVE_UPGRADES.md) are qualified in Linux CoreCLR development tests; Windows/Native AOT upgrades, general migrations and asynchronous saving remain unfinished.
 
-Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
+Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims.
 
 ## Build the headless engine
 

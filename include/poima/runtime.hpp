@@ -186,6 +186,8 @@ class Runtime {
     static std::unique_ptr<Runtime> restore_snapshot_data(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
         std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision);
+    static std::unique_ptr<Runtime> bind_snapshot_gameplay(std::unique_ptr<Runtime> candidate,
+        const std::string& saved_gameplay,std::uint64_t saved_gameplay_revision,std::unique_ptr<Gameplay> gameplay);
 public:
     static constexpr double fixed_dt=1.0/60.0;
     static bool available();
@@ -214,6 +216,13 @@ public:
     static std::unique_ptr<Runtime> from_snapshot(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
         const std::optional<GameplayConfig>& gameplay=std::nullopt);
+    // Consumes a trusted host-selected instance already registered in restore
+    // mode (Initialize skipped), allowing metadata inspection without a second
+    // registration. The caller must validate original source data before loading
+    // that instance. Exact image/schema/value/reference checks still apply here;
+    // this does not authorize migration or suppress constructor side effects.
+    static std::unique_ptr<Runtime> from_snapshot_with_gameplay(const RuntimeDefinition& definition,
+        const std::string& content_sha256,const std::string& bytes,std::unique_ptr<Gameplay> gameplay);
     // Scheduled edits execute after gameplay and before physics at their tick
     // offsets. Results become observable only after the entire batch commits.
     std::vector<RuntimeStructureResult> step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs,

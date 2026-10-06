@@ -206,6 +206,10 @@ class RuntimeSaves(unittest.TestCase):
     def test_configuration_discovery_validation_and_receipts(self):
         methods = self.rpc('world.describe')['methods']
         self.assertTrue({'save.configure', 'save.inspect', 'save.write', 'save.load'} <= set(methods))
+        upgrade = methods['save.load']['properties']['upgrade']
+        self.assertEqual(set(upgrade['required']), {'path', 'expected_sha256'})
+        self.assertFalse(upgrade['additionalProperties'])
+        self.assertNotIn('upgrade', methods['save.load']['required'])
         params, configured = self.configure()
         self.assertEqual(configured['generation'], 1)
         self.assertEqual(configured['root'], native(self.saves))

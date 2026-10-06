@@ -107,10 +107,11 @@
         saves::Status storage;
         std::string session;
         std::set<std::string> used;
-        Json empty_receipts=Json::array(),start_params,start_result;
+        Json empty_receipts=Json::array(),start_params,start_result,upgrade;
     };
+#include "world_save_upgrade.inc"
     PreparedLoad prepare_runtime_load(const std::string& slot,std::uint64_t generation,bool allow_recovery,
-        std::string session,std::optional<GameplayConfig> config) {
+        std::string session,std::optional<GameplayConfig> config,const std::optional<save_upgrades::Plan>& upgrade=std::nullopt) {
         profiling::Scope trace("save.restore.prepare");
         require(Runtime::available(),"Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON.",-32003);
         require(!used_runtime_ids_.contains(session),"Runtime replacement ID was already used.",-32010);
@@ -126,7 +127,10 @@
             require(document.at("world_id")==doc_.at("world_id"),"Save belongs to a different world.",-32070);
             result.frozen=freeze_content(document);
         }catch(const std::exception& error) { throw Error(-32070,error.what()); }
-        result.runtime=Runtime::from_snapshot(result.frozen.definition,result.frozen.hash,save.at("snapshot").dump(),config);
+        if(upgrade) {
+            require(config.has_value(),"Save upgrade requires explicit target gameplay.",-32070);
+            prepare_upgraded_runtime(result,save.at("snapshot"),*config,*upgrade);
+        } else result.runtime=Runtime::from_snapshot(result.frozen.definition,result.frozen.hash,save.at("snapshot").dump(),config);
         configure_runtime_saves(*result.runtime);
         result.gameplay=std::move(config);result.storage=std::move(stored.status);result.session=std::move(session);
         result.used=used_runtime_ids_;result.used.insert(result.session);return result;
@@ -212,7 +216,7 @@
             return saved_write_result(store.write(revision(params.at("expected_generation")),request,bytes,normalized.at("acknowledge_recovery"),request_hash),slot);
         }
         if(method=="save.load") {
-            fields(params,{"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","expected_component_revision","expected_structure_revision","expected_ui_revision","expected_control_sequence","new_session_id","gameplay","allow_recovery"},
+            fields(params,{"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","expected_component_revision","expected_structure_revision","expected_ui_revision","expected_control_sequence","new_session_id","gameplay","allow_recovery","upgrade"},
                 {"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","new_session_id"});
             identifier(params.at("request_id"));auto new_id=identifier(params.at("new_session_id"));const auto slot=save_slot(params.at("slot"));
             for(const auto* key:{"configuration_generation","expected_generation","revision"})revision(params.at(key));
@@ -229,14 +233,20 @@
                 component_save_guard(params,true);
             } else { component_save_guard(params,false);require(params.at("expected_session_id").is_null() && params.at("expected_tick").is_null() && params.at("expected_gameplay_revision").is_null(),"Stopped restore requires null current runtime guards.",-32009); }
             require(!runtime_ || !runtime_->gameplay_saves().pending(),"Resolve pending gameplay save before external replacement.",-32070);
+            std::optional<save_upgrades::Plan> upgrade;
+            if(params.contains("upgrade")) {
+                require(params.contains("gameplay") && !params.at("gameplay").is_null(),"Save upgrade requires explicit target gameplay.");
+                upgrade=read_upgrade_plan(params.at("upgrade"));
+            }
             auto config=runtime_gameplay_config_;
             if(params.contains("gameplay")) { if(params.at("gameplay").is_null())config.reset();else config=save_gameplay(params.at("gameplay")); }
-            auto prepared=prepare_runtime_load(slot,revision(params.at("expected_generation")),normalized.at("allow_recovery"),new_id,std::move(config));
+            auto prepared=prepare_runtime_load(slot,revision(params.at("expected_generation")),normalized.at("allow_recovery"),new_id,std::move(config),upgrade);
             const auto& frozen=prepared.frozen;const auto& stored=prepared.storage;
             Json result={{"session_id",new_id},{"tick",prepared.runtime->inspect().tick},{"structure_revision",prepared.runtime->structure_revision()},{"ui_revision",prepared.runtime->ui_model().revision()},{"control_sequence",prepared.runtime->control_sequence()},{"authored_revision",frozen.definition.authored_revision},{"current_authored_revision",doc_.at("revision")},
                 {"source_stale",frozen.document.at("revision")!=doc_.at("revision") || !same_authored_state(frozen.document,doc_)},
                 {"slot",slot},{"generation",stored.generation},{"selected_generation",stored.selected->generation},{"recovered",stored.recovered},
                 {"recovery_reason",stored.recovery_reason},{"replayed",false}};
+            if(!prepared.upgrade.is_null())result["upgrade"]=prepared.upgrade;
             auto receipts=prepare_save_receipt(normalized,result);
             // Every allocation/validation precedes the no-throw activation.
             GameplaySaveRestore restored;restored.destination_epoch=prepared.runtime->gameplay_saves().epoch();

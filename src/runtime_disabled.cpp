@@ -14,6 +14,7 @@ RuntimeEntityState Runtime::entity(const std::string&) const { throw std::runtim
 std::string Runtime::save_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::validate_snapshot(const RuntimeDefinition&,const std::string&,const std::string&) { throw std::runtime_error("Simulation is not built."); }
 std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,const std::optional<GameplayConfig>&) { throw std::runtime_error("Simulation is not built."); }
+std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition&,const std::string&,const std::string&,std::unique_ptr<Gameplay>) { throw std::runtime_error("Simulation is not built."); }
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&, const std::vector<KinematicTarget>&,const std::vector<SoundCommand>&,const std::vector<AnimationCommand>&,const std::vector<RuntimeStructureTick>&) { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }

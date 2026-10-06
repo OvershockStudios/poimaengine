@@ -121,10 +121,27 @@ int main(int argc,char** argv) {
                   "Restored gameplay did not continue on its saved fixed-tick clock.");
             check(typed.at("Precise")==126 && typed.at("LastX")==3,"Saved typed values/entity references did not reach real Tick.");
             restored.reset();
+            // Inspect the same host-selected instance that is later consumed;
+            // restore-mode registration must not invoke Initialize twice (or once).
+            auto selected=std::make_unique<Gameplay>(config,nullptr,GameplayInitialization::restore);
+            const auto selected_metadata=Json::parse(selected->inspect());
+            check(selected_metadata.at("schema")==envelope.at("payload").at("gameplay").at("schema"),"Selected schema differs before restore.");
+            auto consumed=Runtime::from_snapshot_with_gameplay(def,content,saved,std::move(selected));
+            check(!selected,"Restore did not consume selected gameplay.");consumed->step(23,{});same_game(source,*consumed);consumed.reset();
+            bool missing_rejected=false;
+            try {(void)Runtime::from_snapshot_with_gameplay(def,content,saved,nullptr);}catch(const std::exception&){missing_rejected=true;}
+            check(missing_rejected,"Preselected restore accepted missing gameplay.");
             const auto live_before=source.save_snapshot(content);std::size_t failures=0;
             auto reject=[&](const Json& candidate,const std::optional<GameplayConfig>& trusted) {
                 bool failed=false;try { (void)Runtime::from_snapshot(def,content,reseal(candidate),trusted); }catch(const std::exception&) { failed=true; }
                 check(failed,"Malformed or incompatible gameplay snapshot was accepted.");
+                failed=false;
+                try {
+                    std::unique_ptr<Gameplay> selected_game;
+                    if(trusted)selected_game=std::make_unique<Gameplay>(*trusted,nullptr,GameplayInitialization::restore);
+                    (void)Runtime::from_snapshot_with_gameplay(def,content,reseal(candidate),std::move(selected_game));
+                }catch(const std::exception&){failed=true;}
+                check(failed,"Preselected gameplay accepted an incompatible snapshot.");
                 check(source.save_snapshot(content)==live_before,"Rejected restore mutated the old game's fields/clock/revision.");++failures;
             };
             auto mutate=[&](const auto& change) { auto candidate=envelope;change(candidate["payload"]["gameplay"]);reject(candidate,config); };
@@ -143,8 +160,11 @@ int main(int argc,char** argv) {
             mutate([](Json& g){g["values"]["OptionalTarget"]="invalid";});
             mutate([&](Json& g){g["backend"]=native?"coreclr":"native_aot";});
             mutate([](Json& g){g["extra"]=1;});
-            // Valid no-module snapshots must not accidentally execute supplied code.
+            // Config-based no-module restore rejects before code registration;
+            // preselected restore consumes and rejects the host-created instance.
             Runtime no_game(def);auto no_game_save=Json::parse(no_game.save_snapshot(content));reject(no_game_save,config);
+            auto no_game_restored=Runtime::from_snapshot_with_gameplay(def,content,no_game_save.dump(),nullptr);
+            check(no_game_restored->save_snapshot(content)==no_game_save.dump(),"No-game preselected restore changed the snapshot.");
             auto nullable=envelope;nullable["payload"]["gameplay"]["values"]["OptionalTarget"]=std::string(32,'0');
             auto with_null=Runtime::from_snapshot(def,content,reseal(nullable),config);with_null->step(1,{});
             check(values(*with_null).at("LastX")==3,"Null entity reference did not survive restore and Tick.");with_null.reset();

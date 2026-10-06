@@ -1,6 +1,6 @@
 # Persistent gameplay field metadata
 
-This development API assigns stable identities and literal defaults to C# global state fields. It prepares explicit save upgrades. **It does not enable cross-version loading:** ordinary restores still require the saved backend, image, type and complete schema to match the trusted game.
+This development API assigns stable identities and literal defaults to C# global state fields. **The annotation alone does not enable cross-version loading:** ordinary restores still require the saved backend, image, type and complete schema to match the trusted game. Changed saves require an [explicit host-selected upgrade](SAVE_UPGRADES.md).
 
 ## Declare state
 
@@ -50,7 +50,7 @@ Without `GameplayPersistence`, the emitted schema remains unchanged. Existing fi
 
 A Native AOT artifact carrying this object declares `gameplay_persistence_v1` in addition to `baseline_v7`. Runtime selection, export and bundle inspection check that requirement. This feature describes metadata support, not save-migration support. Service epoch 7, its 176-byte baseline and call ABI 1/80 bytes remain unchanged. An older runtime must reject an unsupported artifact rather than ignore its metadata.
 
-Native field mapping and strict upgrade-plan parsing are implemented as development primitives. Connecting them to complete saved worlds and game-facing upgrade policy remains unfinished. Development reload continues to use its documented compatible-field rules; stable persistence IDs are not a new reload migration mechanism.
+Native field mapping and strict upgrade-plan parsing are connected to the external world-service load path in development. Automatic packaged-game upgrade policy remains unfinished. Development reload continues to use its documented compatible-field rules; stable persistence IDs are not a new reload migration mechanism.
 
 ## Native upgrade primitives
 
@@ -60,7 +60,7 @@ Native field mapping and strict upgrade-plan parsing are implemented as developm
 
 `parse_plan` accepts bounded `poima.save-upgrade` version 1 JSON and an expected SHA-256 of its exact bytes. The plan binds source and target world/content, backend, module identity/type, executable image and complete schema hashes. Source and target world, backend, module identity and type must match. Operations and component entries use sorted, unique stable IDs; duplicate JSON keys, unknown members, overlapping operations and excessive resource counts are rejected. `require_edge` compares all bound identities with independently obtained identities. A matching hash proves byte identity, not permission to load code.
 
-These APIs do not open files, execute gameplay, modify slots or activate a runtime. The owner must validate original source data, approved authored changes, actual source/target schemas and code, and the complete transformed target snapshot before activation. Component fingerprint equality alone is insufficient to establish unchanged authoring semantics because names and units are outside that fingerprint. Ordinary `save.load` remains exact; it does not yet accept upgrade plans.
+These mapping APIs do not open files, execute gameplay, modify slots or activate a runtime. The owner validates original source data, approved authored changes, actual source/target schemas and code, and the complete transformed target snapshot before activation. Component fingerprint equality alone is insufficient to establish unchanged authoring semantics because names and units are outside that fingerprint. Ordinary `save.load` remains exact; the optional explicit upgrade path and its qualification limits are documented in [Save upgrades](SAVE_UPGRADES.md).
 
 ## Qualification
 
