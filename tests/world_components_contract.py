@@ -100,7 +100,7 @@ class Contract(unittest.TestCase):
 
     def test_discovery_and_explicit_upgrade_only(self):
         d = self.ok('world.describe')
-        self.assertEqual(d['schema_revision'], 32)
+        self.assertEqual(d['schema_revision'], 33)
         for name in ('component.schemas', 'component.schema.import', 'runtime.components', 'runtime.component.get', 'runtime.component.query', 'runtime.component.edit'):
             self.assertIn(name, d['methods'])
         self.assertEqual(self.ok('component.schemas')['schemas'], [])

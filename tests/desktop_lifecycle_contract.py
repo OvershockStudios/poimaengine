@@ -216,9 +216,23 @@ try:
     check(image_hash('scene-before') == image_hash('scene-removed'), 'Scene pixels did not return to pre-spawn state')
     check(image_hash('game-before') == image_hash('game-removed'), 'Game pixels did not return to pre-spawn state')
     record['checks'].append('same_tick_removal_restores_pixels_and_picking_and_invalidates_queued_game_capture')
+    step = {'session_id': session, 'request_id': uuid.uuid4().hex, 'expected_tick': 0, 'ticks': 1}
+    before_step = state()['runtime']
+    rpc('desktop.play.step', step, -32602)
+    check(state()['runtime'] == before_step, 'Missing topology guard changed the paused runtime')
+    rpc('desktop.play.step', dict(step, expected_structure_revision=1), -32009)
+    check(state()['runtime'] == before_step, 'Stale topology guard changed the paused runtime')
+    step['expected_structure_revision'] = 2
+    committed_step = rpc('desktop.play.step', step)
+    after_step = state()['runtime']
+    check(after_step['tick'] == 1 and after_step['structure_revision'] == 2, after_step)
+    retried_step = rpc('desktop.play.step', step)
+    check(retried_step == dict(committed_step, replayed=True), retried_step)
+    check(state()['runtime'] == after_step, 'Retained paused-step retry advanced the runtime twice')
+    record['checks'].append('paused_step_requires_current_topology_guard_and_replays_without_advancing')
     rpc('desktop.play.resume', {'session_id': session})
     rpc('runtime.structure.transact', {'session_id': session, 'request_id': uuid.uuid4().hex,
-        'expected_tick': 0, 'expected_structure_revision': 2, 'spawns': [{'template_id': template}]}, -32009)
+        'expected_tick': 1, 'expected_structure_revision': 2, 'spawns': [{'template_id': template}]}, -32009)
     rpc('desktop.play.pause', {'session_id': session})
     final = state()
     check(final['runtime']['structure_revision'] == 2, final)

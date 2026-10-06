@@ -1,0 +1,105 @@
+{
+  "milestone": "Structural revision guards for tick-based runtime mutations",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39 development",
+  "protocol_schema_revision": 33,
+  "source_base": "b075d5b46c09b8b7102908e89e7321e611873e76",
+  "source_sha256": {
+    "desktop/Poima.Editor/ComponentEditorModel.cs": "0092e33b9c55f39a66df33bd2d25f1c07e1d12c8cbc5fdfd67243550af06cc9b",
+    "desktop/Poima.Editor/EditorModel.cs": "2c56fc8e3e1f8e7548f1feeebfdcc4aa21d3a5667006f21d7012caa9b7bdf923",
+    "desktop/Poima.Editor/GameplayEditorModel.cs": "1e70fd98f1a340504da5a78132e29ed46ecd1d19445fb8f9e242fd08bc0c0319",
+    "desktop/Poima.Editor/MainWindow.cs": "4839d6cf14aefefe76597b4ba92ee44f1cb1d49dc698a4d1349ab3493ccdd7c7",
+    "docs/CUSTOM_COMPONENTS.md": "fd74a8bf62262a72f42dd5d8c725d7800bbe03d7e7f6a8cdb691352b28a6bb50",
+    "docs/IMPLEMENTATION_STATUS.md": "fa75f497fe6ea47375f7bfc7669b681e97b9a6d9b1b80f582b47312bbe88a2f7",
+    "docs/MANAGED_GAMEPLAY.md": "62f75fedc193297caf135d73b05b3ce3efa7f4e70bd154a296452fa2b71e727c",
+    "docs/RUNTIME.md": "2d2300122818e6c51a19170d871f73b5b99d5b3c203ffec542850e41931a1c6c",
+    "src/world.cpp": "3b0cabb8e1512b8bf06bb9c6748c6e0b46c812213f9d3456056642fc3abdad71",
+    "tests/desktop_lifecycle_contract.py": "39e5da32cf511889307670c052e028382efb8c957907e523860e06dc4843d937",
+    "tests/profiler_contract.py": "06472aeecc37e58a21362081d218e2cff3a3ccb7ba120169b4810d48a96a697f",
+    "tests/world_components_contract.py": "97ded6195930e7ca61db464207ad3b34626c8fde86ff31620f4c28360a4905bb",
+    "tests/world_session_native.cpp": "beae0798cbb93b3bdf0de4c283a225fd9b7b4aa05c5d583c16bad9e434357259",
+    "tests/world_templates_contract.py": "d7736a413a39b788af1077df87a4d1c6d910598e1f70881abdd0c6ebffd78d1d"
+  },
+  "binary_sha256": {
+    "build/runtime-headless/poima": "ff2c946d49506a425029ca80ca7ba734b6db9211a53aac63347f68c271532652",
+    "build/windows-runtime/poima.exe": "f2d48511372c20bccca694c84c8ce87ecc7deb3394c7fd6efede879e79fbe95e",
+    "build/windows-runtime/poima_desktop.dll": "96c896edaaed5640b76aaae19636ba125e6951d61df394a86c6ce6f29d78a3d4",
+    "desktop/Poima.Editor/bin/Release/net10.0/win-x64/Poima.Editor.dll": "b312fe83a7b563dc52a6761e2fbc1a3a7684200bf85be93476629d89074eaf45",
+    "build/headless/poima": "d25ec3684420e1052094c948ab1157d31f283767ebf54edf6e543836d360cfac"
+  },
+  "implemented": [
+    "Stepping, component edits, gameplay edits/loads, audio replay and player execution require expected_structure_revision after structural edits; a supplied guard is always checked.",
+    "Guard integer representation is validated before receipt equality; matching retained retries recover their original results after later structural changes.",
+    "Gameplay inspection exposes structure_revision. Editor component, gameplay and animation drafts retain their observed guard; manual stepping supplies the current observation."
+  ],
+  "qualification": {
+    "linux_runtime": {
+      "passed": true,
+      "catalog_lifecycle_tests": 10,
+      "rpc_count": 155,
+      "regression_suites": [
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract",
+        "world_session_native",
+        "profiler_contract"
+      ],
+      "regression_passed": true,
+      "logs": [
+        "build/structure-guards-linux-contract.json",
+        "build/structure-guards-linux-regression.log"
+      ]
+    },
+    "windows": {
+      "passed": true,
+      "templates": {
+        "tests": 10,
+        "rpc_count": 155,
+        "evidence": "build/topology-guards-templates-windows.json"
+      },
+      "save": {
+        "tests": 7,
+        "rpc_count": 547,
+        "evidence": "build/topology-guards-save-windows.json"
+      },
+      "desktop": {
+        "checks": 5,
+        "rpc_count": 52,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "samples": 4,
+        "captures": 6,
+        "errors": 0,
+        "evidence": "build/desktop-topology-guards-qualification/run-9d0890025dd5499ba74f5b8c58174570/result.json"
+      },
+      "build_log": "build/topology-guards-windows-build.log"
+    },
+    "editor_build": {
+      "passed": true,
+      "configuration": "Release",
+      "warnings": "Two existing obsolete Bitmap.Save overload warnings; zero errors.",
+      "log": "build/structure-guards-editor-build.log"
+    },
+    "linux_authoring_only": {
+      "passed": true,
+      "reported_tests": 10,
+      "skipped_runtime_tests": 4,
+      "rpc_count": 62,
+      "regression_suites": [
+        "world_components_contract",
+        "world_session_native",
+        "profiler_contract"
+      ],
+      "regression_passed": true,
+      "logs": [
+        "build/structure-guards-authoring-contract.json",
+        "build/structure-guards-authoring-regression.log"
+      ]
+    }
+  },
+  "limitations": [
+    "Windows desktop qualification uses owned native child windows on the AMD laptop GPU with 4x MSAA; it is not a full Avalonia widget, physical-input, NVIDIA or performance qualification.",
+    "Negative gameplay load/replay tests verify rejection before opening dummy module paths or output devices; this checkpoint does not requalify loaded CoreCLR or Native AOT modules.",
+    "Editor C# changes compile but draft interactions have not received a new full GUI test pass.",
+    "No desktop package publication or launcher activation. C#-initiated spawning and removal remain unfinished; gameplay services ABI stays at version 5."
+  ]
+}

@@ -363,7 +363,7 @@ public sealed class EditorModel : IDisposable
     {
         Components?.RequireClean();
         if (RuntimeId is null || !Paused) throw new InvalidOperationException("Pause playback before stepping.");
-        Host.Call("desktop.play.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["ticks"] = ticks });
+        Host.Call("desktop.play.step", new() { ["session_id"] = RuntimeId, ["request_id"] = NewId(), ["expected_tick"] = Tick, ["expected_structure_revision"] = Host.State["runtime"]!["structure_revision"]!.DeepClone(), ["ticks"] = ticks });
         Host.RefreshState();
     }
     public JsonObject InspectSelectedAnimation()
@@ -387,7 +387,7 @@ public sealed class EditorModel : IDisposable
         } while (parameters["offset"] is not null);
         return result;
     }
-    public void StepAnimation(string entity, string session, long observedTick, JsonObject command, int blendTicks)
+    public void StepAnimation(string entity, string session, long observedTick, long observedStructure, JsonObject command, int blendTicks)
     {
         RequireClean();
         if (Selected != entity || RuntimeId != session) throw new InvalidOperationException("Animation selection or runtime changed. Load live state again.");
@@ -395,7 +395,7 @@ public sealed class EditorModel : IDisposable
         if (blendTicks < 0 || blendTicks > 3600) throw new ArgumentOutOfRangeException(nameof(blendTicks));
         var value = Clone(command); value["entity"] = entity; value["blend_ticks"] = blendTicks;
         Host.Call("desktop.play.step", new() { ["session_id"] = session, ["request_id"] = NewId(),
-            ["expected_tick"] = observedTick, ["ticks"] = 1, ["animations"] = new JsonArray(value) });
+            ["expected_tick"] = observedTick, ["expected_structure_revision"] = observedStructure, ["ticks"] = 1, ["animations"] = new JsonArray(value) });
         Host.RefreshState();
     }
     public void SetGameCamera(string? camera)

@@ -44,7 +44,7 @@ public sealed class ComponentEditorModel : IDisposable
     public string? Error { get; private set; }
     public bool Dirty => Values.Any(value => baseline.GetValueOrDefault(value.Key) != value.Value);
     public bool Conflict => Observation is not null && (Observation["session_id"]?.GetValue<string>() != editor.RuntimeId ||
-        Observation["tick"]?.GetValue<long>() != editor.Tick || Observation["component_revision"]?.GetValue<long>() != editor.Host.State["components"]?["revision"]?.GetValue<long>());
+        Observation["tick"]?.GetValue<long>() != editor.Tick || Observation["structure_revision"]?.GetValue<long>() != editor.Host.State["runtime"]?["structure_revision"]?.GetValue<long>() || Observation["component_revision"]?.GetValue<long>() != editor.Host.State["components"]?["revision"]?.GetValue<long>());
     public ComponentEditorModel(EditorModel editor) { this.editor = editor; editor.Host.StateChanged += HostChanged; }
     private void HostChanged(object? sender, EventArgs args) => Changed?.Invoke(this, EventArgs.Empty);
     public void Fail(Exception error) { Error = error.Message; editor.Note(error.Message); Changed?.Invoke(this, EventArgs.Empty); }
@@ -90,7 +90,7 @@ public sealed class ComponentEditorModel : IDisposable
         var values = new JsonObject();
         foreach (var field in Observation["schema"]!["fields"]!.AsArray().OfType<JsonObject>()) values[field["id"]!.GetValue<string>()] = ComponentFields.Parse(field, Values[field["id"]!.GetValue<string>()]);
         editor.Host.Call("runtime.component.edit", new() { ["session_id"] = Observation["session_id"]!.DeepClone(), ["request_id"] = EditorModel.NewId(),
-            ["expected_tick"] = Observation["tick"]!.DeepClone(), ["expected_revision"] = Observation["component_revision"]!.DeepClone(),
+            ["expected_tick"] = Observation["tick"]!.DeepClone(), ["expected_structure_revision"] = Observation["structure_revision"]!.DeepClone(), ["expected_revision"] = Observation["component_revision"]!.DeepClone(),
             ["id"] = Observation["id"]!.DeepClone(), ["type"] = Observation["type"]!.DeepClone(), ["values"] = values });
         editor.Host.RefreshState(); Reload();
     }

@@ -363,7 +363,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 32}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 33}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -601,6 +601,9 @@ Json describe() {
         {"components",recipe_components},{"references","Entity references in recipes are literal IDs; liveness is deferred until spawning. Template IDs are a separate namespace and are never live EntityIds."},
         {"save_guard","save.write/load require expected_structure_revision after any structural transaction; stopped restore accepts absent or null."},
         {"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# initiation and RPC tick scheduling remain unavailable."}};
+    for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play"})
+        methods[method]["properties"]["expected_structure_revision"]=rev;
+    result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -1971,13 +1974,13 @@ public:
         return {{"session_id",runtime_id_},{"tick",tick},{"next_voice",state.next_id()},{"emitting",emitting},{"retained",state.voices().size()},{"has_more",more},{"voices",voices}};
     }
     Json audio_replay(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","listener","path","sequence"},{"session_id","request_id","expected_tick","listener","path","sequence"});
+        fields(params,{"session_id","request_id","expected_tick","listener","path","sequence","expected_structure_revision"},{"session_id","request_id","expected_tick","listener","path","sequence"});
         identifier(params.at("session_id"));identifier(params.at("request_id"));revision(params.at("expected_tick"));auto normalized=params;normalized["method"]="runtime.audio.replay";
         for(const auto& receipt:playback_receipts_)if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);auto result=receipt["result"];result["replayed"]=true;return result;
         }
         runtime_guard(params);
-        const auto expected=revision(params.at("expected_tick"));require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        const auto expected=revision(params.at("expected_tick"));structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(audio_available(),"Audio replay is not built. Configure POIMA_ENABLE_AUDIO=ON.",-32003);
         const auto listener=identifier(params.at("listener"));const auto output=render_options(Json{{"path",params.at("path")}}).capture;
         struct Segment { std::uint32_t ticks;std::vector<RuntimeInput> inputs;std::vector<KinematicTarget> motions;std::vector<SoundCommand> sounds; };
@@ -2012,7 +2015,7 @@ public:
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision","gamepad"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
             {"session_id","request_id","expected_tick","controller","camera","mode"});
         identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";
@@ -2022,7 +2025,7 @@ public:
         }
         runtime_guard(params);
         const auto expected=revision(params.at("expected_tick"));
-        require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(!params.contains("audio") || params.at("audio").is_boolean(),"audio must be Boolean.");
         require(!params.value("audio",false) || audio_available(),"Player audio is not built.",-32003);
         PlayerOptions options;options.audio=params.value("audio",false);
@@ -2147,7 +2150,7 @@ public:
             auto result=component_runtime_info();result["type"]=type;result["entities"]=entities;result["next_after"]=more ? Json(entities.back()) : Json(nullptr);return result;
         }
         require(method=="runtime.component.edit","Unknown runtime component operation.",-32601);
-        fields(params,{"session_id","request_id","expected_tick","expected_revision","id","type","values"},{"session_id","request_id","expected_tick","expected_revision","id","type","values"});
+        fields(params,{"session_id","request_id","expected_tick","expected_revision","id","type","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","id","type","values"});
         const auto request=identifier(params.at("request_id")),id=identifier(params.at("id")),type=identifier(params.at("type"));revision(params.at("expected_tick"));revision(params.at("expected_revision"));
         const auto& schema=runtime_component_schema(type);
         const auto value=component_checked([&]{return components::parse_values(schema,params.at("values").dump());});
@@ -2157,6 +2160,7 @@ public:
         }
         for(const auto& receipt:advance_receipts_)if(receipt && receipt->params.at("session_id")==runtime_id_ && receipt->params.at("request_id")==request)
             throw Error(-32010,"Runtime request ID already belongs to a simulation advance.");
+        structure_mutation_guard(params);
         require(params.at("expected_tick")==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(params.at("expected_revision")==runtime_->component_revision(),"Component revision conflict.",-32009);
         require(runtime_->component_revision()<max_revision,"Component revision limit reached.");
@@ -2167,7 +2171,7 @@ public:
         component_checked([&]{runtime_->component_edit(type,id,value);});runtime_receipts_.swap(receipts);return result;
     }
     Json gameplay_info() const {
-        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"revision",runtime_->gameplay_revision()},{"module",Json::parse(runtime_->gameplay_inspect())}};
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"revision",runtime_->gameplay_revision()},{"structure_revision",runtime_->structure_revision()},{"module",Json::parse(runtime_->gameplay_inspect())}};
     }
     Json gameplay_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Gameplay requests require session_id.");runtime_guard(params);
@@ -2189,15 +2193,16 @@ public:
         }
         const bool managed_load=method=="runtime.gameplay.load",native_load=method=="runtime.gameplay.load_native",load=managed_load || native_load;
         require(load || method=="runtime.gameplay.edit","Unknown gameplay method.",-32601);
-        if(managed_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
-        else if(native_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","descriptor","expected_descriptor_sha256","values"},{"session_id","request_id","expected_tick","expected_revision","descriptor"});
-        else fields(params,{"session_id","request_id","expected_tick","expected_revision","values"},{"session_id","request_id","expected_tick","expected_revision","values"});
+        if(managed_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","hostfxr","bridge","assembly","type"});
+        else if(native_load)fields(params,{"session_id","request_id","expected_tick","expected_revision","descriptor","expected_descriptor_sha256","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","descriptor"});
+        else fields(params,{"session_id","request_id","expected_tick","expected_revision","values","expected_structure_revision"},{"session_id","request_id","expected_tick","expected_revision","values"});
         identifier(params.at("request_id"));auto normalized=params;normalized["method"]=method;
         if(!normalized.contains("values"))normalized["values"]=Json::object();
         require(normalized.at("values").is_object() && normalized.at("values").size()<=128,"Gameplay values must be a bounded field object.");
         for(const auto& receipt:runtime_receipts_)if(receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);auto result=receipt["result"];result["replayed"]=true;return result;
         }
+        structure_mutation_guard(params);
         require(revision(params.at("expected_tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
         require(revision(params.at("expected_revision"))==runtime_->gameplay_revision(),"Gameplay revision conflict.",-32009);
         require(managed_load ? Gameplay::available() : native_load ? Gameplay::native_available() : (Gameplay::available() || Gameplay::native_available()),
@@ -2227,6 +2232,10 @@ public:
         }
         catch(const std::exception& e) { throw Error(-32060,e.what()); }
         auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
+    }
+    void structure_mutation_guard(const Json& params) const {
+        require(runtime_->structure_revision()==0 || params.contains("expected_structure_revision"),"Changed runtime structure requires expected_structure_revision.");
+        if(params.contains("expected_structure_revision"))require(revision(params.at("expected_structure_revision"))==runtime_->structure_revision(),"Runtime structure revision conflict.",-32009);
     }
     void structure_read_guard(const Json& params) const {
         if(params.contains("structure_revision"))require(revision(params.at("structure_revision"))==runtime_->structure_revision(),"Runtime structure revision conflict.",-32009);
@@ -2276,6 +2285,9 @@ public:
         return structure_receipt_json(*structure_receipts_[index],false);
     }
     Json runtime_dispatch(const std::string& method,const Json& params) {
+        // Validate guard representation before receipt equality (JSON considers
+        // integer and floating numeric values equal).
+        if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
         if(method=="runtime.structure.transact")return structure_dispatch(params);
         if(params.is_object() && params.contains("session_id") && params.contains("request_id"))
             for(const auto& receipt:structure_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id"))
@@ -2375,7 +2387,7 @@ public:
                 {"velocity",e.velocity},{"has_body",e.has_body},{"is_character",e.is_character},{"ground",e.ground},{"yaw",e.yaw},{"pitch",e.pitch}};
         }
         if(method=="runtime.step") {
-            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations"},{"session_id","request_id","expected_tick","ticks"});
+            fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});
             identifier(params.at("session_id"));identifier(params.at("request_id"));
             auto normalized=params; normalized["method"]="runtime.step"; if(!normalized.contains("inputs")) normalized["inputs"]=Json::array();if(!normalized.contains("motions"))normalized["motions"]=Json::array();if(!normalized.contains("sounds"))normalized["sounds"]=Json::array();
             if(!normalized.contains("animations"))normalized["animations"]=Json::array();
@@ -2403,7 +2415,7 @@ public:
                 require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
                 auto result=receipt["result"]; result["replayed"]=true; return result;
             }
-            require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             auto receipt=std::make_unique<AdvanceReceipt>();receipt->params=normalized;
             receipt->outcome=advance_runtime(static_cast<std::uint32_t>(ticks),inputs,motions,sounds,animations);
             const auto index=advance_receipt_next_;advance_receipts_[index].swap(receipt);advance_receipt_next_=(index+1)%advance_receipts_.size();

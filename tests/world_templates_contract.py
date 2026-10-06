@@ -88,7 +88,7 @@ class Contract(unittest.TestCase):
 
     def test_discovery_empty_catalog_and_explicit_upgrade(self):
         description = self.ok('world.describe')
-        self.assertEqual(description['schema_revision'], 32)
+        self.assertEqual(description['schema_revision'], 33)
         for method in ('template.get', 'template.query'):
             self.assertIn(method, description['methods'])
         self.assertEqual(self.ok('template.query')['templates'], [])
@@ -223,10 +223,51 @@ class Contract(unittest.TestCase):
         self.assertEqual(self.ok('runtime.structure.transact', **first), dict(created, replayed=True))
         self.error('runtime.entity', -32004, session_id=sid, id=identity)
         self.assertEqual(self.world.read_bytes(), original)
-        step = dict(session_id=sid, request_id=uuid.uuid4().hex, expected_tick=0, ticks=1)
+        step = dict(session_id=sid, request_id=uuid.uuid4().hex, expected_tick=0, expected_structure_revision=3, ticks=1)
         self.ok('runtime.step', **step)
         self.error('runtime.structure.transact', -32010,
                    **dict(request(3, spawns=[{'template_id': A}]), request_id=step['request_id'], expected_tick=1))
+
+    @unittest.skipUnless(args.runtime, 'Simulation not built')
+    def test_structural_guards_cover_tick_based_mutations(self):
+        self.tx(0, [recipe(), {'op': 'component.schema.set', 'schema': SCHEMA},
+                    {'op': 'entity.create', 'id': C, 'name': 'Survivor'},
+                    {'op': 'component.set', 'id': C, 'type': 'game:'+TYPE, 'value': {FIELD: uid(0)}}])
+        sid = uuid.uuid4().hex
+        self.ok('runtime.start', session_id=sid, revision=1)
+        component = self.ok('runtime.component.get', session_id=sid, tick=0, id=C, type=TYPE)
+        self.assertEqual(self.ok('runtime.gameplay.inspect', session_id=sid)['structure_revision'], 0)
+        birth = self.ok('runtime.structure.transact', session_id=sid, request_id=uuid.uuid4().hex,
+                        expected_tick=0, expected_structure_revision=0, spawns=[{'template_id': A}])
+        self.assertEqual(birth['component_revision'], component['component_revision'])
+        common = dict(session_id=sid, expected_tick=0)
+        candidates = {
+            'runtime.step': dict(ticks=1),
+            'runtime.component.edit': dict(expected_revision=component['component_revision'], id=C, type=TYPE, values={FIELD: uid(0)}),
+            'runtime.gameplay.edit': dict(expected_revision=0, values={}),
+            'runtime.gameplay.load': dict(expected_revision=0, hostfxr='unopened-host', bridge='unopened-bridge', assembly='unopened-assembly', type='Unused'),
+            'runtime.gameplay.load_native': dict(expected_revision=0, descriptor='unopened-descriptor'),
+            'runtime.audio.replay': dict(listener=C, path=str(self.root/'never-created.wav'), sequence=[{'ticks': 1}]),
+            'runtime.play': dict(controller=C, camera=C, mode='replay', sequence=[{'ticks': 1}])}
+        baseline = self.ok('runtime.inspect', session_id=sid)
+        for method, extra in candidates.items():
+            request = dict(common, request_id=uuid.uuid4().hex, **extra)
+            self.error(method, -32602, **request)
+            self.error(method, -32009, **dict(request, expected_structure_revision=0))
+            self.error(method, -32602, **dict(request, expected_structure_revision=1.0))
+        self.assertEqual(self.ok('runtime.inspect', session_id=sid), baseline)
+        self.assertFalse((self.root/'never-created.wav').exists())
+        edit = dict(common, request_id=uuid.uuid4().hex, expected_structure_revision=1, **candidates['runtime.component.edit'])
+        result = self.ok('runtime.component.edit', **edit)
+        self.ok('runtime.structure.transact', session_id=sid, request_id=uuid.uuid4().hex,
+                expected_tick=0, expected_structure_revision=1, despawns=birth['spawned'])
+        # Successful receipt stays recoverable after the structure guard becomes stale.
+        self.assertEqual(self.ok('runtime.component.edit', **edit), dict(result, replayed=True))
+        self.error('runtime.component.edit', -32602, **dict(edit, expected_structure_revision=1.0))
+        step = dict(common, request_id=uuid.uuid4().hex, expected_structure_revision=2, ticks=1)
+        advanced = self.ok('runtime.step', **step)
+        self.assertEqual(self.ok('runtime.step', **step), dict(advanced, replayed=True))
+        self.error('runtime.step', -32602, **dict(step, expected_structure_revision=True))
 
     @unittest.skipUnless(args.runtime, 'Simulation not built')
     def test_spawned_props_save_restore_and_retired_ids(self):

@@ -593,6 +593,7 @@ public sealed partial class MainWindow : Window
         panel.Children.Add(loop); panel.Children.Add(playing);
         var blend = Field("Blend ticks", "12"); ToolTip.SetTip(blend, "0–3600 fixed ticks; 60 ticks = 1 second. Zero switches immediately.");
         long? observedTick = null;
+        long observedStructure = 0;
         bool Current() => Model.Selected == entity && Model.RuntimeId == session;
         string Number(JsonNode? node) => node is JsonValue number && number.TryGetValue<double>(out var value) ? value.ToString("G6", CultureInfo.InvariantCulture) : node?.ToJsonString() ?? "rest";
         void Show(JsonObject observation)
@@ -614,7 +615,7 @@ public sealed partial class MainWindow : Window
             clip.Text = state["clip"]?.ToJsonString() ?? ""; time.Text = state["time"]!.ToJsonString(); speed.Text = state["speed"]!.ToJsonString();
             loop.IsChecked = state["loop"]!.GetValue<bool>(); playing.IsChecked = state["playing"]!.GetValue<bool>();
             foreach (var field in new[] { clip, time, speed }) field.BorderBrush = EditorTheme.Brush("#191919");
-            observedTick = observation["tick"]!.GetValue<long>(); Show(observation);
+            observedTick = observation["tick"]!.GetValue<long>(); observedStructure = observation["structure_revision"]!.GetValue<long>(); Show(observation);
         }
         double Read(TextBox field, double minimum, double maximum, bool integer = false)
         {
@@ -630,7 +631,7 @@ public sealed partial class MainWindow : Window
             int? clipIndex = string.IsNullOrWhiteSpace(clip.Text) ? null : (int)Read(clip, 0, 255, true);
             var command = new JsonObject { ["clip"] = clipIndex, ["time"] = Read(time, 0, 1e9), ["speed"] = Read(speed, 0, 8),
                 ["loop"] = loop.IsChecked == true, ["playing"] = play ?? (playing.IsChecked == true) };
-            Model.StepAnimation(entity, session, tick, command, crossfade ? (int)Read(blend, 0, 3600, true) : 0);
+            Model.StepAnimation(entity, session, tick, observedStructure, command, crossfade ? (int)Read(blend, 0, 3600, true) : 0);
         }
         var load = Button("Load live state", Load); AutomationProperties.SetName(load, "AnimationRig Load live state"); panel.Children.Add(load);
         var buttons = new[] { Button("Seek / hold · +1 tick", () => Submit(false, false)), Button("Play · +1 tick", () => Submit(true, false)), Button("Crossfade · +1 tick", () => Submit(null, true)) };

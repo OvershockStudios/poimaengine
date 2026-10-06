@@ -31,6 +31,7 @@ public sealed class GameplayEditorModel : IDisposable
     public bool ConfigConflict => Generation != CurrentGeneration;
     public bool LiveConflict => Observation is not null &&
         (Observation["session_id"]?.GetValue<string>() != editor.RuntimeId || Observation["tick"]?.GetValue<long>() != editor.Tick ||
+         Observation["structure_revision"]?.GetValue<long>() != editor.Host.State["runtime"]?["structure_revision"]?.GetValue<long>() ||
          Observation["revision"]?.GetValue<long>() != editor.Host.State["gameplay"]?["runtime"]?["revision"]?.GetValue<long>());
     public bool Paused => editor.RuntimeId is not null && editor.Paused;
     public bool Stopped => editor.RuntimeId is null;
@@ -156,7 +157,7 @@ public sealed class GameplayEditorModel : IDisposable
         }
         if (patch.Count == 0) throw new InvalidOperationException("No changed gameplay values to apply.");
         editor.Host.Call("runtime.gameplay.edit", new() { ["session_id"] = Observation!["session_id"]!.DeepClone(),
-            ["request_id"] = EditorModel.NewId(), ["expected_tick"] = Observation["tick"]!.DeepClone(),
+            ["request_id"] = EditorModel.NewId(), ["expected_tick"] = Observation["tick"]!.DeepClone(), ["expected_structure_revision"] = Observation["structure_revision"]!.DeepClone(),
             ["expected_revision"] = Observation["revision"]!.DeepClone(), ["values"] = patch });
         editor.Host.RefreshState(); ReadValues(false);
     }
@@ -166,7 +167,7 @@ public sealed class GameplayEditorModel : IDisposable
         if (ValuesDirty) throw new InvalidOperationException("Apply or revert live gameplay values before reloading the assembly.");
         if (profile is null) throw new InvalidOperationException("Configure a launch profile first.");
         editor.Host.Call("runtime.gameplay.load", new() { ["session_id"] = Observation!["session_id"]!.DeepClone(),
-            ["request_id"] = EditorModel.NewId(), ["expected_tick"] = Observation["tick"]!.DeepClone(),
+            ["request_id"] = EditorModel.NewId(), ["expected_tick"] = Observation["tick"]!.DeepClone(), ["expected_structure_revision"] = Observation["structure_revision"]!.DeepClone(),
             ["expected_revision"] = Observation["revision"]!.DeepClone(), ["hostfxr"] = profile["hostfxr"]!.DeepClone(),
             ["bridge"] = profile["bridge"]!.DeepClone(), ["assembly"] = ReloadAssembly, ["type"] = profile["type"]!.DeepClone(), ["values"] = new JsonObject() });
         editor.Host.RefreshState(); RefreshValues();
