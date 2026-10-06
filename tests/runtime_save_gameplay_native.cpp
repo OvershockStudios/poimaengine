@@ -99,6 +99,10 @@ int main(int argc,char** argv) {
             const auto saved=source.save_snapshot(content);const auto envelope=Json::parse(saved);
             check(!envelope.at("payload").at("gameplay").is_null(),"Snapshot omitted loaded gameplay.");
             initialize_marker.arm();
+            const auto modules_before_validation=Gameplay::collect();
+            Runtime::validate_snapshot(def,content,saved);
+            check(Gameplay::collect()==modules_before_validation,"Source validation loaded/retired a compiled gameplay instance.");
+            check(source.save_snapshot(content)==saved,"Source validation changed the actual compiled game.");
             bool initialization_blocked=false;
             try {
                 // Native replacement is independently forbidden, so use a fresh

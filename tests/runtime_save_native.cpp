@@ -423,6 +423,53 @@ void malformed() {
     auto valid=Runtime::from_snapshot(d,content,bytes);valid->step(1,{});
     check(valid->inspect().tick==13,"Valid staging failed after malformed snapshot attempts.");
 }
+// A synthetic saved module is deliberately not backed by an executable. This
+// exercises source-data validation only, not compiled gameplay compatibility.
+void source_validation_without_code() {
+    const std::string entity_id(32,'1'),type_id(32,'2'),field_id(32,'3');
+    const auto schema=components::parse_schema(Json{{"id",type_id},{"name","Score"},{"version",1},
+        {"fields",Json::array({{{"id",field_id},{"name","Value"},{"kind","int32"},{"default",0}}})}}.dump());
+    RuntimeDefinition definition;definition.world_id="source-validation-fixture";definition.authored_revision=1;
+    definition.component_schemas.push_back(schema);RuntimeEntityDefinition entity;entity.id=entity_id;
+    entity.components[type_id]=components::parse_values(schema,Json{{field_id,7}}.dump());definition.entities.push_back(entity);
+    Runtime live(definition);live.step(3,{});const auto unchanged=live.save_snapshot(content);
+    auto snapshot=Json::parse(unchanged);auto& payload=snapshot["payload"];
+    payload["gameplay_revision"]=1;
+    payload["gameplay"]={{"backend","coreclr"},{"assembly_sha256",std::string(64,'d')},{"type","Unavailable.SourceGame"},
+        {"schema",{{"identity","poima.test.source-only"},{"bytes",24},
+            {"fields",Json::array({{{"name","Counter"},{"kind","int32"},{"offset",0},{"bytes",4}},
+                                  {{"name","Target"},{"kind","entity"},{"offset",8},{"bytes",16}}})},
+            {"components",Json::array({Json::parse(components::schema_json(schema))})}}},
+        {"values",{{"Counter",9},{"Target",entity_id}}}};
+    const auto bytes=sealed(snapshot),modules=Gameplay::collect();
+    Runtime::validate_snapshot(definition,content,bytes);
+    check(Gameplay::collect()==modules,"Source validation loaded gameplay code.");
+    check(live.save_snapshot(content)==unchanged,"Source validation changed a live runtime.");
+    rejects([&]{(void)Runtime::from_snapshot(definition,content,bytes);});
+    GameplayConfig unavailable;unavailable.assembly="missing-source-game-assembly.dll";unavailable.type="Unavailable.SourceGame";
+    rejects([&]{(void)Runtime::from_snapshot(definition,content,bytes,unavailable);});
+    check(Gameplay::collect()==modules,"Unavailable exact restore retained a gameplay module.");
+    auto invalid=[&](const auto& mutate) {
+        auto changed=snapshot;mutate(changed["payload"]);
+        rejects([&]{Runtime::validate_snapshot(definition,content,sealed(changed));});
+        check(live.save_snapshot(content)==unchanged && Gameplay::collect()==modules,"Rejected source validation changed live state or module lifetime.");
+    };
+    invalid([](Json& p){p["gameplay_revision"]=0;});
+    invalid([](Json& p){p["gameplay"]["values"].erase("Counter");});
+    invalid([](Json& p){p["gameplay"]["values"]["Counter"]=true;});
+    invalid([](Json& p){p["gameplay"]["values"]["Target"]=std::string(32,'9');});
+    invalid([](Json& p){p["gameplay"]["schema"].erase("components");});
+    invalid([](Json& p){auto& c=p["gameplay"]["schema"]["components"][0];c.erase("fingerprint");c["fields"][0]["default"]=1;});
+    invalid([](Json& p){auto& c=p["gameplay"]["schema"]["components"][0];c.erase("fingerprint");c["id"]=std::string(32,'8');});
+    invalid([](Json& p){p["components"]["types"][0]["instances"][0]["values"][0]="bad-int32";});
+    invalid([](Json& p){p["entities"][0]["local"]["scale"][0]=2;});
+    auto corrupt=snapshot;corrupt["payload"]["tick"]=4;
+    rejects([&]{Runtime::validate_snapshot(definition,content,corrupt.dump());});
+    Runtime::validate_snapshot(definition,content,unchanged);
+    auto restored=Runtime::from_snapshot(definition,content,unchanged);
+    check(restored->save_snapshot(content)==unchanged,"Exact no-game restore changed after validation extraction.");
+}
+
 }
 int main(int argc,char** argv) {
     try {
@@ -432,7 +479,7 @@ int main(int argc,char** argv) {
             else fixture_file(mode,std::filesystem::path(argv[2]));
             return 0;
         }
-        roundtrip_motion();animation_and_sound();angular_and_sleep();export_boundaries();malformed();lifecycle_roundtrip();lifecycle_components();lifecycle_malformed();
+        source_validation_without_code();roundtrip_motion();animation_and_sound();angular_and_sleep();export_boundaries();malformed();lifecycle_roundtrip();lifecycle_components();lifecycle_malformed();
         std::cout<<"Runtime snapshot moving door/child, airborne/angular dynamics and sleep, reconstructed character jump, future contact tolerance, outgoing/frozen animation fades, logical sound continuation, export bounds/yaw/IDs, repeated staging, lifecycle provenance/frontier/reference restoration and malformed/binding rejection passed.\n";
         return 0;
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }

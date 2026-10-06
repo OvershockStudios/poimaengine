@@ -145,8 +145,8 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
 
-std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definition,const std::string& content_sha256,
-    const std::string& bytes,const std::optional<GameplayConfig>& gameplay) {
+std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition& definition,const std::string& content_sha256,
+    const std::string& bytes,std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision) {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto envelope=save_parse(bytes);save_fields(envelope,{"format","version","sha256","payload"});
     const bool custom=!definition.component_schemas.empty();
@@ -246,7 +246,6 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     }
     const auto& restored_definition=expanded ? *expanded : definition;
     require(rows.size()==restored_definition.entities.size(),"Runtime snapshot entity set differs from restored content.");
-    require(data.at("gameplay").is_null()==!gameplay.has_value(),"Snapshot gameplay needs a matching trusted host configuration.");
     require(data.at("gameplay").is_null() ? game_revision==0 : game_revision>0,"Snapshot gameplay revision does not match module presence.");
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
@@ -260,7 +259,14 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     if(custom || structural || logical_ui)s.components->load(data.at("components").dump());
     if(logical_ui)s.ui_model->load(data.at("ui").dump());
     if(version==5)s.control_sequence=save_integer(data.at("control_sequence"));
-    if(!data.at("gameplay").is_null())save_game_values(data.at("gameplay"),s.topology->identities);
+    if(!data.at("gameplay").is_null()) {
+        const auto& source_game=data.at("gameplay");save_game_values(source_game,s.topology->identities);
+        const auto& schema=source_game.at("schema");
+        const auto declared=schema.contains("components")
+            ? components::parse_manifest(SaveJson{{"format","poima.components"},{"version",1},{"schemas",schema.at("components")}}.dump())
+            : std::vector<components::Schema>{};
+        s.components->validate_module(declared);
+    }
     s.animations->load_state(data.at("animation").dump(),tick);s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;
     std::string previous;
@@ -334,12 +340,25 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     std::map<std::string,AudioEmitter> emitters;
     for(auto e:s.topology->order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);
     s.sounds.load_state(data.at("sound").dump(),tick,emitters);
+    saved_gameplay=data.at("gameplay").dump();saved_gameplay_revision=game_revision;
+    return candidate;
+}
+void Runtime::validate_snapshot(const RuntimeDefinition& definition,const std::string& content_sha256,const std::string& bytes) {
+    std::string saved_gameplay;std::uint64_t saved_gameplay_revision=0;
+    (void)restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,saved_gameplay_revision);
+}
+std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definition,const std::string& content_sha256,
+    const std::string& bytes,const std::optional<GameplayConfig>& gameplay) {
+    std::string saved_gameplay;std::uint64_t game_revision=0;
+    auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision);
+    const auto saved=SaveJson::parse(saved_gameplay);
+    require(saved.is_null()==!gameplay.has_value(),"Snapshot gameplay needs a matching trusted host configuration.");
+    auto& s=*candidate->impl_;
     // Executable selection comes exclusively from the host. No path, type name
     // or constructor selected by the snapshot is ever invoked. Fresh game
     // constructors/statics may execute while registering the trusted module;
     // their external side effects cannot roll back. Initialize is skipped.
     if(gameplay) {
-        const auto& saved=data.at("gameplay");
         auto game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore);const auto current=SaveJson::parse(game->inspect());
         for(const auto* key:{"backend","assembly_sha256","type","schema"})require(current.at(key)==saved.at(key),"Snapshot gameplay module/schema differs from the trusted module.");
         game->edit(saved.at("values").dump());s.components->validate_module(game->component_schemas());

@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-06",
+  "engine_version": "0.0.39-development",
+  "scope": "Native source snapshot validation without loading gameplay code; exact trusted restore remains required.",
+  "sources": {
+    "include/poima/runtime.hpp": "e46bbda7ccdaa47d79785bc9f19573bcd117d564bdced8e76cc7a5f96ae0cac3",
+    "src/runtime_disabled.cpp": "aa1016856b55c2b143cbed45a74c5b78b34ee81d2986d9a892b0b8058663945e",
+    "src/runtime_save.inc": "153647bf1260741a662872db658447340e081779d003290924ae7ec14f887bc0",
+    "tests/runtime_save_gameplay_native.cpp": "c0115fc07b49015d3aadc9af5810f1570c4bbeb50e45d76ec558a7f0f355817e",
+    "tests/runtime_save_native.cpp": "0c8425b8c3079d90cdef47383e069158877c7364847f975c773057dd40ad5553",
+    "tests/fixtures/runtime_save_gameplay/SaveProbe.cs": "9200b36afb31d6e691dab84d3e9d777f745b624944e01ddf40a18d122a010662"
+  },
+  "qualification": {
+    "Windows": {
+      "passed": true,
+      "data_suite": true,
+      "compiled_backends": [
+        "CoreCLR",
+        "NativeAOT"
+      ],
+      "rejection_cases_per_backend": 16,
+      "restore_iterations_per_backend": 40,
+      "native_artifact_sha256": "bb0e517d718d453be55f16159ea2fc77b62bbc87cae2dc17e4576b4e44a7ce41"
+    },
+    "Linux": {
+      "passed": true,
+      "data_suite": true,
+      "compiled_backends": [
+        "CoreCLR",
+        "NativeAOT"
+      ],
+      "rejection_cases_per_backend": 16,
+      "restore_iterations_per_backend": 40,
+      "native_artifact_sha256": "38819f12596d740632050ea43eb23767155aeaabf0b00fa553773527117335ca",
+      "toolchain": "GCC 16.2.0",
+      "toolchain_unchanged": true,
+      "disabled_runtime_syntax": true
+    }
+  },
+  "checks": [
+    "Synthetic source metadata with unavailable executable validates; exact restore without trusted code still rejects.",
+    "Source checksum, complete values, kinds, entity references, component schema binding, saved payloads and reconstructed local transforms are checked.",
+    "Real compiled saves validate with unchanged module counts and live snapshot; armed Initialize guard rejects ordinary initialization, while restore bypasses Initialize.",
+    "Exact restore retains backend, image, type and complete schema matching and actual fixed-tick continuation."
+  ],
+  "limitations": [
+    "Source validation and unchanged exact restore only; not schema migration.",
+    "No new GUI, GPU, package activation, or save-performance qualification.",
+    "Validation reconstructs and discards bounded native state; it is not allocation-free or cheap metadata inspection.",
+    "The caller supplies the trusted source definition and content identity; this low-level API does not independently authenticate that asset closure."
+  ]
+}

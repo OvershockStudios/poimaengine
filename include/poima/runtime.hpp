@@ -182,6 +182,10 @@ struct RuntimeControlResult {
 class Runtime {
     struct Impl;
     std::unique_ptr<Impl> impl_;
+    // Detached source restoration shared by validation and exact code binding.
+    static std::unique_ptr<Runtime> restore_snapshot_data(const RuntimeDefinition& definition,
+        const std::string& content_sha256,const std::string& bytes,
+        std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision);
 public:
     static constexpr double fixed_dt=1.0/60.0;
     static bool available();
@@ -202,6 +206,11 @@ public:
     // Loading stages a separate world; it never modifies an existing Runtime.
     // Solver/contact caches and presentation resources are reconstructed.
     std::string save_snapshot(const std::string& content_sha256) const;
+    // Validates the complete source checkpoint without loading gameplay code.
+    // Reconstructs and discards bounded native state; does not publish a world,
+    // prove executable compatibility, or authorize a changed-schema restore.
+    static void validate_snapshot(const RuntimeDefinition& definition,
+        const std::string& content_sha256,const std::string& bytes);
     static std::unique_ptr<Runtime> from_snapshot(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
         const std::optional<GameplayConfig>& gameplay=std::nullopt);
