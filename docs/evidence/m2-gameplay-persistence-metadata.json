@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-06",
+  "engine_version": "0.0.39-development",
+  "scope": "Opt-in persistent scalar-field metadata, capability negotiation and unchanged exact restore.",
+  "sources": {
+    "include/poima/gameplay_compatibility.hpp": "d626bc0533f2d2e390c8e0d577de7551f4d0c6da2e2e9dd29124f4d9c5171e0d",
+    "src/native_gameplay_artifact.cpp": "5d62e44aa9f6946e1ae0331cf0ac03717cd05346f14066eb955daa58dd584599",
+    "src/project.cpp": "668911316843cf925b5ec704532f98369e5d20d5e80c7d4296285a4f81da72da",
+    "scripts/publish_native_gameplay.py": "e3e699bdcada67947e0db5df5f314e1a0a443bf9b27697e5fa9f835b4c125f9a",
+    "cmake/runtime.json.in": "10d259a046582121410ccc332c70a02088d611cd9fe10b1c642487e0ba9bfa97",
+    "CMakeLists.txt": "d0ecbaa1151a98742b0fde760efc232e915a1ee1fdebe43c9290f1789af02e69",
+    "src/gameplay.cpp": "eb158f618717944f5246b08907c30c31c4964968b7fd411b34092080a04d0235",
+    "tests/gameplay_metadata_native.cpp": "4aab2b6e33346c31757c55a46f41d4f4277f075f41fbeef376be6279cf6ac293",
+    "tests/project_gameplay_contract.py": "4f98861b9d493f7bc17087435c8c489c90525cce76d1f83bace186f5df54c605",
+    "managed/Poima.ManagedBridge/Entry.cs": "747a1617d334f274a0c369863600ba315d27ddd40f14ebeab633ffaa539a88af",
+    "managed/Poima.NativeGame.Generator/Program.cs": "a3f7ffd1fc907971ac0016fa992d11f62b4830612e27b42fb9d78a31618abf31",
+    "tests/gameplay_persistence/Fixtures.cs": "f601f916ffd14a2f6af6f2060cd57a56934f8f30e5fa4f2f8c3ae04b8653254d",
+    "managed/Poima.Gameplay/Persistence.cs": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2",
+    "managed/Shared/PersistenceMetadata.cs": "953c5cbfef06b2b3ffa7814ee16b9486ecb6ac540358c8d9698829a5515206f8",
+    "managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj": "fca83a20df45dea4f10593b7503f774d37ea2a4beceb7cd3b4a4072d1806ee8e",
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098",
+    "tests/gameplay_persistence/Program.cs": "fe38f6c59b7b80671f9b3681bdafa8d476b308a753aa186bad2ae36b5f2b7007",
+    "tests/gameplay_persistence/GameplayPersistence.csproj": "70cf02b8e60a99cfe1540cd9fa1d217d733a7713a793d5b5d44a982153af4f5b",
+    "tests/gameplay_persistence_fixture/GameplayPersistenceFixture.csproj": "2481dcf4cc7a0da72dbe758510ed8d0aa72f333c282723e431aa191947d537fb"
+  },
+  "qualification": {
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "native_malformed_cases_per_platform": 70,
+    "managed_invalid_cases_per_platform": 21,
+    "managed_schema_parity": "Real bridge and NativeGame generator agree for literal defaults, zero defaults and unchanged legacy schema.",
+    "compiled_coreclr_types_per_platform": 3,
+    "compiled_native_aot_types_per_platform": 1,
+    "compiled_checks": [
+      "Restore-mode state remains zero until explicitly edited; metadata defaults do not invoke Initialize.",
+      "Explicit declared defaults reach complete typed native state without changing metadata.",
+      "Published fixture Initialize sets Count17, three ticks reach20; exact save/source validation/restore preserve schema, values and tick; two restored ticks reach22.",
+      "Independent restore leaves source checkpoint unchanged; module instances are released."
+    ],
+    "preserved_binary_cases_per_platform": 4,
+    "preserved_binary_scope": "Policy, old bridge/game, old NativeAOT and old game with current bridge/SDK; archived artifacts unchanged.",
+    "windows_package_suites": {
+      "executed": 28,
+      "skipped": 2,
+      "scope": "Preserved baseline and actual new persistent NativeAOT artifacts; preflight, export and resealed-bundle capability checks. Windows skips Linux symlink cases."
+    },
+    "native_schema_matches_across_platforms": true
+  },
+  "native_artifact_sha256": {
+    "Windows": "b203967c30efb84ace7266d4ef22ce0bfb21d185b537e6b66036e069d47867b5",
+    "Linux": "f2a7aa5ea570be87046d15c9bb360010ef6a59b8a37853e595e524ab21744397"
+  },
+  "limitations": [
+    "Metadata support does not implement changed-image/schema save migration or stable-ID development reload.",
+    "Exact save/Tick checks cover one small counter fixture, not a representative game or performance benchmark.",
+    "No new GUI, physical-device, console or installed-editor qualification."
+  ]
+}

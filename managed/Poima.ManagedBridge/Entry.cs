@@ -29,7 +29,8 @@ internal sealed class GameLoadContext(string path) : AssemblyLoadContext(isColle
 }
 internal sealed record FieldDescription(string name,string kind,int offset,int bytes);
 internal sealed record Manifest(ulong handle,string identity,string assembly_sha256,int bytes,FieldDescription[] fields,
-    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? components=null);
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? components=null,
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? persistent=null);
 internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes);
 public static unsafe class Entry
 {
@@ -108,8 +109,7 @@ public static unsafe class Entry
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)
                     throw new ArgumentException("Game classes must be stateless; declare mutable data in TState.");
-            var identity=type.GetCustomAttribute<GameModuleAttribute>()?.Identity;
-            if(string.IsNullOrWhiteSpace(identity) || identity.Length>128)throw new ArgumentException("GameModule needs an identity of 1..128 characters.");
+            var identity=PersistenceMetadata.GameIdentity(type);
             IGame game=(IGame)Activator.CreateInstance(type)!;Type state=game.StateType;
             if(!state.IsLayoutSequential || game.StateBytes<1 || game.StateBytes>65536 || Marshal.SizeOf(state)!=game.StateBytes)
                 throw new ArgumentException("State must have sequential blittable layout and contain 1..65536 bytes.");
@@ -121,7 +121,8 @@ public static unsafe class Entry
                 var (kind,size)=field.FieldType==typeof(int) ? ("int32",4) : field.FieldType==typeof(long) ? ("int64",8) : field.FieldType==typeof(float) ? ("float32",4) : field.FieldType==typeof(double) ? ("float64",8) : field.FieldType==typeof(EntityId) ? ("entity",16) : throw new ArgumentException($"Unsupported state field {field.Name}: use int, long, float, double or EntityId.");
                 descriptions.Add(new(field.Name,kind,Marshal.OffsetOf(state,field.Name).ToInt32(),size));
             }
-            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components);
+            var persistent=PersistenceMetadata.Read(state);
+            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent);
             string encoded=JsonSerializer.Serialize(manifest); // Stable bridge DTOs only; don't cache game Types in serialization.
             Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes));published=true;
         }

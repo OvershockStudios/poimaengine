@@ -12,6 +12,7 @@ namespace poima::gameplay_abi {
 inline constexpr std::uint32_t call_version=1,call_bytes=80;
 inline constexpr std::uint32_t services_version=7,services_bytes=176;
 inline constexpr const char* baseline_feature="baseline_v7";
+inline constexpr const char* persistence_feature="gameplay_persistence_v1";
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -23,6 +24,10 @@ struct Contract {
     std::uint32_t services_bytes=gameplay_abi::services_bytes;
     std::vector<std::string> features{baseline_feature};
 };
+
+inline Contract available_contract() {
+    Contract result;result.features.push_back(persistence_feature);return result;
+}
 
 // Existing compiled bridges/modules require exactly 176 bytes. Current engine
 // features use only this baseline, so expose a bounded view even when a host
@@ -52,10 +57,10 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
         return "Gameplay service table is shorter than the 176-byte baseline.";
     if(required.services_bytes>available.services_bytes)
         return "Runtime does not provide the required gameplay service prefix.";
-    if(required.features.empty())return "Gameplay requirements must declare baseline_v7.";
+    if(std::find(required.features.begin(),required.features.end(),baseline_feature)==required.features.end())return "Gameplay requirements must declare baseline_v7.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

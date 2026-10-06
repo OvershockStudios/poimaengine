@@ -262,6 +262,8 @@ Json project_summary(const Project& p) {
     return result;
 }
 gameplay_abi::Contract runtime_gameplay_contract(const Json& runtime) {
+    // Missing optional fields describe the historical baseline, not the
+    // capabilities of the exporter currently inspecting this runtime.
     gameplay_abi::Contract result;
     require(runtime.contains("gameplay_services_version"),"Native gameplay requires a runtime service compatibility epoch.");
     result.services_version=static_cast<std::uint32_t>(integer(runtime.at("gameplay_services_version"),UINT32_MAX));

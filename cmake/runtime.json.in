@@ -6,7 +6,7 @@
   "gameplay_call_version": 1,
   "gameplay_call_bytes": 80,
   "gameplay_services_bytes": 176,
-  "gameplay_features": ["baseline_v7"],
+  "gameplay_features": ["baseline_v7", "gameplay_persistence_v1"],
   "target_os": "@CMAKE_SYSTEM_NAME@",
   "target_arch": "@POIMA_TARGET_ARCH@",
   "executable": "bin/poima@CMAKE_EXECUTABLE_SUFFIX@",

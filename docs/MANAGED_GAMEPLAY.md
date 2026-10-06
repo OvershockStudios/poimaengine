@@ -4,6 +4,8 @@ Poima can load handwritten C# into its native EnTT/Jolt runtime, inspect and edi
 
 This is the first integrated gameplay SDK subset: one `Game<TState>` module per runtime, with input, entity observation, raycasts, kinematic movement, sound events and animation control. C++20 remains the engine language. CoreCLR supplies JIT compilation and garbage collection during development. A bounded [Native AOT distribution route](NATIVE_GAMEPLAY.md) compiles the same game source for Linux and Windows. [Custom scalar components](CUSTOM_COMPONENTS.md) provide native-owned per-entity data with generated C# accessors. Production deployment qualification and the complete SDK remain unfinished.
 
+Opt-in [persistent field metadata](GAMEPLAY_PERSISTENCE.md) assigns stable IDs and literal defaults to global state without changing normal initialization or the current exact-save restore rules.
+
 ## Build
 
 From the repository root, obtain the optional workspace-local Linux .NET SDK if it is absent:

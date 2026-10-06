@@ -14,6 +14,7 @@
 #include <map>
 #include <limits>
 #include <sstream>
+#include <set>
 #include <stdexcept>
 #if POIMA_MANAGED_GAMEPLAY || POIMA_NATIVE_GAMEPLAY
 #ifdef _WIN32
@@ -137,22 +138,61 @@ PoimaEntityId gameplay_id(const std::string& text) {
     parse(text.data(),text.data()+16,value.high);parse(text.data()+16,text.data()+32,value.low);return value;
 }
 std::string gameplay_id(PoimaEntityId id) { std::ostringstream out;out<<std::hex<<std::setfill('0')<<std::setw(16)<<id.high<<std::setw(16)<<id.low;return out.str(); }
+static Json apply_values(const Json& metadata,std::vector<std::uint64_t>& storage,const std::string& patch);
 void validate_gameplay_schema(const std::string& schema) {
-    check(schema.size()<=1024*1024,"Gameplay schema exceeds 1 MiB.");const auto m=Json::parse(schema);
-    check(m.is_object() && (m.size()==3 || (m.size()==4 && m.contains("components"))) && m.contains("identity") && m.contains("bytes") && m.contains("fields"),"Invalid gameplay schema object.");
+    check(schema.size()<=1024*1024,"Gameplay schema exceeds 1 MiB.");
+    std::vector<std::set<std::string>> keys;std::size_t tokens=0;
+    const auto m=Json::parse(schema,[&](int depth,Json::parse_event_t event,Json& value) {
+        check(depth<=64 && ++tokens<=100000,"Gameplay schema nesting/token budget exceeded.");
+        if(event==Json::parse_event_t::object_start)keys.emplace_back();
+        if(event==Json::parse_event_t::key)check(!keys.empty() && keys.back().insert(value.get<std::string>()).second,"Duplicate gameplay schema JSON key.");
+        if(event==Json::parse_event_t::object_end)keys.pop_back();
+        return true;
+    });
+    check(m.is_object() && m.size()==3+std::size_t(m.contains("components"))+std::size_t(m.contains("persistent")) && m.contains("identity") && m.contains("bytes") && m.contains("fields"),"Invalid gameplay schema object.");
     if(m.contains("components")) (void)components::parse_manifest(Json{{"format","poima.components"},{"version",1},{"schemas",m.at("components")}}.dump());
     check(m.at("identity").is_string(),"Gameplay identity must be a string.");const auto identity=m.at("identity").get<std::string>();
     check(!identity.empty() && identity.size()<=128 && identity.find('\0')==std::string::npos,"Invalid gameplay identity.");
     check(m.at("bytes").is_number_integer() && m.at("bytes")>0 && m.at("bytes")<=65536,"Invalid gameplay state size.");
     const auto bytes=m.at("bytes").get<std::size_t>();const auto& fields=m.at("fields");check(fields.is_array() && !fields.empty() && fields.size()<=128,"Invalid gameplay state fields.");
-    std::vector<bool> used(bytes);std::map<std::string,int> names;const std::map<std::string,std::size_t> sizes{{"int32",4},{"int64",8},{"float32",4},{"float64",8},{"entity",16}};
+    std::vector<bool> used(bytes);std::map<std::string,std::string> names;const std::map<std::string,std::size_t> sizes{{"int32",4},{"int64",8},{"float32",4},{"float64",8},{"entity",16}};
     for(const auto& field:fields) {
         check(field.is_object() && field.size()==4 && field.contains("name") && field.contains("kind") && field.contains("offset") && field.contains("bytes"),"Invalid gameplay field object.");
         check(field.at("name").is_string() && field.at("kind").is_string(),"Invalid gameplay field name or kind.");const auto name=field.at("name").get<std::string>(),kind=field.at("kind").get<std::string>();
-        check(!name.empty() && name.size()<=64 && name.find('\0')==std::string::npos && names.emplace(name,1).second,"Invalid or duplicate gameplay field name.");
+        check(!name.empty() && name.size()<=64 && name.find('\0')==std::string::npos && names.emplace(name,kind).second,"Invalid or duplicate gameplay field name.");
         check(field.at("offset").is_number_integer() && field.at("offset")>=0 && field.at("offset")<=bytes && field.at("bytes").is_number_integer() && sizes.contains(kind) && field.at("bytes")==sizes.at(kind),"Invalid gameplay field layout.");
         const auto offset=field.at("offset").get<std::size_t>(),size=sizes.at(kind);check(size<=bytes-offset,"Gameplay field exceeds state.");
         for(std::size_t i=offset;i<offset+size;++i) {check(!used[i],"Overlapping gameplay fields.");used[i]=true;}
+    }
+    if(m.contains("persistent")) {
+        const auto& persistent=m.at("persistent");
+        check(persistent.is_object() && persistent.size()==4 && persistent.contains("format") && persistent.contains("version") && persistent.contains("revision") && persistent.contains("fields"),"Invalid gameplay persistent metadata object.");
+        check(persistent.at("format")=="poima.gameplay-persistence" && persistent.at("version").is_number_integer() && persistent.at("version")==1,"Unsupported gameplay persistent metadata format/version.");
+        check(persistent.at("revision").is_number_integer() && persistent.at("revision")>0 && persistent.at("revision")<=INT32_MAX,"Gameplay persistence revision must be 1..2147483647.");
+        const auto& entries=persistent.at("fields");
+        check(entries.is_array() && entries.size()==fields.size(),"Persistent metadata must describe every gameplay field exactly once.");
+        std::string previous;Json defaults=Json::object();
+        for(const auto& field:entries) {
+            check(field.is_object() && field.size()==4 && field.contains("id") && field.contains("name") && field.contains("kind") && field.contains("default"),"Invalid persistent gameplay field object.");
+            check(field.at("id").is_string() && field.at("name").is_string() && field.at("kind").is_string(),"Persistent gameplay ID/name/kind must be text.");
+            const auto id=field.at("id").get<std::string>(),name=field.at("name").get<std::string>(),kind=field.at("kind").get<std::string>();
+            check(id.size()==32 && id.find_first_not_of("0123456789abcdef")==std::string::npos && id!=std::string(32,'0') && (previous.empty() || previous<id),"Persistent gameplay IDs must be nonzero lowercase hex, unique and sorted.");previous=id;
+            check(names.contains(name) && names.at(name)==kind && !defaults.contains(name),"Persistent gameplay field does not match its unique layout name/kind.");
+            const auto& value=field.at("default");
+            if(kind=="int64") {
+                check(value.is_string(),"Persistent int64 defaults require canonical decimal strings.");const auto text=value.get<std::string>();std::int64_t integer=0;
+                const auto [end,error]=std::from_chars(text.data(),text.data()+text.size(),integer);
+                check(error==std::errc{} && end==text.data()+text.size() && std::to_string(integer)==text,"Persistent int64 default is not canonical.");
+            }else if(kind=="entity")check(value.is_string() && value==std::string(32,'0'),"Persistent entity defaults must be null IDs.");
+            else if(kind=="float32" || kind=="float64") {
+                check(value.is_number(),"Persistent floating defaults must be numeric.");const auto number=value.get<double>();
+                check(std::isfinite(number) && !(number==0 && std::signbit(number)),"Persistent floating defaults must be finite with positive zero.");
+                if(kind=="float32")check(std::abs(number)<=std::numeric_limits<float>::max() && !(static_cast<float>(number)==0 && std::signbit(number)),"Persistent float32 default overflows or normalizes to negative zero.");
+            }
+            defaults[name]=value;
+        }
+        std::vector<std::uint64_t> storage((bytes+7)/8);
+        (void)apply_values(m,storage,defaults.dump()); // Existing typed bounds, no schema-validation recursion.
     }
 }
 struct Gameplay::Impl {

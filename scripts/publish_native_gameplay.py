@@ -141,7 +141,7 @@ def main():
         descriptor = dict(format='poima.native-gameplay', version=2, engine_version=version,
                           target_os='Windows' if rid == 'win-x64' else 'Linux', target_arch='x86_64',
                           call_version=1, call_bytes=80, services_version=7, minimum_services_bytes=176,
-                          required_features=['baseline_v7'], entry='poima_gameplay_entry',
+                          required_features=['baseline_v7'] + (['gameplay_persistence_v1'] if 'persistent' in schema else []), entry='poima_gameplay_entry',
                           library=library_name, identity=schema['identity'], type=args.game_type,
                           schema=schema, files=files)
         (stage / 'native-gameplay.json').write_text(json.dumps(descriptor, indent=2) + '\n', encoding='utf-8')

@@ -137,13 +137,16 @@ NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename
             result.requirements.features.push_back(name);
         }
     }
-    const auto compatibility=gameplay_abi::compatibility_error(result.requirements,gameplay_abi::Contract{});
+    const auto compatibility=gameplay_abi::compatibility_error(result.requirements,gameplay_abi::available_contract());
     check(compatibility.empty(),compatibility);
     result.descriptor=text(path);result.descriptor_sha256=hash(bytes);result.root=text(root);result.target_os=spec.at("target_os");result.target_arch=spec.at("target_arch");
     check(spec.at("identity").is_string() && spec.at("type").is_string(),"Native gameplay identity/type must be text.");
     result.identity=spec.at("identity");result.type=spec.at("type");
     check(!result.type.empty() && result.type.size()<=512 && result.type.find('\0')==std::string::npos,"Invalid native gameplay type.");
     result.schema=spec.at("schema").dump();validate_gameplay_schema(result.schema);
+    if(spec.at("schema").contains("persistent"))
+        check(std::find(result.requirements.features.begin(),result.requirements.features.end(),gameplay_abi::persistence_feature)!=result.requirements.features.end(),
+              "Persistent gameplay schema requires gameplay_persistence_v1.");
     check(spec.at("schema").at("identity")==spec.at("identity"),"Native gameplay descriptor/schema identity differs.");
     const auto library=relative(spec.at("library")),descriptor_name=relative(text(path.filename()));
     check(spec.at("files").is_array() && !spec.at("files").empty() && spec.at("files").size()<=256,"Native gameplay inventory must contain 1..256 files.");

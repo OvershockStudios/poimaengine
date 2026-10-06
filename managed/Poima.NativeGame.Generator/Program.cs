@@ -29,8 +29,7 @@ for(Type? type=game;type!=null;type=type.BaseType)
     if(type.IsGenericType && type.GetGenericTypeDefinition()==typeof(Game<>))state=type.GetGenericArguments()[0];
 }
 if(state==null || !state.IsPublic || state.IsGenericType || !state.IsLayoutSequential)throw new ArgumentException("Expected Game<TState> with public non-generic sequential state.");
-string identity=game.GetCustomAttribute<GameModuleAttribute>()?.Identity??"";
-if(string.IsNullOrWhiteSpace(identity) || identity.Length>128)throw new ArgumentException("Invalid GameModule identity.");
+string identity=PersistenceMetadata.GameIdentity(game);
 int bytes=Marshal.SizeOf(state);if(bytes is <1 or >65536)throw new ArgumentException("State exceeds 1..65536 bytes.");
 var fields=state.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).OrderBy(f=>f.Name,StringComparer.Ordinal).ToArray();
 if(fields.Length is <1 or >128 || fields.Any(f=>!f.IsPublic || f.IsInitOnly || f.Name.Length>64))throw new ArgumentException("Expected 1..128 public mutable state fields.");
@@ -40,6 +39,7 @@ var schemaFields=fields.Select(f=> {
 }).ToArray();
 var schema=JsonSerializer.Serialize(new {identity,bytes,fields=schemaFields});
 if(componentSchemas is { } components)schema=schema[..^1]+",\"components\":"+components.GetRawText()+"}";
+if(PersistenceMetadata.Read(state) is { } persistent)schema=schema[..^1]+",\"persistent\":"+persistent.GetRawText()+"}";
 string Name(Type type)=>"global::"+string.Join(".",type.FullName!.Replace('+','.').Split('.').Select(s=>"@"+s));
 string assertions=string.Join(" &&\n",schemaFields.Select(f=>$"(byte*)&state.@{f.name}-(byte*)&state=={f.offset}"));
 string source=$$"""

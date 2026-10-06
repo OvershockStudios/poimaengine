@@ -183,6 +183,70 @@ class GameplayProjects(unittest.TestCase):
                 self.descriptor.write_text(json.dumps(candidate)); self.inspect(False)
         self.descriptor.write_text(json.dumps(good)); self.inspect()
 
+    def persistent_fixture(self):
+        descriptor = self.artifact_fixture()
+        descriptor.update(version=2, call_bytes=80, minimum_services_bytes=176,
+                          required_features=['baseline_v7', 'gameplay_persistence_v1'])
+        descriptor['schema']['persistent'] = dict(format='poima.gameplay-persistence', version=1, revision=1,
+            fields=[dict(id=f'{index:032x}', name=name, kind=kind, default=default)
+                    for index, (name, kind, default) in enumerate([
+                        ('Counter', 'int32', 0), ('Distance', 'float64', 0.0), ('Rig', 'entity', '0'*32)], 1)])
+        return descriptor
+
+    def test_persistent_schema_requires_explicit_capability(self):
+        good = self.persistent_fixture()
+        self.descriptor.write_text(json.dumps(good))
+        self.assertEqual(self.inspect()['gameplay']['requirements']['required_features'], good['required_features'])
+        for features in [['baseline_v7'], ['gameplay_persistence_v1'],
+                         ['baseline_v7', 'gameplay_persistence_v1', 'unknown'],
+                         ['baseline_v7', 'gameplay_persistence_v1', 'gameplay_persistence_v1']]:
+            with self.subTest(features=features):
+                candidate=copy.deepcopy(good);candidate['required_features']=features
+                self.descriptor.write_text(json.dumps(candidate));self.inspect(False)
+        legacy=copy.deepcopy(good);legacy['version']=1
+        for key in ['call_bytes', 'minimum_services_bytes', 'required_features']:legacy.pop(key)
+        self.descriptor.write_text(json.dumps(legacy));self.inspect(False)
+        # Declaring an unused supported feature is conservative and valid.
+        declared=copy.deepcopy(good);declared['schema'].pop('persistent')
+        self.descriptor.write_text(json.dumps(declared));self.inspect()
+        self.descriptor.write_text(json.dumps(good));self.inspect()
+
+    def test_persistent_feature_required_at_export_and_resealed_bundle_inspection(self):
+        artifact=self.persistent_fixture();self.descriptor.write_text(json.dumps(artifact))
+        runtime=self.root/'Persistence runtime';(runtime/'bin').mkdir(parents=True)
+        notices=runtime/'share/poima';notices.mkdir(parents=True)
+        for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md']:(notices/name).write_text('Metadata fixture only.')
+        executable='bin/poima.exe' if self.target=='Windows' else 'bin/poima'
+        (runtime/executable).write_bytes(b'Metadata-only runtime; never executed.');(runtime/executable).chmod(0o755)
+        spec=dict(format='poima.runtime', version=1, engine_version=self.version,
+                  target_os=self.target, target_arch='x86_64', executable=executable,
+                  gameplay_services_version=7, gameplay_call_version=1, gameplay_call_bytes=80,
+                  gameplay_services_bytes=176, gameplay_features=['baseline_v7', 'gameplay_persistence_v1'],
+                  features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
+        path=runtime/'runtime.json';path.write_text(json.dumps(spec));bundle=self.root/'Persistence bundle'
+        self.cli('project','build',native(self.manifest),'--runtime',native(runtime),'--output',native(bundle))
+        self.cli('game','inspect',native(bundle/'game.json'));game=json.loads((bundle/'game.json').read_text())
+        for index,features in enumerate([['baseline_v7'], ['baseline_v7', 'future_optional']]):
+            changed=copy.deepcopy(spec);changed['gameplay_features']=features;path.write_text(json.dumps(changed))
+            output=self.root/f'Unsupported persistence {index}';before=tree(runtime)
+            self.cli('project','build',native(self.manifest),'--runtime',native(runtime),'--output',native(output),success=False)
+            self.assertFalse(output.exists());self.assertEqual(tree(runtime),before)
+            bundled=bundle/'runtime/runtime.json';bundled.write_bytes(path.read_bytes())
+            resealed=copy.deepcopy(game);row=next(row for row in resealed['files'] if row['path']=='runtime/runtime.json')
+            row.update(size=bundled.stat().st_size,sha256=digest(bundled));(bundle/'game.json').write_text(json.dumps(resealed))
+            before=tree(bundle);self.cli('game','inspect',native(bundle/'game.json'),success=False);self.assertEqual(tree(bundle),before)
+        # Missing descriptor requirements cannot be hidden by resealing inventory.
+        (bundle/'runtime/runtime.json').write_text(json.dumps(spec))
+        # Bundle layout is defined by the manifest, not the source project path.
+        descriptor=bundle/next(row['path'] for row in game['files'] if row['path'].endswith('/native-gameplay.json'))
+        changed=json.loads(descriptor.read_text());changed['required_features']=['baseline_v7'];descriptor.write_text(json.dumps(changed))
+        resealed=copy.deepcopy(game)
+        for row in resealed['files']:
+            if row['path'] in ['runtime/runtime.json', descriptor.relative_to(bundle).as_posix()]:
+                item=bundle/row['path'];row.update(size=item.stat().st_size,sha256=digest(item))
+        (bundle/'game.json').write_text(json.dumps(resealed));before=tree(bundle)
+        self.cli('game','inspect',native(bundle/'game.json'),success=False);self.assertEqual(tree(bundle),before)
+
     def test_explicit_runtime_contract_export_and_inspection_share_policy(self):
         artifact = self.artifact_fixture()
         artifact.update(version=2, engine_version='another-compatible-build', call_bytes=80,
