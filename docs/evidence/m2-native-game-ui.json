@@ -1,0 +1,1073 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "scope": "Native UI presentation foundation; no gameplay UI service or installed editor update.",
+  "sources": {
+    "CMakeLists.txt": "48249333471d52f8dfe8e7781fcd0a1ee0c3e469c4ca565c6fb3cbe3c11a7e16",
+    "cmake/game_ui.cmake": "f56cf903b917f118c7cbe2c577ceb1fbad21c219e26d4fb61acba2d44583a55e",
+    "cmake/render_smoke.cmake": "2e081433fe4134e4fd63a937cee2e1c7e0e00945fb37b90bdc4920478bafe56a",
+    "include/poima/scene.hpp": "83e80d4536026cdcd9eb4ccbcbcc00466ebf6d0580a81df5d2e4600b694ddccf",
+    "include/poima/ui.hpp": "d23ef452818236c6330bf04b53459a78509feb09bc75a3557eed9c50df8621a9",
+    "include/poima/ui_document.hpp": "e478eda74a1ec9c8f194fcfc7eadfec3bde78ade089f9d9c0234c64dddf13742",
+    "src/ui_frame.cpp": "ef217be90009a03fcfa997c5240fcac3b42ceb98d40821c32b304f5c4b28b5d8",
+    "src/ui_document.cpp": "8441e8b9b73b730c623423ef5d0f78e48b0a057500ebbdd05394263caae9ac48",
+    "src/render_smoke.cpp": "19e6c3431062b95660e7a8b383d598533d037bfff886a5235df06dba3048cc46",
+    "shaders/game_ui.hlsl": "dce1cf05d7612a4f642946094c5fbcd6a8512add68d87f4434545f3f2206b1c0",
+    "tests/ui_frame.cpp": "6df67220d16e0bf20c2d8de424930d5f0dcdc6e84fc02b917618ed2efee8eca4",
+    "tests/ui_document.cpp": "8a76190b7712e953405e13de1d41b3b6c3b597d5c641b3b77f5af8a830b3c1b8",
+    "tests/ui_capture_native.cpp": "2fd4d93817a02ff4d2eeedb389de47feec01612e4b2f4cc966c746c3fb85b3bd",
+    "tests/ui_capture.py": "4d340608df457658e8dc78611229730caa5e960755353efc00bdf90470416f0c",
+    "tests/ui_document_capture.cpp": "d907033e2899b413a0c2a54aaf1e167a9491e7c88363b69d04c453ae96134ec5",
+    "examples/ui/hud.rml": "6f956b275a183b4d33b33156855a7ab0c59570848a02192fd1394f6d5caf7c1e",
+    "third_party/inter/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+    "third_party/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c"
+  },
+  "artifacts": {
+    "build/game-ui/poima-ui-frame-test": {
+      "bytes": 475072,
+      "sha256": "fe9bbbcfe900fecbf09930e4644c57e6099702b2737b0e3c0540698e1236dac8"
+    },
+    "build/game-ui/poima-ui-document-test": {
+      "bytes": 64914288,
+      "sha256": "e60d36c4de1d8a4e38dd5356156a1674dec07f26f4c505e203cc494a718406a7"
+    },
+    "build/headless/poima-ui-frame-test": {
+      "bytes": 475080,
+      "sha256": "29a3969a1b3e9ff621a896a48fd0f6e263d9117576af8ec2be6c94d4e25eb441"
+    },
+    "build/headless/poima-scene-math-test": {
+      "bytes": 78528,
+      "sha256": "32b9c7befcee0a0127f6001872adc729ca9a2b18bef0aaac205d0c911d1f009b"
+    },
+    "build/headless/poima-shadow-math-test": {
+      "bytes": 654256,
+      "sha256": "675f703446b82fc50e972dd3cbf0df4952e65792aa5b823455a18650943ca083"
+    },
+    "build/headless/poima-visibility-math-test": {
+      "bytes": 272480,
+      "sha256": "2441b66a39474b581616424863c69c65b6934c81632dff10262663fbb900cff9"
+    },
+    "build/windows-runtime/poima-ui-frame-test.exe": {
+      "bytes": 2130944,
+      "sha256": "b3cdd79ed9576e35025e55792202cf0754b424f0d10047b72892a194bddb6129"
+    },
+    "build/windows-runtime/poima-ui-document-test.exe": {
+      "bytes": 53417472,
+      "sha256": "457277b54561e6050ca4de0b919a06573187614862c0d6bc30d250bfa65e32ab"
+    },
+    "build/windows-runtime/poima-ui-capture-test.exe": {
+      "bytes": 50616320,
+      "sha256": "199f4ab4ab475edca1f6ece6d323e65f2919240738406b005a12a48c5108b63c"
+    },
+    "build/windows-runtime/poima-ui-document-capture-test.exe": {
+      "bytes": 101481472,
+      "sha256": "62219ddbd3ac4559dae82c918c9342f64ceb814d1a13057d206545f4e2d26fbb"
+    }
+  },
+  "dependencies": {
+    "RmlUi": {
+      "version": "6.3",
+      "commit": "ba95ffe8bfb6370efb2cdcca927eaad4710c5413",
+      "url": "https://codeload.github.com/mikke89/RmlUi/tar.gz/ba95ffe8bfb6370efb2cdcca927eaad4710c5413",
+      "archive_sha256": "1541ef5577115e9368f8ed389b29f0925ef6572f326a33d378ea16c3cfa2cde8"
+    },
+    "FreeType": {
+      "version": "2.14.3",
+      "url": "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz",
+      "archive_sha256": "36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f",
+      "selected_license": "FTL"
+    },
+    "font": "Existing Inter Regular 4.1; OFL notices retained",
+    "isolated_native_font_load_and_install_checks": {
+      "linux": {
+        "passed": true,
+        "installed_files": [
+          "share/poima/fonts/Inter-Regular.ttf",
+          "share/poima/licenses/Inter/LICENSE.txt",
+          "share/poima/licenses/game_ui/FreeType-BDF.txt",
+          "share/poima/licenses/game_ui/FreeType-FTL.TXT",
+          "share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt",
+          "share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt",
+          "share/poima/licenses/game_ui/FreeType-LICENSE.TXT",
+          "share/poima/licenses/game_ui/FreeType-PCF.txt",
+          "share/poima/licenses/game_ui/FreeType-hash.txt",
+          "share/poima/licenses/game_ui/FreeType-zlib.txt",
+          "share/poima/licenses/game_ui/PROVENANCE.json",
+          "share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt",
+          "share/poima/licenses/game_ui/RmlUi-LICENSE.txt"
+        ]
+      },
+      "windows": {
+        "passed": true,
+        "installed_files": [
+          "share/poima/fonts/Inter-Regular.ttf",
+          "share/poima/licenses/Inter/LICENSE.txt",
+          "share/poima/licenses/game_ui/FreeType-BDF.txt",
+          "share/poima/licenses/game_ui/FreeType-FTL.TXT",
+          "share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt",
+          "share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt",
+          "share/poima/licenses/game_ui/FreeType-LICENSE.TXT",
+          "share/poima/licenses/game_ui/FreeType-PCF.txt",
+          "share/poima/licenses/game_ui/FreeType-hash.txt",
+          "share/poima/licenses/game_ui/FreeType-zlib.txt",
+          "share/poima/licenses/game_ui/PROVENANCE.json",
+          "share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt",
+          "share/poima/licenses/game_ui/RmlUi-LICENSE.txt"
+        ]
+      }
+    }
+  },
+  "linux": {
+    "ui_enabled_ctest": [
+      "ui_frame_native",
+      "ui_document_native"
+    ],
+    "default_headless_ctest": [
+      "ui_frame_native",
+      "scene_math",
+      "shadow_math",
+      "visibility_math"
+    ],
+    "passed": true
+  },
+  "windows_native": [
+    {
+      "name": "frame",
+      "exit_code": 0,
+      "stdout": "UI packets: ownership, geometry/texture budgets, transforms, scissor and linear premultiplied color passed.\n",
+      "stderr": "",
+      "binary_sha256": "b3cdd79ed9576e35025e55792202cf0754b424f0d10047b72892a194bddb6129"
+    },
+    {
+      "name": "document",
+      "exit_code": 0,
+      "stdout": "Native RmlUi document layout/atlas, pointer/semantic/focus actions, clipping/visibility, literal text, immutable packet/global font lifetime and unsupported-resource checks passed.\n",
+      "stderr": "",
+      "binary_sha256": "457277b54561e6050ca4de0b919a06573187614862c0d6bc30d250bfa65e32ab"
+    }
+  ],
+  "numeric_vulkan_captures": [
+    {
+      "exit_code": 0,
+      "stderr": "",
+      "gpu_index": 0,
+      "requested_samples": 1,
+      "passed": true,
+      "response": {
+        "baseline": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 240,
+          "samples": 1,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        },
+        "packet_revision": 7,
+        "ui": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 240,
+          "samples": 1,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        }
+      },
+      "probes": {
+        "opaque": {
+          "pixel": [
+            40,
+            40
+          ],
+          "expected": [
+            255,
+            0,
+            0
+          ],
+          "actual": [
+            255,
+            0,
+            0
+          ]
+        },
+        "linear_overlap": {
+          "pixel": [
+            90,
+            60
+          ],
+          "expected": [
+            187,
+            188,
+            0
+          ],
+          "actual": [
+            187,
+            188,
+            0
+          ]
+        },
+        "linear_alpha": {
+          "pixel": [
+            140,
+            80
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "actual": [
+            0,
+            188,
+            0
+          ]
+        },
+        "clip_inside": {
+          "pixel": [
+            200,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            0,
+            0,
+            255
+          ]
+        },
+        "clip_left": {
+          "pixel": [
+            185,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "clip_bottom": {
+          "pixel": [
+            210,
+            70
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "transformed": {
+          "pixel": [
+            40,
+            170
+          ],
+          "expected": [
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            0
+          ]
+        },
+        "transform_outside": {
+          "pixel": [
+            65,
+            170
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "premultiplied_texture": {
+          "pixel": [
+            120,
+            175
+          ],
+          "expected": [
+            92,
+            92,
+            92
+          ],
+          "actual": [
+            92,
+            92,
+            92
+          ]
+        },
+        "background": {
+          "pixel": [
+            300,
+            220
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "image_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+      "baseline_sha256": "46a8e4089a9f9469b68684c3591a8aa67f448be86965cba5774836b5595c6006"
+    },
+    {
+      "exit_code": 0,
+      "stderr": "",
+      "gpu_index": 0,
+      "requested_samples": 4,
+      "passed": true,
+      "response": {
+        "baseline": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 240,
+          "samples": 4,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        },
+        "packet_revision": 7,
+        "ui": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 240,
+          "samples": 4,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        }
+      },
+      "probes": {
+        "opaque": {
+          "pixel": [
+            40,
+            40
+          ],
+          "expected": [
+            255,
+            0,
+            0
+          ],
+          "actual": [
+            255,
+            0,
+            0
+          ]
+        },
+        "linear_overlap": {
+          "pixel": [
+            90,
+            60
+          ],
+          "expected": [
+            187,
+            188,
+            0
+          ],
+          "actual": [
+            187,
+            188,
+            0
+          ]
+        },
+        "linear_alpha": {
+          "pixel": [
+            140,
+            80
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "actual": [
+            0,
+            188,
+            0
+          ]
+        },
+        "clip_inside": {
+          "pixel": [
+            200,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            0,
+            0,
+            255
+          ]
+        },
+        "clip_left": {
+          "pixel": [
+            185,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "clip_bottom": {
+          "pixel": [
+            210,
+            70
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "transformed": {
+          "pixel": [
+            40,
+            170
+          ],
+          "expected": [
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            0
+          ]
+        },
+        "transform_outside": {
+          "pixel": [
+            65,
+            170
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "premultiplied_texture": {
+          "pixel": [
+            120,
+            175
+          ],
+          "expected": [
+            92,
+            92,
+            92
+          ],
+          "actual": [
+            92,
+            92,
+            92
+          ]
+        },
+        "background": {
+          "pixel": [
+            300,
+            220
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "image_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+      "baseline_sha256": "46a8e4089a9f9469b68684c3591a8aa67f448be86965cba5774836b5595c6006"
+    },
+    {
+      "exit_code": 0,
+      "stderr": "",
+      "gpu_index": 1,
+      "requested_samples": 1,
+      "passed": true,
+      "response": {
+        "baseline": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 240,
+          "samples": 1,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        },
+        "packet_revision": 7,
+        "ui": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 240,
+          "samples": 1,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        }
+      },
+      "probes": {
+        "opaque": {
+          "pixel": [
+            40,
+            40
+          ],
+          "expected": [
+            255,
+            0,
+            0
+          ],
+          "actual": [
+            255,
+            0,
+            0
+          ]
+        },
+        "linear_overlap": {
+          "pixel": [
+            90,
+            60
+          ],
+          "expected": [
+            187,
+            188,
+            0
+          ],
+          "actual": [
+            187,
+            188,
+            0
+          ]
+        },
+        "linear_alpha": {
+          "pixel": [
+            140,
+            80
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "actual": [
+            0,
+            188,
+            0
+          ]
+        },
+        "clip_inside": {
+          "pixel": [
+            200,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            0,
+            0,
+            255
+          ]
+        },
+        "clip_left": {
+          "pixel": [
+            185,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "clip_bottom": {
+          "pixel": [
+            210,
+            70
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "transformed": {
+          "pixel": [
+            40,
+            170
+          ],
+          "expected": [
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            0
+          ]
+        },
+        "transform_outside": {
+          "pixel": [
+            65,
+            170
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "premultiplied_texture": {
+          "pixel": [
+            120,
+            175
+          ],
+          "expected": [
+            92,
+            92,
+            92
+          ],
+          "actual": [
+            92,
+            92,
+            92
+          ]
+        },
+        "background": {
+          "pixel": [
+            300,
+            220
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "image_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+      "baseline_sha256": "46a8e4089a9f9469b68684c3591a8aa67f448be86965cba5774836b5595c6006"
+    },
+    {
+      "exit_code": 0,
+      "stderr": "",
+      "gpu_index": 1,
+      "requested_samples": 4,
+      "passed": true,
+      "response": {
+        "baseline": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 240,
+          "samples": 4,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        },
+        "packet_revision": 7,
+        "ui": {
+          "capture_written": true,
+          "detail": "Authored scene rendered through the bounded forward preview.",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 240,
+          "samples": 4,
+          "success": true,
+          "validation_errors": 0,
+          "width": 320
+        }
+      },
+      "probes": {
+        "opaque": {
+          "pixel": [
+            40,
+            40
+          ],
+          "expected": [
+            255,
+            0,
+            0
+          ],
+          "actual": [
+            255,
+            0,
+            0
+          ]
+        },
+        "linear_overlap": {
+          "pixel": [
+            90,
+            60
+          ],
+          "expected": [
+            187,
+            188,
+            0
+          ],
+          "actual": [
+            187,
+            188,
+            0
+          ]
+        },
+        "linear_alpha": {
+          "pixel": [
+            140,
+            80
+          ],
+          "expected": [
+            0,
+            188,
+            0
+          ],
+          "actual": [
+            0,
+            188,
+            0
+          ]
+        },
+        "clip_inside": {
+          "pixel": [
+            200,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            255
+          ],
+          "actual": [
+            0,
+            0,
+            255
+          ]
+        },
+        "clip_left": {
+          "pixel": [
+            185,
+            40
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "clip_bottom": {
+          "pixel": [
+            210,
+            70
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "transformed": {
+          "pixel": [
+            40,
+            170
+          ],
+          "expected": [
+            255,
+            255,
+            0
+          ],
+          "actual": [
+            255,
+            255,
+            0
+          ]
+        },
+        "transform_outside": {
+          "pixel": [
+            65,
+            170
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        },
+        "premultiplied_texture": {
+          "pixel": [
+            120,
+            175
+          ],
+          "expected": [
+            92,
+            92,
+            92
+          ],
+          "actual": [
+            92,
+            92,
+            92
+          ]
+        },
+        "background": {
+          "pixel": [
+            300,
+            220
+          ],
+          "expected": [
+            0,
+            0,
+            0
+          ],
+          "actual": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "image_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+      "baseline_sha256": "46a8e4089a9f9469b68684c3591a8aa67f448be86965cba5774836b5595c6006"
+    }
+  ],
+  "text_hud_captures": [
+    {
+      "exit_code": 0,
+      "stderr": "",
+      "passed": true,
+      "binary_sha256": "62219ddbd3ac4559dae82c918c9342f64ceb814d1a13057d206545f4e2d26fbb",
+      "report": {
+        "capture_written": true,
+        "detail": "Authored scene rendered through the bounded forward preview.",
+        "elements": [
+          {
+            "enabled": true,
+            "focused": false,
+            "hittable": false,
+            "id": "health",
+            "text": "Health 83 / 100",
+            "visible": true
+          },
+          {
+            "enabled": true,
+            "focused": false,
+            "hittable": false,
+            "id": "objective",
+            "text": "Find the survey marker",
+            "visible": true
+          },
+          {
+            "enabled": true,
+            "focused": true,
+            "hittable": true,
+            "id": "continue",
+            "text": "Continue",
+            "visible": true
+          },
+          {
+            "enabled": true,
+            "focused": false,
+            "hittable": true,
+            "id": "save",
+            "text": "Save",
+            "visible": true
+          }
+        ],
+        "gpu": "AMD Radeon(TM) Graphics",
+        "success": true,
+        "ui_draws": 9,
+        "ui_vertices": 276,
+        "validation_errors": 0
+      },
+      "image_sha256": "51f4e755c23c549dd8e4f9379e2f7db0193bc1a61c414f45caeb76a631cb7192"
+    },
+    {
+      "exit_code": 0,
+      "stderr": "",
+      "passed": true,
+      "binary_sha256": "62219ddbd3ac4559dae82c918c9342f64ceb814d1a13057d206545f4e2d26fbb",
+      "report": {
+        "capture_written": true,
+        "detail": "Authored scene rendered through the bounded forward preview.",
+        "elements": [
+          {
+            "enabled": true,
+            "focused": false,
+            "hittable": false,
+            "id": "health",
+            "text": "Health 83 / 100",
+            "visible": true
+          },
+          {
+            "enabled": true,
+            "focused": false,
+            "hittable": false,
+            "id": "objective",
+            "text": "Find the survey marker",
+            "visible": true
+          },
+          {
+            "enabled": true,
+            "focused": true,
+            "hittable": true,
+            "id": "continue",
+            "text": "Continue",
+            "visible": true
+          },
+          {
+            "enabled": true,
+            "focused": false,
+            "hittable": true,
+            "id": "save",
+            "text": "Save",
+            "visible": true
+          }
+        ],
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "success": true,
+        "ui_draws": 9,
+        "ui_vertices": 276,
+        "validation_errors": 0
+      },
+      "image_sha256": "8c57ed9db6cab149cd18296267a3f31dead1b1729b0e20fbde02587f9d1a455c"
+    }
+  ],
+  "sample_layout": {
+    "scales": [
+      1.0,
+      1.5
+    ],
+    "passed": true,
+    "registered_buttons": [
+      "continue",
+      "save"
+    ],
+    "both_buttons_hittable_and_activate": true
+  },
+  "public_capture": {
+    "file": "docs/evidence/m2-native-game-ui.png",
+    "sha256": "39b0d807f873e821e52384195dd1ecb9a7849f05548724c111280137a057274f",
+    "width": 960,
+    "height": 540,
+    "source": "NVIDIA Vulkan HUD capture, 4x scene MSAA",
+    "visual_review": "Text is readable; health/objective labels and focused Continue control appear within the viewport."
+  },
+  "corrected_checks": [
+    "Initial clipping fixture assumed overflow:hidden alone forced clipping of absolutely positioned children. Pinned RmlUi requires clip:always in this case; corrected render/hit-test fixture passes.",
+    "Windows native test needed an explicit <exception> include; both final builds/tests pass with it.",
+    "Initial sample RML omitted explicit viewport-sized body dimensions, leaving bottom controls outside the useful layout. Added body dimensions and block layout; final 100%/150% layout and both GPU captures pass."
+  ],
+  "limits": [
+    "Presentation-only native C++ API. No C# bindings, world-service UI commands, authored UI asset/cook pipeline, runtime UI checkpoint state, paused control turns or live player/editor input routing.",
+    "The common renderer composition seam is implemented; this qualification uses native scene captures, not a hosted desktop Game or legacy editor UI workflow.",
+    "Semantic activation searches a bounded point grid; thin, partly occluded or transformed controls can remain unhittable by this helper. General semantic/pointer parity is not qualified.",
+    "Only basic geometry/text, textures, transforms and scissor are supported. Optional masks, layers, filters, shaders and external resources fail explicitly. Complex text shaping/accessibility remain unfinished.",
+    "Nonempty UI requires an sRGB composition attachment. General UNORM/HDR composition is not implemented.",
+    "NVRHI validation counts are zero in tested captures; Khronos validation layers, physical input, consoles, clean-machine deployment and production performance are not qualified.",
+    "Captures still use a native Vulkan surface/window. Headless layout does not establish surface-free rendering.",
+    "No installed desktop package activation; gameplay services remain ABI6/144 and discovery schema34."
+  ]
+}

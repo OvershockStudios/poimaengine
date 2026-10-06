@@ -6,6 +6,16 @@
 
 Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 
+## RmlUi and FreeType (opt-in native game UI)
+
+- RmlUi release `6.3`, commit `ba95ffe8bfb6370efb2cdcca927eaad4710c5413`; [upstream source](https://github.com/mikke89/RmlUi/tree/ba95ffe8bfb6370efb2cdcca927eaad4710c5413).
+- RmlUi archive SHA-256: `1541ef5577115e9368f8ed389b29f0925ef6572f326a33d378ea16c3cfa2cde8`.
+- FreeType release `2.14.3`; [official release archive](https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz), SHA-256 `36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f`.
+- RmlUi and its included containers use MIT licenses. Poima selects the FreeType License (FTL); its additional BDF/PCF/hash, bundled zlib, and HarfBuzz-derived notices are retained in `third_party/game_ui` with source paths and hashes in `PROVENANCE.json`.
+- Portions of this software are copyright © 1996–2026 The FreeType Project (https://freetype.org). All rights reserved.
+- `POIMA_ENABLE_GAME_UI` is off by default. The enabled build statically links RmlUi Core and FreeType. Lua, sample applications, upstream render backends, the debugger, SVG/Lottie plugins, and external font-shaping/compression dependencies are not linked. FreeType retains its bundled zlib inflater. The dependency layer does not imply complex-script shaping, accessibility, or console qualification.
+- The existing unmodified Inter 4.1 regular font is reused under SIL OFL 1.1; its pinned source and hashes are in `third_party/inter/README.md`. Enabled installs include `share/poima/fonts/Inter-Regular.ttf`, its OFL notice, and the game-UI dependency notices. Upstream sample fonts and development headers/libraries are not installed.
+
 ## JSON for Modern C++ (bundled)
 
 - Publisher: Niels Lohmann and contributors; [source](https://github.com/nlohmann/json/releases/tag/v3.12.0).

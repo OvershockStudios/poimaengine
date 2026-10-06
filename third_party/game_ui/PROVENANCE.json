@@ -1,0 +1,87 @@
+{
+  "format": 1,
+  "RmlUi": {
+    "version": "6.3",
+    "commit": "ba95ffe8bfb6370efb2cdcca927eaad4710c5413",
+    "url": "https://codeload.github.com/mikke89/RmlUi/tar.gz/ba95ffe8bfb6370efb2cdcca927eaad4710c5413",
+    "archive_sha256": "1541ef5577115e9368f8ed389b29f0925ef6572f326a33d378ea16c3cfa2cde8"
+  },
+  "FreeType": {
+    "version": "2.14.3",
+    "url": "https://download.savannah.gnu.org/releases/freetype/freetype-2.14.3.tar.xz",
+    "archive_sha256": "36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f",
+    "selected_license": "FTL"
+  },
+  "notices": [
+    {
+      "package": "RmlUi",
+      "source": "LICENSE.txt",
+      "file": "RmlUi-LICENSE.txt",
+      "sha256": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+      "scope": "complete upstream file"
+    },
+    {
+      "package": "RmlUi",
+      "source": "Include/RmlUi/Core/Containers/LICENSE.txt",
+      "file": "RmlUi-Containers-LICENSE.txt",
+      "sha256": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+      "scope": "complete upstream file"
+    },
+    {
+      "package": "FreeType",
+      "source": "LICENSE.TXT",
+      "file": "FreeType-LICENSE.TXT",
+      "sha256": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+      "scope": "complete upstream file"
+    },
+    {
+      "package": "FreeType",
+      "source": "docs/FTL.TXT",
+      "file": "FreeType-FTL.TXT",
+      "sha256": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+      "scope": "complete upstream file"
+    },
+    {
+      "package": "FreeType",
+      "source": "src/bdf/README",
+      "file": "FreeType-BDF.txt",
+      "sha256": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+      "scope": "complete upstream file"
+    },
+    {
+      "package": "FreeType",
+      "source": "src/pcf/README",
+      "file": "FreeType-PCF.txt",
+      "sha256": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+      "scope": "complete upstream file"
+    },
+    {
+      "package": "FreeType",
+      "source": "src/gzip/zlib.h",
+      "file": "FreeType-zlib.txt",
+      "sha256": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+      "scope": "unchanged comment block 1"
+    },
+    {
+      "package": "FreeType",
+      "source": "src/autofit/ft-hb-ft.c",
+      "file": "FreeType-HarfBuzz-bridge.txt",
+      "sha256": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+      "scope": "unchanged comment block 1"
+    },
+    {
+      "package": "FreeType",
+      "source": "src/autofit/hb-script-list.h",
+      "file": "FreeType-HarfBuzz-script-list.txt",
+      "sha256": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+      "scope": "unchanged comment block 1"
+    },
+    {
+      "package": "FreeType",
+      "source": "src/base/fthash.c",
+      "file": "FreeType-hash.txt",
+      "sha256": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+      "scope": "unchanged comment block 2"
+    }
+  ]
+}

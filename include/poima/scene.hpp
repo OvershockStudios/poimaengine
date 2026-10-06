@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/core.hpp"
+#include "poima/ui.hpp"
 #include <array>
 #include <memory>
 #include <optional>
@@ -83,6 +84,7 @@ struct SceneSnapshot {
     double far_plane = 1000;
     std::vector<SceneObject> objects;
     SceneLighting lighting;
+    std::shared_ptr<const UiFrame> ui;
 };
 struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
 std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);

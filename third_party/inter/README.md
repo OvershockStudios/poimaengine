@@ -1,7 +1,8 @@
 # Inter 4.1
 
 Unmodified static TrueType fonts from the official rsms/inter release, vendored
-for the Avalonia desktop editor. Source Sans remains the native ImGui font.
+for the Avalonia desktop editor. The opt-in native game UI also reuses the regular
+face. Source Sans remains the native ImGui font.
 
 - Official release: https://github.com/rsms/inter/releases/tag/v4.1
 - Release published: 2024-11-16; verified/downloaded 2026-09-26.

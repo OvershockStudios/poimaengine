@@ -40,7 +40,7 @@ find_program(POIMA_DXC NAMES dxc
     HINTS "${CMAKE_SOURCE_DIR}/.cache/toolchains/dxc-v1.8.2505.1/bin"
     DOC "Host DXC executable with SPIR-V support" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
-foreach(shader smoke scene sky shadow skinning editor_overlay)
+foreach(shader smoke scene sky shadow skinning editor_overlay game_ui)
 foreach(stage vs ps cs)
     if((shader STREQUAL "skinning" AND NOT stage STREQUAL "cs") OR (NOT shader STREQUAL "skinning" AND stage STREQUAL "cs"))
         continue()
