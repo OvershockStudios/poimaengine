@@ -1,6 +1,6 @@
 # Static glTF assets and textured materials
 
-Poima 0.0.9 supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and an initial textured metallic/roughness rendering path. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. This implements another part of M2; it does not establish full glTF support, Unity conversion or the planned advanced renderer.
+Poima 0.0.9 supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and an initial textured metallic/roughness rendering path. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. This implements another part of M2; it does not establish full glTF support or the planned advanced renderer.
 
 ## Import, inspect and instantiate
 
@@ -68,7 +68,7 @@ An entity cannot combine `StaticMesh` and the older `MeshRenderer`. `PbrMaterial
 
 16-bit PNG, HDR images, KTX/Basis/WebP, texture transforms, morph targets, compression, required extensions, extended material models, alpha masking/blending, vertex colors, additional UV sets, sparse indices, non-triangle-list modes, matrix-authored nodes and mirrored/zero scales are rejected explicitly. Cameras/lights retain their transform nodes but are not converted to engine camera/light components; this produces a diagnostic. Sparse attribute unpacking is delegated to cgltf but has not yet received a dedicated Poima fixture. Do not infer general glTF conformance from the current fixture set.
 
-This strict profile is intended to grow. Broader transforms/materials, compressed GPU formats and streaming remain required work. [Material authoring](MATERIAL_AUTHORING.md) adds independent image imports, texture-slot overrides, sampler/strength editing and effective inspection. Purchased-asset rights and Unity-specific material/prefab/script conversion are separate work.
+This strict profile is intended to grow. Broader transforms/materials, compressed GPU formats and streaming remain required work. [Material authoring](MATERIAL_AUTHORING.md) adds independent image imports, texture-slot overrides, sampler/strength editing and effective inspection. Asset workflows target Poima’s own authoring model and standard interchange formats. Users must have appropriate rights to imported source assets.
 
 ## Storage, limits and recovery
 

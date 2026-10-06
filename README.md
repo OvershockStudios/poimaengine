@@ -46,7 +46,7 @@ These are bounded implementations with subsystem-specific limits, not finished v
 
 The experimental [save-slot service](docs/RUNTIME.md#durable-save-slots) preserves supported physics, animation, sound and typed gameplay state with guarded writes, fresh-process loads and explicit corruption recovery. The CLI and [editor Save/Load window](docs/EDITOR_SAVES.md) share these operations. [Typed C# save/load requests](docs/GAMEPLAY_SAVES.md) run after committed simulation batches. General migrations and asynchronous saving remain unfinished.
 
-Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, Unity scene/prefab conversion, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
+Advanced GI, temporal upscaling/frame generation, comprehensive water and weather, multiplayer, production VFX/UI frameworks and console backends are **roadmap work**. They are not included in the current feature claims. Poima is an independent implementation, not an id Tech 4 fork.
 
 ## Build the headless engine
 
