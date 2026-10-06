@@ -96,7 +96,7 @@ Calls made during `Tick` queue commands. Repeated queries in that callback obser
 
 Invalid commands, failed curve samples and managed exceptions restore animation clocks, interrupted-pose buffers, local poses, physics, sounds and native-owned gameplay fields to the start of the batch. This covers a failure several ticks into one step request. It cannot undo external side effects made by managed code. Compatible code reload leaves the native animation clocks and in-progress transitions intact.
 
-The native service ABI is now version 4, including the [gameplay save extension](GAMEPLAY_SAVES.md). Rebuild `Poima.ManagedBridge` and the gameplay SDK together when updating the engine. Incompatible bridge/service layouts reject before calling the new callbacks. This ABI change does not require a new world format. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
+The native service ABI is now version 6 (144 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md) and [lifecycle](GAMEPLAY_LIFECYCLE.md) extensions. Rebuild `Poima.ManagedBridge` and the gameplay SDK together when updating the engine. Incompatible bridge/service layouts reject before calling the new callbacks. This ABI change does not require a new world format. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
 
 ## Load, inspect and edit
 
@@ -158,10 +158,14 @@ For the animation extension, run `scripts/verify_gameplay_animation.py` with the
 | --- | --- |
 | ![Closed door](evidence/m2-csharp-door-closed.png) | ![Open door](evidence/m2-csharp-door-open.png) |
 
-These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. General component registration and bindings, general events/jobs, spawn/despawn, animation graphs/layers, complete audio/environmental controls, VFX, UI, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
+These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. Generated scalar component bindings and template-based root-prop spawning/removal are implemented. Arbitrary component membership changes, general events/jobs, removal of originally authored entities, animation graphs/layers, complete audio/environmental controls, VFX, UI, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
 
-Sound callbacks are retained in the service-table prefix. Animation and save callbacks extend the table to ABI version 4 (88 bytes); the outer call remains version 1 (80 bytes). Rebuild Poima.Gameplay, Poima.ManagedBridge and game assemblies together when upgrading the service ABI. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
+Sound callbacks are retained in the service-table prefix. Animation, save, component and lifecycle callbacks extend the table to ABI version 6 (144 bytes); the outer call remains version 1 (80 bytes). Rebuild Poima.Gameplay, Poima.ManagedBridge and game assemblies together when upgrading the service ABI. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
 
 ## Native compiled game distribution
 
 The same bounded `Game<TState>` source can be compiled into a native shared library through the [Native AOT artifact route](NATIVE_GAMEPLAY.md). That route statically binds its game/state types, uses the same native services and rollback state, and packages through project/game manifest v2. Native library replacement requires restarting the player process; compatible collectible reload remains a CoreCLR development feature. Native AOT still includes runtime services such as garbage collection.
+
+## Create and remove runtime props
+
+The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) adds typed template handles, immediate ID reservation, same-Tick component initialization, frozen default inspection and spawned-prop removal. It requires a coordinated rebuild for services ABI 6 (144 bytes). Reads retain committed membership; all births, writes, removals and save intentions participate in outer-batch rollback.

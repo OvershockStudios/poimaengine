@@ -363,7 +363,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 33}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 34}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -544,7 +544,7 @@ Json describe() {
         {"recovery","Inspect reports verified previous-generation fallback. Load requires allow_recovery:true; writes after payload fallback require acknowledge_recovery:true. Manifest recovery permits reads only."},
         {"limitations","Synchronous bounded64MiB save, exact gameplay backend/image/schema, fixed entity set. No general migrations, autosave scheduler, platform/cloud adapters or power-loss qualification."}};
     result["gameplay_saves"]={
-        {"services_abi",5},{"kinds",{{"none",0},{"save",1},{"load",2}}},
+        {"services_abi",6},{"kinds",{{"none",0},{"save",1},{"load",2}}},
         {"states",{{"expired",0},{"queued",1},{"resolving",2},{"succeeded",3},{"failed",4}}},
         {"request_rejections",{{"none",0},{"disabled",1},{"busy",2},{"invalid",3},{"exhausted",4}}},
         {"boundary","One runtime request, serviced only after the complete atomic batch commits. Requested tick and committed tick may differ. Failed batches perform no save I/O."},
@@ -575,7 +575,7 @@ Json describe() {
         {"session_id","request_id","expected_tick","expected_revision","id","type","values"});
     methods["save.write"]["properties"]["expected_component_revision"]=rev;
     methods["save.load"]["properties"]["expected_component_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
-    result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",5},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},
+    result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",6},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},
         {"wire","16-byte canonical little-endian cells in ascending stable field ID order"},{"int64_json","Canonical signed decimal strings; exact full Int64 range"},
         {"schema_changes","Labels/units may change; shape/default changes require a future explicit migration. Removed type IDs cannot be reused except known undo/redo history."},
         {"runtime","Native-owned membership; queries sorted by entity ID; writes publish after Tick and before physics. Whole batch rollback includes payloads and component revision."},
@@ -600,7 +600,7 @@ Json describe() {
     result["spawn_templates"]={{"authored_version",3},{"max_templates",max_runtime_spawn_templates},{"max_custom_payload_bytes",max_runtime_template_payload_bytes},
         {"components",recipe_components},{"references","Entity references in recipes are literal IDs; liveness is deferred until spawning. Template IDs are a separate namespace and are never live EntityIds."},
         {"save_guard","save.write/load require expected_structure_revision after any structural transaction; stopped restore accepts absent or null."},
-        {"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# initiation and RPC tick scheduling remain unavailable."}};
+        {"gameplay_services_abi",6},{"gameplay_services_bytes",144},{"gameplay_reads","Committed tick membership; reserved births support Set before publication, and template component defaults are read explicitly."},{"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# Tick can reserve, initialize and remove root props; RPC tick scheduling remains unavailable."}};
     for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
     result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");

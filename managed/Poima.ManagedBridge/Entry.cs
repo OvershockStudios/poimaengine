@@ -44,8 +44,8 @@ public static unsafe class Entry
         call->Output[0]=0;
         try
         {
-            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=120 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
-                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid())
+            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=144 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid())
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -133,12 +133,12 @@ public static unsafe class Entry
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
-        // Check the stable header before reading any v5 tail pointer. An old
+        // Check the stable header before reading any v6 tail pointer. An old
         // engine/bridge pair must be rebuilt together, never partially invoked.
-        if(call->Services==null || call->Services->Version!=5 || call->Services->Bytes!=120 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
-            throw new ArgumentException("Gameplay service ABI mismatch: services v5/120 bytes required.");
+        if(call->Services==null || call->Services->Version!=6 || call->Services->Bytes!=144 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
+            throw new ArgumentException("Gameplay service ABI mismatch: services v6/144 bytes required.");
         if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null ||
-            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null)throw new ArgumentException("Gameplay service callback is absent.");
+            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null || call->Services->Spawn==null || call->Services->Despawn==null || call->Services->TemplateComponentGet==null)throw new ArgumentException("Gameplay service callback is absent.");
         module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));
     }
     [MethodImpl(MethodImplOptions.NoInlining)]

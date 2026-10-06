@@ -101,7 +101,7 @@ class GameplayProjects(unittest.TestCase):
             {'name': 'Distance', 'kind': 'float64', 'offset': 8, 'bytes': 8},
             {'name': 'Rig', 'kind': 'entity', 'offset': 16, 'bytes': 16}]}
         descriptor = {'format': 'poima.native-gameplay', 'version': 1, 'engine_version': self.version,
-            'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 5,
+            'target_os': target, 'target_arch': 'x86_64', 'call_version': 1, 'services_version': 6,
             'entry': 'poima_gameplay_entry', 'library': name, 'identity': identity, 'type': 'Poima.Test.NativeMetadata',
             'schema': schema, 'files': [{'path': p.name, 'size': p.stat().st_size, 'sha256': digest(p), 'role': role}
                                       for p, role in [(library, 'library'), (notice, 'notice')]]}
@@ -135,7 +135,8 @@ class GameplayProjects(unittest.TestCase):
         good = self.artifact_fixture()
         variants = []
         for field, value in [('engine_version', '0.0.0'), ('version', 2), ('call_version', 2),
-                             ('services_version', 3), ('call_version', 1.0), ('services_version', True),
+                             ('services_version', 3), ('services_version', 5), ('services_version', 7),
+                             ('call_version', 1.0), ('services_version', 6.0), ('services_version', True),
                              ('entry', 'other_export'), ('target_arch', 'arm64'), ('target_os', 'Other'),
                              ('type', ''), ('identity', 'different')]:
             value_doc = copy.deepcopy(good)
@@ -330,7 +331,7 @@ class GameplayProjects(unittest.TestCase):
         (runtime/executable).chmod(0o755)
         spec = dict(format='poima.runtime', version=1, engine_version=self.version,
                     target_os=self.target, target_arch='x86_64', executable=executable,
-                    gameplay_services_version=5,
+                    gameplay_services_version=6,
                     features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
         path = runtime/'runtime.json'
         path.write_text(json.dumps(spec))
@@ -339,7 +340,7 @@ class GameplayProjects(unittest.TestCase):
         self.cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
         self.cli('game', 'inspect', native(bundle/'game.json'))
         game = json.loads((bundle/'game.json').read_text())
-        for index, value in enumerate([None, 3, 4, 6, '5', True, 5.0, 0]):
+        for index, value in enumerate([None, 3, 4, 5, 7, '6', True, 6.0, 0]):
             with self.subTest(services_version=value):
                 changed = copy.deepcopy(spec)
                 if value is None: changed.pop('gameplay_services_version')
@@ -361,6 +362,22 @@ class GameplayProjects(unittest.TestCase):
                 self.cli('game', 'inspect', native(bundle/'game.json'), success=False)
                 self.assertEqual(tree(bundle), before_bundle)
         self.assertEqual(tree(self.project), source)
+        # Services ABI constrains gameplay-bearing bundles, not legacy native
+        # projects which never load a gameplay module.
+        self.spec.pop('gameplay')
+        self.spec['version'] = 1
+        self.write()
+        source = tree(self.project)
+        for index, value in enumerate([None, 5, 6, 7]):
+            with self.subTest(no_gameplay_services_version=value):
+                changed = copy.deepcopy(spec)
+                if value is None: changed.pop('gameplay_services_version')
+                else: changed['gameplay_services_version'] = value
+                path.write_text(json.dumps(changed))
+                destination = self.root/f'No gameplay ABI {index}'
+                self.cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(destination))
+                self.cli('game', 'inspect', native(destination/'game.json'))
+                self.assertEqual(tree(self.project), source)
 
     @unittest.skipUnless(ARGS.runtime and ARGS.artifact, 'Requires a real published Native AOT artifact and installed runtime.')
     def test_real_published_artifact_exports_without_development_paths(self):

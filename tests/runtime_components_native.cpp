@@ -222,6 +222,134 @@ void candidate_references_and_guards() {
     s.begin_batch();s.stage(b,gameplay_id(id(2)),values(t,1));rejects([&]{s.prepare_tick({},removed);},"Write to despawned target accepted.");rollback_no_alloc(s);
     check(s.save()==baseline,"Guard failures changed committed state.");
 }
+
+void pending_births() {
+    const auto d=definition();Store owned(d);auto& s=*owned.store;const auto& t=d.component_schemas[0];const auto b=binding(t);
+    Initial first{{t.id,values(t,3)}},second{{t.id,values(t,4)}};
+    const auto a=gameplay_id(id(10)),z=gameplay_id(id(11));const auto baseline=s.save();
+    s.begin_batch();s.reserve_birth(a,first);s.reserve_birth(z,second);
+    check(!s.alive(a) && s.query(t.id,"",257)==std::vector<std::string>{id(1),id(2)},"Pending births escaped committed membership/query.");
+    std::vector<std::byte> output(t.bytes());std::uint32_t present=1;
+    rejects([&]{s.get(b,a,output,present);},"Pending birth became readable before publication.");
+    rejects([&]{s.reserve_birth(a,first);},"Duplicate pending birth accepted.");
+    rejects([&]{s.reserve_birth(gameplay_id(id(1)),first);},"Live entity registered as pending birth.");
+    rejects([&]{s.reserve_birth({},first);},"Zero pending identity accepted.");
+    rejects([&]{s.stage_pending_checked(b,gameplay_id(id(999)),values(t,8));},"Managed staging accepted an arbitrary target.");
+    rejects([&]{s.stage_pending_checked(binding(d.component_schemas[1]),a,values(d.component_schemas[1],8));},"Managed staging added a component absent from pending layout.");
+    rejects([&]{s.stage_pending_checked(b,gameplay_id(id(3)),values(t,8));},"Managed staging added an absent component to live entity.");
+    s.stage_pending_checked(b,a,values(t,9,id(11)));s.stage_pending_checked(b,z,values(t,8,id(10)));
+    rejects([&]{s.stage_pending_checked(b,a,values(t,7));},"Duplicate pending initializer accepted.");
+    rejects([&]{s.prepare_tick();},"Reserved births silently omitted from preparation.");
+    auto changed=first;changed[t.id]=values(t,99);auto malformed=spawn(owned,10,changed);auto good_second=spawn(owned,11,second);
+    std::array mismatch{malformed,good_second};rejects([&]{s.prepare_tick(mismatch);},"Reserved birth accepted different recipe payload.");
+    // Matching content in another map is legitimate; pointer identity is not a contract.
+    const auto first_copy=first;malformed.initial=&first_copy;std::array births{malformed,good_second};
+    s.prepare_tick(births);check(s.candidate_alive(a) && !s.alive(a),"Pending candidate visibility differs.");publish_no_alloc(s);
+    check(*s.read(t.id,id(10))==values(t,9,id(11)) && *s.read(t.id,id(11))==values(t,8,id(10)),"Same-tick initializers or mutual references failed.");
+    // Publication must drop registration, while retained lineage still rejects reuse.
+    rejects([&]{s.cancel_birth(a);},"Published pending registration survived publication.");
+    rejects([&]{s.reserve_birth(a,first);},"Published identity could be re-reserved.");
+    rollback_no_alloc(s);check(s.save()==baseline,"Pending birth rollback lost original store.");
+    // Cancellation removes only that birth's staged writes, keeps surviving hash
+    // entries sound, and must not allocate even when removing the middle entry.
+    s.begin_batch();s.reserve_birth(a,first);s.reserve_birth(z,second);
+    s.stage_pending_checked(b,gameplay_id(id(1)),values(t,20));
+    s.stage_pending_checked(b,a,values(t,21));s.stage_pending_checked(b,z,values(t,22,id(10)));
+    { allocation_test::Budget deny(0);s.cancel_birth(a); }
+    rejects([&]{s.cancel_birth(a);},"Canceled birth remained registered.");
+    rejects([&]{s.stage_pending_checked(b,a,values(t,23));},"Canceled identity remained writable.");
+    rejects([&]{s.stage_pending_checked(b,z,values(t,23));},"Cancellation lost another initializer's duplicate guard.");
+    rejects([&]{s.stage_pending_checked(b,gameplay_id(id(1)),values(t,23));},"Cancellation lost a committed target's duplicate guard.");
+    rejects([&]{s.prepare_tick(std::span(&good_second,1));},"Cancellation left a surviving dangling reference valid.");
+    rollback_no_alloc(s);check(s.save()==baseline,"Canceled/dangling birth rollback changed committed state.");
+    s.begin_batch();s.reserve_birth(a,first);s.stage_pending_checked(b,a,values(t,31));
+    { allocation_test::Budget deny(0);s.cancel_birth(a); }
+    s.reserve_birth(a,first);s.stage_pending_checked(b,a,values(t,32));
+    s.prepare_tick(std::span(&malformed,1));publish_no_alloc(s);commit_no_alloc(s);
+    check(*s.read(t.id,id(10))==values(t,32),"Cancellation left staged hash/payload budget residue.");
+    // A reservation discarded by commit/rollback cannot leak into the next batch.
+    s.begin_batch();s.reserve_birth(z,second);commit_no_alloc(s);
+    s.begin_batch();s.reserve_birth(z,second);rollback_no_alloc(s);
+    s.begin_batch();s.reserve_birth(z,second);s.prepare_tick(std::span(&good_second,1));publish_no_alloc(s);commit_no_alloc(s);
+    check(s.alive(z),"Reservation lifetime leaked across batch boundaries.");
+}
+// Insert before pending_reservation_guarantees(); invoke pending_payload_budget()
+// in main next to pending_births() and pending_reservation_guarantees().
+void pending_payload_budget() {
+    RuntimeDefinition d;d.world_id=id(99);RuntimeEntityDefinition base;base.id=id(1);d.entities.push_back(base);
+    for(unsigned n=0;n<64;++n)d.component_schemas.push_back(schema(100+n,32));
+    Initial initial;for(const auto& t:d.component_schemas)initial.emplace(t.id,components::defaults(t));
+    std::size_t recipe_bytes=0;for(const auto& [type,payload]:initial) { (void)type;recipe_bytes+=payload.size(); }
+    check(recipe_bytes==32768 && components::max_command_bytes==2097152,"Pending byte-boundary fixture no longer represents 2 MiB.");
+    // 63 recipes (63 * 32 KiB) plus 64 initializer writes (64 * 512 B)
+    // exactly fill the shared pending/staged command payload allowance.
+    for(const bool cancel_and_replace:{false,true}) {
+        Store owned(d);auto& s=*owned.store;const auto baseline=s.save();s.begin_batch();
+        std::vector<ComponentSpawn> births;
+        for(unsigned n=0;n<63;++n) {
+            births.push_back(spawn(owned,1000+n,initial));s.reserve_birth(births.back().id,initial);
+        }
+        for(const auto& t:d.component_schemas)s.stage_pending_checked(binding(t),births.front().id,values(t,7));
+        Initial extra{{d.component_schemas.front().id,components::defaults(d.component_schemas.front())}};
+        const auto extra_id=gameplay_id(id(9000));
+        rejects([&]{s.reserve_birth(extra_id,extra);},"Reservation exceeded exact combined pending/initializer 2 MiB boundary.");
+        rejects([&]{s.stage_pending_checked(binding(d.component_schemas.front()),births[1].id,values(d.component_schemas.front(),8));},
+            "Initializer exceeded exact combined pending/initializer 2 MiB boundary.");
+        if(cancel_and_replace) {
+            // Cancel the only initialized birth. This must recover BOTH its
+            // 32 KiB recipe and its 32 KiB initializer set, without allocations.
+            const auto canceled=births.front().id;
+            { allocation_test::Budget deny(0);s.cancel_birth(canceled); }
+            births.erase(births.begin());
+            // Reusing extra_id also proves the failed reservation above did not
+            // leave a duplicate registration or retain its byte accounting.
+            births.push_back(spawn(owned,9000,initial));s.reserve_birth(extra_id,initial);
+            births.push_back(spawn(owned,9001,initial));s.reserve_birth(births.back().id,initial);
+            check(births.size()==64,"Cancellation replacement fixture count differs.");
+            rejects([&]{s.stage_pending_checked(binding(d.component_schemas.front()),births.front().id,values(d.component_schemas.front(),9));},
+                "Replacement recipes did not consume the recovered full byte budget.");
+        }
+        s.prepare_tick(births);publish_no_alloc(s);
+        check(s.live_instances()==births.size()*64 && s.live_bytes()==births.size()*recipe_bytes,
+            "Exact pending byte boundary lost live component instances or bytes.");
+        for(const auto& birth:births)for(const auto& t:d.component_schemas) {
+            const auto expected=!cancel_and_replace && birth.id.high==births.front().id.high && birth.id.low==births.front().id.low
+                ? values(t,7) : components::defaults(t);
+            check(s.read(t.id,gameplay_id(birth.id))==std::optional<components::Payload>(expected),
+                "Failed reservation/stage or cancellation corrupted surviving pending recipe/initializer state.");
+        }
+        rollback_no_alloc(s);check(s.save()==baseline && s.live_instances()==0 && s.retained_instances()==0,
+            "Exact pending byte-budget rollback retained registrations or cells.");
+    }
+}
+
+void pending_reservation_guarantees() {
+    const auto d=definition();const auto& t=d.component_schemas[0];Initial initial{{t.id,values(t,3)}};
+    {
+        Store owned(d);auto& s=*owned.store;s.begin_batch();const auto a=gameplay_id(id(10));
+        auto invalid=initial;invalid[t.id][4]=std::byte{1};rejects([&]{s.reserve_birth(a,invalid);},"Invalid pending wire payload accepted.");
+        invalid=initial;invalid[id(999)]=values(t,3);rejects([&]{s.reserve_birth(a,invalid);},"Unknown pending component type accepted.");
+        s.reserve_birth(a,initial);s.stage_pending_checked(binding(t),a,values(t,4));
+        auto birth=spawn(owned,10,initial);s.prepare_tick(std::span(&birth,1));publish_no_alloc(s);rollback_no_alloc(s);
+    }
+    bool success=false;std::size_t failures=0;
+    for(std::size_t budget=0;budget<64 && !success;++budget) {
+        Store owned(d);auto& s=*owned.store;const auto baseline=s.save();s.begin_batch();bool failed=false;const auto numeric=gameplay_id(id(10));
+        {allocation_test::Budget deny(budget);try {s.reserve_birth(numeric,initial);}catch(const std::bad_alloc&) {failed=true;}}
+        if(failed) {++failures;s.reserve_birth(gameplay_id(id(10)),initial);}else success=true;
+        auto birth=spawn(owned,10,initial);s.stage_pending_checked(binding(t),birth.id,values(t,7));
+        s.prepare_tick(std::span(&birth,1));publish_no_alloc(s);rollback_no_alloc(s);
+        check(s.save()==baseline,"Failed reservation changed committed or journal state.");
+    }
+    check(success && failures>0,"Pending reservation allocation failure coverage missing.");
+    {
+        Store owned(d);auto& s=*owned.store;Initial empty;s.begin_batch();
+        for(unsigned n=0;n<components::max_commands;++n)s.reserve_birth(gameplay_id(id(10000+n)),empty);
+        rejects([&]{s.reserve_birth(gameplay_id(id(20000)),empty);},"Pending birth count budget was not enforced.");
+        const auto canceled=gameplay_id(id(10000));{allocation_test::Budget deny(0);s.cancel_birth(canceled);}
+        s.reserve_birth(gameplay_id(id(20000)),empty);rollback_no_alloc(s);
+    }
+}
 void preparation_allocation_failures() {
     const auto d=definition();const auto& t=d.component_schemas[0];const auto b=binding(t);
     Initial initial{{t.id,values(t,5)},{d.component_schemas[1].id,values(d.component_schemas[1],7)}};
@@ -300,6 +428,6 @@ void runtime_snapshots() {
 }
 }
 int main() {
-    try { storage_and_journal();budgets();staging_allocation_failures();lifecycle_rollback_and_stability();candidate_references_and_guards();preparation_allocation_failures();lifecycle_budgets();runtime_snapshots();std::cout<<"Runtime components: storage/query/journal/lifecycle/fault-injection/budgets/snapshot tests passed.\n";return 0; }
+    try { storage_and_journal();budgets();staging_allocation_failures();lifecycle_rollback_and_stability();candidate_references_and_guards();pending_births();pending_payload_budget();pending_reservation_guarantees();preparation_allocation_failures();lifecycle_budgets();runtime_snapshots();std::cout<<"Runtime components: storage/query/journal/lifecycle/pending-birth/fault-injection/budgets/snapshot tests passed.\n";return 0; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

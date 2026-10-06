@@ -26,7 +26,7 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Rendering | Vulkan/NVRHI geometry, PBR materials, texture and normal maps, direct lights, shadow maps, procedural sky, frustum culling, 1×/4× MSAA, GPU skinning and image captures. |
 | Simulation | Optional Jolt/EnTT runtime at 60 Hz, rigid bodies, capsule locomotion, static triangle mesh collision, raycasts with mesh triangle identities, moving kinematic objects, editable rigs and interruptible animation crossfades. |
 | Input and player | Native continuous player, shared keyboard/mouse/gamepad profiles, editor device assignment and deterministic scripted input replay. |
-| C# gameplay | [Native-owned custom components](docs/CUSTOM_COMPONENTS.md), generated typed accessors, compatible code reload, rollback and exact-schema saves; CoreCLR development and native AOT shipping. |
+| C# gameplay | [Native-owned custom components](docs/CUSTOM_COMPONENTS.md), [template-based spawning/removal](docs/GAMEPLAY_LIFECYCLE.md), generated typed accessors, compatible code reload, rollback and exact-schema saves; CoreCLR development and native AOT shipping. |
 | Profiling | [Shared native captures](docs/PROFILER.md), editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events, native-player output and bounded editor audio processing. |

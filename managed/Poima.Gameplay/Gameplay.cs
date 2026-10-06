@@ -135,6 +135,9 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,EntityId*,void*,uint,uint*,NativeError*,int> ComponentGet;
     public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,EntityId*,void*,uint,NativeError*,int> ComponentSet;
     public delegate* unmanaged[Cdecl]<void*,EntityId*,uint*,NativeError*,int> EntityAlive;
+    public delegate* unmanaged[Cdecl]<void*,TemplateId*,NativeTransform*,EntityId*,NativeError*,int> Spawn;
+    public delegate* unmanaged[Cdecl]<void*,EntityId*,NativeError*,int> Despawn;
+    public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,TemplateId*,void*,uint,uint*,NativeError*,int> TemplateComponentGet;
 }
 internal static unsafe class SaveAbiLayout
 {

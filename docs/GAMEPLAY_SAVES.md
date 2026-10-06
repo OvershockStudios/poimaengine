@@ -2,7 +2,7 @@
 
 C# gameplay can request native checkpoints through `GameContext`. CoreCLR development and compiled Native AOT games use the same owner, storage and restoration code as the editor Save/Load window. Requests execute after a successful simulation batch; they never perform file I/O inside `Tick`.
 
-This extension requires **services ABI 5 (120 bytes)**. Rebuild the gameplay SDK, managed bridge and game assemblies together; republish native game libraries. Older service tables and native descriptors reject. Saves still require their exact original module image and schema: rebuilding gameplay is not a save migration. Keep matching runtime/module builds for existing checkpoints.
+This extension requires **services ABI 6 (144 bytes)**. Rebuild the gameplay SDK, managed bridge and game assemblies together; republish native game libraries. Older service tables and native descriptors reject. Saves still require their exact original module image and schema: rebuilding gameplay is not a save migration. Keep matching runtime/module builds for existing checkpoints.
 
 ## Configure storage
 

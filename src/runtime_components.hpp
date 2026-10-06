@@ -35,6 +35,7 @@ class RuntimeComponents {
     struct OwnedCell { std::size_t type;PoimaEntityId id;entt::entity owner;Cell* cell; };
     using WriteKey=std::array<std::uint64_t,3>; // schema index, entity high, low
     struct Staged { WriteKey key;components::Payload bytes; };
+    struct PendingBirth { PoimaEntityId id;const std::map<std::string,components::Payload>* initial;std::size_t bytes; };
     struct Write { Cell* cell;components::Payload* bytes; };
     struct Prepared {
         std::array<std::shared_ptr<const Rows>,components::max_types> rows;
@@ -53,6 +54,8 @@ class RuntimeComponents {
     Entities owned_entities_; // includes retired entities until batch commit
     std::vector<OwnedCell> cells_; // append-only while a batch is active
     std::vector<Staged> staged_;
+    std::vector<PendingBirth> pending_births_;
+    std::size_t pending_bytes_=0;
     // At most half full. Entries are staging-vector indices plus one; zero is empty.
     std::array<std::uint16_t,components::max_commands*2> staged_index_{};
     std::vector<Change> journal_;
@@ -69,6 +72,7 @@ class RuntimeComponents {
     static bool exists(void*,PoimaEntityId);
     std::size_t staged_slot(const WriteKey&) const noexcept;
     void clear_staged() noexcept;
+    void clear_pending() noexcept;
     static void validate_references(const Type&,std::span<const std::byte>,const Entities&);
     void discard_prepared() noexcept;
 public:
@@ -89,6 +93,12 @@ public:
     // Schema/wire/duplicate guards are immediate; entity and reference guards
     // resolve against the complete candidate in prepare_tick.
     void stage(const PoimaGameComponentType&,PoimaEntityId,std::span<const std::byte>);
+    // Managed writes may initialize only registered births or existing cells.
+    // Reads remain committed-only. Native stage retains deferred target checks.
+    void stage_pending_checked(const PoimaGameComponentType&,PoimaEntityId,std::span<const std::byte>);
+    // Borrowed immutable recipe must outlive this tick's publication/cancellation.
+    void reserve_birth(PoimaEntityId,const std::map<std::string,components::Payload>& initial);
+    void cancel_birth(PoimaEntityId);
     void edit(const std::string&,const std::string&,const components::Payload&);
     void validate_module(const std::vector<components::Schema>&) const;
     void begin_batch();

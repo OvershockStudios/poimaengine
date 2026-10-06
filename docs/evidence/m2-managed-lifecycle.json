@@ -1,0 +1,218 @@
+{
+  "milestone": "C# template-based root-prop lifecycle with native publication and rollback",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39 development",
+  "protocol_schema_revision": 34,
+  "source_base": "6a902c3278e774cef623fee22cec1c9119305d0f",
+  "gameplay_abi": {
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 6,
+    "services_bytes": 144,
+    "compatibility": "Rebuild SDK/bridge/game assemblies together; republish older NativeAOT artifacts. This does not migrate saved module bindings."
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "372663907a6c270b49a024ee70e06bea9a05b39ec12fd3531396e4e912e08bd5",
+    "cmake/runtime.json.in": "7c43a7c3ee586c294f7695fbd2a2ee938ebf6358f207b28cecbed95af71b839d",
+    "include/poima/gameplay_abi.h": "7e2bfaa4e5991ccc326b3bf8c0b5a751cf032b1912a074af2784c8cf857ef019",
+    "include/poima/runtime.hpp": "5eb05a39dc75cade8538269069606b9a1d2f45a801d7b5a6f239222238b32594",
+    "managed/Poima.Gameplay/Components.cs": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4",
+    "managed/Poima.Gameplay/Gameplay.cs": "5963186ff05317eed2e626864bf2686e587a0d551c354e4d4dbef02daa8289d4",
+    "managed/Poima.ManagedBridge/Entry.cs": "307ade9bb5231117328777deb8be2d6b550002164cb1e6af6a7c914ca0c5d74c",
+    "managed/Poima.NativeGame/Entry.cs": "46e74b43b7926d7de318580dbddce8ab1ced46faf72f81bc2b96d2221c7fdcdf",
+    "scripts/publish_native_gameplay.py": "1f0aa74a436f6ab469dd049e2a7ffee2c90a92d01a1b5872afd5dd817e65a8e4",
+    "src/native_gameplay_artifact.cpp": "6b19416a4a241ca0bd178577fcf4fed2cb91b76afc0be05a92e491ba83d26956",
+    "src/project.cpp": "28036d11086e6458f60a5d3256887521f724505a27bb6cd99fa833c0bb29ebf8",
+    "src/runtime.cpp": "8b8a3db106e48d9b95363885dac51960c690d996164c841ffd4b0c72ed502bd8",
+    "src/runtime_components.cpp": "0bc6ff31bde06243654faefa95335646158a044c9ec19e9c6eddd0396adb02b9",
+    "src/runtime_components.hpp": "5c7aece61a70d2534643f535ae7ecbaf7475453b7b8557779a8f4cadda96b24a",
+    "src/runtime_templates.cpp": "0a8668295b72f408498c37df22f7f0ad5dc04c364e70c7c7c2f50d03e40ced5a",
+    "src/world.cpp": "0e2264d0612c1de63601abd1c8a7296f70cad9355a69a6c71f7c979e0931f4c5",
+    "tests/components_gameplay_bundle.py": "b34bb3ba9faaf0b1c3cfbad98f14c67b2516bda368b6c0dc9dbdeb5576c7ba60",
+    "tests/gameplay_save_bundle.py": "fb612e9e6f7b28a303b9409d3e705fafd0b0ddd723b22515fa73d42b27a806f6",
+    "tests/managed_service_abi/Program.cs": "0b002a42910386566beffd31eec79d6049c6f8bb4e07463ed602afa1fdba8e2c",
+    "tests/managed_service_abi/README.md": "83349ed2c9d65b41ccb84378e8b71d574592d39c3d268ab44843638c7732cab9",
+    "tests/profiler_contract.py": "1589a13467cefcc15e39c7e061006dfb38172cf5ab00c865041e2caa89738cd2",
+    "tests/project_gameplay_contract.py": "c96dcd0580807ed40d17832d5d7cf35ea94f3374395c40801a91fd3762415bc0",
+    "tests/runtime_components_native.cpp": "bc5eb4d32f2d9a265f4122ebfa05cba2671b7797986392b27a0c6648b96dcdf2",
+    "tests/world_components_contract.py": "885e2fe9ece8a31bd765d1a264da2bddcb12fc95fb90f9d1256f7dcec38c7e1c",
+    "tests/world_session_native.cpp": "f1a9d275939f8638793d088bb4114fdce7f1e7f12670859ece8c799157f95a27",
+    "tests/world_templates_contract.py": "3d626ac0cdc22b8ae57d4f13ee9ebfd1a64f9dbac8992662e2f4365a504c3013",
+    "managed/Poima.Gameplay/Lifecycle.cs": "0d0cad0b4795c78a94a7f6c77e7a0c60cbb5a8056e092bfe2850b45911d72a58",
+    "tests/managed_lifecycle_contract.py": "cd660e7a31754b99d85b51d190831011dc8db7dc71642e07cd7d34fcf62e5edc",
+    "tests/managed_lifecycle_gameplay/ManagedLifecycleGame.cs": "429989745f8b1749ed494d70f606362f99494192a99e0116c8c36a1d145866ce",
+    "tests/runtime_managed_lifecycle_native.cpp": "105e7879089cf51665ea88edf93a74ac7246c3de946574b1e55fcd24169d784a",
+    "tests/runtime_save_contract.py": "5b3f808d6ae61d0ecbf67d3a6839fae8d2c187836f939dffb9a056481896f8ca",
+    "tests/managed_lifecycle_gameplay/Poima.ManagedLifecycleGame.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+    "tests/managed_lifecycle_gameplay/README.md": "30231a799e0c45fd3b06fcd88be1801e2b7853d33a7b6981f7c3f89bf3b8ce04"
+  },
+  "artifact_sha256": {
+    "build/runtime-headless/poima": "664e9279df46a27ffa86a608933140f623bf614a3930831028e2036ee59e6e07",
+    "build/runtime-headless/poima-runtime-components-test": "c303bad31bb153c927da3ebd73c1745408dfa1c4aabbba0205bc67b7535885fa",
+    "build/runtime-headless/poima-runtime-managed-lifecycle-test": "705191e29bf3812a1b445007646f57d789d6ea2f342a16de0d5a18f4dfe54e13",
+    "build/runtime-headless/poima-runtime-lifecycle-gameplay-test": "7fa27ca2d5be72c3759e9ee3a668f570cd02073a53c1f9837a99a919746027fa",
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll": "b5c8fced48e9888b0b0af8a82024f70a055bdd0c70d8124a1ff9b7216503d197",
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.Gameplay.dll": "45a26e9b864a9350026dd17a839b311811bc6b5371b9dd6addd88008267abae6",
+    "build/managed-lifecycle-gameplay/game/Poima.ManagedLifecycleGame.dll": "ad2da16f0756bdd2b14fca778310199f7e9b677fe3da9407a37c5adc76769a73",
+    "build/managed-lifecycle-native-linux/native-gameplay.json": "dd7e12ec877f0ab1b83b5b947e1781ddc6bc95a3959bc035e3b0659901ade008",
+    "build/managed-lifecycle-native-linux/Poima.NativeGame.so": "01bd9afb9e30227e8b0dc4c5a35fd6f491adb30aeb7b114df2e1cb769e85c9cf",
+    "build/managed-lifecycle-components-regression/Poima.ComponentGame.dll": "b4af057f4b1b7d5e565727b7e925bd5b8cd0838d3dab858ad336a35f1ced10a6",
+    "desktop/Poima.Editor/bin/Release/net10.0/win-x64/Poima.Editor.dll": "d943aa3cfc3a33f2dab7b34940feabd2278a89fd92f2121f71560d439b3441f6",
+    "build/headless/poima": "2e910a7e5d6a1205f7cf838e49b6d42319a20faa0c077099556f742e28dc7f31",
+    "build/windows-runtime/poima.exe": "96e58e07cbcca311c256fe6e30be524e0735235b673fe18e61dde144974a7899",
+    "build/windows-runtime/poima-runtime-managed-lifecycle-test.exe": "f4eac5f661decf6f65ce6ad084db4fbf230cdcad82ca960caba88fe3c05cfd41",
+    "build/windows-runtime/poima-runtime-components-test.exe": "d5f6c268e576461a4b746c0c0a9d287552cc22bab2e1b72206fbb920f6259f75",
+    "build/windows-runtime/poima-runtime-test.exe": "bd00428554fb001bdb5be9fe2eac546209184da9e3b9ef5430b1d83893da3a4e",
+    "build/windows-runtime/poima-runtime-save-test.exe": "60db76da5e979050a623827c04a1153f21d9aa22a974c94fa38a597abf43946d",
+    "build/windows-runtime/poima-runtime-lifecycle-gameplay-test.exe": "a3eb2f549914ecafc3c08616b6fd213ef8cdcdfd687e0ffa5cc7b40dec983be6",
+    "build/managed-lifecycle-gameplay/game.poima-components.json": "97b806a9edb0d053ac6c8fd70bb49f768bc6c497ff749e05ae1e53f8b2f55574",
+    "build/managed-lifecycle-native-windows/native-gameplay.json": "44b0cc600c4275fcacb52389354151d4a250ffc42a8b53287143c9753222c1f4",
+    "build/managed-lifecycle-native-windows/Poima.NativeGame.dll": "a79025ff3a7650188ecbf780260af912339db04e36825cdebe89908dea8bbe65"
+  },
+  "implemented": [
+    "Typed TemplateId, Spawn/Despawn and explicit frozen GetTemplate/TryGetTemplate component values through appended native callbacks.",
+    "Reserve generated IDs during Tick; initialize known pending component layouts with full replacements and validate mutually referencing births/global state in the final candidate. Reads retain committed membership.",
+    "Publish gameplay and host-scheduled structure once per affected tick, gameplay IDs before host IDs; host results contain only host births. Newly born kinematic props can move in the creation tick.",
+    "Cancel pending births without creating native owners, discard their component and movement initializers, retain consumed IDs on success and record cancel-only allocation history in v3 snapshots.",
+    "Restore membership, native/component/global/physics state, allocation cursors and save requests after later-tick failure. Invalid synchronous spawn callbacks preserve reservation state when caught.",
+    "Enforce combined host/gameplay 4096 structural-command budget including canceled calls, and combined pending recipe/staged component payload limit of 2 MiB.",
+    "Validate frozen assets at runtime construction; spawn overrides reuse transform validation without rescanning immutable mesh geometry.",
+    "Coordinate discovery, runtime metadata, NativeAOT artifact publisher/loader and game bundle gates on services ABI6; retain compatibility of legacy bundles without gameplay."
+  ],
+  "qualification": {
+    "linux": {
+      "passed": true,
+      "compiled_lifecycle_groups_per_backend": 5,
+      "backends": [
+        "CoreCLR",
+        "NativeAOT"
+      ],
+      "rpc_lifecycle": {
+        "coreclr": {
+          "passed": true,
+          "checks": 3,
+          "rpc_count": 37,
+          "evidence": "build/managed-lifecycle-service-coreclr-linux/8785467dc98248f5b4d2dc10a3922252/evidence.json"
+        },
+        "aot": {
+          "passed": true,
+          "checks": 2,
+          "rpc_count": 34,
+          "evidence": "build/managed-lifecycle-service-aot-linux/6196bec1bf704af2a857c965041cd064/evidence.json"
+        }
+      },
+      "independent_abi_checks": 39,
+      "additional_collectible_lifetimes": 100,
+      "existing_component_coreclr": {
+        "checks": 7,
+        "rpc_count": 414,
+        "compatible_reloads": 100
+      },
+      "component_tests": "Pending birth visibility, initialization, cancellation, exact payload and count bounds, allocation-failure injection, retained cells and rollback; 103 preparation allocation-failure points.",
+      "regression_suites": [
+        "runtime_native",
+        "runtime_save_native",
+        "world_templates_contract",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract",
+        "world_session_native",
+        "profiler_contract",
+        "project_contract",
+        "project_gameplay_contract"
+      ],
+      "logs": [
+        "build/managed-lifecycle-coreclr-linux.log",
+        "build/managed-lifecycle-aot-linux.log",
+        "build/managed-lifecycle-existing-coreclr-linux.log",
+        "build/managed-lifecycle-components-native-linux.log",
+        "build/managed-lifecycle-linux-regression.log"
+      ],
+      "authoring_only": {
+        "passed": true,
+        "reported_template_tests": 10,
+        "skipped": 4,
+        "rpc_count": 62,
+        "regression_suites": 5,
+        "regression_log": "build/managed-lifecycle-authoring-regression.log"
+      }
+    },
+    "windows": {
+      "passed": true,
+      "checks": {
+        "lifecycle_coreclr": {
+          "groups": 5,
+          "log": "build/managed-lifecycle-native-coreclr-windows.log"
+        },
+        "lifecycle_native_aot": {
+          "groups": 5,
+          "log": "build/managed-lifecycle-native-aot-windows.log"
+        },
+        "abi": {
+          "checks": 39,
+          "additional_lifetimes": 100,
+          "evidence": "build/managed-lifecycle-abi6-windows.json"
+        },
+        "native_components": {
+          "log": "build/managed-lifecycle-components-unit-windows.log"
+        },
+        "native_runtime": {
+          "log": "build/managed-lifecycle-runtime-unit-windows.log"
+        },
+        "native_snapshot": {
+          "log": "build/managed-lifecycle-save-unit-windows.log"
+        },
+        "existing_compiled_lifecycle": {
+          "log": "build/managed-lifecycle-existing-coreclr-windows.log"
+        },
+        "templates": {
+          "tests": 10,
+          "rpc_count": 155,
+          "evidence": "build/managed-lifecycle-templates-windows.json"
+        },
+        "project_metadata": {
+          "discovered": 11,
+          "executed": 6,
+          "skipped": 5,
+          "cli_calls": 94,
+          "evidence": "build/managed-lifecycle-project-windows.json"
+        },
+        "save": {
+          "tests": 7,
+          "rpc_count": 547,
+          "evidence": "build/managed-lifecycle-save-windows.json"
+        },
+        "lifecycle_rpc_coreclr": {
+          "rpc_count": 37,
+          "evidence": "build/managed-lifecycle-service-coreclr-windows/1f4360da2d2148338393ffe84c3dedba/evidence.json"
+        },
+        "lifecycle_rpc_native_aot": {
+          "rpc_count": 34,
+          "evidence": "build/managed-lifecycle-service-native-windows/5dfb4e6c73e0416f99deadb6567b279f/evidence.json"
+        }
+      },
+      "native_aot": {
+        "engine_version": "0.0.39",
+        "target_os": "Windows",
+        "target_arch": "x86_64",
+        "services_version": 6,
+        "payload_files": 8,
+        "library_sha256": "a79025ff3a7650188ecbf780260af912339db04e36825cdebe89908dea8bbe65",
+        "publication_log": "build/managed-lifecycle-native-windows-publish.log"
+      },
+      "build_log": "build/managed-lifecycle-windows-build.log"
+    },
+    "editor_build": {
+      "passed": true,
+      "log": "build/managed-lifecycle-editor-build.log",
+      "warnings": "Two existing obsolete Bitmap.Save overload warnings, zero errors."
+    }
+  },
+  "limitations": [
+    "Root templates support optional box colliders, static presentation and registered scalar components; dynamic cameras/controllers/rigs/emitters and removal of originally authored entities remain unfinished.",
+    "TemplateId is not yet a persisted configurable resource field. General prefab hierarchies, component membership changes, dynamic-body launch velocity and impulses remain unfinished.",
+    "No new GPU captures, full editor GUI tests, physical input/audio, game-scale performance, console, or relocated deployment qualification. The installed desktop package remains the prior qualified package.",
+    "Snapshot tests cover exact supported content/module bindings and semantic continuation in bounded fixtures; they do not establish cross-platform deterministic C#, preserved arbitrary physics warm contacts or general migrations.",
+    "Project metadata tests retain explicit conditional skips; actual NativeAOT artifacts were loaded and executed, but installed-runtime export and relocated bundles were not repeated in this cohort."
+  ]
+}

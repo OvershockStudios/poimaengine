@@ -4,7 +4,7 @@ Poima's Native AOT route compiles one C# `Game<TState>` into a native shared lib
 
 The 0.0.35 integration has recorded Linux and Windows native execution, CoreCLR/native state comparisons and a relocated Windows Vulkan game replay. These are bounded fixture results; clean-machine deployment, consoles and production workloads remain unqualified. See the [checkpoint evidence](evidence/m2-native-gameplay.json) and [implementation status](IMPLEMENTATION_STATUS.md).
 
-The [custom component API](CUSTOM_COMPONENTS.md) requires rebuilding with services ABI 5. Older compiled artifacts must be republished.
+The [custom component API](CUSTOM_COMPONENTS.md) requires rebuilding with services ABI 6. Older compiled artifacts must be republished.
 
 ## Publish
 
@@ -28,7 +28,7 @@ Native AOT includes runtime services, including garbage collection. It is native
 
 A dedicated artifact directory contains `native-gameplay.json`, one library, and the included dependency notices. Intermediate IL assemblies, debug symbols, generated source and build logs belong outside that directory.
 
-The descriptor declares the exact engine version, Linux/Windows x86_64 target, call ABI 1, services ABI 5, fixed `poima_gameplay_entry` export, game identity/type and complete state schema. Its payload inventory records relative paths, byte counts, SHA-256 hashes and roles (`library`, `dependency`, `notice`, `metadata`).
+The descriptor declares the exact engine version, Linux/Windows x86_64 target, call ABI 1, services ABI 6, fixed `poima_gameplay_entry` export, game identity/type and complete state schema. Its payload inventory records relative paths, byte counts, SHA-256 hashes and roles (`library`, `dependency`, `notice`, `metadata`).
 
 Read-only inspection validates the schema, file inventory and native image headers without executing code. It accepts foreign-target metadata for export workflows. Actual loading additionally requires the running engine's platform, generated schema and native diagnostics to agree. Hashes check integrity against the supplied inventory; they are not signatures or an authenticity guarantee.
 
@@ -73,7 +73,7 @@ Project version 1 remains the format for projects without gameplay. Version 2 re
 
 Other project fields retain their existing contracts. Inspection validates initial values against the artifact schema. Export requires a matching target runtime with `features.native_gameplay: true`; older runtime descriptors lacking this feature are treated as false.
 
-Native gameplay export and bundle inspection also require `runtime.json` to declare `gameplay_services_version: 5`. Matching engine version alone is insufficient: an older services ABI cannot execute the new module. Legacy runtime descriptors without this field remain usable for bundles without gameplay.
+Native gameplay export and bundle inspection also require `runtime.json` to declare `gameplay_services_version: 6`. Matching engine version alone is insufficient: an older services ABI cannot execute the new module. Legacy runtime descriptors without this field remain usable for bundles without gameplay.
 
 Export copies the descriptor and exact payload closure into the bundle's `gameplay/` directory and emits game manifest version 2. Game launch verifies the bundle, starts its read-only runtime, loads the compiled module at tick zero, applies supplied values, then enters the player. Its result includes full gameplay inspection. Source projects, development IL and hostfxr are not part of this artifact route.
 

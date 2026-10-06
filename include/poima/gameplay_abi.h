@@ -7,9 +7,11 @@
 #else
 #define POIMA_CALL
 #endif
-// Call version 1, services version 5, 64-bit Windows/Linux. POD only; borrowed pointers never escape a
+// Call version 1, services version 6, 64-bit Windows/Linux. POD only; borrowed pointers never escape a
 // callback. Engine owns state and services. No exceptions cross this boundary.
 typedef struct PoimaEntityId { uint64_t high,low; } PoimaEntityId;
+typedef struct PoimaTemplateId { uint64_t high,low; } PoimaTemplateId;
+typedef struct PoimaGameTransform { double position[3],rotation[4],scale[3]; } PoimaGameTransform;
 typedef struct PoimaGameEntity { double world[16],velocity[3]; uint32_t motion,remaining_ticks; } PoimaGameEntity;
 typedef struct PoimaGameRay { double origin[3],direction[3],distance; const PoimaEntityId* ignore; uint32_t ignore_count,reserved; } PoimaGameRay;
 typedef struct PoimaGameHit { PoimaEntityId entity; double fraction,distance,position[3],normal[3]; uint32_t hit,normal_valid; } PoimaGameHit;
@@ -61,7 +63,7 @@ typedef struct PoimaGameServices {
     int32_t (POIMA_CALL *raycast)(void*,const PoimaGameRay*,PoimaGameHit*,PoimaGameError*);
     int32_t (POIMA_CALL *move)(void*,const PoimaGameMotion*,PoimaGameError*);
     int32_t (POIMA_CALL *sound)(void*,const PoimaGameSound*,uint64_t*,PoimaGameError*);
-    // Prefixes remain unchanged; v5 requires a matching rebuilt bridge/module.
+    // Prefixes remain unchanged; v6 requires a matching rebuilt bridge/module.
     int32_t (POIMA_CALL *animation_get)(void*,const PoimaEntityId*,PoimaGameAnimationState*,PoimaGameError*);
     int32_t (POIMA_CALL *animation_set)(void*,const PoimaGameAnimationCommand*,PoimaGameError*);
     int32_t (POIMA_CALL *save_info)(void*,PoimaGameSaveInfo*,PoimaGameError*);
@@ -71,6 +73,11 @@ typedef struct PoimaGameServices {
     int32_t (POIMA_CALL *component_get)(void*,const PoimaGameComponentType*,const PoimaEntityId*,void*,uint32_t,uint32_t*,PoimaGameError*);
     int32_t (POIMA_CALL *component_set)(void*,const PoimaGameComponentType*,const PoimaEntityId*,const void*,uint32_t,PoimaGameError*);
     int32_t (POIMA_CALL *entity_alive)(void*,const PoimaEntityId*,uint32_t*,PoimaGameError*);
+    // A null transform selects the frozen recipe transform. Spawn returns a
+    // reserved ID; membership publishes after Tick. Template reads are frozen.
+    int32_t (POIMA_CALL *spawn)(void*,const PoimaTemplateId*,const PoimaGameTransform*,PoimaEntityId*,PoimaGameError*);
+    int32_t (POIMA_CALL *despawn)(void*,const PoimaEntityId*,PoimaGameError*);
+    int32_t (POIMA_CALL *template_component_get)(void*,const PoimaGameComponentType*,const PoimaTemplateId*,void*,uint32_t,uint32_t*,PoimaGameError*);
 } PoimaGameServices;
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -79,7 +86,9 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
-static_assert(sizeof(PoimaGameCall)==80 && sizeof(PoimaGameServices)==120 && sizeof(PoimaGameSound)==32 && sizeof(PoimaGameInput)==40);
+static_assert(sizeof(PoimaGameCall)==80 && sizeof(PoimaGameServices)==144 && sizeof(PoimaGameSound)==32 && sizeof(PoimaGameInput)==40);
+static_assert(sizeof(PoimaTemplateId)==16 && sizeof(PoimaGameTransform)==80 && offsetof(PoimaGameTransform,rotation)==24 && offsetof(PoimaGameTransform,scale)==56);
+static_assert(offsetof(PoimaGameServices,spawn)==120 && offsetof(PoimaGameServices,despawn)==128 && offsetof(PoimaGameServices,template_component_get)==136);
 static_assert(sizeof(PoimaGameEntity)==160 && sizeof(PoimaGameRay)==72 && sizeof(PoimaGameHit)==88 && sizeof(PoimaGameMotion)==80);
 static_assert(offsetof(PoimaGameServices,context)==8 && offsetof(PoimaGameServices,entity)==16 && offsetof(PoimaGameServices,sound)==40);
 static_assert(offsetof(PoimaGameServices,animation_get)==48 && offsetof(PoimaGameServices,animation_set)==56);

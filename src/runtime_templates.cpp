@@ -56,6 +56,21 @@ void geometry(const MeshAsset& mesh) {
     for(auto index:mesh.indices)check(index<mesh.vertices.size(),"Template mesh index is outside its vertex array.");
 }
 }
+void validate_runtime_spawn_transform(const RuntimeSpawnTemplate& recipe,const RuntimeTransform& transform) {
+    for(auto value:transform.position)check(bounded(value,-1e9,1e9),"Template position is invalid.");
+    for(auto value:transform.scale)check(bounded(value,0,1e9) && value>0,"Template scale must be positive, finite and bounded.");
+    double norm=0;for(auto value:transform.rotation) { check(bounded(value,-1e9,1e9),"Template rotation is invalid.");norm+=value*value; }
+    check(std::abs(norm-1)<=1e-6,"Template rotation must be a normalized XYZW quaternion.");
+    if(recipe.collider) {
+        const auto& collider=*recipe.collider;
+        check(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Template body motion is invalid.");
+        check(bounded(collider.mass,0,1e6) && collider.mass>0 && bounded(collider.friction,0,2) && bounded(collider.restitution,0,1),"Template collider material/mass is invalid.");
+        for(std::size_t k=0;k<3;++k) {
+            check(std::abs(transform.position[k])<=1e6,"Template collider position exceeds the 1000 km bound.");
+            check(bounded(collider.half_extents[k],.001,10000) && bounded(double(collider.half_extents[k])*transform.scale[k],.001,10000),"Template collider half extents must be 0.001..10000 meters before and after scaling.");
+        }
+    }
+}
 void validate_runtime_templates(const RuntimeDefinition& definition) {
     check(definition.templates.size()<=max_runtime_spawn_templates,"Runtime template count exceeds 256.");
     if(definition.templates.empty())return;
@@ -73,20 +88,7 @@ void validate_runtime_templates(const RuntimeDefinition& definition) {
     for(const auto& recipe:definition.templates) {
         check(identity(recipe.id) && ids.insert(recipe.id).second,"Template IDs must be canonical, nonzero and unique.");
         check(!recipe.name.empty() && recipe.name.size()<=256,"Template name requires 1..256 UTF-8 bytes.");
-        const auto& transform=recipe.transform;
-        for(auto value:transform.position)check(bounded(value,-1e9,1e9),"Template position is invalid.");
-        for(auto value:transform.scale)check(bounded(value,0,1e9) && value>0,"Template scale must be positive, finite and bounded.");
-        double norm=0;for(auto value:transform.rotation) { check(bounded(value,-1e9,1e9),"Template rotation is invalid.");norm+=value*value; }
-        check(std::abs(norm-1)<=1e-6,"Template rotation must be a normalized XYZW quaternion.");
-        if(recipe.collider) {
-            const auto& collider=*recipe.collider;
-            check(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Template body motion is invalid.");
-            check(bounded(collider.mass,0,1e6) && collider.mass>0 && bounded(collider.friction,0,2) && bounded(collider.restitution,0,1),"Template collider material/mass is invalid.");
-            for(std::size_t k=0;k<3;++k) {
-                check(std::abs(transform.position[k])<=1e6,"Template collider position exceeds the 1000 km bound.");
-                check(bounded(collider.half_extents[k],.001,10000) && bounded(double(collider.half_extents[k])*transform.scale[k],.001,10000),"Template collider half extents must be 0.001..10000 meters before and after scaling.");
-            }
-        }
+        validate_runtime_spawn_transform(recipe,recipe.transform);
         if(recipe.mesh) {
             const auto& presentation=*recipe.mesh;
             for(auto channel:presentation.albedo)check(bounded(channel,0,1),"Template presentation albedo is invalid.");

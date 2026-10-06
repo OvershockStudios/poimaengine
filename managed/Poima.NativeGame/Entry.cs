@@ -27,9 +27,9 @@ public static unsafe class Entry
         try
         {
             if(!redirected) { Console.SetOut(Console.Error);redirected=true; }
-            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=120 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 ||
+            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=144 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 ||
                sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 || sizeof(NativeSound)!=32 ||
-               sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !Binding.LayoutValid() || !AbiLayout() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid())
+               sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !Binding.LayoutValid() || !AbiLayout() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid())
                 throw new InvalidOperationException("Generated gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -44,8 +44,8 @@ public static unsafe class Entry
                     if(!modules.TryGetValue(call->Handle,out var instance))throw new ArgumentException("Unknown native game instance.");
                     if(call->State==null || call->StateBytes!=Binding.StateBytes)throw new ArgumentException("Gameplay state size mismatch.");
                     if(call->Operation==2) { Binding.InitializeObject(instance,call->State);break; }
-                    if(call->Services==null || call->Services->Version!=5 || call->Services->Bytes!=120 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))throw new ArgumentException("Gameplay service ABI mismatch: services v5/120 bytes required.");
-                    if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null || call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null)throw new ArgumentException("Gameplay service callback is absent.");
+                    if(call->Services==null || call->Services->Version!=6 || call->Services->Bytes!=144 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))throw new ArgumentException("Gameplay service ABI mismatch: services v6/144 bytes required.");
+                    if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null || call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null || call->Services->Spawn==null || call->Services->Despawn==null || call->Services->TemplateComponentGet==null)throw new ArgumentException("Gameplay service callback is absent.");
                     Binding.TickObject(instance,call->State,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));break;
                 case 4: modules.Remove(call->Handle);break;
                 case 5: Write(call,"{\"active_modules\":"+modules.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)+",\"retired_alive\":0,\"unload_supported\":false,\"diagnostics\":"+Diagnostics()+"}");break;

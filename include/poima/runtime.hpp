@@ -111,6 +111,8 @@ void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
 // Validates recipe values/assets without creating entities or physics bodies.
 // Custom entity-reference liveness resolves against the eventual spawn candidate.
 void validate_runtime_templates(const RuntimeDefinition& definition);
+// Check an instance override against an already validated immutable recipe.
+void validate_runtime_spawn_transform(const RuntimeSpawnTemplate&,const RuntimeTransform&);
 struct RuntimeInput {
     std::string entity;
     std::array<float,2> move{0,0}; // right, forward; diagonal magnitude clamped to one

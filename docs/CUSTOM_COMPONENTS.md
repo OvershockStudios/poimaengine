@@ -2,7 +2,7 @@
 
 Custom components attach typed gameplay data to entities. The native world owns that data; C# reads copies and queues writes through generated accessors. The Inspector and world service edit the same authored fields. This is an initial scalar component API; root-prop templates can supply components for runtime births.
 
-Use the matching engine, `Poima.Gameplay` SDK and managed bridge. The component API requires services ABI **5 (120 bytes)**; rebuild game assemblies and republish Native AOT artifacts. Call ABI remains 1. Existing worlds without custom schemas retain their version 1 format.
+Use the matching engine, `Poima.Gameplay` SDK and managed bridge. The component API requires services ABI **6 (144 bytes)**; rebuild game assemblies and republish Native AOT artifacts. Call ABI remains 1. Existing worlds without custom schemas retain their version 1 format.
 
 ## Declare a component
 

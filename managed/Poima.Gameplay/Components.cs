@@ -45,7 +45,7 @@ public readonly unsafe ref partial struct GameContext
             throw new ArgumentException("Invalid generated component wire descriptor.");
         return descriptor;
     }
-    /// <summary>Sorted persistent IDs after an exclusive cursor. No membership changes during this runtime.</summary>
+    /// <summary>Sorted published IDs after an exclusive cursor. Queued lifecycle commands are not visible during Tick.</summary>
     public int Query<T>(Span<EntityId> destination,EntityId after=default) where T:unmanaged,IGameplayComponent<T>
     {
         if(destination.Length is <1 or >256)throw new ArgumentOutOfRangeException(nameof(destination),"Query pages hold 1..256 IDs.");

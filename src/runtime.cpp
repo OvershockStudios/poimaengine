@@ -36,6 +36,7 @@
 #include <numbers>
 #include <set>
 #include <stdexcept>
+#include <type_traits>
 
 namespace poima {
 namespace {
@@ -142,6 +143,13 @@ struct Runtime::Impl {
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
     std::vector<KinematicTarget> game_commands;
+    struct PendingSpawn { PoimaEntityId id;RuntimeSpawnRequest request;bool canceled=false; };
+    std::vector<PendingSpawn> game_spawns;
+    std::vector<std::string> game_despawns;
+    std::size_t game_structure_calls=0,scheduled_structure_calls=0;
+    void clear_structure_commands() noexcept {
+        game_spawns.clear();game_despawns.clear();game_structure_calls=scheduled_structure_calls=0;
+    }
     std::vector<AnimationCommand> game_animation_commands;
     SoundState sounds;
     std::vector<AcousticGeometry> acoustic_geometry;
@@ -428,12 +436,81 @@ struct Runtime::Impl {
     static int32_t POIMA_CALL component_set(void* context,const PoimaGameComponentType* type,const PoimaEntityId* entity,const void* value,uint32_t bytes,PoimaGameError* error) {
         return callback(error,[&] {
             require(type && entity && value && bytes<=components::max_fields*components::cell_bytes,"Invalid component write pointers/size.");
-            static_cast<Impl*>(context)->components->stage(*type,*entity,std::span(static_cast<const std::byte*>(value),bytes));
+            static_cast<Impl*>(context)->components->stage_pending_checked(*type,*entity,std::span(static_cast<const std::byte*>(value),bytes));
         });
     }
     static int32_t POIMA_CALL entity_alive(void* context,const PoimaEntityId* entity,uint32_t* alive,PoimaGameError* error) {
         return callback(error,[&] {
             require(entity && alive,"Invalid entity-liveness pointers.");*alive=static_cast<Impl*>(context)->components->alive(*entity) ? 1u : 0u;
+        });
+    }
+    const RuntimeSpawnTemplate& spawn_template(const std::string& id) const {
+        const auto found=std::lower_bound(templates.begin(),templates.end(),id,
+            [](const auto& recipe,const auto& key){return recipe.id<key;});
+        require(found!=templates.end() && found->id==id,"Runtime spawn template does not exist.");return *found;
+    }
+    void validate_spawn(const RuntimeSpawnRequest& request) const {
+        const auto& recipe=spawn_template(request.template_id);
+        if(game)for(const auto& [type,payload]:recipe.components) {
+            (void)payload;const auto& declarations=game->component_schemas();
+            require(std::any_of(declarations.begin(),declarations.end(),[&](const auto& schema){return schema.id==type;}),
+                "Gameplay module does not declare a spawned component type.");
+        }
+        validate_runtime_spawn_transform(recipe,request.transform ? *request.transform : recipe.transform);
+    }
+    static int32_t POIMA_CALL spawn_entity(void* context,const PoimaTemplateId* source,const PoimaGameTransform* transform,PoimaEntityId* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(source && output,"Spawn template/output is absent.");*output={};auto& self=*static_cast<Impl*>(context);
+            require(self.game_structure_calls+self.scheduled_structure_calls<4096,"Combined structural command budget exceeded.");
+            RuntimeSpawnRequest request;request.template_id=gameplay_id(PoimaEntityId{source->high,source->low});
+            if(transform) {
+                RuntimeTransform value;std::copy_n(transform->position,3,value.position.begin());
+                std::copy_n(transform->rotation,4,value.rotation.begin());std::copy_n(transform->scale,3,value.scale.begin());request.transform=value;
+            }
+            self.validate_spawn(request);
+            auto cursor=*self.entity_ids;const auto id=cursor.allocate();
+            PendingSpawn pending{id,std::move(request),false};
+            // Reserve all fallible storage before the component registration.
+            // Successful registration is followed only by nonthrowing moves.
+            if(self.game_spawns.size()==self.game_spawns.capacity())
+                self.game_spawns.reserve(std::min<std::size_t>(4096,std::max<std::size_t>(16,self.game_spawns.capacity()*2)));
+            self.components->reserve_birth(id,self.spawn_template(pending.request.template_id).components);
+            static_assert(std::is_nothrow_move_constructible_v<PendingSpawn>);
+            self.game_spawns.push_back(std::move(pending));*self.entity_ids=std::move(cursor);
+            ++self.game_structure_calls;*output=id;
+        });
+    }
+    static int32_t POIMA_CALL despawn_entity(void* context,const PoimaEntityId* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(source,"Despawn entity is absent.");auto& self=*static_cast<Impl*>(context);
+            require(self.game_structure_calls+self.scheduled_structure_calls<4096,"Combined structural command budget exceeded.");
+            const auto pending=std::find_if(self.game_spawns.begin(),self.game_spawns.end(),[&](const auto& birth){return birth.id.high==source->high && birth.id.low==source->low;});
+            if(pending!=self.game_spawns.end()) {
+                require(!pending->canceled,"Pending birth is already canceled.");const auto id=gameplay_id(*source);
+                self.components->cancel_birth(*source);pending->canceled=true;
+                std::erase_if(self.game_commands,[&](const auto& motion){return motion.entity==id;});
+            } else {
+                auto id=gameplay_id(*source);
+                require(self.topology->spawned.contains(id),"Despawn requires a live spawned root prop.");
+                require(std::find(self.game_despawns.begin(),self.game_despawns.end(),id)==self.game_despawns.end(),"Duplicate despawn in one tick.");
+                self.game_despawns.push_back(std::move(id));
+            }
+            ++self.game_structure_calls;
+        });
+    }
+    static int32_t POIMA_CALL template_component_get(void* context,const PoimaGameComponentType* binding,const PoimaTemplateId* source,void* output,uint32_t bytes,uint32_t* present,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(binding && source && output && present,"Invalid template component read pointers.");*present=0;
+            const auto& self=*static_cast<Impl*>(context);const auto type_id=gameplay_id(binding->type);
+            const auto& schemas=self.components->schemas();
+            const auto schema=std::lower_bound(schemas.begin(),schemas.end(),type_id,[](const auto& value,const auto& id){return value.id<id;});
+            require(schema!=schemas.end() && schema->id==type_id,"Template component type is not registered.");
+            require(binding->reserved==0 && binding->bytes==schema->bytes() && bytes==binding->bytes &&
+                std::equal(schema->fingerprint.begin(),schema->fingerprint.end(),binding->fingerprint),"Template component descriptor differs from frozen schema.");
+            const auto& recipe=self.spawn_template(gameplay_id(PoimaEntityId{source->high,source->low}));
+            if(const auto found=recipe.components.find(type_id);found!=recipe.components.end()) {
+                std::memcpy(output,found->second.data(),bytes);*present=1;
+            }
         });
     }
     static PoimaGameSaveTicket save_ticket(GameplaySaveTicket ticket) noexcept {
@@ -582,9 +659,11 @@ struct Runtime::Impl {
         });
     }
     RuntimeStructureResult publish_structure(std::uint64_t expected_revision,
-        const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
+        const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals,
+        std::span<const PoimaEntityId> assigned={},bool canceled_births=false) {
         require(expected_revision==structure_revision,"Stale runtime structure revision.");
-        require(!requests.empty() || !removals.empty(),"Structural transaction is empty.");
+        require(!requests.empty() || !removals.empty() || canceled_births,"Structural transaction is empty.");
+        require(assigned.size()<=requests.size(),"Assigned spawn identity count exceeds requests.");
         require(requests.size()+removals.size()<=4096,"Structural command budget exceeded.");
         require(structure_revision<9007199254740991ULL,"Runtime structure revision exhausted.");
         auto candidate=std::make_shared<Topology>(*topology);
@@ -602,23 +681,14 @@ struct Runtime::Impl {
         std::size_t payload_bytes=0;
         // Validate overrides using the same rules as frozen native recipes.
         for(const auto& request:requests) {
-            const auto found=std::lower_bound(templates.begin(),templates.end(),request.template_id,
-                [](const auto& recipe,const auto& id){return recipe.id<id;});
-            require(found!=templates.end() && found->id==request.template_id,"Runtime spawn template does not exist.");
-            for(const auto& [type_id,payload]:found->components) {
+            validate_spawn(request);const auto& source=spawn_template(request.template_id);
+            for(const auto& [type_id,payload]:source.components) {
                 (void)type_id;
                 require(payload.size()<=components::max_command_bytes-payload_bytes,"Spawn payload command budget exceeded.");
                 payload_bytes+=payload.size();
             }
-            auto recipe=*found;if(request.transform)recipe.transform=*request.transform;
-            if(game)for(const auto& [type_id,payload]:recipe.components) {
-                (void)payload;
-                const auto& declarations=game->component_schemas();
-                require(std::any_of(declarations.begin(),declarations.end(),[&](const auto& schema){return schema.id==type_id;}),
-                    "Gameplay module does not declare a spawned component type.");
-            }
-            RuntimeDefinition validation;validation.component_schemas=recipes.component_schemas;validation.templates.push_back(recipe);
-            validate_runtime_templates(validation);recipes.templates.push_back(std::move(recipe));
+            auto recipe=source;if(request.transform)recipe.transform=*request.transform;
+            recipes.templates.push_back(std::move(recipe));
         }
         std::vector<entt::entity> born;born.reserve(requests.size());
         std::vector<ComponentSpawn> cells;cells.reserve(requests.size());
@@ -626,8 +696,10 @@ struct Runtime::Impl {
         require(requests.size()<=RuntimeComponents::max_retained_entities-owned_entities.size(),"Runtime retained owner budget exceeded.");
         owned_entities.reserve(owned_entities.size()+requests.size());
         auto& bodies=physics.GetBodyInterface();
+        std::size_t recipe_index=0;
         for(const auto& recipe:recipes.templates) {
-            const auto numeric=entity_ids->allocate();const auto id=gameplay_id(numeric);
+            const auto numeric=recipe_index<assigned.size() ? assigned[recipe_index] : entity_ids->allocate();++recipe_index;
+            require(entity_ids->allocated(numeric),"Spawn identity was not reserved by this runtime.");const auto id=gameplay_id(numeric);
             const auto e=registry.create();owned_entities.push_back(e);born.push_back(e);
             auto& node=registry.emplace<Node>(e,id,std::string{},recipe.transform,recipe.transform);
             node.world=local_matrix(node.local.position,node.local.rotation,node.local.scale);
@@ -757,6 +829,13 @@ struct Runtime::Impl {
                 if(frame==0)for(const auto& command:sound_commands) {
                     if(command.stop)sounds.stop(command.voice,tick);else (void)play_sound(command.emitter,command.gain);
                 }
+                clear_structure_commands();
+                const RuntimeStructureTick* scheduled=next_structure<structure.size() && structure[next_structure].offset==frame ? &structure[next_structure] : nullptr;
+                if(scheduled) {
+                    require(scheduled->expected_revision==structure_revision,"Stale runtime structure revision.");
+                    scheduled_structure_calls=scheduled->spawns.size()+scheduled->despawns.size();
+                    require(scheduled_structure_calls>=1 && scheduled_structure_calls<=4096,"Scheduled structural command budget exceeded.");
+                }
                 if(game) {
                     game_sound_calls=0;sync();game_commands.clear();game_animation_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
@@ -764,17 +843,12 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    const PoimaGameServices services{5,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive};
+                    const PoimaGameServices services{6,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,&spawn_entity,&despawn_entity,&template_component_get};
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
                         game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                     }
                     profiling::Scope commands_profile("runtime.gameplay.commands");
-                    auto commands=prepare_motions(game_commands);
-                    for(auto& [e,motion]:commands) {
-                        require(frame!=0 || !prepared.contains(e),"Gameplay and caller targeted the same body in one tick.");
-                        registry.get<Body>(e).target=std::move(motion);
-                    }
                     require(game_animation_commands.size()+(frame==0 ? animation_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation commands in one tick.");
                     for(const auto& command:game_animation_commands)
                         require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity; }),
@@ -784,15 +858,24 @@ struct Runtime::Impl {
                     }
                     game_animation_commands.clear();
                 }
-                if(next_structure<structure.size() && structure[next_structure].offset==frame) {
-                    const auto& command=structure[next_structure++];
-                    for(const auto& id:command.despawns) {
+                if(scheduled || game_structure_calls) {
+                    std::vector<RuntimeSpawnRequest> births;std::vector<PoimaEntityId> assigned;
+                    births.reserve(game_spawns.size()+(scheduled ? scheduled->spawns.size() : 0));assigned.reserve(game_spawns.size());
+                    for(const auto& birth:game_spawns)if(!birth.canceled) { births.push_back(birth.request);assigned.push_back(birth.id); }
+                    auto removals=game_despawns;
+                    if(scheduled) { births.insert(births.end(),scheduled->spawns.begin(),scheduled->spawns.end());removals.insert(removals.end(),scheduled->despawns.begin(),scheduled->despawns.end()); }
+                    for(const auto& id:removals) {
                         require(frame!=0 || std::none_of(motions.begin(),motions.end(),[&](const auto& m){return m.entity==id;}),
                             "Caller motion and removal target the same entity in one tick.");
                         require(std::none_of(game_commands.begin(),game_commands.end(),[&](const auto& m){return m.entity==id;}),
                             "Gameplay motion and removal target the same entity in one tick.");
                     }
-                    structure_results.push_back(publish_structure(command.expected_revision,command.spawns,command.despawns));
+                    auto result=publish_structure(structure_revision,births,removals,assigned,game_structure_calls!=0);
+                    if(scheduled) {
+                        // The native schedule API returns only its own births.
+                        result.spawned.erase(result.spawned.begin(),result.spawned.begin()+static_cast<std::ptrdiff_t>(assigned.size()));
+                        structure_results.push_back(std::move(result));++next_structure;
+                    }
                 } else if(game) {
                     components->prepare_tick({},{});
                     game->validate_entity_references([](void* context,PoimaEntityId id) {
@@ -800,7 +883,16 @@ struct Runtime::Impl {
                     },components.get());
                     components->publish_tick();
                 }
-                game_commands.clear();
+                // Membership has now published. Newly born kinematic bodies can
+                // receive their first movement before this tick's physics step.
+                if(game) {
+                    auto commands=prepare_motions(game_commands);
+                    for(auto& [e,motion]:commands) {
+                        require(frame!=0 || !prepared.contains(e),"Gameplay and caller targeted the same body in one tick.");
+                        registry.get<Body>(e).target=std::move(motion);
+                    }
+                }
+                game_commands.clear();clear_structure_commands();
                 for(auto e:topology->kinematics) {
                     auto& body=registry.get<Body>(e);
                     if(!body.target)continue;
@@ -836,7 +928,7 @@ struct Runtime::Impl {
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
-            game_commands.clear();
+            game_commands.clear();clear_structure_commands();
             game_animation_commands.clear();
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");

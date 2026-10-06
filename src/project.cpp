@@ -323,7 +323,7 @@ VerifiedGame verify_game(const std::string& filename) {
         component_bindings_validate(content.document,artifact.schema);
         require(artifact.descriptor_sha256==inventory.at("gameplay/native-gameplay.json").at("sha256").get<std::string>(),"Gameplay descriptor changed since inventory verification.");
         require(runtime.at("features").value("native_gameplay",false),"Game requires a native-gameplay runtime.");
-        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==5,"Native gameplay requires runtime gameplay_services_version 5.");
+        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==6,"Native gameplay requires runtime gameplay_services_version 6.");
         require(artifact.target_os==runtime.at("target_os").get<std::string>() && artifact.target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay target differs from runtime target.");
         result.definition.gameplay_values=validate_gameplay_values(artifact.schema,config.at("values").dump());
         result.definition.gameplay_descriptor=text(descriptor);result.definition.gameplay_descriptor_sha256=artifact.descriptor_sha256;gameplay_paths.emplace("gameplay/native-gameplay.json","gameplay_descriptor");
@@ -378,7 +378,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
         if(p.gameplay) {
             require(runtime.at("features").value("native_gameplay",false),"Project requires a native-gameplay runtime.");
-            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==5,"Native gameplay requires runtime gameplay_services_version 5.");
+            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==6,"Native gameplay requires runtime gameplay_services_version 6.");
             require(p.gameplay->target_os==runtime.at("target_os").get<std::string>() && p.gameplay->target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay artifact target differs from installed runtime.");
         }
 #ifdef _WIN32

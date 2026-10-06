@@ -35,3 +35,6 @@ __pycache__/
 
 /tests/components_gameplay/**/bin/
 /tests/components_gameplay/**/obj/
+
+/tests/managed_lifecycle_gameplay/**/bin/
+/tests/managed_lifecycle_gameplay/**/obj/

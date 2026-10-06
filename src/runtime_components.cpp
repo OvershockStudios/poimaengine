@@ -105,11 +105,48 @@ std::uint32_t RuntimeComponents::query(const PoimaGameComponentType& binding,Poi
     const auto& rows=*t.rows;auto it=std::upper_bound(rows.begin(),rows.end(),after,[](PoimaEntityId value,const Row& row){return less_id(value,row.id);});
     std::uint32_t written=0;for(;it!=rows.end() && written<output.size();++it)output[written++]=it->id;return written;
 }
+void RuntimeComponents::reserve_birth(PoimaEntityId id,const std::map<std::string,components::Payload>& initial) {
+    check(batch_ && !prepared_,"Birth reservation requires an active unprepared runtime tick.");
+    check(id.high || id.low,"Pending birth cannot use the zero entity ID.");
+    check(pending_births_.size()<components::max_commands,"Pending birth command budget exceeded.");
+    check(std::none_of(owned_entities_.begin(),owned_entities_.end(),[&](const Entity& e){return equal_id(e.id,id);}),"Pending birth reuses an existing or retained entity ID.");
+    check(std::none_of(pending_births_.begin(),pending_births_.end(),[&](const PendingBirth& e){return equal_id(e.id,id);}),"Duplicate pending birth identity.");
+    std::size_t bytes=0;
+    for(const auto& [type_id,payload]:initial) {
+        const auto& t=type(parse_id(type_id));components::validate_payload(schemas_[t.schema],payload);
+        check(payload.size()<=components::max_command_bytes-staged_bytes_-pending_bytes_-bytes,"Pending birth payload budget exceeded.");bytes+=payload.size();
+    }
+    // The only mutation is a strong-guarantee vector append; the recipe is not copied.
+    pending_births_.push_back({id,&initial,bytes});pending_bytes_+=bytes;
+}
+void RuntimeComponents::cancel_birth(PoimaEntityId id) {
+    check(batch_ && !prepared_,"Birth cancellation requires an active unprepared runtime tick.");
+    const auto it=std::find_if(pending_births_.begin(),pending_births_.end(),[&](const PendingBirth& e){return equal_id(e.id,id);});
+    check(it!=pending_births_.end(),"Pending birth does not exist.");
+    pending_bytes_-=it->bytes;pending_births_.erase(it);
+    std::erase_if(staged_,[&](const Staged& write) {
+        if(write.key[1]!=id.high || write.key[2]!=id.low)return false;
+        staged_bytes_-=write.bytes.size();return true;
+    });
+    // Stable erase moves vector indices. Rebuild the bounded table without allocation.
+    staged_index_.fill(0);
+    for(std::size_t i=0;i<staged_.size();++i)staged_index_[staged_slot(staged_[i].key)]=static_cast<std::uint16_t>(i+1);
+}
+void RuntimeComponents::stage_pending_checked(const PoimaGameComponentType& binding,PoimaEntityId entity,std::span<const std::byte> value) {
+    check(batch_ && !prepared_,"Component writes require an active unprepared runtime tick.");const auto& t=type(binding);
+    if(alive(entity))check(find_cell(*t.rows,entity),"Runtime entity has no instance of this component.");
+    else {
+        const auto it=std::find_if(pending_births_.begin(),pending_births_.end(),[&](const PendingBirth& e){return equal_id(e.id,entity);});
+        check(it!=pending_births_.end(),"Component target is neither live nor a reserved birth.");
+        check(it->initial->contains(schemas_[t.schema].id),"Pending birth has no instance of this component.");
+    }
+    stage(binding,entity,value);
+}
 void RuntimeComponents::stage(const PoimaGameComponentType& binding,PoimaEntityId entity,std::span<const std::byte> value) {
     check(batch_ && !prepared_,"Component writes require an active unprepared runtime tick.");const auto& t=type(binding);
     check(entity.high || entity.low,"Component target cannot be the zero entity ID.");
     const WriteKey key{t.schema,entity.high,entity.low};const auto slot=staged_slot(key);check(!staged_index_[slot],"Duplicate gameplay component target in one tick.");
-    check(staged_.size()<components::max_commands && value.size()<=components::max_command_bytes-staged_bytes_,"Gameplay component command budget exceeded.");
+    check(staged_.size()<components::max_commands && value.size()<=components::max_command_bytes-staged_bytes_-pending_bytes_,"Gameplay component command budget exceeded.");
     components::validate_payload(schemas_[t.schema],value);
     staged_.push_back({key,components::Payload(value.begin(),value.end())});
     staged_index_[slot]=static_cast<std::uint16_t>(staged_.size());staged_bytes_+=value.size();
@@ -127,6 +164,7 @@ std::size_t RuntimeComponents::staged_slot(const WriteKey& key) const noexcept {
     while(staged_index_[slot] && staged_[staged_index_[slot]-1].key!=key)slot=(slot+1)&(staged_index_.size()-1);
     return slot;
 }
+void RuntimeComponents::clear_pending() noexcept { pending_births_.clear();pending_bytes_=0; }
 void RuntimeComponents::clear_staged() noexcept {
     staged_.clear();staged_index_.fill(0);staged_bytes_=0;
 }
@@ -142,7 +180,7 @@ void RuntimeComponents::validate_references(const Type& type,std::span<const std
     }
 }
 void RuntimeComponents::begin_batch() {
-    check(!batch_ && !prepared_ && staged_.empty() && journal_.empty(),"Component batch is already active.");
+    check(!batch_ && !prepared_ && staged_.empty() && pending_births_.empty() && journal_.empty(),"Component batch is already active.");
     original_revision_=revision_;original_entities_=entities_;
     for(auto& t:types_)t.original=t.rows;
     original_cells_=cells_.size();original_owners_=owned_entities_.size();
@@ -152,6 +190,10 @@ void RuntimeComponents::prepare_tick(std::span<const ComponentSpawn> spawns,std:
     check(batch_ && !prepared_,"Component tick is absent or already prepared.");
     check(spawns.size()<=components::max_commands && despawns.size()<=components::max_commands-spawns.size(),"Component structural command budget exceeded.");
     check(spawns.size()<=max_retained_entities-owned_entities_.size(),"Runtime retained entity budget exceeded.");
+    for(const auto& pending:pending_births_) {
+        const auto found=std::find_if(spawns.begin(),spawns.end(),[&](const ComponentSpawn& spawn){return equal_id(spawn.id,pending.id);});
+        check(found!=spawns.end() && found->initial && *found->initial==*pending.initial,"Pending birth is absent or its recipe differs from reserved content.");
+    }
     Prepared candidate;candidate.entities=entities_;candidate.births.reserve(spawns.size());candidate.structural=!spawns.empty() || !despawns.empty();
     for(std::size_t i=0;i<types_.size();++i)candidate.rows[i]=types_[i].rows;
     // IDs and native owners remain reserved even after logical retirement until
@@ -259,10 +301,10 @@ void RuntimeComponents::publish_tick() {
     if(candidate.component_changed)++revision_;
     structural_|=candidate.structural;
     // Ownership has moved to the batch journal; reset without erasing cells.
-    prepared_.reset();clear_staged();
+    prepared_.reset();clear_staged();clear_pending();
     profiling::counter("runtime.components.journal_bytes",journal_bytes_);profiling::counter("runtime.components.journal_entries",journal_.size());
 }
-void RuntimeComponents::apply_tick() { check(batch_ && !prepared_,"No active unprepared component batch.");if(staged_.empty())return;prepare_tick();publish_tick(); }
+void RuntimeComponents::apply_tick() { check(batch_ && !prepared_,"No active unprepared component batch.");if(staged_.empty() && pending_births_.empty())return;prepare_tick();publish_tick(); }
 void RuntimeComponents::discard_prepared() noexcept {
     if(prepared_) {
         for(const auto& cell:prepared_->created)types_[cell.type].pool->remove(cell.owner);
@@ -273,7 +315,7 @@ void RuntimeComponents::commit_batch() noexcept {
     if(!batch_)return;
     discard_prepared();
     for(auto& change:journal_)change.cell->journaled=false;
-    journal_.clear();clear_staged();original_entities_.reset();for(auto& t:types_)t.original.reset();
+    journal_.clear();clear_staged();clear_pending();original_entities_.reset();for(auto& t:types_)t.original.reset();
     if(structural_) {
     std::erase_if(cells_,[&](const OwnedCell& cell) {
         if(alive(cell.id)) { cell.cell->born=false;return false; }
@@ -287,7 +329,7 @@ void RuntimeComponents::rollback_batch() noexcept {
     if(!batch_)return;
     discard_prepared();
     for(auto& change:journal_) { change.cell->bytes.swap(change.bytes);change.cell->journaled=false; }
-    journal_.clear();clear_staged();
+    journal_.clear();clear_staged();clear_pending();
     for(auto& t:types_) { t.rows.swap(t.original);t.original.reset(); }
     entities_.swap(original_entities_);original_entities_.reset();
     for(std::size_t i=original_cells_;i<cells_.size();++i)types_[cells_[i].type].pool->remove(cells_[i].owner);

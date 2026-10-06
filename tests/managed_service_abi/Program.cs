@@ -30,7 +30,12 @@ using System.Buffers.Binary;
     public delegate* unmanaged[Cdecl]<void*, ComponentType*, Id*, void*, uint, uint*, void*, int> ComponentGet;
     public delegate* unmanaged[Cdecl]<void*, ComponentType*, Id*, void*, uint, void*, int> ComponentSet;
     public delegate* unmanaged[Cdecl]<void*, Id*, uint*, void*, int> Alive;
+    public delegate* unmanaged[Cdecl]<void*, RecipeId*, Transform*, Id*, void*, int> Spawn;
+    public delegate* unmanaged[Cdecl]<void*, Id*, void*, int> Despawn;
+    public delegate* unmanaged[Cdecl]<void*, ComponentType*, RecipeId*, void*, uint, uint*, void*, int> TemplateGet;
 }
+[StructLayout(LayoutKind.Sequential)] struct RecipeId { public ulong High,Low; }
+[StructLayout(LayoutKind.Sequential)] unsafe struct Transform { public fixed double Position[3];public fixed double Rotation[4];public fixed double Scale[3]; }
 [StructLayout(LayoutKind.Sequential)] struct ComponentType { public Id Id;public ulong A,B,C,D;public uint Bytes,Reserved; }
 [StructLayout(LayoutKind.Sequential)] struct Ticket { public ulong High,Low,Sequence; }
 [StructLayout(LayoutKind.Sequential)] unsafe struct SaveRequest { public uint Kind,SlotBytes;public byte* Slot;public ulong Expected;public uint HasExpected,Recovery; }
@@ -53,7 +58,14 @@ using System.Buffers.Binary;
     public uint Present, Loop, Playing, TransitionPresent, Reserved; public Transition Transition;
 }
 [StructLayout(LayoutKind.Sequential)] public struct ProbeState { public int Count; }
-[GameModule("poima-test-services-v5")]
+[StructLayout(LayoutKind.Sequential)] public struct UnsupportedTemplateState { public TemplateId Recipe; }
+[GameModule("poima-test-template-state-rejected")]
+public sealed class UnsupportedTemplateGame : Game<UnsupportedTemplateState>
+{
+    public override void Initialize(ref UnsupportedTemplateState state) { }
+    public override void Tick(ref UnsupportedTemplateState state,GameContext context) { }
+}
+[GameModule("poima-test-services-v6")]
 public sealed class ProbeGame : Game<ProbeState>
 {
     public override void Initialize(ref ProbeState state) { state.Count=7; }
@@ -109,11 +121,31 @@ public sealed class ProbeGame : Game<ProbeState>
         try { context.Set(new(11,22),in health); }catch(ArgumentException){finiteRejected=true;}
         if(!finiteRejected)throw new Exception("Nonfinite generated encode accepted.");
         if(!context.IsAlive(new(11,22)) || context.IsAlive(default))throw new Exception("Liveness ABI mismatch.");
+        var template=new TemplateId(0xfedcba9876543210,22);
+        var defaults=context.GetTemplate<Health>(template);
+        if(defaults.Current!=99 || defaults.Maximum!=100 || defaults.Score!=long.MinValue)throw new Exception("Frozen template payload mismatch.");
+        if(context.TryGetTemplate<Health>(new(template.High,24),out _))throw new Exception("Absent template component was present.");
+        var first=context.Spawn(template);
+        var second=context.Spawn(template,new SpawnTransform(new(1.25,-2.5,3.75),System.Numerics.Quaternion.Identity,new(2,3,4)));
+        if(first!=new EntityId(ulong.MaxValue,1001) || second!=new EntityId(ulong.MaxValue,1002) || context.IsAlive(first))throw new Exception("Reserved spawn ID transfer/publication mismatch.");
+        defaults.Current=8;context.Set(first,in defaults);
+        if(context.GetTemplate<Health>(template).Current!=99)throw new Exception("Template read observed instance initialization.");
+        context.Despawn(first);context.Despawn(second);
+        bool unknown=false;try {context.GetTemplate<Health>(new(template.High,999));}catch(InvalidOperationException e){unknown=e.Message=="lifecycle rejected";}
+        if(!unknown)throw new Exception("Unknown template error was not transferred.");
+        bool presence=false;try {context.TryGetTemplate<Health>(new(template.High,25),out _);}catch(InvalidOperationException){presence=true;}
+        if(!presence)throw new Exception("Invalid template presence flag accepted.");
+        bool zero=false;try {context.Spawn(new(template.High,26));}catch(InvalidOperationException){zero=true;}
+        if(!zero)throw new Exception("Zero spawn result accepted.");
+        bool spawnError=false;try {context.Spawn(new(template.High,999));}catch(InvalidOperationException e){spawnError=e.Message=="lifecycle rejected";}
+        if(!spawnError)throw new Exception("Spawn error was not transferred.");
+        bool despawnError=false;try {context.Despawn(new(ulong.MaxValue,999));}catch(InvalidOperationException e){despawnError=e.Message=="lifecycle rejected";}
+        if(!despawnError)throw new Exception("Despawn error was not transferred.");
     }
 }
 static unsafe class Program
 {
-    static int gets, sets,infos,requests,results,queries,componentGets,componentSets,aliveCalls;
+    static int gets, sets,infos,requests,results,queries,componentGets,componentSets,aliveCalls,spawns,despawns,templateGets;
     static bool badPayload;
     [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
     static int Unused() => -1;
@@ -211,6 +243,12 @@ static unsafe class Program
     static int ComponentSet(void* context,ComponentType* descriptor,Id* id,void* input,uint bytes,void* error)
     {
         ++componentSets;
+        if(id->High==ulong.MaxValue && id->Low==1001) {
+            if((nint)context!=0x1234 || !Descriptor(descriptor) || bytes!=48)badPayload=true;
+            var value=new ReadOnlySpan<byte>(input,(int)bytes);
+            if(BinaryPrimitives.ReadSingleLittleEndian(value)!=8 || BinaryPrimitives.ReadInt32LittleEndian(value[16..])!=100 || BinaryPrimitives.ReadInt64LittleEndian(value[32..])!=long.MinValue)badPayload=true;
+            return 0;
+        }
         if((nint)context!=0x1234 || !Descriptor(descriptor) || id->High!=11 || id->Low!=22 || bytes!=descriptor->Bytes)badPayload=true;
         Span<byte> expected=stackalloc byte[(int)bytes];expected.Clear();
         if(bytes==48) { BinaryPrimitives.WriteInt32LittleEndian(expected[16..],-9);BinaryPrimitives.WriteInt64LittleEndian(expected[32..],long.MaxValue); }
@@ -222,6 +260,37 @@ static unsafe class Program
     {
         ++aliveCalls;if((nint)context!=0x1234)badPayload=true;*alive=id->High==11 && id->Low==22?1u:0u;return 0;
     }
+    static int LifecycleError(void* error)
+    { var text=new Span<byte>(error,2048);text.Clear();Encoding.UTF8.GetBytes("lifecycle rejected",text);return -1; }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Spawn(void* context,RecipeId* template,Transform* transform,Id* result,void* error)
+    {
+        ++spawns;if((nint)context!=0x1234 || template->High!=0xfedcba9876543210)badPayload=true;
+        if(template->Low==999)return LifecycleError(error);
+        if(template->Low==26) {*result=default;return 0;}
+        if(template->Low!=22)badPayload=true;
+        if(transform!=null && (transform->Position[0]!=1.25 || transform->Position[1]!=-2.5 || transform->Position[2]!=3.75 ||
+            transform->Rotation[0]!=0 || transform->Rotation[1]!=0 || transform->Rotation[2]!=0 || transform->Rotation[3]!=1 ||
+            transform->Scale[0]!=2 || transform->Scale[1]!=3 || transform->Scale[2]!=4))badPayload=true;
+        *result=new(){High=ulong.MaxValue,Low=transform==null?1001u:1002u};return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int Despawn(void* context,Id* id,void* error)
+    {
+        ++despawns;if((nint)context!=0x1234 || id->High!=ulong.MaxValue)badPayload=true;
+        if(id->Low==999)return LifecycleError(error);
+        if(id->Low!=1001 && id->Low!=1002)badPayload=true;return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int TemplateGet(void* context,ComponentType* descriptor,RecipeId* template,void* output,uint bytes,uint* present,void* error)
+    {
+        ++templateGets;if((nint)context!=0x1234 || !Descriptor(descriptor) || bytes!=48 || template->High!=0xfedcba9876543210)badPayload=true;
+        if(template->Low==999)return LifecycleError(error);
+        *present=template->Low==24?0u:template->Low==25?2u:1u;if(*present!=1)return 0;
+        if(template->Low!=22)badPayload=true;
+        var wire=new Span<byte>(output,(int)bytes);wire.Clear();BinaryPrimitives.WriteSingleLittleEndian(wire,99);
+        BinaryPrimitives.WriteInt32LittleEndian(wire[16..],100);BinaryPrimitives.WriteInt64LittleEndian(wire[32..],long.MinValue);return 0;
+    }
     static void Check(bool condition,string message) { if(!condition)throw new Exception(message); }
     static string Output(byte* output) => Marshal.PtrToStringUTF8((nint)output)!;
     static void Reject(Call* call,List<string> checks,string name,Services candidate,bool nullServices=false)
@@ -230,7 +299,7 @@ static unsafe class Program
         int before=((ProbeState*)call->State)->Count;
         Check(Entry.Invoke((nint)call,sizeof(Call))!=0,$"{name} unexpectedly accepted.");
         Check(Output(call->Output).Contains("Gameplay service"),$"{name}: wrong error {Output(call->Output)}");
-        Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0 && infos==0 && requests==0 && results==0 && queries==0 && componentGets==0 && componentSets==0 && aliveCalls==0,$"{name} invoked gameplay or callbacks.");
+        Check(((ProbeState*)call->State)->Count==before && gets==0 && sets==0 && infos==0 && requests==0 && results==0 && queries==0 && componentGets==0 && componentSets==0 && aliveCalls==0 && spawns==0 && despawns==0 && templateGets==0,$"{name} invoked gameplay or callbacks.");
         checks.Add(name);
     }
     static int Main(string[] args)
@@ -238,8 +307,15 @@ static unsafe class Program
         var checks=new List<string>();
         try
         {
-            Check(sizeof(Call)==80 && sizeof(Services)==120 && sizeof(ComponentType)==56 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
-                sizeof(Ticket)==24 && sizeof(SaveRequest)==32 && sizeof(SaveEnqueue)==32 && sizeof(SaveResult)==344 && sizeof(SaveInfo)==104,"Independent ABI sizes.");
+            Check(sizeof(Call)==80 && sizeof(Services)==144 && sizeof(ComponentType)==56 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
+                sizeof(Ticket)==24 && sizeof(SaveRequest)==32 && sizeof(SaveEnqueue)==32 && sizeof(SaveResult)==344 && sizeof(SaveInfo)==104 && sizeof(RecipeId)==16 && sizeof(Transform)==80,"Independent ABI sizes.");
+            Check(Marshal.OffsetOf<Services>(nameof(Services.Spawn)).ToInt64()==120 && Marshal.OffsetOf<Services>(nameof(Services.Despawn)).ToInt64()==128 &&
+                Marshal.OffsetOf<Services>(nameof(Services.TemplateGet)).ToInt64()==136 && Marshal.OffsetOf<Transform>(nameof(Transform.Rotation)).ToInt64()==24 &&
+                Marshal.OffsetOf<Transform>(nameof(Transform.Scale)).ToInt64()==56,"Independent lifecycle offsets.");
+            Check(TemplateId.Parse("fedcba98765432100000000000000016")==new TemplateId(0xfedcba9876543210,22),"Template ID parsing.");
+            foreach(var invalid in new[]{new string('0',32),new string('A',32),"template"}) {
+                bool failed=false;try {TemplateId.Parse(invalid);}catch(ArgumentException){failed=true;}Check(failed,"Invalid template identity accepted.");
+            }
             byte* output=stackalloc byte[65536]; byte* state=stackalloc byte[sizeof(ProbeState)];
             var request=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(ProbeGame).FullName})+"\0");
             Call call=new(){Version=1,Operation=1,Output=output,OutputCapacity=65536};
@@ -252,14 +328,17 @@ static unsafe class Program
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             Check(((ProbeState*)state)->Count==7,"Initialize state.");
             nint unused=(nint)(delegate* unmanaged[Cdecl]<int>)&Unused;
-            Services good=new(){Version=5,Bytes=120,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result,Query=&Query,ComponentGet=&ComponentGet,ComponentSet=&ComponentSet,Alive=&Alive};
+            Services good=new(){Version=6,Bytes=144,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result,Query=&Query,ComponentGet=&ComponentGet,ComponentSet=&ComponentSet,Alive=&Alive,Spawn=&Spawn,Despawn=&Despawn,TemplateGet=&TemplateGet};
             call.Operation=3;call.Tick=123;
             Reject(&call,checks,"null services rejected before Tick",good,true);
-            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,121),(6,120),(5,0)})
+            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,120),(5,121),(6,120),(6,136),(6,143),(6,145),(7,144),(6,0)})
             { var candidate=good;candidate.Version=pair.Version;candidate.Bytes=pair.Bytes;Reject(&call,checks,$"services {pair.Version}/{pair.Bytes} rejected before Tick",candidate); }
             var missing=good;missing.Get=null;Reject(&call,checks,"null animation get rejected",missing);
             missing=good;missing.Set=null;Reject(&call,checks,"null animation set rejected",missing);
             missing=good;missing.Sound=0;Reject(&call,checks,"null prefix callback rejected",missing);
+            missing=good;missing.Entity=0;Reject(&call,checks,"null entity callback rejected",missing);
+            missing=good;missing.Raycast=0;Reject(&call,checks,"null ray callback rejected",missing);
+            missing=good;missing.Move=0;Reject(&call,checks,"null motion callback rejected",missing);
             missing=good;missing.SaveInfo=null;Reject(&call,checks,"null save info rejected",missing);
             missing=good;missing.SaveRequest=null;Reject(&call,checks,"null save request rejected",missing);
             missing=good;missing.SaveResult=null;Reject(&call,checks,"null save result rejected",missing);
@@ -267,10 +346,14 @@ static unsafe class Program
             missing=good;missing.ComponentGet=null;Reject(&call,checks,"null component get rejected",missing);
             missing=good;missing.ComponentSet=null;Reject(&call,checks,"null component set rejected",missing);
             missing=good;missing.Alive=null;Reject(&call,checks,"null entity alive rejected",missing);
+            missing=good;missing.Spawn=null;Reject(&call,checks,"null spawn rejected",missing);
+            missing=good;missing.Despawn=null;Reject(&call,checks,"null despawn rejected",missing);
+            missing=good;missing.TemplateGet=null;Reject(&call,checks,"null template component get rejected",missing);
             call.Services=&good;
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
-            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && queries==2 && componentGets==3 && componentSets==2 && aliveCalls==2 && !badPayload,"Successful v5 invocation payload/state mismatch.");
-            checks.Add("matching v5 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation");
+            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && queries==2 && componentGets==3 && componentSets==3 && aliveCalls==3 && spawns==4 && despawns==3 && templateGets==5 && !badPayload,"Successful v6 invocation payload/state mismatch.");
+            checks.Add("matching v6 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation");
+            checks.Add("lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors");
             call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             for(int iteration=0;iteration<100;++iteration)
             {
@@ -281,6 +364,11 @@ static unsafe class Program
                 call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             }
             checks.Add("100 additional generated-code module lifetimes invoke and retire without retained Type caches");
+            var unsupported=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(UnsupportedTemplateGame).FullName})+"\0");
+            call.Operation=1;fixed(byte* text=unsupported) {
+                call.Text=text;Check(Entry.Invoke((nint)(&call),sizeof(Call))!=0 && Output(output).Contains("Unsupported state field"),"TemplateId was silently accepted as persisted EntityId state.");
+            }
+            checks.Add("TemplateId remains distinct from persisted EntityId state fields");
             call.Operation=5;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             using var collected=JsonDocument.Parse(Output(output));
             Check(collected.RootElement.GetProperty("active_modules").GetInt32()==0 && collected.RootElement.GetProperty("retired_alive").GetInt32()==0,"Fixture context retained after release.");

@@ -2,7 +2,7 @@
   "format": "poima.runtime",
   "version": 1,
   "engine_version": "@PROJECT_VERSION@",
-  "gameplay_services_version": 5,
+  "gameplay_services_version": 6,
   "target_os": "@CMAKE_SYSTEM_NAME@",
   "target_arch": "@POIMA_TARGET_ARCH@",
   "executable": "bin/poima@CMAKE_EXECUTABLE_SUFFIX@",
