@@ -139,6 +139,7 @@ struct Runtime::Impl {
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
     std::unique_ptr<RuntimeComponents> components;
+    std::unique_ptr<ui::Model> ui_model;
     std::uint64_t game_revision=0,structure_revision=0;
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
@@ -392,6 +393,7 @@ struct Runtime::Impl {
         }
         entity_ids.emplace(authored_ids);
         components=std::make_unique<RuntimeComponents>(registry,candidate->identities,definition);
+        ui_model=std::make_unique<ui::Model>(definition.ui);
         physics.OptimizeBroadPhase();
         for (auto e : candidate->characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
@@ -1059,6 +1061,11 @@ void Runtime::gameplay_edit(const std::string& values) {
 }
 const std::vector<components::Schema>& Runtime::component_schemas() const { return impl_->components->schemas(); }
 std::uint64_t Runtime::component_revision() const { return impl_->components->revision(); }
+const ui::Model& Runtime::ui_model() const { return *impl_->ui_model; }
+void Runtime::ui_edit(std::uint64_t expected_revision,const std::vector<ui::Edit>& edits,std::optional<std::string> modal) {
+    require(!impl_->save_queue.pending(),"Resolve pending gameplay save before UI editing.");
+    impl_->ui_model->edit(expected_revision,edits,std::move(modal));
+}
 std::optional<components::Payload> Runtime::component_read(const std::string& type,const std::string& entity) const { return impl_->components->read(type,entity); }
 std::vector<std::string> Runtime::component_query(const std::string& type,const std::string& after,std::uint32_t limit) const { return impl_->components->query(type,after,limit); }
 void Runtime::component_edit(const std::string& type,const std::string& entity,const components::Payload& value) {

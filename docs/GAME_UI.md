@@ -1,8 +1,56 @@
 # Native game UI foundation
 
-Poima's native UI work starts with retained document layout and shared Vulkan composition. This is a presentation foundation, not yet an integrated gameplay HUD or menu system. Compiled C# bindings, authored UI assets, service commands, live player/desktop input routing and paused control transactions remain unfinished.
+Poima has two native UI foundations: authoritative logical controls in the world/runtime, and retained document layout with shared Vulkan composition. They are not connected to one another yet. Compiled C# callbacks, automatic layout binding and live player/desktop input routing remain unfinished.
 
-The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The default headless engine build retains no UI dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
+The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The logical model is available in the default headless engine; it has no RmlUi, font or graphics dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
+
+## Authoritative controls
+
+Authored world format 4 adds a separate `ui` hierarchy. Panels, labels and buttons have nonzero 32-character lowercase hexadecimal IDs, independent of world entities. Controls do not require transforms or physics objects. Definitions are frozen at runtime start and participate in packaged content identity.
+
+Use `world.transact` with `ui.element.set` or `ui.element.remove`. A set operation supplies the complete element:
+
+```json
+{
+  "op": "ui.element.set",
+  "id": "10000000000000000000000000000001",
+  "element": {
+    "parent": null,
+    "name": "Health",
+    "kind": "label",
+    "text": "Health 100",
+    "action": null,
+    "visible": true,
+    "enabled": true
+  }
+}
+```
+
+Parents must be panels. Panel text is empty. Buttons require an action token of 1–128 ASCII letters, digits, underscores, dots or hyphens; other kinds require `action:null`. Tokens are metadata only: a button named Save does not write a checkpoint. Final-state validation permits a child before its parent within the same transaction. Removing a parent requires removing or reparenting its children in that transaction. Retired IDs cannot be reused outside known undo/redo history.
+
+`world.ui.get` and `world.ui.list` inspect authored definitions. Pagination uses `revision`, `after` and `limit`. `runtime.ui.inspect` accepts `session_id`, `tick`, optional `ui_revision`, `after` and `limit`. Continuation pages require `ui_revision`. It returns frozen metadata alongside live text, local and inherited visibility/enabled state, modal membership eligibility and the next cursor. Inspection does not search for pixels or require a window.
+
+`runtime.ui.edit` commits all supplied patches at the current simulation tick:
+
+```json
+{
+  "session_id": "20000000000000000000000000000001",
+  "request_id": "30000000000000000000000000000001",
+  "expected_tick": 0,
+  "expected_ui_revision": 0,
+  "edits": [
+    {"id": "10000000000000000000000000000001", "text": "Health 83"}
+  ]
+}
+```
+
+Each patch needs an ID and at least one of `text`, `visible` or `enabled`. Duplicate IDs are rejected. Optional `modal` selects an effectively visible panel; explicit `null` clears it, and omission preserves it. A modal-only edit can use an empty `edits` array. Hiding the active modal requires clearing or replacing it in the same transaction. Buttons are logically eligible only when they and their ancestors are visible/enabled and they lie inside the active modal, if any. Eligibility does not execute an action or promise a physically clickable layout region.
+
+An accepted edit advances `ui_revision` once, including a same-value edit; it leaves simulation tick, physics and authored defaults unchanged. Invalid edits publish nothing. Identical retries return the original result within the shared 32-receipt runtime window, even after later UI/tick changes. A new runtime session invalidates old edit requests. Desktop-hosted edits require paused Play. The API is serialized by the native owner; it is not a concurrent direct-memory interface.
+
+Definitions allow 256 controls, hierarchy depth 32, 128 UTF-8 bytes per name, 16 KiB per text and 1 MiB total text. Text is literal UTF-8 without NUL. These are bounded contract limits, not performance claims. The [native model API](../include/poima/ui_model.hpp) validates sorted complete definitions and owns mutable values. It is available without simulation; a live `Runtime` additionally requires the simulation build.
+
+UI-bearing runtimes use snapshot version 4. Saves preserve complete text/visibility/enabled state, active modal and UI revision against trusted frozen definitions; no focus, atlas or pixel data is serialized. Existing UI-free snapshots retain versions 1–3. External `save.write` and replacement `save.load` require `expected_ui_revision` when the active world contains UI. The Save/Load editor model retains this guard and recognizes same-tick UI edits as stale. Stopped restore accepts an absent or null guard.
 
 ## Presentation boundary
 
@@ -56,9 +104,11 @@ Current bounds include a 1 MiB RML document, 4,096 parsed nodes, 256 registered 
 
 ## Current limits
 
-The presentation API is experimental. It has no C# bindings, world-service authoring commands, gameplay transactions or portable UI save state. Its returned action strings do not pause/resume a game or request storage operations. Controller navigation integration, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished.
+Both APIs are experimental. Native logical controls and document presentation remain separate: no automatic layout/style binding, C# UI callbacks, UI action execution or control-turn replay is implemented. Returned presentation action strings do not pause/resume a game or request storage operations. Controller navigation integration, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished.
 
 ## Recorded checks
+
+[Logical-state evidence](evidence/m2-native-ui-state.json) covers native model/runtime checks, authored and runtime RPC transactions, strict restores, legacy save regressions and a linked C# Save model test. Windows and Linux both pass the authored six-case and runtime four-case UI suites. The default authoring-only build also validates UI definitions without simulation or RmlUi. Reproduce the focused native checks with `poima-ui-model-test` and `poima-runtime-ui-test`; the RPC harnesses are `tests/world_ui_contract.py` and `tests/runtime_ui_contract.py`. Each accepts a CLI binary and `--runtime 0` or `--runtime 1`; Windows interop uses `--windows-interop`. The save-panel model test runs with `.NET 10` using `dotnet run --project tests/fixtures/editor_save_model/Poima.SaveModel.Contract.csproj`.
 
 [Qualification evidence](evidence/m2-native-game-ui.json) covers native layout/packet tests on Windows and Linux, the default headless build, and explicit Windows Vulkan captures on the laptop's AMD and NVIDIA GPUs. Numeric readback checks cover alpha composition, textures, transforms and clipping at 1× and 4× scene MSAA. The example also passes layout/action checks at 100% and 150% scale.
 

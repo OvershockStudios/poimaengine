@@ -288,7 +288,7 @@ struct Bridge : ViewportState {
     }
     Json runtime_json() const {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
-            {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"structure_revision",value.active ? Json(value.structure_revision) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
+            {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"structure_revision",value.active ? Json(value.structure_revision) : Json(nullptr)},{"ui_revision",value.active ? Json(value.ui_revision) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
     }
     void release_input(bool forget=false) {
         input_focused=false;
@@ -1021,7 +1021,7 @@ struct Bridge : ViewportState {
             }
             if(!method.starts_with("desktop.")) {
                 sync_playback();
-                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" || method=="runtime.component.edit" || method=="runtime.structure.transact" ||
+                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" || method=="runtime.component.edit" || method=="runtime.structure.transact" || method=="runtime.ui.edit" ||
                     method=="save.configure" || method=="save.write" || method=="save.load"))
                     throw Failure(-32009,"Pause desktop playback before manual runtime mutation or saving/loading.");
                 auto response=world->request(bytes,WorldRequestScope::shared_editor);

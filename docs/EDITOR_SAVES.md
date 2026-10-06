@@ -38,3 +38,7 @@ Qualification uses actual editor textboxes and routed button events, fresh edito
 When custom components are active, Save/Load observations also retain their independent component revision. Applying a paused component edit makes an earlier observation stale. An unapplied live component draft blocks Save/Load until applied or discarded. See [custom components](CUSTOM_COMPONENTS.md).
 
 Save/Load observations also retain the runtime structure revision. A paused plain-prop birth or removal makes an older observation stale even when the tick and custom component revision remain unchanged.
+
+## Logical UI freshness (development)
+
+The development save model also captures `ui_revision`. An agent changing logical UI text, visibility, enabled state or the active modal makes an older save observation stale even when simulation tick and structure are unchanged. Save and active-load requests retain that observed revision, including after a lost-response retry. This source change has a linked C# model test; it does not activate a new installed desktop package or qualify a visual UI-authoring workflow.

@@ -1,0 +1,224 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-05",
+  "engine_version": "0.0.39-development",
+  "milestone": "Authoritative native UI definitions, same-tick state edits and portable saves",
+  "schema_revision": 35,
+  "authored_format": 4,
+  "ui_snapshot_format": 4,
+  "gameplay_services_abi": 6,
+  "contracts": [
+    "Separate stable panel/label/button hierarchy; no Transform or world entity ownership.",
+    "Final-state authoring transactions, preview, paged inspection, undo/redo, retired identities and frozen content binding.",
+    "Native text/visibility/enabled/modal state with atomic guarded edits and logical eligibility independent of pixels.",
+    "Same-tick UI revision and retained retry receipts; no physics advance.",
+    "Strict staged UI restore alongside spawned props, allocator lineage and custom component values; UI-free v1-v3 compatibility.",
+    "Save/load freshness includes UI revision; desktop save model retains observed and retry guards."
+  ],
+  "linux": {
+    "runtime_selected_ctest": {
+      "tests": 10,
+      "passed": true,
+      "seconds": 12.88,
+      "log_sha256": "fa43f4edba843e1f9cf1698dca8ceffaf2e0f2ce547361bf48a51cdc681fcbb4",
+      "names": [
+        "ui_model_native",
+        "profiler_contract",
+        "world_templates_contract",
+        "world_ui_contract",
+        "runtime_save_native",
+        "runtime_ui_native",
+        "runtime_save_fixture",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_ui_contract"
+      ]
+    },
+    "headless_selected_ctest": {
+      "tests": 5,
+      "passed": true,
+      "names": [
+        "world_ui_contract",
+        "world_components_contract",
+        "world_templates_contract",
+        "profiler_contract",
+        "world_session_native"
+      ]
+    },
+    "protocol": [
+      {
+        "test": "tests/world_ui_contract.py",
+        "tests": 6,
+        "skipped": 0,
+        "rpc_calls": 65,
+        "passed": true,
+        "binary_sha256": "87e4725f8e7ac9b01bc843089987a355252766b1dfa95c804b8f7f7dd1d305ad",
+        "record_sha256": "67e9dadad349d483ffc316d96e87753fae244689d81e489e3bb81f7051291053"
+      },
+      {
+        "test": "tests/runtime_ui_contract.py",
+        "tests": 4,
+        "skipped": 0,
+        "rpc_calls": 98,
+        "passed": true,
+        "binary_sha256": "87e4725f8e7ac9b01bc843089987a355252766b1dfa95c804b8f7f7dd1d305ad",
+        "record_sha256": "233238210cce60fb56d525b551eb382b897c18573bf4478415f1b957204e9a03"
+      },
+      {
+        "test": "tests/world_ui_contract.py",
+        "tests": 6,
+        "skipped": 1,
+        "rpc_calls": 59,
+        "passed": true,
+        "binary_sha256": "c5a6214a675ec00f19a9a9e635ddaa145bb6bbacf8bb99f02e60f18b572a47f7",
+        "record_sha256": "71b9d04fbbc9bcdf2a9046e8551c6a29d7f83bbee87c46cf275aa3bbe6e35e06"
+      },
+      {
+        "test": "tests/runtime_ui_contract.py",
+        "tests": 4,
+        "skipped": 3,
+        "rpc_calls": 3,
+        "passed": true,
+        "binary_sha256": "c5a6214a675ec00f19a9a9e635ddaa145bb6bbacf8bb99f02e60f18b572a47f7",
+        "record_sha256": "c2331baef3436b2a4b7b511755acac32dbfa575abf20f9282d325282aed09547"
+      }
+    ],
+    "compatibility_ctest": {
+      "tests": 3,
+      "passed": true,
+      "seconds": 16.39,
+      "names": [
+        "project_contract",
+        "runtime_contract",
+        "world_contract"
+      ],
+      "log_sha256": "10b38bf90c9121b7ec7c44dfa0b24ae39e78cfcaf898f5c071aac9db482d3eab"
+    }
+  },
+  "windows": {
+    "build_targets": [
+      "poima",
+      "poima_desktop",
+      "poima-runtime-ui-test",
+      "poima-ui-model-test",
+      "poima-runtime-save-test"
+    ],
+    "build_passed": true,
+    "native": [
+      {
+        "target": "poima-ui-model-test",
+        "exit_code": 0,
+        "output": "Logical UI definition, modal eligibility, atomic edits, UTF-8 budgets and strict snapshots passed.\n"
+      },
+      {
+        "target": "poima-runtime-ui-test",
+        "exit_code": 0,
+        "output": "Runtime UI: atomic same-tick edits, modal eligibility, isolated v4 snapshots, spawned custom state, pending-save guards and legacy v1-v3 compatibility passed.\n"
+      },
+      {
+        "target": "poima-runtime-save-test",
+        "exit_code": 0,
+        "output": "Runtime snapshot moving door/child, airborne/angular dynamics and sleep, reconstructed character jump, future contact tolerance, outgoing/frozen animation fades, logical sound continuation, export bounds/yaw/IDs, repeated staging, lifecycle provenance/frontier/reference restoration and malformed/binding rejection passed.\n"
+      }
+    ],
+    "protocol": [
+      {
+        "test": "tests/world_ui_contract.py",
+        "tests": 6,
+        "skipped": 0,
+        "rpc_calls": 65,
+        "passed": true,
+        "binary_sha256": "861c8b4802e8a5730778d44219b84dc06ad7a6488f3f4e0a65fc7ad3ff720d67",
+        "record_sha256": "68557b1d1eeb52d56efe50db7859cfb28edc63f837836c469c35bd178d0b72e9"
+      },
+      {
+        "test": "tests/runtime_ui_contract.py",
+        "tests": 4,
+        "skipped": 0,
+        "rpc_calls": 98,
+        "passed": true,
+        "binary_sha256": "861c8b4802e8a5730778d44219b84dc06ad7a6488f3f4e0a65fc7ad3ff720d67",
+        "record_sha256": "32a39c0534d463d7513be0e85bf745774a701e84d0eff1cd1b1129ef3bf1d4a8"
+      },
+      {
+        "test": "tests/runtime_save_contract.py",
+        "tests": 7,
+        "skipped": 0,
+        "rpc_calls": 547,
+        "passed": true,
+        "binary_sha256": "861c8b4802e8a5730778d44219b84dc06ad7a6488f3f4e0a65fc7ad3ff720d67",
+        "record_sha256": "62526dac56b8a5319c6cedbe7bf12d8698edd97fca7d525a18a13bfca74009e4"
+      },
+      {
+        "test": "tests/world_templates_contract.py",
+        "tests": 10,
+        "skipped": 0,
+        "rpc_calls": 155,
+        "passed": true,
+        "binary_sha256": "861c8b4802e8a5730778d44219b84dc06ad7a6488f3f4e0a65fc7ad3ff720d67",
+        "record_sha256": "0a892a2198f34938a81410c759c5f378d78c679daf47d6ca7949e298f868b554"
+      }
+    ]
+  },
+  "desktop_save_model": {
+    "project": "tests/fixtures/editor_save_model/Poima.SaveModel.Contract.csproj",
+    "passed": true,
+    "scope": "Real SaveEditorModel.cs linked against a fake host; not a running editor.",
+    "log_sha256": "334c4dd57bc4e1e5c729cf1715611024d690b8377615b731d31a6191403c6bc1"
+  },
+  "corrected_failures": [
+    "Initial discovery-schema initializer lacked a closing brace; corrected before qualification.",
+    "Native test omitted the assets header declaring sha256; corrected.",
+    "New test fixtures expected the wrong established session error and attempted to clear an uncommitted save intent. Both corrected without production changes; final native case checks rejection before and after intent commit."
+  ],
+  "limitations": [
+    "Logical controls and RmlUi presentation are separate; no automatic layout/style binding.",
+    "No native UI action execution, C# UI callbacks, paused control-turn replay, or live input routing.",
+    "No new visual/GPU/physical-input checks, deployed desktop package, or console qualification.",
+    "No production UI performance or accessibility claim.",
+    "Saved logical state is portable JSON; this milestone tested independent OS runs, not a new cross-OS UI fixture exchange."
+  ],
+  "sources": {
+    "CMakeLists.txt": "a15e2daf488095c70f17a1ca9e39672c3e9020d1f4af38dbea78e228871a5666",
+    "include/poima/ui_model.hpp": "1c837f99cf27b8c7dcd8a3c4c37ac5ad2b274001712bbcb5b55a55efcc5de155",
+    "include/poima/runtime.hpp": "dfc35977d2890d3f8cd6c1f91a96ec953762eb665ab3ff76474bd8c54770980c",
+    "include/poima/world.hpp": "5cd142d374d5e28a8520be272181e28fd2e8ce2d9dff25da06682c7caa6d97a6",
+    "src/ui_model.cpp": "d7255828053f45941be83ce26529c1412ba207da7b0c0ab253dc6078638be5ee",
+    "src/world_ui.inc": "0a6c258195f9a31381bece43a3c470ce9e8b231bdb1424ea3757fcf60842b05f",
+    "src/world.cpp": "7dac76adfcedea10af6c129e564cd2ceddec3c33165defa6e3fad2877fc98174",
+    "src/runtime.cpp": "c9b0467b78f6374b6a0694423b720649130cb2adf971e6b6227b953ed04ab6ef",
+    "src/runtime_disabled.cpp": "6d0474d538431e1db7b565da399bfeef379cc841de4f9af93848f1d4156d9187",
+    "src/runtime_save.inc": "cfd07deead78ad80aff113bb619766e1a23fdcc1a443fd7dc3e905eaa87d325b",
+    "src/world_save.inc": "735f0501af0696c4448852358027cf38d45d53852077263e6803c837cd5846fd",
+    "src/desktop_bridge.cpp": "0782ab89356f143f4610870cbfa9b3e37a53dc8ede2d784a733644b6ac71cf3a",
+    "desktop/Poima.Editor/SaveEditorModel.cs": "7df4faa4eff2e979e792b5a73ac62b82abfb593458c57e975d1e31f0f9f370a4",
+    "tests/ui_model.cpp": "4c3eccc0b894f616ee79c8147301feb9bdfe8a551513ea254b58c04db80b5de1",
+    "tests/runtime_ui_native.cpp": "205f094e6969a747d2759c5424e7c416018197386dbb9708ecddb37d5f36b64e",
+    "tests/runtime_ui_contract.py": "ab0471458a4ddd78f93a103a019d16cd3eba4bfa91533dc74f1d6d0e25e2facb",
+    "tests/world_ui_contract.py": "dd14a7619f0fdf8d559bff617ee95c4249db56a1c5a96f4b053ab70ab781f705",
+    "tests/world_session_native.cpp": "f280b819dedb34bf3f0a00416bc9b3a0a57d5b914fcc03a2c96e5c92f716ce45",
+    "tests/profiler_contract.py": "3f857857740698e60a29d9facf85bf690938717ff61c03de7321f99176a7e2b0",
+    "tests/world_templates_contract.py": "f9c27204c69bb26bf7c86acdfcee5edd4b796deed720c778c45717192fcccfef",
+    "tests/world_components_contract.py": "30fc53485a6004401347272a0f7fb2a8f785d03d784e9148574fbd44c237c5bf",
+    "tests/runtime_save_native.cpp": "80c5d14d9aeec4c929a93f05bfbfa09c85816f0c0cc9634940c79d82ed5009b0",
+    "tests/runtime_save_contract.py": "5b3f808d6ae61d0ecbf67d3a6839fae8d2c187836f939dffb9a056481896f8ca",
+    "tests/fixtures/editor_save_model/Poima.SaveModel.Contract.csproj": "5626d7e28f12fb8e4ec3826cbef676ee7c5b05ca74366d80206c74a06904ee5d",
+    "tests/fixtures/editor_save_model/Program.cs": "b962cf7147eb550b513ce2cc978f00e0ac3aabd8a7b40fced577ecdfff29b9b0",
+    "tests/project_contract.py": "165b6f12f2a9a1c35eb83f675a93089c2464f6007469b44ab9da2a3eed1a8a9e",
+    "tests/runtime_contract.py": "7656eb1060ef4f4ffe528fbfc27ca6d5ead62b348af038a8122ca7244fe7542f",
+    "tests/world_contract.py": "76007a2c416141521f1b2f07e7212379326247c800bdb9b3d65700d1264fdbf8"
+  },
+  "artifacts": {
+    "build/headless/poima": "c5a6214a675ec00f19a9a9e635ddaa145bb6bbacf8bb99f02e60f18b572a47f7",
+    "build/runtime-headless/poima": "87e4725f8e7ac9b01bc843089987a355252766b1dfa95c804b8f7f7dd1d305ad",
+    "build/runtime-headless/poima-ui-model-test": "8b980401f296d7f9ec29895696d7bd4929245728fbe329599b737c63d27cffe0",
+    "build/runtime-headless/poima-runtime-ui-test": "27c093f1c945ce5cdff27e4d85822f3ddbebfe6090b0c6f5db1489160eb51cbe",
+    "build/runtime-headless/poima-runtime-save-test": "a5862abb457f0dd1bf41bd7f31abea1b0f6f8f650763b145ec2f5516b5b80969",
+    "build/windows-runtime/poima.exe": "861c8b4802e8a5730778d44219b84dc06ad7a6488f3f4e0a65fc7ad3ff720d67",
+    "build/windows-runtime/poima_desktop.dll": "fd21f6aaf77aa83d39fb016b2dc02ec82be90747170cc0521537dcb58d7fb9aa",
+    "build/windows-runtime/poima-ui-model-test.exe": "a8896c5557ed0870beede26c3ecd3ea38a9b833b92135a852458ca44d3ffcd8d",
+    "build/windows-runtime/poima-runtime-ui-test.exe": "6761989fb3719a9526ff6e4c5c3c5f886928248b0972045bc3ac5490c946a2e4",
+    "build/windows-runtime/poima-runtime-save-test.exe": "72000b0b7c4432cf8ae7a2623e57324fada8cc664582cfe2048254dffce2167b"
+  }
+}

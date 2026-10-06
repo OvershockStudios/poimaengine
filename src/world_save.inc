@@ -147,6 +147,10 @@
     }
     void component_save_guard(const Json& params,bool active) const {
         if(active) {
+            require(runtime_->ui_model().definition().empty() || params.contains("expected_ui_revision"),"Active UI requires expected_ui_revision.");
+            if(params.contains("expected_ui_revision"))require(revision(params.at("expected_ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
+        } else require(!params.contains("expected_ui_revision") || params.at("expected_ui_revision").is_null(),"Stopped restore requires an absent or null UI revision guard.",-32009);
+        if(active) {
             require(runtime_->structure_revision()==0 || params.contains("expected_structure_revision"),"Changed runtime structure requires expected_structure_revision.");
             if(params.contains("expected_structure_revision"))require(revision(params.at("expected_structure_revision"))==runtime_->structure_revision(),"Runtime structure revision conflict.",-32009);
         } else require(!params.contains("expected_structure_revision") || params.at("expected_structure_revision").is_null(),"Stopped restore requires an absent or null structure revision guard.",-32009);
@@ -180,12 +184,13 @@
             fields(params,{"slot"},{"slot"});const auto slot=save_slot(params.at("slot"));save_configured();return save_status(saves::Store(save_store_path(slot)).inspect(),slot);
         }
         if(method=="save.write") {
-            fields(params,{"request_id","configuration_generation","slot","expected_generation","session_id","expected_tick","expected_gameplay_revision","expected_component_revision","expected_structure_revision","acknowledge_recovery"},
+            fields(params,{"request_id","configuration_generation","slot","expected_generation","session_id","expected_tick","expected_gameplay_revision","expected_component_revision","expected_structure_revision","expected_ui_revision","acknowledge_recovery"},
                 {"request_id","configuration_generation","slot","expected_generation","session_id","expected_tick","expected_gameplay_revision"});
             const auto request=identifier(params.at("request_id"));identifier(params.at("session_id"));const auto slot=save_slot(params.at("slot"));
             for(const auto* key:{"configuration_generation","expected_generation","expected_tick","expected_gameplay_revision"})revision(params.at(key));
             if(params.contains("expected_component_revision"))revision(params.at("expected_component_revision"));
             if(params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
+            if(params.contains("expected_ui_revision"))revision(params.at("expected_ui_revision"));
             auto normalized=params;normalized["method"]=method;if(!normalized.contains("acknowledge_recovery"))normalized["acknowledge_recovery"]=false;
             require(normalized.at("acknowledge_recovery").is_boolean(),"acknowledge_recovery must be Boolean.");
             require(params.at("configuration_generation")==save_configuration_generation_,"Save configuration generation conflict.",-32009);save_configured();
@@ -202,12 +207,13 @@
             return saved_write_result(store.write(revision(params.at("expected_generation")),request,bytes,normalized.at("acknowledge_recovery"),request_hash),slot);
         }
         if(method=="save.load") {
-            fields(params,{"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","expected_component_revision","expected_structure_revision","new_session_id","gameplay","allow_recovery"},
+            fields(params,{"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","expected_component_revision","expected_structure_revision","expected_ui_revision","new_session_id","gameplay","allow_recovery"},
                 {"request_id","configuration_generation","slot","expected_generation","revision","expected_session_id","expected_tick","expected_gameplay_revision","new_session_id"});
             identifier(params.at("request_id"));auto new_id=identifier(params.at("new_session_id"));const auto slot=save_slot(params.at("slot"));
             for(const auto* key:{"configuration_generation","expected_generation","revision"})revision(params.at(key));
             if(params.contains("expected_component_revision") && !params.at("expected_component_revision").is_null())revision(params.at("expected_component_revision"));
             if(params.contains("expected_structure_revision") && !params.at("expected_structure_revision").is_null())revision(params.at("expected_structure_revision"));
+            if(params.contains("expected_ui_revision") && !params.at("expected_ui_revision").is_null())revision(params.at("expected_ui_revision"));
             auto normalized=params;normalized["method"]=method;if(!normalized.contains("allow_recovery"))normalized["allow_recovery"]=false;
             require(normalized.at("allow_recovery").is_boolean(),"allow_recovery must be Boolean.");if(auto replay=save_retry(normalized))return *replay;
             require(params.at("configuration_generation")==save_configuration_generation_,"Save configuration generation conflict.",-32009);save_configured();current_revision(params);
@@ -221,7 +227,7 @@
             if(params.contains("gameplay")) { if(params.at("gameplay").is_null())config.reset();else config=save_gameplay(params.at("gameplay")); }
             auto prepared=prepare_runtime_load(slot,revision(params.at("expected_generation")),normalized.at("allow_recovery"),new_id,std::move(config));
             const auto& frozen=prepared.frozen;const auto& stored=prepared.storage;
-            Json result={{"session_id",new_id},{"tick",prepared.runtime->inspect().tick},{"structure_revision",prepared.runtime->structure_revision()},{"authored_revision",frozen.definition.authored_revision},{"current_authored_revision",doc_.at("revision")},
+            Json result={{"session_id",new_id},{"tick",prepared.runtime->inspect().tick},{"structure_revision",prepared.runtime->structure_revision()},{"ui_revision",prepared.runtime->ui_model().revision()},{"authored_revision",frozen.definition.authored_revision},{"current_authored_revision",doc_.at("revision")},
                 {"source_stale",frozen.document.at("revision")!=doc_.at("revision") || !same_authored_state(frozen.document,doc_)},
                 {"slot",slot},{"generation",stored.generation},{"selected_generation",stored.selected->generation},{"recovered",stored.recovered},
                 {"recovery_reason",stored.recovery_reason},{"replayed",false}};

@@ -108,3 +108,7 @@ Schema revision 14 adds native sound commands to `runtime.step` and player repla
 Schema revision 26 adds `runtime.gameplay.load_native` for an inventoried Native AOT artifact, with existing runtime tick/revision guards and retry semantics. An optional expected descriptor hash binds loading to previously inspected metadata. [Native gameplay contract](NATIVE_GAMEPLAY.md).
 
 Schema revision 27 adds `save.status`, `save.configure`, `save.inspect`, `save.write` and `save.load`. Saves use an explicit external root, persisted write receipts and guarded staged replacement without changing the authored document. See the [save-slot contract](RUNTIME.md#durable-save-slots) for examples, frozen content binding, recovery and current limits.
+
+## Logical UI definitions and state
+
+Schema revision 35 adds authored `ui.element.set/remove` transactions and `world.ui.get/list`, plus `runtime.ui.inspect/edit` for native logical state. UI definitions use authored format 4 and participate in history and frozen content identity. Runtime edits retain an independent revision without advancing physics. UI-bearing saves use snapshot version 4 and require the observed UI revision on external save/load operations. See [Game UI](GAME_UI.md#authoritative-controls) for payloads, bounds, retry semantics and remaining presentation/gameplay integration work.

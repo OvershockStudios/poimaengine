@@ -5,6 +5,7 @@
 #include "poima/gameplay_save.hpp"
 #include "poima/audio.hpp"
 #include "poima/components.hpp"
+#include "poima/ui_model.hpp"
 #include <map>
 #include <memory>
 #include <optional>
@@ -104,6 +105,7 @@ struct RuntimeDefinition {
     std::vector<RuntimeEntityDefinition> entities;
     std::vector<components::Schema> component_schemas;
     std::vector<RuntimeSpawnTemplate> templates;
+    ui::Definition ui;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
@@ -210,6 +212,11 @@ public:
     std::optional<components::Payload> component_read(const std::string& type,const std::string& entity) const;
     std::vector<std::string> component_query(const std::string& type,const std::string& after,std::uint32_t limit) const;
     void component_edit(const std::string& type,const std::string& entity,const components::Payload& value);
+    // Native logical controls are independent of layout, renderer and physics.
+    // An edit commits at the current tick and advances its own revision once.
+    const ui::Model& ui_model() const;
+    void ui_edit(std::uint64_t expected_revision,const std::vector<ui::Edit>& edits,
+        std::optional<std::string> modal=std::nullopt);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents

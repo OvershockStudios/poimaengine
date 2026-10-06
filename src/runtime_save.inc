@@ -125,7 +125,12 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         {"sound",SaveJson::parse(s.sounds.save_state(s.tick))},{"gameplay",game}};
     const bool custom=!s.components->schemas().empty();
     const bool structural=s.structure_revision!=0;
-    if(custom || structural)payload["components"]=SaveJson::parse(s.components->save());
+    const bool logical_ui=!s.ui_model->definition().empty();
+    if(custom || structural || logical_ui)payload["components"]=SaveJson::parse(s.components->save());
+    if(logical_ui) {
+        payload["ui"]=SaveJson::parse(s.ui_model->save());
+        payload["structure"]=nullptr;
+    }
     if(structural) {
         SaveJson spawned=SaveJson::array();
         for(const auto& [id,origin]:s.topology->spawned)
@@ -134,7 +139,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         payload["structure"]={{"revision",s.structure_revision},{"next_entity_id",gameplay_id(cursor.next)},
             {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
     }
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",logical_ui ? 4 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -144,13 +149,17 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto envelope=save_parse(bytes);save_fields(envelope,{"format","version","sha256","payload"});
     const bool custom=!definition.component_schemas.empty();
-    const auto version=save_integer(envelope.at("version"));const bool structural=version==3;
-    require(envelope.at("format")=="poima.runtime-snapshot" && (structural || version==(custom ? 2u : 1u)),"Unsupported runtime snapshot format/version for this definition.");
+    const bool logical_ui=!definition.ui.empty();
+    const auto version=save_integer(envelope.at("version"));
+    require(envelope.at("format")=="poima.runtime-snapshot" &&
+        (logical_ui ? version==4 : (version==3 || version==(custom ? 2u : 1u))),"Unsupported runtime snapshot format/version for this definition.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    if(structural)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
+    if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
+    else if(version==3)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
     else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
+    const bool structural=version==3 || (logical_ui && !data.at("structure").is_null());
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
     const auto tick=save_integer(data.at("tick")),game_revision=save_integer(data.at("gameplay_revision"));
@@ -246,7 +255,8 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
         s.entity_ids=std::move(restored_ids);s.structure_revision=structure_revision;
         auto topology=std::make_shared<Impl::Topology>(*s.topology);topology->spawned=std::move(origins);s.topology=std::move(topology);
     }
-    if(custom || structural)s.components->load(data.at("components").dump());
+    if(custom || structural || logical_ui)s.components->load(data.at("components").dump());
+    if(logical_ui)s.ui_model->load(data.at("ui").dump());
     if(!data.at("gameplay").is_null())save_game_values(data.at("gameplay"),s.topology->identities);
     s.animations->load_state(data.at("animation").dump(),tick);s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;

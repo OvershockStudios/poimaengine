@@ -20,7 +20,7 @@ enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {
     bool available=false,active=false;
     std::string session_id;
-    std::uint64_t tick=0,authored_revision=0,structure_revision=0;
+    std::uint64_t tick=0,authored_revision=0,structure_revision=0,ui_revision=0;
 };
 struct WorldGameplayStatus {
     bool active=false;

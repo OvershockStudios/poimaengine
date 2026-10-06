@@ -3,6 +3,7 @@
 #include "poima/animation.hpp"
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
+#include "poima/ui_model.hpp"
 #include "poima/player.hpp"
 #include "poima/build_info.hpp"
 #include "poima/native_gameplay_artifact.hpp"
@@ -363,7 +364,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 34}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 35}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -585,6 +586,29 @@ Json describe() {
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
     mutations.push_back(object_schema({{"op",{{"const","template.remove"}}},{"id",stable_type}},{"op","id"}));
     const Json template_page_limit={{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}};
+    const auto ui_element=object_schema({{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",128}}},
+        {"kind",{{"enum",{"panel","label","button"}}}},{"text",{{"type","string"},{"maxLength",16384}}},
+        {"action",{{"anyOf",Json::array({Json{{"type","string"},{"pattern","^[A-Za-z0-9_.-]{1,128}$"}},Json{{"type","null"}}})}}},{"visible",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}},
+        {"parent","name","kind","text","action","visible","enabled"});
+    mutations.push_back(object_schema({{"op",{{"const","ui.element.set"}}},{"id",stable_type},{"element",ui_element}},{"op","id","element"}));
+    mutations.push_back(object_schema({{"op",{{"const","ui.element.remove"}}},{"id",stable_type}},{"op","id"}));
+    methods["world.ui.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});
+    methods["world.ui.list"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
+    methods["runtime.ui.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"ui_revision",rev},{"after",stable_type},{"limit",template_page_limit}},
+        {"session_id","tick"});
+    const auto ui_edit=object_schema({{"id",stable_type},{"text",{{"type","string"},{"maxLength",16384}}},
+        {"visible",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}},{"id"});
+    methods["runtime.ui.edit"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_ui_revision",rev},
+        {"edits",{{"type","array"},{"maxItems",256},{"items",ui_edit}}},{"modal",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}}},
+        {"session_id","request_id","expected_tick","expected_ui_revision","edits"});
+    methods["save.write"]["properties"]["expected_ui_revision"]=rev;
+    methods["save.load"]["properties"]["expected_ui_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
+    result["ui"]={{"authored_version",4},{"max_elements",256},{"max_depth",32},{"element",ui_element},
+        {"max_text_bytes",16384},{"max_total_text_bytes",1048576},
+        {"state","Same-tick native text/visibility/enabled/modal edits with independent ui_revision and retry receipts. Runtime inspection pagination requires ui_revision after the first page."},
+        {"save_guard","save.write/load require expected_ui_revision for an active UI-bearing world; stopped restore accepts absent or null. Snapshot v4 preserves logical UI state."},
+        {"limits","Button actions are immutable metadata, not executed callbacks. No C# UI services, layout binding or player input routing yet."},
+        {"authority","Stable native panel/label/button definitions; frozen at runtime start. Parent must be a panel; panel text is empty; only buttons have non-null action tokens. RmlUi is presentation, not authored authority."}};
     methods["template.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});
     methods["template.query"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
     methods["runtime.template.get"]=object_schema({{"session_id",id},{"tick",rev},{"revision",rev},{"id",stable_type}},{"session_id","tick","id"});
@@ -652,10 +676,10 @@ const components::Schema& authored_schema(const std::vector<components::Schema>&
     require(found!=schemas.end() && found->id==id,"Custom component type is not registered.");return *found;
 }
 bool authored_reference_exists(void* context,PoimaEntityId entity) { return static_cast<const Json*>(context)->contains(gameplay_id(entity)); }
-Json history_state(const Json& doc) { return {{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())},{"templates",doc.value("templates",Json::object())}}; }
+Json history_state(const Json& doc) { return {{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())},{"templates",doc.value("templates",Json::object())},{"ui",doc.value("ui",Json::object())}}; }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
-    for(const auto* key:{"component_schemas","templates"}) {
+    for(const auto* key:{"component_schemas","templates","ui"}) {
         const auto left=a.find(key),right=b.find(key);
         if(left==a.end()) { if(right!=b.end() && !right->empty())return false; }
         else if(right==b.end() ? !left->empty() : *left!=*right)return false;
@@ -669,19 +693,30 @@ void upgrade_templates(Json& doc) {
     upgrade_components(doc);
     if(doc.at("version")==2) {doc["version"]=3;doc["templates"]=Json::object();doc["retired_template_ids"]=Json::array();}
 }
+void upgrade_ui(Json& doc) {
+    upgrade_templates(doc);
+    if(doc.at("version")==3) {doc["version"]=4;doc["ui"]=Json::object();doc["retired_ui_ids"]=Json::array();}
+}
 bool template_component(const std::string& type) {
     return type=="Transform" || type=="BoxCollider" || type=="MeshRenderer" || type=="StaticMesh" || type=="PbrMaterial" || type=="PbrTextures" || custom_component(type);
 }
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
-    const bool catalog=doc.at("version")==3,custom=catalog || doc.at("version")==2;
-    if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},
+    const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
+    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"},
+        {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
+    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
     else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
     else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
     const auto schemas=authored_component_schemas(doc);
+    if(user_interface) {
+        component_checked([&]{return ui::parse_definition(doc.at("ui").dump());});
+        require(doc.at("retired_ui_ids").is_array(),"Invalid retired UI identities.");std::set<std::string> retired;
+        for(const auto& value:doc.at("retired_ui_ids")) {const auto id=identifier(value);require(id!=std::string(32,'0') && !doc.at("ui").contains(id) && retired.insert(id).second,"Reused or duplicate retired UI identity.");}
+    }
     if(custom) {
         require(doc.at("retired_component_schemas").is_array(),"Invalid retired component schema identities.");std::set<std::string> retired;
         for(const auto& value:doc.at("retired_component_schemas")) {const auto id=identifier(value);require(id!=std::string(32,'0') && !doc.at("component_schemas").contains(id) && retired.insert(id).second,"Reused or duplicate retired component schema identity.");}
@@ -942,9 +977,9 @@ public:
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
         auto definition=runtime_definition(false,&source,false,&assets,&audio);
-        auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();result.document=document.dump(2)+'\n';
+        auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
-        auto identity=document;identity.erase("receipts");identity.erase("retired_ids");identity.erase("retired_component_schemas");identity.erase("retired_template_ids");
+        auto identity=document;identity.erase("receipts");identity.erase("retired_ids");identity.erase("retired_component_schemas");identity.erase("retired_template_ids");identity.erase("retired_ui_ids");
         Json inventory=Json::array();for(const auto& f:result.assets)inventory.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
         const auto hash=content_hash(Json{{"format","poima.runtime-content"},{"version",1},{"document",identity},{"assets",inventory}}.dump());
         return {std::move(definition),std::move(result),std::move(document),hash};
@@ -952,7 +987,7 @@ public:
     WorldPackageContent package_content() const { return freeze_content(doc_).package; }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
-        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision(); }
+        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision(); }
         return status;
     }
     WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
@@ -1097,6 +1132,24 @@ public:
             fields(params, {});auto result=describe();result["methods"].update(profiling::Service::schemas());result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
+        }
+        if(method=="world.ui.get" || method=="world.ui.list") {
+            const bool single=method=="world.ui.get";
+            if(single)fields(params,{"id","revision"},{"id"});else fields(params,{"revision","after","limit"});
+            current_revision(params);if(params.contains("after"))require(params.contains("revision"),"Pagination requires a revision.");
+            const auto catalog=doc_.value("ui",Json::object());Json result={{"revision",doc_.at("revision")}};
+            if(single) {
+                const auto id=identifier(params.at("id"));require(catalog.contains(id),"UI element does not exist.",-32004);
+                result["id"]=id;result["element"]=catalog.at(id);return result;
+            }
+            const auto after=params.contains("after") ? identifier(params.at("after")) : std::string{};
+            const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;require(limit>=1 && limit<=256,"UI page limit must be 1..256.");
+            Json rows=Json::array(),next=nullptr;
+            for(const auto& [id,element]:catalog.items())if(id>after) {
+                if(rows.size()==limit) {next=rows.back().at("id");break;}
+                rows.push_back({{"id",id},{"element",element}});
+            }
+            result["elements"]=std::move(rows);result["next_after"]=next;return result;
         }
         if(method=="template.get" || method=="template.query") {
             if(method=="template.get")fields(params,{"id","revision"},{"id"});else fields(params,{"revision","after","limit"});
@@ -1864,7 +1917,10 @@ public:
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
             result.entities.push_back(std::move(value));
         }
-        if(!animation_only && !audio_only)result.templates=template_definitions(document,cache,result.component_schemas);
+        if(!animation_only && !audio_only) {
+            result.templates=template_definitions(document,cache,result.component_schemas);
+            result.ui=component_checked([&]{return ui::parse_definition(document.value("ui",Json::object()).dump());});
+        }
         try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         return result;
@@ -1875,7 +1931,7 @@ public:
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
             {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
-            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
+            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"ui_revision",runtime_->ui_model().revision()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
     RuntimeInput parse_input(const Json& i) const {
@@ -2119,6 +2175,7 @@ public:
         receipts.back()["result"]=result; playback_receipts_.swap(receipts);
         return result;
     }
+#include "world_ui.inc"
     const components::Schema& runtime_component_schema(const std::string& type) const {
         return authored_schema(runtime_->component_schemas(),type);
     }
@@ -2299,11 +2356,12 @@ public:
             if(params.contains("revision"))require(revision(params.at("revision"))==runtime_definition_.authored_revision,"Frozen template revision conflict.",-32009);
             auto result=inspect_templates(runtime_document_,params,method=="runtime.template.get");result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;return result;
         }
+        if(method.starts_with("runtime.ui."))return ui_dispatch(method,params);
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
             return {{"available",s.available},{"active",s.active},{"session_id",s.active ? Json(s.session_id) : Json(nullptr)},
-                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
+                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"ui_revision",s.active ? Json(s.ui_revision) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
         }
         if(method=="runtime.save.status") {
             fields(params,{"session_id"},{"session_id"});runtime_guard(params);const auto& queue=runtime_->gameplay_saves();
@@ -2445,7 +2503,7 @@ public:
             staged["component_schemas"]=schemas;staged["retired_component_schemas"]=retired;
         }
         std::set<std::string> changed_templates;
-        if(staged.at("version")==3) {
+        if(staged.at("version")>=3) {
             std::set<std::string> retired;for(const auto& id:staged.at("retired_template_ids"))retired.insert(id.get<std::string>());
             const auto& templates=target_state.at("templates");
             for(const auto& [id,value]:staged.at("templates").items()) {
@@ -2454,6 +2512,17 @@ public:
             }
             for(const auto& [id,value]:templates.items()) { (void)value;retired.erase(id);if(!staged.at("templates").contains(id))changed_templates.insert(id); }
             staged["templates"]=templates;staged["retired_template_ids"]=retired;
+        }
+        std::set<std::string> changed_ui;
+        if(staged.at("version")>=4) {
+            std::set<std::string> retired;for(const auto& id:staged.at("retired_ui_ids"))retired.insert(id.get<std::string>());
+            const auto& target_ui=target_state.at("ui");
+            for(const auto& [id,value]:staged.at("ui").items()) {
+                if(!target_ui.contains(id)) {retired.insert(id);changed_ui.insert(id);}
+                else if(target_ui.at(id)!=value)changed_ui.insert(id);
+            }
+            for(const auto& [id,value]:target_ui.items()) {(void)value;retired.erase(id);if(!staged.at("ui").contains(id))changed_ui.insert(id);}
+            staged["ui"]=target_ui;staged["retired_ui_ids"]=retired;
         }
         std::set<std::string> retired,changed;
         for(const auto& id:doc_.at("retired_ids"))retired.insert(id.get<std::string>());
@@ -2465,6 +2534,7 @@ public:
         staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged);
         Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
+        if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
         auto next_undo=undo_,next_redo=redo_;
         if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
@@ -2480,7 +2550,7 @@ public:
         for (const auto& receipt : doc_.at("receipts")) {
             if (receipt.at("params").at("request_id") != params.at("request_id")) continue;
             bool custom=false;for(const auto& op:params.at("ops"))if(op.is_object() && op.contains("op") &&
-                (op.at("op")=="template.set" || op.at("op")=="template.remove" || op.at("op")=="component.schema.set" || op.at("op")=="component.schema.remove" || (op.contains("type") && op.at("type").is_string() && custom_component(op.at("type").get<std::string>()))))custom=true;
+                (op.at("op")=="ui.element.set" || op.at("op")=="ui.element.remove" || op.at("op")=="template.set" || op.at("op")=="template.remove" || op.at("op")=="component.schema.set" || op.at("op")=="component.schema.remove" || (op.contains("type") && op.at("type").is_string() && custom_component(op.at("type").get<std::string>()))))custom=true;
             require(custom ? receipt.at("params").dump()==params.dump() : receipt.at("params")==params,"Transaction ID was already used with different parameters.",-32010);
             auto result = receipt.at("result"); result["replayed"] = true; return result;
         }
@@ -2490,10 +2560,21 @@ public:
         require(ops.is_array() && !ops.empty() && ops.size() <= 256, "Transaction needs 1..256 operations.");
         Json staged = doc_;
         auto& entities = staged["entities"];
-        std::set<std::string> changed,changed_templates;
+        std::set<std::string> changed,changed_templates,changed_ui;
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
             const auto name=op.at("op").get<std::string>();
+            if(name=="ui.element.set" || name=="ui.element.remove") {
+                if(name=="ui.element.set")fields(op,{"op","id","element"},{"op","id","element"});else fields(op,{"op","id"},{"op","id"});
+                const auto id=identifier(op.at("id"));require(id!=std::string(32,'0'),"UI identity cannot be zero.");upgrade_ui(staged);
+                if(name=="ui.element.remove") {
+                    require(staged["ui"].erase(id)==1,"UI element does not exist.",-32004);staged["retired_ui_ids"].push_back(id);
+                }else {
+                    const auto& retired=staged.at("retired_ui_ids");require(std::find(retired.begin(),retired.end(),id)==retired.end(),"UI identity was retired and cannot be reused.");
+                    staged["ui"][id]=op.at("element");
+                }
+                changed_ui.insert(id);continue;
+            }
             if(name=="template.set" || name=="template.remove") {
                 if(name=="template.set")fields(op,{"op","id","name","components"},{"op","id","name","components"});
                 else fields(op,{"op","id"},{"op","id"});
@@ -2577,6 +2658,7 @@ public:
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
+        if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if (!params["preview"].get<bool>()) {
             auto next_undo=undo_;History next_redo;
             auto edit=std::make_shared<Edit>(Edit{history_state(doc_),history_state(staged),0,params.at("request_id").get<std::string>()});

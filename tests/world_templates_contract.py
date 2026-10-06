@@ -88,7 +88,7 @@ class Contract(unittest.TestCase):
 
     def test_discovery_empty_catalog_and_explicit_upgrade(self):
         description = self.ok('world.describe')
-        self.assertEqual(description['schema_revision'], 34)
+        self.assertEqual(description['schema_revision'], 35)
         for method in ('template.get', 'template.query'):
             self.assertIn(method, description['methods'])
         self.assertEqual(self.ok('template.query')['templates'], [])
