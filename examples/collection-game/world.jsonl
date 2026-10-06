@@ -1,0 +1,653 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "world.transact",
+  "params": {
+    "request_id": "000000000000000000000000000001f4",
+    "base_revision": 0,
+    "ops": [
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000001",
+        "name": "Floor",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000001",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            -0.5,
+            -4
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            8,
+            1,
+            24
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000001",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.12,
+            0.17,
+            0.21
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000001",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000002",
+        "name": "Left wall",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000002",
+        "type": "Transform",
+        "value": {
+          "position": [
+            -3.5,
+            1.5,
+            -4
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.4,
+            3,
+            24
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000002",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.18,
+            0.27,
+            0.33
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000002",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000003",
+        "name": "Right wall",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000003",
+        "type": "Transform",
+        "value": {
+          "position": [
+            3.5,
+            1.5,
+            -4
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.4,
+            3,
+            24
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000003",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.18,
+            0.27,
+            0.33
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000003",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000004",
+        "name": "End wall",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000004",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            1.5,
+            -12
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            7,
+            3,
+            0.4
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000004",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.12,
+            0.35,
+            0.38
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000004",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "0000000000000000000000000000000a",
+        "name": "Cell pedestal",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000a",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            0.3,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            0.6,
+            1.2
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000a",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.28,
+            0.34,
+            0.38
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000a",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "0000000000000000000000000000000b",
+        "name": "Cell pedestal",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000b",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            0.3,
+            -4
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            0.6,
+            1.2
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000b",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.28,
+            0.34,
+            0.38
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000b",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "0000000000000000000000000000000c",
+        "name": "Cell pedestal",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000c",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            0.3,
+            -8
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            0.6,
+            1.2
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000c",
+        "type": "MeshRenderer",
+        "value": {
+          "primitive": "box",
+          "visible": true,
+          "albedo": [
+            0.28,
+            0.34,
+            0.38
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "0000000000000000000000000000000c",
+        "type": "BoxCollider",
+        "value": {
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "motion": "static",
+          "mass": 1,
+          "friction": 0.5,
+          "restitution": 0
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000064",
+        "name": "Player",
+        "parent": null
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000064",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            0,
+            3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000064",
+        "type": "CharacterController",
+        "value": {
+          "radius": 0.3,
+          "height": 1.8,
+          "speed": 4,
+          "jump_speed": 5,
+          "camera": "00000000000000000000000000000065"
+        }
+      },
+      {
+        "op": "entity.create",
+        "id": "00000000000000000000000000000065",
+        "name": "Player camera",
+        "parent": "00000000000000000000000000000064"
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000065",
+        "type": "Transform",
+        "value": {
+          "position": [
+            0,
+            1.6,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      {
+        "op": "component.set",
+        "id": "00000000000000000000000000000065",
+        "type": "Camera",
+        "value": {
+          "vertical_fov": 70,
+          "near": 0.1,
+          "far": 100
+        }
+      },
+      {
+        "op": "template.set",
+        "id": "000000000000000000000000000000c8",
+        "name": "Collectible cell",
+        "components": {
+          "Transform": {
+            "position": [
+              0,
+              1.5,
+              0
+            ],
+            "rotation": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              0.7,
+              1,
+              0.7
+            ]
+          },
+          "MeshRenderer": {
+            "primitive": "box",
+            "visible": true,
+            "albedo": [
+              0.1,
+              0.75,
+              0.58
+            ]
+          },
+          "BoxCollider": {
+            "half_extents": [
+              0.5,
+              0.5,
+              0.5
+            ],
+            "motion": "static",
+            "mass": 1,
+            "friction": 0.5,
+            "restitution": 0
+          }
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "00000000000000000000000000000001",
+        "element": {
+          "parent": null,
+          "name": "Collection UI 1",
+          "kind": "panel",
+          "text": "",
+          "action": null,
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "00000000000000000000000000000002",
+        "element": {
+          "parent": "00000000000000000000000000000001",
+          "name": "Collection UI 2",
+          "kind": "label",
+          "text": "Cells collected: 0 / 3",
+          "action": null,
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "00000000000000000000000000000003",
+        "element": {
+          "parent": "00000000000000000000000000000001",
+          "name": "Collection UI 3",
+          "kind": "label",
+          "text": "WASD move | E collect | Tab releases cursor\nClick outside this panel to return to the game.",
+          "action": null,
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "0000000000000000000000000000000a",
+        "element": {
+          "parent": "00000000000000000000000000000001",
+          "name": "Collection UI 10",
+          "kind": "panel",
+          "text": "",
+          "action": null,
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "0000000000000000000000000000000b",
+        "element": {
+          "parent": "0000000000000000000000000000000a",
+          "name": "Collection UI 11",
+          "kind": "button",
+          "text": "Pause",
+          "action": "pause",
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "0000000000000000000000000000000c",
+        "element": {
+          "parent": "0000000000000000000000000000000a",
+          "name": "Collection UI 12",
+          "kind": "button",
+          "text": "Resume",
+          "action": "resume",
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "0000000000000000000000000000000d",
+        "element": {
+          "parent": "0000000000000000000000000000000a",
+          "name": "Collection UI 13",
+          "kind": "button",
+          "text": "Save checkpoint",
+          "action": "save",
+          "visible": true,
+          "enabled": true
+        }
+      },
+      {
+        "op": "ui.element.set",
+        "id": "0000000000000000000000000000000e",
+        "element": {
+          "parent": "0000000000000000000000000000000a",
+          "name": "Collection UI 14",
+          "kind": "button",
+          "text": "Load checkpoint",
+          "action": "load",
+          "visible": true,
+          "enabled": true
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-06",
+  "engine_version": "0.0.39-development",
+  "milestone": "Collection Room compiled gameplay sample",
+  "sources": {
+    "examples/collection-game/.gitignore": "bed6308a89cccf01b2576cade9bc0e84c47e1b496ad8fc21750722966ce27692",
+    "examples/collection-game/CollectionGame.cs": "c38cc8fd20e8196a205bb8c0f0b058169c87bc9f868bcf9fd17059431a40b952",
+    "examples/collection-game/Poima.CollectionGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "examples/collection-game/README.md": "02bbd6e92c76d412742ac463bbb29d7307d0d0d6658a48024b361022ff9614bf",
+    "examples/collection-game/run.py": "8f9b33793a4cf07b4d07a95500531074f1e261f6b08c24da8755c3d219be5272",
+    "examples/collection-game/world.jsonl": "eb5ce4a5f3b161d156189b7baed53c54321e7c0e4f9b5eb2b7f530da844b77ef"
+  },
+  "artifacts": {
+    "build/sample-collection/native-windows-restored-hud/native-gameplay.json": "b30b6a1b56544077385a64a58628bc7f136c898af488c7eeca4dccc2712a8d24",
+    "build/sample-collection/native-windows-restored-hud/Poima.NativeGame.dll": "0a17c2afef2cf99a5c6153311f27d9a0aaa14267f3fa52500f6addc5ccf95fba",
+    "build/sample-collection/native-windows-restored-hud-work/game/Poima.CollectionGame.dll": "c6ebd7cb70510433e1f6ddafd99cd53e195b514d4f703e43ce7bd3870795c555",
+    "build/sample-collection/game-bundle-qualified/game.json": "012da1419310fd73542e5ff73afadfc3edd5eeeced734739c231a83cd406eeae",
+    "build/sample-collection/game-bundle-qualified/runtime/bin/poima.exe": "3b5ace5e077e6002d5bf6f178c99ef983aaa6e388805ea9454e499b19d11a1dc",
+    "build/sample-collection/bundled-qualified-report.json": "bcd4e2f38860dc5d0993f8ecbf5f035aa3bea40a0f9e875f3cf5c9e36a38a918",
+    "build/sample-collection/bundled-qualified-completion.bmp": "ae3389fa29dfa259008de2f8eb29221d479df5f9abd917782d399bee2fdde703",
+    "build/sample-collection/game-inspect-qualified.json": "1efcae351c6794d8bd8d6ecd211fa84aad1fadf70da0c136cfd6ba3840c91f0e"
+  },
+  "checks": [
+    {
+      "evidence": {
+        "path": "build/sample-collection/verify-coreclr-qualified/sample-evidence.json",
+        "sha256": "13ee4fc0e38a30d2a7358966369d561abc3aa933973a87374aee2f2c0a31e949"
+      },
+      "checks": [
+        "Real raycast/Use removes exactly one spawned collectible; another Use cannot collect out of range.",
+        "Actual CharacterController movement and camera queries collect all three cells; native UI reports completion.",
+        "Compiled Load restores count, live spawned handles and exact player transform; restored gameplay finishes again.",
+        "A fresh native process loads the same durable checkpoint and completes the room again."
+      ],
+      "restored_hud": "Exact native UI Checkpoint loaded. with Status=3 and SavePending=0, same-process and fresh-process restore.",
+      "captures": []
+    },
+    {
+      "evidence": {
+        "path": "build/sample-collection/verify-native-qualified-gpu1/sample-evidence.json",
+        "sha256": "f53c2a1a7f5959ff8f91636436bceb2278043ed6ecfde66ae30b39b4e16eee79"
+      },
+      "checks": [
+        "Real raycast/Use removes exactly one spawned collectible; another Use cannot collect out of range.",
+        "Actual CharacterController movement and camera queries collect all three cells; native UI reports completion.",
+        "Compiled Load restores count, live spawned handles and exact player transform; restored gameplay finishes again.",
+        "A fresh native process loads the same durable checkpoint and completes the room again."
+      ],
+      "restored_hud": "Exact native UI Checkpoint loaded. with Status=3 and SavePending=0, same-process and fresh-process restore.",
+      "captures": [
+        {
+          "name": "initial",
+          "sha256": "257d67de5a4f9f150939d6711e3e42c4b7710055e431458d820117b547cfcc00",
+          "kind": "renderer_readback",
+          "nvrhi_errors": 0
+        },
+        {
+          "name": "completed",
+          "sha256": "e95809788fae555c5807f0f53f11fe93e5481600fa491db08e61cea4d51a7be3",
+          "kind": "renderer_readback",
+          "nvrhi_errors": 0
+        }
+      ]
+    },
+    {
+      "evidence": {
+        "path": "build/sample-collection/verify-native-qualified-gpu0/sample-evidence.json",
+        "sha256": "b1a9ed5fde44ab361490225492339caac90b4e64b82038555a19f1202c381c3c"
+      },
+      "checks": [
+        "Real raycast/Use removes exactly one spawned collectible; another Use cannot collect out of range.",
+        "Actual CharacterController movement and camera queries collect all three cells; native UI reports completion.",
+        "Compiled Load restores count, live spawned handles and exact player transform; restored gameplay finishes again.",
+        "A fresh native process loads the same durable checkpoint and completes the room again."
+      ],
+      "restored_hud": "Exact native UI Checkpoint loaded. with Status=3 and SavePending=0, same-process and fresh-process restore.",
+      "captures": [
+        {
+          "name": "initial",
+          "sha256": "679948d44413386b4c0e0ab917fc5b14c4d53ec5b7f554cc5247c9d573522917",
+          "kind": "renderer_readback",
+          "nvrhi_errors": 0
+        },
+        {
+          "name": "completed",
+          "sha256": "594c5007718a597fed7900c7e07df363660388157c11f0a1ddb2b5ca40e418b9",
+          "kind": "renderer_readback",
+          "nvrhi_errors": 0
+        }
+      ]
+    }
+  ],
+  "runner_failure_qualification": {
+    "runner-errors-piavyndh/results.json": {
+      "path": "build/sample-collection/runner-errors-piavyndh/results.json",
+      "sha256": "55ee2b2f7a26e2fb70659a44d94b0fef570e9838320137f377a976100e82bc99"
+    },
+    "verify-native-cleanup-injected/sample-evidence.json": {
+      "path": "build/sample-collection/verify-native-cleanup-injected/sample-evidence.json",
+      "sha256": "f21c432dbbea07767c017d63600bd0977e6e3bde0153f491cfe262aa00e90061"
+    },
+    "check-runner-failures.py": {
+      "path": "build/sample-collection/check-runner-failures.py",
+      "sha256": "56ed2544dcf78148a8c74f8235dcfd03bc91fda377cb99bdcc55d5582d9d7aac"
+    },
+    "check-final-cleanup.py": {
+      "path": "build/sample-collection/check-final-cleanup.py",
+      "sha256": "56a77c56174657e805d62237b40bfb0ecc5fbe17312c6f8859227fc700a19215"
+    },
+    "scope": "Real child RPC error+exit9 and delayed-response timeout; -O rejection; actual NativeAOT gameplay completes but an injected final close exception forces failure. These are failure-handling checks, not GPU/physical qualification."
+  },
+  "bundle": {
+    "tick": 245,
+    "collected": 3,
+    "frames": 246,
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "nvrhi_errors": 0,
+    "working_directory": "C:/Windows/Temp",
+    "inventory_verified_after_play": true
+  },
+  "limitations": [
+    "Prototype primitive geometry; no visual-performance benchmark.",
+    "Synthetic semantic replay and renderer readbacks; no physical-input or foreground qualification.",
+    "Windows CoreCLR and NativeAOT only; Linux and console sample execution unqualified.",
+    "Exact content/module save binding; general save migration unavailable."
+  ]
+}

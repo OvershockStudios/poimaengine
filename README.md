@@ -6,7 +6,7 @@ Poima is an experimental 3D game engine built around native agent workflows, wit
 
 The core and player are C++20. The 3D renderer uses Vulkan. The Windows editor uses C#/Avalonia with native Vulkan Scene and Game viewports, and C# gameplay supports development-time reloads and a bounded native AOT game-bundle route. Headless deployments can run without the editor or its managed runtime.
 
-**Status: early development, version 0.0.39.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Native animation crossfades support advancing clips, interruption, C# gameplay and guarded Inspector controls. Static mesh collision preserves geometric openings. Scene and Game are independent dockable panels over one simulation, with a Modified Tall workspace and editable procedural sky in new projects. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
+**Status: early development, version 0.0.39.** Working authoring, simulation, rendering and packaging systems exist, but Poima is not a production-ready engine. APIs and file formats may change. Current development includes C# components and native AOT bundles, durable save slots, a shared profiler and independent Scene/Game panels. The [Collection Room sample](examples/collection-game) exercises movement, interaction, UI and saves together. See [implementation status and recorded evidence](docs/IMPLEMENTATION_STATUS.md) for tested configurations and limitations.
 
 ![Poima desktop editor with independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
@@ -30,7 +30,7 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Profiling | [Shared native captures](docs/PROFILER.md), editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events, native-player output and bounded editor audio processing. |
-| Game UI foundation | [Native logical controls](docs/GAME_UI.md) support authored hierarchy, guarded runtime edits, portable saves and compiled C# control callbacks without a physics tick. An optional default layout composes through Vulkan. Live pointer/gamepad routing and a general UI authoring toolkit remain unfinished. |
+| Game UI foundation | [Native logical controls](docs/GAME_UI.md) support authored hierarchy, guarded runtime edits, portable saves and compiled C# control callbacks without a physics tick. An optional default layout composes through Vulkan and routes pointer, keyboard and assigned-gamepad input. General UI authoring, inventory widgets and physical-device qualification remain unfinished. |
 | Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields and animation controls, Project browser, native navigation and transform gizmos; clocked Play with keyboard/mouse Game controls, C# launch configuration, typed live fields and compatible assembly reload. |
 | Packaging | Project manifests and native game bundles with validated content, runtime files, compiled C# gameplay artifacts, integrity checks and read-only game launch. |
 
