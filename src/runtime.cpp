@@ -3,6 +3,7 @@
 #include "poima/runtime_animation.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
+#include "runtime_entity_ids.hpp"
 #include "poima/profiler.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>
@@ -117,16 +118,27 @@ struct Runtime::Impl {
     JPH::TempAllocatorImplWithMallocFallback allocator{16*1024*1024};
     JPH::JobSystemSingleThreaded jobs{JPH::cMaxPhysicsJobs};
     entt::registry registry;
-    std::map<std::string,entt::entity> identities;
-    std::vector<entt::entity> order, hierarchy, characters, kinematics;
-    std::map<JPH::uint32,std::string> body_names;
+    struct SpawnOrigin { std::string template_id;RuntimeTransform initial; };
+    struct Topology {
+        std::map<std::string,SpawnOrigin> spawned;
+
+        std::map<std::string,entt::entity> identities;
+        std::vector<entt::entity> order,hierarchy,characters,kinematics;
+        std::map<JPH::uint32,std::string> body_names;
+        std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>> mesh_shapes;
+    };
+    // One immutable live membership root. Retired native owners must remain in
+    // the separate ownership inventory until their batch commits.
+    std::shared_ptr<const Topology> topology;
+    std::vector<entt::entity> owned_entities;
     RuntimeBodyIds body_ids;
-    std::map<JPH::uint32,JPH::RefConst<JPH::MeshShape>> mesh_shapes;
+    std::optional<RuntimeEntityIds> entity_ids;
+    std::vector<RuntimeSpawnTemplate> templates;
     Runtime* owner=nullptr;
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
     std::unique_ptr<RuntimeComponents> components;
-    std::uint64_t game_revision=0;
+    std::uint64_t game_revision=0,structure_revision=0;
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
     std::vector<KinematicTarget> game_commands;
@@ -137,22 +149,24 @@ struct Runtime::Impl {
     std::string world_id;
     std::uint64_t revision=0, tick=0;
     ~Impl() {
-        for (auto e : order) {
+        for (auto e : owned_entities) {
             if (auto* c=registry.try_get<Controller>(e); c && c->character) {
-                c->character->RemoveFromPhysicsSystem(); c->character=nullptr;
+                if(physics.GetBodyInterface().IsAdded(c->character->GetBodyID()))c->character->RemoveFromPhysicsSystem();
+                c->character=nullptr;
             }
             if (auto* b=registry.try_get<Body>(e); b && !b->id.IsInvalid()) {
-                physics.GetBodyInterface().RemoveBody(b->id); physics.GetBodyInterface().DestroyBody(b->id);
+                if(physics.GetBodyInterface().IsAdded(b->id))physics.GetBodyInterface().RemoveBody(b->id);
+                physics.GetBodyInterface().DestroyBody(b->id);
             }
         }
     }
     entt::entity find(const std::string& id) const {
-        const auto found=identities.find(id);
-        require(found!=identities.end(), "Runtime entity does not exist."); return found->second;
+        const auto found=topology->identities.find(id);
+        require(found!=topology->identities.end(), "Runtime entity does not exist."); return found->second;
     }
     void world_matrices() {
         profiling::Scope profile("runtime.hierarchy",static_cast<std::int64_t>(tick));
-        for (auto e : hierarchy) {
+        for (auto e : topology->hierarchy) {
             auto& n=registry.get<Node>(e);
             const auto local=local_matrix(n.local.position,n.local.rotation,n.local.scale);
             n.world=n.parent.empty() ? local : multiply(registry.get<Node>(find(n.parent)).world,local);
@@ -165,7 +179,7 @@ struct Runtime::Impl {
     }
     void sync() {
         profiling::Scope profile("runtime.sync",static_cast<std::int64_t>(tick));
-        for (auto e : order) {
+        for (auto e : topology->order) {
             auto& node=registry.get<Node>(e);
             if (auto* body=registry.try_get<Body>(e); body && body->motion!=BodyMotion::Static) {
                 JPH::RVec3 position; JPH::Quat rotation;
@@ -183,18 +197,25 @@ struct Runtime::Impl {
         world_matrices();
     }
     void initialize(const RuntimeDefinition& definition) {
+        // Construction is private to this Runtime; helpers read the same root
+        // while only this local builder may mutate its indices.
+        auto candidate=std::make_shared<Topology>();topology=candidate;
         world_id=definition.world_id; revision=definition.authored_revision;
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
+        validate_runtime_templates(definition);templates=definition.templates;
+        std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
         animations=std::make_unique<RuntimeAnimations>(definition);
         validate_runtime_mesh_colliders(definition);
         physics.Init(RuntimeBodyIds::capacity,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
         auto definitions=definition.entities;
         std::sort(definitions.begin(),definitions.end(),[](const auto& a,const auto& b){return a.id<b.id;});
+        owned_entities.reserve(definitions.size());
         std::size_t body_count=0;
         for (const auto& d : definitions) {
-            require(!identities.contains(d.id),"Duplicate runtime entity ID.");
-            auto e=registry.create(); identities.emplace(d.id,e); order.push_back(e);
+            require(!candidate->identities.contains(d.id),"Duplicate runtime entity ID.");
+            auto e=registry.create();owned_entities.push_back(e);
+            candidate->identities.emplace(d.id,e);candidate->order.push_back(e);
             registry.emplace<Node>(e, d.id,d.parent,d.transform,d.transform);
             if (d.camera) registry.emplace<RuntimeCamera>(e,*d.camera);
             if (d.mesh) registry.emplace<RuntimeMesh>(e,*d.mesh);
@@ -220,8 +241,8 @@ struct Runtime::Impl {
                 const auto& sun=d.environment->sky.sun;
                 if(!sun.empty()) {
                     require(sun.size()==32 && sun.find_first_not_of("0123456789abcdef")==std::string::npos,"Runtime sky sun needs a 32-character lowercase hexadecimal identity.");
-                    const auto found=identities.find(sun);
-                    require(found!=identities.end(),"Runtime sky sun entity does not exist.");
+                    const auto found=candidate->identities.find(sun);
+                    require(found!=candidate->identities.end(),"Runtime sky sun entity does not exist.");
                     const auto* light=registry.try_get<Light>(found->second);
                     require(light && light->kind==LightKind::directional,"Runtime sky sun must reference a directional Light.");
                 }
@@ -231,7 +252,7 @@ struct Runtime::Impl {
         validate_shadow_budget(shadow_count,shadow_resolution);
         require(body_count<=RuntimeBodyIds::capacity,"Runtime physics body limit exceeded.");
         std::set<entt::entity> done;
-        for (auto e : order) {
+        for (auto e : candidate->order) {
             std::vector<entt::entity> chain; std::set<entt::entity> visiting;
             auto current=e;
             while (!done.contains(current)) {
@@ -240,7 +261,7 @@ struct Runtime::Impl {
                 if (parent.empty()) break;
                 current=find(parent);
             }
-            for (auto it=chain.rbegin();it!=chain.rend();++it) { hierarchy.push_back(*it); done.insert(*it); }
+            for (auto it=chain.rbegin();it!=chain.rend();++it) { candidate->hierarchy.push_back(*it); done.insert(*it); }
         }
         animation_locals();world_matrices();
         std::set<std::string> controlled_cameras,moving_roots;
@@ -277,8 +298,8 @@ struct Runtime::Impl {
                 auto& body=registry.emplace<Body>(e);
                 body.id=physics.GetBodyInterface().CreateAndAddBody(settings,JPH::EActivation::DontActivate);
                 require(!body.id.IsInvalid(),"Jolt mesh body allocation failed.");
-                body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
-                mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),static_cast<const JPH::MeshShape*>(shape.Get().GetPtr()));
+                candidate->body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
+                candidate->mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),static_cast<const JPH::MeshShape*>(shape.Get().GetPtr()));
             }
             if (d.collider) {
                 const auto& collider=*d.collider;
@@ -309,13 +330,13 @@ struct Runtime::Impl {
                 body.motion=collider.motion;
                 body.id=physics.GetBodyInterface().CreateAndAddBody(settings,collider.motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
                 require(!body.id.IsInvalid(),"Jolt body allocation failed.");
-                body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
-                if(body.motion==BodyMotion::Kinematic)kinematics.push_back(e);
+                candidate->body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
+                if(body.motion==BodyMotion::Kinematic)candidate->kinematics.push_back(e);
             }
             if (d.character) {
                 require(d.parent.empty() && rigid_transform(node.world),"CharacterController requires an unscaled hierarchy root.");
                 require(std::abs(node.world[4])<1e-6 && std::abs(node.world[5]-1)<1e-6 && std::abs(node.world[6])<1e-6,"CharacterController can only rotate around Y.");
-                require(characters.size()<32,"Runtime character limit exceeded.");
+                require(candidate->characters.size()<32,"Runtime character limit exceeded.");
                 const auto& settings=*d.character;
                 require(std::isfinite(settings.radius) && settings.radius>=0.05f && settings.radius<=2 &&
                     std::isfinite(settings.height) && settings.height>2*settings.radius && settings.height<=4,"Invalid character capsule dimensions.");
@@ -338,22 +359,33 @@ struct Runtime::Impl {
                 controller.character=new JPH::Character(&config,p.position,p.rotation,0,&physics);
                 controller.character->AddToPhysicsSystem();
                 physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
-                characters.push_back(e);
-                body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
+                candidate->characters.push_back(e);
+                candidate->body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
             }
         }
         // Character constructors allocate their own Jolt IDs. Finish all bootstrap
         // creation before inventorying slots; subsequent structural creation must
         // use explicit IDs so a failed batch cannot consume Jolt sequence numbers.
-        for(const auto& [id,name]:body_names) {
+        for(const auto& [id,name]:candidate->body_names) {
             (void)name;
             body_ids.reserve(JPH::BodyID(id));
         }
         body_ids.seal();
         require(body_ids.live()==physics.GetNumBodies(),"Runtime physics identity inventory is incomplete.");
-        components=std::make_unique<RuntimeComponents>(registry,identities,definition);
+        std::vector<PoimaEntityId> authored_ids;authored_ids.reserve(candidate->identities.size());
+        for(const auto& [id,native_entity]:candidate->identities) {
+            (void)native_entity;
+            // Legacy native fixtures may use descriptive strings; generated IDs
+            // are canonical lowercase hex and cannot alias those names.
+            if(id.size()==32 && std::all_of(id.begin(),id.end(),[](char c){return (c>='0' && c<='9') || (c>='a' && c<='f');})) {
+                const auto numeric=gameplay_id(id);
+                if(numeric.high || numeric.low)authored_ids.push_back(numeric);
+            }
+        }
+        entity_ids.emplace(authored_ids);
+        components=std::make_unique<RuntimeComponents>(registry,candidate->identities,definition);
         physics.OptimizeBroadPhase();
-        for (auto e : characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
+        for (auto e : candidate->characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
     }
     std::map<entt::entity,Motion> prepare_motions(const std::vector<KinematicTarget>& motions) {
@@ -511,9 +543,162 @@ struct Runtime::Impl {
             else *voice=self.play_sound(gameplay_id(command->emitter),command->gain);
         });
     }
-    void step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands) {
+    struct StructureCheckpoint {
+        std::shared_ptr<const Topology> topology;
+        std::size_t owners;
+        RuntimeEntityIds entities;
+        RuntimeBodyIds bodies;
+        std::uint64_t revision;
+    };
+    StructureCheckpoint checkpoint_structure() const { return {topology,owned_entities.size(),*entity_ids,body_ids,structure_revision}; }
+    void destroy_prop_owner(entt::entity e,bool release_id) {
+        auto& bodies=physics.GetBodyInterface();
+        if(const auto* body=registry.try_get<Body>(e);body && !body->id.IsInvalid()) {
+            if(bodies.IsAdded(body->id))bodies.RemoveBody(body->id);
+            bodies.DestroyBody(body->id);if(release_id)body_ids.release(body->id);
+        }
+        registry.destroy(e);
+    }
+    // Component cells must already have rolled back before native owners die.
+    // Restore physical membership before the caller restores Jolt state.
+    void rollback_structure(const StructureCheckpoint& saved) {
+        for(std::size_t i=saved.owners;i<owned_entities.size();++i)destroy_prop_owner(owned_entities[i],false);
+        owned_entities.resize(saved.owners);topology=saved.topology;
+        auto& bodies=physics.GetBodyInterface();
+        for(const auto& [raw,name]:topology->body_names) {
+            (void)name;const JPH::BodyID id(raw);
+            if(!bodies.IsAdded(id))bodies.AddBody(id,JPH::EActivation::DontActivate);
+        }
+        *entity_ids=saved.entities;body_ids=saved.bodies;structure_revision=saved.revision;
+    }
+    // Component commit precedes owner destruction; all allocations and fallible
+    // validation must finish before either commit operation.
+    void commit_structure(const StructureCheckpoint& saved) noexcept {
+        if(structure_revision==saved.revision)return;
+        std::erase_if(owned_entities,[&](auto e) {
+            const auto& id=registry.get<Node>(e).id;
+            if(topology->identities.contains(id))return false;
+            destroy_prop_owner(e,true);return true;
+        });
+    }
+    RuntimeStructureResult publish_structure(std::uint64_t expected_revision,
+        const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
+        require(expected_revision==structure_revision,"Stale runtime structure revision.");
+        require(!requests.empty() || !removals.empty(),"Structural transaction is empty.");
+        require(requests.size()+removals.size()<=4096,"Structural command budget exceeded.");
+        require(structure_revision<9007199254740991ULL,"Runtime structure revision exhausted.");
+        auto candidate=std::make_shared<Topology>(*topology);
+        std::vector<entt::entity> retired;retired.reserve(removals.size());
+        std::vector<PoimaEntityId> removed;removed.reserve(removals.size());
+        for(const auto& id:removals) {
+            require(candidate->spawned.erase(id)==1,"Removal needs a unique live spawned root prop.");
+            const auto e=candidate->identities.at(id);candidate->identities.erase(id);
+            retired.push_back(e);removed.push_back(gameplay_id(id));
+            std::erase(candidate->order,e);std::erase(candidate->hierarchy,e);std::erase(candidate->kinematics,e);
+            if(const auto* body=registry.try_get<Body>(e))candidate->body_names.erase(body->id.GetIndexAndSequenceNumber());
+        }
+        require(candidate->identities.size()+requests.size()<=10000,"Runtime live entity budget exceeded.");
+        RuntimeDefinition recipes;recipes.component_schemas=components->schemas();
+        std::size_t payload_bytes=0;
+        // Validate overrides using the same rules as frozen native recipes.
+        for(const auto& request:requests) {
+            const auto found=std::lower_bound(templates.begin(),templates.end(),request.template_id,
+                [](const auto& recipe,const auto& id){return recipe.id<id;});
+            require(found!=templates.end() && found->id==request.template_id,"Runtime spawn template does not exist.");
+            for(const auto& [type_id,payload]:found->components) {
+                (void)type_id;
+                require(payload.size()<=components::max_command_bytes-payload_bytes,"Spawn payload command budget exceeded.");
+                payload_bytes+=payload.size();
+            }
+            auto recipe=*found;if(request.transform)recipe.transform=*request.transform;
+            if(game)for(const auto& [type_id,payload]:recipe.components) {
+                (void)payload;
+                const auto& declarations=game->component_schemas();
+                require(std::any_of(declarations.begin(),declarations.end(),[&](const auto& schema){return schema.id==type_id;}),
+                    "Gameplay module does not declare a spawned component type.");
+            }
+            RuntimeDefinition validation;validation.component_schemas=recipes.component_schemas;validation.templates.push_back(recipe);
+            validate_runtime_templates(validation);recipes.templates.push_back(std::move(recipe));
+        }
+        std::vector<entt::entity> born;born.reserve(requests.size());
+        std::vector<ComponentSpawn> cells;cells.reserve(requests.size());
+        RuntimeStructureResult result;result.revision=structure_revision+1;result.spawned.reserve(requests.size());
+        require(requests.size()<=RuntimeComponents::max_retained_entities-owned_entities.size(),"Runtime retained owner budget exceeded.");
+        owned_entities.reserve(owned_entities.size()+requests.size());
+        auto& bodies=physics.GetBodyInterface();
+        for(const auto& recipe:recipes.templates) {
+            const auto numeric=entity_ids->allocate();const auto id=gameplay_id(numeric);
+            const auto e=registry.create();owned_entities.push_back(e);born.push_back(e);
+            auto& node=registry.emplace<Node>(e,id,std::string{},recipe.transform,recipe.transform);
+            node.world=local_matrix(node.local.position,node.local.rotation,node.local.scale);
+            if(recipe.mesh)registry.emplace<RuntimeMesh>(e,*recipe.mesh);
+            if(recipe.collider) {
+                const auto& collider=*recipe.collider;const auto p=pose(node.world);
+                JPH::Vec3 extents(static_cast<float>(collider.half_extents[0]*p.scale[0]),
+                    static_cast<float>(collider.half_extents[1]*p.scale[1]),static_cast<float>(collider.half_extents[2]*p.scale[2]));
+                const auto bevel=std::min(.05f,.1f*std::min({extents.GetX(),extents.GetY(),extents.GetZ()}));
+                auto shape=JPH::BoxShapeSettings(extents,bevel).Create();require(!shape.HasError(),"Jolt spawn shape creation failed.");
+                JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,
+                    collider.motion==BodyMotion::Dynamic ? JPH::EMotionType::Dynamic : collider.motion==BodyMotion::Kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
+                    collider.motion==BodyMotion::Static ? 0 : 1);
+                settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
+                settings.mOverrideMassProperties=JPH::EOverrideMassProperties::CalculateInertia;settings.mMassPropertiesOverride.mMass=collider.mass;
+                settings.mMotionQuality=collider.motion==BodyMotion::Dynamic ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+                auto& body=registry.emplace<Body>(e);body.motion=collider.motion;
+                const auto id_body=body_ids.allocate();auto* native=bodies.CreateBodyWithID(id_body,settings);
+                require(native!=nullptr,"Jolt spawn body allocation failed.");body.id=id_body;
+                candidate->body_names.emplace(id_body.GetIndexAndSequenceNumber(),id);
+                if(body.motion==BodyMotion::Kinematic)candidate->kinematics.push_back(e);
+            }
+            candidate->identities.emplace(id,e);candidate->order.push_back(e);candidate->hierarchy.push_back(e);
+            candidate->spawned.emplace(id,SpawnOrigin{recipe.id,recipe.transform});
+            cells.push_back({numeric,e,&recipe.components});result.spawned.push_back(id);
+        }
+        // Native iteration and snapshot ordering stays canonical.
+        auto by_id=[&](auto a,auto b){return registry.get<Node>(a).id<registry.get<Node>(b).id;};
+        std::sort(candidate->order.begin(),candidate->order.end(),by_id);
+        std::sort(candidate->kinematics.begin(),candidate->kinematics.end(),by_id);
+        components->prepare_tick(cells,removed);
+        if(game)game->validate_entity_references([](void* context,PoimaEntityId id) {
+            return static_cast<RuntimeComponents*>(context)->candidate_alive(id);
+        },components.get());
+        // All allocating preparation and reference checks precede physics publication.
+        for(auto e:retired)if(const auto* body=registry.try_get<Body>(e))bodies.RemoveBody(body->id);
+        for(auto e:born)if(const auto* body=registry.try_get<Body>(e))
+            bodies.AddBody(body->id,body->motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
+        components->publish_tick();topology=candidate;
+        for(auto e:topology->characters)registry.get<Controller>(e).character->PostSimulation(0.05f);
+        sync();
+        structure_revision=result.revision;
+        return result;
+    }
+    RuntimeStructureResult change_structure(std::uint64_t expected_revision,
+        const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
+        require(expected_revision==structure_revision,"Stale runtime structure revision.");
+        require(!save_queue.pending(),"Resolve pending gameplay save intent before structural edits.");
+        const auto saved=checkpoint_structure();
+        JPH::StateRecorderImpl checkpoint;physics.SaveState(checkpoint);
+        for(auto e:topology->characters)registry.get<Controller>(e).character->SaveState(checkpoint);
+        require(!checkpoint.IsFailed(),"Cannot checkpoint physics for structural edit.");
+        components->begin_batch();
+        try {
+            auto result=publish_structure(expected_revision,requests,removals);
+            components->commit_batch();commit_structure(saved);return result;
+        } catch(...) {
+            components->rollback_batch();rollback_structure(saved);
+            checkpoint.Rewind();require(physics.RestoreState(checkpoint),"Structural physics rollback failed.");
+            for(auto e:topology->characters)registry.get<Controller>(e).character->RestoreState(checkpoint);
+            require(!checkpoint.IsFailed(),"Structural character rollback failed.");sync();
+            throw;
+        }
+    }
+    std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
+        require(structure.size()<=count,"At most one structural transaction per tick is supported.");
+        for(std::size_t i=0;i<structure.size();++i)
+            require(structure[i].offset<count && (i==0 || structure[i-1].offset<structure[i].offset),"Structural offsets must be unique, sorted and inside the batch.");
+        std::vector<RuntimeStructureResult> structure_results;structure_results.reserve(structure.size());std::size_t next_structure=0;
         std::map<entt::entity,const RuntimeInput*> controls;
         for (const auto& input : inputs) {
             const auto e=find(input.entity);
@@ -523,15 +708,17 @@ struct Runtime::Impl {
         }
         require(sound_commands.size()<=64,"At most 64 sound commands per batch.");
         auto prepared=prepare_motions(motions);
-        std::vector<std::optional<Motion>> previous_motions;previous_motions.reserve(kinematics.size());
-        for(auto e:kinematics)previous_motions.push_back(registry.get<Body>(e).target);
+        const auto structure_checkpoint=checkpoint_structure();
+        std::vector<std::pair<entt::entity,std::optional<Motion>>> previous_motions;previous_motions.reserve(topology->kinematics.size());
+        for(auto e:topology->kinematics)previous_motions.emplace_back(e,registry.get<Body>(e).target);
         // Internal rollback remains distinct from the portable save format.
         // Optional scope permits closing the region while keeping checkpoint
         // objects alive through the whole transaction, without allocation.
         std::optional<profiling::Scope> checkpoint_profile(std::in_place,"runtime.checkpoint",static_cast<std::int64_t>(tick));
         JPH::StateRecorderImpl checkpoint; physics.SaveState(checkpoint);
-        std::vector<std::array<double,2>> angles;
-        for(auto e:characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({c.yaw,c.pitch}); }
+        struct ControllerCheckpoint { entt::entity entity;double yaw,pitch; };
+        std::vector<ControllerCheckpoint> angles;
+        for(auto e:topology->characters) { auto& c=registry.get<Controller>(e); c.character->SaveState(checkpoint); angles.push_back({e,c.yaw,c.pitch}); }
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
         require(!save_queue.pending() || !save_queue.pending()->committed,"Resolve the pending save operation before another simulation batch.");
@@ -539,8 +726,8 @@ struct Runtime::Impl {
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;
         auto animation_checkpoint=animations->checkpoint();
-        std::vector<RuntimeTransform> local_checkpoint;local_checkpoint.reserve(order.size());
-        for(auto e:order)local_checkpoint.push_back(registry.get<Node>(e).local);
+        std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
+        for(auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
         checkpoint_profile.reset();
         components->begin_batch();
         try {
@@ -548,7 +735,7 @@ struct Runtime::Impl {
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
-                for(auto e:characters) {
+                for(auto e:topology->characters) {
                     auto& c=registry.get<Controller>(e);
                     const RuntimeInput neutral;
                     const auto& input=controls.contains(e) ? *controls.at(e) : neutral;
@@ -595,11 +782,26 @@ struct Runtime::Impl {
                     if(!game_animation_commands.empty()) {
                         animations->apply(game_animation_commands,tick);animation_locals();sync();
                     }
-                    game_commands.clear();
                     game_animation_commands.clear();
-                    components->apply_tick();
                 }
-                for(auto e:kinematics) {
+                if(next_structure<structure.size() && structure[next_structure].offset==frame) {
+                    const auto& command=structure[next_structure++];
+                    for(const auto& id:command.despawns) {
+                        require(frame!=0 || std::none_of(motions.begin(),motions.end(),[&](const auto& m){return m.entity==id;}),
+                            "Caller motion and removal target the same entity in one tick.");
+                        require(std::none_of(game_commands.begin(),game_commands.end(),[&](const auto& m){return m.entity==id;}),
+                            "Gameplay motion and removal target the same entity in one tick.");
+                    }
+                    structure_results.push_back(publish_structure(command.expected_revision,command.spawns,command.despawns));
+                } else if(game) {
+                    components->prepare_tick({},{});
+                    game->validate_entity_references([](void* context,PoimaEntityId id) {
+                        return static_cast<RuntimeComponents*>(context)->candidate_alive(id);
+                    },components.get());
+                    components->publish_tick();
+                }
+                game_commands.clear();
+                for(auto e:topology->kinematics) {
                     auto& body=registry.get<Body>(e);
                     if(!body.target)continue;
                     const auto& m=*body.target;const double fraction=static_cast<double>(m.elapsed+1)/m.target.duration_ticks;
@@ -612,8 +814,8 @@ struct Runtime::Impl {
                     return physics.Update(1.0f/60.0f,1,&allocator,&jobs);
                 }();
                 require(error==JPH::EPhysicsUpdateError::None,"Jolt physics capacity/update error; batch rolled back.");
-                for(auto e:characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
-                for(auto e:kinematics) {
+                for(auto e:topology->characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
+                for(auto e:topology->kinematics) {
                     auto& body=registry.get<Body>(e);
                     if(body.target && ++body.target->elapsed==body.target->target.duration_ticks) {
                         physics.GetBodyInterface().SetLinearAndAngularVelocity(body.id,JPH::Vec3::sZero(),JPH::Vec3::sZero());body.target.reset();
@@ -623,28 +825,30 @@ struct Runtime::Impl {
             }
             sync();
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
-            components->commit_batch();
+            components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             components->rollback_batch();
+            rollback_structure(structure_checkpoint);
             save_queue=save_checkpoint;
             animations->restore(animation_checkpoint);
-            for(std::size_t i=0;i<order.size();++i)registry.get<Node>(order[i]).local=local_checkpoint[i];
+            for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();
             game_animation_commands.clear();
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
-            for(std::size_t k=0;k<characters.size();++k) {
-                auto& c=registry.get<Controller>(characters[k]); c.character->RestoreState(checkpoint); c.yaw=angles[k][0]; c.pitch=angles[k][1];
+            for(const auto& saved:angles) {
+                auto& c=registry.get<Controller>(saved.entity);c.character->RestoreState(checkpoint);c.yaw=saved.yaw;c.pitch=saved.pitch;
             }
-            for(std::size_t k=0;k<kinematics.size();++k)registry.get<Body>(kinematics[k]).target=std::move(previous_motions[k]);
+            for(auto& [e,motion]:previous_motions)registry.get<Body>(e).target=std::move(motion);
             require(!checkpoint.IsFailed(),"Internal character rollback failed."); tick=previous_tick; sync();
             }
             throw;
         }
+        return structure_results;
     }
 };
 
@@ -656,7 +860,8 @@ Runtime::Runtime(const RuntimeDefinition& definition) {
     impl_=std::make_unique<Impl>();impl_->owner=this;impl_->initialize(definition);
 }
 Runtime::~Runtime()=default;
-RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->order.size(),impl_->physics.GetNumBodies(),impl_->characters.size()}; }
+const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const {return impl_->templates;}
+RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->topology->order.size(),impl_->topology->body_names.size(),impl_->topology->characters.size()}; }
 RuntimeEntityState Runtime::entity(const std::string& id) const {
     const auto e=impl_->find(id); const auto& node=impl_->registry.get<Node>(e);
     RuntimeEntityState result; result.id=id; result.world=node.world;result.local=node.local;result.animation=impl_->animations->state(id,impl_->tick);
@@ -672,7 +877,9 @@ RuntimeEntityState Runtime::entity(const std::string& id) const {
     }
     result.velocity={velocity.GetX(),velocity.GetY(),velocity.GetZ()}; return result;
 }
-void Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations) { impl_->step(ticks,inputs,motions,sounds,animations); }
+RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns) { return impl_->change_structure(expected,spawns,despawns); }
+std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
+std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure) { return impl_->step(ticks,inputs,motions,sounds,animations,structure); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
@@ -709,15 +916,15 @@ std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
             }
             if(better)hit=value;
         }
-    } collector(impl_->body_names,impl_->mesh_shapes);
+    } collector(impl_->topology->body_names,impl_->topology->mesh_shapes);
     const JPH::RRayCast ray(JPH::RVec3(query.origin[0],query.origin[1],query.origin[2]),JPH::Vec3(delta[0],delta[1],delta[2]));
     JPH::RayCastSettings ray_settings;ray_settings.mBackFaceModeTriangles=JPH::EBackFaceMode::CollideWithBackFaces;
     impl_->physics.GetNarrowPhaseQuery().CastRay(ray,ray_settings,collector,{}, {},filter);
     if(!collector.hit)return {};
     const auto& hit=*collector.hit;const auto point=ray.GetPointOnRay(hit.mFraction);
-    RuntimeRayHit result;result.entity=impl_->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
+    RuntimeRayHit result;result.entity=impl_->topology->body_names.at(hit.mBodyID.GetIndexAndSequenceNumber());
     result.fraction=hit.mFraction;result.distance=query.distance*hit.mFraction;result.position={point.GetX(),point.GetY(),point.GetZ()};
-    if(const auto mesh=impl_->mesh_shapes.find(hit.mBodyID.GetIndexAndSequenceNumber());mesh!=impl_->mesh_shapes.end())
+    if(const auto mesh=impl_->topology->mesh_shapes.find(hit.mBodyID.GetIndexAndSequenceNumber());mesh!=impl_->topology->mesh_shapes.end())
         result.triangle=mesh->second->GetTriangleUserData(hit.mSubShapeID2);
     if(hit.mFraction>0 || result.triangle) {
         JPH::BodyLockRead lock(impl_->physics.GetBodyLockInterface(),hit.mBodyID);require(lock.Succeeded(),"Ray hit body could not be inspected.");
@@ -739,12 +946,24 @@ void Runtime::gameplay_load(const GameplayConfig& config,const std::string& valu
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before code reload.");
     require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     if(config.native_aot)validate_gameplay_values(config.native_schema,values);
-    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);impl_->components->validate_module(candidate->component_schemas());impl_->game.swap(candidate);++impl_->game_revision;
+    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);
+    impl_->components->validate_module(candidate->component_schemas());
+    candidate->validate_entity_references([](void* context,PoimaEntityId id) {
+        return static_cast<RuntimeComponents*>(context)->alive(id);
+    },impl_->components.get());
+    impl_->game.swap(candidate);++impl_->game_revision;
 }
 void Runtime::gameplay_edit(const std::string& values) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before field editing.");
     require(impl_->game!=nullptr,"No gameplay module is loaded.");require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
-    impl_->game->edit(values);++impl_->game_revision;
+    auto previous=impl_->game->state();
+    try {
+        impl_->game->edit(values);
+        impl_->game->validate_entity_references([](void* context,PoimaEntityId id) {
+            return static_cast<RuntimeComponents*>(context)->alive(id);
+        },impl_->components.get());
+    } catch(...) { impl_->game->state().swap(previous);throw; }
+    ++impl_->game_revision;
 }
 const std::vector<components::Schema>& Runtime::component_schemas() const { return impl_->components->schemas(); }
 std::uint64_t Runtime::component_revision() const { return impl_->components->revision(); }
@@ -759,14 +978,14 @@ AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
     for(const auto& source:impl_->acoustic_geometry) {
         auto g=source;g.world=multiply(impl_->registry.get<Node>(impl_->find(g.entity)).world,g.world);result.geometry.push_back(std::move(g));
     }
-    for(auto e:impl_->order)if(auto* emitter=impl_->registry.try_get<AudioEmitter>(e);emitter && emitter->enabled) {
+    for(auto e:impl_->topology->order)if(auto* emitter=impl_->registry.try_get<AudioEmitter>(e);emitter && emitter->enabled) {
         const auto& n=impl_->registry.get<Node>(e);result.sources.push_back({n.id,*emitter,n.world});
     }
     return result;
 }
 SceneLighting Runtime::lighting() const {
     SceneLighting result;
-    for(auto e:impl_->order) {
+    for(auto e:impl_->topology->order) {
         const auto& node=impl_->registry.get<Node>(e);
         if(const auto* light=impl_->registry.try_get<Light>(e))append_light(result,node.id,*light,node.world);
         if(const auto* environment=impl_->registry.try_get<LightingEnvironment>(e)) { result.environment=*environment;result.preview=false; }
@@ -777,10 +996,14 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     const auto e=impl_->find(camera);
     require(impl_->registry.all_of<RuntimeCamera>(e),"Runtime entity has no Camera component.");
     const auto& lens=impl_->registry.get<RuntimeCamera>(e);
-    SceneSnapshot result; result.lighting=lighting();result.world_id=impl_->world_id; result.revision=impl_->revision; result.camera_id=camera;
-    result.camera_world=impl_->registry.get<Node>(e).world; result.vertical_fov=lens.vertical_fov; result.near_plane=lens.near_plane; result.far_plane=lens.far_plane;
+    auto result=snapshot();result.camera_id=camera;
+    result.camera_world=impl_->registry.get<Node>(e).world;result.vertical_fov=lens.vertical_fov;result.near_plane=lens.near_plane;result.far_plane=lens.far_plane;
     require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
-    for(auto object:impl_->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
+    return result;
+}
+SceneSnapshot Runtime::snapshot() const {
+    SceneSnapshot result;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;
+    for(auto object:impl_->topology->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
         const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
             impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; })});
     }

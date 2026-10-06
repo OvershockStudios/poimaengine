@@ -11,7 +11,7 @@ Open **Window > Saves** or **File > Runtime saves** to save and restore the supp
 
 The **Details** section shows observed generations, session IDs and trusted gameplay information.
 
-The window does not silently refresh a stale observation just before saving or loading. If an agent advances the runtime, replaces a save or changes the storage root, the native guards reject the outdated operation. Drafts and the observed state remain available so the conflict can be understood.
+The window does not silently refresh a stale observation just before saving or loading. If an agent advances the runtime, creates/removes a runtime prop, replaces a save or changes the storage root, the native guards reject the outdated operation. Drafts and the observed state remain available so the conflict can be understood.
 
 ## Load a checkpoint
 
@@ -31,8 +31,10 @@ Changing the selected root/slot or inspecting a new observation clears recovery 
 
 ## Current limits
 
-The window operates on named slots; it does not yet provide a slot browser, thumbnails, autosave scheduling, persistent root preferences or cloud/platform storage. Saves and loads are synchronous and require paused editor playback. The current format binds a fixed supported entity set and external assets, with a 64 MiB total bound. It is not an arbitrary-object serializer or a guarantee of identical future physics trajectories. [Typed gameplay requests](GAMEPLAY_SAVES.md) can also save after committed ticks; gameplay loads pause the editor and clear old input.
+The window operates on named slots; it does not yet provide a slot browser, thumbnails, autosave scheduling, persistent root preferences or cloud/platform storage. Saves and loads are synchronous and require paused editor playback. The current format binds authored entities, supported spawned root props and external assets, with a 64 MiB total bound. It is not an arbitrary-object serializer or a guarantee of identical future physics trajectories. [Typed gameplay requests](GAMEPLAY_SAVES.md) can also save after committed ticks; gameplay loads pause the editor and clear old input.
 
 Qualification uses actual editor textboxes and routed button events, fresh editor processes, real C# state and deliberately damaged test-owned files. Visual-content captures render the attached Avalonia window; they do not qualify OS chrome, a desktop compositor, physical input or general accessibility. [Recorded evidence](evidence/m2-editor-saves.json).
 
 When custom components are active, Save/Load observations also retain their independent component revision. Applying a paused component edit makes an earlier observation stale. An unapplied live component draft blocks Save/Load until applied or discarded. See [custom components](CUSTOM_COMPONENTS.md).
+
+Save/Load observations also retain the runtime structure revision. A paused plain-prop birth or removal makes an older observation stale even when the tick and custom component revision remain unchanged.

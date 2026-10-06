@@ -16,6 +16,171 @@ RuntimeDefinition fixture() {
     RuntimeEntityDefinition camera; camera.id="camera"; camera.parent="player"; camera.transform.position={0,1.6,0}; camera.camera=RuntimeCamera{};
     d.entities={player,box,camera,wall,floor}; return d;
 }
+void lifecycle() {
+    const std::string tid(32,'a'),refid(32,'b'),field(32,'c');
+    auto d=fixture();
+    const auto canonical=[](const std::string& name) {
+        if(name.empty())return name;
+        return std::string(31,'e')+std::to_string(name=="floor" ? 1 : name=="wall" ? 2 : name=="box" ? 3 : name=="player" ? 4 : 5);
+    };
+    for(auto& e:d.entities) {
+        e.id=canonical(e.id);e.parent=canonical(e.parent);
+        if(e.character)e.character->camera=canonical(e.character->camera);
+    }
+    const auto schema=components::parse_schema("{\"id\":\""+refid+"\",\"name\":\"Target\",\"version\":1,\"fields\":[{\"id\":\""+field+"\",\"name\":\"Entity\",\"kind\":\"entity\",\"default\":\"00000000000000000000000000000000\"}]}");
+    d.component_schemas.push_back(schema);
+    RuntimeSpawnTemplate prop;prop.id=tid;prop.name="Crate";prop.collider=BoxCollider{};
+    prop.collider->motion=BodyMotion::Dynamic;prop.transform.position={4,4,0};
+    prop.components[refid]=components::defaults(schema);d.templates.push_back(prop);
+    auto invalid=prop;invalid.id=std::string(32,'d');
+    invalid.components[refid]=components::parse_values(schema,"{\""+field+"\":\"ffffffffffffffffffffffffffffffff\"}");
+    d.templates.push_back(invalid);
+    Runtime a(d),control(d);bool rejected=false;
+    try {a.change_structure(0,{{tid,{}},{invalid.id,{}}},{});}catch(const std::exception&) {rejected=true;}
+    require(rejected && a.structure_revision()==0 && a.component_revision()==0 && a.inspect().entities==5 && a.inspect().bodies==4,"Failed spawn changed membership.");
+    const auto born=a.change_structure(0,{{tid,{}}},{});
+    const auto same=control.change_structure(0,{{tid,{}}},{});
+    require(born.spawned==same.spawned && born.revision==1,"Failed spawn consumed public IDs.");
+    require(a.inspect().entities==6 && a.inspect().bodies==5 && a.inspect().tick==0,"Spawn did not publish native membership.");
+    const auto id=born.spawned.front();require(a.entity(id).has_body,"Spawned prop has no body.");
+    require(a.component_query(refid,"",100)==std::vector<std::string>{id},"Spawned custom component not queryable.");
+    a.step(60,{});control.step(60,{});
+    require(a.entity(id).world==control.entity(id).world && a.entity(id).velocity==control.entity(id).velocity,"Failed preparation changed subsequent physics.");
+    RuntimeTransform other;other.position={6,3,0};const auto second=a.change_structure(1,{{tid,other}},{}).spawned.front();
+    a.component_edit(refid,id,components::parse_values(schema,"{\""+field+"\":\""+second+"\"}"));
+    const auto component_revision=a.component_revision();
+    rejected=false;try {a.change_structure(2,{}, {second});}catch(const std::exception&) {rejected=true;}
+    require(rejected && a.structure_revision()==2 && a.component_revision()==component_revision && a.inspect().entities==7,"Incoming reference did not protect removal.");
+    a.component_edit(refid,id,components::defaults(schema));
+    a.change_structure(2,{}, {second});
+    require(a.inspect().entities==6 && a.inspect().bodies==5,"Removal retained live physics membership.");
+    const auto next=a.change_structure(3,{{tid,other}}, {id});
+    require(next.spawned.front()!=id && next.spawned.front()!=second && a.inspect().entities==6,"Retired public ID was reused.");
+    a.change_structure(4,{},next.spawned);
+    require(a.inspect().entities==5 && a.inspect().bodies==4 && a.component_query(refid,"",100).empty(),"Spawn/remove did not restore baseline membership.");
+    rejected=false;try {a.change_structure(5,{}, {canonical("floor")});}catch(const std::exception&) {rejected=true;}
+    require(rejected,"Unsupported authored removal was accepted.");
+    const auto saved=a.save_snapshot(std::string(64,'a'));
+    auto loaded=Runtime::from_snapshot(d,std::string(64,'a'),saved);
+    require(loaded->structure_revision()==a.structure_revision(),"Save lost lifecycle revision with no spawned survivors.");
+    for(unsigned i=0;i<32;++i) {
+        const auto item=a.change_structure(a.structure_revision(),{{tid,{}}},{});
+        a.change_structure(a.structure_revision(),{},item.spawned);
+    }
+    require(a.inspect().entities==5 && a.inspect().bodies==4,"Repeated lifecycle leaked live bodies.");
+    auto platform_definition=d;
+    platform_definition.templates[0].collider->motion=BodyMotion::Static;
+    for(auto& e:platform_definition.entities)if(e.character)e.transform.position={0,4,2};
+    Runtime platform(platform_definition);
+    RuntimeTransform support;support.position={0,2,2};support.scale={4,1,4};
+    const auto support_id=platform.change_structure(0,{{tid,support}},{}).spawned.front();
+    platform.step(120,{});
+    require(platform.entity(canonical("player")).ground=="on_ground" && platform.entity(canonical("player")).local.position[1]>2,
+        "Platform fixture did not support the character.");
+    platform.change_structure(1,{}, {support_id});
+    require(platform.entity(canonical("player")).ground!="on_ground","Deleted support left character grounded.");
+    RuntimeInput jump;jump.entity=canonical("player");jump.jump=true;platform.step(1,{jump});
+    require(platform.entity(canonical("player")).velocity[1]<=0,"Character jumped from deleted support.");
+    auto kinematic_definition=d;kinematic_definition.templates[0].collider->motion=BodyMotion::Kinematic;
+    Runtime kinematic(kinematic_definition);
+    const auto mover=kinematic.change_structure(0,{{tid,{}}},{}).spawned.front();
+    KinematicTarget motion;motion.entity=mover;motion.position={5,4,0};motion.duration_ticks=2;
+    kinematic.step(2,{}, {motion});
+    require(std::abs(kinematic.entity(mover).local.position[0]-5)<1e-6,"Spawned kinematic body was not stepped.");
+    kinematic.change_structure(1,{}, {mover});kinematic.step(2,{});
+    auto logical_definition=d;logical_definition.templates[0].collider.reset();
+    Runtime logical(logical_definition);
+    const auto logical_id=logical.change_structure(0,{{tid,{}}},{}).spawned.front();
+    require(logical.inspect().entities==6 && logical.inspect().bodies==4,"Bodyless spawn created a physical body.");
+    rejected=false;try {logical.change_structure(0,{}, {logical_id});}catch(const std::exception&) {rejected=true;}
+    require(rejected && logical.inspect().entities==6,"Stale structural request changed membership.");
+    rejected=false;try {logical.change_structure(1,{}, {logical_id,logical_id});}catch(const std::exception&) {rejected=true;}
+    require(rejected && logical.inspect().entities==6,"Duplicate removal partially committed.");
+    logical.change_structure(1,{}, {logical_id});
+}
+void scheduled_lifecycle() {
+    const std::string tid(32,'a'),logical_tid(32,'d'),kinematic_tid(32,'e'),type(32,'b'),field(32,'c'),hash(64,'a');
+    const auto id=[](unsigned n){return std::string(31,'0')+std::to_string(n);};
+    RuntimeDefinition d;d.world_id="scheduled-lifecycle";
+    const auto schema=components::parse_schema("{\"id\":\""+type+"\",\"name\":\"Target\",\"version\":1,\"fields\":[{\"id\":\""+field+"\",\"name\":\"Entity\",\"kind\":\"entity\",\"default\":\"00000000000000000000000000000000\"}]}");
+    d.component_schemas={schema};
+    RuntimeSpawnTemplate prop;prop.id=tid;prop.name="Scheduled prop";prop.transform.position={0,10,0};
+    prop.collider=BoxCollider{};prop.collider->motion=BodyMotion::Dynamic;prop.components[type]=components::defaults(schema);
+    auto logical=prop;logical.id=logical_tid;logical.collider.reset();
+    auto kinematic=prop;kinematic.id=kinematic_tid;kinematic.collider->motion=BodyMotion::Kinematic;
+    d.templates={prop,logical,kinematic};
+    Runtime a(d),control(d);
+    const auto results=a.step(5,{}, {}, {}, {},{{0,0,{{tid,{}}},{}},{2,1,{{logical_tid,{}}},{id(1)}}});
+    require(results.size()==2 && results[0].revision==1 && results[0].spawned==std::vector<std::string>{id(1)} && results[1].revision==2 && results[1].spawned==std::vector<std::string>{id(2)},"Scheduled lifecycle result order differs.");
+    control.change_structure(0,{{tid,{}}},{});control.step(2,{});
+    control.change_structure(1,{{logical_tid,{}}},{id(1)});control.step(3,{});
+    require(a.save_snapshot(hash)==control.save_snapshot(hash),"Scheduled lifecycle differs from equivalent tick-boundary edits.");
+    require(a.inspect().entities==1 && a.inspect().bodies==0 && a.component_query(type,"",64)==std::vector<std::string>{id(2)},"Committed born-then-retired prop retained ownership or components.");
+    a.change_structure(2,{}, {id(2)});require(a.inspect().entities==0 && a.inspect().bodies==0,"Successful scheduled cleanup retained live entities.");
+    // A later revision failure must unwind births already published and retired
+    // within this same batch, including their custom-cell and body owners.
+    Runtime failed(d),untouched(d);const auto before=failed.save_snapshot(hash);
+    bool rejected=false;
+    try {(void)failed.step(5,{}, {}, {}, {},{{0,0,{{tid,{}}},{}},{2,1,{}, {id(1)}},{4,0,{{logical_tid,{}}},{}}});}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected && failed.save_snapshot(hash)==before,"Later structural failure did not restore complete original snapshot.");
+    require(failed.structure_revision()==0 && failed.component_revision()==0 && failed.inspect().entities==0 && failed.inspect().bodies==0,"Failed born-then-retired batch retained state.");
+    require(failed.change_structure(0,{{tid,{}}},{}).spawned==untouched.change_structure(0,{{tid,{}}},{}).spawned,"Failed schedule consumed generated IDs.");
+    failed.step(3,{});untouched.step(3,{});
+    require(failed.save_snapshot(hash)==untouched.save_snapshot(hash),"Failed schedule changed subsequent physics or component state.");
+    // Schedule guards must reject before committing any partial tick sequence.
+    const auto guarded=failed.save_snapshot(hash);
+    for(const auto& schedule:std::vector<std::vector<RuntimeStructureTick>>{
+        {{0,1,{{logical_tid,{}}},{}},{0,2,{{logical_tid,{}}},{}}},
+        {{1,1,{{logical_tid,{}}},{}},{0,2,{{logical_tid,{}}},{}}},
+        {{2,1,{{logical_tid,{}}},{}}}}) {
+        rejected=false;try {(void)failed.step(2,{}, {}, {}, {},schedule);}catch(const std::exception&) {rejected=true;}
+        require(rejected && failed.save_snapshot(hash)==guarded,"Invalid structural schedule partially committed.");
+    }
+    // Retirement of an existing moving kinematic must preserve its original
+    // target and elapsed clock when a subsequent scheduled edit fails.
+    Runtime moving(d),moving_control(d);
+    const auto mover=moving.change_structure(0,{{kinematic_tid,{}}},{}).spawned.front();
+    require(moving_control.change_structure(0,{{kinematic_tid,{}}},{}).spawned.front()==mover,"Kinematic fixture IDs differ.");
+    KinematicTarget motion;motion.entity=mover;motion.position={2,10,0};motion.duration_ticks=20;
+    moving.step(2,{}, {motion});moving_control.step(2,{}, {motion});
+    const auto moving_before=moving.save_snapshot(hash);
+    rejected=false;try {(void)moving.step(4,{}, {}, {}, {},{{1,1,{}, {mover}},{3,1,{{logical_tid,{}}},{}}});}catch(const std::exception&) {rejected=true;}
+    require(rejected && moving.save_snapshot(hash)==moving_before,"Failed removal lost existing kinematic target/state.");
+    moving.step(2,{});moving_control.step(2,{});
+    require(moving.save_snapshot(hash)==moving_control.save_snapshot(hash),"Restored kinematic failed to continue its original motion.");
+    const auto conflict_before=moving.save_snapshot(hash);
+    rejected=false;try {(void)moving.step(1,{}, {motion}, {}, {},{{0,1,{}, {mover}}});}catch(const std::exception&) {rejected=true;}
+    require(rejected && moving.save_snapshot(hash)==conflict_before,"Same-tick explicit motion and removal did not reject atomically.");
+    const auto removed=moving.step(2,{}, {}, {}, {},{{1,1,{}, {mover}}});
+    require(removed.size()==1 && moving.inspect().entities==0,"Later retirement of ongoing motion was rejected or retained membership.");
+    // Trigger the real Jolt pair/contact overflow after a structural publication,
+    // rather than failing a request validator before physics runs.
+    Runtime overflow(d),overflow_control(d);std::vector<RuntimeSpawnRequest> crowded(150,RuntimeSpawnRequest{tid,{}});
+    const auto overflow_before=overflow.save_snapshot(hash);std::string error;
+    try {(void)overflow.step(3,{}, {}, {}, {},{{1,0,crowded,{}}});}catch(const std::exception& e) {error=e.what();}
+    require(error.find("Jolt physics capacity/update error")!=std::string::npos,"Scheduled crowd did not reach real Jolt update failure.");
+    require(overflow.save_snapshot(hash)==overflow_before && overflow.inspect().bodies==0,"Physics failure retained published structural state.");
+    require(overflow.change_structure(0,{{tid,{}}},{}).spawned==overflow_control.change_structure(0,{{tid,{}}},{}).spawned,"Physics failure consumed generated IDs.");
+    overflow.step(3,{});overflow_control.step(3,{});
+    require(overflow.save_snapshot(hash)==overflow_control.save_snapshot(hash),"Physics failure left stale native body allocation state.");
+}
+
+void scheduled_character_support() {
+    auto d=fixture();for(auto& e:d.entities)if(e.character)e.transform.position={0,4,2};
+    RuntimeSpawnTemplate platform;platform.id=std::string(32,'a');platform.name="Support";
+    platform.collider=BoxCollider{};platform.transform.position={0,2,2};platform.transform.scale={4,1,4};d.templates.push_back(platform);
+    Runtime source(d),control(d);const auto support=source.change_structure(0,{{platform.id,{}}},{}).spawned.front();
+    control.change_structure(0,{{platform.id,{}}},{});source.step(120,{});control.step(120,{});
+    require(source.entity("player").ground=="on_ground" && source.entity("player").local.position[1]>2,"Scheduled support fixture failed to settle.");
+    const std::string hash(64,'a');const auto before=source.save_snapshot(hash);bool rejected=false;
+    try {(void)source.step(4,{}, {}, {}, {},{{0,1,{}, {support}},{3,1,{{platform.id,{}}},{}}});}
+    catch(const std::exception&) {rejected=true;}
+    require(rejected && source.save_snapshot(hash)==before && source.entity("player").ground=="on_ground",
+        "Later failure did not restore character support and platform membership.");
+    RuntimeInput jump;jump.entity="player";jump.jump=true;source.step(5,{jump});control.step(5,{jump});
+    require(source.save_snapshot(hash)==control.save_snapshot(hash),"Restored support changed later character jump or contact state.");
+}
 void equal(const RuntimeEntityState& a,const RuntimeEntityState& b) {
     if(a.world!=b.world || a.velocity!=b.velocity || a.ground!=b.ground)
         std::cerr<<"Mismatch for "<<a.id<<": positions "<<a.world[12]<<','<<a.world[13]<<','<<a.world[14]
@@ -25,7 +190,25 @@ void equal(const RuntimeEntityState& a,const RuntimeEntityState& b) {
 }
 int main() {
     try {
+        lifecycle();scheduled_lifecycle();scheduled_character_support();
         const auto definition=fixture(); Runtime a(definition), b(definition);
+        {
+            RuntimeDefinition source;source.world_id="template-only";
+            RuntimeSpawnTemplate recipe;recipe.id=std::string(32,'1');recipe.name="Frozen crate";recipe.collider=BoxCollider{};recipe.mesh=RuntimeMesh{};
+            source.templates.push_back(recipe);Runtime frozen(source);
+            source.templates.front().name="Edited authored recipe";source.templates.front().transform.position[0]=9;
+            require(frozen.inspect().entities==0 && frozen.inspect().bodies==0,"Standalone template created a live entity or body.");
+            require(frozen.spawn_templates().front().name=="Frozen crate" && frozen.spawn_templates().front().transform.position[0]==0,"Runtime recipe changed with its source definition.");
+            require(frozen.snapshot().objects.empty(),"Empty live world rendered a template instance.");
+            const auto created=frozen.change_structure(0,{{recipe.id,{}}},{}).spawned.front();
+            const auto visible=frozen.snapshot();
+            require(visible.objects.size()==1 && visible.objects.front().entity_id==created,"Camera-independent live snapshot omitted a spawned prop.");
+            frozen.change_structure(1,{}, {created});
+            require(frozen.snapshot().objects.empty(),"Live snapshot retained a removed prop.");
+            require(visible.objects.size()==1 && visible.objects.front().entity_id==created,"Structural removal invalidated an earlier render snapshot.");
+        }
+        const auto membership=a.inspect();
+        require(membership.entities==5 && membership.bodies==4 && membership.characters==1,"Live membership counts omit a native owner or controller body.");
         a.step(120,{}); b.step(60,{}); b.step(60,{});
         equal(a.entity("player"),b.entity("player")); equal(a.entity("box"),b.entity("box"));
         const auto landed=a.entity("player");
@@ -51,6 +234,16 @@ int main() {
         auto invalid=definition; invalid.entities.front().character->camera="absent";
         rejected=false; try { Runtime bad(invalid); } catch(const std::runtime_error&) { rejected=true; }
         require(rejected,"Invalid camera reference accepted.");
+        // Fail after both rigid bodies and a Character have been installed.
+        // Teardown must use the complete ownership inventory, not a partially
+        // constructed presentation/body lookup table.
+        auto late_failure=definition;RuntimeEntityDefinition bad_tail;
+        bad_tail.id="zz-invalid-body";bad_tail.collider=BoxCollider{};bad_tail.collider->mass=0;
+        late_failure.entities.push_back(bad_tail);
+        for(unsigned attempt=0;attempt<3;++attempt) {
+            rejected=false;try {Runtime bad(late_failure);}catch(const std::runtime_error&) {rejected=true;}
+            require(rejected,"Late invalid body material was accepted.");
+        }
         // Exercise the rollback path after Jolt has started a real update:
         // overlapping bodies exceed the configured contact/pair capacities.
         RuntimeDefinition crowded; crowded.world_id="capacity-fixture";
@@ -64,7 +257,7 @@ int main() {
         for(const auto& state:original) equal(state,overflow.entity(state.id));
         // A new runtime still works after failed construction and update.
         Runtime c(definition); c.step(120,{}); equal(landed,c.entity("player"));
-        std::cout << "Physics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards and real capacity rollback passed.\n";
+        std::cout << "Physics landing, wall collision, jump, look, chunked deterministic replay, snapshot identity, input guards, scheduled lifecycle ownership/revision rollback and real capacity rollback passed.\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n'; return 1; }
 }

@@ -1,0 +1,150 @@
+{
+  "milestone": "Guarded world-service root-prop lifecycle and live desktop snapshots",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39 development",
+  "protocol_schema_revision": 32,
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "CMakeLists.txt": "f4df1d4681efe8dcd9ca88c06441761e945215500267616e2e72c66b2ba593d8",
+    "include/poima/runtime.hpp": "e9887d4ec934e62326dae52d7c752fc5f5c28d291de4eb71139e1b9e08d5f032",
+    "include/poima/world.hpp": "f6dd86e49f542e18e431e6d11fbfb948b1e4ddf5e927f9305022a6be06c2bf8c",
+    "src/runtime.cpp": "ddec1b97f7ce004eee114c0a0084da802ccc1549c41b177841239a24db225463",
+    "src/runtime_disabled.cpp": "ef0230979e16b0c1ccd15858461daa41e5c1b263fd6d76e8c884f449efcfdbb8",
+    "src/world.cpp": "f790de9092fe7413e597126075e9893b849fd027745f56fbfa7402f95c8675fe",
+    "src/world_save.inc": "dd74307d5ba59c0c1c7349dd7f79198d49bac6008e83aa71726690f39e12cb4d",
+    "src/desktop_bridge.cpp": "6bff75bbb2f103e3653d07bc196b41260d8e886476982896bb041ce6e33d24a4",
+    "src/runtime_templates.cpp": "1ffd4aa5cea5cfb4c98e725aadc43fdd7673d7045f6221a05772c06603337df8",
+    "src/runtime_components.cpp": "f06e82a81253fe01c7f83aed4096183946baeb9efd1b451cd0c6bc8aa5f6e7d6",
+    "src/runtime_save.inc": "09371a0d280c52046c49e19eaa449cd8cd81a9ccb90f6c67f35f8b67322562e6",
+    "tests/runtime_native.cpp": "9070bf90439c193791243e1e1f13e05a43e27bd122501c36ad11c358cfbf2a6f",
+    "tests/runtime_save_native.cpp": "80c5d14d9aeec4c929a93f05bfbfa09c85816f0c0cc9634940c79d82ed5009b0",
+    "tests/world_templates_contract.py": "63c582a77cfc5240bce2254991ce212545577527103eb0432d1218f9269c8aa0",
+    "tests/runtime_save_contract.py": "5b3f808d6ae61d0ecbf67d3a6839fae8d2c187836f939dffb9a056481896f8ca",
+    "tests/desktop_lifecycle_contract.py": "01d84615d239c81dfd697d1910400ece4062021fab82b83fa7f821cf336d6ad1",
+    "desktop/Poima.Editor/SaveEditorModel.cs": "7918474b71c18ca95e9768c9f5c2583dfcd0a0b0f54b6ab1997ccb48bc13625d",
+    "src/runtime_components.hpp": "50c63693d390688c866e1407739fce5b0c1646d49fb346ecd6741572bab8bce9",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "src/gameplay.cpp": "8ba415fbb09bce84675dddc9c7303952d8b855faac11d1d19fa0e563e6da34c3",
+    "include/poima/gameplay.hpp": "ee3d671788a8e4244809fae24216f056fec022713eb0bd0ef60f0a31d8e1b14f",
+    "tests/runtime_lifecycle_gameplay_native.cpp": "4d8f7b441c9508d180233ff1ca2f58ddea872e7bbbe56c769440de0c78303a26"
+  },
+  "binary_sha256": {
+    "build/windows-runtime/poima.exe": "5ad61e6fc4f31f3bb6d9c101e62b0aac6c2c3373da6ed09e4ac186fdd3058bdb",
+    "build/windows-runtime/poima_desktop.dll": "6110c3e978e1d7ca9174492b4245e91fcbdfda3076d1aa94f3ffabdd10becb21",
+    "build/windows-runtime/poima-runtime-test.exe": "e303971d6d009bb64e055de338f6329b31968dbabbc5cfaa74357bc6058e4d1a",
+    "build/windows-runtime/poima-runtime-save-test.exe": "711f9cd0358b440d5e065b4c0c680a0ebce50463ec434c395db6ce7a49eee5fb",
+    "build/runtime-headless/poima": "9e40593b0ff7fa3d5e5281f329fff68e42e051a73c0b20bed7479881fb47f742",
+    "build/runtime-headless/poima-runtime-test": "8a276ef1ccafb2b18e6861b063520d14a20ab519726c4a26e694f5d76e5d5c1b",
+    "build/headless/poima": "9614d2024a4fad289789d26048bcf69ff1048ffc1d666189aab0dd1e9993b628",
+    "desktop/Poima.Editor/bin/Release/net10.0/win-x64/Poima.Editor.dll": "40ae7b04faa4a93f6757753f9e12a077c3f28a37aec65d3c666bd7784bb24d9b"
+  },
+  "implemented": [
+    "runtime.structure.transact creates frozen root-prop templates and removes previously spawned props with tick/structure guards and generated IDs in request order.",
+    "Thirty-two typed structural receipts retain successful native outcomes before response serialization; matching retries and cross-method request-ID conflicts are tested.",
+    "Native structural transactions and tick batches retain rollback journals for membership, components, physics and ID allocation; snapshot v3 preserves provenance and allocator history.",
+    "Active saves/replacements require expected_structure_revision after any topology change, independently of tick and custom component revisions.",
+    "Editor save observations, runtime polling, Scene/Game snapshot caches and queued capture guards include structural revision.",
+    "Scene and Game use the same live native geometry snapshot assembly. Camera-independent snapshots include born props, exclude retired props and preserve earlier snapshot values."
+  ],
+  "qualification": {
+    "linux_runtime": {
+      "catalog_lifecycle_tests": 9,
+      "rpc_count": 120,
+      "passed": true,
+      "regression_suites": [
+        "runtime_native",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract",
+        "world_session_native",
+        "profiler_contract"
+      ],
+      "logs": [
+        "build/lifecycle-rpc-linux-contract.log",
+        "build/lifecycle-rpc-regression.log"
+      ]
+    },
+    "linux_authoring_only": {
+      "tests": 9,
+      "skipped_runtime_cases": 3,
+      "rpc_count": 62,
+      "passed": true,
+      "regression_suites": [
+        "world_components_contract",
+        "world_session_native",
+        "profiler_contract"
+      ],
+      "logs": [
+        "build/lifecycle-rpc-authoring-contract.log",
+        "build/lifecycle-rpc-authoring-regression.log"
+      ]
+    },
+    "windows": {
+      "templates": {
+        "tests": 9,
+        "rpc_count": 120,
+        "evidence": "build/world-templates-windows.json"
+      },
+      "save_rpc": {
+        "tests": 7,
+        "rpc_count": 547,
+        "evidence": "build/lifecycle-runtime-save-windows.json"
+      },
+      "native_runtime": {
+        "passed": true,
+        "log": "build/lifecycle-native-runtime-windows.log"
+      },
+      "native_snapshot": {
+        "passed": true,
+        "log": "build/lifecycle-native-save-windows.log"
+      },
+      "desktop": {
+        "checks": 4,
+        "rpc_count": 43,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "samples": 4,
+        "captures": 6,
+        "render_errors": 0,
+        "pixels": {
+          "scene": {
+            "changed_pixels": 30276,
+            "restored_exact": true
+          },
+          "game": {
+            "changed_pixels": 30276,
+            "restored_exact": true
+          }
+        },
+        "evidence": "build/desktop-lifecycle-qualification-final/run-ef60d6cc8d8342e8abe5643d5dfed68c/result.json"
+      }
+    },
+    "managed_editor": {
+      "build": "Release win-x64, pinned .NET 10.0.401, existing locked packages",
+      "passed": true,
+      "log": "build/lifecycle-editor-managed-build.log"
+    }
+  },
+  "prior_failures": {
+    "compiler": "Initial Windows compiler frontend crashed while the worktree was changing; frozen-source rebuilds passed. No compiler root-cause claim.",
+    "desktop": "Initial unchanged graphics fixture found that the Scene snapshot still enumerated authored-only entities. Shared native live snapshot assembly fixed this; the same fixture passed.",
+    "desktop_evidence": "build/desktop-lifecycle-qualification/run-bfc5de98f66c48db93693840ba4d1bc9/result.json"
+  },
+  "foundation_evidence": [
+    "m2-component-lifecycle-foundation.json",
+    "m2-runtime-entity-ids.json",
+    "m2-runtime-membership.json",
+    "m2-template-catalog.json",
+    "m2-runtime-lifecycle-native.json",
+    "m2-runtime-lifecycle-save.json",
+    "m2-runtime-lifecycle-batch.json"
+  ],
+  "limitations": [
+    "Initial lifecycle supports root props only; originally authored entities cannot be removed. No camera/controller/rig/emitter hierarchy instantiation.",
+    "C# initiation, scheduled RPC structural commands, arbitrary component membership changes, self-reference remapping and a runtime-only hierarchy/Inspector workflow remain unfinished.",
+    "Legacy runtime mutations do not universally accept structural revision guards. Structural receipts are bounded, session-local and not durable across process restarts.",
+    "Focused AMD Vulkan owned-HWND validation at 4x MSAA; no NVIDIA rerun, full Avalonia visual review, physical input or game-performance claim.",
+    "Editor Save model compiles and native guards are tested; its new stale-observation display has not been exercised through actual widgets in this checkpoint.",
+    "No new desktop package/launcher activation. Earlier CoreCLR/NativeAOT journal and lifecycle qualification remains bound to the foundation evidence, not a new complete Windows compiled-gameplay qualification.",
+    "Portable physics saves reconstruct typed state and do not promise bit-identical future contact caches."
+  ]
+}

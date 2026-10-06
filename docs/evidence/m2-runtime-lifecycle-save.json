@@ -1,0 +1,64 @@
+{
+  "milestone": "Version 3 spawned-prop snapshot restoration",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "src/runtime_save.inc": "09371a0d280c52046c49e19eaa449cd8cd81a9ccb90f6c67f35f8b67322562e6",
+    "src/runtime.cpp": "446214149028dfac083fa81690a7f0785af933112bb603b65b02ed779750a5db",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "src/runtime_components.cpp": "f06e82a81253fe01c7f83aed4096183946baeb9efd1b451cd0c6bc8aa5f6e7d6",
+    "tests/runtime_save_native.cpp": "80c5d14d9aeec4c929a93f05bfbfa09c85816f0c0cc9634940c79d82ed5009b0",
+    "tests/runtime_native.cpp": "bd0995cda658faba44bbb9aa8ff5779a331fe89034a2c89dc9241bc6a364a8d2"
+  },
+  "implemented": [
+    "Version 3 only after structural mutation; unchanged runtimes continue to emit legacy v1/v2 snapshots.",
+    "Persist sorted live recipe provenance, initial spawn transforms, structure revision and generated-ID cursor even with zero live survivors.",
+    "Restore allocator exclusions from complete original authored inventory; reject generated IDs outside the saved lineage or colliding with authored identities.",
+    "Reconstruct immutable layouts from trusted templates; validate complete saved component membership, fingerprints and references before native construction.",
+    "Check aggregate component instance/byte budgets before expanding repeated recipe payloads.",
+    "Use the existing separate candidate-runtime restore boundary and typed physics restoration; retain legacy readers."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed_tests": [
+        "world_templates_contract",
+        "runtime_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract"
+      ],
+      "test_execution_note": "Initial run passed six suites; a malformed-component test used an object field key against compact array data and failed in the fixture. Corrected fixture, rebuilt its executable, and runtime_save_native passed. Engine source was unchanged for that correction.",
+      "new_native_checks": [
+        "Dynamic, static transform override, kinematic and bodyless prop restoration.",
+        "Live poses/velocities and seven-tick future motion comparisons within fixture tolerances.",
+        "Generated ID continuation after restoring with live props and with zero generated survivors.",
+        "A completely empty restored world preserves retired IDs and component membership/revision.",
+        "Saved repaired references replace obsolete recipe defaults pointing at removed targets.",
+        "Canonical authored identity exclusion remains effective after restoration.",
+        "26 recomputed-checksum malformed provenance, allocator, membership and component cases reject without mutating the source runtime."
+      ],
+      "fresh_process": "Separate v3 writer/reader processes pass exact canonical-byte roundtrip, live prop state, future logical motion and next-ID continuity.",
+      "artifact_sha256": {
+        "build/runtime-headless/poima": "67bb504dcbffd68d8b6304596db8c6d332a61ed0942cc4d7e56efc6b51880123",
+        "build/runtime-headless/poima-runtime-test": "01fa9343125768ee88ef4b43041bd36618d16c23e9ca22dc7e72aa51a10f7d75",
+        "build/runtime-headless/poima-runtime-save-test": "c4e9b3e8cd968fc71c1d6564f9b5c0f4d6edd982a99b8cdefbbab7e5b8320bbd",
+        "build/runtime-lifecycle-save-tests.log": "52ad957a02d9dfc01f0c3e97329b1e5511496f3bbb519bee3ee9e9169c22fc25",
+        "build/runtime-lifecycle-save-tests-final.log": "9ae8c9f7695e41a04de4298a0d955e696c1f670fb9d801b43f9827e62aa8398d",
+        "build/runtime-lifecycle-save-exchange-final.log": "de21a6f092e207663016b91b46c875613d2e655e36c8cea9167f8e69d5e64007",
+        "build/lifecycle-v3-final-ae9k6p6u/snapshot.json": "42b738d25f56e9469441122db5a03107891f802a1015d71a38d2f99fdb94cc53"
+      }
+    },
+    "Windows": "Not built or executed for this change."
+  },
+  "limits": [
+    "Native paused lifecycle only; agent/C# spawn/despawn and outer multi-tick structural rollback remain unfinished.",
+    "Original authored entities must remain present; arbitrary authored-entity removal is not supported.",
+    "WorldSession structural revision guards still need integration before exposing paused structural edits.",
+    "Jolt allocation order, solver/contact caches and sleep history are reconstructed; bit-identical future contact simulation is not promised.",
+    "No managed-gameplay v3 fixture or production-scale restore performance qualification in this milestone.",
+    "Save checksums are corruption detection, not authentication or proof of allocation history."
+  ]
+}

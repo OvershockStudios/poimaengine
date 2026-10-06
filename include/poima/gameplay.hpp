@@ -34,6 +34,9 @@ public:
     std::string inspect() const;
     const std::vector<components::Schema>& component_schemas() const;
     void edit(const std::string& values);
+    // Cached field offsets; no JSON/reflection/allocation on success. Null IDs
+    // are allowed, every non-null schema-declared entity field must resolve.
+    void validate_entity_references(components::EntityExists,void* context) const;
     std::vector<std::uint64_t>& state();
     void tick(const PoimaGameServices&,std::span<const PoimaGameInput>,std::uint64_t tick);
 };

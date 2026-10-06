@@ -28,5 +28,17 @@ The `Mode` global selects these Tick behaviors:
 | 7 | Read an unknown entity |
 | 8 | Queue a C# save to `components-game`, then observe its ticket |
 | 9 | Queue a C# load from that slot, then observe its ticket |
+| 10 | Assign an unresolved global entity reference after queuing a component write |
+| 11 | Assign that unresolved global reference on odd ticks, testing whole-batch rollback |
 
 `Selected` defaults to the first entity in the sorted Health query. The fixture queries in pages of two and also checks liveness and an optional Interaction component. `tests/components_gameplay_contract.py` drives the real engine and durable save APIs; `tests/managed_service_abi` independently checks callback wire transfer; `tests/component_generator_contract.py` checks diagnostics and metadata-only extraction.
+
+The native lifecycle harness uses this same compiled module for writes, later-tick exceptions and save intents while the host schedules structural edits:
+
+```sh
+cmake --build --preset runtime-headless --target poima-runtime-lifecycle-gameplay-test
+./build/runtime-headless/poima-runtime-lifecycle-gameplay-test HOSTFXR BRIDGE COMPONENT_GAME_ASSEMBLY COMPONENT_MANIFEST
+./build/runtime-headless/poima-runtime-lifecycle-gameplay-test --native COMPONENT_GAME_DESCRIPTOR COMPONENT_MANIFEST
+```
+
+The uppercase arguments are paths to matching built artifacts. These checks cover atomic component writes/removal, next-tick query visibility, full-batch rollback, save-ticket continuity and v3 restoration. They do not expose a C# spawn API. [Qualification evidence](../../docs/evidence/m2-runtime-lifecycle-batch.json).

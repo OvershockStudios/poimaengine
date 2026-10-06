@@ -1,0 +1,83 @@
+{
+  "milestone": "Atomic multi-tick native lifecycle and compiled-gameplay coordination",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "CMakeLists.txt": "f4df1d4681efe8dcd9ca88c06441761e945215500267616e2e72c66b2ba593d8",
+    "include/poima/runtime.hpp": "c07aa3c933669a97f69da4d049c6ed75fc800b469d53bf547a99a38bb333ccd4",
+    "src/runtime.cpp": "5802e79dd64d8ad99158d87b8037fba73793b1381dca93147757d9fe10d51297",
+    "src/runtime_disabled.cpp": "af5b9e0ba168c878997a69b51b8e07de6aee083490cab1b36b4268762e01b8e1",
+    "src/runtime_components.cpp": "f06e82a81253fe01c7f83aed4096183946baeb9efd1b451cd0c6bc8aa5f6e7d6",
+    "src/runtime_components.hpp": "50c63693d390688c866e1407739fce5b0c1646d49fb346ecd6741572bab8bce9",
+    "src/runtime_save.inc": "09371a0d280c52046c49e19eaa449cd8cd81a9ccb90f6c67f35f8b67322562e6",
+    "tests/runtime_native.cpp": "88c969a89bc32427ed32e0d7c39cf830a98473a467759b1e6461b7b9b839e726",
+    "tests/runtime_lifecycle_gameplay_native.cpp": "4d8f7b441c9508d180233ff1ca2f58ddea872e7bbbe56c769440de0c78303a26"
+  },
+  "implemented": [
+    "One retained-owner journal shared by paused structural edits and multi-tick simulation batches.",
+    "Sorted unique batch-relative RuntimeStructureTick commands with expected structure revision; returned generated IDs become available after whole-batch success.",
+    "Component writes and structural membership validate and publish together after gameplay and before physics.",
+    "Removed native owners/bodies remain allocated until final commit; rollback destroys every appended birth, including born-then-retired props, before restoring original physical membership and Jolt state.",
+    "Rollback restores topology, structure revision, public/native ID allocators, component/gameplay state and pending save-ticket allocation.",
+    "Reject same-tick caller/gameplay kinematic commands targeting a removed entity; allow later removal to cancel an ongoing motion.",
+    "Bound retained native owners to 20000, in addition to existing component and physical body budgets."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed_ctest": [
+        "world_templates_contract",
+        "runtime_native",
+        "runtime_components_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract"
+      ],
+      "native_checks": [
+        "Scheduled edits match equivalent paused boundary edits.",
+        "Later structural failure restores canonical original snapshot, component/structure revisions and subsequent generated IDs.",
+        "Born-then-retired objects are cleaned up on commit and rollback.",
+        "Original kinematic target/progress survives a failed retirement batch.",
+        "Removed supporting platform and character support restore on later failure; subsequent jump matches a clean control.",
+        "150 overlapping spawned dynamic bodies trigger a real Jolt update failure after publication; rollback restores original state and subsequent allocation/physics behavior."
+      ],
+      "compiled_gameplay": {
+        "CoreCLR": "Passed with existing compiled ComponentGame through hostfxr and bridge.",
+        "NativeAOT": "Passed with existing compiled ComponentGame artifact.",
+        "checks": [
+          "Real C# component write and scheduled removal commit in one component publication.",
+          "Scheduled Health birth is absent from current C# query and present on next tick.",
+          "Later-tick C# exception restores canonical global/component/native state and ID continuation.",
+          "Trusted v3 restore preserves spawned components and continues matching compiled writes and simple dynamic motion.",
+          "Gameplay save intent commits with successful final batch state; later structural failure restores queue, globals and ticket sequence."
+        ]
+      },
+      "artifact_sha256": {
+        "build/runtime-headless/poima": "ecc1b77c11136737ab74036a79183dcac6a9cbaa23a2b91a5a9503f18e0a66cd",
+        "build/runtime-headless/poima-runtime-test": "5f369ede74a66c41d1a378ed86deddb77f5080478e502296f49529742d91a571",
+        "build/runtime-headless/poima-runtime-components-test": "c687c45d7c64e03cda39d7a73df71868e092079da25217518ef6fddcea6090da",
+        "build/runtime-headless/poima-runtime-save-test": "727c5049989587bb55d2d8335021df15308ba11d324094e700a665a6ffc877d7",
+        "build/runtime-headless/poima-runtime-lifecycle-gameplay-test": "8b34d6bfd6fefb96a8b0e0c947b25a5a31b0c486f0af36bf7175552a0be2da93",
+        "build/runtime-lifecycle-batch-tests.log": "96b0aae2bc5b109bc6b7d122d5ff5963b2d1a075d7a2325804937a30ab290c05",
+        "build/runtime-lifecycle-gameplay-coreclr.log": "9c292c63fdde92c002e6c4b9ca10bea4b27ea8a7983dd66dd1eb4dc8982829e1",
+        "build/runtime-lifecycle-gameplay-aot.log": "65970e0eb92628c561f476e5aa53efc3e225a33626c26f14e7cc878d0ebcd727",
+        "build/components-gameplay-managed/game.poima-components.json": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+        "build/components-gameplay-managed/bridge/Poima.ManagedBridge.dll": "95acd84c7b0b5c1a995dbcb7b684a340c7af5e56e448fb34707245efce6c00f1",
+        "build/lifecycle-components-native-linux-work/game/Poima.ComponentGame.dll": "79ec8e9ddf93cacc909ed7cbc660b2888a53f88a7afa71ff4a2888721b6863ca",
+        "build/lifecycle-components-native-linux/native-gameplay.json": "4aa4cc787fd7a805e647138c5fc2b769bdda740f21e6d41e02d7e33a5644d1dc"
+      }
+    },
+    "authoring_only": "Updated disabled-runtime translation unit passed syntax checking; full authoring-only binary not rebuilt for this batch change.",
+    "Windows": "Not built or executed for this batch change."
+  },
+  "limits": [
+    "C# and RPC cannot initiate structural commands yet; tests submit native host schedules while actual compiled gameplay executes.",
+    "Standalone WorldSession structural mutation/observation/save revision guards remain unfinished.",
+    "Only template root props may be created and only spawned props removed.",
+    "No positive compiled-fixture test for clearing an incoming reference in the same tick; candidate reference repair is covered by the native component-store tests.",
+    "No production-scale throughput or retained-body replacement-at-capacity claim.",
+    "Portable saves retain semantic state, not Jolt allocation/contact cache history or guaranteed bit-identical future contact simulation."
+  ]
+}

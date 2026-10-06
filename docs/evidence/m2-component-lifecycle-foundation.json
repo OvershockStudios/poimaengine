@@ -1,0 +1,324 @@
+{
+  "milestone": "Internal component lifecycle journal and gameplay entity-reference validation",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "include/poima/gameplay.hpp": "ee3d671788a8e4244809fae24216f056fec022713eb0bd0ef60f0a31d8e1b14f",
+    "src/gameplay.cpp": "8ba415fbb09bce84675dddc9c7303952d8b855faac11d1d19fa0e563e6da34c3",
+    "src/runtime.cpp": "0b50694a3918e529d2c8715fb8db607c50b15d81b5578af2718e73bd26ffb003",
+    "src/runtime_components.hpp": "50c63693d390688c866e1407739fce5b0c1646d49fb346ecd6741572bab8bce9",
+    "src/runtime_components.cpp": "f06e82a81253fe01c7f83aed4096183946baeb9efd1b451cd0c6bc8aa5f6e7d6",
+    "src/runtime_save.inc": "ab594fc1593f4cddd6b785baa54912ad518827f17a4894a60154f324fa4d6a48",
+    "tests/runtime_components_native.cpp": "6cebf4068c6d22482f80a3c3be3f7db72e42b9fea50a14f542bf4e786d60319d",
+    "tests/components_gameplay/ComponentGame.cs": "83a261d0142e52af8594105dce56c68d4f1f8c533decdca3f07c14ddb021cee2",
+    "tests/components_gameplay_contract.py": "3bc461afb746cf4ec752d730fef7e787f2483a1a33b8f411d4490b888dbb4e37",
+    "tests/components_benchmark.cpp": "a523aa6dd6da07823b12a1525a36a1dc3afb030773769619a7336e4d65b4e476"
+  },
+  "implemented": [
+    "Stable native component cells with prepared membership indices, retained retirements, first-write payload journals, and rollback of internal spawn/despawn batches.",
+    "Bounded reusable staging with full immediate wire validation and deferred final-candidate entity reference checks.",
+    "Global gameplay references validated before module activation, paused edits, tick publication and save restoration; errors identify field and missing entity."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed": true,
+      "ctest": [
+        "runtime_components_native",
+        "runtime_native",
+        "runtime_mesh_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract",
+        "runtime_animation_contract",
+        "runtime_animation_blend_contract",
+        "mesh_collision_contract"
+      ],
+      "component_native_groups": 8,
+      "additional_save_fixture": "CoreCLR: 16 resealed rejection cases and 40 collectible restores passed.",
+      "compiled_gameplay": {
+        "CoreCLR": {
+          "passed": true,
+          "checks": [
+            "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "100 real CoreCLR reloads collect all retired modules",
+            "Compatible CLR reorder/labels preserve native values",
+            "Changed component defaults reject without swapping the live module",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ],
+          "artifact_sha256": {
+            "binary": "cf2c4307908cd4c1839462a805db78afda4741e8c890e94c53b25aab8996c1c3",
+            "manifest": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+            "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+            "bridge": "95acd84c7b0b5c1a995dbcb7b684a340c7af5e56e448fb34707245efce6c00f1",
+            "assembly": "79ec8e9ddf93cacc909ed7cbc660b2888a53f88a7afa71ff4a2888721b6863ca",
+            "reorder": "baadc9483ab23d436d064c964a4b1620f2b4b2c0bba44fca55d3cec2d5bbd096",
+            "labels": "0303aab84171094be9541fdc9d551fa76d3de27b1dce3f7a593325e0e08b23ff",
+            "incompatible": "c0604fdaecc6c9d971c62e42992e319885e3e5f7bfa3da5c7631afd723742e23"
+          },
+          "raw_evidence_sha256": "a7b3f7d7457ec10b47fec6c096c0bb3e9c35febc662362a26b75d187737d04ee"
+        },
+        "NativeAOT": {
+          "passed": true,
+          "checks": [
+            "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ],
+          "artifact_sha256": {
+            "binary": "cf2c4307908cd4c1839462a805db78afda4741e8c890e94c53b25aab8996c1c3",
+            "manifest": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+            "native_descriptor": "4aa4cc787fd7a805e647138c5fc2b769bdda740f21e6d41e02d7e33a5644d1dc",
+            "library": "e2be78eb0dce5cef3527ec66a122e725b987abafc9836f4c9e96e9b9eccb7fc7"
+          },
+          "raw_evidence_sha256": "9a8f7fc31990180de5f8439a2f4149b925b2380ca4b19d1afecfde17833faf9d"
+        }
+      }
+    },
+    "Windows": {
+      "qualified": false,
+      "reason": "Native Windows invocation blocked by WSL UtilBindVsockAnyPort socket failure in the current execution environment."
+    }
+  },
+  "native_checks": [
+    "No C++ new/new[] or aligned-new allocation during tested publication, commit and rollback paths.",
+    "Preparation allocation-failure sweep restores original membership, values and revisions, and permits retry.",
+    "Stable pointers after pool growth and middle-cell retirement; multi-tick write/spawn/despawn rollback.",
+    "Mutual birth references, same-tick reference repair and removal, untouched dangling reference rejection.",
+    "Live/retained entity, instance and payload limits; staged payload and command limits.",
+    "Failed staging allocation leaves duplicate index reusable; nonmonotonic keys, cross-type keys and nonzero high-half references."
+  ],
+  "measurements": {
+    "scope": "Isolated native RuntimeComponents; three alternating runs per binary, 100 warm samples per operation. User reported laptop on mains. Builds/tests idle during measurement. Not gameplay, GPU, RPC, C# or cross-device performance.",
+    "large_case_instances": 10000,
+    "results": [
+      {
+        "run": 0,
+        "version": "baseline",
+        "binary_sha256": "8d45eee8e7b08f06b8fbdb0681a14d796310722dd5eacd794fc982e68f520444",
+        "read_p95_us": 777.335,
+        "writes": [
+          {
+            "checkpoint_payload_bytes": 80,
+            "median_us": 0.101,
+            "ordinary_cpp_allocated_bytes_per_sample": 160.0,
+            "ordinary_cpp_allocations_per_sample": 2.0,
+            "p95_us": 0.111,
+            "samples": 100,
+            "writes": 1
+          },
+          {
+            "checkpoint_payload_bytes": 1280,
+            "median_us": 1.432,
+            "ordinary_cpp_allocated_bytes_per_sample": 2560.0,
+            "ordinary_cpp_allocations_per_sample": 32.0,
+            "p95_us": 1.453,
+            "samples": 100,
+            "writes": 16
+          },
+          {
+            "checkpoint_payload_bytes": 327680,
+            "median_us": 526.538,
+            "ordinary_cpp_allocated_bytes_per_sample": 655360.0,
+            "ordinary_cpp_allocations_per_sample": 8192.0,
+            "p95_us": 641.602,
+            "samples": 100,
+            "writes": 4096
+          }
+        ]
+      },
+      {
+        "run": 0,
+        "version": "optimized",
+        "binary_sha256": "ea56b9cb62b4c7e1f350fa0e28e2f874ce312f699091e79d2942114a56fe091c",
+        "read_p95_us": 713.316,
+        "writes": [
+          {
+            "checkpoint_payload_bytes": 80,
+            "median_us": 0.481,
+            "ordinary_cpp_allocated_bytes_per_sample": 208.0,
+            "ordinary_cpp_allocations_per_sample": 4.0,
+            "p95_us": 0.511,
+            "samples": 100,
+            "writes": 1
+          },
+          {
+            "checkpoint_payload_bytes": 1280,
+            "median_us": 1.743,
+            "ordinary_cpp_allocated_bytes_per_sample": 3328.0,
+            "ordinary_cpp_allocations_per_sample": 34.0,
+            "p95_us": 1.874,
+            "samples": 100,
+            "writes": 16
+          },
+          {
+            "checkpoint_payload_bytes": 327680,
+            "median_us": 487.857,
+            "ordinary_cpp_allocated_bytes_per_sample": 851968.0,
+            "ordinary_cpp_allocations_per_sample": 8194.0,
+            "p95_us": 604.604,
+            "samples": 100,
+            "writes": 4096
+          }
+        ]
+      },
+      {
+        "run": 1,
+        "version": "baseline",
+        "binary_sha256": "8d45eee8e7b08f06b8fbdb0681a14d796310722dd5eacd794fc982e68f520444",
+        "read_p95_us": 865.198,
+        "writes": [
+          {
+            "checkpoint_payload_bytes": 80,
+            "median_us": 0.11,
+            "ordinary_cpp_allocated_bytes_per_sample": 160.0,
+            "ordinary_cpp_allocations_per_sample": 2.0,
+            "p95_us": 0.111,
+            "samples": 100,
+            "writes": 1
+          },
+          {
+            "checkpoint_payload_bytes": 1280,
+            "median_us": 1.403,
+            "ordinary_cpp_allocated_bytes_per_sample": 2560.0,
+            "ordinary_cpp_allocations_per_sample": 32.0,
+            "p95_us": 1.423,
+            "samples": 100,
+            "writes": 16
+          },
+          {
+            "checkpoint_payload_bytes": 327680,
+            "median_us": 581.811,
+            "ordinary_cpp_allocated_bytes_per_sample": 655360.0,
+            "ordinary_cpp_allocations_per_sample": 8192.0,
+            "p95_us": 790.899,
+            "samples": 100,
+            "writes": 4096
+          }
+        ]
+      },
+      {
+        "run": 1,
+        "version": "optimized",
+        "binary_sha256": "ea56b9cb62b4c7e1f350fa0e28e2f874ce312f699091e79d2942114a56fe091c",
+        "read_p95_us": 759.06,
+        "writes": [
+          {
+            "checkpoint_payload_bytes": 80,
+            "median_us": 0.481,
+            "ordinary_cpp_allocated_bytes_per_sample": 208.0,
+            "ordinary_cpp_allocations_per_sample": 4.0,
+            "p95_us": 0.501,
+            "samples": 100,
+            "writes": 1
+          },
+          {
+            "checkpoint_payload_bytes": 1280,
+            "median_us": 1.733,
+            "ordinary_cpp_allocated_bytes_per_sample": 3328.0,
+            "ordinary_cpp_allocations_per_sample": 34.0,
+            "p95_us": 1.763,
+            "samples": 100,
+            "writes": 16
+          },
+          {
+            "checkpoint_payload_bytes": 327680,
+            "median_us": 500.53,
+            "ordinary_cpp_allocated_bytes_per_sample": 851968.0,
+            "ordinary_cpp_allocations_per_sample": 8194.0,
+            "p95_us": 612.579,
+            "samples": 100,
+            "writes": 4096
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "version": "baseline",
+        "binary_sha256": "8d45eee8e7b08f06b8fbdb0681a14d796310722dd5eacd794fc982e68f520444",
+        "read_p95_us": 817.509,
+        "writes": [
+          {
+            "checkpoint_payload_bytes": 80,
+            "median_us": 0.1,
+            "ordinary_cpp_allocated_bytes_per_sample": 160.0,
+            "ordinary_cpp_allocations_per_sample": 2.0,
+            "p95_us": 0.111,
+            "samples": 100,
+            "writes": 1
+          },
+          {
+            "checkpoint_payload_bytes": 1280,
+            "median_us": 1.393,
+            "ordinary_cpp_allocated_bytes_per_sample": 2560.0,
+            "ordinary_cpp_allocations_per_sample": 32.0,
+            "p95_us": 1.433,
+            "samples": 100,
+            "writes": 16
+          },
+          {
+            "checkpoint_payload_bytes": 327680,
+            "median_us": 542.809,
+            "ordinary_cpp_allocated_bytes_per_sample": 655360.0,
+            "ordinary_cpp_allocations_per_sample": 8192.0,
+            "p95_us": 628.598,
+            "samples": 100,
+            "writes": 4096
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "version": "optimized",
+        "binary_sha256": "ea56b9cb62b4c7e1f350fa0e28e2f874ce312f699091e79d2942114a56fe091c",
+        "read_p95_us": 824.452,
+        "writes": [
+          {
+            "checkpoint_payload_bytes": 80,
+            "median_us": 0.641,
+            "ordinary_cpp_allocated_bytes_per_sample": 208.0,
+            "ordinary_cpp_allocations_per_sample": 4.0,
+            "p95_us": 0.682,
+            "samples": 100,
+            "writes": 1
+          },
+          {
+            "checkpoint_payload_bytes": 1280,
+            "median_us": 2.394,
+            "ordinary_cpp_allocated_bytes_per_sample": 3328.0,
+            "ordinary_cpp_allocations_per_sample": 34.0,
+            "p95_us": 2.575,
+            "samples": 100,
+            "writes": 16
+          },
+          {
+            "checkpoint_payload_bytes": 327680,
+            "median_us": 498.807,
+            "ordinary_cpp_allocated_bytes_per_sample": 851968.0,
+            "ordinary_cpp_allocations_per_sample": 8194.0,
+            "p95_us": 697.497,
+            "samples": 100,
+            "writes": 4096
+          }
+        ]
+      }
+    ],
+    "tradeoffs": "Small writes add approximately 0.4\u20130.6 microseconds in these samples; preparation adds two vector allocations per sample. Duplicate index costs 16 KiB per store plus retained staging-vector capacity. Ordinary C++ new/new[] counts exclude aligned/direct allocators."
+  },
+  "limitations": [
+    "Public runtime entity/component membership remains fixed. Internal tests do not constitute an exposed spawn/despawn API.",
+    "Coordinated runtime topology, public identity retirement, templates and topology-bearing portable saves remain pending.",
+    "No Windows runtime qualification or new desktop package for this source state.",
+    "No arbitrary cross-platform bit-exact determinism claim.",
+    "An older NativeAOT save fixture was rejected by the exact engine-version guard; it was not retagged. NativeAOT component save/load is covered by the current compiled gameplay suite."
+  ]
+}

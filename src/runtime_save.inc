@@ -88,7 +88,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     const auto& s=*impl_;
     (void)save_text(s.world_id);(void)save_integer(s.revision);(void)save_integer(s.tick);(void)save_integer(s.game_revision);
     SaveJson entities=SaveJson::array();auto& bodies=s.physics.GetBodyInterface();
-    for(const auto e:s.order) {
+    for(const auto e:s.topology->order) {
         const auto& node=s.registry.get<Node>(e);
         (void)save_text(node.id);(void)save_text(node.parent,256,true);(void)save_transform(save_local(node.local));
         SaveJson body=nullptr,controller=nullptr;
@@ -118,14 +118,23 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     if(s.game) {
         const auto inspected=SaveJson::parse(s.game->inspect());game=SaveJson::object();
         for(const auto* key:{"backend","assembly_sha256","type","schema","values"})game[key]=inspected.at(key);
-        save_game_values(game,s.identities);
+        save_game_values(game,s.topology->identities);
     }
     SaveJson payload={{"content_sha256",content_sha256},{"world_id",s.world_id},{"authored_revision",s.revision},{"tick",s.tick},
         {"gameplay_revision",s.game_revision},{"entities",entities},{"animation",SaveJson::parse(s.animations->save_state(s.tick))},
         {"sound",SaveJson::parse(s.sounds.save_state(s.tick))},{"gameplay",game}};
     const bool custom=!s.components->schemas().empty();
-    if(custom)payload["components"]=SaveJson::parse(s.components->save());
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    const bool structural=s.structure_revision!=0;
+    if(custom || structural)payload["components"]=SaveJson::parse(s.components->save());
+    if(structural) {
+        SaveJson spawned=SaveJson::array();
+        for(const auto& [id,origin]:s.topology->spawned)
+            spawned.push_back({{"id",id},{"template_id",origin.template_id},{"initial_transform",save_local(origin.initial)}});
+        const auto cursor=s.entity_ids->cursor();
+        payload["structure"]={{"revision",s.structure_revision},{"next_entity_id",gameplay_id(cursor.next)},
+            {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
+    }
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -135,22 +144,110 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto envelope=save_parse(bytes);save_fields(envelope,{"format","version","sha256","payload"});
     const bool custom=!definition.component_schemas.empty();
-    require(envelope.at("format")=="poima.runtime-snapshot" && save_integer(envelope.at("version"))==(custom ? 2u : 1u),"Unsupported runtime snapshot format/version for this definition.");
+    const auto version=save_integer(envelope.at("version"));const bool structural=version==3;
+    require(envelope.at("format")=="poima.runtime-snapshot" && (structural || version==(custom ? 2u : 1u)),"Unsupported runtime snapshot format/version for this definition.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
+    if(structural)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
+    else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
     const auto tick=save_integer(data.at("tick")),game_revision=save_integer(data.at("gameplay_revision"));
-    const auto& rows=data.at("entities");require(rows.is_array() && rows.size()==definition.entities.size() && rows.size()<=10000,"Runtime snapshot entity set differs from the definition.");
+    const auto& rows=data.at("entities");require(rows.is_array() && rows.size()<=10000,"Runtime snapshot entity budget exceeded.");
+    std::optional<RuntimeDefinition> expanded;
+    std::optional<RuntimeEntityIds> restored_ids;
+    std::map<std::string,Impl::SpawnOrigin> origins;
+    std::uint64_t structure_revision=0;
+    if(structural) {
+        validate_runtime_templates(definition);
+        const auto& structure=data.at("structure");save_fields(structure,{"revision","next_entity_id","exhausted","spawned"});
+        structure_revision=save_integer(structure.at("revision"));require(structure_revision>0,"Structural snapshot needs a committed structure revision.");
+        const auto next=save_text(structure.at("next_entity_id"),32);
+        require(next.size()==32 && next.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid saved entity allocator frontier.");
+        require(structure.at("exhausted").is_boolean(),"Saved entity allocator exhaustion must be Boolean.");
+        std::vector<PoimaEntityId> exclusions;std::set<std::string> authored;
+        for(const auto& entity:definition.entities) {
+            require(authored.insert(entity.id).second,"Duplicate original authored identity.");
+            if(entity.id.size()==32 && entity.id.find_first_not_of("0123456789abcdef")==std::string::npos) {
+                const auto numeric=gameplay_id(entity.id);if(numeric.high || numeric.low)exclusions.push_back(numeric);
+            }
+        }
+        restored_ids.emplace(exclusions,RuntimeEntityIds::Cursor{gameplay_id(next),structure.at("exhausted").get<bool>()});
+        const auto& births=structure.at("spawned");
+        require(definition.entities.size()<=10000 && births.is_array() && births.size()<=10000-definition.entities.size(),"Snapshot spawned entity budget exceeded.");
+        std::size_t payload_bytes=0,component_instances=0;
+        auto account_components=[&](const auto& values) {
+            for(const auto& [type_id,payload]:values) {
+                (void)type_id;
+                require(component_instances<components::max_instances && payload.size()<=components::max_payload_bytes-payload_bytes,
+                    "Restored component storage budget exceeded.");
+                ++component_instances;payload_bytes+=payload.size();
+            }
+        };
+        for(const auto& entity:definition.entities)account_components(entity.components);
+        expanded=definition;std::string previous_birth;
+        for(const auto& birth:births) {
+            save_fields(birth,{"id","template_id","initial_transform"});const auto id=save_text(birth.at("id"),32);
+            require(id.size()==32 && id.find_first_not_of("0123456789abcdef")==std::string::npos && (previous_birth.empty() || previous_birth<id),
+                "Spawned snapshot identities must be canonical, unique and sorted.");previous_birth=id;
+            require(!authored.contains(id) && restored_ids->allocated(gameplay_id(id)),"Saved spawned identity is outside its allocator lineage.");
+            const auto template_id=save_text(birth.at("template_id"),32);
+            const auto found=std::find_if(definition.templates.begin(),definition.templates.end(),[&](const auto& recipe){return recipe.id==template_id;});
+            require(found!=definition.templates.end(),"Saved spawn template does not exist in frozen content.");
+            account_components(found->components);
+            const auto initial=save_transform(birth.at("initial_transform"));
+            // Frozen assets and payload schemas were validated once above.
+            // Only the saved transform and its collider scaling are variable.
+            RuntimeDefinition validation;
+            validation.templates.push_back({found->id,found->name,initial,found->collider,std::nullopt,{}});
+            validate_runtime_templates(validation);
+            RuntimeEntityDefinition entity;entity.id=id;entity.transform=initial;entity.collider=found->collider;
+            entity.mesh=found->mesh;entity.components=found->components;expanded->entities.push_back(std::move(entity));
+            origins.emplace(id,Impl::SpawnOrigin{template_id,initial});
+        }
+        // Validate complete saved membership against trusted layouts, then use
+        // saved payloads for construction. Old defaults can reference an entity
+        // legitimately retired after its incoming references were repaired.
+        const auto schemas=components::parse_manifest(components::manifest_json(definition.component_schemas));
+        const auto& state=data.at("components");save_fields(state,{"revision","types"});(void)save_integer(state.at("revision"));
+        const auto& types=state.at("types");require(types.is_array() && types.size()==schemas.size(),"Saved component type membership differs from frozen content.");
+        std::map<std::string,RuntimeEntityDefinition*> live;
+        for(auto& entity:expanded->entities)require(live.emplace(entity.id,&entity).second,"Duplicate restored entity identity.");
+        for(std::size_t i=0;i<schemas.size();++i) {
+            const auto& schema=schemas[i];const auto& type=types[i];save_fields(type,{"id","fingerprint","instances"});
+            require(type.at("id")==schema.id && type.at("fingerprint")==components::fingerprint_hex(schema),"Saved component schema differs from frozen content.");
+            const auto& instances=type.at("instances");std::size_t count=0;
+            for(const auto& [id,entity]:live) { (void)id;if(entity->components.contains(schema.id))++count; }
+            require(instances.is_array() && instances.size()==count,"Saved component instance membership differs from restored layouts.");
+            std::string previous_instance;
+            for(const auto& instance:instances) {
+                save_fields(instance,{"entity","values"});const auto id=save_text(instance.at("entity"),32);
+                require(previous_instance.empty() || previous_instance<id,"Saved component instances must be unique and sorted.");previous_instance=id;
+                const auto found=live.find(id);require(found!=live.end() && found->second->components.contains(schema.id),"Saved component does not belong to its restored entity layout.");
+                auto payload=components::parse_values(schema,instance.at("values").dump(),true);
+                components::validate_payload(schema,payload,[](void* context,PoimaEntityId target) {
+                    return static_cast<std::map<std::string,RuntimeEntityDefinition*>*>(context)->contains(gameplay_id(target));
+                },&live);
+                found->second->components[schema.id]=std::move(payload);
+            }
+        }
+    }
+    const auto& restored_definition=expanded ? *expanded : definition;
+    require(rows.size()==restored_definition.entities.size(),"Runtime snapshot entity set differs from restored content.");
     require(data.at("gameplay").is_null()==!gameplay.has_value(),"Snapshot gameplay needs a matching trusted host configuration.");
     require(data.at("gameplay").is_null() ? game_revision==0 : game_revision>0,"Snapshot gameplay revision does not match module presence.");
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
-    auto candidate=std::make_unique<Runtime>(definition);auto& s=*candidate->impl_;s.tick=tick;
-    if(custom)s.components->load(data.at("components").dump());
-    if(!data.at("gameplay").is_null())save_game_values(data.at("gameplay"),s.identities);
+    auto candidate=std::make_unique<Runtime>(restored_definition);auto& s=*candidate->impl_;s.tick=tick;
+    if(structural) {
+        // Bootstrap may see generated objects as definitions, but exclusions
+        // must come exclusively from the complete original authored inventory.
+        s.entity_ids=std::move(restored_ids);s.structure_revision=structure_revision;
+        auto topology=std::make_shared<Impl::Topology>(*s.topology);topology->spawned=std::move(origins);s.topology=std::move(topology);
+    }
+    if(custom || structural)s.components->load(data.at("components").dump());
+    if(!data.at("gameplay").is_null())save_game_values(data.at("gameplay"),s.topology->identities);
     s.animations->load_state(data.at("animation").dump(),tick);s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;
     std::string previous;
@@ -216,13 +313,13 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
         }
     }
     // Rebuild support from current geometry only after every body is restored.
-    s.physics.OptimizeBroadPhase();for(auto e:s.characters)s.registry.get<Controller>(e).character->PostSimulation(.05f);s.sync();
+    s.physics.OptimizeBroadPhase();for(auto e:s.topology->characters)s.registry.get<Controller>(e).character->PostSimulation(.05f);s.sync();
     for(const auto& [id,saved]:locals) {
         const auto& actual=s.registry.get<Node>(s.find(id)).local;
         require(save_near(saved.position,actual.position) && save_near(saved.rotation,actual.rotation) && save_near(saved.scale,actual.scale),"Saved local transform does not match reconstructed state/content.");
     }
     std::map<std::string,AudioEmitter> emitters;
-    for(auto e:s.order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);
+    for(auto e:s.topology->order)if(const auto* emitter=s.registry.try_get<AudioEmitter>(e))emitters.emplace(s.registry.get<Node>(e).id,*emitter);
     s.sounds.load_state(data.at("sound").dump(),tick,emitters);
     // Executable selection comes exclusively from the host. No path, type name
     // or constructor selected by the snapshot is ever invoked. Fresh game
@@ -232,7 +329,11 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
         const auto& saved=data.at("gameplay");
         auto game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore);const auto current=SaveJson::parse(game->inspect());
         for(const auto* key:{"backend","assembly_sha256","type","schema"})require(current.at(key)==saved.at(key),"Snapshot gameplay module/schema differs from the trusted module.");
-        game->edit(saved.at("values").dump());s.components->validate_module(game->component_schemas());s.game=std::move(game);s.game_revision=game_revision;
+        game->edit(saved.at("values").dump());s.components->validate_module(game->component_schemas());
+        game->validate_entity_references([](void* context,PoimaEntityId id) {
+            return static_cast<RuntimeComponents*>(context)->alive(id);
+        },s.components.get());
+        s.game=std::move(game);s.game_revision=game_revision;
     }
     return candidate;
 }

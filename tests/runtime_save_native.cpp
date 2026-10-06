@@ -239,6 +239,137 @@ void fixture_file(const std::string& mode,const std::filesystem::path& path) {
     check(!restored->animation("rig")->transition,"Fresh-process restored fade missed its original endpoint.");
     std::cout<<"Read fresh-process fixture: exact canonical bytes, all live entities, animation/sound state and future logical motion passed.\n";
 }
+RuntimeDefinition lifecycle_definition() {
+    auto d=definition();
+    RuntimeEntityDefinition reserved;reserved.id=std::string(31,'0')+"1";d.entities.push_back(reserved);
+    for(int i=0;i<4;++i) {
+        RuntimeSpawnTemplate recipe;recipe.id=std::string(31,'a')+char('1'+i);recipe.name="Save prop";
+        recipe.transform.position={double(10+i*4),20,0};
+        if(i<3) {recipe.collider=BoxCollider{};recipe.collider->motion=i==0 ? BodyMotion::Dynamic : i==1 ? BodyMotion::Static : BodyMotion::Kinematic;}
+        d.templates.push_back(recipe);
+    }
+    return d;
+}
+void lifecycle_roundtrip() {
+    const auto d=lifecycle_definition();Runtime source(d);
+    check(Json::parse(source.save_snapshot(content)).at("version")==1,"Unused catalog changed legacy snapshot version.");
+    RuntimeTransform override;override.position={18,4,0};override.scale={2,1,1};
+    const auto born=source.change_structure(0,{{d.templates[0].id,{}},{d.templates[1].id,override},{d.templates[2].id,{}},{d.templates[3].id,{}}},{}).spawned;
+    source.step(15,{},{{born[2],{20,20,0},{0,0,0,1},90}});
+    check(born.front()==std::string(31,'0')+"2","Generated ID failed to skip authored reservation.");
+    const auto bytes=source.save_snapshot(content);const auto saved=Json::parse(bytes);
+    check(saved.at("version")==3 && saved.at("payload").contains("components"),"Lifecycle snapshot needs version 3 and component state.");
+    check(saved.at("payload").at("structure").at("revision")==1 && saved.at("payload").at("structure").at("spawned").size()==4,"Lifecycle provenance missing.");
+    auto restored=Runtime::from_snapshot(d,content,bytes);
+    check(restored->structure_revision()==1 && restored->inspect().tick==source.inspect().tick,"Restored lifecycle revision/clock differs.");
+    for(const auto& e:d.entities)equal_entity(source,*restored,e.id);
+    for(const auto& id:born)equal_entity(source,*restored,id);
+    source.step(7,{});restored->step(7,{});
+    for(const auto& id:born)equal_entity(source,*restored,id,1e-4);
+    const auto next=source.change_structure(1,{{d.templates[3].id,{}}},{}).spawned;
+    check(restored->change_structure(1,{{d.templates[3].id,{}}},{}).spawned==next,"Restored generated identity frontier differs.");
+    // Removing every generated entity must still retain allocator history.
+    auto all=born;all.insert(all.end(),next.begin(),next.end());
+    source.change_structure(2,{},all);
+    const auto empty_bytes=source.save_snapshot(content);const auto empty=Json::parse(empty_bytes);
+    check(empty.at("version")==3 && empty.at("payload").at("structure").at("spawned").empty(),"Empty survivor set discarded lifecycle history.");
+    auto empty_restore=Runtime::from_snapshot(d,content,empty_bytes);
+    check(empty_restore->structure_revision()==3,"Empty survivor restore reset structural revision.");
+    const auto later=source.change_structure(3,{{d.templates[3].id,{}}},{}).spawned;
+    check(empty_restore->change_structure(3,{{d.templates[3].id,{}}},{}).spawned==later && later.front()>next.front(),"Empty survivor restore reused a retired identity.");
+}
+void lifecycle_components() {
+    RuntimeDefinition d;d.world_id="lifecycle-reference-save";
+    const std::string type(32,'b'),field(32,'c'),target=std::string(31,'0')+"1";
+    const auto schema=components::parse_schema("{\"id\":\""+type+"\",\"name\":\"Target\",\"version\":1,\"fields\":[{\"id\":\""+field+"\",\"name\":\"Entity\",\"kind\":\"entity\",\"default\":\"00000000000000000000000000000000\"}]}");
+    d.component_schemas={schema};
+    RuntimeSpawnTemplate plain;plain.id=std::string(32,'d');plain.name="Target";
+    RuntimeSpawnTemplate referencing;referencing.id=std::string(32,'e');referencing.name="Referrer";
+    referencing.components[type]=components::parse_values(schema,Json{{field,target}}.dump());d.templates={plain,referencing};
+    Runtime source(d);check(Json::parse(source.save_snapshot(content)).at("version")==2,"Unchanged custom world lost legacy snapshot version.");
+    const auto born=source.change_structure(0,{{plain.id,{}},{referencing.id,{}}},{}).spawned;
+    check(born.front()==target,"Reference fixture allocation assumption changed.");
+    source.component_edit(type,born[1],components::defaults(schema));
+    source.change_structure(1,{}, {born[0]});
+    const auto bytes=source.save_snapshot(content);auto restored=Runtime::from_snapshot(d,content,bytes);
+    check(restored->component_read(type,born[1])==source.component_read(type,born[1]) && restored->component_revision()==source.component_revision(),"Repaired saved reference did not replace stale template default.");
+    rejects([&]{(void)restored->entity(born[0]);});
+    check(restored->component_query(type,"",64)==std::vector<std::string>{born[1]},"Restored component membership differs.");
+    const auto original=Json::parse(bytes);
+    auto invalid=[&](auto change) {auto j=original;change(j);rejects([&]{(void)Runtime::from_snapshot(d,content,sealed(j));});check(source.save_snapshot(content)==bytes,"Rejected component save mutated source.");};
+    invalid([](auto& j){j["payload"]["components"]["types"][0]["fingerprint"]=std::string(64,'0');});
+    invalid([](auto& j){j["payload"]["components"]["types"][0]["instances"].clear();});
+    invalid([&](auto& j){j["payload"]["components"]["types"][0]["instances"][0]["entity"]=born[0];});
+    invalid([&](auto& j){j["payload"]["components"]["types"][0]["instances"][0]["values"][0]=born[0];});
+    invalid([](auto& j){j["payload"].erase("components");});
+    source.change_structure(2,{}, {born[1]});
+    const auto empty_bytes=source.save_snapshot(content);const auto empty=Json::parse(empty_bytes);
+    check(empty.at("payload").at("entities").empty() && empty.at("payload").at("structure").at("spawned").empty(),"Zero-live fixture retained entities.");
+    auto empty_restore=Runtime::from_snapshot(d,content,empty_bytes);
+    check(empty_restore->structure_revision()==3 && empty_restore->component_query(type,"",64).empty(),"Zero-live restoration retained stale membership or reset revision.");
+    const auto next=source.change_structure(3,{{plain.id,{}}},{}).spawned;
+    check(empty_restore->change_structure(3,{{plain.id,{}}},{}).spawned==next && next.front()>born.back(),"Zero-live restoration reused one of its two retired identities.");
+}
+void lifecycle_fixture_file(const std::string& mode,const std::filesystem::path& path) {
+    const auto d=lifecycle_definition();Runtime expected(d);
+    const auto born=expected.change_structure(0,{{d.templates[0].id,{}},{d.templates[1].id,{}},{d.templates[2].id,{}},{d.templates[3].id,{}}},{}).spawned;
+    expected.step(12,{},{{born[2],{20,20,0},{0,0,0,1},90}});
+    expected.change_structure(1,{}, {born[3]});
+    if(mode=="--write-lifecycle-fixture") {
+        check(!std::filesystem::exists(path),"Lifecycle fixture output already exists.");
+        const auto bytes=expected.save_snapshot(content);std::ofstream output(path,std::ios::binary);
+        check(bool(output),"Cannot create lifecycle snapshot fixture.");output.write(bytes.data(),static_cast<std::streamsize>(bytes.size()));output.close();
+        check(bool(output),"Could not finish lifecycle snapshot fixture.");
+        std::cout<<"Wrote test-only version 3 lifecycle snapshot at tick 12 ("<<bytes.size()<<" bytes).\n";return;
+    }
+    check(mode=="--read-lifecycle-fixture","Expected --write-lifecycle-fixture PATH or --read-lifecycle-fixture PATH.");
+    const auto size=std::filesystem::file_size(path);check(size>0 && size<=64U*1024U*1024U,"Lifecycle fixture exceeds snapshot limit.");
+    std::string bytes(static_cast<std::size_t>(size),'\0');std::ifstream input(path,std::ios::binary);
+    input.read(bytes.data(),static_cast<std::streamsize>(bytes.size()));check(bool(input),"Cannot read complete lifecycle snapshot fixture.");
+    check(Json::parse(bytes).at("version")==3,"Lifecycle exchange fixture is not version 3.");
+    auto restored=Runtime::from_snapshot(d,content,bytes);
+    check(restored->inspect().tick==12 && restored->structure_revision()==2,"Fresh-process lifecycle clock or revision changed.");
+    for(const auto& e:d.entities)equal_entity(expected,*restored,e.id,1e-5,false);
+    for(std::size_t i=0;i<3;++i)equal_entity(expected,*restored,born[i]);
+    rejects([&]{(void)restored->entity(born[3]);});
+    check(restored->save_snapshot(content)==bytes,"Fresh-process lifecycle restore changed canonical snapshot bytes.");
+    expected.step(7,{});restored->step(7,{});
+    for(std::size_t i=0;i<3;++i)equal_entity(expected,*restored,born[i],1e-4);
+    const auto next=expected.change_structure(2,{{d.templates[3].id,{}}},{}).spawned;
+    check(restored->change_structure(2,{{d.templates[3].id,{}}},{}).spawned==next && next.front()>born.back(),"Fresh-process lifecycle restore reused a retired identity.");
+    std::cout<<"Read fresh-process version 3 fixture: exact canonical bytes, live prop state, future motion and retired identity continuity passed.\n";
+}
+
+void lifecycle_malformed() {
+    const auto d=lifecycle_definition();Runtime source(d);
+    const auto born=source.change_structure(0,{{d.templates[1].id,{}},{d.templates[3].id,{}}},{}).spawned;
+    const auto bytes=source.save_snapshot(content);const auto original=Json::parse(bytes);
+    auto invalid=[&](auto change) {auto j=original;change(j);rejects([&]{(void)Runtime::from_snapshot(d,content,sealed(j));});check(source.save_snapshot(content)==bytes,"Rejected lifecycle save mutated source.");};
+    invalid([](auto& j){j["payload"]["structure"]["revision"]=0;});
+    invalid([](auto& j){j["payload"]["structure"]["revision"]=1.0;});
+    invalid([](auto& j){j["payload"]["structure"]["next_entity_id"]=std::string(32,'0');});
+    invalid([&](auto& j){j["payload"]["structure"]["next_entity_id"]=born.back();});
+    invalid([](auto& j){j["payload"]["structure"]["next_entity_id"]=std::string(32,'A');});
+    invalid([](auto& j){j["payload"]["structure"]["exhausted"]=true;});
+    invalid([](auto& j){j["payload"]["structure"]["exhausted"]=0;});
+    invalid([](auto& j){j["payload"]["structure"]["extra"]=true;});
+    invalid([](auto& j){j["payload"]["structure"]["spawned"][0]["template_id"]=std::string(32,'f');});
+    invalid([](auto& j){j["payload"]["structure"]["spawned"][0]["id"]="floor";});
+    invalid([](auto& j){j["payload"]["structure"]["spawned"][0]["id"]=std::string(31,'0')+"1";});
+    invalid([](auto& j){auto& a=j["payload"]["structure"]["spawned"];std::swap(a[0],a[1]);});
+    invalid([](auto& j){auto& a=j["payload"]["structure"]["spawned"];a.push_back(a[0]);});
+    invalid([](auto& j){j["payload"]["structure"]["spawned"].erase(0);});
+    invalid([](auto& j){j["payload"]["structure"]["spawned"][0]["initial_transform"]["scale"][0]=0;});
+    invalid([](auto& j){j["payload"]["structure"]["spawned"][0]["initial_transform"]["position"][0]=900;});
+    invalid([&](auto& j){row(j,born[0])["parent"]="floor";});
+    invalid([](auto& j){auto& a=j["payload"]["entities"];for(auto it=a.begin();it!=a.end();++it)if(it->at("id")=="floor") {a.erase(it);break;}});
+    invalid([](auto& j){j["payload"]["components"]["types"].push_back(Json::object());});
+    invalid([](auto& j){j["payload"].erase("structure");});
+    invalid([](auto& j){j["version"]=1;});
+    auto restored=Runtime::from_snapshot(d,content,bytes);
+    check(restored->change_structure(1,{{d.templates[3].id,{}}},{}).spawned==source.change_structure(1,{{d.templates[3].id,{}}},{}).spawned,"Malformed load attempts consumed generated IDs.");
+}
+
 void malformed() {
     const auto d=definition();Runtime source(d);source.step(12,{},{{"door",{3,1.5,-3},{0,0,0,1},90}});
     const auto bytes=source.save_snapshot(content);const auto original=Json::parse(bytes);
@@ -295,9 +426,14 @@ void malformed() {
 }
 int main(int argc,char** argv) {
     try {
-        if(argc!=1) { check(argc==3,"Expected --write-fixture PATH or --read-fixture PATH.");fixture_file(argv[1],std::filesystem::path(argv[2]));return 0; }
-        roundtrip_motion();animation_and_sound();angular_and_sleep();export_boundaries();malformed();
-        std::cout<<"Runtime snapshot moving door/child, airborne/angular dynamics and sleep, reconstructed character jump, future contact tolerance, outgoing/frozen animation fades, logical sound continuation, export bounds/yaw/IDs, repeated staging and malformed/binding rejection passed.\n";
+        if(argc!=1) {
+            check(argc==3,"Expected a fixture writer/reader mode and PATH.");const std::string mode=argv[1];
+            if(mode=="--write-lifecycle-fixture" || mode=="--read-lifecycle-fixture")lifecycle_fixture_file(mode,std::filesystem::path(argv[2]));
+            else fixture_file(mode,std::filesystem::path(argv[2]));
+            return 0;
+        }
+        roundtrip_motion();animation_and_sound();angular_and_sleep();export_boundaries();malformed();lifecycle_roundtrip();lifecycle_components();lifecycle_malformed();
+        std::cout<<"Runtime snapshot moving door/child, airborne/angular dynamics and sleep, reconstructed character jump, future contact tolerance, outgoing/frozen animation fades, logical sound continuation, export bounds/yaw/IDs, repeated staging, lifecycle provenance/frontier/reference restoration and malformed/binding rejection passed.\n";
         return 0;
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

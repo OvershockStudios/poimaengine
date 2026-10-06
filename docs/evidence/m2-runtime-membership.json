@@ -1,0 +1,126 @@
+{
+  "milestone": "Runtime live membership and native ownership separation",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "src/runtime.cpp": "5461770767b769b3f0ce31b1eb40bca1d5b6cdb26a94687e80eeb544ea3f1c69",
+    "src/runtime_save.inc": "f77e7b8ad918f9df2c5b5f9bd43671f4f14d2cd9d683256b588caad0cc216de8",
+    "src/runtime_components.hpp": "50c63693d390688c866e1407739fce5b0c1646d49fb346ecd6741572bab8bce9",
+    "src/runtime_components.cpp": "f06e82a81253fe01c7f83aed4096183946baeb9efd1b451cd0c6bc8aa5f6e7d6",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "tests/runtime_native.cpp": "83c31b01b490a691a59f8e6713e94bb56343e3e609a0bf83acbbaf017d78d696"
+  },
+  "implemented": [
+    "Live identities, traversal indices, body-name mapping and mesh collision references share one immutable topology root after construction.",
+    "Native ownership inventory is independent of live presentation traversal; teardown handles bodies already removed from broadphase.",
+    "Explicit batch rollback retains the original topology root and records native entity handles for local transforms, controller states and kinematic targets.",
+    "Runtime summary reports live mapped body membership rather than allocated physical body count."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed": true,
+      "ctest": [
+        "runtime_native",
+        "runtime_components_native",
+        "runtime_mesh_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "runtime_animation_native",
+        "interaction_native",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract",
+        "runtime_animation_contract",
+        "runtime_animation_blend_contract",
+        "mesh_collision_contract",
+        "audio_contract",
+        "lighting_contract"
+      ],
+      "additional_save_fixture": "CoreCLR: complete typed values, Initialize bypass, exact tick continuation, trusted binding, 16 resealed rejection cases and 40 collectible restores.",
+      "compiled_gameplay": {
+        "CoreCLR": {
+          "passed": true,
+          "checks": [
+            "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "100 real CoreCLR reloads collect all retired modules",
+            "Compatible CLR reorder/labels preserve native values",
+            "Changed component defaults reject without swapping the live module",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ],
+          "artifact_sha256": {
+            "binary": "25fb3c64f3aa28fc91ccd1dc46a6a5a3b3d3e7533db15bae6245eaf1b09a7857",
+            "manifest": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+            "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+            "bridge": "95acd84c7b0b5c1a995dbcb7b684a340c7af5e56e448fb34707245efce6c00f1",
+            "assembly": "79ec8e9ddf93cacc909ed7cbc660b2888a53f88a7afa71ff4a2888721b6863ca",
+            "reorder": "baadc9483ab23d436d064c964a4b1620f2b4b2c0bba44fca55d3cec2d5bbd096",
+            "labels": "0303aab84171094be9541fdc9d551fa76d3de27b1dce3f7a593325e0e08b23ff",
+            "incompatible": "c0604fdaecc6c9d971c62e42992e319885e3e5f7bfa3da5c7631afd723742e23"
+          },
+          "raw_evidence_sha256": "0a52bbef57b0935e7382fa2264f715259faa4356940a27f6b2ca56402d046d3a"
+        },
+        "NativeAOT": {
+          "passed": true,
+          "checks": [
+            "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ],
+          "artifact_sha256": {
+            "binary": "25fb3c64f3aa28fc91ccd1dc46a6a5a3b3d3e7533db15bae6245eaf1b09a7857",
+            "manifest": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+            "native_descriptor": "4aa4cc787fd7a805e647138c5fc2b769bdda740f21e6d41e02d7e33a5644d1dc",
+            "library": "e2be78eb0dce5cef3527ec66a122e725b987abafc9836f4c9e96e9b9eccb7fc7"
+          },
+          "raw_evidence_sha256": "850a4276db4076735fe0a154fdb7070cbc994652154e3862ef3808c87fd5d983"
+        }
+      },
+      "construction_checks": [
+        "Live fixture reports 5 entities, 4 bodies including controller body, and 1 character.",
+        "Invalid camera reference and repeated late construction failure after rigid bodies and a character reject; subsequent valid runtime still simulates correctly.",
+        "Actual Jolt contact-capacity failure restores all 150 entity states and tick."
+      ]
+    },
+    "Windows": {
+      "cross_compile_passed": true,
+      "execution_qualified": false,
+      "targets": [
+        "poima",
+        "poima-runtime-test",
+        "poima-runtime-components-test",
+        "poima-runtime-save-test"
+      ],
+      "execution_failure": "WSL UtilBindVsockAnyPort socket failed before test executable entry.",
+      "warning": "One Vulkan-Hpp DispatchLoaderDynamic deprecated-copy warning while compiling render_smoke.cpp.",
+      "binary_sha256": {
+        "poima.exe": "6b0c3a0a49db30e874ee0c99779b5491495c043aa487f74ea035e518a660ce5c",
+        "poima-runtime-test.exe": "78899e0e6ae61ba4b9c367848a8f2f5981d6034abee1cea1d910a8e87170d29f",
+        "poima-runtime-components-test.exe": "6815290a1797277071c2d753cf56a5e1f3d33e190e9233a5fc0f4ad478b226fa",
+        "poima-runtime-save-test.exe": "28265433f498b500c3d94e75dfc082c3aeba66ff9809f425f342af6124f27f36"
+      }
+    }
+  },
+  "linux_binary_sha256": {
+    "poima": "25fb3c64f3aa28fc91ccd1dc46a6a5a3b3d3e7533db15bae6245eaf1b09a7857",
+    "poima-runtime-test": "cb970f4f4894327da579053b801f6d16f651df2dce9f03859c766462c64cb174",
+    "poima-runtime-components-test": "5d0f037340db8655b18ee6041ae8d0307da0110156dbcca660993f06e46fe425",
+    "poima-runtime-mesh-test": "06f1167535af8364e8d01ef6502513a2efc75ee8fa32589ad6fb970a6f4c534a",
+    "poima-runtime-save-test": "5e91db20e9aafc2717225c409c4c9c837a08f536c6c4f3042d981d3855b8b1c0",
+    "poima-runtime-save-gameplay-test": "b28da8844c3ce9e9f7cc55385db7a8a4187e8d50ad99804a63d5eb30e7c62526",
+    "poima-runtime-animation-test": "cc529aa8252e0c4e51b0fa4146b61f05a10b2ef15ca94777dea375ac0e3343ae",
+    "poima-interaction-test": "676fdd81653577fa50f550515da1293085e7e7c753f0d19b49ac4d232aabadde"
+  },
+  "limitations": [
+    "Public runtime membership remains fixed. These tests preserve existing behavior; they do not qualify runtime spawn/despawn or topology-changing save/load.",
+    "Physical membership rollback, allocator checkpoints, template provenance and topology-bearing runtime saves must still be coordinated before exposing lifecycle commands.",
+    "No new renderer feature, Windows execution result, GUI qualification, desktop package or game performance claim."
+  ]
+}

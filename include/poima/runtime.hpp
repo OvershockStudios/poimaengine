@@ -86,15 +86,31 @@ struct RuntimeEntityDefinition {
     std::optional<MeshCollider> mesh_collider;
     std::map<std::string,components::Payload> components;
 };
+inline constexpr std::size_t max_runtime_spawn_templates=256;
+inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
+// Standalone frozen root-prop recipe, not an entity or a view of live state.
+// Scalar values and custom payloads are owned; presentation assets are shared
+// immutable values. Template IDs occupy a separate namespace from entity IDs.
+struct RuntimeSpawnTemplate {
+    std::string id,name;
+    RuntimeTransform transform;
+    std::optional<BoxCollider> collider;
+    std::optional<RuntimeMesh> mesh;
+    std::map<std::string,components::Payload> components;
+};
 struct RuntimeDefinition {
     std::string world_id;
     std::uint64_t authored_revision=0;
     std::vector<RuntimeEntityDefinition> entities;
     std::vector<components::Schema> component_schemas;
+    std::vector<RuntimeSpawnTemplate> templates;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
 void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
+// Validates recipe values/assets without creating entities or physics bodies.
+// Custom entity-reference liveness resolves against the eventual spawn candidate.
+void validate_runtime_templates(const RuntimeDefinition& definition);
 struct RuntimeInput {
     std::string entity;
     std::array<float,2> move{0,0}; // right, forward; diagonal magnitude clamped to one
@@ -133,12 +149,27 @@ struct RuntimeEntityState {
     std::optional<KinematicTarget> kinematic_target;
     std::uint32_t motion_remaining_ticks=0;
 };
+// Experimental native lifecycle input. Results follow spawn request order.
+struct RuntimeSpawnRequest {
+    std::string template_id;
+    std::optional<RuntimeTransform> transform;
+};
+struct RuntimeStructureResult {
+    std::uint64_t revision=0;
+    std::vector<std::string> spawned;
+};
+struct RuntimeStructureTick {
+    std::uint32_t offset=0;
+    std::uint64_t expected_revision=0;
+    std::vector<RuntimeSpawnRequest> spawns;
+    std::vector<std::string> despawns;
+};
 struct RuntimeSummary {
     std::uint64_t tick=0;
     std::size_t entities=0, bodies=0, characters=0;
 };
 // One single-threaded world, no GUI/graphics dependency. Structural definition
-// is immutable while running; presentation snapshots own copies of their data.
+// freezes recipes while running; presentation snapshots own copies of their data.
 class Runtime {
     struct Impl;
     std::unique_ptr<Impl> impl_;
@@ -150,6 +181,12 @@ public:
     Runtime(const Runtime&)=delete;
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
+    // Atomic paused-boundary prototype. Removal currently accepts spawned root
+    // props only. No RPC/C# exposure until coordinated tick/save support lands.
+    RuntimeStructureResult change_structure(std::uint64_t expected_revision,
+        const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns);
+    std::uint64_t structure_revision() const;
+
     RuntimeEntityState entity(const std::string& id) const;
     // Portable, bounded logical checkpoint. The trusted host supplies the SHA-256
     // of the complete frozen authored content, including referenced assets.
@@ -159,8 +196,13 @@ public:
     static std::unique_ptr<Runtime> from_snapshot(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
         const std::optional<GameplayConfig>& gameplay=std::nullopt);
-    void step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs, const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},const std::vector<AnimationCommand>& animations={});
+    // Scheduled edits execute after gameplay and before physics at their tick
+    // offsets. Results become observable only after the entire batch commits.
+    std::vector<RuntimeStructureResult> step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs,
+        const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},
+        const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
+    const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;
     const std::vector<components::Schema>& component_schemas() const;
     std::uint64_t component_revision() const;
     std::optional<components::Payload> component_read(const std::string& type,const std::string& entity) const;
@@ -180,6 +222,8 @@ public:
     const SoundState& sound_state() const;
     AudioSnapshot audio_snapshot(const std::string& listener) const;
     SceneLighting lighting() const;
+    // Live geometry/lighting, independent of an authored camera entity.
+    SceneSnapshot snapshot() const;
     SceneSnapshot snapshot(const std::string& camera) const;
 };
 }

@@ -21,6 +21,7 @@
 #include <random>
 #include <set>
 #include <functional>
+#include <type_traits>
 
 namespace poima {
 namespace {
@@ -362,7 +363,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 30}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 32}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -577,8 +578,29 @@ Json describe() {
     result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",5},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},
         {"wire","16-byte canonical little-endian cells in ascending stable field ID order"},{"int64_json","Canonical signed decimal strings; exact full Int64 range"},
         {"schema_changes","Labels/units may change; shape/default changes require a future explicit migration. Removed type IDs cannot be reused except known undo/redo history."},
-        {"runtime","Native-owned fixed membership; queries sorted by entity ID; writes publish after Tick and before physics. Whole batch rollback includes payloads and component revision."},
+        {"runtime","Native-owned membership; queries sorted by entity ID; writes publish after Tick and before physics. Whole batch rollback includes payloads and component revision."},
         {"save_guard","save.write/load require expected_component_revision when replacing or saving an active runtime with declared custom schemas. Stopped restore accepts absent or null."}};
+    Json recipe_properties=Json::object();for(const auto* type:{"Transform","BoxCollider","MeshRenderer","StaticMesh","PbrMaterial","PbrTextures"})recipe_properties[type]=components.at(type);
+    auto recipe_components=object_schema(recipe_properties,{"Transform"});recipe_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
+    mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
+    mutations.push_back(object_schema({{"op",{{"const","template.remove"}}},{"id",stable_type}},{"op","id"}));
+    const Json template_page_limit={{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}};
+    methods["template.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});
+    methods["template.query"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
+    methods["runtime.template.get"]=object_schema({{"session_id",id},{"tick",rev},{"revision",rev},{"id",stable_type}},{"session_id","tick","id"});
+    methods["runtime.template.query"]=object_schema({{"session_id",id},{"tick",rev},{"revision",rev},{"after",stable_type},{"limit",template_page_limit}},{"session_id","tick"});
+    methods["runtime.structure.transact"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_structure_revision",rev},
+        {"spawns",{{"type","array"},{"maxItems",4096},{"items",object_schema({{"template_id",stable_type},{"transform",components.at("Transform")}},{"template_id"})}}},
+        {"despawns",{{"type","array"},{"maxItems",4096},{"items",stable_type}}}},
+        {"session_id","request_id","expected_tick","expected_structure_revision"});
+    methods["save.write"]["properties"]["expected_structure_revision"]=rev;
+    methods["save.load"]["properties"]["expected_structure_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
+    for(const auto* method:{"runtime.entity","runtime.component.get","runtime.component.query"})
+        methods[method]["properties"]["structure_revision"]=rev;
+    result["spawn_templates"]={{"authored_version",3},{"max_templates",max_runtime_spawn_templates},{"max_custom_payload_bytes",max_runtime_template_payload_bytes},
+        {"components",recipe_components},{"references","Entity references in recipes are literal IDs; liveness is deferred until spawning. Template IDs are a separate namespace and are never live EntityIds."},
+        {"save_guard","save.write/load require expected_structure_revision after any structural transaction; stopped restore accepts absent or null."},
+        {"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# initiation and RPC tick scheduling remain unavailable."}};
     result["runtime_available"]=Runtime::available();
     return result;
 }
@@ -627,20 +649,32 @@ const components::Schema& authored_schema(const std::vector<components::Schema>&
     require(found!=schemas.end() && found->id==id,"Custom component type is not registered.");return *found;
 }
 bool authored_reference_exists(void* context,PoimaEntityId entity) { return static_cast<const Json*>(context)->contains(gameplay_id(entity)); }
-Json history_state(const Json& doc) { return {{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())}}; }
+Json history_state(const Json& doc) { return {{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())},{"templates",doc.value("templates",Json::object())}}; }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
-    const auto left=a.find("component_schemas"),right=b.find("component_schemas");
-    if(left==a.end())return right==b.end() || right->empty();
-    return right==b.end() ? left->empty() : *left==*right;
+    for(const auto* key:{"component_schemas","templates"}) {
+        const auto left=a.find(key),right=b.find(key);
+        if(left==a.end()) { if(right!=b.end() && !right->empty())return false; }
+        else if(right==b.end() ? !left->empty() : *left!=*right)return false;
+    }
+    return true;
 }
 void upgrade_components(Json& doc) {
     if(doc.at("version")==1) {doc["version"]=2;doc["component_schemas"]=Json::object();doc["retired_component_schemas"]=Json::array();}
 }
+void upgrade_templates(Json& doc) {
+    upgrade_components(doc);
+    if(doc.at("version")==2) {doc["version"]=3;doc["templates"]=Json::object();doc["retired_template_ids"]=Json::array();}
+}
+bool template_component(const std::string& type) {
+    return type=="Transform" || type=="BoxCollider" || type=="MeshRenderer" || type=="StaticMesh" || type=="PbrMaterial" || type=="PbrTextures" || custom_component(type);
+}
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
-    const bool custom=doc.at("version")==2;
-    if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},
+    const bool catalog=doc.at("version")==3,custom=catalog || doc.at("version")==2;
+    if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},
+        {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
+    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
     else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
@@ -648,6 +682,26 @@ void validate(const Json& doc) {
     if(custom) {
         require(doc.at("retired_component_schemas").is_array(),"Invalid retired component schema identities.");std::set<std::string> retired;
         for(const auto& value:doc.at("retired_component_schemas")) {const auto id=identifier(value);require(id!=std::string(32,'0') && !doc.at("component_schemas").contains(id) && retired.insert(id).second,"Reused or duplicate retired component schema identity.");}
+    }
+    if(catalog) {
+        const auto& templates=doc.at("templates");require(templates.is_object() && templates.size()<=max_runtime_spawn_templates,"Invalid template catalog or recipe count.");
+        require(doc.at("retired_template_ids").is_array(),"Invalid retired template identities.");std::set<std::string> retired;
+        for(const auto& value:doc.at("retired_template_ids")) {const auto id=identifier(value);require(id!=std::string(32,'0') && !templates.contains(id) && retired.insert(id).second,"Reused or duplicate retired template identity.");}
+        std::size_t bytes=0;
+        for(const auto& [id,recipe]:templates.items()) {
+            require(identifier(id)!=std::string(32,'0'),"Template identity cannot be zero.");fields(recipe,{"name","components"},{"name","components"});validate_name(recipe.at("name"));
+            const auto& bag=recipe.at("components");require(bag.is_object() && bag.contains("Transform"),"Template requires components with Transform.");
+            require(!(bag.contains("StaticMesh") && bag.contains("MeshRenderer")),"Template permits one mesh component.");
+            require(!(bag.contains("PbrMaterial") || bag.contains("PbrTextures")) || bag.contains("StaticMesh") || bag.contains("MeshRenderer"),"Template material requires a mesh component.");
+            for(const auto& [type,value]:bag.items()) {
+                require(template_component(type),"Unsupported spawn template component: "+type);
+                if(!custom_component(type))validate_component(type,value);
+                else {
+                    const auto type_id=custom_type(type);const auto& schema=authored_schema(schemas,type_id);const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
+                    require(payload.size()<=max_runtime_template_payload_bytes-bytes,"Template custom payload budget exceeded.");bytes+=payload.size();
+                }
+            }
+        }
     }
     std::size_t component_count=0,component_bytes=0;
     identifier(doc.at("world_id")); revision(doc.at("revision"));
@@ -761,6 +815,15 @@ class World {
     struct AdvanceReceipt { Json params;RuntimeAdvance outcome; };
     std::array<std::unique_ptr<AdvanceReceipt>,32> advance_receipts_;
     std::size_t advance_receipt_next_=0;
+    // Store the native outcome before formatting JSON, so an allocation failure
+    // while serializing a response can be recovered by an identical retry.
+    struct StructureReceipt {
+        Json params;
+        RuntimeStructureResult outcome;
+        std::uint64_t component_revision=0;
+    };
+    std::array<std::unique_ptr<StructureReceipt>,32> structure_receipts_;
+    std::size_t structure_receipt_next_=0;
 
     mutable ModelCache model_cache_;
     mutable std::optional<SceneSnapshot> authored_cache_;
@@ -777,7 +840,7 @@ class World {
             if(value.is_string()) { const auto& text=value.get_ref<const std::string&>();if(valid_asset_id(text))referenced.insert(text); }
             else if(value.is_structured())for(const auto& item:value)visit(item);
         };
-        visit(doc_.at("entities"));
+        visit(doc_.at("entities"));if(doc_.contains("templates"))visit(doc_.at("templates"));
         for(auto it=model_cache_.models.begin();it!=model_cache_.models.end();) {
             if(referenced.contains(it->first))++it;else { model_cache_.bytes-=it->second.bytes;it=model_cache_.models.erase(it); }
         }
@@ -851,8 +914,7 @@ public:
         };
         // Only active component references are dependencies. Receipt/history
         // payloads may mention retired assets and are deliberately not scanned.
-        for(const auto& entity:source.at("entities")) {
-            const auto& components=entity.at("components");
+        auto collect_components=[&](const Json& components) {
             for(const auto* type:{"StaticMesh","SkinnedMesh","AnimationRig","MeshCollider"})if(components.contains(type)) {
                 const auto& ref=components.at(type);const auto value=model(ref.at("asset").get<std::string>());
                 if(ref.contains("primitive"))require(revision(ref.at("primitive"))<value->primitives.size(),"Package mesh primitive index does not exist.",-32050);
@@ -871,13 +933,15 @@ public:
                 result.needs_audio=true;const auto id=components.at("AudioEmitter").at("asset").get<std::string>();
                 if(!files.contains(id+".paudio")) { (void)audio.get(asset_directory(),id);add(id,".paudio",audio.clips.at(id).bytes); }
             }
-        }
+        };
+        for(const auto& entity:source.at("entities"))collect_components(entity.at("components"));
+        if(source.contains("templates"))for(const auto& recipe:source.at("templates"))collect_components(recipe.at("components"));
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
         auto definition=runtime_definition(false,&source,false,&assets,&audio);
-        auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();result.document=document.dump(2)+'\n';
+        auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
-        auto identity=document;identity.erase("receipts");identity.erase("retired_ids");identity.erase("retired_component_schemas");
+        auto identity=document;identity.erase("receipts");identity.erase("retired_ids");identity.erase("retired_component_schemas");identity.erase("retired_template_ids");
         Json inventory=Json::array();for(const auto& f:result.assets)inventory.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
         const auto hash=content_hash(Json{{"format","poima.runtime-content"},{"version",1},{"document",identity},{"assets",inventory}}.dump());
         return {std::move(definition),std::move(result),std::move(document),hash};
@@ -885,7 +949,7 @@ public:
     WorldPackageContent package_content() const { return freeze_content(doc_).package; }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
-        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision; }
+        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision(); }
         return status;
     }
     WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
@@ -935,22 +999,19 @@ public:
         require(camera.world[3]==0 && camera.world[7]==0 && camera.world[11]==0 && camera.world[15]==1 && rigid_transform(camera.world),"Editor camera must be a rigid affine transform.");
         (void)perspective(camera.vertical_fov,1,camera.near_plane,camera.far_plane);
         if(live)require(bool(runtime_),"No runtime is active for the editor snapshot.",-32030);
-        SceneSnapshot result;
-        if(!live && !preview && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
+        SceneSnapshot result{};
+        if(live)result=runtime_->snapshot();
+        else if(!preview && authored_cache_ && authored_cache_->revision==revision(doc_.at("revision")))result=*authored_cache_;
         else {
-            prune_model_cache();RuntimeDefinition authored;
-            if(!live)authored=runtime_definition(false,preview,true);
-            const auto& definition=live ? runtime_definition_ : authored;
-            std::map<std::string,Matrix4> matrices;
-            if(live)for(const auto& e:definition.entities)matrices.emplace(e.id,runtime_->entity(e.id).world);
-            else matrices=world_matrices(document.at("entities"));
+            prune_model_cache();const auto definition=runtime_definition(false,preview,true);
+            const auto matrices=world_matrices(document.at("entities"));
             result.world_id=definition.world_id;result.revision=definition.authored_revision;
-            result.lighting=live ? runtime_->lighting() : authored_lighting(matrices);
+            result.lighting=authored_lighting(matrices);
             std::map<std::string,const RuntimeEntityDefinition*> entities;
             std::map<std::string,std::map<std::uint32_t,std::string>> nodes;
             for(const auto& e:definition.entities) { entities[e.id]=&e;if(e.rig_node)nodes[e.rig_node->rig][e.rig_node->node]=e.id; }
             for(const auto& e:definition.entities) {
-                const auto mesh=live ? e.mesh : mesh_component(doc_.at("entities").at(e.id).at("components"),model_cache_);
+                const auto mesh=mesh_component(doc_.at("entities").at(e.id).at("components"),model_cache_);
                 if(!mesh || !mesh->visible)continue;
                 std::shared_ptr<const SkinPose> skin;
                 if(e.skinned_mesh) {
@@ -962,7 +1023,7 @@ public:
                 }
                 result.objects.push_back({e.id,matrices.at(e.id),mesh->albedo,mesh->mesh,mesh->material,mesh->textures,skin});
             }
-            if(!live && !preview)authored_cache_=result;
+            if(!preview)authored_cache_=result;
         }
         result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
         return result;
@@ -1033,6 +1094,11 @@ public:
             fields(params, {});auto result=describe();result["methods"].update(profiling::Service::schemas());result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
+        }
+        if(method=="template.get" || method=="template.query") {
+            if(method=="template.get")fields(params,{"id","revision"},{"id"});else fields(params,{"revision","after","limit"});
+            current_revision(params);if(params.contains("after"))require(params.contains("revision"),"Pagination requires a revision.");
+            return inspect_templates(doc_,params,method=="template.get");
         }
         if(method=="component.schemas") {
             fields(params,{"id"});const auto schemas=authored_component_schemas(doc_);Json values=Json::array();
@@ -1678,7 +1744,45 @@ public:
             require(!receipt || receipt->params.at("session_id")!=id || receipt->params.at("request_id")!=params.at("request_id"),
                 "Runtime request ID was already used by a step.",-32010);
     }
+    static Json inspect_templates(const Json& document,const Json& params,bool single) {
+        const Json empty=Json::object();const auto& catalog=document.contains("templates") ? document.at("templates") : empty;
+        Json result={{"revision",document.at("revision")}};
+        if(single) {
+            const auto id=identifier(params.at("id"));require(catalog.contains(id),"Template does not exist.",-32004);
+            result["id"]=id;result["template"]=catalog.at(id);return result;
+        }
+        const auto after=params.contains("after") ? identifier(params.at("after")) : std::string{};
+        const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;require(limit>=1 && limit<=256,"Query limit must be 1..256.");
+        Json rows=Json::array(),next=nullptr;
+        for(const auto& [id,recipe]:catalog.items()) {
+            if(id<=after)continue;
+            if(rows.size()==limit) {next=rows.back().at("id");break;}
+            Json types=Json::array();for(const auto& [type,value]:recipe.at("components").items()) {(void)value;types.push_back(type);}
+            rows.push_back({{"id",id},{"name",recipe.at("name")},{"components",types}});
+        }
+        result["templates"]=std::move(rows);result["next_after"]=next;return result;
+    }
+    std::vector<RuntimeSpawnTemplate> template_definitions(const Json& document,ModelCache& cache,const std::vector<components::Schema>& schemas) const {
+        std::vector<RuntimeSpawnTemplate> result;if(!document.contains("templates"))return result;
+        for(const auto& [id,recipe]:document.at("templates").items()) {
+            RuntimeSpawnTemplate value;value.id=id;value.name=recipe.at("name");const auto& bag=recipe.at("components");const auto& t=bag.at("Transform");
+            value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
+            if(bag.contains("BoxCollider")) {const auto& c=bag.at("BoxCollider");value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")};}
+            value.mesh=mesh_component(bag,cache);
+            for(const auto& [type,data]:bag.items())if(custom_component(type)) {
+                const auto key=custom_type(type);const auto& schema=authored_schema(schemas,key);
+                value.components[key]=component_checked([&]{return components::parse_values(schema,data.dump());});
+            }
+            result.push_back(std::move(value));
+        }
+        return result;
+    }
     void validate_animation_document(const Json& document) const {
+        if(document.contains("templates") && !document.at("templates").empty()) {
+            RuntimeDefinition definition;definition.component_schemas=authored_component_schemas(document);
+            definition.templates=template_definitions(document,model_cache_,definition.component_schemas);
+            component_checked([&]{validate_runtime_templates(definition);});
+        }
         // Resolve rig ownership in headless authoring too. Unrelated static
         // meshes/audio are intentionally not loaded by this structural check.
         for(const auto& e:document.at("entities")) {
@@ -1757,7 +1861,8 @@ public:
             if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
             result.entities.push_back(std::move(value));
         }
-        try { validate_runtime_animation(result);if(!animation_only && !audio_only)validate_runtime_mesh_colliders(result); }
+        if(!animation_only && !audio_only)result.templates=template_definitions(document,cache,result.component_schemas);
+        try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         return result;
     }
@@ -1767,7 +1872,7 @@ public:
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
             {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
-            {"tick",state.tick},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
+            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
     RuntimeInput parse_input(const Json& i) const {
@@ -2015,7 +2120,7 @@ public:
         return authored_schema(runtime_->component_schemas(),type);
     }
     Json component_runtime_info() const {
-        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"component_revision",runtime_->component_revision()}};
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"component_revision",runtime_->component_revision()},{"structure_revision",runtime_->structure_revision()}};
     }
     Json component_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime component requests require session_id.");runtime_guard(params);
@@ -2025,14 +2130,16 @@ public:
             return result;
         }
         if(method=="runtime.component.get") {
-            fields(params,{"session_id","tick","id","type"},{"session_id","tick","id","type"});
+            fields(params,{"session_id","tick","structure_revision","id","type"},{"session_id","tick","id","type"});
+            structure_read_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             const auto id=identifier(params.at("id")),type=identifier(params.at("type"));const auto& schema=runtime_component_schema(type);
             const auto value=component_checked([&]{return runtime_->component_read(type,id);});auto result=component_runtime_info();result["id"]=id;result["type"]=type;
             result["schema"]=Json::parse(components::schema_json(schema));result["values"]=value ? Json::parse(components::values_json(schema,*value)) : Json(nullptr);return result;
         }
         if(method=="runtime.component.query") {
-            fields(params,{"session_id","tick","type","after","limit"},{"session_id","tick","type"});
+            fields(params,{"session_id","tick","structure_revision","type","after","limit"},{"session_id","tick","type"});
+            structure_read_guard(params);
             require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             const auto type=identifier(params.at("type"));const auto after=params.contains("after") ? identifier(params.at("after")) : std::string{};
             const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;require(limit>=1 && limit<=256,"Component query limit must be 1..256.");
@@ -2121,12 +2228,70 @@ public:
         catch(const std::exception& e) { throw Error(-32060,e.what()); }
         auto result=gameplay_info();result["replayed"]=false;receipts.back()["result"]=result;runtime_receipts_.swap(receipts);return result;
     }
+    void structure_read_guard(const Json& params) const {
+        if(params.contains("structure_revision"))require(revision(params.at("structure_revision"))==runtime_->structure_revision(),"Runtime structure revision conflict.",-32009);
+    }
+    static Json structure_receipt_json(const StructureReceipt& receipt,bool replayed) {
+        return {{"session_id",receipt.params.at("session_id")},{"tick",receipt.params.at("expected_tick")},
+            {"structure_revision",receipt.outcome.revision},{"component_revision",receipt.component_revision},
+            {"spawned",receipt.outcome.spawned},{"despawned",receipt.params.at("despawns")},{"replayed",replayed}};
+    }
+    Json structure_dispatch(const Json& params) {
+        fields(params,{"session_id","request_id","expected_tick","expected_structure_revision","spawns","despawns"},
+            {"session_id","request_id","expected_tick","expected_structure_revision"});
+        runtime_guard(params);const auto request=identifier(params.at("request_id"));
+        const auto tick=revision(params.at("expected_tick")),expected=revision(params.at("expected_structure_revision"));
+        auto normalized=params;normalized["method"]="runtime.structure.transact";
+        for(const auto* key:{"spawns","despawns"})if(!normalized.contains(key))normalized[key]=Json::array();
+        const auto& births=normalized.at("spawns");const auto& deaths=normalized.at("despawns");
+        require(births.is_array() && deaths.is_array() && births.size()+deaths.size()>=1 && births.size()+deaths.size()<=4096,
+            "Structural transaction needs 1..4096 total spawn/removal commands.");
+        std::vector<RuntimeSpawnRequest> spawns;spawns.reserve(births.size());
+        std::vector<std::string> despawns;despawns.reserve(deaths.size());
+        for(const auto& value:births) {
+            fields(value,{"template_id","transform"},{"template_id"});RuntimeSpawnRequest spawn;spawn.template_id=identifier(value.at("template_id"));
+            if(value.contains("transform")) {
+                const auto& t=value.at("transform");validate_transform(t);RuntimeTransform transform;
+                transform.position=t.at("position").get<std::array<double,3>>();transform.rotation=t.at("rotation").get<std::array<double,4>>();transform.scale=t.at("scale").get<std::array<double,3>>();spawn.transform=transform;
+            }
+            spawns.push_back(std::move(spawn));
+        }
+        for(const auto& value:deaths)despawns.push_back(identifier(value));
+        for(const auto& receipt:structure_receipts_)if(receipt && receipt->params.at("session_id")==runtime_id_ && receipt->params.at("request_id")==request) {
+            require(receipt->params==normalized,"Runtime request ID reused with different parameters.",-32010);
+            return structure_receipt_json(*receipt,true);
+        }
+        for(const auto& receipt:runtime_receipts_)require(receipt.at("params").at("request_id")!=request,"Runtime request ID already belongs to another operation.",-32010);
+        for(const auto& receipt:advance_receipts_)if(receipt && receipt->params.at("session_id")==runtime_id_)
+            require(receipt->params.at("request_id")!=request,"Runtime request ID already belongs to a simulation advance.",-32010);
+        require(tick==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+        require(expected==runtime_->structure_revision(),"Runtime structure revision conflict.",-32009);
+        auto receipt=std::make_unique<StructureReceipt>();receipt->params=std::move(normalized);
+        static_assert(std::is_nothrow_move_assignable_v<RuntimeStructureResult>);
+        try { receipt->outcome=runtime_->change_structure(expected,spawns,despawns); }
+        catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
+        receipt->component_revision=runtime_->component_revision();
+        const auto index=structure_receipt_next_;structure_receipts_[index].swap(receipt);
+        structure_receipt_next_=(index+1)%structure_receipts_.size();
+        return structure_receipt_json(*structure_receipts_[index],false);
+    }
     Json runtime_dispatch(const std::string& method,const Json& params) {
+        if(method=="runtime.structure.transact")return structure_dispatch(params);
+        if(params.is_object() && params.contains("session_id") && params.contains("request_id"))
+            for(const auto& receipt:structure_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id"))
+                throw Error(-32010,"Runtime request ID already belongs to a structural transaction.");
+        if(method=="runtime.template.get" || method=="runtime.template.query") {
+            if(method=="runtime.template.get")fields(params,{"session_id","tick","revision","id"},{"session_id","tick","id"});
+            else fields(params,{"session_id","tick","revision","after","limit"},{"session_id","tick"});
+            runtime_guard(params);require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            if(params.contains("revision"))require(revision(params.at("revision"))==runtime_definition_.authored_revision,"Frozen template revision conflict.",-32009);
+            auto result=inspect_templates(runtime_document_,params,method=="runtime.template.get");result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;return result;
+        }
         if(method=="runtime.components" || method.starts_with("runtime.component."))return component_dispatch(method,params);
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
             return {{"available",s.available},{"active",s.active},{"session_id",s.active ? Json(s.session_id) : Json(nullptr)},
-                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
+                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
         }
         if(method=="runtime.save.status") {
             fields(params,{"session_id"},{"session_id"});runtime_guard(params);const auto& queue=runtime_->gameplay_saves();
@@ -2198,12 +2363,12 @@ public:
             }catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
         if(method=="runtime.entity") {
-            fields(params,{"session_id","id","tick"},{"session_id","id"}); runtime_guard(params);
+            fields(params,{"session_id","id","tick","structure_revision"},{"session_id","id"}); runtime_guard(params);structure_read_guard(params);
             if(params.contains("tick")) require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             RuntimeEntityState e;
             try { e=runtime_->entity(identifier(params.at("id"))); }
             catch(const std::runtime_error& error) { throw Error(-32004,error.what()); }
-            return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"id",e.id},{"world_matrix",e.world},{"layout","column_major"},
+            return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"structure_revision",runtime_->structure_revision()},{"id",e.id},{"world_matrix",e.world},{"layout","column_major"},
                 {"local_transform",{{"position",e.local.position},{"rotation",e.local.rotation},{"scale",e.local.scale}}},
                 {"animation",e.animation ? animation_json(*e.animation) : Json(nullptr)},
                 {"motion",e.motion},{"kinematic_target",e.kinematic_target ? motion_json(*e.kinematic_target) : Json(nullptr)},{"motion_remaining_ticks",e.motion_remaining_ticks},
@@ -2260,12 +2425,23 @@ public:
         const auto& edit=*source.back();const auto& target_state=undo ? edit.before : edit.after;const auto& target=target_state.at("entities");
         require(history_state(doc_)==(undo ? edit.after : edit.before),"History no longer matches the authored state.",-32009);
         auto staged=doc_;staged["entities"]=target;staged["revision"]=revision(doc_.at("revision"))+1;
-        if(staged.at("version")==2) {
+        if(staged.at("version")>=2) {
             std::set<std::string> retired;for(const auto& id:staged.at("retired_component_schemas"))retired.insert(id.get<std::string>());
             const auto& schemas=target_state.at("component_schemas");
             for(const auto& [id,value]:staged.at("component_schemas").items()) { (void)value;if(!schemas.contains(id))retired.insert(id); }
             for(const auto& [id,value]:schemas.items()) { (void)value;retired.erase(id); }
             staged["component_schemas"]=schemas;staged["retired_component_schemas"]=retired;
+        }
+        std::set<std::string> changed_templates;
+        if(staged.at("version")==3) {
+            std::set<std::string> retired;for(const auto& id:staged.at("retired_template_ids"))retired.insert(id.get<std::string>());
+            const auto& templates=target_state.at("templates");
+            for(const auto& [id,value]:staged.at("templates").items()) {
+                if(!templates.contains(id)) {retired.insert(id);changed_templates.insert(id);}
+                else if(templates.at(id)!=value)changed_templates.insert(id);
+            }
+            for(const auto& [id,value]:templates.items()) { (void)value;retired.erase(id);if(!staged.at("templates").contains(id))changed_templates.insert(id); }
+            staged["templates"]=templates;staged["retired_template_ids"]=retired;
         }
         std::set<std::string> retired,changed;
         for(const auto& id:doc_.at("retired_ids"))retired.insert(id.get<std::string>());
@@ -2276,6 +2452,7 @@ public:
         for(const auto& [id,value]:target.items()) { (void)value;retired.erase(id);if(!doc_.at("entities").contains(id))changed.insert(id); }
         staged["retired_ids"]=retired;validate(staged);validate_animation_document(staged);
         Json result={{"revision",staged.at("revision")},{"committed",true},{"replayed",false},{"changed_ids",changed},{"history_recorded",true},{"history_action",undo ? "undo" : "redo"}};
+        if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
         auto next_undo=undo_,next_redo=redo_;
         if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
@@ -2291,7 +2468,7 @@ public:
         for (const auto& receipt : doc_.at("receipts")) {
             if (receipt.at("params").at("request_id") != params.at("request_id")) continue;
             bool custom=false;for(const auto& op:params.at("ops"))if(op.is_object() && op.contains("op") &&
-                (op.at("op")=="component.schema.set" || op.at("op")=="component.schema.remove" || (op.contains("type") && op.at("type").is_string() && custom_component(op.at("type").get<std::string>()))))custom=true;
+                (op.at("op")=="template.set" || op.at("op")=="template.remove" || op.at("op")=="component.schema.set" || op.at("op")=="component.schema.remove" || (op.contains("type") && op.at("type").is_string() && custom_component(op.at("type").get<std::string>()))))custom=true;
             require(custom ? receipt.at("params").dump()==params.dump() : receipt.at("params")==params,"Transaction ID was already used with different parameters.",-32010);
             auto result = receipt.at("result"); result["replayed"] = true; return result;
         }
@@ -2301,10 +2478,28 @@ public:
         require(ops.is_array() && !ops.empty() && ops.size() <= 256, "Transaction needs 1..256 operations.");
         Json staged = doc_;
         auto& entities = staged["entities"];
-        std::set<std::string> changed;
+        std::set<std::string> changed,changed_templates;
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
             const auto name=op.at("op").get<std::string>();
+            if(name=="template.set" || name=="template.remove") {
+                if(name=="template.set")fields(op,{"op","id","name","components"},{"op","id","name","components"});
+                else fields(op,{"op","id"},{"op","id"});
+                const auto id=identifier(op.at("id"));require(id!=std::string(32,'0'),"Template identity cannot be zero.");upgrade_templates(staged);
+                if(name=="template.remove") {
+                    fields(op,{"op","id"},{"op","id"});require(staged["templates"].erase(id)==1,"Template does not exist.",-32004);staged["retired_template_ids"].push_back(id);
+                }else {
+                    fields(op,{"op","id","name","components"},{"op","id","name","components"});
+                    const auto& retired=staged.at("retired_template_ids");require(std::find(retired.begin(),retired.end(),id)==retired.end(),"Template identity was retired and cannot be reused.");
+                    auto bag=op.at("components");require(bag.is_object(),"Template components must be an object.");const auto schemas=authored_component_schemas(staged);
+                    for(auto& [type,value]:bag.items())if(custom_component(type)) {
+                        const auto type_id=custom_type(type);const auto& schema=authored_schema(schemas,type_id);const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
+                        value=Json::parse(components::values_json(schema,payload));
+                    }
+                    staged["templates"][id]={{"name",op.at("name")},{"components",std::move(bag)}};
+                }
+                changed_templates.insert(id);continue;
+            }
             if(name=="component.schema.set") {
                 fields(op,{"op","schema"},{"op","schema"});const auto schema=component_checked([&]{return components::parse_schema(op.at("schema").dump());});upgrade_components(staged);
                 const auto& retired=staged.at("retired_component_schemas");require(std::find(retired.begin(),retired.end(),schema.id)==retired.end(),"Component schema identity was retired and cannot be reused.");
@@ -2369,6 +2564,7 @@ public:
         validate_animation_document(staged);
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
                        {"replayed", false}, {"changed_ids", changed}};
+        if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if (!params["preview"].get<bool>()) {
             auto next_undo=undo_;History next_redo;
             auto edit=std::make_shared<Edit>(Edit{history_state(doc_),history_state(staged),0,params.at("request_id").get<std::string>()});

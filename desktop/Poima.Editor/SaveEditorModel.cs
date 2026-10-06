@@ -37,6 +37,7 @@ public sealed class SaveEditorModel : IDisposable
          SlotDraft != SlotObservation["slot"]?.GetValue<string>() || RootDirty ||
          RuntimeObservation?["session_id"]?.GetValue<string>() != editor.RuntimeId ||
          RuntimeObservation?["tick"]?.GetValue<long>() != (editor.RuntimeId is null ? null : editor.Tick) ||
+         RuntimeObservation?["structure_revision"]?.GetValue<long>() != editor.Host.State["runtime"]?["structure_revision"]?.GetValue<long>() ||
          RuntimeObservation?["authored_revision"]?.GetValue<long>() != editor.Revision ||
          RuntimeObservation?["gameplay_revision"]?.GetValue<long>() != editor.Host.State["gameplay"]?["runtime"]?["revision"]?.GetValue<long>() ||
          RuntimeObservation?["component_revision"]?.GetValue<long>() != (editor.RuntimeId is null ? null : editor.Host.State["components"]?["revision"]?.GetValue<long>()) ||
@@ -88,13 +89,15 @@ public sealed class SaveEditorModel : IDisposable
         var gameplay = editor.Host.Call("desktop.gameplay.inspect");
         var components = editor.Host.Call("desktop.inspect")["components"];
         var active = runtime["active"]?.GetValue<bool>() == true;
+        var structure = active ? editor.Host.Call("runtime.inspect", new() { ["session_id"] = runtime["session_id"]!.DeepClone() }) : null;
         var observation = new JsonObject
         {
             ["authored_revision"] = world["revision"]!.DeepClone(),
             ["session_id"] = active ? runtime["session_id"]?.DeepClone() : null,
             ["tick"] = active ? runtime["tick"]?.DeepClone() : null,
             ["gameplay_revision"] = active ? gameplay["runtime"]?["revision"]?.DeepClone() : null,
-            ["component_revision"] = active ? components?["revision"]?.DeepClone() : null
+            ["component_revision"] = active ? components?["revision"]?.DeepClone() : null,
+            ["structure_revision"] = structure?["structure_revision"]?.DeepClone()
         };
         SlotObservation = EditorModel.Clone(slot); RuntimeObservation = observation; GameplayObservation = EditorModel.Clone(gameplay);
         observationSuperseded = false; ResetRecovery(); Error = null; ++DraftVersion; Notify();
@@ -136,6 +139,7 @@ public sealed class SaveEditorModel : IDisposable
             ["expected_gameplay_revision"] = RuntimeObservation["gameplay_revision"]!.DeepClone(), ["acknowledge_recovery"] = AcknowledgeRecovery
         };
         request["expected_component_revision"] = RuntimeObservation["component_revision"]!.DeepClone();
+        request["expected_structure_revision"] = RuntimeObservation["structure_revision"]!.DeepClone();
         Execute("save.write", request, rootBaseline);
     }
     public void Load()
@@ -150,6 +154,7 @@ public sealed class SaveEditorModel : IDisposable
             ["allow_recovery"] = AllowRecovery
         };
         if (RuntimeObservation["session_id"] is not null) request["expected_component_revision"] = RuntimeObservation["component_revision"]!.DeepClone();
+        if (RuntimeObservation["session_id"] is not null) request["expected_structure_revision"] = RuntimeObservation["structure_revision"]!.DeepClone();
         if (RuntimeObservation["session_id"] is null)
         {
             var current = editor.Host.Call("desktop.gameplay.inspect");

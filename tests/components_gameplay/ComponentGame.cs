@@ -86,6 +86,8 @@ public sealed class ComponentGame : Game<ComponentGameState>
         if(state.Mode==5) { health.Current=float.NaN;context.Set(state.Selected,in health); }
         if(state.Mode==6) { interaction.Target=new(ulong.MaxValue,ulong.MaxValue);context.Set(state.Selected,in interaction); }
         if(state.Mode==7)context.Get<Health>(new(ulong.MaxValue,ulong.MaxValue));
+        if(state.Mode==10 || (state.Mode==11 && context.Tick%2==1))
+            state.Selected=new(ulong.MaxValue,ulong.MaxValue); // Global references must also resolve at commit.
         if(state.Mode is 8 or 9)
         {
             if(state.SaveSequence==0)

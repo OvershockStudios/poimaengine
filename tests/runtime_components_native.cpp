@@ -9,6 +9,55 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdio>
+#include <cstdlib>
+#include <limits>
+#include <new>
+#ifdef _WIN32
+#include <malloc.h>
+#endif
+
+namespace allocation_test {
+thread_local std::size_t remaining=std::numeric_limits<std::size_t>::max();
+void consume() {
+    if(remaining==std::numeric_limits<std::size_t>::max())return;
+    if(remaining==0)throw std::bad_alloc();
+    --remaining;
+}
+struct Budget {
+    std::size_t previous;
+    explicit Budget(std::size_t count):previous(remaining) { remaining=count; }
+    ~Budget() { remaining=previous; }
+};
+}
+void* operator new(std::size_t size) {
+    allocation_test::consume();if(auto* p=std::malloc(size ? size : 1))return p;throw std::bad_alloc();
+}
+void* operator new[](std::size_t size) { return ::operator new(size); }
+void operator delete(void* p) noexcept { std::free(p); }
+void operator delete[](void* p) noexcept { std::free(p); }
+void operator delete(void* p,std::size_t) noexcept { std::free(p); }
+void operator delete[](void* p,std::size_t) noexcept { std::free(p); }
+void* operator new(std::size_t size,std::align_val_t alignment) {
+    allocation_test::consume();void* p=nullptr;
+#ifdef _WIN32
+    p=_aligned_malloc(size ? size : 1,static_cast<std::size_t>(alignment));
+#else
+    if(posix_memalign(&p,static_cast<std::size_t>(alignment),size ? size : 1)!=0)p=nullptr;
+#endif
+    if(p)return p;
+    throw std::bad_alloc();
+}
+void* operator new[](std::size_t size,std::align_val_t alignment) { return ::operator new(size,alignment); }
+void operator delete(void* p,std::align_val_t) noexcept {
+#ifdef _WIN32
+    _aligned_free(p);
+#else
+    std::free(p);
+#endif
+}
+void operator delete[](void* p,std::align_val_t alignment) noexcept { ::operator delete(p,alignment); }
+void operator delete(void* p,std::size_t,std::align_val_t alignment) noexcept { ::operator delete(p,alignment); }
+void operator delete[](void* p,std::size_t,std::align_val_t alignment) noexcept { ::operator delete(p,alignment); }
 
 using namespace poima;
 using Json=nlohmann::json;
@@ -82,9 +131,156 @@ void budgets() {
     const auto d=definition(5000,32);Store owned(d);auto& s=*owned.store;const auto& t=d.component_schemas[0];const auto b=binding(t);const auto data=values(t,3);
     s.begin_batch();s.stage(b,gameplay_id(id(1)),data);s.apply_tick();
     check(s.journal_bytes()==512 && s.journal_entries()==1,"Single sparse write copied full multi-megabyte store.");s.rollback_batch();
-    s.begin_batch();for(unsigned i=1;i<=4096;++i)s.stage(b,gameplay_id(id(i)),data);
+    // Odd multiplication permutes the complete command range; probe collisions
+    // and duplicates in orders unrelated to entity order or insertion order.
+    s.begin_batch();for(unsigned i=0;i<4095;++i)s.stage(b,gameplay_id(id((i*2053)%4096+1)),data);
+    // Leave capacity for one more write so only duplicate detection can reject.
+    for(unsigned i=4095;i>0;--i)rejects([&]{s.stage(b,gameplay_id(id(((i-1)*2053)%4096+1)),data);},"Duplicate target escaped a populated staging index.");
+    s.stage(b,gameplay_id(id((4095*2053)%4096+1)),data);
     rejects([&]{s.stage(b,gameplay_id(id(4097)),data);},"4097th staged command accepted.");s.apply_tick();check(s.journal_entries()==4096 && s.journal_bytes()==2*1024*1024,"Exact command/journal budget differs.");s.rollback_batch();check(s.revision()==0,"Budget batch rollback lost revision.");
     s.edit(t.id,id(4097),data);check(s.revision()==1,"Failed staging left duplicate/queue residue.");
+}
+void publish_no_alloc(RuntimeComponents& s) { allocation_test::Budget deny(0);s.publish_tick(); }
+void rollback_no_alloc(RuntimeComponents& s) { allocation_test::Budget deny(0);s.rollback_batch(); }
+void commit_no_alloc(RuntimeComponents& s) { allocation_test::Budget deny(0);s.commit_batch(); }
+void staging_allocation_failures() {
+    auto d=definition();d.entities[1].id="0123456789abcdeffedcba9876543210";
+    const auto& t=d.component_schemas[0];const auto b=binding(t);
+    const auto data=values(t,7,d.entities[1].id);
+    const auto& other=d.component_schemas[1];d.entities[0].components[other.id]=components::defaults(other);
+    // Fail both the payload copy and the first staging-vector allocation. Neither
+    // may leave a duplicate-index entry behind; retry the identical key directly.
+    for(std::size_t allowance=0;allowance<2;++allowance) {
+        Store owned(d);auto& s=*owned.store;const auto baseline=s.save();s.begin_batch();bool failed=false;
+        { allocation_test::Budget budget(allowance);try { s.stage(b,gameplay_id(id(1)),data); }catch(const std::bad_alloc&) { failed=true; } }
+        check(failed,"Staging fault injection did not fail the intended allocation.");
+        s.stage(b,gameplay_id(id(1)),data);rejects([&]{s.stage(b,gameplay_id(id(1)),data);},"Retried stage lost duplicate tracking.");
+        s.stage(binding(other),gameplay_id(id(1)),data);
+        s.prepare_tick();publish_no_alloc(s);
+        check(*s.read(t.id,id(1))==data,"Reference validation failed to decode both entity ID halves.");
+        check(*s.read(other.id,id(1))==data,"Staging index conflated different component types.");
+        rollback_no_alloc(s);check(s.save()==baseline,"Failed-stage retry did not roll back.");
+        s.begin_batch();s.stage(b,gameplay_id(id(1)),data);s.prepare_tick();publish_no_alloc(s);commit_no_alloc(s);
+        check(*s.read(t.id,id(1))==data,"Staging index survived rollback into the next batch.");
+    }
+}
+using Initial=std::map<std::string,components::Payload>;
+ComponentSpawn spawn(Store& owned,unsigned number,const Initial& initial) {
+    return {gameplay_id(id(number)),owned.registry.create(),&initial};
+}
+void lifecycle_rollback_and_stability() {
+    const auto d=definition(5);Store owned(d);auto& s=*owned.store;const auto& t=d.component_schemas[0];const auto b=binding(t);
+    const auto baseline=s.save();const auto initial=*s.read(t.id,id(4));
+    Initial fresh{{t.id,values(t,11)}};std::vector<ComponentSpawn> births;
+    // Cross multiple pinned EnTT payload pages, preserving old Cell pointers.
+    for(unsigned i=100;i<1200;++i)births.push_back(spawn(owned,i,fresh));
+    s.begin_batch();s.stage(b,gameplay_id(id(4)),values(t,17));s.apply_tick();
+    const std::array removed{gameplay_id(id(2))};s.prepare_tick(births,removed);
+    check(s.candidate_alive(gameplay_id(id(100))) && !s.candidate_alive(gameplay_id(id(2))) &&
+        !s.alive(gameplay_id(id(100))) && s.alive(gameplay_id(id(2))),"Prepared membership escaped before publication.");
+    publish_no_alloc(s);check(s.live_instances()==1103 && s.retained_instances()==1104,"Logical/physical component retention differs.");
+    s.stage(b,gameplay_id(id(100)),values(t,23));s.apply_tick();
+    check(s.journal_entries()==1,"Born-cell write copied an unnecessary original payload.");
+    s.stage(b,gameplay_id(id(3)),values(t,29));
+    const std::array born_removed{gameplay_id(id(101))};s.prepare_tick({},born_removed);publish_no_alloc(s);
+    check(s.journal_entries()==2 && !s.alive(gameplay_id(id(101))),"Multi-tick journal or retirement failed.");
+    rollback_no_alloc(s);check(s.save()==baseline && s.retained_instances()==4,"Structural rollback did not restore the original store.");
+    check(*s.read(t.id,id(4))==initial && s.query(t.id,"",257)==std::vector<std::string>{id(1),id(2),id(3),id(4)},"Growth/rollback invalidated surviving Cell pointers.");
+    // Physical middle deletion must not move the final Cell onto a stale row.
+    s.begin_batch();s.stage(b,gameplay_id(id(4)),values(t,31));s.prepare_tick({},removed);publish_no_alloc(s);commit_no_alloc(s);
+    check(s.retained_instances()==3 && s.query(t.id,"",257)==std::vector<std::string>{id(1),id(3),id(4)},"Middle deletion changed sorted membership.");
+    s.edit(t.id,id(4),values(t,37));s.edit(t.id,id(3),values(t,41));
+    check(*s.read(t.id,id(4))==values(t,37) && *s.read(t.id,id(3))==values(t,41),"Middle deletion invalidated surviving payload/journal pointers.");
+    check(s.query(t.id,id(1),1)==std::vector<std::string>{id(3)} && s.query(t.id,id(3),1)==std::vector<std::string>{id(4)},"Structural pagination skipped/repeated IDs.");
+    // A born-and-retired entity consumes retained storage until commit.
+    const auto before=s.retained_instances();auto short_lived=spawn(owned,8000,fresh);s.begin_batch();
+    s.prepare_tick(std::span(&short_lived,1));publish_no_alloc(s);
+    const std::array retire{short_lived.id};s.prepare_tick({},retire);publish_no_alloc(s);
+    check(s.retained_instances()==before+1 && s.live_instances()==before,"Born retirement was destroyed before commit.");
+    commit_no_alloc(s);check(s.retained_instances()==before && !s.alive(short_lived.id),"Born retirement leaked a physical Cell.");
+}
+void candidate_references_and_guards() {
+    auto d=definition();const auto& t=d.component_schemas[0];d.entities[0].components[t.id]=values(t,1,id(2));
+    Store owned(d);auto& s=*owned.store;const auto b=binding(t);const auto baseline=s.save();
+    const std::array removed{gameplay_id(id(2))};
+    s.begin_batch();rejects([&]{s.prepare_tick({},removed);},"Untouched incoming reference survived despawn.");
+    check(s.alive(gameplay_id(id(2))) && s.retained_instances()==2 && !s.candidate_alive(gameplay_id(id(2))),"Failed preparation changed current/candidate state.");
+    s.stage(b,gameplay_id(id(1)),values(t,2));s.prepare_tick({},removed);publish_no_alloc(s);
+    check(!s.alive(gameplay_id(id(2))) && *s.read(t.id,id(1))==values(t,2),"Reference repair plus despawn failed.");rollback_no_alloc(s);check(s.save()==baseline,"Reference repair rollback failed.");
+    Initial first{{t.id,values(t,3,id(11))}},second{{t.id,values(t,4,id(10))}};
+    std::array births{spawn(owned,10,first),spawn(owned,11,second)};
+    s.begin_batch();s.stage(b,births[0].id,values(t,9,id(11)));s.prepare_tick(births);publish_no_alloc(s);
+    check(*s.read(t.id,id(10))==values(t,9,id(11)) && *s.read(t.id,id(11))==values(t,4,id(10)),"Mutual spawn references/full override failed.");
+    s.stage(b,gameplay_id(id(9999)),values(t,1));rejects([&]{s.prepare_tick();},"Unknown queued target accepted at final candidate.");
+    rollback_no_alloc(s);check(s.save()==baseline,"Bad later target did not restore earlier spawn/override.");
+    // Invalid strong references are intentionally deferred; bad wire is not.
+    s.begin_batch();s.stage(b,gameplay_id(id(1)),values(t,2,id(9999)));rejects([&]{s.prepare_tick();},"Dangling final reference accepted.");rollback_no_alloc(s);
+    s.begin_batch();auto bad=values(t,2);bad[4]=std::byte{1};rejects([&]{s.stage(b,gameplay_id(id(1)),bad);},"Bad wire was not rejected during staging.");rollback_no_alloc(s);
+    Initial empty;auto duplicate=spawn(owned,1,empty);s.begin_batch();rejects([&]{s.prepare_tick(std::span(&duplicate,1));},"Existing public entity ID was reused.");rollback_no_alloc(s);
+    auto aliased=ComponentSpawn{gameplay_id(id(12)),owned.ids.at(id(1)),&empty};s.begin_batch();rejects([&]{s.prepare_tick(std::span(&aliased,1));},"Existing native entity owner was reused.");rollback_no_alloc(s);
+    auto invalid=spawn(owned,12,first);invalid.owner=entt::null;s.begin_batch();rejects([&]{s.prepare_tick(std::span(&invalid,1));},"Invalid native entity owner accepted.");rollback_no_alloc(s);
+    s.begin_batch();s.stage(b,gameplay_id(id(2)),values(t,1));rejects([&]{s.prepare_tick({},removed);},"Write to despawned target accepted.");rollback_no_alloc(s);
+    check(s.save()==baseline,"Guard failures changed committed state.");
+}
+void preparation_allocation_failures() {
+    const auto d=definition();const auto& t=d.component_schemas[0];const auto b=binding(t);
+    Initial initial{{t.id,values(t,5)},{d.component_schemas[1].id,values(d.component_schemas[1],7)}};
+    bool reached_success=false;std::size_t failed_points=0;
+    for(std::size_t allowance=0;allowance<2048 && !reached_success;++allowance) {
+        // A fresh registry each time preserves preparation's allocation sequence.
+        Store owned(d);auto& s=*owned.store;const auto baseline=s.save();
+        std::vector<ComponentSpawn> births;for(unsigned i=10;i<26;++i)births.push_back(spawn(owned,i,initial));
+        s.begin_batch();s.stage(b,gameplay_id(id(1)),values(t,13));bool failed=false;
+        { allocation_test::Budget budget(allowance);try { s.prepare_tick(births); }catch(const std::bad_alloc&) { failed=true; } }
+        if(failed) {
+            ++failed_points;check(s.retained_instances()==2 && !s.alive(births[0].id),"Failed preparation retained an unpublished Cell.");
+        } else { publish_no_alloc(s);reached_success=true; }
+        rollback_no_alloc(s);check(s.save()==baseline,"Allocation failure/retry did not preserve the batch checkpoint.");
+        // Reuse identical owners immediately: leaked pool membership would fail.
+        s.begin_batch();s.prepare_tick(births);publish_no_alloc(s);commit_no_alloc(s);
+        check(s.live_instances()==34 && s.retained_instances()==34,"Post-failure retry leaked or omitted Cells.");
+    }
+    check(reached_success && failed_points>32,"Allocation fault injection did not cover staged Cell creation.");
+    std::cout<<"Component preparation allocation failure points: "<<failed_points<<".\n";
+}
+void lifecycle_budgets() {
+    // Exact2MiB spawn payload per tick; maximum-sized cells make retained count
+    // and payload-byte ceilings coincide, while logical live size stays small.
+    RuntimeDefinition d;d.world_id=id(99);RuntimeEntityDefinition base;base.id=id(1);d.entities.push_back(base);
+    for(unsigned i=0;i<64;++i)d.component_schemas.push_back(schema(100+i,32));
+    Initial initial;for(const auto& t:d.component_schemas)initial.emplace(t.id,components::defaults(t));
+    {
+        Store owned(d);auto& s=*owned.store;s.begin_batch();std::vector<PoimaEntityId> previous;
+        for(unsigned group=0;group<16;++group) {
+            std::vector<ComponentSpawn> births;for(unsigned n=0;n<64;++n)births.push_back(spawn(owned,100+group*64+n,initial));
+            s.prepare_tick(births,previous);publish_no_alloc(s);previous.clear();for(const auto& birth:births)previous.push_back(birth.id);
+        }
+        check(s.retained_instances()==RuntimeComponents::max_retained_instances && s.retained_bytes()==RuntimeComponents::max_retained_bytes && s.live_instances()==4096,"Retained component count/byte boundary differs.");
+        auto extra=spawn(owned,2000,initial);rejects([&]{s.prepare_tick(std::span(&extra,1),previous);},"Net-live accounting ignored full retained storage.");
+        check(s.retained_instances()==RuntimeComponents::max_retained_instances && s.alive(previous.front()),"Retained budget rejection changed membership.");
+        rollback_no_alloc(s);check(s.retained_instances()==0 && s.live_instances()==0 && s.revision()==0,"Retained budget rollback leaked state.");
+    }
+    {
+        Store owned(d);auto& s=*owned.store;s.begin_batch();
+        for(unsigned group=0;group<8;++group) {
+            std::vector<ComponentSpawn> births;for(unsigned n=0;n<64;++n)births.push_back(spawn(owned,100+group*64+n,initial));
+            s.prepare_tick(births);publish_no_alloc(s);
+        }
+        check(s.live_instances()==components::max_instances && s.live_bytes()==components::max_payload_bytes,"Live component boundary differs.");
+        auto extra=spawn(owned,2000,initial);rejects([&]{s.prepare_tick(std::span(&extra,1));},"Live component budget exceeded silently.");rollback_no_alloc(s);
+    }
+    {
+        auto small=definition();Store owned(small);auto& s=*owned.store;std::vector<ComponentSpawn> births;
+        Initial empty;for(unsigned n=0;n<4097;++n)births.push_back(spawn(owned,10000+n,empty));
+        s.begin_batch();rejects([&]{s.prepare_tick(births);},"4097th structural command accepted.");rollback_no_alloc(s);
+    }
+    {
+        auto with_value=d;with_value.entities[0].components[d.component_schemas[0].id]=components::defaults(d.component_schemas[0]);
+        Store owned(with_value);auto& s=*owned.store;std::vector<ComponentSpawn> births;
+        for(unsigned n=0;n<64;++n)births.push_back(spawn(owned,100+n,initial));
+        s.begin_batch();s.stage(binding(d.component_schemas[0]),gameplay_id(id(1)),components::defaults(d.component_schemas[0]));
+        rejects([&]{s.prepare_tick(births);},"Combined spawn/value bytes exceeded2MiB.");rollback_no_alloc(s);check(s.retained_instances()==1,"Byte-budget failure leaked cells.");
+    }
 }
 std::string resign(Json j) { const auto payload=j.at("payload").dump();j["sha256"]=sha256(std::as_bytes(std::span(payload.data(),payload.size())));return j.dump(); }
 void runtime_snapshots() {
@@ -104,6 +300,6 @@ void runtime_snapshots() {
 }
 }
 int main() {
-    try { storage_and_journal();budgets();runtime_snapshots();std::cout<<"Runtime components: storage/query/journal/budgets/snapshot tests passed.\n";return 0; }
+    try { storage_and_journal();budgets();staging_allocation_failures();lifecycle_rollback_and_stability();candidate_references_and_guards();preparation_allocation_failures();lifecycle_budgets();runtime_snapshots();std::cout<<"Runtime components: storage/query/journal/lifecycle/fault-injection/budgets/snapshot tests passed.\n";return 0; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

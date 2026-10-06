@@ -158,6 +158,7 @@ struct Gameplay::Impl {
     Entry entry=nullptr;Json diagnostics=Json::object();
     std::vector<components::Schema> component_schemas;
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
+    std::vector<std::pair<std::size_t,std::string>> entity_fields;
     ~Impl() { if(handle)try { PoimaGameCall call{};call.operation=4;call.handle=handle;(void)invoke(entry,call); }catch(...) {} }
     void validate() const {
         for(const auto& [offset,is_float]:floating_fields)
@@ -203,6 +204,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
         check(sizes.contains(field.at("kind")) && size==sizes.at(field.at("kind")) && offset<=impl_->bytes && size<=impl_->bytes-offset,"Invalid gameplay field layout.");
         check(named.emplace(field.at("name"),field).second,"Duplicate gameplay field name.");
         if(field.at("kind")=="float32" || field.at("kind")=="float64")impl_->floating_fields.emplace_back(offset,field.at("kind")=="float32");
+        if(field.at("kind")=="entity")impl_->entity_fields.emplace_back(offset,field.at("name").get<std::string>());
         for(std::size_t k=offset;k<offset+size;++k) { check(!used[k],"Overlapping gameplay fields.");used[k]=true; }
     }
     impl_->storage.resize((impl_->bytes+7)/8);
@@ -250,6 +252,15 @@ static Json apply_values(const Json& metadata,std::vector<std::uint64_t>& storag
     storage.swap(staged);return values;
 }
 void Gameplay::edit(const std::string& patch) { (void)apply_values(impl_->manifest,impl_->storage,patch); }
+void Gameplay::validate_entity_references(components::EntityExists exists,void* context) const {
+    check(exists!=nullptr,"Gameplay entity validation requires a world resolver.");
+    check(impl_->storage.size()==(impl_->bytes+7)/8,"Gameplay state storage differs from its schema.");
+    for(const auto& [offset,name]:impl_->entity_fields) {
+        const auto id=read<PoimaEntityId>(impl_->storage,offset);
+        if((id.high || id.low) && !exists(context,id))
+            throw std::runtime_error("Gameplay entity reference '"+name+"' points to missing entity "+gameplay_id(id)+" in the candidate runtime.");
+    }
+}
 std::string validate_gameplay_values(const std::string& schema,const std::string& values) {
     validate_gameplay_schema(schema);const auto metadata=Json::parse(schema);std::vector<std::uint64_t> storage((metadata.at("bytes").get<std::size_t>()+7)/8);
     return apply_values(metadata,storage,values).dump();

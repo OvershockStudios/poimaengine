@@ -1,0 +1,66 @@
+{
+  "milestone": "Experimental native paused-boundary prop lifecycle",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "include/poima/runtime.hpp": "066ba2fa313a0b48168d66eb53b5a4ea2e013e8dd30de0bc6db233c73a5f312b",
+    "src/runtime.cpp": "446214149028dfac083fa81690a7f0785af933112bb603b65b02ed779750a5db",
+    "src/runtime_disabled.cpp": "ec475f360b695f0a89e4006580d3903244e76bbe5e488b57519fc1df87e69837",
+    "src/runtime_save.inc": "506a2c0adaa11e1a1dc57471791fcab5989469f9e1060db3884be41a8143b09e",
+    "src/runtime_components.cpp": "f06e82a81253fe01c7f83aed4096183946baeb9efd1b451cd0c6bc8aa5f6e7d6",
+    "src/runtime_components.hpp": "50c63693d390688c866e1407739fce5b0c1646d49fb346ecd6741572bab8bce9",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "src/runtime_body_ids.hpp": "46c84801b20fcba146255775993ad46477f6a65a8a4d3ea5dae58f0ea83a9b80",
+    "tests/runtime_native.cpp": "da94d0a2b63f82a5aa0036c9cbce14433cffbfbe140e10cc18f450bd971065be"
+  },
+  "implemented": [
+    "Native structure revision guards, ordered generated-ID results, frozen template transform overrides, and bounded spawn payload preparation.",
+    "Prepare entity handles and explicit-ID Jolt bodies outside broadphase; validate candidate custom/global references before publishing live membership.",
+    "Retain removed body/entity allocations until component commit; remove born resources and restore ID allocators on preparation failure.",
+    "Store live birth recipe and initial transform provenance; never recycle committed generated public IDs.",
+    "Refresh character support after structural publication and include character-owned state in the rollback checkpoint.",
+    "Reject portable snapshot export after any structural commit until topology-aware save restoration is implemented."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed": true,
+      "ctest": [
+        "world_templates_contract",
+        "runtime_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_contract"
+      ],
+      "native_lifecycle_checks": [
+        "Failed multi-spawn with dangling recipe reference preserves topology, component revision and generated ID sequence.",
+        "Subsequent dynamic physics matches a clean control after rejected preparation.",
+        "Spawned native components are queryable; incoming references reject removal without revision changes.",
+        "Removed IDs are not reused; repeated create/remove cycles return live membership to baseline.",
+        "Removing a platform immediately clears character support and prevents a jump from deleted support.",
+        "Spawned kinematic bodies execute target motion; bodyless props do not add physics bodies.",
+        "Stale revisions, duplicate removals and unsupported authored-entity removal reject atomically.",
+        "Save export rejects even after all generated props are removed, preventing silent allocator-history loss."
+      ],
+      "artifacts_sha256": {
+        "build/runtime-headless/poima": "05c7c980718354bb7fff8d301e65156f042a8d0f3c47553c94deb4d4daeb98da",
+        "build/runtime-headless/poima-runtime-test": "3e45ce6c77cdefee0b4fa965af7f98e6a8a0dfa23b4e1d0be295eb9b8222288d",
+        "build/runtime-headless/poima-runtime-save-test": "e2c54afd80e38209f6c850fd259e971cc317a66c4e63d10379bb80ef52cf8740",
+        "build/runtime-lifecycle-native-tests.log": "f78c9df1e18983913baffa7dd1ce620fb354c52d843598812c4b4dee8e0d5642"
+      }
+    },
+    "authoring_only": "Updated disabled-runtime translation unit passes C++20 syntax checking; full binary was not rebuilt for this lifecycle change.",
+    "Windows": "Not built or executed for this lifecycle change."
+  },
+  "limits": [
+    "Native paused-boundary prototype only; no RPC/C# lifecycle methods or multi-tick structural rollback integration.",
+    "Removal currently accepts previously spawned root props only, not arbitrary authored entities.",
+    "Component reference repair cannot yet be submitted in the same structural request.",
+    "Topology-bearing portable saves remain explicitly unavailable.",
+    "Retired bodies occupy capacity until commit; replacement requires temporary headroom under the existing 4096-body limit.",
+    "No injected failure after physics publication; checkpoint restore path is inspected but not fault-injection qualified here.",
+    "No production-scale performance or cross-platform determinism claim."
+  ]
+}

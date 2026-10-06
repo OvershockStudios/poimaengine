@@ -1,6 +1,6 @@
 # Custom C# gameplay components
 
-Custom components attach typed gameplay data to entities. The native world owns that data; C# reads copies and queues writes through generated accessors. The Inspector and world service edit the same authored fields. This is an initial scalar component API, with fixed membership during Play.
+Custom components attach typed gameplay data to entities. The native world owns that data; C# reads copies and queues writes through generated accessors. The Inspector and world service edit the same authored fields. This is an initial scalar component API; root-prop templates can supply components for runtime births.
 
 Use the matching engine, `Poima.Gameplay` SDK and managed bridge. The component API requires services ABI **5 (120 bytes)**; rebuild game assemblies and republish Native AOT artifacts. Call ABI remains 1. Existing worlds without custom schemas retain their version 1 format.
 
@@ -64,9 +64,11 @@ public sealed class HealthGame : Game<GameState>
 }
 ```
 
-Queries return sorted stable entity IDs after an exclusive cursor. Pages contain 1–256 IDs. `TryGet<T>` returns false for an existing entity without that component; unknown entities are errors. `IsAlive` returns false for unknown or unset IDs. A runtime freezes schemas, entities and component membership at Play; spawning entities or adding/removing live components is not part of this slice.
+Queries return sorted stable entity IDs after an exclusive cursor. Pages contain 1–256 IDs. `TryGet<T>` returns false for an existing entity without that component; unknown entities are errors. `IsAlive` returns false for unknown or unset IDs. A runtime freezes schemas and its template catalog at Play. The world service can create/remove root props and their template-defined components through [structural transactions](RUNTIME.md#standalone-template-catalog-development). Arbitrary component addition/removal on an existing entity remains unfinished.
 
 Reads observe committed data. `Set` queues a complete replacement after the C# callback and before physics. Reads later in that callback still see the prior values. Writing the same entity/type twice in one tick rejects the batch. Aggregate changes in a local struct, then call `Set` once. Component writes participate in runtime rollback, including failure on a later tick of an explicit multi-tick request. Automatic editor playback commits one tick at a time, retaining earlier successful ticks.
+
+Queued writes validate their schema and wire representation immediately. Target membership and nonzero entity references are checked against the complete candidate component state before publication. Global gameplay `EntityId` fields are also checked at this boundary. A rejected reference fails the batch without publishing partial component changes; the unset, all-zero ID remains valid.
 
 ## Import and author
 
@@ -111,3 +113,5 @@ C# queries and generated reads do not allocate payloads. Writes allocate staged 
 ## Qualification
 
 The [0.0.37 evidence record](evidence/m2-custom-components.json) binds the qualified sources, Linux/Windows binaries and editor package to native, C#, reload, save, Inspector and relocated compiled-game checks. It also records resource bounds, isolated storage measurements and unqualified deployment/UI cases.
+
+The subsequent [component lifecycle foundation evidence](evidence/m2-component-lifecycle-foundation.json) covers internal membership journaling, allocation-failure recovery and global gameplay reference validation on Linux under CoreCLR and Native AOT. It records isolated staging measurements and their overhead. That checkpoint qualifies the component journal on Linux. The later world-service lifecycle path and its platform qualifications are documented in [Runtime](RUNTIME.md).

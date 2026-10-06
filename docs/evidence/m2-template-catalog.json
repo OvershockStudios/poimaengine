@@ -1,0 +1,61 @@
+{
+  "milestone": "Standalone authored template catalog",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "CMakeLists.txt": "bd8beb3d31e2056ef84ec2b57909dfa2fb76893326d812563cacec55dba4413f",
+    "include/poima/runtime.hpp": "b4daaec512422dd49f2dd439867c3812074802f386cc08da7d1b872e7bd050e8",
+    "src/runtime_templates.cpp": "1ffd4aa5cea5cfb4c98e725aadc43fdd7673d7045f6221a05772c06603337df8",
+    "src/runtime.cpp": "5db7c4188fe44498d8cec00600a282902e5b0ae24747581e88ce425d91f45c5b",
+    "src/runtime_disabled.cpp": "aaa56eba5524ccd16b11e7552e5b64866683a7d8eecff6458b68f9e78350a5d1",
+    "src/world.cpp": "3faaa9da98bc9a603a0720f5cc6668c82b2711d62ea8b80b4aebe1716285aba9",
+    "tests/runtime_templates_native.cpp": "b0bc7c11603dd56d4fe5a54456463f06b46f161320e538a54aa3952b9974728a",
+    "tests/world_templates_contract.py": "6435cf9916b2bda0d4a9af7d4c31ef3a6be60c6b6b0589e9f97509e3ccded7da",
+    "tests/runtime_native.cpp": "8aed7dad9102db15d0b8eb0ed07b2eaef0e6eff1acf1fe7ad5cf8ed2733eed25"
+  },
+  "implemented": [
+    "Version 3 authored recipes with atomic complete replacement, preview, receipts, revision guards, retirement and undo/redo.",
+    "Bounded sorted catalog queries and frozen runtime catalog inspection with session/tick/revision guards.",
+    "Shared native recipe validation, custom schema consumers, and deferred literal entity-reference liveness.",
+    "Template-only model and texture dependency closure, relocation without import sources, and frozen catalog save/restore without replacing authored edits."
+  ],
+  "qualification": {
+    "Linux_simulation": {
+      "protocol_tests": 7,
+      "protocol_skipped": 0,
+      "protocol_passed": true,
+      "rpc_count": 83,
+      "binary_sha256": "d7b958e9a47fe78c563d0fd3e027020e553145e4b08d5fe18f8441bb44dd5c18",
+      "native_tests_passed": [
+        "runtime_templates_native",
+        "runtime_native",
+        "runtime_save_native",
+        "world_session_native"
+      ],
+      "regression_tests_passed": [
+        "profiler_contract",
+        "world_components_contract",
+        "runtime_save_contract",
+        "project_contract",
+        "world_history_contract",
+        "world_contract"
+      ]
+    },
+    "Linux_authoring_only": {
+      "protocol_tests": 7,
+      "protocol_skipped": 1,
+      "protocol_passed": true,
+      "rpc_count": 62,
+      "binary_sha256": "7df44297a28d33467c630a275eb6ae852c51b4e215ff2734ecd57de85f3a352b"
+    },
+    "Windows": "This catalog change has not yet been cross-built or executed on Windows."
+  },
+  "limits": [
+    "No public runtime spawn/despawn or C# TemplateId API.",
+    "Root-prop subset only; no template hierarchies, animation rigs, audio emitters or GUI catalog authoring.",
+    "At most 256 recipes and 2 MiB total custom payload bytes.",
+    "Save slots retain recipes, not cooked asset bytes; required cooked content must remain available.",
+    "Relocation fixture manually copies the dependency directory; it is not an end-to-end packaged-player qualification."
+  ]
+}

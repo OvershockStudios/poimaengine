@@ -100,7 +100,11 @@ def main():
         ops=[dict(op='component.set',id=uid(i),type='game:'+HEALTH,value=values) for i in (1,2,3)]
         ops.append(dict(op='component.set',id=uid(1),type='game:'+INTERACTION,value={uid(1):uid(2),uid(2):.125}))
         authored=process.rpc('world.transact',dict(request_id=uuid.uuid4().hex,base_revision=imported['revision'],ops=ops))
-        revision=authored['revision'];authored_bytes=world.read_bytes();process.start(revision);loaded=process.load(config)
+        revision=authored['revision'];authored_bytes=world.read_bytes();process.start(revision)
+        before_load=process.game()
+        rejected=process.load(dict(config,values=dict(Selected=uid(999999))),error=True)
+        assert all(text in rejected['message'] for text in ('reference','Selected',uid(999999))) and process.game()==before_load
+        loaded=process.load(config)
         module=loaded['module'];assert module['backend']==evidence['backend']
         assert {s['id']:s['fingerprint'] for s in module['schema']['components']}=={s['id']:s['fingerprint'] for s in registered}
         if args.native_descriptor:assert module['native_diagnostics']==dict(dynamic_code_supported=False,dynamic_code_compiled=False)
@@ -108,19 +112,25 @@ def main():
         assert observed['Ticks']==1 and observed['Queried']==3 and observed['Selected']==uid(1) and observed['Alive']==1 and observed['Missing']==0
         assert observed['LastHealth']==100 and observed['LastScore']==str(-(2**63)) and observed['LastWeight']==.125
         assert process.components()['component_revision']==0 and process.get()['values']==values
+        before_edit=process.state()
+        rejected=process.rpc('runtime.gameplay.edit',dict(session_id=process.session,request_id=uuid.uuid4().hex,
+            expected_tick=process.tick,expected_revision=process.game()['revision'],
+            values=dict(Selected=uid(999999),Mode=10)),error=True)
+        assert all(text in rejected['message'] for text in ('reference','Selected',uid(999999))) and process.state()==before_edit
+        evidence['checks'].append('Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid')
         process.edit(Selected=uid(3));process.step();assert process.game()['module']['values']['Missing']==1
         process.edit(Selected=uid(1),Mode=1);process.step(3)
         assert process.get()['values'][uid(1)]==97 and process.get()['values'][uid(3)]==str(-(2**63)+3)
         assert process.components()['component_revision']==3 and process.game()['module']['values']['ReadBeforeWrite']==1
         evidence['checks'].append('Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick')
-        for mode in (2,3,4,5,6,7):
-            if mode==4 and process.tick%2:
+        for mode in (2,3,4,5,6,7,10,11):
+            if mode in (4,11) and process.tick%2:
                 process.edit(Mode=1);process.step()  # The failure must occur after one successful tick in the same batch.
-            process.edit(Mode=mode);before=process.state();process.step(2 if mode==4 else 1,error=True)
+            process.edit(Mode=mode);before=process.state();process.step(2 if mode in (4,11) else 1,error=True)
             assert process.state()==before and world.read_bytes()==authored_bytes
         previous_health=process.get()['values'][uid(1)]
         process.edit(Mode=1);process.step();assert process.get()['values'][uid(1)]==previous_health-1
-        evidence['checks'].append('Duplicate, explicit exception, later-tick exception, NaN, dangling reference and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers')
+        evidence['checks'].append('Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers')
         # Paused native edits are observed by the next generated C# read.
         change=copy.deepcopy(process.get()['values']);change[uid(1)]=25
         edited=process.rpc('runtime.component.edit',dict(session_id=process.session,request_id=uuid.uuid4().hex,expected_tick=process.tick,
@@ -139,7 +149,9 @@ def main():
             for iteration in range(100):process.load(config)
             collected=process.rpc('runtime.gameplay.collect',dict(session_id=process.session))
             assert collected['active_modules']==1 and collected['retired_alive']==0,collected
-            evidence['checks'].append('Compatible CLR reorder/labels preserve native values, changed defaults reject without swap, 100 real CoreCLR reloads collect all retired modules')
+            evidence['checks'].append('100 real CoreCLR reloads collect all retired modules')
+            if args.reorder and args.labels:evidence['checks'].append('Compatible CLR reorder/labels preserve native values')
+            if args.incompatible:evidence['checks'].append('Changed component defaults reject without swapping the live module')
         storage=run/'saves';storage.mkdir()
         process.rpc('save.configure',dict(request_id=uuid.uuid4().hex,expected_generation=0,root=native(storage)))
         saved=process.state();crev=process.components()['component_revision']

@@ -1,0 +1,109 @@
+{
+  "milestone": "Internal public entity identity allocation and authored inventory",
+  "date": "2026-10-05",
+  "engine_version": "0.0.39",
+  "source_base": "b42184d52a0ce5d9e20744abcbe6cebbd03878c8",
+  "source_sha256": {
+    "CMakeLists.txt": "625959d66e110f39ce7b7fdc8164662f95b0a19ad30e2403d461fd7586af576b",
+    "src/runtime.cpp": "5f4464c1e663fbb684614e7aaed5d70bcfc010ef9985f6b25cda47ab41750802",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "tests/runtime_entity_ids_native.cpp": "16b3048a529420dd22fb378d0902b774ab72f2737f5d657651e4c169a9513966"
+  },
+  "implemented": [
+    "Runtime inventories canonical nonzero authored entity IDs separately from Jolt body handles.",
+    "Immutable authored exclusions remain reserved for the allocator lifetime; monotonically generated IDs have no release/reuse operation.",
+    "128-bit frontier supports checkpoint copying and trusted-owner reconstruction; exhaustion rejects rather than wrapping."
+  ],
+  "qualification": {
+    "Linux": {
+      "passed": true,
+      "ctest": [
+        "runtime_entity_ids_native",
+        "runtime_native",
+        "runtime_components_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "runtime_contract",
+        "runtime_save_contract"
+      ],
+      "allocator_groups": 4,
+      "compiled_gameplay": {
+        "CoreCLR": {
+          "passed": true,
+          "checks": [
+            "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "100 real CoreCLR reloads collect all retired modules",
+            "Compatible CLR reorder/labels preserve native values",
+            "Changed component defaults reject without swapping the live module",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ],
+          "artifact_sha256": {
+            "binary": "b7949e3b604101a137b489cc6819090b2dadbc6d87c6729d1a95a1f187dfa2e1",
+            "manifest": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+            "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+            "bridge": "95acd84c7b0b5c1a995dbcb7b684a340c7af5e56e448fb34707245efce6c00f1",
+            "assembly": "79ec8e9ddf93cacc909ed7cbc660b2888a53f88a7afa71ff4a2888721b6863ca",
+            "reorder": "baadc9483ab23d436d064c964a4b1620f2b4b2c0bba44fca55d3cec2d5bbd096",
+            "labels": "0303aab84171094be9541fdc9d551fa76d3de27b1dce3f7a593325e0e08b23ff",
+            "incompatible": "c0604fdaecc6c9d971c62e42992e319885e3e5f7bfa3da5c7631afd723742e23"
+          },
+          "raw_evidence_sha256": "cdf38b8e146b0b51c6567f93a8d30b61b682bc9dcb8348aa127940f98921d558"
+        },
+        "NativeAOT": {
+          "passed": true,
+          "checks": [
+            "Unresolved global entity references reject module activation and paused field edits without changing state or revisions; null defaults remain valid",
+            "Generated schemas match native fingerprints; sorted paged query, all typed reads, optional absence, liveness and staged writes run through actual C# Tick",
+            "Duplicate, explicit exception, later-tick exception, NaN, dangling component/global references and unknown entity all roll back component bytes/revision/global state/tick; later valid write recovers",
+            "Exact component membership/state/revision and C# values restore transactionally; stale component-only save/load guards reject and old receipts never replay mutation",
+            "Fresh process restores native-owned custom components with trusted CoreCLR/NativeAOT configuration and continues generated C# writes",
+            "Actual generated C# Tick saves/restores native components through owner coordination; same-owner ticket stays terminal, fresh-owner old ticket expires, and source-step retry cannot replay the load"
+          ],
+          "artifact_sha256": {
+            "binary": "b7949e3b604101a137b489cc6819090b2dadbc6d87c6729d1a95a1f187dfa2e1",
+            "manifest": "da393a69954a52e65fcf4337caec2fca66907d264eb0ddffac937421d2158048",
+            "native_descriptor": "4aa4cc787fd7a805e647138c5fc2b769bdda740f21e6d41e02d7e33a5644d1dc",
+            "library": "e2be78eb0dce5cef3527ec66a122e725b987abafc9836f4c9e96e9b9eccb7fc7"
+          },
+          "raw_evidence_sha256": "b6d68e95582b0dc9743f4c061111f7458d7579ea41c5c1e1558732ec4c441aab"
+        }
+      },
+      "warnings_check": "C++20 standalone syntax check passed with -Wall -Wextra -Wpedantic -Wconversion -Wshadow."
+    },
+    "Windows": {
+      "cross_compile_passed": true,
+      "runtime_qualified": false,
+      "compiler": "LLVM-MinGW x86_64-w64-mingw32",
+      "execution_result": "WSL UtilBindVsockAnyPort socket failed before executable entry.",
+      "binary_sha256": "8e196757c27f3a4d197a54afe9530523c8e943466f9ec3030a676c17fe9fe5a8"
+    }
+  },
+  "checks": [
+    "Unsorted authored exclusions, including high-bit identities, are never emitted.",
+    "Committed generated IDs are not recycled after conceptual retirement; allocated-lineage classification is distinct from current liveness.",
+    "Whole-allocator checkpoint restores tentative allocation state and repeats the same next IDs.",
+    "Reconstructed saved frontier matches 10,000 subsequent allocations.",
+    "Low-half overflow carries into high half, including contiguous authored exclusions across carry.",
+    "Last usable identity exhausts the frontier without wrapping; exclusion-only exhaustion leaves failed allocation state unchanged.",
+    "Zero/duplicate authored IDs, inconsistent cursor/exhaustion states and excess authored inventory reject.",
+    "Full 10,000-ID authored inventory skips correctly."
+  ],
+  "linux_binary_sha256": {
+    "poima": "b7949e3b604101a137b489cc6819090b2dadbc6d87c6729d1a95a1f187dfa2e1",
+    "poima-runtime-entity-ids-test": "866a7e1d0d3d8d0d0cbed5d61c297b250067d5cb57cfabe19133d58601c1ebce",
+    "poima-runtime-test": "8d12f7dc3ae024a17f326714545beb098a4afe239e989d41926fb27f55a8b24a",
+    "poima-runtime-components-test": "ac9edc86932c27ef6816b9221be33ccba5fd07d04920a347b79ce5a8bee656cf",
+    "poima-runtime-save-test": "0ebb6019afca3c20141b66c3089913d55b14c70152e263d276af3dd1a598c005"
+  },
+  "limitations": [
+    "Internal prerequisite only: public runtime spawn/despawn is not exposed.",
+    "Runtime snapshots do not yet persist the public allocator cursor or changed membership. Cursor reconstruction is a standalone helper test, not end-to-end lifecycle save qualification.",
+    "The owner must validate restored live IDs and provenance against the saved frontier and complete original authored exclusions, including deleted authored IDs.",
+    "Rollback may restore allocation state only together with the complete failed transaction; tentative IDs must not escape publication.",
+    "No Windows execution qualification, desktop package, or performance claim for this source state."
+  ]
+}

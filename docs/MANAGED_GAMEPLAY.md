@@ -125,6 +125,8 @@ Gameplay revision is separate from authored-world revision and tick. It changes 
 
 ## Replace game code
 
+Global `EntityId` fields must be unset (all zero) or refer to an existing runtime entity. The engine checks them before activating a module, after paused field edits, after each gameplay callback against the candidate component state, and during save restoration. Invalid references reject activation/edit/restore or roll back the entire explicit simulation batch. This applies to both CoreCLR and Native AOT gameplay.
+
 Build the game project again while retaining the engine process, then call `runtime.gameplay.load` with a new request ID and current tick/gameplay revision. The engine loads assembly bytes into a new collectible context and computes their actual SHA-256. The main assembly has no persistent file lock. Rebuild/load happens explicitly; file watching is not implemented.
 
 Initialization runs into fresh native-owned staging state. Matching field names and exact field kinds are copied from the old state; added fields keep initialization defaults and removed fields are listed in the migration report. A retained field changing type, a changed module identity, missing/broken assembly or failed initializer rejects replacement. Successful publication retires the old context. A failed compile never replaces the running assembly; a failed load/migration/edit leaves its state and physics intact. This is compatible-field migration, not arbitrary user-defined migration or hot replacement of the engine itself.

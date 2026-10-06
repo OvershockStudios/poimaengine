@@ -79,7 +79,7 @@ struct Camera {
     }
 };
 struct Capture {
-    std::uint64_t id=0,revision=0,tick=0,camera_revision=0,gizmo_generation=0,view_revision=0;std::string path,session,state="queued",detail,target="legacy";int code=0;bool runtime=false;
+    std::uint64_t id=0,revision=0,tick=0,structure_revision=0,camera_revision=0,gizmo_generation=0,view_revision=0;std::string path,session,state="queued",detail,target="legacy";int code=0;bool runtime=false;
     Clock::time_point deadline;Json result=Json::object();
     Json json() const {
         Json out={{"capture_id",id},{"state",state},{"revision",revision},{"path",path},{"view",target}};
@@ -288,7 +288,7 @@ struct Bridge : ViewportState {
     }
     Json runtime_json() const {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
-            {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
+            {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"structure_revision",value.active ? Json(value.structure_revision) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
     }
     void release_input(bool forget=false) {
         input_focused=false;
@@ -714,8 +714,8 @@ struct Bridge : ViewportState {
         const auto state=world->runtime_status();
         const bool camera_changed=capture->target=="game" ? game_camera_revision!=capture->camera_revision :
             camera_revision!=capture->camera_revision || gizmo_generation!=capture->gizmo_generation || (capture->target=="legacy" && view_revision!=capture->view_revision);
-        if(revision()!=capture->revision || camera_changed || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick)))
-            fail_capture(-32009,"World, runtime tick, or camera changed before capture presentation.");
+        if(revision()!=capture->revision || camera_changed || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick || state.structure_revision!=capture->structure_revision)))
+            fail_capture(-32009,"World, runtime tick/structure, or camera changed before capture presentation.");
     }
     std::string capture_path(const Json& value) const {
         require(value.is_string(),"Capture path must be text.");const auto path=path_of(value.get<std::string>());require(fs::is_directory(fs::absolute(path).parent_path()),"Capture parent directory does not exist.");
@@ -1021,7 +1021,7 @@ struct Bridge : ViewportState {
             }
             if(!method.starts_with("desktop.")) {
                 sync_playback();
-                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" || method=="runtime.component.edit" ||
+                if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" || method=="runtime.component.edit" || method=="runtime.structure.transact" ||
                     method=="save.configure" || method=="save.write" || method=="save.load"))
                     throw Failure(-32009,"Pause desktop playback before manual runtime mutation or saving/loading.");
                 auto response=world->request(bytes,WorldRequestScope::shared_editor);
@@ -1071,7 +1071,7 @@ struct Bridge : ViewportState {
                 require(destination.viewport && !destination.faulted,"A working attached target viewport is required.",-32003);
                 require(!capture || capture->state!="queued","One capture is already pending.",-32009);
                 const auto expected=integer(params.at("revision"));require(expected==revision(),"Authored revision conflict.",-32009);const auto path=capture_path(params.at("path"));require(next_capture<=max_integer,"Capture identity limit reached.");const auto state=world->runtime_status();
-                Capture candidate;candidate.target=target;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=target=="game" ? game_camera_revision : camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;suspend_audio();result=capture->json();
+                Capture candidate;candidate.target=target;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=target=="game" ? game_camera_revision : camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.structure_revision=state.structure_revision;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;suspend_audio();result=capture->json();
             }else if(method=="desktop.capture.status") {
                 fields(params,{"capture_id"},{"capture_id"});const auto value=integer(params.at("capture_id"));require(capture && capture->id==value,"Capture result is absent or was superseded.",-32004);expire_capture();result=capture->json();
             }else throw Failure(-32601,"Unknown desktop method.");
@@ -1098,7 +1098,7 @@ struct Bridge : ViewportState {
         if(game)require(!game_id.empty(),"Select a Game camera.",-32004);
         const Json key={{"revision",revision()},{"camera",effective=="game" ? game_camera_revision : camera_revision},
             {"view",effective=="legacy" ? view_revision : 0},{"active",runtime.active},
-            {"session",runtime.active ? runtime.session_id : std::string{}},{"tick",runtime.active ? runtime.tick : 0},{"mode",effective}};
+            {"session",runtime.active ? runtime.session_id : std::string{}},{"tick",runtime.active ? runtime.tick : 0},{"structure_revision",runtime.active ? runtime.structure_revision : 0},{"mode",effective}};
         if(!destination.cached_snapshot || key!=destination.snapshot_key) {
             auto candidate=game
                 ? (runtime.active ? world->runtime_camera_snapshot(game_id) : world->authored_camera_snapshot(game_id))
@@ -1180,7 +1180,7 @@ struct Bridge : ViewportState {
         if(!presented)return 0;
         ++destination.presented_frames;destination.presented_revision=scene.revision;destination.presented_tick=runtime.active ? std::optional<std::uint64_t>(runtime.tick) : std::nullopt;
         if(pending()) {
-            const auto& report=*destination.last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",destination.presented_frames},{"gizmo",target=="game" ? Json(nullptr) : gizmo_state()},{"view",target=="legacy" ? view_json() : explicit_view_json(target)},{"camera_world",scene.camera_world},{"lens",{{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},{"preview",bool(target!="game" && gesture && gesture->preview)},{"render",render_json(destination)}};
+            const auto& report=*destination.last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"structure_revision",runtime.active ? Json(runtime.structure_revision) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",destination.presented_frames},{"gizmo",target=="game" ? Json(nullptr) : gizmo_state()},{"view",target=="legacy" ? view_json() : explicit_view_json(target)},{"camera_world",scene.camera_world},{"lens",{{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},{"preview",bool(target!="game" && gesture && gesture->preview)},{"render",render_json(destination)}};
         }
         return 1;
     }
