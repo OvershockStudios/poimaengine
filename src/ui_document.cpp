@@ -106,13 +106,13 @@ struct Renderer final:Rml::RenderInterface {
     }
     Rml::TextureHandle LoadTexture(Rml::Vector2i&,const Rml::String&) override {unsupported("external texture resource");return 0;}
     Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> bytes,Rml::Vector2i extent) override {
-        if(extent.x<1 || extent.y<1 || extent.x>4096 || extent.y>4096 || bytes.size()!=std::size_t(extent.x)*extent.y*4 || bytes.size()>max_ui_texture_bytes-resident_bytes || textures.size()>=max_ui_textures) {diagnose(error,"UI generated texture budget/extent invalid.");return 0;}
-        UiTexture texture;texture.width=extent.x;texture.height=extent.y;texture.rgba.assign(bytes.begin(),bytes.end());const auto handle=next_texture++;textures.emplace(handle,std::move(texture));resident_bytes+=bytes.size();return handle;
+        if(extent.x<1 || extent.y<1 || extent.x>4096 || extent.y>4096 || bytes.size()!=std::size_t(extent.x)*std::size_t(extent.y)*4 || bytes.size()>max_ui_texture_bytes-resident_bytes || textures.size()>=max_ui_textures) {diagnose(error,"UI generated texture budget/extent invalid.");return 0;}
+        UiTexture texture;texture.width=static_cast<std::uint32_t>(extent.x);texture.height=static_cast<std::uint32_t>(extent.y);texture.rgba.assign(bytes.begin(),bytes.end());const auto handle=next_texture++;textures.emplace(handle,std::move(texture));resident_bytes+=bytes.size();return handle;
     }
     void ReleaseTexture(Rml::TextureHandle handle) override {const auto it=textures.find(handle);if(it!=textures.end()) {resident_bytes-=it->second.rgba.size();textures.erase(it);}}
     void EnableScissorRegion(bool enable) override {scissor_enabled=enable;}
     void SetScissorRegion(Rml::Rectanglei r) override {clip={r.Left(),r.Top(),r.Right(),r.Bottom()};}
-    void SetTransform(const Rml::Matrix4f* transform) override {matrix=UiDraw{}.transform;if(transform)for(int row=0;row<4;++row)for(int col=0;col<4;++col)matrix[4*col+row]=transform->GetRow(row)[col];}
+    void SetTransform(const Rml::Matrix4f* transform) override {matrix=UiDraw{}.transform;if(transform)for(int row=0;row<4;++row)for(int col=0;col<4;++col)matrix[static_cast<std::size_t>(4*col+row)]=transform->GetRow(row)[col];}
     void EnableClipMask(bool enable) override {if(enable)unsupported("clip mask");}
     void RenderToClipMask(Rml::ClipMaskOperation,Rml::CompiledGeometryHandle,Rml::Vector2f) override {unsupported("clip mask");}
     Rml::LayerHandle PushLayer() override {unsupported("layer");return 0;}
@@ -130,6 +130,7 @@ struct Renderer final:Rml::RenderInterface {
 struct UiDocument::Impl {
     std::string error,name,focus;Renderer renderer{error};Rml::Context* context=nullptr;Rml::ElementDocument* document=nullptr;bool joined=false;
     std::vector<UiElementBinding> bindings;std::map<std::string,Rml::Element*> elements;std::map<std::string,std::string> texts;
+    std::vector<Rml::Element*> hit_regions;
     std::uint32_t width=640,height=480;float scale=1;double time=0;std::uint64_t revision=0;
     void valid() const {if(!error.empty())throw std::runtime_error(error);}
     void update() {
@@ -157,6 +158,9 @@ struct UiDocument::Impl {
             check(Rml::LoadFontFace(Rml::Span<const Rml::byte>(owned->data(),owned->size()),family,Rml::Style::FontStyle::Normal),"RmlUi rejected in-memory font.");valid();g.fonts.at(family).loaded=true;
         }
         name="poima-ui-"+std::to_string(++g.next);context=Rml::CreateContext(name,{static_cast<int>(width),static_cast<int>(height)},&renderer);check(context,"RmlUi context creation failed.");
+        // Input feedback is event-driven; scrolling must not depend on an
+        // advancing animation clock to reach the requested viewport position.
+        context->SetDefaultScrollBehavior(Rml::ScrollBehavior::Instant,1.f);
         document=context->LoadDocumentFromMemory(source.rml);valid();check(document,"RmlUi rejected document.");
         std::vector<Rml::Element*> pending{document};std::set<std::string> ids;std::size_t nodes=0;
         while(!pending.empty()) {
@@ -172,6 +176,15 @@ struct UiDocument::Impl {
             auto* element=document->GetElementById(binding.id);check(element,"Registered UI element is absent.");
             check(binding.kind!=UiElementKind::button || element->GetTagName()=="button","UI button binding requires a button element.");
             check(elements.emplace(binding.id,element).second,"Duplicate UI element registration.");
+        }
+        check(source.hit_regions.size()<=257,"UI hit-region budget exceeded.");
+        std::set<std::string> region_ids;
+        for(const auto& id:source.hit_regions) {
+            text_bound(id,128);auto* e=document->GetElementById(id);
+            check(e && e->GetTagName()=="div" && region_ids.insert(id).second && !elements.contains(id),"Invalid or duplicate UI hit region.");
+            for(auto* ancestor=e->GetParentNode();ancestor;ancestor=ancestor->GetParentNode())
+                check(std::none_of(elements.begin(),elements.end(),[&](const auto& item){return item.second==ancestor;}),"Text registration cannot contain a hit region.");
+            hit_regions.push_back(e);
         }
         // Text setters must never be able to destroy another registered handle.
         for(const auto& [id,e]:elements) {
@@ -189,8 +202,14 @@ struct UiDocument::Impl {
     const UiElementBinding& binding(const std::string& id) {const auto found=std::find_if(bindings.begin(),bindings.end(),[&](const auto& b){return b.id==id;});check(found!=bindings.end(),"UI element is not registered.");return *found;}
     bool enabled(Rml::Element* e) {for(;e;e=e->GetParentNode())if(e->HasAttribute("disabled") || e->IsPseudoClassSet("disabled"))return false;return true;}
     std::array<float,4> bounds(Rml::Element* e) {const auto p=e->GetAbsoluteOffset(Rml::BoxArea::Border),size=e->GetBox().GetSize(Rml::BoxArea::Border);return {p.x,p.y,p.x+size.x,p.y+size.y};}
+    std::array<float,4> clipping(Rml::Element* e) {
+        std::array<float,4> out{0,0,float(width),float(height)};Rml::Rectanglei clip;
+        if(Rml::ElementUtilities::GetClippingRegion(e,clip)) {out[0]=std::max(out[0],float(clip.Left()));out[1]=std::max(out[1],float(clip.Top()));out[2]=std::min(out[2],float(clip.Right()));out[3]=std::min(out[3],float(clip.Bottom()));}
+        return out;
+    }
     bool hit(Rml::Element* e,float x,float y) {
         if(!e->IsVisible(true) || !enabled(e) || x<0 || y<0 || x>=static_cast<float>(width) || y>=static_cast<float>(height))return false;
+        const auto clip=clipping(e);if(x<clip[0] || y<clip[1] || x>=clip[2] || y>=clip[3])return false;
         for(auto* found=context->GetElementAtPoint({x,y});found;found=found->GetParentNode()) {
             if(found==e)return true;
         }
@@ -220,7 +239,7 @@ std::shared_ptr<const UiFrame> UiDocument::frame(std::uint32_t width,std::uint32
 }
 std::vector<UiElementInspection> UiDocument::inspect() {
     auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();std::vector<UiElementInspection> out;
-    for(const auto& b:s.bindings) {auto* e=s.element(b.id);out.push_back({b.id,b.action,s.texts.contains(b.id)?s.texts.at(b.id):s.plain_text(e),b.kind,e->IsVisible(true),s.enabled(e),b.kind==UiElementKind::button && s.hittable(e),s.focus==b.id,s.bounds(e)});}s.valid();return out;
+    for(const auto& b:s.bindings) {auto* e=s.element(b.id);out.push_back({b.id,b.action,s.texts.contains(b.id)?s.texts.at(b.id):s.plain_text(e),b.kind,e->IsVisible(true),s.enabled(e),b.kind==UiElementKind::button && s.hittable(e),s.focus==b.id,s.bounds(e),s.clipping(e)});}s.valid();return out;
 }
 void UiDocument::set_text(const std::string& id,const std::string& text) {
     text_bound(text,16384,true);auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.valid();auto* e=s.element(id);
@@ -230,6 +249,38 @@ void UiDocument::set_text(const std::string& id,const std::string& text) {
 }
 void UiDocument::set_enabled(const std::string& id,bool enabled) {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.valid();auto* e=s.element(id);e->SetPseudoClass("disabled",!enabled);if(enabled)e->RemoveAttribute("disabled");else e->SetAttribute("disabled",true);}
 void UiDocument::set_visible(const std::string& id,bool visible) {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.valid();check(s.element(id)->SetProperty("visibility",visible?"visible":"hidden"),"UI visibility property rejected.");}
+UiPointerTarget UiDocument::pointer_target(float x,float y) {
+    check(std::isfinite(x) && std::isfinite(y),"Invalid UI pointer position.");auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();
+    UiPointerTarget target;
+    if(x<0 || y<0 || x>=float(s.width) || y>=float(s.height))return target;
+    for(auto* e=s.context->GetElementAtPoint({x,y});e;e=e->GetParentNode()) {
+        if(!e->IsVisible(true))continue;
+        // RmlUi projects the point before testing an ancestor scissor. The
+        // scissor is in viewport coordinates, so also check the original point.
+        const auto clip=s.clipping(e);if(x<clip[0] || y<clip[1] || x>=clip[2] || y>=clip[3])continue;
+        if(std::find(s.hit_regions.begin(),s.hit_regions.end(),e)!=s.hit_regions.end())target.region=true;
+        if(!target.button)for(const auto& b:s.bindings)if(b.kind==UiElementKind::button && s.element(b.id)==e)target.button=b.id;
+    }
+    s.valid();return target;
+}
+void UiDocument::pointer_move(float x,float y) {
+    check(std::isfinite(x) && std::isfinite(y) && std::abs(x)<=1000000 && std::abs(y)<=1000000,"Invalid UI pointer position.");
+    auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();s.context->ProcessMouseMove(static_cast<int>(std::floor(x)),static_cast<int>(std::floor(y)),0);s.valid();
+}
+void UiDocument::pointer_button(bool down) {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();if(down)s.context->ProcessMouseButtonDown(0,0);else s.context->ProcessMouseButtonUp(0,0);s.update();s.valid();}
+void UiDocument::pointer_leave() {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.context->ProcessMouseLeave();s.valid();}
+void UiDocument::pointer_wheel(float delta) {
+    check(std::isfinite(delta) && std::abs(delta)<=100,"Invalid UI wheel delta.");auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();s.context->ProcessMouseWheel(delta,0);s.update();s.valid();
+}
+bool UiDocument::focus(const std::optional<std::string>& id,bool scroll) {
+    auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();
+    if(!id) {if(auto* e=s.context->GetFocusElement())e->Blur();s.focus.clear();s.valid();return true;}
+    auto* e=s.element(*id);if(s.binding(*id).kind!=UiElementKind::button || !e->IsVisible(true) || !s.enabled(e))return false;
+    if(!e->Focus(true))return false;
+    if(scroll)e->ScrollIntoView();
+    s.focus=*id;s.update();s.valid();return true;
+}
+void UiDocument::set_pressed(const std::string& id,bool value) {auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.valid();s.element(id)->SetPseudoClass("active",value);s.valid();}
 std::optional<std::string> UiDocument::pointer_activate(float x,float y) {
     check(std::isfinite(x) && std::isfinite(y),"Invalid UI pointer position.");auto& g=globals();std::lock_guard lock(g.mutex);auto& s=*impl_;Operation operation(s.error,s.time);s.update();
     for(auto* e=s.context->GetElementAtPoint({x,y});e;e=e->GetParentNode())for(const auto& b:s.bindings)if(b.kind==UiElementKind::button && s.element(b.id)==e && s.hit(e,x,y))return b.action;

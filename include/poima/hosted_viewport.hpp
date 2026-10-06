@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/scene.hpp"
 #include "poima/editor_overlay.hpp"
+#include "poima/ui_input.hpp"
 #include <array>
 #include <memory>
 #include <string>
@@ -27,6 +28,13 @@ public:
     // while hidden. report() retains the extent of the last presentation.
     std::array<std::uint32_t,2> extent() const;
     void resize();
+    // Routes to the layout used by the last successful presentation. The
+    // caller supplies the current authoritative projection; stale/hidden or
+    // resized presentations cancel gestures and return an unconsumed result.
+    // Coordinates are physical client pixels. Activation identifies a target
+    // only: the owner must execute it through the native control service.
+    UiInputResult ui_input(const std::shared_ptr<const ui::Presentation>& current,const UiInput&);
+    void reset_ui_input();
     // Retains a bounded copy without initializing graphics. Empty clears;
     // otherwise count must be divisible by three and <=65536. Coordinates
     // and linear RGBA must be finite and in [0,1]. Invalid input preserves the

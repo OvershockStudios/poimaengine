@@ -375,7 +375,15 @@ public sealed class ViewportInput : IDisposable
                 if (button == ViewportMouseButton.None) return;
                 buttons &= ~Mask(button);
                 Emit(new(ViewportInputKind.PointerUp, Button: button));
-                if (buttons == ViewportMouseButtons.None && !GameCapture) ReleaseOwnedCapture();
+                if (buttons == ViewportMouseButtons.None && !GameCapture)
+                {
+                    // The completed PointerUp is not a focus/capture failure.
+                    // Keep keyboard UI focus after an ordinary button click.
+                    var previous = suppressCaptureNotification;
+                    suppressCaptureNotification = true;
+                    try { ReleaseOwnedCapture(); }
+                    finally { suppressCaptureNotification = previous; }
+                }
                 break;
             }
             case 0x0200:

@@ -9,6 +9,8 @@ HostedViewport::HostedViewport(const RenderOptions&,const SceneSnapshot&,void*) 
 HostedViewport::~HostedViewport()=default;
 std::array<std::uint32_t,2> HostedViewport::extent() const { return {}; }
 void HostedViewport::resize() {}
+UiInputResult HostedViewport::ui_input(const std::shared_ptr<const ui::Presentation>&,const UiInput&) { return {}; }
+void HostedViewport::reset_ui_input() {}
 void HostedViewport::set_overlay(const std::vector<EditorOverlayVertex>&) { throw std::runtime_error("This build has no hosted Vulkan viewport."); }
 bool HostedViewport::draw(const SceneSnapshot&,bool) { return false; }
 bool HostedViewport::draw_capture(const SceneSnapshot&,const std::string&) { return false; }

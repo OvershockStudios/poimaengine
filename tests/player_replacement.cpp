@@ -134,6 +134,106 @@ public:
         runtime_.reset();runtime_=std::move(replacement);identity_="restored";return true;
     }
 };
+#if POIMA_PLAYER_SDL_TEST && POIMA_GAME_UI
+// Exercises production SDL dispatch, presenter hit testing and run_player ownership.
+// The owner is deliberately a routing stub: compiled callbacks/receipt dispatch are
+// qualified separately. This does not claim physical mouse/keyboard qualification.
+RuntimeDefinition ui_routing_fixture(bool menu_only) {
+    auto definition=fixture(false);
+    if(menu_only)definition.entities[1].character.reset();
+    return definition;
+}
+class UiRoutingOwner final:public PlayerSession {
+    Runtime runtime_;
+    bool menu_only_=false;
+    const std::string panel_=std::string(32,'1'),button_=std::string(32,'2');
+    ui::Model ui_{{{panel_,"","Menu",ui::Kind::panel},{button_,panel_,"Action",ui::Kind::button,"Continue","continue"}}};
+    mutable unsigned phase_=0;
+    mutable std::uint64_t phase_at_=0;
+    mutable std::uint64_t movement_start_=0;
+    mutable double movement_z_=0;
+    void inject() const {
+        if(!(SDL_WasInit(SDL_INIT_VIDEO)&SDL_INIT_VIDEO))return;
+        int count=0;auto** windows=SDL_GetWindows(&count);
+        if(!windows)return;
+        if(count!=1) {SDL_free(windows);return;}
+        auto* window=windows[0];const auto id=SDL_GetWindowID(window);SDL_free(windows);
+        const auto now=SDL_GetTicksNS();
+        if(!phase_at_) {phase_at_=now;return;}
+        check(now-phase_at_<10000000000ULL,"UI routing phase timed out.");
+        if(now-phase_at_<60000000ULL)return;
+        auto push=[](SDL_Event event) {check(SDL_PushEvent(&event),"Cannot enqueue UI routing event.");};
+        auto focus=[&](bool gain) {SDL_Event e{};e.type=gain ? SDL_EVENT_WINDOW_FOCUS_GAINED : SDL_EVENT_WINDOW_FOCUS_LOST;e.window.windowID=id;push(e);};
+        auto key=[&](SDL_Scancode code,bool down) {SDL_Event e{};e.type=down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;e.key.windowID=id;e.key.scancode=code;e.key.down=down;push(e);};
+        auto mouse=[&](float x,float y,bool down) {SDL_Event e{};e.type=down ? SDL_EVENT_MOUSE_BUTTON_DOWN : SDL_EVENT_MOUSE_BUTTON_UP;e.button.windowID=id;e.button.button=SDL_BUTTON_LEFT;e.button.down=down;e.button.x=x;e.button.y=y;push(e);};
+        auto accept=[&] {key(SDL_SCANCODE_TAB,true);key(SDL_SCANCODE_TAB,false);key(SDL_SCANCODE_RETURN,true);key(SDL_SCANCODE_RETURN,false);};
+        if(phase_==0) {focus(true);accept();phase_=1;phase_at_=now;}
+        else if(phase_==1 && controls==1) {
+            check(tick()==paused_tick,"Typed Pause allowed simulation before next UI click.");
+            int lw=0,lh=0,pw=0,ph=0;check(SDL_GetWindowSize(window,&lw,&lh) && SDL_GetWindowSizeInPixels(window,&pw,&ph),"Cannot inspect UI test drawable.");
+            check(lw>0 && lh>0 && pw>0 && ph>0,"UI test drawable is empty.");
+            const auto scale=SDL_GetWindowDisplayScale(window);
+            const float x=(static_cast<float>(pw)*.03f+40.f*scale)*static_cast<float>(lw)/static_cast<float>(pw);
+            const float y=(static_cast<float>(ph)*.03f+30.f*scale)*static_cast<float>(lh)/static_cast<float>(ph);
+            mouse(x,y,true);mouse(x,y,false);phase_=2;phase_at_=now;
+        } else if(phase_==2 && controls==2) {
+            check(tick()==paused_tick,"Paused pointer UI action advanced simulation.");
+            key(SDL_SCANCODE_TAB,true);key(SDL_SCANCODE_TAB,false);
+            key(SDL_SCANCODE_RETURN,true);focus(false);focus(true);key(SDL_SCANCODE_RETURN,false);
+            mouse(600,450,true);mouse(600,450,false);key(SDL_SCANCODE_W,true);
+            phase_=3;phase_at_=now;
+        } else if(phase_==3) {
+            check(controls==2,"Focus-loss release or modal outside click activated UI.");
+            check(tick()==paused_tick,"Modal outside click resumed gameplay.");
+            accept();phase_=4;phase_at_=now;
+        } else if(phase_==4 && controls==3 && tick()>=paused_tick+3) {
+            if(menu_only_) {
+                check(received_after_resume.empty(),"Menu-only player fabricated CharacterController input.");
+                check(!SDL_GetWindowRelativeMouseMode(window),"Menu-only player captured the pointer.");
+                mouse(600,450,true);mouse(600,450,false);key(SDL_SCANCODE_W,true);phase_=7;phase_at_=now;return;
+            }
+            for(const auto& input:received_after_resume)
+                check(input.move==std::array<float,2>{0,0} && !input.jump && !input.use && input.look==std::array<float,2>{0,0},"UI-owned held input leaked through Resume.");
+            movement_start_=tick();movement_z_=runtime_.entity("player").world[14];
+            mouse(600,450,true);mouse(600,450,false);key(SDL_SCANCODE_W,true);phase_=5;phase_at_=now;
+        } else if(phase_==7) {
+            check(received_after_resume.empty(),"Menu-only fresh input fabricated a controller command.");
+            check(!SDL_GetWindowRelativeMouseMode(window),"Menu-only click captured the pointer.");
+            key(SDL_SCANCODE_W,false);SDL_Event e{};e.type=SDL_EVENT_WINDOW_CLOSE_REQUESTED;e.window.windowID=id;push(e);phase_=6;phase_at_=now;
+        } else if(phase_==5 && tick()>=movement_start_+6) {
+            check(runtime_.entity("player").world[14]<movement_z_-.1,"Fresh capture did not restore gameplay input after UI Resume.");
+            key(SDL_SCANCODE_W,false);SDL_Event e{};e.type=SDL_EVENT_WINDOW_CLOSE_REQUESTED;e.window.windowID=id;push(e);phase_=6;phase_at_=now;
+        }
+    }
+public:
+    unsigned controls=0;
+    std::uint64_t paused_tick=0;
+    std::vector<RuntimeInput> received_after_resume;
+    explicit UiRoutingOwner(bool menu_only=false):runtime_(ui_routing_fixture(menu_only)),menu_only_(menu_only) {ui_.edit(0,{},panel_);}
+    bool complete() const {return phase_==6;}
+    std::string identity() const override {return "ui-routing-owner";}
+    std::uint64_t tick() const override {return runtime_.inspect().tick;}
+    bool controller_valid(const std::string& id) const override {return !menu_only_ && id=="player";}
+    std::shared_ptr<const ui::Presentation> ui_presentation() const override {return ui_.presentation();}
+    SceneSnapshot snapshot(const std::string& camera) const override {inject();auto result=runtime_.snapshot(camera);result.logical_ui=ui_.presentation();return result;}
+    PlayerAudioState audio_state(const std::string& listener) const override {return {tick(),runtime_.audio_snapshot(listener),runtime_.sound_state().voices()};}
+    PlayerControlResult control(const std::string& session,std::uint64_t revision,const std::string& target) override {
+        check(session==identity() && revision==ui_.revision() && target==button_,"SDL supplied stale/wrong UI target or epoch.");
+        const auto before=tick();++controls;check(controls<=3,"A UI gesture activated more than once.");
+        if(controls==1) {paused_tick=before;return {RuntimeControlIntent::pause,false};}
+        check(before==paused_tick,"Paused UI control was delivered at a different simulation tick.");
+        if(controls==2)return {};
+        ui_.edit(ui_.revision(),{{panel_,std::nullopt,false}},std::string{});
+        check(tick()==before,"UI routing stub unexpectedly advanced simulation.");
+        return {RuntimeControlIntent::resume,false};
+    }
+    bool advance(const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds) override {
+        if(menu_only_)check(inputs.empty(),"Menu-only simulation received a controller input.");
+        if(controls==3)received_after_resume.insert(received_after_resume.end(),inputs.begin(),inputs.end());
+        runtime_.step(1,inputs,motions,sounds);return false;
+    }
+};
+#endif
 Matrix4 door_world(const SceneSnapshot& scene) {
     for(const auto& object:scene.objects)if(object.entity_id=="door")return object.world;
     throw std::runtime_error("Fixture door is absent from the snapshot.");
@@ -149,16 +249,18 @@ void owned_snapshot_boundary() {
 }
 int main(int argc,char** argv) {
     try {
-        bool gpu_run=false,audio=false,interactive=false;std::uint32_t gpu=0;std::string capture;
+        bool gpu_run=false,audio=false,interactive=false,ui_routing=false,ui_menu_only=false;std::uint32_t gpu=0;std::string capture;
         for(int i=1;i<argc;++i) {
             const std::string arg=argv[i];
             if(arg=="--gpu" && i+1<argc) { gpu=static_cast<std::uint32_t>(std::stoul(argv[++i]));gpu_run=true; }
             else if(arg=="--audio")audio=true;
             else if(arg=="--interactive")interactive=true;
+            else if(arg=="--ui-routing")ui_routing=true;
+            else if(arg=="--ui-menu-only")ui_menu_only=true;
             else if(arg=="--capture" && i+1<argc)capture=argv[++i];
-            else throw std::invalid_argument("Usage: player-replacement-test [--gpu INDEX] [--audio] [--interactive] [--capture PATH]");
+            else throw std::invalid_argument("Usage: player-replacement-test [--gpu INDEX] [--audio] [--interactive] [--ui-routing] [--ui-menu-only] [--capture PATH]");
         }
-        check(!interactive || gpu_run,"Interactive qualification requires --gpu.");
+        check(!(interactive || ui_routing || ui_menu_only) || gpu_run,"Interactive qualification requires --gpu.");
         owned_snapshot_boundary();
         nlohmann::json result={{"passed",true},{"owned_snapshot",true},{"render_qualified",gpu_run},{"physical_input_qualified",false}};
         if(gpu_run) {
@@ -187,9 +289,25 @@ int main(int argc,char** argv) {
             check(!invalid_camera.render.success && invalid_camera.stop_reason=="error" && invalid_camera.runtime_replacements==1,"Missing restored camera was not a recoverable player error.");
             check(missing_camera.calls==3 && invalid_camera.final_session=="restored" && invalid_camera.final_tick==0,"Missing-camera replacement was stepped or misreported.");
             result["missing_camera_rejected"]=true;
+            for(bool menu_only:{false,true}) {
+                if(!(menu_only ? ui_menu_only : ui_routing))continue;
+#if POIMA_PLAYER_SDL_TEST && POIMA_GAME_UI
+                UiRoutingOwner ui_owner(menu_only);options.replay=false;options.audio=false;options.max_frames=1500;
+                options.controller=menu_only ? "" : "player";
+                const auto ui_report=run_player(options,ui_owner);
+                check(ui_report.render.success && ui_report.render.validation_errors==0,ui_report.render.detail.c_str());
+                check(ui_owner.complete() && ui_owner.controls==3 && ui_report.stop_reason=="window_closed","Synthetic UI routing sequence did not complete.");
+                result[menu_only ? "ui_menu_only" : "ui_routing"]={{"synthetic_sdl_events",true},{"authoritative_owner_stub",true},{"compiled_callback_qualified",false},
+                    {"paused_pointer_and_keyboard",true},{"focus_loss_cancels",true},{"modal_outside_click_consumed",true},
+                    {"resume_clears_held_input",true},{"fresh_capture_restores_gameplay",!menu_only},{"no_character_controller",menu_only},{"controls",ui_owner.controls},
+                    {"frames",ui_report.render.frames_presented},{"final_tick",ui_report.final_tick}};
+#else
+                throw std::runtime_error("SDL game UI routing qualification is not enabled in this build.");
+#endif
+            }
             if(interactive) {
 #if POIMA_PLAYER_SDL_TEST
-                Owner continuous(audio,0,true);options.replay=false;options.audio=audio;options.max_frames=600;
+                Owner continuous(audio,0,true);options.replay=false;options.audio=audio;options.max_frames=600;options.controller="player";
                 const auto live=run_player(options,continuous);
                 check(live.render.success && live.render.validation_errors==0,live.render.detail.c_str());
                 check(continuous.synthetic_complete() && live.stop_reason=="window_closed","Owned synthetic interactive sequence did not complete.");

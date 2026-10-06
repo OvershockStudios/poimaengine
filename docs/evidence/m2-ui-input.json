@@ -1,0 +1,342 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-06",
+  "engine_version": "0.0.39-development",
+  "milestone": "Native player and Game-view UI input",
+  "schema_revision": 37,
+  "gameplay_services_abi": 7,
+  "gameplay_services_bytes": 176,
+  "sources": {
+    "src/render_smoke.cpp": "110740d5412103f34c386805d72d6ca140e698893f35b9b9c4a282eb64072005",
+    "src/ui_presenter.cpp": "124f9e166d8ffc674e480a1803daecc04eff9223495321b7bcc8fd88901e962f",
+    "include/poima/ui_presenter.hpp": "526b058d2ed70d9334b946c68f480821e610e8aa2393884a9a72bd68beda4c2f",
+    "src/ui_document.cpp": "a9b345e0de2696299987fdd0fb87df6f9c90ae9cb69110cf67a36087807de5c2",
+    "include/poima/ui_document.hpp": "b9c8107c38beb5bcf1d2183ae064f0a2802360eb3344c7d7ba7b43a9f1c3db4f",
+    "src/desktop_bridge.cpp": "736609a5a328da1e06dd49185ead139b192fcdc343da646474e74fb14720895c",
+    "tests/ui_presenter.cpp": "c54dad0c6dbb3edcda48b9349e0ea4fe5a79d6ef39ecbc8ff9f493a69b147426",
+    "tests/desktop_ui_input.py": "4d119a4e453cca550c5340ddafc260cc2ab42596544cd7fe19d20290ed911e1c"
+  },
+  "checks": [
+    {
+      "kind": "desktop_compiled_ui",
+      "gpu": 1,
+      "checks": [
+        "First displayed click executes real compiled Control once at unchanged Tick; duplicate receipt and changed-payload rejection.",
+        "Pointer drag-out, resize and explicit cancellation preserve callback count.",
+        "Keyboard activation applies Resume once; rejected compiled callback retains rollback and failure on retry.",
+        "Between-draws nonmodal HUD changes consume old visible hits and held releases without activation; outside input stays free and fresh presentation restores activation."
+      ],
+      "evidence": {
+        "path": "build/desktop-ui-input-stale-final-gpu1/ef2d93ae44e8474cb471727038a26b69/evidence.json",
+        "sha256": "01db0ee69b2b0a0a20209c9519535d83e8129b00af6668c76d6f9721499bf72b"
+      },
+      "artifacts": {
+        "bridge": "7458c4e3b6d25b3495bb95a18accbea49d4df14189e31bff5733528dbf4828e2",
+        "binary": "3b5ace5e077e6002d5bf6f178c99ef983aaa6e388805ea9454e499b19d11a1dc",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "gameplay_bridge": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+        "assembly": "c5ad0197651e4e9b930a7435a0cf409a8932f9edb749499ac8bd84e8f38aedb1"
+      },
+      "physical_input": false
+    },
+    {
+      "kind": "desktop_compiled_ui",
+      "gpu": 0,
+      "checks": [
+        "First displayed click executes real compiled Control once at unchanged Tick; duplicate receipt and changed-payload rejection.",
+        "Pointer drag-out, resize and explicit cancellation preserve callback count.",
+        "Keyboard activation applies Resume once; rejected compiled callback retains rollback and failure on retry.",
+        "Between-draws nonmodal HUD changes consume old visible hits and held releases without activation; outside input stays free and fresh presentation restores activation."
+      ],
+      "evidence": {
+        "path": "build/desktop-ui-input-stale-final-gpu0/a52d26929dc94f4387d2886c0b1ef94f/evidence.json",
+        "sha256": "6f686efce76502e0967c634aa54a833b8469a76bfada94f18d3cfbc56ee59f31"
+      },
+      "artifacts": {
+        "bridge": "7458c4e3b6d25b3495bb95a18accbea49d4df14189e31bff5733528dbf4828e2",
+        "binary": "3b5ace5e077e6002d5bf6f178c99ef983aaa6e388805ea9454e499b19d11a1dc",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "gameplay_bridge": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+        "assembly": "c5ad0197651e4e9b930a7435a0cf409a8932f9edb749499ac8bd84e8f38aedb1"
+      },
+      "physical_input": false
+    },
+    {
+      "kind": "sdl",
+      "checks": [
+        "discovery_labels",
+        "initial_event_deduplication",
+        "neutral_attachment",
+        "binding_edges",
+        "analog_axes",
+        "second_pad_filtering",
+        "focus_gating",
+        "start_rising_edges",
+        "mapping_changes",
+        "explicit_disconnect_ids",
+        "stop_cleanup",
+        "hosted_unrelated_event_preservation",
+        "hosted_no_owner_message_pump",
+        "hosted_failed_reassignment_atomic",
+        "hosted_bounded_drain",
+        "hosted_3000_tick_queue_stability",
+        "hosted_neutral_start_focus",
+        "hosted_lifetime_hotplug",
+        "ui_paused_assigned_only",
+        "ui_held_confirm_navigation_gate",
+        "ui_stick_hysteresis",
+        "ui_exclusive_gameplay",
+        "ui_bounded_overflow_reset",
+        "ui_remap_disconnect_cleanup"
+      ],
+      "calls": null,
+      "evidence": {
+        "path": "build/menu-ui-gamepad-final-sdl.log",
+        "sha256": "6aa9548af3ae4a7576e34df9ce928b8f32bdf562ac2ec2b6cce6f2b7f44a0dc3"
+      },
+      "physical_input": false
+    },
+    {
+      "kind": "controller",
+      "checks": [
+        "hosted_discovery_start_poll_preserve_windows_and_unrelated_sdl_messages",
+        "failed_reconfiguration_strong_guarantee_and_repeated_focus",
+        "mixed_keyboard_mouse_gamepad_exact_catchup_frames",
+        "focus_neutral_gate_and_assigned_start_release_only",
+        "disconnect_preserves_keyboard_explicit_identity_and_auto_ambiguity",
+        "undrawn_capture_timeout_preserves_keyboard_mouse_rearms_pad_and_named_detach_isolation",
+        "save_load_fresh_session_stop_cleanup_authored_bytes_unchanged"
+      ],
+      "calls": 66,
+      "evidence": {
+        "path": "build/menu-ui-gamepad-final-controller.log",
+        "sha256": "3a53a27c2376902a3b845fdd9690f59c9fff5e08fbf18a0bac4e88c4688ffb1d"
+      },
+      "physical_input": false
+    },
+    {
+      "kind": "menu_gamepad",
+      "evidence": {
+        "path": "build/menu-ui-gamepad-final-scoped-gpu1.log",
+        "sha256": "109ce06a26d177f4e6d3d7dc3eb879c262c18a7c2c0f130f2f0c0ea7438e1c35"
+      },
+      "result": {
+        "calls": 44,
+        "checks": [
+          "ui_only_camera_binding_schema_null_controller_strong_failure_and_gameplay_rejection",
+          "focused_visible_menu_without_keyboard_first_navigation_assigned_only_neutral_gate_real_control",
+          "camera_and_owned_hwnd_focus_changes_cancel_partial_confirm_and_recover",
+          "session_replacement_reassignment_and_disconnect_cancel_partial_gestures_without_controller_input",
+          "hosted_background_event_policy_restored_after_last_owner"
+        ],
+        "gpu_index": 1,
+        "passed": true,
+        "render": {
+          "available": true,
+          "capture_written": false,
+          "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+          "frames_presented": 5,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "height": 480,
+          "nvrhi_errors": 0,
+          "samples": 1,
+          "success": true,
+          "width": 320
+        },
+        "source": "Real SDL virtual gamepads, owned HWND focus, Vulkan layout and compiled C# Control; no physical device/global input injection claim"
+      }
+    },
+    {
+      "kind": "menu_gamepad",
+      "evidence": {
+        "path": "build/menu-ui-gamepad-final-scoped-gpu0.log",
+        "sha256": "040499f1a137349c37de423942d66b9f039e17bfd714810f23a5122f54cb670c"
+      },
+      "result": {
+        "calls": 44,
+        "checks": [
+          "ui_only_camera_binding_schema_null_controller_strong_failure_and_gameplay_rejection",
+          "focused_visible_menu_without_keyboard_first_navigation_assigned_only_neutral_gate_real_control",
+          "camera_and_owned_hwnd_focus_changes_cancel_partial_confirm_and_recover",
+          "session_replacement_reassignment_and_disconnect_cancel_partial_gestures_without_controller_input",
+          "hosted_background_event_policy_restored_after_last_owner"
+        ],
+        "gpu_index": 0,
+        "passed": true,
+        "render": {
+          "available": true,
+          "capture_written": false,
+          "detail": "Native Vulkan child viewport; serialized presentation, no frame-time qualification.",
+          "frames_presented": 5,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "height": 480,
+          "nvrhi_errors": 0,
+          "samples": 1,
+          "success": true,
+          "width": 320
+        },
+        "source": "Real SDL virtual gamepads, owned HWND focus, Vulkan layout and compiled C# Control; no physical device/global input injection claim"
+      }
+    },
+    {
+      "kind": "standalone_player",
+      "evidence": {
+        "path": "build/menu-ui-final-player-gpu1.log",
+        "sha256": "3b3087832a97d6686ec9292b0f93423adf1cb895089d2250c43062e169c76beb"
+      },
+      "result": {
+        "missing_camera_rejected": true,
+        "missing_controller_rejected": true,
+        "owned_snapshot": true,
+        "passed": true,
+        "physical_input_qualified": false,
+        "render_qualified": true,
+        "replay": {
+          "audio_resets": 0,
+          "capture_written": false,
+          "final_tick": 8,
+          "frames": 3,
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "initial_tick": 32,
+          "replacements": 1
+        },
+        "ui_menu_only": {
+          "authoritative_owner_stub": true,
+          "compiled_callback_qualified": false,
+          "controls": 3,
+          "final_tick": 7,
+          "focus_loss_cancels": true,
+          "frames": 259,
+          "fresh_capture_restores_gameplay": false,
+          "modal_outside_click_consumed": true,
+          "no_character_controller": true,
+          "paused_pointer_and_keyboard": true,
+          "resume_clears_held_input": true,
+          "synthetic_sdl_events": true
+        },
+        "ui_routing": {
+          "authoritative_owner_stub": true,
+          "compiled_callback_qualified": false,
+          "controls": 3,
+          "final_tick": 9,
+          "focus_loss_cancels": true,
+          "frames": 324,
+          "fresh_capture_restores_gameplay": true,
+          "modal_outside_click_consumed": true,
+          "no_character_controller": false,
+          "paused_pointer_and_keyboard": true,
+          "resume_clears_held_input": true,
+          "synthetic_sdl_events": true
+        }
+      }
+    },
+    {
+      "kind": "standalone_player",
+      "evidence": {
+        "path": "build/menu-ui-final-player-gpu0.log",
+        "sha256": "75866e7b4575cedca2725d2aab32c641ad34c40a0c16f3f07dbff9a2f92d67c4"
+      },
+      "result": {
+        "missing_camera_rejected": true,
+        "missing_controller_rejected": true,
+        "owned_snapshot": true,
+        "passed": true,
+        "physical_input_qualified": false,
+        "render_qualified": true,
+        "replay": {
+          "audio_resets": 0,
+          "capture_written": false,
+          "final_tick": 8,
+          "frames": 3,
+          "gpu": "AMD Radeon(TM) Graphics",
+          "initial_tick": 32,
+          "replacements": 1
+        },
+        "ui_menu_only": {
+          "authoritative_owner_stub": true,
+          "compiled_callback_qualified": false,
+          "controls": 3,
+          "final_tick": 7,
+          "focus_loss_cancels": true,
+          "frames": 36,
+          "fresh_capture_restores_gameplay": false,
+          "modal_outside_click_consumed": true,
+          "no_character_controller": true,
+          "paused_pointer_and_keyboard": true,
+          "resume_clears_held_input": true,
+          "synthetic_sdl_events": true
+        },
+        "ui_routing": {
+          "authoritative_owner_stub": true,
+          "compiled_callback_qualified": false,
+          "controls": 3,
+          "final_tick": 14,
+          "focus_loss_cancels": true,
+          "frames": 48,
+          "fresh_capture_restores_gameplay": true,
+          "modal_outside_click_consumed": true,
+          "no_character_controller": false,
+          "paused_pointer_and_keyboard": true,
+          "resume_clears_held_input": true,
+          "synthetic_sdl_events": true
+        }
+      }
+    }
+  ],
+  "linux_focused": {
+    "date": "2026-10-06",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "build/game-ui",
+      "-R",
+      "ui.presenter|ui-presenter|ui.document|ui-document",
+      "--output-on-failure"
+    ],
+    "exit_code": 0,
+    "passed": 2,
+    "tests": [
+      "ui_document_native",
+      "ui_presenter_native"
+    ],
+    "sha256": {
+      "src/ui_document.cpp": "a9b345e0de2696299987fdd0fb87df6f9c90ae9cb69110cf67a36087807de5c2",
+      "src/ui_presenter.cpp": "124f9e166d8ffc674e480a1803daecc04eff9223495321b7bcc8fd88901e962f",
+      "include/poima/ui_presenter.hpp": "526b058d2ed70d9334b946c68f480821e610e8aa2393884a9a72bd68beda4c2f",
+      "tests/ui_presenter.cpp": "c54dad0c6dbb3edcda48b9349e0ea4fe5a79d6ef39ecbc8ff9f493a69b147426",
+      "tests/ui_document.cpp": "8a76190b7712e953405e13de1d41b3b6c3b597d5c641b3b77f5af8a830b3c1b8",
+      "build/game-ui/poima-ui-presenter-test": "45bcaca989bc4ea31cff084dc9fdefa91c6aa9984e41f00d2186d1433ed209ae",
+      "build/game-ui/poima-ui-document-test": "989960da61c94fb613ef34e57b7df377c8c14b99718cc8c53daefbb21db59812",
+      "build/game-ui/Testing/Temporary/LastTest.log": "0fc02eaad5e5ab8e64a607b4727733748bc8017247a11f6b1492b95db8aedc01"
+    },
+    "limits": [
+      "Focused UI checks only; not full Linux runtime or renderer qualification.",
+      "GCC 16 was redetected during this dependency rebuild; the separate runtime-headless build remains unqualified after its earlier interrupted compiler transition."
+    ]
+  },
+  "limitations": [
+    "Synthetic input and virtual controllers; physical devices and full Avalonia interaction remain unqualified.",
+    "No new installed desktop package was activated.",
+    "These small fixtures do not establish game-scale performance.",
+    "Full Linux runtime qualification after the compiler transition remains outstanding."
+  ],
+  "artifacts_and_sources": {
+    "build/windows-runtime/poima_desktop.dll": "7458c4e3b6d25b3495bb95a18accbea49d4df14189e31bff5733528dbf4828e2",
+    "build/windows-runtime/poima-desktop-gamepad-test.exe": "7c2c9331521651e70d6c3247a47547ea65f0114331f57c17cdbf11a3def51f6b",
+    "build/windows-runtime/poima-gamepad-sdl-test.exe": "2243b4060760e5c16867a3623136a7ee939d04f5a58a2308a6a267b89e491032",
+    "build/windows-runtime/poima-player-replacement-test.exe": "bb1362e4d33d4f80a9c00c3c731fde0a505775b6dd39e1c36372aa403fdf24d0",
+    "build/windows-runtime/poima.exe": "3b5ace5e077e6002d5bf6f178c99ef983aaa6e388805ea9454e499b19d11a1dc",
+    "src/desktop_bridge.cpp": "736609a5a328da1e06dd49185ead139b192fcdc343da646474e74fb14720895c",
+    "src/gamepad_sdl.cpp": "567c32ab8d97a0d896a66ffb5db2ca9e212de3b03c504e444756ed1c33728c28",
+    "src/render_smoke.cpp": "110740d5412103f34c386805d72d6ca140e698893f35b9b9c4a282eb64072005",
+    "src/ui_presenter.cpp": "124f9e166d8ffc674e480a1803daecc04eff9223495321b7bcc8fd88901e962f",
+    "tests/desktop_gamepad_native.cpp": "a75eb59ae499f7d48bdc305d9643451423b814350f861eb6dce966f3ec1f863c",
+    "tests/player_replacement.cpp": "a8e5410526ac1fb3e6c760ce9d2f6aa15d8a48f75e7b559d35c816afe7848765",
+    "desktop/Poima.Editor/GameInput.cs": "b08cdf1b6d78e4dfe9014fcf610b78308a0303cbe370b855344616b111f1b7eb",
+    "desktop/Poima.Editor/GameInputWindow.cs": "69df8ae3228d8cda646060dbdc324289537ed82d0564f8ed2f9ec2e41639d4a8",
+    "tests/fixtures/editor_game_input/Program.cs": "5a5fca7052576b66f6e520bc40a42bd483de00b53f7a9280a18e873b1838d952"
+  }
+}

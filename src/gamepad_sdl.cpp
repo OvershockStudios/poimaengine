@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
+#include <optional>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -18,6 +19,40 @@ using Json=nlohmann::json;
 static_assert(SDL_GAMEPAD_BUTTON_GUIDE==5 && SDL_GAMEPAD_BUTTON_START==6);
 static_assert(SDL_GAMEPAD_AXIS_COUNT==6 && SDL_GAMEPAD_BUTTON_COUNT==26);
 void check(bool ok,const char* message) { if(!ok)throw std::runtime_error(std::string(message)+": "+SDL_GetError()); }
+// Hosted HWNDs belong to the desktop, not SDL's keyboard-focus bookkeeping.
+// Enable delivery while hosted owners exist; Win32 ownership gates dispatch.
+// Normal priority deliberately respects a higher-priority external policy.
+struct HostedEventsPolicy {
+    static inline unsigned owners=0;
+    static inline std::optional<std::string> previous;
+    static inline bool changed=false;
+    bool acquired=false;
+    void acquire() {
+        if(acquired)return;
+        if(!owners) {
+            const auto value=SDL_GetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS);
+            previous=value ? std::optional<std::string>(value) : std::nullopt;
+            changed=!SDL_GetHintBoolean(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,false);
+            if(changed && !SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,"1")) {
+                changed=false;previous.reset();
+                throw std::runtime_error("Hosted gamepad events are disabled by external SDL background-event policy");
+            }
+        }
+        ++owners;acquired=true;
+    }
+    void release() noexcept {
+        if(!acquired)return;
+        acquired=false;
+        if(--owners)return;
+        const auto current=SDL_GetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS);
+        if(changed && current && std::string_view(current)=="1") {
+            if(previous)SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS,previous->c_str());
+            else SDL_ResetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS);
+        }
+        previous.reset();changed=false;
+    }
+    ~HostedEventsPolicy() {release();}
+};
 std::string text(const char* value) { return value ? value : "unknown"; }
 std::string label(SDL_Gamepad* pad,const InputControl& control) {
     switch(SDL_GetGamepadButtonLabel(pad,static_cast<SDL_GamepadButton>(control.code))) {
@@ -71,7 +106,50 @@ bool SDLCALL retain_unrelated_raw(void* data,SDL_Event* event) {
 struct GamepadHost::Impl {
     explicit Impl(GamepadHostMode host_mode):mode(host_mode) {}
     GamepadHostMode mode;
+    HostedEventsPolicy hosted_events;
     bool initialized=false,active=false,start_held=false;
+    bool ui=false,ui_blocked=false,ui_accept=false,ui_stick_armed=false;
+    std::uint32_t ui_held=0,ui_suppressed=0;
+    int ui_stick_value=0;
+    GamepadUiBatch ui_events;
+    void reset_ui(std::uint32_t held=0,int stick=0) noexcept {
+        ui_events.count=0;ui_events.reset=true;ui_blocked=false;ui_accept=false;
+        ui_held=held;ui_suppressed=held;ui_stick_value=stick;ui_stick_armed=stick>=-8192 && stick<=8191;
+    }
+    void ui_event(GamepadUiAction value) noexcept {
+        if(ui_blocked)return;
+        if(ui_events.count==ui_events.events.size()) {
+            ui_events.count=0;ui_events.reset=true;ui_blocked=true;ui_accept=false;
+            ui_suppressed=ui_held;ui_stick_armed=false;return;
+        }
+        ui_events.events[ui_events.count++]=value;
+    }
+    void ui_button(std::uint16_t button,bool down) noexcept {
+        if(button>=32)return;
+        const auto bit=1u<<button;const bool was=(ui_held&bit)!=0;
+        if(down)ui_held|=bit;else ui_held&=~bit;
+        if(ui_blocked) {if(down)ui_suppressed|=bit;else ui_suppressed&=~bit;return;}
+        if(ui_suppressed&bit) {if(!down)ui_suppressed&=~bit;return;}
+        if(was==down)return;
+        if(button==SDL_GAMEPAD_BUTTON_SOUTH) {
+            if(down) {ui_event(GamepadUiAction::accept_down);ui_accept=!ui_blocked;}
+            else if(ui_accept) {ui_accept=false;ui_event(GamepadUiAction::accept_up);}
+        } else if(down) {
+            if(button==SDL_GAMEPAD_BUTTON_EAST)ui_event(GamepadUiAction::cancel);
+            else if(button==SDL_GAMEPAD_BUTTON_DPAD_UP || button==SDL_GAMEPAD_BUTTON_DPAD_LEFT)ui_event(GamepadUiAction::previous);
+            else if(button==SDL_GAMEPAD_BUTTON_DPAD_DOWN || button==SDL_GAMEPAD_BUTTON_DPAD_RIGHT)ui_event(GamepadUiAction::next);
+        }
+    }
+    // Match gameplay signed normalization: negative /32768, positive /32767.
+    void ui_axis(std::uint16_t axis,std::int16_t value) noexcept {
+        if(axis!=SDL_GAMEPAD_AXIS_LEFTY)return;
+        ui_stick_value=value;
+        if(ui_blocked) {ui_stick_armed=false;return;}
+        if(value>=-8192 && value<=8191)ui_stick_armed=true;
+        else if(ui_stick_armed && (value<=-18023 || value>=18022)) {
+            ui_stick_armed=false;ui_event(value<0 ? GamepadUiAction::previous : GamepadUiAction::next);
+        }
+    }
     BoundPlayerInput* input=nullptr;
     GamepadSelection selection;
     SDL_Gamepad* pad=nullptr;
@@ -83,9 +161,15 @@ struct GamepadHost::Impl {
     std::string detail="Gamepad selection disabled.";
     void initialize() {
         if(initialized)return;
-        SDL_SetMainReady();check(SDL_InitSubSystem(SDL_INIT_GAMEPAD),"SDL gamepad initialization failed");initialized=true;
+        SDL_SetMainReady();
+        if(mode==GamepadHostMode::hosted)hosted_events.acquire();
+        if(!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) {
+            hosted_events.release();check(false,"SDL gamepad initialization failed");
+        }
+        initialized=true;
     }
     void release(bool count) {
+        reset_ui();
         if(input)input->gamepad_disconnect();
         if(pad) { SDL_CloseGamepad(pad);pad=nullptr;if(count)++disconnects; }
         assigned=0;start_held=false;snapshot_time=0;name.clear();
@@ -107,7 +191,8 @@ struct GamepadHost::Impl {
         for(unsigned i=0;i<SDL_GAMEPAD_BUTTON_COUNT;++i)if(SDL_GetGamepadButton(pad,static_cast<SDL_GamepadButton>(i)))held|=1u<<i;
         start_held=(held&(1u<<SDL_GAMEPAD_BUTTON_START))!=0;
         input->gamepad_connect(axes,held);
-        if(!active)input->gamepad_clear();
+        if(!active || ui)input->gamepad_clear();
+        if(ui)reset_ui(held,axes[SDL_GAMEPAD_AXIS_LEFTY]);
         snapshot_time=sampled_at;
         // The snapshot supersedes already queued state changes for this pad.
         // Retain all other pads and all lifecycle events.
@@ -174,7 +259,7 @@ void GamepadHost::start(BoundPlayerInput& input,const GamepadSelection& selectio
     static_assert(std::is_nothrow_move_assignable_v<GamepadSelection>);
     p.release(false);
     input=std::move(staged_input);p.input=&input;
-    p.selection=std::move(staged.selection);p.active=initially_active;
+    p.selection=std::move(staged.selection);p.active=initially_active;p.ui=false;
     p.pad=std::exchange(staged.pad,nullptr);p.assigned=staged.assigned;
     p.start_held=staged.start_held;p.snapshot_time=staged.snapshot_time;
     p.attachments=staged.attachments;p.disconnects=0;
@@ -219,15 +304,25 @@ bool GamepadHost::poll() {
     else p.raw_pending.clear();
     return start;
 }
-void GamepadHost::stop() { auto& p=*impl_;p.release(false);p.input=nullptr;p.active=false; }
+void GamepadHost::stop() { auto& p=*impl_;p.release(false);p.input=nullptr;p.active=false;p.ui=false; }
 void GamepadHost::activate(bool active) {
     auto& p=*impl_;if(p.active==active)return;
     if(!p.input)return;
     if(!active) { p.active=false;p.input->gamepad_clear(); }
     else {
-        try { p.reconcile();p.active=true;p.snapshot(); }
+        try { p.reconcile();p.active=true;if(!p.ui)p.snapshot(); }
         catch(...) { p.active=false;p.input->gamepad_clear();throw; }
     }
+}
+void GamepadHost::ui_active(bool active) {
+    auto& p=*impl_;if(p.ui==active)return;
+    p.ui=active;p.reset_ui();
+    if(p.input)p.input->gamepad_clear();
+    try {if(p.initialized)p.reconcile();if(p.pad)p.snapshot();}
+    catch(...) {p.ui=false;p.reset_ui();if(p.input)p.input->gamepad_clear();throw;}
+}
+GamepadUiBatch GamepadHost::drain_ui_events() noexcept {
+    auto& p=*impl_;auto result=p.ui_events;if(p.ui_blocked)p.ui_stick_armed=p.ui_stick_value>=-8192 && p.ui_stick_value<=8191;p.ui_events.count=0;p.ui_events.reset=false;p.ui_blocked=false;return result;
 }
 void GamepadHost::added(std::uint32_t) { auto& p=*impl_;if(p.initialized)p.reconcile(); }
 void GamepadHost::removed(std::uint32_t id) {
@@ -235,26 +330,27 @@ void GamepadHost::removed(std::uint32_t id) {
     if(p.initialized)p.reconcile();
 }
 void GamepadHost::remapped(std::uint32_t id) {
-    auto& p=*impl_;if(id==p.assigned && p.pad) { p.snapshot();p.detail="Gamepad mapping changed; input rechecked for neutrality."; }
+    auto& p=*impl_;if(id==p.assigned && p.pad) { p.reset_ui();p.snapshot();p.detail="Gamepad mapping changed; input rechecked for neutrality."; }
 }
 void GamepadHost::axis(std::uint32_t id,std::uint16_t axis,std::int16_t value) {
-    auto& p=*impl_;if(id==p.assigned && p.input && p.active)p.input->gamepad_axis(axis,value);
+    auto& p=*impl_;if(id!=p.assigned || !p.pad || !p.input)return;
+    if(p.ui)p.ui_axis(axis,value);else if(p.active)p.input->gamepad_axis(axis,value);
 }
 bool GamepadHost::button(std::uint32_t id,std::uint16_t button,bool down) {
     auto& p=*impl_;if(id!=p.assigned || !p.pad || !p.input)return false;
     if(button==SDL_GAMEPAD_BUTTON_START) {
         const bool rising=down && !p.start_held;p.start_held=down;
         // Start participates in neutral gating but is reserved from bindings.
-        if(p.active)p.input->gamepad_button(button,down);
+        if(p.active && !p.ui)p.input->gamepad_button(button,down);
         return rising;
     }
-    if(p.active)p.input->gamepad_button(button,down);
+    if(p.ui)p.ui_button(button,down);else if(p.active)p.input->gamepad_button(button,down);
     return false;
 }
 std::string GamepadHost::status_json() const {
     const auto& p=*impl_;return Json{{"policy",p.selection.mode},{"requested_id",p.selection.mode=="explicit" ? Json(p.selection.id) : Json(nullptr)},
         {"slot",0},{"assigned",p.assigned ? Json(p.assigned) : Json(nullptr)},{"name",p.pad ? Json(p.name) : Json(nullptr)},
-        {"connected",p.pad && SDL_GamepadConnected(p.pad)},{"armed",p.input && p.active && p.input->gamepad_armed()},
-        {"active",p.active},{"detail",p.detail},{"attachments",p.attachments},{"disconnects",p.disconnects}}.dump();
+        {"connected",p.pad && SDL_GamepadConnected(p.pad)},{"armed",p.input && p.active && !p.ui && p.input->gamepad_armed()},
+        {"active",p.active},{"ui_active",p.ui},{"detail",p.detail},{"attachments",p.attachments},{"disconnects",p.disconnects}}.dump();
 }
 }

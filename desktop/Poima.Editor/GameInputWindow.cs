@@ -33,7 +33,7 @@ public sealed class GameInputWindow : Window
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter"); FontSize = 12;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var root = new StackPanel { Spacing = 10, Margin = new Thickness(16) };
-        root.Children.Add(Note("Choose bindings and a gamepad. Click the Game view to take control; Escape or gamepad Start releases it."));
+        root.Children.Add(Note("Choose bindings and a gamepad. Focus the Game view to navigate menus; cameras with a player controller also support gameplay capture."));
         Add(root, "Bindings", profile, "Bindings");
         Add(root, "Profile file", path, "Profile path");
         root.Children.Add(Button("Browse profile", async () => await Browse()));
@@ -91,7 +91,7 @@ public sealed class GameInputWindow : Window
         var mode = policy.SelectedIndex switch { 1 => "only_connected", 2 => "explicit", _ => "disabled" };
         input.SelectConfiguration(defaults, profile.SelectedIndex == 2 ? path.Text?.Trim() ?? "" : null, mode,
             mode == "explicit" ? (device.SelectedItem as Device)?.Id ?? 0 : 0);
-        message.Text = input.ConfigurationPending ? "Saved for the next Game capture." : "Applied. Click the Game view to take control.";
+        message.Text = input.ConfigurationPending ? "Saved for the next runtime Game camera." : "Applied. Focus the Game view to use these bindings.";
         Observe();
     }
     private async Task Browse()
@@ -109,16 +109,17 @@ public sealed class GameInputWindow : Window
     {
         var state = editor.Host.State["input"];
         var pad = state?["gamepad"];
-        format.Text = (input.ConfigurationPending ? "For next Game capture: " : "Selected bindings: ") + input.ProfileFormat
+        format.Text = (input.ConfigurationPending ? "For next runtime Game camera: " : "Selected bindings: ") + input.ProfileFormat
             + (input.ProfilePath is string source ? " · " + Path.GetFileName(source) : " · built-in");
+        if (input.ConfigurationError is string configurationError) { status.Text = configurationError + " Apply retries the saved selection."; return; }
         if (state?["configured"]?.GetValue<bool>() != true) { status.Text = "No active runtime input configuration."; return; }
         if (pad?["policy"]?.GetValue<string>() == "disabled") { status.Text = "Gamepad disabled."; return; }
         var connected = pad?["connected"]?.GetValue<bool>() == true;
-        var active = pad?["active"]?.GetValue<bool>() == true;
+        var active = pad?["active"]?.GetValue<bool>() == true || pad?["ui_active"]?.GetValue<bool>() == true;
         var assignment = pad?["policy"]?.GetValue<string>() == "explicit" ? "Explicit device" : "Only connected gamepad";
         status.Text = assignment + " · " + (pad?["name"]?.GetValue<string>() ?? "No assigned gamepad")
             + "\n" + (connected ? "Connected" : "Disconnected")
-            + (connected && active ? pad?["armed"]?.GetValue<bool>() == true ? " · Armed" : " · Waiting for neutral controls" : "")
+            + (pad?["ui_active"]?.GetValue<bool>() == true ? " · Menu navigation" : connected && active ? pad?["armed"]?.GetValue<bool>() == true ? " · Armed" : " · Waiting for neutral controls" : "")
             + " · " + (active ? "Active" : "Inactive")
             + "\n" + pad?["detail"]?.GetValue<string>();
         if (pad?["error"]?.GetValue<string>() is string error) status.Text += "\n" + error;

@@ -364,7 +364,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 36}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 37}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -468,7 +468,8 @@ Json describe() {
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
     auto play=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"controller",id},{"camera",id},
         {"mode",{{"enum",{"interactive","replay"}}}}, {"max_frames",{{"type","integer"},{"minimum",0},{"maximum",36000}}}},
-        {"session_id","request_id","expected_tick","controller","camera","mode"});
+        {"session_id","request_id","expected_tick","camera","mode"});
+    play["allOf"]=Json::array({{{"if",{{"properties",{{"mode",{{"const","replay"}}}}}}},{"then",{{"required",{"controller","sequence"}}}}}});
     auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
     segment["properties"]["motions"]=motions;segment["properties"]["sounds"]=sounds;
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
@@ -478,7 +479,7 @@ Json describe() {
     play["properties"]["input_revision"]=rev;
     play["properties"]["gamepad"]=object_schema({{"mode",{{"enum",{"disabled","only_connected","explicit"}}}},{"id",{{"type","integer"},{"minimum",1},{"maximum",4294967295ULL}}}},{"mode"});
     methods["runtime.play"]=play;
-    result["invariants"].push_back("runtime.play blocks this session until exit; replay requires sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit). Play results retain partial progress on window/device failure.");
+    result["invariants"].push_back("runtime.play blocks this session until exit; replay requires controller and sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit) and may omit controller for menu-only scenes. Play results retain partial progress on window/device failure.");
     result["invariants"].push_back("At most 64 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
@@ -1001,6 +1002,10 @@ public:
         return {std::move(definition),std::move(result),std::move(document),hash};
     }
     WorldPackageContent package_content() const { return freeze_content(doc_).package; }
+    std::shared_ptr<const ui::Presentation> runtime_ui_presentation() const {
+        require(bool(runtime_),"No runtime is active for UI observation.",-32030);
+        return runtime_->ui_model().presentation();
+    }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
         if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision();status.control_sequence=runtime_->control_sequence(); }
@@ -2090,7 +2095,7 @@ public:
     }
     Json play(const Json& params) {
         fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
-            {"session_id","request_id","expected_tick","controller","camera","mode"});
+            {"session_id","request_id","expected_tick","camera","mode"});
         identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";
         for(const auto& receipt:playback_receipts_) if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
@@ -2103,9 +2108,11 @@ public:
         require(!params.contains("audio") || params.at("audio").is_boolean(),"audio must be Boolean.");
         require(!params.value("audio",false) || audio_available(),"Player audio is not built.",-32003);
         PlayerOptions options;options.audio=params.value("audio",false);
-        options.controller=identifier(params.at("controller")); options.camera=identifier(params.at("camera"));
+        if(params.contains("controller"))options.controller=identifier(params.at("controller"));
+        options.camera=identifier(params.at("camera"));
         require(params.at("mode")=="interactive" || params.at("mode")=="replay","Player mode must be interactive or replay.");
         options.replay=params.at("mode")=="replay";
+        require(!options.replay || !options.controller.empty(),"Replay requires a CharacterController; interactive menus may omit controller.");
         Json input_info={{"source","defaults"},{"revision",0},{"content_hash",nullptr},{"applied",!options.replay}};
         require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
         if(params.contains("input_profile")) {
@@ -2129,7 +2136,7 @@ public:
         input_info["format"]=options.input_profile->gamepad ? "poima.input.v2" : "poima.input.v1";
         const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
             [&](const auto& e){return e.id==options.controller && e.character.has_value();});
-        require(controller!=runtime_definition_.entities.end(),"Player requires a CharacterController entity.",-32004);
+        require(options.controller.empty() || controller!=runtime_definition_.entities.end(),"Player requires a valid CharacterController when controller is supplied.",-32004);
         try { runtime_->snapshot(options.camera); }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         if(options.replay) {
@@ -2171,6 +2178,15 @@ public:
             SceneSnapshot snapshot(const std::string& camera) const override { return owner.runtime_->snapshot(camera); }
             PlayerAudioState audio_state(const std::string& listener) const override {
                 return {tick(),owner.runtime_->audio_snapshot(listener),owner.runtime_->sound_state().voices()};
+            }
+            std::shared_ptr<const ui::Presentation> ui_presentation() const override { return owner.runtime_->ui_model().presentation(); }
+            PlayerControlResult control(const std::string& session_id,std::uint64_t ui_revision,const std::string& target) override {
+                const auto result=owner.control_dispatch({{"session_id",session_id},{"request_id",new_id()},
+                    {"expected_tick",tick()},{"expected_ui_revision",ui_revision},
+                    {"expected_control_sequence",owner.runtime_->control_sequence()},
+                    {"expected_gameplay_revision",owner.runtime_->gameplay_revision()},
+                    {"expected_structure_revision",owner.runtime_->structure_revision()},{"id",target}});
+                return {static_cast<RuntimeControlIntent>(result.at("intent").get<std::uint32_t>()),result.at("save_serviced").get<bool>()};
             }
             bool advance(const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds) override {
                 return owner.advance_runtime(1,inputs,motions,sounds).save_serviced;
@@ -2717,6 +2733,9 @@ WorldPackageContent WorldSession::package_content() const {
 }
 WorldRuntimeStatus WorldSession::runtime_status() const {
     require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_status();
+}
+std::shared_ptr<const ui::Presentation> WorldSession::runtime_ui_presentation() const {
+    require(!closed(),"World session is closed.",-32001);return impl_->world.runtime_ui_presentation();
 }
 WorldTickAdvance WorldSession::advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
     const std::vector<RuntimeInput>& inputs) {

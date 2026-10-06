@@ -112,7 +112,7 @@ public sealed partial class MainWindow : Window
         KeyDown += (_, e) =>
         {
             if (ClosingPending) return;
-            if (e.Source is TextBox) return;
+            if (e.Source is TextBox || Game.UiKeyboardOwned) return;
             if (!Game.Captured && e.Key == Key.F && e.KeyModifiers == KeyModifiers.None) { Run(Navigation.FrameSelection); e.Handled = true; }
             if (!Game.Captured && !Navigation.Flying && e.KeyModifiers == KeyModifiers.None && e.Key is Key.Q or Key.W or Key.E or Key.R)
             {

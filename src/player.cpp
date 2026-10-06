@@ -5,6 +5,9 @@
 #include <stdexcept>
 
 namespace poima {
+PlayerControlResult PlayerSession::control(const std::string&,std::uint64_t,const std::string&) {
+    throw std::runtime_error("This player owner does not provide native UI controls.");
+}
 void PlayerInput::button(PlayerAction action, bool down) {
     const auto index=static_cast<std::size_t>(action);
     if(index>=held_.size()) throw std::invalid_argument("Invalid player action.");

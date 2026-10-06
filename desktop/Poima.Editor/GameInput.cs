@@ -33,6 +33,12 @@ public sealed class GameInput : IViewportInteraction
     private Dictionary<uint, string>? keyboard;
     private string? profilePath;
     private bool replaceProfile;
+    private long configurationGeneration;
+    private (string Session, string Camera, long Generation)? configurationAttempt;
+    public string? ConfigurationError { get; private set; }
+    public bool UiKeyboardOwned { get; private set; }
+    private string? uiSession;
+    private bool uiAcceptHeld;
     public bool Captured => capturedSession is not null && viewport?.GameCapture == true;
     public string? ProfilePath => profilePath;
     public string Defaults { get; private set; } = "keyboard_mouse";
@@ -66,29 +72,51 @@ public sealed class GameInput : IViewportInteraction
             && !model.Host.Call("desktop.input.devices")["devices"]!.AsArray().Any(value => value!["id"]!.GetValue<uint>() == id))
             throw new InvalidOperationException("The selected gamepad is disconnected. Refresh devices and choose an available device.");
         JsonObject? applied = null;
-        if (model.RuntimeId is string session)
-        {
-            var controller = Controller();
-            applied = model.Host.Call("desktop.input.configure", Configuration(session, controller, defaults, path, mode, id));
-        }
+        if (model.RuntimeId is string session && model.GameCamera is string camera)
+            applied = model.Host.Call("desktop.input.configure", Configuration(session, FindController(), camera, defaults, path, mode, id));
         // Only retire managed capture once native validation/acquisition succeeded.
         Release();
         profilePath = path; Defaults = defaults; GamepadMode = mode; GamepadId = id; ProfileFormat = format;
-        replaceProfile = applied is null;
+        replaceProfile = applied is null; ++configurationGeneration; ConfigurationError = null;
+        configurationAttempt = applied is not null && model.RuntimeId is string currentSession && model.GameCamera is string currentCamera
+            ? (currentSession, currentCamera, configurationGeneration) : null;
         if (applied is not null) Adopt(applied);
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private string Controller() => model.Host.Call("desktop.controllers")["controllers"]!.AsArray()
-        .FirstOrDefault(value => value?["camera"]?.GetValue<string>() == model.GameCamera)?["id"]?.GetValue<string>()
-        ?? throw new InvalidOperationException("This camera has no CharacterController. Choose a player's camera to control it.");
+    private string? FindController() => model.Host.Call("desktop.controllers")["controllers"]!.AsArray()
+        .FirstOrDefault(value => value?["camera"]?.GetValue<string>() == model.GameCamera)?["id"]?.GetValue<string>();
 
-    private static JsonObject Configuration(string session, string controller, string defaults, string? path, string mode, uint id)
+    private static JsonObject Configuration(string session, string? controller, string camera, string defaults, string? path, string mode, uint id)
     {
         var selection = new JsonObject { ["mode"] = mode }; if (mode == "explicit") selection["id"] = id;
-        var result = new JsonObject { ["session_id"] = session, ["controller"] = controller, ["gamepad"] = selection };
+        var result = new JsonObject { ["session_id"] = session, ["gamepad"] = selection };
+        if (controller is null) result["camera"] = camera; else result["controller"] = controller;
         if (path is not null) result["input_profile"] = path; else result["defaults"] = defaults;
         return result;
+    }
+
+    private JsonNode? ApplyPendingConfiguration(JsonNode? state)
+    {
+        if (model.RuntimeId is not string session || model.GameCamera is not string camera) return state;
+        var context = (session, camera, configurationGeneration);
+        if (configurationAttempt == context) return state;
+        // Remember the attempt before device acquisition. A disconnected device
+        // or invalid profile reports once; Apply retries explicitly, and a new
+        // session/camera retries the stored preference without a per-poll loop.
+        configurationAttempt = context;
+        if (!replaceProfile && state?["configured"]?.GetValue<bool>() == true
+            && state["session_id"]?.GetValue<string>() == session && state["camera"]?.GetValue<string>() == camera)
+            return state;
+        replaceProfile = true;
+        try
+        {
+            var applied = model.Host.Call("desktop.input.configure", Configuration(session, FindController(), camera, Defaults, profilePath, GamepadMode, GamepadId));
+            Release(); replaceProfile = false; ConfigurationError = null; Adopt(applied);
+            Changed?.Invoke(this, EventArgs.Empty);
+            return applied;
+        }
+        catch (Exception error) { ConfigurationError = error.Message; throw; }
     }
 
     private void Adopt(JsonNode state)
@@ -101,7 +129,13 @@ public sealed class GameInput : IViewportInteraction
         GamepadId = state["gamepad"]?["requested_id"]?.GetValue<uint>() ?? 0;
     }
 
-    public void Release()
+    private void ResetUi()
+    {
+        UiKeyboardOwned = false; uiAcceptHeld = false; uiSession = null;
+        if (model.Host.State["closing"]?.GetValue<bool>() != true) model.Host.Call("desktop.ui.reset");
+    }
+    public void Release() { ResetUi(); ReleaseGameplay(); }
+    private void ReleaseGameplay()
     {
         if (releasing) return;
         releasing = true;
@@ -122,11 +156,12 @@ public sealed class GameInput : IViewportInteraction
     private void Engage()
     {
         if (viewport is null || model.RuntimeId is not string session || model.PlaybackState != "playing") return;
-        var controller = Controller();
+        var controller = FindController();
+        if (controller is null) return; // Playing menus need no player controller.
         var state = model.Host.Call("desktop.input.inspect");
         if (replaceProfile || state["session_id"]?.GetValue<string>() != session || state["controller"]?.GetValue<string>() != controller)
         {
-            state = model.Host.Call("desktop.input.configure", Configuration(session, controller, Defaults, profilePath, GamepadMode, GamepadId));
+            state = model.Host.Call("desktop.input.configure", Configuration(session, controller, model.GameCamera!, Defaults, profilePath, GamepadMode, GamepadId));
             replaceProfile = false;
         }
         Adopt(state);
@@ -136,6 +171,9 @@ public sealed class GameInput : IViewportInteraction
                 .Where(value => value!["device"]!.GetValue<string>() == "keyboard" && !value["reserved"]!.GetValue<bool>())
                 .ToDictionary(value => value!["code"]!.GetValue<uint>(), value => value!["id"]!.GetValue<string>());
         }
+        // A deliberate click outside UI transfers keyboard ownership back to
+        // gameplay; stale UI focus must not swallow the new player's keys.
+        ResetUi();
         viewport.BeginGameCapture();
         try { model.Host.Call("desktop.input.focus", new() { ["session_id"] = session, ["focused"] = true }); }
         catch { viewport.EndGameCapture(); throw; }
@@ -148,16 +186,48 @@ public sealed class GameInput : IViewportInteraction
         model.Host.Call("desktop.input.events", new() { ["session_id"] = capturedSession, ["request_id"] = EditorModel.NewId(), ["events"] = new JsonArray(value) });
     }
 
+    private bool RouteUi(ViewportInputEvent e)
+    {
+        if (model.RuntimeId is not string session || model.GameCamera is not string camera) return false;
+        if (uiSession != session) { UiKeyboardOwned = false; uiAcceptHeld = false; uiSession = session; }
+        string? kind = e.Kind switch
+        {
+            ViewportInputKind.PointerMove when !Captured => "pointer_move",
+            ViewportInputKind.PointerDown when e.Button == ViewportMouseButton.Left => "pointer_down",
+            ViewportInputKind.PointerUp when e.Button == ViewportMouseButton.Left => "pointer_up",
+            ViewportInputKind.PointerWheel when !e.HorizontalWheel && !Captured => "pointer_wheel",
+            ViewportInputKind.KeyDown when e.VirtualKey == 0x09 && !e.Repeat => e.Shift ? "focus_previous" : "focus_next",
+            ViewportInputKind.KeyDown when e.VirtualKey == 0x0D && !e.Repeat && !uiAcceptHeld => "accept_down",
+            ViewportInputKind.KeyUp when e.VirtualKey == 0x0D && uiAcceptHeld => "accept_up",
+            ViewportInputKind.KeyDown when e.VirtualKey == 0x1B && !e.Repeat => "cancel",
+            _ => null
+        };
+        if (kind is null) return UiKeyboardOwned && e.Kind is ViewportInputKind.KeyDown or ViewportInputKind.KeyUp;
+        var response = model.Host.Call("desktop.ui.input", new() { ["session_id"] = session, ["camera"] = camera,
+            ["request_id"] = EditorModel.NewId(), ["kind"] = kind, ["x"] = e.X, ["y"] = e.Y,
+            ["delta"] = kind == "pointer_wheel" ? -e.WheelDelta / 120f : 0 });
+        UiKeyboardOwned = response["keyboard_owned"]?.GetValue<bool>() == true;
+        bool consumed = response["consumed"]?.GetValue<bool>() == true;
+        if (kind == "accept_down") uiAcceptHeld = consumed;
+        if (kind == "accept_up" || kind == "cancel") uiAcceptHeld = false;
+        if (consumed && Captured) ReleaseGameplay();
+        return consumed;
+    }
+
     public void Handle(ViewportInputEvent e) => Guard(() => HandleCore(e));
     private void HandleCore(ViewportInputEvent e)
     {
+        // EndGameCapture synchronously emits its own cleanup notification. A
+        // deliberate gameplay-to-UI handoff must retain the new UI gesture.
+        if (releasing && e.Kind == ViewportInputKind.CaptureLost) return;
         if (model.Host.State["closing"]?.GetValue<bool>() == true) { Release(); return; }
         lastModifiers = e.Modifiers; lastX = e.X; lastY = e.Y;
         if (e.Kind is ViewportInputKind.FocusLost or ViewportInputKind.CaptureLost or ViewportInputKind.Resized)
         { Release(); return; }
+        if (RouteUi(e)) return;
         if (e.Kind == ViewportInputKind.KeyDown && e.VirtualKey is 0x1B or 0x09)
         { Release(); return; }
-        if (model.PlaybackState != "playing") { Release(); return; }
+        if (model.PlaybackState != "playing") { ReleaseGameplay(); return; }
         if (!Captured)
         {
             // The acquisition click never fires a gameplay action.
@@ -183,20 +253,22 @@ public sealed class GameInput : IViewportInteraction
     {
         if (viewport?.LastError is string error && reportedError != error)
         { reportedError = error; throw new InvalidOperationException(error); }
-        var state = model.Host.State["input"];
+        var state = ApplyPendingConfiguration(model.Host.State["input"]);
+        if (uiSession is not null && model.RuntimeId != uiSession) ResetUi();
+        UiKeyboardOwned = state?["ui_keyboard"]?.GetValue<bool>() == true;
         if (!replaceProfile && state is not null) Adopt(state);
         if (capturedSession is null) return;
         if (model.PlaybackState != "playing" || model.RuntimeId != capturedSession
             || viewport?.GameCapture != true || state?["focused"]?.GetValue<bool>() != true
             || state?["session_id"]?.GetValue<string>() != capturedSession)
-            Release();
+            ReleaseGameplay();
     });
 
     public JsonObject Inspect() => new() { ["attached"] = viewport is not null, ["width"] = viewport?.Width ?? 0, ["height"] = viewport?.Height ?? 0,
         ["last_input_modifiers"] = (int)lastModifiers, ["last_input_x"] = lastX, ["last_input_y"] = lastY,
         ["input_error"] = viewport?.LastError, ["error_count"] = ErrorCount,
         ["qualification_input"] = viewport?.QualificationInput ?? false, ["ignored_interactive_messages"] = viewport?.IgnoredInteractiveMessages ?? 0,
-        ["captured"] = Captured, ["session_id"] = capturedSession,
+        ["captured"] = Captured, ["ui_keyboard_owned"] = UiKeyboardOwned, ["session_id"] = capturedSession,
         ["profile_path"] = profilePath, ["defaults"] = Defaults, ["gamepad_mode"] = GamepadMode, ["gamepad_id"] = GamepadId,
-        ["profile_format"] = ProfileFormat, ["configuration_pending"] = replaceProfile, ["native"] = model.Host.State["closing"]?.GetValue<bool>() == true ? model.Host.State["input"]?.DeepClone() : model.Host.Call("desktop.input.inspect") };
+        ["profile_format"] = ProfileFormat, ["configuration_pending"] = replaceProfile, ["configuration_error"] = ConfigurationError, ["native"] = model.Host.State["closing"]?.GetValue<bool>() == true ? model.Host.State["input"]?.DeepClone() : model.Host.Call("desktop.input.inspect") };
 }

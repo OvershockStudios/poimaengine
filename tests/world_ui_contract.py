@@ -52,7 +52,7 @@ class Contract(unittest.TestCase):
     def history(self,method,revision):return self.ok(method,request_id=uuid.uuid4().hex,base_revision=revision)
 
     def test_upgrade_preview_discovery_and_persistence(self):
-        discovery=self.ok('world.describe');self.assertEqual(discovery['schema_revision'],36)
+        discovery=self.ok('world.describe');self.assertEqual(discovery['schema_revision'],37)
         self.assertIn('world.ui.list',discovery['methods']);self.assertIn('world.ui.get',discovery['methods'])
         self.assertEqual(self.ok('world.ui.list')['elements'],[])
         self.tx(0,[dict(op='entity.create',id=C,name='Legacy')]);self.assertEqual(json.loads(self.world.read_text())['version'],1)

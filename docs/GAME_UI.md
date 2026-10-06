@@ -1,6 +1,6 @@
 # Native game UI foundation
 
-Poima owns logical controls in the world/runtime and uses native retained layout for Vulkan presentation. The current development changes connect this state to a default layout and add compiled C# control callbacks. Bounded native, agent-service, desktop-owner and Vulkan capture checks are recorded below. Live pointer and gamepad routing remain unfinished.
+Poima owns logical controls in the world/runtime and uses native retained layout for Vulkan presentation. The current development changes connect this state to a default layout and add compiled C# control callbacks. Bounded native, agent-service, desktop-owner and Vulkan capture checks are recorded below. The live input routing scope and qualification limits are recorded below.
 
 The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The logical model is available in the default headless engine; it has no RmlUi, font or graphics dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
 
@@ -139,11 +139,32 @@ auto requested_action = ui.activate("continue");
 
 Current bounds include a 1 MiB RML document, 4,096 parsed nodes, 256 registered elements, 16 fonts per source and 16 KiB replacement text. [Draw-packet validation](../include/poima/ui.hpp) bounds extent, vertices, indices, draws and texture storage. Limit failures report errors instead of publishing invalid packets. These bounds are guardrails, not a measured production workload budget.
 
+## Player and Game-view input
+
+The native player and the desktop Game pane route mouse, keyboard and assigned gamepad input through the displayed `UiPresenter`. Hit testing uses the actual layout, clipping and scroll position. Presentation returns a stable button ID; the native control service checks eligibility and executes compiled `Control`. Agents should normally use `runtime.ui.inspect` and `runtime.ui.activate` directly, without synthesizing pointer events.
+
+- Left-button release activates only the eligible button that received the press. Dragging away, focus loss, resizing, DPI changes or a runtime replacement cancel the gesture. Unrelated HUD text updates preserve a held gesture when its target geometry and eligibility remain unchanged.
+- Tab and Shift+Tab move focus; Enter presses/releases the focused button. Assigned gamepad D-pad or left-stick edges navigate, South confirms and East cancels the gesture. Navigation currently has no held-direction repeat.
+- Modal UI owns input even outside its visible controls. It blocks gameplay bindings without implicitly stopping simulation. Compiled Pause/Resume intents change playback explicitly and clear held gameplay input.
+- The generated menu scrolls with the wheel, scrollbar and focused-control navigation. Mouse coordinates supplied to the hosted interface are physical Game-client pixels.
+
+If runtime UI changes before the next draw, the old visible layout cannot activate controls. It still consumes hits in its visible regions and releases belonging to an existing gesture, preventing a menu click from becoming gameplay capture. Such input cancels the armed activation; a fresh draw does not rearm it. Clicks outside nonmodal UI remain available to gameplay. This differs from a compatible HUD update that has already been drawn before the next input event.
+
+Interactive `runtime.play` may omit `controller` for a menu-only scene; a valid camera is still required. Replay requires a controller. A menu-only player advances simulation with no fabricated controller inputs. Game-view mouse and keyboard menus also work while paused and without a CharacterController. The desktop can bind gamepad input directly to a runtime camera for a menu-only view. `desktop.input.configure` accepts exactly one of `controller` (gameplay and UI) or `camera` (UI-only). For example, pass `session_id`, `camera`, `defaults:"keyboard_mouse_gamepad"` and `gamepad:{"mode":"only_connected"}`. An explicit session-local device ID uses `gamepad:{"mode":"explicit","id":...}`. Invalid cameras, profiles or device acquisition preserve the previous binding. Hosted gamepad event delivery temporarily enables SDL background events because native desktop windows do not have SDL keyboard focus; the engine still requires its focused, visible Game pane in the foreground window before dispatching UI input. The hint is restored when the last hosted owner exits; an explicit higher-priority policy disabling it is respected and reported as an acquisition error.
+
+`desktop.input.inspect.binding` is `controller`, `ui` or null; a UI-only binding reports `controller:null`, zero pending gameplay input and no gameplay focus. `desktop.input.focus` with `focused:true` and `desktop.input.events` reject UI-only bindings. The assigned pad navigates when its camera is selected in the visible, focused Game HWND, including paused playback and before any keyboard navigation. Changing cameras, losing focus, disconnecting or replacing the runtime cancels partial confirmation and requires neutral controls before reuse.
+
+The Game Input window retains selections while stopped or without a Game camera. When a runtime camera becomes available it configures that camera once, using its CharacterController when present and UI-only mode otherwise. A failed acquisition is reported once for that session/camera/selection; Apply retries it explicitly. This avoids repeatedly reconfiguring devices during editor polling.
+
+The desktop host exposes `desktop.ui.input` with `session_id`, `camera`, `request_id`, `kind` and optional `x`, `y`, `delta`. Discover the event kinds and bounds through `desktop.describe`. Results identify input consumption, focused/activated IDs, keyboard ownership and presentation generation. An activation includes the native control outcome. Exact retries preserve the original event and control request; changed payloads cannot reuse an ID. `desktop.ui.reset` cancels presentation gestures without editing logical UI state. These are experimental host interfaces, not a replacement for the authoritative agent control API.
+
 ## Current limits
 
-These APIs are experimental. Logical state, default native layout and compiled semantic execution are implemented and covered by bounded checks. Live player/editor pointer and gamepad event routing, general control-turn replay tooling, authored styles/layouts, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished. The standalone document API still returns presentation action strings; executing gameplay requires the authoritative control boundary above.
+These APIs are experimental. Logical state, default native layout and compiled semantic execution are implemented and covered by bounded checks. General control-turn replay tooling, authored styles/layouts, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished. Physical-device and full Avalonia interaction qualification remain separate from synthetic routing tests. The standalone document API still returns presentation action strings; executing gameplay requires the authoritative control boundary above.
 
 ## Recorded checks
+
+[Input routing evidence](evidence/m2-ui-input.json) records focused native UI tests, compiled desktop controls and menu-only gamepad tests on both laptop GPUs, plus standalone player input checks. These use synthetic input and virtual controllers, not physical devices or the full Avalonia message path.
 
 [Control and presentation evidence](evidence/m2-ui-control-presentation.json) records services ABI 7 qualification under CoreCLR and NativeAOT on Windows and Linux, same-tick save/load and retry checks, desktop owner intent handling, and runtime UI captures on the laptop's AMD and NVIDIA GPUs at 1× and 4× MSAA. The full editor builds, but a new installed editor package and physical UI input are not qualified by these checks.
 

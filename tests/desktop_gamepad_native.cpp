@@ -74,7 +74,7 @@ struct Sentinel {
 };
 struct Bridge {
     void* host=nullptr;std::uint64_t requests=0,receipts=1000;std::string session=id(900);
-    explicit Bridge(const fs::path& world) { host=poima_desktop_create(text(world).c_str(),nullptr,-1,1);check(host!=nullptr,poima_desktop_error(nullptr)); }
+    explicit Bridge(const fs::path& world,int gpu=-1) { host=poima_desktop_create(text(world).c_str(),nullptr,gpu,1);check(host!=nullptr,poima_desktop_error(nullptr)); }
     ~Bridge() { if(host)poima_desktop_destroy(host); }
     Json call(const char* method,Json params=Json::object(),bool expect_error=false) {
         const auto request=Json{{"jsonrpc","2.0"},{"id",++requests},{"method",method},{"params",std::move(params)}}.dump();
@@ -93,12 +93,12 @@ struct Bridge {
 };
 struct HostedWindows {
     Bridge& bridge;HWND parent=nullptr,scene=nullptr,game=nullptr;
-    explicit HostedWindows(Bridge& owner):bridge(owner) {
+    explicit HostedWindows(Bridge& owner,bool visible=false):bridge(owner) {
         const auto module=GetModuleHandleW(nullptr);
-        parent=CreateWindowExW(0,L"STATIC",L"Poima hidden hosted gamepad test",WS_OVERLAPPEDWINDOW,0,0,640,480,nullptr,nullptr,module,nullptr);
+        parent=CreateWindowExW(0,L"STATIC",visible ? L"Poima menu gamepad qualification" : L"Poima hidden hosted gamepad test",WS_OVERLAPPEDWINDOW|(visible?WS_VISIBLE:0),0,0,640,480,nullptr,nullptr,module,nullptr);
         check(parent!=nullptr,"Create hidden parent HWND");
-        scene=CreateWindowExW(0,L"STATIC",L"",WS_CHILD,0,0,320,480,parent,nullptr,module,nullptr);
-        game=CreateWindowExW(0,L"STATIC",L"",WS_CHILD,320,0,320,480,parent,nullptr,module,nullptr);
+        scene=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|(visible?WS_VISIBLE:0),0,0,320,480,parent,nullptr,module,nullptr);
+        game=CreateWindowExW(0,L"STATIC",L"",WS_CHILD|(visible?WS_VISIBLE:0),320,0,320,480,parent,nullptr,module,nullptr);
         if(!scene || !game) { DestroyWindow(parent);parent=nullptr;throw std::runtime_error("Create hidden child HWNDs"); }
         try {
             check(poima_desktop_attach_view(bridge.host,"scene",scene)==1,poima_desktop_error(bridge.host));
@@ -124,12 +124,125 @@ void author(Bridge& bridge) {
     bridge.call("desktop.view",{{"mode","game"},{"camera",id(3)}});
     bridge.call("desktop.play.resume",{{"session_id",bridge.session}});
 }
+Json menu_qualification(const fs::path& directory,int gpu,const fs::path& hostfxr,const fs::path& gameplay_bridge,const fs::path& assembly) {
+    SDLSession sdl;Bridge bridge(directory/"menu-world.json",gpu);Json checks=Json::array();
+    Json ops=Json::array();
+    for(unsigned n:{20u,21u}) {
+        ops.push_back({{"op","entity.create"},{"id",id(n)},{"name","Menu Camera"},{"parent",nullptr}});
+        ops.push_back({{"op","component.set"},{"id",id(n)},{"type","Transform"},{"value",transform({0,0,0})}});
+        ops.push_back({{"op","component.set"},{"id",id(n)},{"type","Camera"},{"value",{{"vertical_fov",60},{"near",.1},{"far",1000}}}});
+    }
+    for(unsigned n=1;n<=4;++n)ops.push_back({{"op","ui.element.set"},{"id",id(n)},{"element",{
+        {"parent",n==1?Json(nullptr):Json(id(1))},{"name","Menu "+std::to_string(n)},
+        {"kind",n==1?"panel":n==2?"label":"button"},{"text",n==1?"":n==2?"Original":n==3?"First":"Second"},
+        {"action",n>=3?Json("pause"):Json(nullptr)},{"visible",true},{"enabled",true}}}});
+    bridge.call("world.transact",{{"request_id",id(500)},{"base_revision",0},{"ops",ops}});
+    const auto authored=bytes(directory/"menu-world.json");
+    const Json profile={{"hostfxr",text(hostfxr)},{"bridge",text(gameplay_bridge)},{"assembly",text(assembly)},{"type","Poima.Tests.ManagedUiGame"}};
+    bridge.call("desktop.gameplay.configure",{{"request_id",id(501)},{"expected_generation",0},{"profile",profile}});
+    auto start=[&] {bridge.call("desktop.play.start",{{"session_id",bridge.session},{"revision",1},{"paused",true},{"expected_gameplay_generation",1}});};start();
+    check(bridge.call("desktop.controllers").at("controllers").empty(),"Menu fixture unexpectedly contains a controller");
+    HostedWindows windows(bridge,true);bridge.call("desktop.game.camera",{{"camera",id(20)}});
+    auto draw=[&] {
+        MSG message{};while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)) {TranslateMessage(&message);DispatchMessageW(&message);}
+        check(poima_desktop_draw_view(bridge.host,"game")==1,poima_desktop_error(bridge.host));
+    };
+    auto focus=[&](HWND window) {SetFocus(window);check(GetFocus()==window,"Could not focus the owned test HWND");};
+    auto count=[&] {return bridge.call("runtime.gameplay.inspect",{{"session_id",bridge.session}}).at("module").at("values").at("ControlCalls").get<int>();};
+    auto tick=[&] {return bridge.call("desktop.play.inspect").at("tick").get<std::uint64_t>();};
+    Pad first("Poima menu first",81),second("Poima menu second",82);
+    auto configure=[&](SDL_JoystickID device) {return bridge.call("desktop.input.configure",{{"session_id",bridge.session},{"camera",id(20)},
+        {"defaults","keyboard_mouse_gamepad"},{"gamepad",{{"mode","explicit"},{"id",device}}}});};
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,true);first.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,true);
+    auto state=configure(first.instance);
+    check(state["binding"]=="ui" && state["controller"].is_null() && state["camera"]==id(20),"UI-only binding fabricated a controller");
+    const auto prior=bridge.input();
+    check(bridge.call("desktop.input.configure",{{"session_id",bridge.session},{"camera",id(20)},{"controller",id(20)}},true).at("code")==-32602,"Mixed bindings accepted");
+    check(bridge.call("desktop.input.configure",{{"session_id",bridge.session}},true).at("code")==-32602,"Absent binding accepted");
+    check(bridge.call("desktop.input.configure",{{"session_id",bridge.session},{"camera",id(999)}},true).at("code")==-32004,"Missing camera accepted");
+    bridge.call("desktop.input.configure",{{"session_id",bridge.session},{"camera",id(20)},{"defaults","keyboard_mouse_gamepad"},
+        {"gamepad",{{"mode","explicit"},{"id",4294967295u}}}},true);
+    check(bridge.input()==prior,"Failed UI assignment changed prior configuration");
+    bridge.call("desktop.play.resume",{{"session_id",bridge.session}});
+    check(bridge.call("desktop.input.focus",{{"session_id",bridge.session},{"focused",true}},true).at("code")==-32009,"UI binding accepted gameplay focus");
+    check(bridge.call("desktop.input.events",{{"session_id",bridge.session},{"request_id",id(502)},{"events",Json::array()}},true).at("code")==-32009,"UI binding accepted gameplay events");
+    bridge.call("desktop.play.pause",{{"session_id",bridge.session}});
+    checks.push_back("ui_only_camera_binding_schema_null_controller_strong_failure_and_gameplay_rejection");
+    draw();auto activated=SetForegroundWindow(windows.parent);
+    if(!activated) {
+        // A process launched from WSL may not own the foreground queue. Join
+        // only for this explicit test-window activation, then detach immediately.
+        const auto foreground_thread=GetWindowThreadProcessId(GetForegroundWindow(),nullptr);
+        const auto own_thread=GetCurrentThreadId();
+        if(foreground_thread && foreground_thread!=own_thread && AttachThreadInput(own_thread,foreground_thread,TRUE)) {
+            BringWindowToTop(windows.parent);activated=SetForegroundWindow(windows.parent);
+            AttachThreadInput(own_thread,foreground_thread,FALSE);
+        }
+    }
+    focus(windows.game);bridge.poll(); // No redraw after ownership reset.
+    if(GetForegroundWindow()!=windows.parent)std::cerr<<"Foreground diagnostics: requested="<<windows.parent<<" actual="<<GetForegroundWindow()<<" focus="<<GetFocus()<<" game="<<windows.game<<" activation="<<activated<<'\n';
+    state=bridge.input();check(state["gamepad"]["ui_active"].get<bool>() && !state["ui_keyboard"].get<bool>(),"Menu-only gamepad requires prior keyboard selection");
+    check(count()==0 && tick()==0,"Held entry controls activated or advanced menu simulation");
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,false);first.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,false);bridge.poll();
+    second.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,true);second.button(SDL_GAMEPAD_BUTTON_SOUTH,true);bridge.poll();
+    check(!bridge.input()["ui_keyboard"].get<bool>() && count()==0,"Unassigned gamepad changed menu focus/control");
+    second.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,false);second.button(SDL_GAMEPAD_BUTTON_SOUTH,false);bridge.poll();
+    auto navigate=[&](Pad& pad) {pad.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,true);bridge.poll();pad.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,false);bridge.poll();};
+    auto confirm=[&](Pad& pad) {pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);bridge.poll();pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);bridge.poll();};
+    navigate(first);
+    if(!bridge.input()["ui_keyboard"].get<bool>()) {
+        std::cerr<<"Menu navigation state: "<<bridge.call("desktop.inspect").dump()<<'\n';
+        std::cerr<<"Direct layout diagnostic: "<<bridge.call("desktop.ui.input",{{"session_id",bridge.session},{"camera",id(20)},{"request_id",id(503)},{"kind","focus_next"}}).dump()<<'\n';
+        throw std::runtime_error("Dpad did not establish focus without keyboard input");
+    }
+    confirm(first);
+    check(count()==1 && tick()==0,"Menu gamepad did not execute exactly one same-tick compiled Control");
+    state=bridge.input();check(!state["focused"].get<bool>() && state["last_applied"].is_null() && state["pending"]==Json{{"move",{0,0}},{"look",{0,0}},{"jump",false},{"use",false}},"UI gamepad fabricated gameplay input");
+    checks.push_back("focused_visible_menu_without_keyboard_first_navigation_assigned_only_neutral_gate_real_control");
+    // A binding belongs to one Game camera, and a held confirm cannot cross a
+    // camera/focus ownership transition into a new target.
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,true);bridge.poll();
+    bridge.call("desktop.game.camera",{{"camera",id(21)}});bridge.poll();
+    check(!bridge.input()["gamepad"]["ui_active"].get<bool>(),"UI assignment followed a different Game camera");
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,false);bridge.poll();check(count()==1,"Old-camera confirm completed");
+    bridge.call("desktop.game.camera",{{"camera",id(20)}});bridge.poll();draw();navigate(first);
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,true);bridge.poll();focus(windows.scene);bridge.poll();
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,false);bridge.poll();check(count()==1,"Focus loss completed old confirm");
+    focus(windows.game);bridge.poll();draw();navigate(first);confirm(first);check(count()==2,"Menu input failed after focus recovery");
+    checks.push_back("camera_and_owned_hwnd_focus_changes_cancel_partial_confirm_and_recover");
+    bridge.call("desktop.play.stop",{{"session_id",bridge.session}});bridge.session=id(901);start();
+    state=bridge.input();check(!state["configured"].get<bool>() && state["controller"].is_null() && state["gamepad"]["assigned"].is_null(),"New runtime retained old UI assignment");
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,true);configure(first.instance);bridge.poll();draw();
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,false);bridge.poll();check(count()==0,"Held confirm crossed runtime replacement");
+    navigate(first);confirm(first);check(count()==1,"New menu runtime failed to bind/control");
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,true);bridge.poll();second.button(SDL_GAMEPAD_BUTTON_SOUTH,true);configure(second.instance);bridge.poll();draw();
+    first.button(SDL_GAMEPAD_BUTTON_SOUTH,false);second.button(SDL_GAMEPAD_BUTTON_SOUTH,false);bridge.poll();check(count()==1,"Reassignment retained partial confirmation");
+    navigate(first);check(!bridge.input()["ui_keyboard"].get<bool>(),"Old assigned device retained navigation authority");navigate(second);confirm(second);check(count()==2,"New device failed after neutral reassignment");
+    second.button(SDL_GAMEPAD_BUTTON_SOUTH,true);bridge.poll();second.detach();bridge.poll();
+    check(bridge.input()["gamepad"]["assigned"].is_null() && count()==2,"Disconnected device completed partial confirm");
+    checks.push_back("session_replacement_reassignment_and_disconnect_cancel_partial_gestures_without_controller_input");
+    check(bytes(directory/"menu-world.json")==authored,"Menu input changed authored world");
+    const auto render=bridge.call("desktop.inspect").at("views").at("game").at("render");
+    check(render.at("nvrhi_errors")==0,"Vulkan reported errors during menu gamepad qualification");
+    return {{"passed",true},{"checks",checks},{"calls",bridge.requests},{"gpu_index",gpu},{"render",render},
+        {"source","Real SDL virtual gamepads, owned HWND focus, Vulkan layout and compiled C# Control; no physical device/global input injection claim"}};
 }
-int main() {
+}
+int main(int argc,char** argv) {
     fs::path directory;
     try {
         directory=fs::temp_directory_path()/fs::path("poima-hosted-gamepad-"+std::to_string(GetCurrentProcessId())+"-"+std::to_string(GetTickCount64()));
         check(fs::create_directory(directory),"Create isolated test directory");
+        if(argc>1) {
+            check(argc==6 && std::string(argv[1])=="--ui-menu","Usage: --ui-menu GPU HOSTFXR GAMEPLAY_BRIDGE ASSEMBLY");
+            const auto hint_before=SDL_GetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS);
+            const std::string policy_before=hint_before ? hint_before : "<unset>";
+            auto result=menu_qualification(directory,std::stoi(argv[2]),fs::path(argv[3]),fs::path(argv[4]),fs::path(argv[5]));
+            const auto hint_after=SDL_GetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS);
+            check(policy_before==(hint_after ? hint_after : "<unset>"),"Hosted owner leaked SDL background-event policy");
+            result["checks"].push_back("hosted_background_event_policy_restored_after_last_owner");
+            fs::remove_all(directory);std::cout<<result.dump()<<'\n';return 0;
+        }
         Json results=Json::array();std::uint64_t calls=0;
         {
             SDLSession sdl;Sentinel sentinel;Bridge bridge(directory/"world.json");author(bridge);const auto original=bytes(directory/"world.json");

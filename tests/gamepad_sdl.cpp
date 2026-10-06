@@ -63,6 +63,38 @@ int queued(Uint32 first,Uint32 last) {
     const int count=SDL_PeepEvents(nullptr,0,SDL_PEEKEVENT,first,last);
     check(count>=0,"Queue count failed");return count;
 }
+void ui_qualification() {
+    BoundPlayerInput input(default_gamepad_input_profile());
+    VirtualPad pad("Poima UI assigned",31),other("Poima UI unassigned",32);
+    GamepadHost host(GamepadHostMode::hosted);host.start(input,{"explicit",pad.id},false);host.poll();
+    (void)host.drain_ui_events();host.remapped(pad.id);check(host.drain_ui_events().reset,"Inactive remap failed to reset UI ownership state");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);pad.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,true);pad.axis(SDL_GAMEPAD_AXIS_LEFTY,24000);host.poll();
+    host.ui_active(true);auto batch=host.drain_ui_events();check(batch.reset && batch.count==0,"UI ownership did not reset input");
+    host.poll();check(host.drain_ui_events().count==0,"Held controls activated on UI entry");still(input.consume("player"));
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);pad.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,false);pad.axis(SDL_GAMEPAD_AXIS_LEFTY,0);host.poll();check(host.drain_ui_events().count==0,"Suppressed release emitted an action");
+    other.button(SDL_GAMEPAD_BUTTON_SOUTH,true);other.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,true);other.axis(SDL_GAMEPAD_AXIS_LEFTY,32767);host.poll();check(host.drain_ui_events().count==0,"Unassigned gamepad emitted UI actions");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();batch=host.drain_ui_events();check(batch.count==1 && batch.events[0]==GamepadUiAction::accept_down,"UI confirm press absent while paused");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);host.poll();batch=host.drain_ui_events();check(batch.count==1 && batch.events[0]==GamepadUiAction::accept_up,"UI confirm release absent");
+    pad.button(SDL_GAMEPAD_BUTTON_DPAD_UP,true);host.poll();pad.button(SDL_GAMEPAD_BUTTON_DPAD_UP,false);host.poll();pad.button(SDL_GAMEPAD_BUTTON_DPAD_RIGHT,true);host.poll();pad.button(SDL_GAMEPAD_BUTTON_DPAD_RIGHT,false);host.poll();pad.button(SDL_GAMEPAD_BUTTON_EAST,true);host.poll();pad.button(SDL_GAMEPAD_BUTTON_EAST,false);host.poll();
+    batch=host.drain_ui_events();check(batch.count==3 && batch.events[0]==GamepadUiAction::previous && batch.events[1]==GamepadUiAction::next && batch.events[2]==GamepadUiAction::cancel,"Dpad/cancel mapping wrong");
+    pad.axis(SDL_GAMEPAD_AXIS_LEFTY,18021);host.poll();check(host.drain_ui_events().count==0,"Stick triggered below threshold");
+    pad.axis(SDL_GAMEPAD_AXIS_LEFTY,20000);host.poll();pad.axis(SDL_GAMEPAD_AXIS_LEFTY,32000);host.poll();pad.axis(SDL_GAMEPAD_AXIS_LEFTY,9000);host.poll();pad.axis(SDL_GAMEPAD_AXIS_LEFTY,-32000);host.poll();
+    batch=host.drain_ui_events();check(batch.count==1 && batch.events[0]==GamepadUiAction::next,"Stick repeated without neutral hysteresis");
+    pad.axis(SDL_GAMEPAD_AXIS_LEFTY,0);host.poll();pad.axis(SDL_GAMEPAD_AXIS_LEFTY,-18022);host.poll();check(host.drain_ui_events().count==0,"Negative stick triggered below normalized threshold");pad.axis(SDL_GAMEPAD_AXIS_LEFTY,-18023);host.poll();batch=host.drain_ui_events();check(batch.count==1 && batch.events[0]==GamepadUiAction::previous,"Stick failed to rearm after neutral");pad.axis(SDL_GAMEPAD_AXIS_LEFTY,0);host.poll();
+    host.activate(true);pad.axis(SDL_GAMEPAD_AXIS_LEFTX,32767);pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();still(input.consume("player"));
+    pad.button(SDL_GAMEPAD_BUTTON_START,true);check(host.poll(),"UI ownership lost Start rising edge");pad.button(SDL_GAMEPAD_BUTTON_START,false);host.poll();
+    host.ui_active(false);batch=host.drain_ui_events();check(batch.reset && batch.count==0,"Ownership change retained partial confirm");host.poll();still(input.consume("player"));
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);pad.axis(SDL_GAMEPAD_AXIS_LEFTX,0);host.poll();check(input.gamepad_armed(),"Gameplay failed neutral rearm after menu");
+    host.ui_active(true);(void)host.drain_ui_events();
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();
+    for(int i=0;i<65;++i) {pad.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,true);host.poll();pad.button(SDL_GAMEPAD_BUTTON_DPAD_DOWN,false);host.poll();}
+    batch=host.drain_ui_events();check(batch.reset && batch.count==0,"Overflow leaked partial press/navigation batch");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);host.poll();check(host.drain_ui_events().count==0,"Overflow leaked unmatched confirm release");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);host.poll();batch=host.drain_ui_events();check(batch.count==2 && batch.events[0]==GamepadUiAction::accept_down && batch.events[1]==GamepadUiAction::accept_up,"Overflow did not recover after neutral");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();host.remapped(pad.id);batch=host.drain_ui_events();check(batch.reset && batch.count==0,"Remap retained queued confirm");pad.button(SDL_GAMEPAD_BUTTON_SOUTH,false);host.poll();check(host.drain_ui_events().count==0,"Remap emitted suppressed confirm release");
+    pad.button(SDL_GAMEPAD_BUTTON_SOUTH,true);host.poll();pad.detach();host.poll();batch=host.drain_ui_events();check(batch.reset && batch.count==0 && status(host)["assigned"].is_null(),"Disconnect retained UI press or reassigned device");
+    host.stop();check(host.drain_ui_events().reset,"Stop failed UI reset");
+}
 void hosted_qualification() {
 #ifdef _WIN32
     // Enable the actual Windows video pump so the sentinel would be consumed
@@ -207,8 +239,9 @@ int main() {
         }
         host.stop();check(!input.gamepad_connected(),"Stopped host retains input attachment");
         hosted_qualification();
+        ui_qualification();
         std::cout<<Json{{"passed",true},{"source","SDL virtual joysticks and real SDL event queue; not physical devices"},
             {"auto_selection_qualified",existing==0},{"preexisting_devices",existing},
-            {"checks",{"discovery_labels","initial_event_deduplication","neutral_attachment","binding_edges","analog_axes","second_pad_filtering","focus_gating","start_rising_edges","mapping_changes","explicit_disconnect_ids","stop_cleanup","hosted_unrelated_event_preservation","hosted_no_owner_message_pump","hosted_failed_reassignment_atomic","hosted_bounded_drain","hosted_3000_tick_queue_stability","hosted_neutral_start_focus","hosted_lifetime_hotplug"}}}.dump()<<'\n';
+            {"checks",{"discovery_labels","initial_event_deduplication","neutral_attachment","binding_edges","analog_axes","second_pad_filtering","focus_gating","start_rising_edges","mapping_changes","explicit_disconnect_ids","stop_cleanup","hosted_unrelated_event_preservation","hosted_no_owner_message_pump","hosted_failed_reassignment_atomic","hosted_bounded_drain","hosted_3000_tick_queue_stability","hosted_neutral_start_focus","hosted_lifetime_hotplug","ui_paused_assigned_only","ui_held_confirm_navigation_gate","ui_stick_hysteresis","ui_exclusive_gameplay","ui_bounded_overflow_reset","ui_remap_disconnect_cleanup"}}}.dump()<<'\n';
     }catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

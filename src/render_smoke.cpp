@@ -1232,6 +1232,24 @@ struct Context {
         }else game_ui_source=game_ui_composed_frame;
 #endif
     }
+    void reset_game_ui_input() {
+#if POIMA_GAME_UI
+        if(game_ui_presenter)game_ui_presenter->reset_input();
+#endif
+    }
+    UiInputResult dispatch_game_ui_input(const UiInput& event,bool activate=true) {
+#if POIMA_GAME_UI
+        if(game_ui_presenter && game_ui_source && scene_visible) {
+            auto local=event;
+            local.x-=static_cast<float>(game_ui_layout_rect[0]);
+            local.y-=static_cast<float>(game_ui_layout_rect[1]);
+            return game_ui_presenter->input(local,activate);
+        }
+#else
+        (void)event;(void)activate;
+#endif
+        return {};
+    }
     void prepare_game_ui() {
         validate_game_ui();
         resolve_game_ui();
@@ -1652,7 +1670,7 @@ struct HostedViewport::Impl {
     RenderReport result;
     void* hwnd=nullptr;
     std::thread::id owner=std::this_thread::get_id();
-    bool ready=false;
+    bool ready=false,ui_presented=false;
     Impl(const RenderOptions& requested,const SceneSnapshot& scene,void* window):options(requested),snapshot(scene),hwnd(window) {
 #ifdef _WIN32
         require(hwnd && IsWindow(static_cast<HWND>(hwnd)),"Hosted viewport requires a valid externally owned HWND.");
@@ -1691,7 +1709,20 @@ HostedViewport::~HostedViewport()=default;
 std::array<std::uint32_t,2> HostedViewport::extent() const {
     impl_->check_thread();return impl_->client_extent();
 }
-void HostedViewport::resize() { impl_->check_thread();impl_->context.swapchain_dirty=true; }
+void HostedViewport::resize() { impl_->check_thread();impl_->context.swapchain_dirty=true;reset_ui_input(); }
+void HostedViewport::reset_ui_input() {
+    impl_->check_thread();impl_->ui_presented=false;impl_->context.reset_game_ui_input();
+}
+UiInputResult HostedViewport::ui_input(const std::shared_ptr<const ui::Presentation>& current,const UiInput& event) {
+    auto& state=*impl_;state.check_thread();
+    const auto size=state.drawable_extent();
+    if(!state.ui_presented || !current || state.context.renderer_fault
+        || state.context.swapchain_dirty || !size[0] || !size[1]
+        || size[0]!=state.result.width || size[1]!=state.result.height) {
+        reset_ui_input();return {};
+    }
+    return state.context.dispatch_game_ui_input(event,current==state.snapshot.logical_ui);
+}
 void HostedViewport::set_overlay(const std::vector<EditorOverlayVertex>& triangles) {
     impl_->check_thread();
     require(triangles.size()<=max_editor_overlay_vertices && triangles.size()%3==0,"Hosted overlay needs a triangle list with at most 65536 vertices.");
@@ -1705,6 +1736,7 @@ bool HostedViewport::draw(const SceneSnapshot& scene,bool capture) { return draw
 bool HostedViewport::draw_capture(const SceneSnapshot& scene,const std::string& path) { return draw_frame(scene,&path); }
 bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* capture_path) {
     auto& state=*impl_;auto& context=state.context;state.check_thread();
+    state.ui_presented=false;
     try {
         require(!context.renderer_fault && context.messages.errors==0,"Hosted renderer fault; recreate the viewport before drawing again.");
         require(!capture_path || (!capture_path->empty() && capture_path->find('\0')==std::string::npos),"Hosted capture requires a nonempty, NUL-free output path.");
@@ -1712,7 +1744,7 @@ bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* ca
         // inside its dispatcher or consume events belonging to another window.
         // Discard only this wrapper's queued SDL copies of native GUI events.
         if(context.window)SDL_FilterEvents([](void* window,SDL_Event* event)->bool { return SDL_GetWindowFromEvent(event)!=window; },context.window);
-        const auto size=state.drawable_extent();if(size[0]==0 || size[1]==0)return false;
+        const auto size=state.drawable_extent();if(size[0]==0 || size[1]==0) {context.reset_game_ui_input();return false;}
         state.snapshot=scene;context.scene=&state.snapshot;
         auto options=state.options;options.width=size[0];options.height=size[1];
         try {
@@ -1724,8 +1756,9 @@ bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* ca
             context.update_scene();
             context.prepare_overlay();
         } catch(...) { context.renderer_fault=true;throw; }
-        if(!context.frame(capture_path!=nullptr))return false;
+        if(!context.frame(capture_path!=nullptr)) {context.reset_game_ui_input();return false;}
         ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
+        state.ui_presented=true;
         state.result.hardware=context.hardware;state.result.gpu_name=context.gpu_name;
         if(capture_path) { context.capture(*capture_path);state.result.capture_written=true; }
         state.result.success=true;state.result.detail="Native Vulkan child viewport; serialized presentation, no frame-time qualification.";
@@ -1825,14 +1858,17 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
     result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
     std::unique_ptr<PlayerAudio> audio;
     try {
-        require(session.controller_valid(options.controller),"Player requires an active CharacterController entity.");
+        require((options.controller.empty() && !options.replay) || session.controller_valid(options.controller),"Player requires an active CharacterController when selected; replay requires a controller.");
         snapshot=session.snapshot(options.camera);
         context.initialize(options.render,&snapshot,true);
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio)audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera));
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
-        bool captured=!options.replay && focused;
-        bool active=captured;
+        bool captured=!options.replay && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
+        bool active=!options.replay && focused;
+        bool ui_ready=false,ui_presented=false;
+        auto ui_modal=[&] { return snapshot.logical_ui && !snapshot.logical_ui->modal.empty(); };
+        auto ui_available=[&] { return snapshot.logical_ui && !snapshot.logical_ui->elements.empty(); };
         if(gamepads) { gamepad_binding.host=gamepads;gamepads->start(input,options.gamepad_selection);gamepads->activate(active); }
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
         bool quit=false;
@@ -1851,30 +1887,71 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             // Runtime ownership changed only after the committed owner advance.
             // Never reuse catch-up ticks, pending edges or DSP from that timeline.
             captured=false;active=false;input.clear();
+            ui_ready=false;ui_presented=false;context.reset_game_ui_input();
             if(gamepads)gamepads->activate(false);
             require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
             clock.advance(0,false);previous=SDL_GetTicksNS();
             if(audio)audio->discard_pending();
-            require(session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
+            require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
             snapshot=session.snapshot(options.camera);
             if(audio)audio->reset(session.audio_state(options.camera));
             if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
             else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
             return true;
         };
+        auto ui_event=[&](const UiInput& event) {
+            if(!ui_presented || !ui_available())return ui_modal();
+            auto physical=event;
+            if(event.kind==UiInputKind::pointer_move || event.kind==UiInputKind::pointer_down || event.kind==UiInputKind::pointer_up || event.kind==UiInputKind::pointer_wheel) {
+                int logical_width=0,logical_height=0;
+                require(SDL_GetWindowSize(context.window,&logical_width,&logical_height),SDL_GetError());
+                if(logical_width<=0 || logical_height<=0) {context.reset_game_ui_input();ui_ready=false;ui_presented=false;return ui_modal();}
+                physical.x*=static_cast<float>(context.extent.width)/static_cast<float>(logical_width);
+                physical.y*=static_cast<float>(context.extent.height)/static_cast<float>(logical_height);
+            }
+            const auto response=context.dispatch_game_ui_input(physical,ui_ready);
+            if(response.activated) {
+                const auto accepted=session.control(result.final_session,snapshot.logical_ui->revision,*response.activated);
+                const bool replaced=after_advance(accepted.save_serviced);
+                if(!replaced && accepted.intent!=RuntimeControlIntent::none) {
+                    active=accepted.intent==RuntimeControlIntent::resume;
+                    captured=false;input.clear();clock.advance(0,false);previous=SDL_GetTicksNS();
+                    SDL_SetWindowRelativeMouseMode(context.window,false);
+                    if(gamepads)gamepads->activate(active);
+                }
+                snapshot=session.snapshot(options.camera);
+                // Same-session queued events still target the visible old UI.
+                // Until redraw, consume its regions without invoking Control.
+                ui_ready=false;context.reset_game_ui_input();
+            }
+            return response.consumed;
+        };
         while(!quit) {
             profiling::SessionScope frame_session(result.final_session);
             profiling::Scope frame_scope("player.frame",static_cast<std::int64_t>(session.tick()));
+            if(!options.replay && ui_modal()) {
+                if(captured)SDL_SetWindowRelativeMouseMode(context.window,false);
+                captured=false;input.clear();
+            }
+            const bool navigable=snapshot.logical_ui && std::any_of(snapshot.logical_ui->elements.begin(),snapshot.logical_ui->elements.end(),
+                [](const auto& row) {return row.eligible && row.element.kind==ui::Kind::button;});
+            if(gamepads)gamepads->ui_active(focused && (ui_modal() || navigable) && !captured);
             SDL_Event event;
             while(SDL_PollEvent(&event)) {
                 if(event.type==SDL_EVENT_QUIT || event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) { quit=true; result.stop_reason="window_closed"; }
-                if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_ESCAPE) { quit=true; result.stop_reason="escape"; }
+                if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_ESCAPE) {
+                    if(!options.replay && ui_modal()) {ui_event({UiInputKind::cancel});continue;}
+                    quit=true; result.stop_reason="escape";
+                }
                 if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
                     focused=false; captured=false; active=false; input.clear();if(gamepads)gamepads->activate(false);
+                    ui_ready=false;ui_presented=false;context.reset_game_ui_input();if(gamepads)gamepads->ui_active(false);
                     if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
                 }
                 if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
-                if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) context.swapchain_dirty=true;
+                if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+                    context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
+                }
                 if(options.replay) continue;
                 if(gamepads) {
                     if(event.type==SDL_EVENT_GAMEPAD_ADDED) { gamepads->added(event.gdevice.which);continue; }
@@ -1889,10 +1966,27 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
                         continue;
                     }
                 }
+                if(focused && !captured && ui_available()) {
+                    std::optional<UiInput> routed;
+                    if(event.type==SDL_EVENT_MOUSE_MOTION)routed=UiInput{UiInputKind::pointer_move,event.motion.x,event.motion.y};
+                    else if((event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP) && event.button.button==SDL_BUTTON_LEFT)
+                        routed=UiInput{event.type==SDL_EVENT_MOUSE_BUTTON_DOWN ? UiInputKind::pointer_down : UiInputKind::pointer_up,event.button.x,event.button.y};
+                    else if(event.type==SDL_EVENT_MOUSE_WHEEL)routed=UiInput{UiInputKind::pointer_wheel,event.wheel.mouse_x,event.wheel.mouse_y,
+                        std::clamp(event.wheel.direction==SDL_MOUSEWHEEL_FLIPPED ? event.wheel.y : -event.wheel.y,-100.f,100.f)};
+                    else if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
+                        if(event.key.repeat)continue;
+                        routed=UiInput{(event.key.mod & SDL_KMOD_SHIFT) ? UiInputKind::focus_previous : UiInputKind::focus_next};
+                    } else if((event.type==SDL_EVENT_KEY_DOWN || event.type==SDL_EVENT_KEY_UP) && event.key.scancode==SDL_SCANCODE_RETURN) {
+                        if(event.type==SDL_EVENT_KEY_DOWN && event.key.repeat)continue;
+                        routed=UiInput{event.type==SDL_EVENT_KEY_DOWN ? UiInputKind::accept_down : UiInputKind::accept_up};
+                    }
+                    if(routed && ui_event(*routed))continue;
+                    if(ui_modal())continue;
+                }
                 if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
                     captured=false;active=false;input.clear();if(gamepads)gamepads->activate(false);SDL_SetWindowRelativeMouseMode(context.window,false);
                 }
-                if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured) {
+                if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured && !options.controller.empty()) {
                     const bool resuming=!active;require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());captured=true;active=true;
                     if(resuming) { input.clear();if(gamepads)gamepads->activate(true); }continue;
                 }
@@ -1902,6 +1996,16 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
                     input.control(InputControlKind::keyboard,static_cast<std::uint16_t>(event.key.scancode),event.type==SDL_EVENT_KEY_DOWN);
                 if(captured && (event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP))
                     input.control(InputControlKind::mouse,event.button.button,event.type==SDL_EVENT_MOUSE_BUTTON_DOWN);
+            }
+            if(gamepads) {
+                const auto batch=gamepads->drain_ui_events();
+                if(batch.reset)context.reset_game_ui_input();
+                for(std::uint32_t i=0;i<batch.count && focused && !captured;++i) {
+                    const auto action=batch.events[i];
+                    const auto kind=action==GamepadUiAction::next ? UiInputKind::focus_next : action==GamepadUiAction::previous ? UiInputKind::focus_previous :
+                        action==GamepadUiAction::accept_down ? UiInputKind::accept_down : action==GamepadUiAction::accept_up ? UiInputKind::accept_up : UiInputKind::cancel;
+                    ui_event({kind});
+                }
             }
             if(audio)audio->active(options.replay || (focused && active));
             if(quit) break;
@@ -1930,15 +2034,23 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             } else {
                 const auto ticks=clock.advance(elapsed,focused && active);
                 for(std::uint32_t tick=0;tick<ticks;++tick) {
-                    const bool save_serviced=session.advance({input.peek(options.controller)});
+                    const bool save_serviced=session.advance(options.controller.empty() ? std::vector<RuntimeInput>{} : std::vector<RuntimeInput>{input.peek(options.controller)});
                     if(after_advance(save_serviced))break;
-                    input.consume(options.controller);
+                    if(!options.controller.empty())input.consume(options.controller);
+                    // A gameplay tick can open a modal during catch-up. Clear
+                    // held input before the next tick, not after all eight.
+                    snapshot.logical_ui=session.ui_presentation();
+                    if(ui_modal()) {
+                        captured=false;input.clear();SDL_SetWindowRelativeMouseMode(context.window,false);
+                        if(gamepads)gamepads->ui_active(focused);
+                    }
                 }
             }
             profiling::SessionScope render_session(result.final_session);
             profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
             snapshot=session.snapshot(options.camera); context.update_scene();
-            if(context.frame(false)) ++report.frames_presented;
+            ui_ready=context.frame(false);ui_presented=ui_ready;
+            if(ui_ready) ++report.frames_presented;
             if(!quit && options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
         }
         profiling::SessionScope final_session(result.final_session);

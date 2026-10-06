@@ -79,6 +79,9 @@ public:
     profiling::Recorder& profiler() noexcept;
     WorldProfilerContext profiler_context() const;
     WorldRuntimeStatus runtime_status() const;
+    // Owned logical UI projection, cached until UI changes. No scene/asset
+    // extraction, camera validation, simulation or storage work.
+    std::shared_ptr<const ui::Presentation> runtime_ui_presentation() const;
     // Owner-only automatic playback: exactly one atomic tick, then any queued
     // save/load service. No RPC receipt is created. Success is committed even
     // if a later presentation operation fails; never retry it as a new tick.

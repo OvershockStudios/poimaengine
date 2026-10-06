@@ -8,6 +8,7 @@
 #include "poima/player.hpp"
 #include "poima/input_profile.hpp"
 #include "poima/gamepad.hpp"
+#include "poima/ui_model.hpp"
 #include "editor_audio.hpp"
 #include "input_profile_store.hpp"
 #include "world_storage.hpp"
@@ -221,6 +222,7 @@ struct ViewportState {
     Json snapshot_key;
     std::optional<RenderReport> last_render;
     bool faulted=false;
+    std::string presented_session,presented_camera;
 };
 struct Bridge : ViewportState {
     std::thread::id owner=std::this_thread::get_id();
@@ -253,7 +255,11 @@ struct Bridge : ViewportState {
     std::string gamepad_error;
     std::string input_controller,input_camera;
     Json input_profile=nullptr,last_input_applied=nullptr;
-    bool input_focused=false;
+    bool input_focused=false,ui_keyboard=false;
+    std::string ui_session,ui_camera;
+    struct UiReceipt { Json params,result,activation;int error_code=0;std::string error; };
+    std::array<std::unique_ptr<UiReceipt>,64> ui_receipts;
+    std::size_t ui_receipt_next=0;
     std::uint64_t input_batches=0;
     std::vector<Json> input_receipts;
     std::uint64_t gameplay_generation=0,gameplay_cached_revision=0;
@@ -291,11 +297,18 @@ struct Bridge : ViewportState {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
             {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"structure_revision",value.active ? Json(value.structure_revision) : Json(nullptr)},{"ui_revision",value.active ? Json(value.ui_revision) : Json(nullptr)},{"control_sequence",value.active ? Json(value.control_sequence) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
     }
+    std::string active_game_camera() const { return explicit_views ? game_camera : view_mode=="game" ? view_camera : std::string{}; }
+    void reset_ui_input() {
+        ui_keyboard=false;ui_session.clear();ui_camera.clear();
+        if(viewport)viewport->reset_ui_input();
+        if(game_view.viewport)game_view.viewport->reset_ui_input();
+        gamepad.ui_active(false);
+    }
     void release_input(bool forget=false) {
         input_focused=false;
         gamepad.activate(false);
         if(game_input)game_input->clear();
-        if(forget) { gamepad.stop();game_input.reset();gamepad_error.clear();input_controller.clear();input_camera.clear();input_profile=nullptr;last_input_applied=nullptr;input_batches=0;input_receipts.clear(); }
+        if(forget) { reset_ui_input();gamepad.stop();game_input.reset();gamepad_error.clear();input_controller.clear();input_camera.clear();input_profile=nullptr;last_input_applied=nullptr;input_batches=0;input_receipts.clear(); }
     }
     static Json input_frame(const RuntimeInput& value,bool entity=false) {
         Json result={{"move",value.move},{"look",value.look},{"jump",value.jump},{"use",value.use}};
@@ -306,9 +319,10 @@ struct Bridge : ViewportState {
         auto device=Json::parse(gamepad.status_json());device["available"]=GamepadHost::available();
         device["error"]=gamepad_error.empty() ? Json(nullptr) : Json(gamepad_error);
         return {{"configured",bool(game_input)},{"session_id",game_input ? Json(play_session) : Json(nullptr)},
-            {"controller",game_input ? Json(input_controller) : Json(nullptr)},{"camera",game_input ? Json(input_camera) : Json(nullptr)},
-            {"focused",input_focused},{"profile",input_profile},{"accepted_batches",input_batches},
-            {"pending",input_frame(game_input ? game_input->peek(input_controller) : RuntimeInput{})},{"last_applied",last_input_applied},{"gamepad",std::move(device)}};
+            {"binding",!game_input ? Json(nullptr) : Json(input_controller.empty() ? "ui" : "controller")},
+            {"controller",game_input && !input_controller.empty() ? Json(input_controller) : Json(nullptr)},{"camera",game_input ? Json(input_camera) : Json(nullptr)},
+            {"focused",input_focused},{"ui_keyboard",ui_keyboard},{"ui_session",ui_session.empty() ? Json(nullptr) : Json(ui_session)},{"profile",input_profile},{"accepted_batches",input_batches},
+            {"pending",input_frame(game_input && !input_controller.empty() ? game_input->peek(input_controller) : RuntimeInput{})},{"last_applied",last_input_applied},{"gamepad",std::move(device)}};
     }
     Json input_devices(const Json& params) {
         fields(params,{});
@@ -326,15 +340,22 @@ struct Bridge : ViewportState {
         if(method=="desktop.input.inspect") { fields(params,{});return input_json(); }
         if(method=="desktop.input.devices")return input_devices(params);
         require(method=="desktop.input.configure" || method=="desktop.input.focus" || method=="desktop.input.events","Unknown desktop input method.",-32601);
-        if(method=="desktop.input.configure")fields(params,{"session_id","controller","input_profile","input_revision","defaults","gamepad"},{"session_id","controller"});
+        if(method=="desktop.input.configure")fields(params,{"session_id","controller","camera","input_profile","input_revision","defaults","gamepad"},{"session_id"});
         else if(method=="desktop.input.focus")fields(params,{"session_id","focused"},{"session_id","focused"});
         else fields(params,{"session_id","request_id","events"},{"session_id","request_id","events"});
         const auto session=identifier(params.at("session_id"));
         require(!play_session.empty() && session==play_session,"Runtime session conflict.",-32009);
         if(method=="desktop.input.configure") {
-            auto controller=identifier(params.at("controller"));const auto values=world->controllers(true);
-            const auto found=std::find_if(values.begin(),values.end(),[&](const auto& value){return value.id==controller;});
-            require(found!=values.end(),"Input requires a runtime CharacterController entity.",-32004);
+            require(params.contains("controller")!=params.contains("camera"),"Choose exactly one controller or UI-only camera binding.");
+            std::string controller,bound_camera;
+            if(params.contains("controller")) {
+                controller=identifier(params.at("controller"));const auto values=world->controllers(true);
+                const auto found=std::find_if(values.begin(),values.end(),[&](const auto& value){return value.id==controller;});
+                require(found!=values.end(),"Input requires a runtime CharacterController entity.",-32004);bound_camera=found->camera;
+            } else {
+                bound_camera=identifier(params.at("camera"));const auto values=world->cameras(true);
+                require(std::any_of(values.begin(),values.end(),[&](const auto& value){return value.id==bound_camera;}),"UI-only input requires a runtime Camera entity.",-32004);
+            }
             require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
             require(!params.contains("defaults") || !params.contains("input_profile"),"Choose defaults or input_profile, not both.");
             auto profile=default_input_profile();Json metadata={{"source","defaults"},{"path",nullptr},{"revision",0},{"content_hash",nullptr},{"format","poima.input.v1"}};
@@ -362,17 +383,17 @@ struct Bridge : ViewportState {
                 if(device.contains("id")) { const auto id=integer(device.at("id"));require(id>0 && id<=std::numeric_limits<std::uint32_t>::max(),"Gamepad id must be a nonzero uint32.");selection.id=static_cast<std::uint32_t>(id); }
             }
             require(selection.mode=="disabled" || profile.gamepad.has_value(),"Gamepad selection requires a v2 profile or keyboard_mouse_gamepad defaults.");
-            auto candidate=std::make_unique<BoundPlayerInput>(std::move(profile));auto camera=found->camera;
+            auto candidate=std::make_unique<BoundPlayerInput>(std::move(profile));
             // All allocating preparation precedes device acquisition. start has
             // the strong guarantee; publishing the stable evaluator is noexcept.
             gamepad.start(*candidate,selection,false);
-            game_input.swap(candidate);input_controller.swap(controller);input_camera.swap(camera);input_profile.swap(metadata);
-            input_focused=false;gamepad_error.clear();last_input_applied=nullptr;input_batches=0;return input_json();
+            game_input.swap(candidate);input_controller.swap(controller);input_camera.swap(bound_camera);input_profile.swap(metadata);
+            reset_ui_input();input_focused=false;gamepad_error.clear();last_input_applied=nullptr;input_batches=0;return input_json();
         }
         if(method=="desktop.input.focus") {
             require(params.at("focused").is_boolean(),"focused must be Boolean.");
             if(!params.at("focused").get<bool>()) { release_input();return input_json(); }
-            require(bool(game_input) && playing && game_selected() && selected_game_camera()==input_camera,"Input focus requires configured playing Game view with its controller camera.",-32009);
+            require(bool(game_input) && !input_controller.empty() && playing && game_selected() && selected_game_camera()==input_camera,"Gameplay focus requires a controller binding and its playing Game camera; UI-only input cannot capture gameplay.",-32009);
             require(gamepad_error.empty(),"Reconfigure input after the gamepad device error.",-32009);
             if(!input_focused) {
                 try { gamepad.activate(true);input_focused=true; }
@@ -385,7 +406,7 @@ struct Bridge : ViewportState {
             require(receipt.at("params")==params,"Input request ID reused with different parameters.",-32010);
             auto result=receipt.at("result");result["replayed"]=true;return result;
         }
-        require(bool(game_input) && input_focused && playing && game_selected() && selected_game_camera()==input_camera,"Gameplay input requires focused configured playing Game view.",-32009);
+        require(bool(game_input) && !input_controller.empty() && input_focused && playing && game_selected() && selected_game_camera()==input_camera,"Gameplay input requires a focused controller binding in its playing Game view.",-32009);
         const auto& events=params.at("events");require(events.is_array() && events.size()<=256,"Input accepts at most 256 events per batch.");
         require(input_batches<max_integer,"Input batch counter exhausted.");
         auto staged=*game_input;
@@ -575,6 +596,74 @@ struct Bridge : ViewportState {
         }
         applied_ui_control_sequence=sequence;
     }
+    void resolve_ui_receipt(UiReceipt& receipt) {
+        if(receipt.error_code)throw Failure(receipt.error_code,receipt.error);
+        if(receipt.activation.is_null() || receipt.result.contains("activation"))return;
+        try {
+            auto result=world_call("runtime.ui.activate",receipt.activation);
+            sync_playback();apply_ui_control(result);expire_capture();receipt.result["activation"]=std::move(result);
+        } catch(const std::exception& error) {
+            const auto current=world->runtime_status();
+            // A rejected callback has no accepted receipt. Preserve that failure
+            // rather than rerunning user code. An accepted callback/save keeps
+            // its original guards so the world owner can resolve its receipt.
+            if(current.active && current.session_id==receipt.activation.at("session_id").get<std::string>() &&
+                current.control_sequence==integer(receipt.activation.at("expected_control_sequence"))) {
+                receipt.error=error.what();const auto* failure=dynamic_cast<const Failure*>(&error);
+                receipt.error_code=failure ? failure->code : -32000;
+            }
+            throw;
+        }
+    }
+    Json ui_command(const Json& params) {
+        fields(params,{"session_id","camera","request_id","kind","x","y","delta"},{"session_id","camera","request_id","kind"});
+        const auto session=identifier(params.at("session_id")),camera_id=identifier(params.at("camera")),request_id=identifier(params.at("request_id"));
+        for(const auto& receipt:ui_receipts)if(receipt && receipt->params.at("session_id")==session && receipt->params.at("request_id")==request_id) {
+            require(receipt->params==params,"UI input request ID reused with different parameters.",-32010);
+            resolve_ui_receipt(*receipt);auto result=receipt->result;result["replayed"]=true;return result;
+        }
+        require(params.at("kind").is_string(),"UI input kind must be text.");
+        const auto kind=params.at("kind").get<std::string>();
+        const std::array<std::pair<const char*,UiInputKind>,10> kinds{{
+            {"pointer_move",UiInputKind::pointer_move},{"pointer_down",UiInputKind::pointer_down},{"pointer_up",UiInputKind::pointer_up},
+            {"pointer_leave",UiInputKind::pointer_leave},{"focus_next",UiInputKind::focus_next},{"focus_previous",UiInputKind::focus_previous},
+            {"accept_down",UiInputKind::accept_down},{"accept_up",UiInputKind::accept_up},{"cancel",UiInputKind::cancel},{"pointer_wheel",UiInputKind::pointer_wheel}}};
+        const auto found=std::find_if(kinds.begin(),kinds.end(),[&](const auto& item){return kind==item.first;});
+        require(found!=kinds.end(),"Unknown UI input kind.");UiInput event;event.kind=found->second;
+        for(const auto* key:{"x","y","delta"})if(params.contains(key))require(params.at(key).is_number() && std::isfinite(params.at(key).get<double>()) && std::abs(params.at(key).get<double>())<=1000000,"Invalid UI input coordinate.");
+        event.x=params.value("x",0.f);event.y=params.value("y",0.f);event.delta=params.value("delta",0.f);
+        require(std::abs(event.delta)<=100,"UI wheel delta exceeds 100 lines.");
+        sync_playback();const auto state=world->runtime_status();
+        require(state.active && state.session_id==session,"UI runtime session conflict.",-32009);
+        require(camera_id==(explicit_views ? game_camera : view_camera) && (explicit_views || view_mode=="game"),"UI Game camera conflict.",-32009);
+        ui_session=session;ui_camera=camera_id;
+        const auto projection=world->runtime_ui_presentation();
+        const bool modal=projection && !projection->modal.empty();
+        auto& destination=explicit_views ? game_view : static_cast<ViewportState&>(*this);
+        UiInputResult input;
+        if(destination.viewport && !destination.faulted && destination.presented_session==session && destination.presented_camera==camera_id)
+            input=destination.viewport->ui_input(projection,event);
+        // A stale or temporarily hidden modal presentation must never leak an
+        // attempted menu click into player capture or a gameplay binding.
+        input.consumed=input.consumed || modal;
+        if(input.consumed)release_input();
+        ui_keyboard=modal || (input.focused.has_value() && kind!="cancel" && kind!="pointer_leave");
+        auto prepared=std::make_unique<UiReceipt>();prepared->params=params;
+        prepared->result={{"consumed",input.consumed},{"focused",input.focused ? Json(*input.focused) : Json(nullptr)},
+            {"presentation_revision",input.presentation_revision},{"modal",modal},{"keyboard_owned",ui_keyboard},{"replayed",false},
+            {"activated",input.activated ? Json(*input.activated) : Json(nullptr)}};
+        auto& retained=ui_receipts[ui_receipt_next];retained=std::move(prepared);ui_receipt_next=(ui_receipt_next+1)%ui_receipts.size();
+        // Remember the consumed edge before user code/storage or JSON response
+        // allocation. Duplicate presentation events never execute it again.
+        if(input.activated) {
+            const auto gameplay=world->gameplay_status();
+            retained->activation={{"session_id",session},{"request_id",request_id},{"id",*input.activated},
+                {"expected_tick",state.tick},{"expected_ui_revision",state.ui_revision},{"expected_control_sequence",state.control_sequence},
+                {"expected_gameplay_revision",gameplay.revision},{"expected_structure_revision",state.structure_revision}};
+            resolve_ui_receipt(*retained);
+        }
+        return retained->result;
+    }
     Json playback_json() const {
         return {{"state",play_session.empty() ? "stopped" : playing ? "playing" : "paused"},
             {"session_id",play_session.empty() ? Json(nullptr) : Json(play_session)},{"tick",play_session.empty() ? Json(nullptr) : Json(play_tick)},
@@ -633,8 +722,41 @@ struct Bridge : ViewportState {
         // errors are input/presentation errors, not simulation rollback.
         if(gamepad_error.empty())try {
             profiling::Scope gamepad_scope("input.gamepad.poll");
-            gamepad.activate(bool(game_input) && input_focused && playing && !held && !capture_hold);
+            auto& ui_view=explicit_views ? game_view : static_cast<ViewportState&>(*this);
+            const auto active_camera=explicit_views ? game_camera : view_mode=="game" ? view_camera : std::string{};
+            bool modal=false;
+            if(!play_session.empty() && !active_camera.empty()) {
+                const auto projection=world->runtime_ui_presentation();
+                modal=projection && !projection->modal.empty();
+            }
+            if(modal && input_focused)release_input();
+            const bool binding_matches=game_input && !play_session.empty() && input_camera==active_camera;
+            const bool ui_only=binding_matches && input_controller.empty();
+            const auto window=static_cast<HWND>(ui_view.hwnd);
+            const bool owns_ui=binding_matches && window && GetFocus()==window && GetForegroundWindow()==GetAncestor(window,GA_ROOT) && IsWindowVisible(window) && !IsIconic(GetAncestor(window,GA_ROOT)) &&
+                !held && !capture_hold && (modal || ui_keyboard || ui_only);
+            gamepad.ui_active(owns_ui);
+            gamepad.activate(bool(game_input) && !input_controller.empty() && input_focused && playing && !held && !capture_hold && !owns_ui);
             if(gamepad.poll() && input_focused)release_input();
+            const auto events=gamepad.drain_ui_events();
+            if(events.reset && ui_view.viewport) {
+                // Cancel gestures without discarding an unchanged displayed layout.
+                // ui_input still rejects stale projections and resized/hidden views.
+                if(!play_session.empty()) {
+                    UiInput cancel;cancel.kind=UiInputKind::cancel;
+                    (void)ui_view.viewport->ui_input(world->runtime_ui_presentation(),cancel);
+                } else ui_view.viewport->reset_ui_input();
+            }
+            for(std::uint32_t i=0;i<events.count && owns_ui;++i) {
+                const auto action=events.events[i];
+                const char* kind=action==GamepadUiAction::next ? "focus_next" : action==GamepadUiAction::previous ? "focus_previous" :
+                    action==GamepadUiAction::accept_down ? "accept_down" : action==GamepadUiAction::accept_up ? "accept_up" : "cancel";
+                std::random_device random;std::string request_id(32,'0');constexpr char hex[]="0123456789abcdef";
+                for(auto& ch:request_id)ch=hex[random()&15];
+                const auto session_before=play_session;
+                (void)ui_command({{"session_id",play_session},{"camera",active_camera},{"request_id",request_id},{"kind",kind}});
+                if(play_session!=session_before)break;
+            }
         }catch(const std::exception& failure) {
             release_input();gamepad.stop();gamepad_error=failure.what();
         }
@@ -642,14 +764,18 @@ struct Bridge : ViewportState {
         if(!audio_seeded)submit_audio();
         try {
             const auto ticks=play_clock.advance(elapsed,true);if(!ticks)return;
-            const bool apply=game_input && input_focused;
+            const bool apply=game_input && !input_controller.empty() && input_focused;
             for(std::uint32_t index=0;index<ticks;++index) {
                 // Prepare all allocating input/inspection data before entering
                 // the transaction. Only a successful tick consumes its edges
                 // and publishes this poll's committed input prefix.
                 std::vector<RuntimeInput> inputs;
                 Json applied=nullptr;
-                if(apply) {
+                if(input_focused && !active_game_camera().empty()) {
+                    const auto current_ui=world->runtime_ui_presentation();
+                    if(current_ui && !current_ui->modal.empty())release_input();
+                }
+                if(apply && input_focused) {
                     inputs.push_back(game_input->peek(input_controller));
                     auto frame=input_frame(inputs.front(),true);
                     applied=index==0 ? Json{{"first_tick",play_tick+1},{"ticks",0},{"input",frame},{"frames",Json::array()}} : last_input_applied;
@@ -663,7 +789,7 @@ struct Bridge : ViewportState {
                     sync_playback();expire_gizmo();expire_capture();play_last=Clock::now();return;
                 }
                 play_tick=result.current_tick;
-                if(apply) { game_input->commit_tick();last_input_applied.swap(applied); }
+                if(apply && !inputs.empty()) { game_input->commit_tick();last_input_applied.swap(applied); }
                 submit_audio();
                 // Each automatic tick is its own commit. Earlier successful
                 // ticks survive a later failure; explicit RPC batches retain
@@ -695,7 +821,7 @@ struct Bridge : ViewportState {
         }
         if(next!=game_camera || !named_audio_camera) {
             require(game_camera_revision<max_integer,"Game camera revision exhausted.");
-            release_input();suspend_audio();audio_capture_error.clear();named_audio_camera=true;game_camera=std::move(next);++game_camera_revision;
+            reset_ui_input();release_input();suspend_audio();audio_capture_error.clear();named_audio_camera=true;game_camera=std::move(next);++game_camera_revision;
             game_view.cached_snapshot.reset();game_view.preparation_error.clear();
             fail_capture(-32009,"Game camera changed before capture presentation.","game");
         }
@@ -721,7 +847,7 @@ struct Bridge : ViewportState {
             (void)(runtime.active ? world->runtime_camera_snapshot(id) : world->authored_camera_snapshot(id));
         } else require(!params.contains("camera"),"Scene view uses the inspection camera; omit camera.");
         if(mode!=view_mode || id!=view_camera || named_audio_camera) {
-            require(view_revision<max_integer,"View revision exhausted.");suspend_audio();audio_capture_error.clear();release_input();cancel_gizmo();named_audio_camera=false;view_mode=mode;view_camera=std::move(id);++view_revision;
+            require(view_revision<max_integer,"View revision exhausted.");suspend_audio();audio_capture_error.clear();reset_ui_input();release_input();cancel_gizmo();named_audio_camera=false;view_mode=mode;view_camera=std::move(id);++view_revision;
             fail_capture(-32009,"Viewport camera changed before capture presentation.");
         }
         return view_json();
@@ -963,14 +1089,20 @@ struct Bridge : ViewportState {
         methods["desktop.play.step"]=world_call("world.describe").at("methods").at("runtime.step");
         methods["desktop.cameras"]=object(Json::object());
         methods["desktop.controllers"]=object(Json::object());
+        methods["desktop.ui.reset"]=object(Json::object());
+        methods["desktop.ui.input"]=object({{"session_id",id_schema},{"camera",id_schema},{"request_id",id_schema},
+            {"kind",{{"enum",{"pointer_move","pointer_down","pointer_up","pointer_leave","focus_next","focus_previous","accept_down","accept_up","cancel","pointer_wheel"}}}},
+            {"x",{{"type","number"},{"minimum",-1000000},{"maximum",1000000}}},{"y",{{"type","number"},{"minimum",-1000000},{"maximum",1000000}}},
+            {"delta",{{"type","number"},{"minimum",-100},{"maximum",100}}}},{"session_id","camera","request_id","kind"});
         methods["desktop.input.inspect"]=object(Json::object());
         methods["desktop.input.devices"]=object(Json::object());
         const Json gamepad_selection={{"oneOf",Json::array({
             object({{"mode",{{"enum",{"disabled","only_connected"}}}}},{"mode"}),
             object({{"mode",{{"const","explicit"}}},{"id",{{"type","integer"},{"minimum",1},{"maximum",std::numeric_limits<std::uint32_t>::max()}}}},{"mode","id"})})}};
-        methods["desktop.input.configure"]=object({{"session_id",id_schema},{"controller",id_schema},
+        auto input_binding=[&](const char* binding) {return object({{"session_id",id_schema},{binding,id_schema},
             {"input_profile",{{"type","string"},{"minLength",1},{"maxLength",4096}}},{"input_revision",integer_schema},
-            {"defaults",{{"enum",{"keyboard_mouse","keyboard_mouse_gamepad"}}}},{"gamepad",gamepad_selection}},{"session_id","controller"});
+            {"defaults",{{"enum",{"keyboard_mouse","keyboard_mouse_gamepad"}}}},{"gamepad",gamepad_selection}},{"session_id",binding});};
+        methods["desktop.input.configure"]={{"oneOf",Json::array({input_binding("controller"),input_binding("camera")})}};
         methods["desktop.input.focus"]=object({{"session_id",id_schema},{"focused",{{"type","boolean"}}}},{"session_id","focused"});
         const Json control_event=object({{"control",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"down",{{"type","boolean"}}}},{"control","down"});
         const Json motion_event=object({{"motion",{{"type","array"},{"minItems",2},{"maxItems",2},{"items",{{"type","number"},{"minimum",-1e6},{"maximum",1e6}}}}}},{"motion"});
@@ -1010,12 +1142,12 @@ struct Bridge : ViewportState {
                 {"inspection","desktop.gameplay.inspect returns configuration and compact runtime metadata. desktop.inspect/poll omit profile and values; gameplay revision changes expose paused edits/reloads. Use runtime.gameplay.inspect for typed values/schema."},
                 {"reload","Pause, then runtime.gameplay.load with current session/tick/gameplay revision and a new request ID; existing state migration and rollback semantics apply. Trusted CoreCLR project code only; shipping Native AOT packages are separate."}}},
             {"input",{{"devices","Keyboard/mouse plus one assigned SDL gamepad. desktop.input.devices and input.devices share the hosted device owner; no editor Windows message pumping. Device IDs are session-local. Policies are disabled, only_connected, or explicit id; an absent explicit device is never replaced by another."},
-                {"configure","Active runtime controller and read-only frozen profile. Omitted defaults selects keyboard_mouse v1; explicitly choose keyboard_mouse_gamepad for built-in v2. defaults and input_profile are exclusive; input_revision requires input_profile. Enabled gamepad selection requires v2 bindings. Successful reconfiguration releases old input; validation/acquisition failure preserves it."},
+                {"configure","Choose exactly one active runtime controller or camera. camera binds UI-only input: controller is null, gameplay focus/events are rejected, and the focused visible Game camera can navigate menus without a prior keyboard selection. Controller callers retain gameplay behavior. Profiles are read-only and frozen. Omitted defaults selects keyboard_mouse v1; explicitly choose keyboard_mouse_gamepad for built-in v2. defaults and input_profile are exclusive; input_revision requires input_profile. Enabled gamepad selection requires v2 bindings. Successful reconfiguration releases old input; validation/acquisition failure preserves it."},
                 {"focus","Explicit focus true requires playing Game view using the configured controller camera. Pause, Game camera change, Game detachment or focus false releases held controls and pending edges/look; Stop/session replacement drops configuration. Resume does not regain focus."},
                 {"gamepad","Assigned Start releases existing focus only. Activation, remapping and capture suspension resnapshot controls and require neutrality; no automatic editor focus acquisition. Device failures release input and require reconfiguration, without claiming simulation rollback. Inspect gamepad assignment/name, connected/armed/active state, detail and error."},
                 {"events","Ordered atomic batches with request_id and the latest 32 successful in-memory receipts per runtime session. Exact retries return the original accepted result with replayed:true without reinjection, even after focus loss, pause or reconfiguration; changed payload conflicts. Stop/session replacement discards receipts. Beyond retention, a forgotten ID is a new request; inspect before recovery. No authored or storage writes. Repeated control-down does not retrigger held actions. Capture hold retains pending input until a committed tick."},
                 {"commit","Automatic playback evaluates and commits one tick at a time. Consume pending edges and up to 180 degrees of mouse backlog per axis only after each success; held movement and analog rates apply every tick. A failed tick pauses playback and clears focus/input, retaining earlier committed ticks and their input trace."},
-                {"inspection","configured,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks, the first input and frames (one complete input including entity per committed tick, at most 8) for the last controlled poll. On failure it retains the successful prefix. Use frames for exact replay, including mouse backlog across ticks."}}},
+                {"inspection","configured,binding,session_id,controller,camera,focused,profile,pending,accepted_batches,last_applied. binding is controller, ui or null; UI-only controller is null and pending gameplay is always zero. pending has move/look/jump/use. last_applied records first_tick (previous+1), ticks, the first input and frames (one complete input including entity per committed tick, at most 8) for the last controlled poll. On failure it retains the successful prefix. Use frames for exact replay, including mouse backlog across ticks."}}},
             {"views",{{"scene","Free inspection camera; authored or runtime world."},{"game","Explicit Camera entity, authored when stopped, frozen runtime lens and live pose while active. No automatic camera replacement if a camera is absent after Stop; choose another camera or Scene."}}},
             {"picking",{{"coordinates","Normalized viewport coordinates, top-left origin; aspect is width/height."},{"geometry","Nearest visible snapshot geometry: transformed boxes or CPU triangle intersections, including posed skin vertices, near/far clipping and material backface culling. No GPU readback; subpixel rasterization is not reproduced."},{"mutation","None; select explicitly using desktop.select."}}},
             {"gizmo",{{"coordinates","Physical client pixels, top-left; attached extent must match. begin hit-tests handles. World/local axes; default move/world."},
@@ -1073,6 +1205,8 @@ struct Bridge : ViewportState {
             else if(method.starts_with("desktop.audio."))result=audio_command(method,params);
             else if(method.starts_with("desktop.play."))result=play_command(method,params);
             else if(method.starts_with("desktop.gameplay."))result=gameplay_command(method,params);
+            else if(method=="desktop.ui.input")result=ui_command(params);
+            else if(method=="desktop.ui.reset") { fields(params,{});reset_ui_input();result={{"reset",true}}; }
             else if(method.starts_with("desktop.input."))result=input_command(method,params);
             else if(method=="desktop.view")result=set_view(params);
             else if(method=="desktop.game.camera")result=set_game_camera(params);
@@ -1164,7 +1298,7 @@ struct Bridge : ViewportState {
     }
     void detach_target(const std::string& target) {
         auto& destination=slot(target);
-        if(target=="game" || target=="legacy")release_input();
+        if(target=="game" || target=="legacy") { reset_ui_input();release_input(); }
         if(target!="game")cancel_gizmo();
         fail_capture(-32003,"Target viewport detached before capture completed.",target);
         remember_render(destination);
@@ -1212,6 +1346,7 @@ struct Bridge : ViewportState {
             throw;
         }
         if(!presented)return 0;
+        destination.presented_session=runtime.active ? runtime.session_id : std::string{};destination.presented_camera=target=="game" ? game_camera : view_mode=="game" ? view_camera : std::string{};
         ++destination.presented_frames;destination.presented_revision=scene.revision;destination.presented_tick=runtime.active ? std::optional<std::uint64_t>(runtime.tick) : std::nullopt;
         if(pending()) {
             const auto& report=*destination.last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"structure_revision",runtime.active ? Json(runtime.structure_revision) : Json(nullptr)},{"ui_revision",runtime.active ? Json(runtime.ui_revision) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",destination.presented_frames},{"gizmo",target=="game" ? Json(nullptr) : gizmo_state()},{"view",target=="legacy" ? view_json() : explicit_view_json(target)},{"camera_world",scene.camera_world},{"lens",{{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},{"preview",bool(target!="game" && gesture && gesture->preview)},{"render",render_json(destination)}};

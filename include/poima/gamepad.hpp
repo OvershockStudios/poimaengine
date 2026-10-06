@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <cstdint>
+#include <array>
 #include <memory>
 #include <string>
 
@@ -10,6 +11,12 @@ struct GamepadSelection {
     // disabled, only_connected, or explicit. IDs are SDL session instance IDs.
     std::string mode="disabled";
     std::uint32_t id=0;
+};
+enum class GamepadUiAction { next,previous,accept_down,accept_up,cancel };
+struct GamepadUiBatch {
+    std::array<GamepadUiAction,64> events{};
+    std::uint32_t count=0;
+    bool reset=false;
 };
 enum class GamepadHostMode { standalone, hosted };
 // Main-thread SDL adapter. Keep alive across device discovery and play so
@@ -34,6 +41,11 @@ public:
     bool poll();
     void stop();
     void activate(bool);
+    // Separate UI ownership works while gameplay is inactive. UI ownership
+    // suppresses gameplay forwarding, gates held controls until neutral, and
+    // emits one navigation edge (no repeat). Consume reset before batch events.
+    void ui_active(bool);
+    GamepadUiBatch drain_ui_events() noexcept;
     void added(std::uint32_t);
     void removed(std::uint32_t);
     void remapped(std::uint32_t);

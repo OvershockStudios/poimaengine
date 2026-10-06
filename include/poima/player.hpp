@@ -32,6 +32,10 @@ struct PlayerAudioState {
     AudioSnapshot snapshot;
     std::vector<SoundVoice> voices;
 };
+struct PlayerControlResult {
+    RuntimeControlIntent intent=RuntimeControlIntent::none;
+    bool save_serviced=false;
+};
 // Owner-thread adapter. advance commits exactly one tick, then services owner
 // requests; it may replace the Runtime before returning. Queries own their data
 // and no borrowed Runtime reference crosses that boundary.
@@ -43,6 +47,12 @@ public:
     virtual bool controller_valid(const std::string& entity) const=0;
     virtual SceneSnapshot snapshot(const std::string& camera) const=0;
     virtual PlayerAudioState audio_state(const std::string& listener) const=0;
+    // Cheap logical projection for per-tick ownership changes; no scene/mesh
+    // extraction is needed when a gameplay tick opens a modal.
+    virtual std::shared_ptr<const ui::Presentation> ui_presentation() const { return {}; }
+    // A presentation supplies only the stable target and observed UI epoch.
+    // Implementations route through the same receipt/commit boundary as agents.
+    virtual PlayerControlResult control(const std::string& session,std::uint64_t ui_revision,const std::string& target);
     // True when synchronous save/load servicing occurred, including a failed
     // storage operation: its wall time must not become simulation catch-up.
     virtual bool advance(const std::vector<RuntimeInput>& inputs,
