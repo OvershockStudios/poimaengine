@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -24,6 +25,16 @@ struct Inspection {
     std::string id,text;bool visible=true,enabled=true,effective_visible=true,effective_enabled=true,eligible=false;
     Kind kind=Kind::panel;
 };
+struct PresentationRow {
+    Element element;
+    bool effective_visible=true,effective_enabled=true,eligible=false;
+};
+// Owned, extent-independent projection. No DOM, runtime or GPU pointers.
+struct Presentation {
+    std::vector<PresentationRow> elements;
+    std::string modal;
+    std::uint64_t revision=0;
+};
 // Logical state only: no action execution, input routing or rendering. Button
 // eligibility follows ancestor visibility/enabled flags and modal ancestry;
 // pixel clipping, focus and hover are presentation state, not authority.
@@ -31,12 +42,14 @@ class Model {
     Definition definition_,values_;
     std::uint64_t revision_=0;
     std::string modal_;
+    mutable std::shared_ptr<const Presentation> presentation_;
 public:
     explicit Model(const Definition&);
     const Definition& definition() const noexcept { return definition_; }
     std::uint64_t revision() const noexcept { return revision_; }
     const std::string& modal() const noexcept { return modal_; }
     std::vector<Inspection> inspect() const;
+    std::shared_ptr<const Presentation> presentation() const;
     // Atomic nonempty transaction; no duplicate IDs or empty patches. Accepted
     // edits increment revision once (maximum 2^53-1). Empty definitions reject
     // all edits. nullopt leaves modal unchanged; empty string clears it.

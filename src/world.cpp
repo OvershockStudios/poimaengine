@@ -364,7 +364,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 35}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 36}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -464,7 +464,7 @@ Json describe() {
     result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
     result["invariants"].push_back("Animation commands optionally accept blend_ticks (0..3600, default 0). Zero switches immediately; positive values blend the outgoing and destination local poses over fixed ticks, independently of playback speed. Both clip clocks advance during an ordinary fade. Interrupting a fade freezes its evaluated local pose as the new source; no nested blend tree is retained. runtime.entity animation.transition reports active weights/clocks and is null on completion. Transition state and frozen source poses join batch rollback.");
     auto capture=methods["world.capture"];
-    capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;
+    capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;capture["properties"]["ui_revision"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
     auto play=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"controller",id},{"camera",id},
         {"mode",{{"enum",{"interactive","replay"}}}}, {"max_frames",{{"type","integer"},{"minimum",0},{"maximum",36000}}}},
@@ -545,7 +545,7 @@ Json describe() {
         {"recovery","Inspect reports verified previous-generation fallback. Load requires allow_recovery:true; writes after payload fallback require acknowledge_recovery:true. Manifest recovery permits reads only."},
         {"limitations","Synchronous bounded64MiB save, exact gameplay backend/image/schema, fixed entity set. No general migrations, autosave scheduler, platform/cloud adapters or power-loss qualification."}};
     result["gameplay_saves"]={
-        {"services_abi",6},{"kinds",{{"none",0},{"save",1},{"load",2}}},
+        {"services_abi",7},{"kinds",{{"none",0},{"save",1},{"load",2}}},
         {"states",{{"expired",0},{"queued",1},{"resolving",2},{"succeeded",3},{"failed",4}}},
         {"request_rejections",{{"none",0},{"disabled",1},{"busy",2},{"invalid",3},{"exhausted",4}}},
         {"boundary","One runtime request, serviced only after the complete atomic batch commits. Requested tick and committed tick may differ. Failed batches perform no save I/O."},
@@ -576,7 +576,7 @@ Json describe() {
         {"session_id","request_id","expected_tick","expected_revision","id","type","values"});
     methods["save.write"]["properties"]["expected_component_revision"]=rev;
     methods["save.load"]["properties"]["expected_component_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
-    result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",6},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},
+    result["custom_components"]={{"manifest",manifest},{"type_prefix","game:"},{"services_abi",7},{"max_types",64},{"max_fields",32},{"max_instances",32768},{"max_payload_bytes",16777216},
         {"wire","16-byte canonical little-endian cells in ascending stable field ID order"},{"int64_json","Canonical signed decimal strings; exact full Int64 range"},
         {"schema_changes","Labels/units may change; shape/default changes require a future explicit migration. Removed type IDs cannot be reused except known undo/redo history."},
         {"runtime","Native-owned membership; queries sorted by entity ID; writes publish after Tick and before physics. Whole batch rollback includes payloads and component revision."},
@@ -603,11 +603,16 @@ Json describe() {
         {"session_id","request_id","expected_tick","expected_ui_revision","edits"});
     methods["save.write"]["properties"]["expected_ui_revision"]=rev;
     methods["save.load"]["properties"]["expected_ui_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
+    methods["runtime.ui.activate"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_ui_revision",rev},
+        {"expected_control_sequence",rev},{"expected_gameplay_revision",rev},{"expected_structure_revision",rev},{"id",stable_type}},
+        {"session_id","request_id","expected_tick","expected_ui_revision","expected_control_sequence","expected_gameplay_revision","id"});
+    methods["save.write"]["properties"]["expected_control_sequence"]=rev;
+    methods["save.load"]["properties"]["expected_control_sequence"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
     result["ui"]={{"authored_version",4},{"max_elements",256},{"max_depth",32},{"element",ui_element},
         {"max_text_bytes",16384},{"max_total_text_bytes",1048576},
         {"state","Same-tick native text/visibility/enabled/modal edits with independent ui_revision and retry receipts. Runtime inspection pagination requires ui_revision after the first page."},
-        {"save_guard","save.write/load require expected_ui_revision for an active UI-bearing world; stopped restore accepts absent or null. Snapshot v4 preserves logical UI state."},
-        {"limits","Button actions are immutable metadata, not executed callbacks. No C# UI services, layout binding or player input routing yet."},
+        {"save_guard","save.write/load require expected_ui_revision and expected_control_sequence for an active UI-bearing world; stopped restore accepts absent or null. Snapshot v5 preserves logical UI state and control sequence; v4 restores sequence zero."},
+        {"limits","Button actions invoke compiled Control callbacks without advancing simulation. C# UI writes are staged atomically; optional rendering uses a default layout. Physical player input routing remains pending."},
         {"authority","Stable native panel/label/button definitions; frozen at runtime start. Parent must be a panel; panel text is empty; only buttons have non-null action tokens. RmlUi is presentation, not authored authority."}};
     methods["template.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});
     methods["template.query"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
@@ -624,7 +629,7 @@ Json describe() {
     result["spawn_templates"]={{"authored_version",3},{"max_templates",max_runtime_spawn_templates},{"max_custom_payload_bytes",max_runtime_template_payload_bytes},
         {"components",recipe_components},{"references","Entity references in recipes are literal IDs; liveness is deferred until spawning. Template IDs are a separate namespace and are never live EntityIds."},
         {"save_guard","save.write/load require expected_structure_revision after any structural transaction; stopped restore accepts absent or null."},
-        {"gameplay_services_abi",6},{"gameplay_services_bytes",144},{"gameplay_reads","Committed tick membership; reserved births support Set before publication, and template component defaults are read explicitly."},{"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# Tick can reserve, initialize and remove root props; RPC tick scheduling remains unavailable."}};
+        {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"gameplay_reads","Committed tick membership; reserved births support Set before publication, and template component defaults are read explicitly."},{"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# Tick can reserve, initialize and remove root props; RPC tick scheduling remains unavailable."}};
     for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
     result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");
@@ -862,6 +867,17 @@ class World {
     };
     std::array<std::unique_ptr<StructureReceipt>,32> structure_receipts_;
     std::size_t structure_receipt_next_=0;
+    struct RuntimeControlOutcome {
+        GameplaySaveEpoch source,current;
+        std::uint64_t tick=0,current_tick=0,control_sequence=0,ui_revision=0;
+        std::uint64_t current_control_sequence=0,current_ui_revision=0;
+        RuntimeControlIntent intent=RuntimeControlIntent::none;
+        bool replaced=false,save_serviced=false;
+        std::optional<GameplaySaveResult> operation;
+    };
+    struct ControlReceipt { Json params;RuntimeControlOutcome outcome; };
+    std::array<std::unique_ptr<ControlReceipt>,32> control_receipts_;
+    std::size_t control_receipt_next_=0;
 
     mutable ModelCache model_cache_;
     mutable std::optional<SceneSnapshot> authored_cache_;
@@ -987,7 +1003,7 @@ public:
     WorldPackageContent package_content() const { return freeze_content(doc_).package; }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
-        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision(); }
+        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision();status.control_sequence=runtime_->control_sequence(); }
         return status;
     }
     WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
@@ -1643,8 +1659,10 @@ public:
     }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         if(live) {
-            fields(params, {"session_id","tick","camera","path","width","height","gpu","samples","culling","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
+            if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
         } else {
             if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
             else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "profile"}, {"revision", "camera", "path"});
@@ -1734,7 +1752,7 @@ public:
         require(report.success, report.detail, -32020);
         return {{"world_id", snapshot.world_id}, {"revision", snapshot.revision}, {"camera", camera_id},
             {"source",asset_preview ? "asset_animation" : live ? "runtime" : "authored"}, {"animation",animation_info}, {"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},
-            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
+            {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
@@ -1931,7 +1949,7 @@ public:
         const auto state=runtime_->inspect();
         return {{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"authored_revision",runtime_definition_.authored_revision},
             {"current_authored_revision",doc_.at("revision")},{"source_stale",runtime_document_.at("revision")!=doc_.at("revision") || !same_authored_state(runtime_document_,doc_)},
-            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"ui_revision",runtime_->ui_model().revision()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
+            {"tick",state.tick},{"structure_revision",runtime_->structure_revision()},{"ui_revision",runtime_->ui_model().revision()},{"control_sequence",runtime_->control_sequence()},{"fixed_dt",Runtime::fixed_dt},{"entities",state.entities},{"bodies",state.bodies},{"characters",state.characters},
             {"scheduler","single_threaded_fixed_60_hz"},{"physics","Jolt 5.4.0; double positions; SSE2 baseline"}};
     }
     RuntimeInput parse_input(const Json& i) const {
@@ -2345,6 +2363,10 @@ public:
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).
         if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
+        if(method=="runtime.ui.activate")return control_dispatch(params);
+        if(params.is_object() && params.contains("session_id") && params.contains("request_id"))
+            for(const auto& receipt:control_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id"))
+                throw Error(-32010,"Runtime request ID already belongs to a UI activation.");
         if(method=="runtime.structure.transact")return structure_dispatch(params);
         if(params.is_object() && params.contains("session_id") && params.contains("request_id"))
             for(const auto& receipt:structure_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id"))
@@ -2361,7 +2383,7 @@ public:
         if(method=="runtime.status") {
             fields(params,{});const auto s=runtime_status();
             return {{"available",s.available},{"active",s.active},{"session_id",s.active ? Json(s.session_id) : Json(nullptr)},
-                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"ui_revision",s.active ? Json(s.ui_revision) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
+                    {"tick",s.active ? Json(s.tick) : Json(nullptr)},{"structure_revision",s.active ? Json(s.structure_revision) : Json(nullptr)},{"ui_revision",s.active ? Json(s.ui_revision) : Json(nullptr)},{"control_sequence",s.active ? Json(s.control_sequence) : Json(nullptr)},{"authored_revision",s.active ? Json(s.authored_revision) : Json(nullptr)}};
         }
         if(method=="runtime.save.status") {
             fields(params,{"session_id"},{"session_id"});runtime_guard(params);const auto& queue=runtime_->gameplay_saves();

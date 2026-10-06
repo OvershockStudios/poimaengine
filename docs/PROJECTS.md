@@ -79,6 +79,8 @@ The exporting headless executable and installed runtime must have the same exact
 }
 ```
 
+Authored worlds with UI controls additionally require `features.game_ui: true`, produced by `POIMA_ENABLE_GAME_UI=ON`. Missing `game_ui` defaults to false for older metadata; both export and bundle verification enforce it. The default layout embeds its font and does not depend on the working directory.
+
 Actual feature values come from that build. A Linux descriptor uses `target_os: "Linux"` and `bin/poima`. Both targets currently require `x86_64`. Simulation and renderer must be enabled; gameplay projects additionally require `native_gameplay: true` (an absent feature defaults to false); an audio-enabled runtime is required when the world dependency inspection or project audio flag requires it. On Linux, the runtime executable must retain owner-execute permission. Windows-to-Linux export is rejected because executable-mode preservation has not been qualified.
 
 The installed tree includes the executable and dependency notices under `share/poima/`. Audio builds also install `bin/phonon.dll` on Windows or `lib/libphonon.so` on Linux. SDL, NVRHI, Jolt and the Windows compiler runtime are statically linked in the existing configuration. The graphics shaders are embedded; the bundle does not need shader sources or DXC. Windows still needs its supported OS/UCRT components and system Vulkan loader/driver. These system dependencies are not copied out of the development machine.

@@ -74,6 +74,7 @@ internal interface IGame
     int StateBytes { get; }
     void Initialize(Span<byte> state);
     void Tick(Span<byte> state, GameContext context);
+    void Control(Span<byte> state, ControlContext context);
 }
 // Authoritative mutable state belongs in TState. Game instances must contain
 // no instance fields. The runtime stages initialization/reload and rolls back
@@ -82,10 +83,12 @@ public abstract class Game<TState> : IGame where TState : unmanaged
 {
     public abstract void Initialize(ref TState state);
     public abstract void Tick(ref TState state, GameContext context);
+    public virtual void Control(ref TState state, ControlContext context) => throw new NotSupportedException("This game module has no UI control handler.");
     Type IGame.StateType => typeof(TState);
     int IGame.StateBytes => Unsafe.SizeOf<TState>();
     void IGame.Initialize(Span<byte> state) => Initialize(ref MemoryMarshal.AsRef<TState>(state));
     void IGame.Tick(Span<byte> state, GameContext context) => Tick(ref MemoryMarshal.AsRef<TState>(state),context);
+    void IGame.Control(Span<byte> state, ControlContext context) => Control(ref MemoryMarshal.AsRef<TState>(state),context);
 }
 
 [StructLayout(LayoutKind.Sequential)] internal unsafe struct NativeRay { public Vector3d Origin,Direction;public double Distance;public EntityId* Ignore;public uint IgnoreCount,Reserved; }
@@ -138,6 +141,10 @@ public abstract class Game<TState> : IGame where TState : unmanaged
     public delegate* unmanaged[Cdecl]<void*,TemplateId*,NativeTransform*,EntityId*,NativeError*,int> Spawn;
     public delegate* unmanaged[Cdecl]<void*,EntityId*,NativeError*,int> Despawn;
     public delegate* unmanaged[Cdecl]<void*,GameplayComponentDescriptor*,TemplateId*,void*,uint,uint*,NativeError*,int> TemplateComponentGet;
+    public delegate* unmanaged[Cdecl]<void*,UiId*,NativeUiState*,byte*,uint,uint*,NativeError*,int> UiGet;
+    public delegate* unmanaged[Cdecl]<void*,NativeUiPatch*,uint,NativeUiModalEdit*,NativeError*,int> UiEdit;
+    public delegate* unmanaged[Cdecl]<void*,NativeUiControlEvent*,NativeError*,int> ControlInfo;
+    public delegate* unmanaged[Cdecl]<void*,uint,NativeError*,int> ControlRequest;
 }
 internal static unsafe class SaveAbiLayout
 {

@@ -1,6 +1,6 @@
 # Native game UI foundation
 
-Poima has two native UI foundations: authoritative logical controls in the world/runtime, and retained document layout with shared Vulkan composition. They are not connected to one another yet. Compiled C# callbacks, automatic layout binding and live player/desktop input routing remain unfinished.
+Poima owns logical controls in the world/runtime and uses native retained layout for Vulkan presentation. The current development changes connect this state to a default layout and add compiled C# control callbacks. Bounded native, agent-service, desktop-owner and Vulkan capture checks are recorded below. Live pointer and gamepad routing remain unfinished.
 
 The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The logical model is available in the default headless engine; it has no RmlUi, font or graphics dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
 
@@ -26,7 +26,7 @@ Use `world.transact` with `ui.element.set` or `ui.element.remove`. A set operati
 }
 ```
 
-Parents must be panels. Panel text is empty. Buttons require an action token of 1–128 ASCII letters, digits, underscores, dots or hyphens; other kinds require `action:null`. Tokens are metadata only: a button named Save does not write a checkpoint. Final-state validation permits a child before its parent within the same transaction. Removing a parent requires removing or reparenting its children in that transaction. Retired IDs cannot be reused outside known undo/redo history.
+Parents must be panels. Panel text is empty. Buttons require an action token of 1–128 ASCII letters, digits, underscores, dots or hyphens; other kinds require `action:null`. Tokens identify compiled handlers: naming a button Save alone does not write a checkpoint. The game must implement its `Control` callback and request storage explicitly. Final-state validation permits a child before its parent within the same transaction. Removing a parent requires removing or reparenting its children in that transaction. Retired IDs cannot be reused outside known undo/redo history.
 
 `world.ui.get` and `world.ui.list` inspect authored definitions. Pagination uses `revision`, `after` and `limit`. `runtime.ui.inspect` accepts `session_id`, `tick`, optional `ui_revision`, `after` and `limit`. Continuation pages require `ui_revision`. It returns frozen metadata alongside live text, local and inherited visibility/enabled state, modal membership eligibility and the next cursor. Inspection does not search for pixels or require a window.
 
@@ -50,9 +50,46 @@ An accepted edit advances `ui_revision` once, including a same-value edit; it le
 
 Definitions allow 256 controls, hierarchy depth 32, 128 UTF-8 bytes per name, 16 KiB per text and 1 MiB total text. Text is literal UTF-8 without NUL. These are bounded contract limits, not performance claims. The [native model API](../include/poima/ui_model.hpp) validates sorted complete definitions and owns mutable values. It is available without simulation; a live `Runtime` additionally requires the simulation build.
 
-UI-bearing runtimes use snapshot version 4. Saves preserve complete text/visibility/enabled state, active modal and UI revision against trusted frozen definitions; no focus, atlas or pixel data is serialized. Existing UI-free snapshots retain versions 1–3. External `save.write` and replacement `save.load` require `expected_ui_revision` when the active world contains UI. The Save/Load editor model retains this guard and recognizes same-tick UI edits as stale. Stopped restore accepts an absent or null guard.
+UI-bearing runtimes now write snapshot version 5, preserving complete logical state, modal, UI revision and `control_sequence` against trusted frozen definitions. Version 4 remains readable with control sequence zero; UI-free snapshots retain versions 1–3. No focus, atlas or pixel data is serialized. External `save.write` and replacement `save.load` require `expected_ui_revision` and `expected_control_sequence` when the active world contains UI. The Save/Load editor model retains the observed guards across retries and detects same-tick control activity even when no UI value changes. Stopped restore accepts absent or null guards.
+
+## Compiled control callbacks
+
+Gameplay services ABI 7 is 176 bytes; the call structure remains 80 bytes. Engines, bridges and compiled modules must use matching rebuilt artifacts. Operation 6 invokes `Control`, separately from `Tick`. The default `Game<TState>.Control` throws when a game has no handler; it does not silently accept an action.
+
+```csharp
+public override void Control(ref State state, ControlContext context)
+{
+    switch (context.Action)
+    {
+        case "resume":
+            context.SetModal(null);
+            context.RequestResume();
+            break;
+        case "save":
+            state.SaveRequests++;
+            context.RequestSave("quick");
+            break;
+        default:
+            throw new InvalidOperationException("Unhandled action.");
+    }
+}
+```
+
+`State` is the game's registered unmanaged state; `SaveRequests` in this example is an `int` field. Control changes to such scalar state are real gameplay changes, although physics does not advance. `ControlContext` exposes the current simulation `Tick`, proposed action `Sequence`, stable `Element` (`UiId`) and frozen `Action` token. It offers UI inspection/edits, modal selection, save requests/results and pause/resume requests. It does not expose physics input or motion methods. `GameContext` also supports `GetUi`, `SetUi` and `SetModal`, allowing ordinary Tick callbacks to update HUD values.
+
+Reads within a callback see committed UI values. UI writes stage bounded patches; repeated writes to a field select the last value. Publication applies the combined candidate once after the callback. Native validation bounds callbacks and text writes and rejects invalid targets or a final invalid modal state. Failure rolls back gameplay state, UI changes and staged save intents. A later failure in a multi-tick batch also rolls back earlier UI publications in that batch.
+
+An accepted control callback increments `control_sequence` once while leaving simulation tick unchanged. A successful Control callback also advances the gameplay revision once, even when its final scalar values are unchanged. This invalidates gameplay Inspector drafts captured before that same-tick callback; a failed callback advances neither gameplay nor control revisions. UI revision advances when UI commands publish; a scalar-only callback still changes control sequence. Save requests are serviced by the serialized owner after acceptance, without calling Tick. An I/O failure is a save-operation outcome, not a reversal of an already accepted callback. Storage retries resolve the original ticket without invoking the handler again.
+
+`runtime.ui.activate` requires `session_id`, `request_id`, `id` (the button), `expected_tick`, `expected_ui_revision`, `expected_control_sequence` and `expected_gameplay_revision`. After structural edits, `expected_structure_revision` is required too; supplied guards are always checked. The owner derives the action token from frozen metadata and validates logical eligibility. It does not accept an arbitrary caller-supplied action string. Retained identical retries return original acceptance; changing parameters under the same request ID conflicts.
+
+The result includes the source tick, UI revision and control sequence, current session/counters after any replacement, save-operation information when applicable, and numeric owner `intent`: `0` none, `1` Resume, `2` Pause. Desktop playback applies eligible intents once for the surviving session and resets elapsed time. Pause also clears held input. A Load replacement cannot be resumed by an old-session intent. These intents do not invent physics ticks.
+
+The [compiled gameplay fixture](../tests/managed_ui_gameplay/ManagedUiGame.cs), [native control harness](../tests/runtime_ui_control_native.cpp) and [RPC harness](../tests/runtime_ui_control_contract.py) exercise the new path. The control/presentation evidence below records the tested backends and limits; earlier state-only evidence does not qualify these callbacks.
 
 ## Presentation boundary
+
+The optional `UiPresenter` now converts an immutable logical-state projection into a default nested panel/label/button layout. It uses literal text and logical visibility/eligibility, an embedded font and cached immutable packets. This is a fixed initial layout, not an authored style/layout editor. Named-camera runtime snapshots carry the projection into the shared renderer. Authored and editor Scene snapshots stay free of runtime UI. Runtime captures of UI-bearing worlds require the observed `ui_revision`.
 
 The native document adapter lays out in-memory RML and produces an owned, immutable `UiFrame`. It exposes registered label/button identities separately from rendered pixels. It returns semantic action identifiers to its caller; the document does not execute gameplay, write saves or advance simulation.
 
@@ -104,9 +141,18 @@ Current bounds include a 1 MiB RML document, 4,096 parsed nodes, 256 registered 
 
 ## Current limits
 
-Both APIs are experimental. Native logical controls and document presentation remain separate: no automatic layout/style binding, C# UI callbacks, UI action execution or control-turn replay is implemented. Returned presentation action strings do not pause/resume a game or request storage operations. Controller navigation integration, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished.
+These APIs are experimental. Logical state, default native layout and compiled semantic execution are implemented and covered by bounded checks. Live player/editor pointer and gamepad event routing, general control-turn replay tooling, authored styles/layouts, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished. The standalone document API still returns presentation action strings; executing gameplay requires the authoritative control boundary above.
 
 ## Recorded checks
+
+[Control and presentation evidence](evidence/m2-ui-control-presentation.json) records services ABI 7 qualification under CoreCLR and NativeAOT on Windows and Linux, same-tick save/load and retry checks, desktop owner intent handling, and runtime UI captures on the laptop's AMD and NVIDIA GPUs at 1× and 4× MSAA. The full editor builds, but a new installed editor package and physical UI input are not qualified by these checks.
+
+![Default runtime UI layout over a scene](evidence/m2-ui-control-presentation.png)
+
+*Actual NVIDIA Vulkan capture at 4× MSAA. This fixture tests native state and presentation; its button labels do not establish physical input routing.*
+
+
+The evidence in this section predates ABI 7, snapshot 5, compiled control callbacks and automatic logical-state presentation. It remains evidence for those recorded fixtures only.
 
 [Logical-state evidence](evidence/m2-native-ui-state.json) covers native model/runtime checks, authored and runtime RPC transactions, strict restores, legacy save regressions and a linked C# Save model test. Windows and Linux both pass the authored six-case and runtime four-case UI suites. The default authoring-only build also validates UI definitions without simulation or RmlUi. Reproduce the focused native checks with `poima-ui-model-test` and `poima-runtime-ui-test`; the RPC harnesses are `tests/world_ui_contract.py` and `tests/runtime_ui_contract.py`. Each accepts a CLI binary and `--runtime 0` or `--runtime 1`; Windows interop uses `--windows-interop`. The save-panel model test runs with `.NET 10` using `dotnet run --project tests/fixtures/editor_save_model/Poima.SaveModel.Contract.csproj`.
 

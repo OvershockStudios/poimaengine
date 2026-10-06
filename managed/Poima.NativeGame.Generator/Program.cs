@@ -53,6 +53,7 @@ internal static unsafe class Binding
     internal static {{Name(game)}} Create()=>new();
     internal static bool LayoutValid() { {{Name(state)}} state=default;return sizeof({{Name(state)}})==StateBytes && {{assertions}}; }
     internal static void InitializeObject(object game,byte* state)=>(({{Name(game)}})game).Initialize(ref *({{Name(state)}}*)state);
+    internal static void ControlObject(object game,byte* state,global::Poima.ControlContext context)=>(({{Name(game)}})game).Control(ref *({{Name(state)}}*)state,context);
     internal static void TickObject(object game,byte* state,global::Poima.GameContext context)=>(({{Name(game)}})game).Tick(ref *({{Name(state)}}*)state,context);
 }
 """;

@@ -2,6 +2,7 @@
 #pragma once
 #include "poima/core.hpp"
 #include "poima/ui.hpp"
+#include "poima/ui_model.hpp"
 #include <array>
 #include <memory>
 #include <optional>
@@ -85,6 +86,7 @@ struct SceneSnapshot {
     std::vector<SceneObject> objects;
     SceneLighting lighting;
     std::shared_ptr<const UiFrame> ui;
+    std::shared_ptr<const poima::ui::Presentation> logical_ui;
 };
 struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
 std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);

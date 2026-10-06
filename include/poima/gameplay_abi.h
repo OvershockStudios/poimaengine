@@ -7,7 +7,7 @@
 #else
 #define POIMA_CALL
 #endif
-// Call version 1, services version 6, 64-bit Windows/Linux. POD only; borrowed pointers never escape a
+// Call version 1, services version 7, 64-bit Windows/Linux. POD only; borrowed pointers never escape a
 // callback. Engine owns state and services. No exceptions cross this boundary.
 typedef struct PoimaEntityId { uint64_t high,low; } PoimaEntityId;
 typedef struct PoimaTemplateId { uint64_t high,low; } PoimaTemplateId;
@@ -57,13 +57,26 @@ typedef struct PoimaGameError { char text[2048]; } PoimaGameError;
 typedef struct PoimaGameComponentType {
     PoimaEntityId type;uint64_t fingerprint[4];uint32_t bytes,reserved;
 } PoimaGameComponentType;
+// Logical UI IDs are separate from scene entity handles. All text is borrowed
+// bounded UTF-8; UI reads see committed state, writes publish after callback.
+typedef struct PoimaUiId { uint64_t high,low; } PoimaUiId;
+typedef struct PoimaGameUiState {
+    uint64_t revision;uint32_t kind,visible,enabled,effective_visible,effective_enabled,eligible,text_bytes,reserved;
+} PoimaGameUiState;
+typedef struct PoimaGameUiPatch {
+    PoimaUiId id;const char* text;uint32_t text_bytes,mask,visible,enabled;
+} PoimaGameUiPatch; // mask text=1, visible=2, enabled=4
+typedef struct PoimaGameUiModalEdit { PoimaUiId id;uint32_t change,reserved; } PoimaGameUiModalEdit;
+typedef struct PoimaGameUiControlEvent {
+    PoimaUiId element;uint64_t sequence;uint32_t action_bytes,reserved;char action[128];
+} PoimaGameUiControlEvent;
 typedef struct PoimaGameServices {
     uint32_t version,bytes; void* context;
     int32_t (POIMA_CALL *entity)(void*,const PoimaEntityId*,PoimaGameEntity*,PoimaGameError*);
     int32_t (POIMA_CALL *raycast)(void*,const PoimaGameRay*,PoimaGameHit*,PoimaGameError*);
     int32_t (POIMA_CALL *move)(void*,const PoimaGameMotion*,PoimaGameError*);
     int32_t (POIMA_CALL *sound)(void*,const PoimaGameSound*,uint64_t*,PoimaGameError*);
-    // Prefixes remain unchanged; v6 requires a matching rebuilt bridge/module.
+    // Prefixes remain unchanged; v7 requires a matching rebuilt bridge/module.
     int32_t (POIMA_CALL *animation_get)(void*,const PoimaEntityId*,PoimaGameAnimationState*,PoimaGameError*);
     int32_t (POIMA_CALL *animation_set)(void*,const PoimaGameAnimationCommand*,PoimaGameError*);
     int32_t (POIMA_CALL *save_info)(void*,PoimaGameSaveInfo*,PoimaGameError*);
@@ -78,7 +91,12 @@ typedef struct PoimaGameServices {
     int32_t (POIMA_CALL *spawn)(void*,const PoimaTemplateId*,const PoimaGameTransform*,PoimaEntityId*,PoimaGameError*);
     int32_t (POIMA_CALL *despawn)(void*,const PoimaEntityId*,PoimaGameError*);
     int32_t (POIMA_CALL *template_component_get)(void*,const PoimaGameComponentType*,const PoimaTemplateId*,void*,uint32_t,uint32_t*,PoimaGameError*);
+    int32_t (POIMA_CALL *ui_get)(void*,const PoimaUiId*,PoimaGameUiState*,char*,uint32_t,uint32_t*,PoimaGameError*);
+    int32_t (POIMA_CALL *ui_edit)(void*,const PoimaGameUiPatch*,uint32_t,const PoimaGameUiModalEdit*,PoimaGameError*);
+    int32_t (POIMA_CALL *control_info)(void*,PoimaGameUiControlEvent*,PoimaGameError*);
+    int32_t (POIMA_CALL *control_request)(void*,uint32_t,PoimaGameError*); // Resume=1, Pause=2
 } PoimaGameServices;
+// operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
     const char* text; void* state; uint32_t state_bytes,input_count;
@@ -86,7 +104,11 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
-static_assert(sizeof(PoimaGameCall)==80 && sizeof(PoimaGameServices)==144 && sizeof(PoimaGameSound)==32 && sizeof(PoimaGameInput)==40);
+static_assert(sizeof(PoimaUiId)==16 && sizeof(PoimaGameUiState)==40 && sizeof(PoimaGameUiPatch)==40 && sizeof(PoimaGameUiModalEdit)==24 && sizeof(PoimaGameUiControlEvent)==160);
+static_assert(offsetof(PoimaGameUiState,kind)==8 && offsetof(PoimaGameUiState,text_bytes)==32 && offsetof(PoimaGameUiPatch,text)==16 && offsetof(PoimaGameUiPatch,mask)==28 && offsetof(PoimaGameUiModalEdit,change)==16);
+static_assert(offsetof(PoimaGameUiControlEvent,sequence)==16 && offsetof(PoimaGameUiControlEvent,action)==32);
+static_assert(offsetof(PoimaGameServices,ui_get)==144 && offsetof(PoimaGameServices,ui_edit)==152 && offsetof(PoimaGameServices,control_info)==160 && offsetof(PoimaGameServices,control_request)==168);
+static_assert(sizeof(PoimaGameCall)==80 && sizeof(PoimaGameServices)==176 && sizeof(PoimaGameSound)==32 && sizeof(PoimaGameInput)==40);
 static_assert(sizeof(PoimaTemplateId)==16 && sizeof(PoimaGameTransform)==80 && offsetof(PoimaGameTransform,rotation)==24 && offsetof(PoimaGameTransform,scale)==56);
 static_assert(offsetof(PoimaGameServices,spawn)==120 && offsetof(PoimaGameServices,despawn)==128 && offsetof(PoimaGameServices,template_component_get)==136);
 static_assert(sizeof(PoimaGameEntity)==160 && sizeof(PoimaGameRay)==72 && sizeof(PoimaGameHit)==88 && sizeof(PoimaGameMotion)==80);

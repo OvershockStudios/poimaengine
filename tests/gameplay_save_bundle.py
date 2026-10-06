@@ -46,7 +46,7 @@ def main():
         return reply
     try:
         descriptor = json.loads(args.artifact.read_text(encoding='utf-8'))
-        assert descriptor['type'] == 'Poima.Tests.GameplaySaveProbe' and descriptor['services_version'] == 6
+        assert descriptor['type'] == 'Poima.Tests.GameplaySaveProbe' and descriptor['services_version'] == 7
         project = run/'Source project'
         cli(args.binary, 'project', 'create', native(project), '--name', 'Packaged gameplay save probe')
         manifest = project/'project.json'; spec = json.loads(manifest.read_text(encoding='utf-8'))

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Logical UI state is authoritative even without a window or RmlUi.
+#include "world_control.inc"
     Json ui_runtime_info() const {
-        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"ui_revision",runtime_->ui_model().revision()}};
+        return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"ui_revision",runtime_->ui_model().revision()},{"control_sequence",runtime_->control_sequence()}};
     }
     Json ui_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime UI requests require session_id.");

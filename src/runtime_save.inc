@@ -129,6 +129,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     if(custom || structural || logical_ui)payload["components"]=SaveJson::parse(s.components->save());
     if(logical_ui) {
         payload["ui"]=SaveJson::parse(s.ui_model->save());
+        payload["control_sequence"]=s.control_sequence;
         payload["structure"]=nullptr;
     }
     if(structural) {
@@ -139,7 +140,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
         payload["structure"]={{"revision",s.structure_revision},{"next_entity_id",gameplay_id(cursor.next)},
             {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
     }
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",logical_ui ? 4 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -152,10 +153,11 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     const bool logical_ui=!definition.ui.empty();
     const auto version=save_integer(envelope.at("version"));
     require(envelope.at("format")=="poima.runtime-snapshot" &&
-        (logical_ui ? version==4 : (version==3 || version==(custom ? 2u : 1u))),"Unsupported runtime snapshot format/version for this definition.");
+        (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u))),"Unsupported runtime snapshot format/version for this definition.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
+    if(version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
+    else if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
     else if(version==3)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
     else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
@@ -257,6 +259,7 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     }
     if(custom || structural || logical_ui)s.components->load(data.at("components").dump());
     if(logical_ui)s.ui_model->load(data.at("ui").dump());
+    if(version==5)s.control_sequence=save_integer(data.at("control_sequence"));
     if(!data.at("gameplay").is_null())save_game_values(data.at("gameplay"),s.topology->identities);
     s.animations->load_state(data.at("animation").dump(),tick);s.animation_locals();
     auto& bodies=s.physics.GetBodyInterface();std::map<std::string,RuntimeTransform> locals;

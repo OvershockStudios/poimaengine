@@ -172,6 +172,11 @@ struct RuntimeSummary {
     std::uint64_t tick=0;
     std::size_t entities=0, bodies=0, characters=0;
 };
+enum class RuntimeControlIntent : std::uint32_t { none=0,resume=1,pause=2 };
+struct RuntimeControlResult {
+    std::uint64_t control_sequence=0,ui_revision=0;
+    RuntimeControlIntent intent=RuntimeControlIntent::none;
+};
 // One single-threaded world, no GUI/graphics dependency. Structural definition
 // freezes recipes while running; presentation snapshots own copies of their data.
 class Runtime {
@@ -217,6 +222,11 @@ public:
     const ui::Model& ui_model() const;
     void ui_edit(std::uint64_t expected_revision,const std::vector<ui::Edit>& edits,
         std::optional<std::string> modal=std::nullopt);
+    std::uint64_t control_sequence() const;
+    // Semantic compiled action, atomic at unchanged simulation time. Its owner
+    // services committed saves and applies the returned playback intent.
+    RuntimeControlResult control(std::uint64_t expected_ui_revision,
+        std::uint64_t expected_control_sequence,const std::string& element);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents

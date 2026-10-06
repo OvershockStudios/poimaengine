@@ -91,7 +91,14 @@ void Model::edit(std::uint64_t expected,const std::vector<Edit>& edits,std::opti
         if(patch.visible)e.visible=*patch.visible;
         if(patch.enabled)e.enabled=*patch.enabled;
     }
-    auto next_modal=modal?*modal:modal_;validate_definition(next);validate_modal(next,next_modal);values_.swap(next);modal_.swap(next_modal);++revision_;
+    auto next_modal=modal?*modal:modal_;validate_definition(next);validate_modal(next,next_modal);values_.swap(next);modal_.swap(next_modal);++revision_;presentation_.reset();
+}
+std::shared_ptr<const Presentation> Model::presentation() const {
+    if(presentation_)return presentation_;
+    auto result=std::make_shared<Presentation>();result->modal=modal_;result->revision=revision_;
+    const auto inspected=inspect();result->elements.reserve(values_.size());
+    for(std::size_t i=0;i<values_.size();++i)result->elements.push_back({values_[i],inspected[i].effective_visible,inspected[i].effective_enabled,inspected[i].eligible});
+    presentation_=std::move(result);return presentation_;
 }
 std::string Model::save() const {
     Json values=Json::object();for(const auto& e:values_)values[e.id]={{"text",e.text},{"visible",e.visible},{"enabled",e.enabled}};
@@ -101,6 +108,6 @@ void Model::load(const std::string& text) {
     const auto j=parse(text);fields(j,{"revision","modal","elements"});const auto& r=j.at("revision");require(r.is_number_integer() && !(r.is_number_integer() && !r.is_number_unsigned() && r.get<std::int64_t>()<0),"Invalid UI saved revision.");const auto rev=r.get<std::uint64_t>();require(rev<=max_revision,"UI saved revision exceeds limit.");
     auto next=definition_;const auto& values=j.at("elements");require(values.is_object() && values.size()==next.size(),"UI saved membership differs.");
     for(auto& e:next) {require(values.contains(e.id),"UI saved membership differs.");const auto& v=values.at(e.id);fields(v,{"text","visible","enabled"});e.text=string(v.at("text"));e.visible=boolean(v.at("visible"));e.enabled=boolean(v.at("enabled"));}
-    auto modal=j.at("modal").is_null()?"":string(j.at("modal"));require(j.at("modal").is_null() || !modal.empty(),"Empty saved modal must be null.");validate_definition(next);validate_modal(next,modal);values_.swap(next);modal_.swap(modal);revision_=rev;
+    auto modal=j.at("modal").is_null()?"":string(j.at("modal"));require(j.at("modal").is_null() || !modal.empty(),"Empty saved modal must be null.");validate_definition(next);validate_modal(next,modal);values_.swap(next);modal_.swap(modal);revision_=rev;presentation_.reset();
 }
 }

@@ -35,7 +35,7 @@ internal static unsafe class LifecycleAbiLayout
     internal static bool Valid()
     {
         NativeServices services=default;NativeTransform transform=default;TemplateId id=default;
-        return sizeof(TemplateId)==16 && sizeof(NativeTransform)==80 && sizeof(NativeServices)==144 &&
+        return sizeof(TemplateId)==16 && sizeof(NativeTransform)==80 && sizeof(NativeServices)==176 &&
             (byte*)&transform.X-(byte*)&transform==24 && (byte*)&transform.Scale-(byte*)&transform==56 &&
             (byte*)&services.Spawn-(byte*)&services==120 && (byte*)&services.Despawn-(byte*)&services==128 &&
             (byte*)&services.TemplateComponentGet-(byte*)&services==136 && id.High==0 && id.Low==0;

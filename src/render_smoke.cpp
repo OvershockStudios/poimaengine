@@ -8,6 +8,9 @@
 #include "poima/editor_viewport.hpp"
 #include "poima/hosted_viewport.hpp"
 #include "poima/profiler.hpp"
+#if POIMA_GAME_UI
+#include "poima/ui_presenter.hpp"
+#endif
 #if POIMA_EDITOR
 #include <imgui.h>
 #include "poima/editor_ui_vs.hpp"
@@ -314,6 +317,12 @@ struct Context {
     nvrhi::BufferHandle overlay_vertices;
     std::vector<nvrhi::FramebufferHandle> overlay_framebuffers;
     std::shared_ptr<const UiFrame> game_ui_frame;
+    std::shared_ptr<const UiFrame> game_ui_source,game_ui_layout_frame,game_ui_composed_frame;
+    std::array<std::int32_t,4> game_ui_layout_rect{};
+    std::array<std::uint32_t,2> game_ui_layout_extent{};
+#if POIMA_GAME_UI
+    std::unique_ptr<UiPresenter> game_ui_presenter;
+#endif
     nvrhi::ShaderHandle game_ui_vs,game_ui_ps;
     nvrhi::InputLayoutHandle game_ui_input;
     nvrhi::BindingLayoutHandle game_ui_layout;
@@ -397,6 +406,10 @@ struct Context {
     }
 
     void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false,void* external_window=nullptr) {
+        require(!source || !source->ui || !source->logical_ui,"A scene cannot supply both a UI packet and a logical UI presentation.");
+#if !POIMA_GAME_UI
+        require(!source || !source->logical_ui || source->logical_ui->elements.empty(),"This renderer was built without native game UI presentation support.");
+#endif
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;
         hosted=external_window!=nullptr;
@@ -1179,15 +1192,56 @@ struct Context {
     }
 
     void validate_game_ui() const {
+        if(!scene)return;
+        require(!scene->ui || !scene->logical_ui,"A scene cannot supply both a UI packet and a logical UI presentation.");
+#if !POIMA_GAME_UI
+        require(!scene->logical_ui || scene->logical_ui->elements.empty(),"This renderer was built without native game UI presentation support.");
+#endif
         if(!scene || !scene->ui)return;
         validate_ui_frame(*scene->ui);
         require(scene->ui->width==extent.width && scene->ui->height==extent.height,"Game UI packet extent differs from the render target; relayout before drawing.");
         if(!scene->ui->draws.empty())require(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb,
             "Game UI requires an sRGB composition attachment; UNORM composition is not supported.");
     }
+    void resolve_game_ui() {
+        game_ui_source=scene ? scene->ui : nullptr;
+#if POIMA_GAME_UI
+        if(!scene || !scene->logical_ui || scene->logical_ui->elements.empty()) {
+            game_ui_presenter.reset();game_ui_layout_frame.reset();game_ui_composed_frame.reset();return;
+        }
+        if(!scene_visible) {game_ui_source.reset();return;}
+        const auto view=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+        const std::array<std::int32_t,4> rect{static_cast<std::int32_t>(std::floor(view.minX)),static_cast<std::int32_t>(std::floor(view.minY)),
+            static_cast<std::int32_t>(std::ceil(view.maxX)),static_cast<std::int32_t>(std::ceil(view.maxY))};
+        if(rect[0]>=rect[2] || rect[1]>=rect[3]) {game_ui_source.reset();return;}
+        if(!game_ui_presenter)game_ui_presenter=std::make_unique<UiPresenter>();
+        const float scale=std::clamp(SDL_GetWindowDisplayScale(window),.25f,8.f);
+        const auto layout=game_ui_presenter->frame(scene->logical_ui,static_cast<std::uint32_t>(rect[2]-rect[0]),static_cast<std::uint32_t>(rect[3]-rect[1]),scale);
+        const std::array<std::uint32_t,2> target_extent{extent.width,extent.height};
+        if(game_ui_layout_frame!=layout || game_ui_layout_rect!=rect || game_ui_layout_extent!=target_extent) {
+            auto packet=*layout;packet.width=extent.width;packet.height=extent.height;
+            for(auto& draw:packet.draws) {
+                // Translate homogeneous coordinates after the layout transform.
+                for(std::size_t col=0;col<4;++col) {
+                    draw.transform[col*4]+=static_cast<float>(rect[0])*draw.transform[col*4+3];
+                    draw.transform[col*4+1]+=static_cast<float>(rect[1])*draw.transform[col*4+3];
+                }
+                draw.scissor[0]+=rect[0];draw.scissor[2]+=rect[0];draw.scissor[1]+=rect[1];draw.scissor[3]+=rect[1];
+            }
+            game_ui_source=freeze_ui_frame(std::move(packet));game_ui_composed_frame=game_ui_source;game_ui_layout_frame=layout;game_ui_layout_rect=rect;game_ui_layout_extent=target_extent;
+        }else game_ui_source=game_ui_composed_frame;
+#endif
+    }
     void prepare_game_ui() {
         validate_game_ui();
-        if(!scene || !scene->ui || scene->ui->draws.empty()) {
+        resolve_game_ui();
+        const auto& packet=game_ui_source;
+        if(packet) {
+            validate_ui_frame(*packet);
+            require(packet->width==extent.width && packet->height==extent.height,"Resolved UI packet extent differs from target.");
+            if(!packet->draws.empty())require(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb,"Game UI requires an sRGB composition attachment; UNORM composition is not supported.");
+        }
+        if(!packet || packet->draws.empty()) {
             game_ui_frame.reset();game_ui_bindings.clear();game_ui_textures.clear();game_ui_vertices=nullptr;game_ui_indices=nullptr;
             game_ui_vertex_capacity=game_ui_index_capacity=0;return;
         }
@@ -1217,7 +1271,7 @@ struct Context {
             game_ui_pipeline=checked->createGraphicsPipeline(description,game_ui_framebuffers.front()->getFramebufferInfo());
             require(bool(game_ui_pipeline),"Game UI composition pipeline creation failed.");
         }
-        if(game_ui_frame==scene->ui)return;
+        if(game_ui_frame==packet)return;
         // Reuse capacity and unchanged atlas slots across layout packets. Retain
         // only the current packet/resources; replacement is bounded by two packets.
         auto buffer=[&](nvrhi::BufferHandle& target,std::size_t& capacity,std::size_t bytes,bool vertex) {
@@ -1226,10 +1280,10 @@ struct Context {
             desc.initialState=vertex ? nvrhi::ResourceStates::VertexBuffer : nvrhi::ResourceStates::IndexBuffer;desc.keepInitialState=true;
             auto result=checked->createBuffer(desc);require(bool(result),"Game UI buffer creation failed.");target=std::move(result);capacity=desc.byteSize;
         };
-        buffer(game_ui_vertices,game_ui_vertex_capacity,scene->ui->vertices.size()*sizeof(UiVertex),true);
-        buffer(game_ui_indices,game_ui_index_capacity,scene->ui->indices.size()*sizeof(std::uint32_t),false);
+        buffer(game_ui_vertices,game_ui_vertex_capacity,packet->vertices.size()*sizeof(UiVertex),true);
+        buffer(game_ui_indices,game_ui_index_capacity,packet->indices.size()*sizeof(std::uint32_t),false);
         std::vector<nvrhi::TextureHandle> textures;std::vector<nvrhi::BindingSetHandle> texture_bindings;
-        textures.reserve(scene->ui->textures.size()+1);texture_bindings.reserve(scene->ui->textures.size()+1);
+        textures.reserve(packet->textures.size()+1);texture_bindings.reserve(packet->textures.size()+1);
         bool uploads=false;
         auto upload_texture=[&](const UiTexture& source) {
             // Linear premultiplied half floats ensure filtering occurs in linear light.
@@ -1254,8 +1308,8 @@ struct Context {
             commands->writeTexture(texture,0,0,pixels.data(),std::size_t(source.width)*8);
             textures.push_back(std::move(texture));texture_bindings.push_back(std::move(binding));
         };
-        for(std::size_t i=0;i<scene->ui->textures.size();++i) {
-            const auto& texture=scene->ui->textures[i];
+        for(std::size_t i=0;i<packet->textures.size();++i) {
+            const auto& texture=packet->textures[i];
             if(game_ui_frame && i<game_ui_frame->textures.size() && texture.width==game_ui_frame->textures[i].width &&
                 texture.height==game_ui_frame->textures[i].height && texture.rgba==game_ui_frame->textures[i].rgba) {
                 textures.push_back(game_ui_textures[i]);texture_bindings.push_back(game_ui_bindings[i]);
@@ -1267,7 +1321,7 @@ struct Context {
             commands->close();checked->executeCommandList(commands);require(checked->waitForIdle(),"Game UI texture upload failed.");
         }
         game_ui_textures.swap(textures);game_ui_bindings.swap(texture_bindings);
-        game_ui_frame=scene->ui;
+        game_ui_frame=packet;
         } catch(...) {
             // Allocation/resource failures can interrupt an open upload command
             // list or submission. Retrying this Context cannot safely recover it.

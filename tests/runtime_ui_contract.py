@@ -135,14 +135,15 @@ class RuntimeUi(unittest.TestCase):
     def write_params(self):
         return dict(request_id=uuid.uuid4().hex, configuration_generation=1, slot='ui', expected_generation=0,
                     session_id=self.session, expected_tick=self.tick, expected_gameplay_revision=0,
-                    expected_ui_revision=self.ui_revision)
+                    expected_ui_revision=self.ui_revision, expected_control_sequence=0)
 
     def load_params(self):
         return dict(request_id=uuid.uuid4().hex, configuration_generation=1, slot='ui', expected_generation=1,
                     revision=self.revision, expected_session_id=self.session,
                     expected_tick=self.tick if self.session else None,
                     expected_gameplay_revision=0 if self.session else None,
-                    expected_ui_revision=self.ui_revision if self.session else None, new_session_id=uuid.uuid4().hex)
+                    expected_ui_revision=self.ui_revision if self.session else None,
+                    expected_control_sequence=0 if self.session else None, new_session_id=uuid.uuid4().hex)
 
     def load(self, params):
         result = self.rpc('save.load', params)

@@ -57,7 +57,7 @@ void snapshot_roundtrip() {
     const auto authored=definition();Runtime runtime(authored);runtime.step(17,{});
     runtime.ui_edit(0,{{id(101),"Saved label",{},{}},{id(103),{},true,{}}},id(103));
     const auto bytes=runtime.save_snapshot(content);const auto envelope=Json::parse(bytes);
-    check(envelope.at("version")==4 && envelope.at("payload").at("ui")==Json::parse(runtime.ui_model().save()),"UI-bearing snapshot is not complete version4 state.");
+    check(envelope.at("version")==5 && envelope.at("payload").at("ui")==Json::parse(runtime.ui_model().save()),"UI-bearing snapshot is not complete version5 state.");
     auto restored=Runtime::from_snapshot(authored,content,bytes);
     check(restored->ui_model().save()==runtime.ui_model().save() && restored->inspect().tick==17,"UI snapshot did not round-trip.");
     check(restored->entity("falling").world==runtime.entity("falling").world,"Snapshot UI restore changed body pose.");
@@ -99,14 +99,14 @@ void structure_components_and_pending_save() {
     runtime.ui_edit(0,{{id(101),"Prop health 42",{},{}},{id(103),{},true,{}}},id(103));
     runtime.step(6,{},{{spawned,{9,4,0},{0,0,0,1},60}});
     const auto bytes=runtime.save_snapshot(content);const auto snapshot=Json::parse(bytes);
-    check(snapshot.at("version")==4 && !snapshot.at("payload").at("structure").is_null(),"UI v4 omitted live structure.");
+    check(snapshot.at("version")==5 && !snapshot.at("payload").at("structure").is_null(),"UI v5 omitted live structure.");
     auto restored=Runtime::from_snapshot(authored,content,bytes);
-    check(restored->structure_revision()==1 && restored->entity(spawned).motion_remaining_ticks==54,"UI v4 lost spawned kinematic state.");
-    check(restored->component_revision()==runtime.component_revision() && restored->component_read(schema.id,spawned)==runtime.component_read(schema.id,spawned),"UI v4 lost spawned custom component state.");
+    check(restored->structure_revision()==1 && restored->entity(spawned).motion_remaining_ticks==54,"UI v5 lost spawned kinematic state.");
+    check(restored->component_revision()==runtime.component_revision() && restored->component_read(schema.id,spawned)==runtime.component_read(schema.id,spawned),"UI v5 lost spawned custom component state.");
     check(restored->ui_model().save()==runtime.ui_model().save(),"Structural restore reset logical UI.");
     runtime.step(4,{});restored->step(4,{});check(restored->entity(spawned).world==runtime.entity(spawned).world,"Restored UI/structure changed kinematic continuation.");
     const auto next_a=runtime.change_structure(1,{{recipe.id,{}}},{}),next_b=restored->change_structure(1,{{recipe.id,{}}},{});
-    check(next_a.spawned==next_b.spawned && next_a.spawned.front()!=spawned,"UI v4 lost allocator continuity.");
+    check(next_a.spawned==next_b.spawned && next_a.spawned.front()!=spawned,"UI v5 lost allocator continuity.");
     const auto state=runtime.ui_model().save();const auto body=runtime.entity(spawned).world;
     runtime.gameplay_save_host({1,2},&ledger);check(runtime.gameplay_saves().configure(true,1),"Save queue setup failed.");
     const auto queued=runtime.gameplay_saves().enqueue(GameplaySaveKind::save,"ui",0,false,runtime.inspect().tick);
@@ -118,7 +118,7 @@ void structure_components_and_pending_save() {
     check(runtime.ui_model().save()==state && runtime.entity(spawned).world==body,"UI edit changed committed pending-save state.");
     check(runtime.gameplay_saves().clear(queued.ticket),"Cannot resolve fixture save intent.");
     runtime.ui_edit(runtime.ui_model().revision(),{{id(101),"Resolved",{},{}}});
-    // Keep all three legacy formats exercised independently of UI v4.
+    // Keep all three legacy formats exercised independently of UI v5.
     authored.ui.clear();Runtime custom(authored);
     const auto v2=custom.save_snapshot(content);check(Json::parse(v2).at("version")==2,"Custom UI-free snapshot version changed.");
     check(Runtime::from_snapshot(authored,content,v2)->ui_model().inspect().empty(),"Legacy v2 restore gained UI state.");
@@ -128,6 +128,6 @@ void structure_components_and_pending_save() {
 }
 }
 int main() {
-    try {edits_and_eligibility();snapshot_roundtrip();legacy_without_ui();structure_components_and_pending_save();std::cout<<"Runtime UI: atomic same-tick edits, modal eligibility, isolated v4 snapshots, spawned custom state, pending-save guards and legacy v1-v3 compatibility passed.\n";return 0;}
+    try {edits_and_eligibility();snapshot_roundtrip();legacy_without_ui();structure_components_and_pending_save();std::cout<<"Runtime UI: atomic same-tick edits, modal eligibility, isolated v5 snapshots, spawned custom state, pending-save guards and legacy v1-v3 compatibility passed.\n";return 0;}
     catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
 }

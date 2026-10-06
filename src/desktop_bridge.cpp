@@ -79,7 +79,7 @@ struct Camera {
     }
 };
 struct Capture {
-    std::uint64_t id=0,revision=0,tick=0,structure_revision=0,camera_revision=0,gizmo_generation=0,view_revision=0;std::string path,session,state="queued",detail,target="legacy";int code=0;bool runtime=false;
+    std::uint64_t id=0,revision=0,tick=0,structure_revision=0,ui_revision=0,camera_revision=0,gizmo_generation=0,view_revision=0;std::string path,session,state="queued",detail,target="legacy";int code=0;bool runtime=false;
     Clock::time_point deadline;Json result=Json::object();
     Json json() const {
         Json out={{"capture_id",id},{"state",state},{"revision",revision},{"path",path},{"view",target}};
@@ -244,6 +244,7 @@ struct Bridge : ViewportState {
     PlayerClock play_clock;Clock::time_point play_last=Clock::now();
     std::string play_session,play_error,view_mode="scene",view_camera;
     std::uint64_t play_tick=0,view_revision=0;
+    std::uint64_t applied_ui_control_sequence=0;
     bool playing=false,capture_hold=false;
     // Stable evaluator address: the device adapter borrows it. Declare the
     // adapter last so it disconnects before the evaluator is destroyed.
@@ -288,7 +289,7 @@ struct Bridge : ViewportState {
     }
     Json runtime_json() const {
         const auto value=world->runtime_status();return {{"available",value.available},{"active",value.active},{"session_id",value.active ? Json(value.session_id) : Json(nullptr)},
-            {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"structure_revision",value.active ? Json(value.structure_revision) : Json(nullptr)},{"ui_revision",value.active ? Json(value.ui_revision) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
+            {"tick",value.active ? Json(value.tick) : Json(nullptr)},{"structure_revision",value.active ? Json(value.structure_revision) : Json(nullptr)},{"ui_revision",value.active ? Json(value.ui_revision) : Json(nullptr)},{"control_sequence",value.active ? Json(value.control_sequence) : Json(nullptr)},{"authored_revision",value.active ? Json(value.authored_revision) : Json(nullptr)}};
     }
     void release_input(bool forget=false) {
         input_focused=false;
@@ -539,6 +540,7 @@ struct Bridge : ViewportState {
             suspend_audio();audio_capture_error.clear();
             release_input(true);runtime_parents.clear();runtime_parent_session.clear();
             playing=false;play_session=state.active ? state.session_id : std::string{};play_tick=state.active ? state.tick : 0;
+            applied_ui_control_sequence=0;
             play_clock=PlayerClock{};play_last=Clock::now();capture_hold=false;play_error.clear();
         } else if(state.tick!=play_tick) {
             suspend_audio();
@@ -552,6 +554,26 @@ struct Bridge : ViewportState {
             for(const auto& [child,parent]:world->runtime_hierarchy())hierarchy.emplace(child,parent);
             runtime_parents.swap(hierarchy);runtime_parent_session=state.session_id;
         }
+    }
+    void apply_ui_control(const Json& result) {
+        // A receipt can outlive its source runtime (Load), or be retried after
+        // later callbacks/manual playback changes. Only a fresh current-epoch
+        // sequence can affect this owner; replayed alone is not sufficient.
+        const auto state=world->runtime_status();
+        if(!state.active || result.at("runtime_replaced").get<bool>() ||
+            result.at("session_id")!=state.session_id || result.at("current_session_id")!=state.session_id)return;
+        const auto sequence=integer(result.at("control_sequence"));
+        if(sequence!=state.control_sequence || integer(result.at("current_control_sequence"))!=sequence ||
+            sequence<=applied_ui_control_sequence)return;
+        const auto intent=integer(result.at("intent"));
+        require(intent<=2,"Invalid UI control intent.",-32000);
+        if(intent) {
+            const bool next=intent==1;
+            if(!next) { release_input();suspend_audio(); }
+            playing=next;play_clock.advance(0,false);play_last=Clock::now();capture_hold=false;
+            if(next)play_error.clear();
+        }
+        applied_ui_control_sequence=sequence;
     }
     Json playback_json() const {
         return {{"state",play_session.empty() ? "stopped" : playing ? "playing" : "paused"},
@@ -714,7 +736,7 @@ struct Bridge : ViewportState {
         const auto state=world->runtime_status();
         const bool camera_changed=capture->target=="game" ? game_camera_revision!=capture->camera_revision :
             camera_revision!=capture->camera_revision || gizmo_generation!=capture->gizmo_generation || (capture->target=="legacy" && view_revision!=capture->view_revision);
-        if(revision()!=capture->revision || camera_changed || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick || state.structure_revision!=capture->structure_revision)))
+        if(revision()!=capture->revision || camera_changed || state.active!=capture->runtime || (state.active && (state.session_id!=capture->session || state.tick!=capture->tick || state.structure_revision!=capture->structure_revision || state.ui_revision!=capture->ui_revision)))
             fail_capture(-32009,"World, runtime tick/structure, or camera changed before capture presentation.");
     }
     std::string capture_path(const Json& value) const {
@@ -1024,13 +1046,25 @@ struct Bridge : ViewportState {
                 if(playing && (method=="runtime.step" || method=="runtime.audio.replay" || method=="runtime.gameplay.load" || method=="runtime.gameplay.load_native" || method=="runtime.gameplay.edit" || method=="runtime.component.edit" || method=="runtime.structure.transact" || method=="runtime.ui.edit" ||
                     method=="save.configure" || method=="save.write" || method=="save.load"))
                     throw Failure(-32009,"Pause desktop playback before manual runtime mutation or saving/loading.");
-                auto response=world->request(bytes,WorldRequestScope::shared_editor);
+                // Notifications still need the internal receipt so Control
+                // intents reach their owner; the synthetic response stays local.
+                const bool ui_activation=method=="runtime.ui.activate";
+                std::string forwarded;
+                if(ui_activation && notification) {
+                    auto request_with_id=message;request_with_id["id"]="desktop-ui-control";forwarded=request_with_id.dump();
+                }
+                auto response=world->request(forwarded.empty() ? bytes : forwarded,WorldRequestScope::shared_editor);
                 if(method=="world.describe" && !notification) {
                     auto value=Json::parse(response);
                     if(value.contains("result"))value["result"]["editor_discovery"]="desktop.describe";
                     response=value.dump();
                 }
-                sync_playback();expire_gizmo();expire_capture();return response;
+                sync_playback();
+                if(ui_activation && !response.empty()) {
+                    const auto value=Json::parse(response);
+                    if(value.contains("result"))apply_ui_control(value.at("result"));
+                }
+                expire_gizmo();expire_capture();return notification ? std::string{} : response;
             }
             fields(message,{"jsonrpc","id","method","params"},{"jsonrpc","method"});const auto params=message.value("params",Json::object());Json result;
             if(method=="desktop.describe") { fields(params,{});result=describe(); }
@@ -1071,7 +1105,7 @@ struct Bridge : ViewportState {
                 require(destination.viewport && !destination.faulted,"A working attached target viewport is required.",-32003);
                 require(!capture || capture->state!="queued","One capture is already pending.",-32009);
                 const auto expected=integer(params.at("revision"));require(expected==revision(),"Authored revision conflict.",-32009);const auto path=capture_path(params.at("path"));require(next_capture<=max_integer,"Capture identity limit reached.");const auto state=world->runtime_status();
-                Capture candidate;candidate.target=target;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=target=="game" ? game_camera_revision : camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.structure_revision=state.structure_revision;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;suspend_audio();result=capture->json();
+                Capture candidate;candidate.target=target;candidate.id=next_capture++;candidate.revision=expected;candidate.path=path;candidate.camera_revision=target=="game" ? game_camera_revision : camera_revision;candidate.gizmo_generation=gizmo_generation;candidate.view_revision=view_revision;candidate.runtime=state.active;candidate.session=state.session_id;candidate.tick=state.tick;candidate.structure_revision=state.structure_revision;candidate.ui_revision=state.ui_revision;candidate.deadline=Clock::now()+std::chrono::seconds(2);capture=std::move(candidate);play_clock.advance(0,false);play_last=Clock::now();capture_hold=true;suspend_audio();result=capture->json();
             }else if(method=="desktop.capture.status") {
                 fields(params,{"capture_id"},{"capture_id"});const auto value=integer(params.at("capture_id"));require(capture && capture->id==value,"Capture result is absent or was superseded.",-32004);expire_capture();result=capture->json();
             }else throw Failure(-32601,"Unknown desktop method.");
@@ -1098,7 +1132,7 @@ struct Bridge : ViewportState {
         if(game)require(!game_id.empty(),"Select a Game camera.",-32004);
         const Json key={{"revision",revision()},{"camera",effective=="game" ? game_camera_revision : camera_revision},
             {"view",effective=="legacy" ? view_revision : 0},{"active",runtime.active},
-            {"session",runtime.active ? runtime.session_id : std::string{}},{"tick",runtime.active ? runtime.tick : 0},{"structure_revision",runtime.active ? runtime.structure_revision : 0},{"mode",effective}};
+            {"session",runtime.active ? runtime.session_id : std::string{}},{"tick",runtime.active ? runtime.tick : 0},{"structure_revision",runtime.active ? runtime.structure_revision : 0},{"ui_revision",runtime.active ? runtime.ui_revision : 0},{"mode",effective}};
         if(!destination.cached_snapshot || key!=destination.snapshot_key) {
             auto candidate=game
                 ? (runtime.active ? world->runtime_camera_snapshot(game_id) : world->authored_camera_snapshot(game_id))
@@ -1180,7 +1214,7 @@ struct Bridge : ViewportState {
         if(!presented)return 0;
         ++destination.presented_frames;destination.presented_revision=scene.revision;destination.presented_tick=runtime.active ? std::optional<std::uint64_t>(runtime.tick) : std::nullopt;
         if(pending()) {
-            const auto& report=*destination.last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"structure_revision",runtime.active ? Json(runtime.structure_revision) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",destination.presented_frames},{"gizmo",target=="game" ? Json(nullptr) : gizmo_state()},{"view",target=="legacy" ? view_json() : explicit_view_json(target)},{"camera_world",scene.camera_world},{"lens",{{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},{"preview",bool(target!="game" && gesture && gesture->preview)},{"render",render_json(destination)}};
+            const auto& report=*destination.last_render;capture->state="complete";capture->result={{"path",capture->path},{"revision",capture->revision},{"scene_revision",scene.revision},{"source",runtime.active ? "runtime" : "authored"},{"tick",runtime.active ? Json(runtime.tick) : Json(nullptr)},{"structure_revision",runtime.active ? Json(runtime.structure_revision) : Json(nullptr)},{"ui_revision",runtime.active ? Json(runtime.ui_revision) : Json(nullptr)},{"width",report.width},{"height",report.height},{"frame",destination.presented_frames},{"gizmo",target=="game" ? Json(nullptr) : gizmo_state()},{"view",target=="legacy" ? view_json() : explicit_view_json(target)},{"camera_world",scene.camera_world},{"lens",{{"vertical_fov",scene.vertical_fov},{"near",scene.near_plane},{"far",scene.far_plane}}},{"preview",bool(target!="game" && gesture && gesture->preview)},{"render",render_json(destination)}};
         }
         return 1;
     }

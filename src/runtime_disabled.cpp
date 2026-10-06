@@ -27,6 +27,8 @@ const std::vector<components::Schema>& Runtime::component_schemas() const { thro
 std::uint64_t Runtime::component_revision() const { throw std::runtime_error("Simulation is not built."); }
 const ui::Model& Runtime::ui_model() const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::ui_edit(std::uint64_t,const std::vector<ui::Edit>&,std::optional<std::string>) { throw std::runtime_error("Simulation is not built."); }
+std::uint64_t Runtime::control_sequence() const { throw std::runtime_error("Simulation is not built."); }
+RuntimeControlResult Runtime::control(std::uint64_t,std::uint64_t,const std::string&) { throw std::runtime_error("Simulation is not built."); }
 std::optional<components::Payload> Runtime::component_read(const std::string&,const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::vector<std::string> Runtime::component_query(const std::string&,const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
 void Runtime::component_edit(const std::string&,const std::string&,const components::Payload&) { throw std::runtime_error("Simulation is not built."); }

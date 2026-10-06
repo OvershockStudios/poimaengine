@@ -1,0 +1,456 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-05",
+  "engine_version": "0.0.39-development",
+  "milestone": "Compiled same-tick UI controls and native runtime presentation",
+  "schema_revision": 36,
+  "authored_format": 4,
+  "ui_snapshot_format": 5,
+  "readable_legacy_ui_snapshot_format": 4,
+  "gameplay_services_abi": 7,
+  "gameplay_services_bytes": 176,
+  "contracts": [
+    "Compiled Control operation 6 at unchanged simulation tick; native eligibility and frozen action identity.",
+    "Committed UI reads, staged literal text/flags/modal writes, global-state validation and save intents commit atomically; failed Control and failed tick batches roll back.",
+    "Every successful Control advances gameplay_revision and control_sequence; UI revision advances for published UI commands. Older same-tick gameplay Inspector edits reject.",
+    "Owner receipts publish native acceptance before storage or JSON formatting; exact retries survive Load replacement and cannot reexecute the callback.",
+    "External save freshness includes UI revision and control sequence; v4 UI snapshots restore sequence zero, UI-free formats remain unchanged.",
+    "Optional immutable projection/default layout/embedded font connects named-camera runtime snapshots to Vulkan composition. Scene/authored snapshots remain UI-free.",
+    "Desktop owner applies Pause/Resume once per live session/control sequence, including notifications; old Load receipts cannot resume a replacement.",
+    "Runtime descriptors advertise game_ui; UI-bearing export and bundle inspection reject missing capability."
+  ],
+  "platforms": {
+    "linux": {
+      "binary_sha256": "fa12eef9335f23a6ce5e25d4e3cb3df563ccda43651a11b099d4f7d95e8c3ee6",
+      "checks": [
+        {
+          "check": "native-coreclr-linux",
+          "exit_code": 0,
+          "groups": 4,
+          "log": {
+            "path": "build/ui-control-native-coreclr-linux-freshness-final.log",
+            "sha256": "c42b68d240224fb3af856d01b48d9504b10be37f4a8be65c3b28526c5e88c2a1"
+          }
+        },
+        {
+          "check": "native-aot-linux",
+          "exit_code": 0,
+          "groups": 4,
+          "log": {
+            "path": "build/ui-control-native-aot-linux-freshness-final.log",
+            "sha256": "47bc2a3ca1cbeb7320317d03fd7c098d9dde56e13ff9c615d82467cf67e4c0f3"
+          }
+        },
+        {
+          "check": "rpc-coreclr-linux",
+          "exit_code": 0,
+          "groups": 7,
+          "rpc_calls": 525,
+          "passed": true,
+          "log": {
+            "path": "build/ui-control-rpc-coreclr-linux-freshness-final.log",
+            "sha256": "22e64f7221dd07ceb919f6df9d100122becddc0f9551ca3aa900edc4b6f0cbb2"
+          },
+          "evidence": {
+            "path": "build/ui-control-rpc-coreclr-linux-freshness-final/6ee0e051b2634d0fb9c7b644f1552b8b/evidence.json",
+            "sha256": "bc5d1cc280564166f3d1b99eaf4555bdb29f761f682c8513e7b0b429a37cc3bb"
+          }
+        },
+        {
+          "check": "rpc-aot-linux",
+          "exit_code": 0,
+          "groups": 7,
+          "rpc_calls": 517,
+          "passed": true,
+          "log": {
+            "path": "build/ui-control-rpc-aot-linux-freshness-final.log",
+            "sha256": "3ac7e3e958a4d5e10988f98ea5d2568f633897c2cd7f1eba1ab027c23bffd14d"
+          },
+          "evidence": {
+            "path": "build/ui-control-rpc-aot-linux-freshness-final/e726b9c8fef14ef9953243e5e8ba96e3/evidence.json",
+            "sha256": "420acdb0d65606076ae88ed353ab539a968160985a668387a1ef33afc47ec946"
+          }
+        }
+      ]
+    },
+    "windows": {
+      "binary_sha256": "20962f9c3157902c5632e75cae4ca24705be918f3cac80c296ee84f5cf6b1fba",
+      "checks": [
+        {
+          "check": "native-coreclr-windows",
+          "exit_code": 0,
+          "groups": 4,
+          "log": {
+            "path": "build/ui-control-native-coreclr-windows-freshness-final.log",
+            "sha256": "60fb3d74e36a5c14781df47c922865bba81506430005914c31c421fabd0c6e85"
+          }
+        },
+        {
+          "check": "native-aot-windows",
+          "exit_code": 0,
+          "groups": 4,
+          "log": {
+            "path": "build/ui-control-native-aot-windows-freshness-final.log",
+            "sha256": "719b5cca329e38c08c5a4c33d5f73526e3088b9fbe4237d89cd6399fa464b361"
+          }
+        },
+        {
+          "check": "rpc-coreclr-windows",
+          "exit_code": 0,
+          "groups": 8,
+          "rpc_calls": 547,
+          "passed": true,
+          "capture_comparison": {
+            "gpu": 1,
+            "samples": 4,
+            "tick": 3,
+            "before_ui_revision": 0,
+            "after_ui_revision": 1,
+            "changed_pixels": 13158,
+            "bounds": [
+              33,
+              32,
+              286,
+              113
+            ],
+            "max_channel_difference": 212
+          },
+          "log": {
+            "path": "build/ui-control-rpc-coreclr-windows-freshness-final.log",
+            "sha256": "abda149191abda6d2e550750c93de9cc6f6b1997b5c1112092ea68517368c8af"
+          },
+          "evidence": {
+            "path": "build/ui-control-rpc-coreclr-windows-freshness-final/13b30ba561a740a58388e97fd1244449/evidence.json",
+            "sha256": "45b69276e99e61a92f58ed4a3dc56441e63e985afc8f83809fbdfe2932159db1"
+          }
+        },
+        {
+          "check": "rpc-aot-windows",
+          "exit_code": 0,
+          "groups": 7,
+          "rpc_calls": 517,
+          "passed": true,
+          "log": {
+            "path": "build/ui-control-rpc-aot-windows-freshness-final.log",
+            "sha256": "70deb7d1f94caa49872d55068fd298b11575e44e7a8444eef14de1c1813cda6c"
+          },
+          "evidence": {
+            "path": "build/ui-control-rpc-aot-windows-freshness-final/968ed2f13cdf41e3919fc46c7877b60a/evidence.json",
+            "sha256": "708f70cf5209a78b11d70c97eadf9fb41f7f8454c1845e8ec08472d31c14bb9b"
+          }
+        }
+      ]
+    }
+  },
+  "rendering": {
+    "binary_sha256": "20962f9c3157902c5632e75cae4ca24705be918f3cac80c296ee84f5cf6b1fba",
+    "runs": [
+      {
+        "gpu_index": 0,
+        "samples": 1,
+        "passed": true,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "captures": 7,
+        "checks": {
+          "named_runtime_ui_composed": true,
+          "authored_capture_stays_scene_only": true,
+          "same_tick_literal_text_changes_pixels": true,
+          "hidden_panel_removes_all_ui_pixels": true,
+          "restore_reproduces_pixels": true,
+          "resize_extent": true,
+          "stale_and_missing_revision_rejected_without_file": true,
+          "literal_markup_preserves_four_controls": true,
+          "physics_tick_and_control_sequence_unchanged": true
+        },
+        "evidence": {
+          "path": "build/runtime-ui-render-freshness-final/gpu0-msaa1-5a47f18d7a764c12b1ab0b2d7dcf4be7/result.json",
+          "sha256": "52d8cd431f6cf0f1c0a5c1a19360da0cfee26d31e77478ce685e8339db610cbe"
+        },
+        "captures_sha256": {
+          "authored-baseline": "9352c036471c3c2984ffe53dbf88a38f0363c7972a80f9416be6d844f9e90b1c",
+          "runtime-initial": "fadbff98156b81568825b816e0a11bb587dd4d7d75bbe7b5263052fc61f79539",
+          "runtime-literal": "a9b788750872b7265ae6c51cefe0b551c45391e05058f3a9735ce39c7718567a",
+          "runtime-hidden": "9352c036471c3c2984ffe53dbf88a38f0363c7972a80f9416be6d844f9e90b1c",
+          "runtime-restored": "a9b788750872b7265ae6c51cefe0b551c45391e05058f3a9735ce39c7718567a",
+          "runtime-resized": "8289027c316d4b5198ec52927f017ae4ceab295ba6fe0ef9b44b69b4441ef63a",
+          "authored-after-runtime-edits": "9352c036471c3c2984ffe53dbf88a38f0363c7972a80f9416be6d844f9e90b1c"
+        }
+      },
+      {
+        "gpu_index": 0,
+        "samples": 4,
+        "passed": true,
+        "gpu": "AMD Radeon(TM) Graphics",
+        "captures": 7,
+        "checks": {
+          "named_runtime_ui_composed": true,
+          "authored_capture_stays_scene_only": true,
+          "same_tick_literal_text_changes_pixels": true,
+          "hidden_panel_removes_all_ui_pixels": true,
+          "restore_reproduces_pixels": true,
+          "resize_extent": true,
+          "stale_and_missing_revision_rejected_without_file": true,
+          "literal_markup_preserves_four_controls": true,
+          "physics_tick_and_control_sequence_unchanged": true
+        },
+        "evidence": {
+          "path": "build/runtime-ui-render-freshness-final/gpu0-msaa4-5d064c21ff5f4e439c99bc7486d1fa52/result.json",
+          "sha256": "b24199a4b7ad85026b06ac9e99294d99c67aedace0f4920114973a16f1fe6f46"
+        },
+        "captures_sha256": {
+          "authored-baseline": "23e29487b4ffdcc67e58713a256a7967009944786866ea9d3046ef10ff412b48",
+          "runtime-initial": "3f74d315af32cec609839b5429fefb0b77f3670e26905466ff0e9f7fec2caf6a",
+          "runtime-literal": "be1412dee37841d548e4247e3875ca4831a8f049bf33b7c0a2926ed659a018a1",
+          "runtime-hidden": "23e29487b4ffdcc67e58713a256a7967009944786866ea9d3046ef10ff412b48",
+          "runtime-restored": "be1412dee37841d548e4247e3875ca4831a8f049bf33b7c0a2926ed659a018a1",
+          "runtime-resized": "771ea7ebbca57957105d437f7339bee4e68f67b047748f6aae8b4cd7cd613494",
+          "authored-after-runtime-edits": "23e29487b4ffdcc67e58713a256a7967009944786866ea9d3046ef10ff412b48"
+        }
+      },
+      {
+        "gpu_index": 1,
+        "samples": 1,
+        "passed": true,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": 7,
+        "checks": {
+          "named_runtime_ui_composed": true,
+          "authored_capture_stays_scene_only": true,
+          "same_tick_literal_text_changes_pixels": true,
+          "hidden_panel_removes_all_ui_pixels": true,
+          "restore_reproduces_pixels": true,
+          "resize_extent": true,
+          "stale_and_missing_revision_rejected_without_file": true,
+          "literal_markup_preserves_four_controls": true,
+          "physics_tick_and_control_sequence_unchanged": true
+        },
+        "evidence": {
+          "path": "build/runtime-ui-render-freshness-final/gpu1-msaa1-c0e280ad9c4c43a983b0e391e0655fa1/result.json",
+          "sha256": "2da4c6b9bbd6e20f3867563ad07651095f675ddeaf524a4b24255c51d412868d"
+        },
+        "captures_sha256": {
+          "authored-baseline": "9352c036471c3c2984ffe53dbf88a38f0363c7972a80f9416be6d844f9e90b1c",
+          "runtime-initial": "04aeba0f443dce458044cafaa11b0e2c8276fa0e07adb28b67aeb60c5b5d9756",
+          "runtime-literal": "7993b34225209f762c20d433edb3291764ed8e1cd7485834424bdfb00b4e1a97",
+          "runtime-hidden": "9352c036471c3c2984ffe53dbf88a38f0363c7972a80f9416be6d844f9e90b1c",
+          "runtime-restored": "7993b34225209f762c20d433edb3291764ed8e1cd7485834424bdfb00b4e1a97",
+          "runtime-resized": "c328570c4b0772bd99a5a175ee69a51cafaff2864c7a2e603953d466bc509624",
+          "authored-after-runtime-edits": "9352c036471c3c2984ffe53dbf88a38f0363c7972a80f9416be6d844f9e90b1c"
+        }
+      },
+      {
+        "gpu_index": 1,
+        "samples": 4,
+        "passed": true,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": 7,
+        "checks": {
+          "named_runtime_ui_composed": true,
+          "authored_capture_stays_scene_only": true,
+          "same_tick_literal_text_changes_pixels": true,
+          "hidden_panel_removes_all_ui_pixels": true,
+          "restore_reproduces_pixels": true,
+          "resize_extent": true,
+          "stale_and_missing_revision_rejected_without_file": true,
+          "literal_markup_preserves_four_controls": true,
+          "physics_tick_and_control_sequence_unchanged": true
+        },
+        "evidence": {
+          "path": "build/runtime-ui-render-freshness-final/gpu1-msaa4-83ba13a864b74389a5f14d179eb561e5/result.json",
+          "sha256": "da0818874168f8ede6736c21f826d430b01222ffadbe41caf09a96994e1fcad9"
+        },
+        "captures_sha256": {
+          "authored-baseline": "23e29487b4ffdcc67e58713a256a7967009944786866ea9d3046ef10ff412b48",
+          "runtime-initial": "9cc15c86db0dfbc88f08a6afcf4355f3422f7a124c8bc16c0d5235ca04fe283a",
+          "runtime-literal": "4af1fefe0e4bfd534d35a03b69b1051de0be73646047332aac31d803add7a6b4",
+          "runtime-hidden": "23e29487b4ffdcc67e58713a256a7967009944786866ea9d3046ef10ff412b48",
+          "runtime-restored": "4af1fefe0e4bfd534d35a03b69b1051de0be73646047332aac31d803add7a6b4",
+          "runtime-resized": "c01c479e6e144730b75d0b249faa6c76d53029762cb5644bdba49c251fa6a380",
+          "authored-after-runtime-edits": "23e29487b4ffdcc67e58713a256a7967009944786866ea9d3046ef10ff412b48"
+        }
+      }
+    ],
+    "successful_captures": 28,
+    "additional_compiled_callback_captures": 2,
+    "total_successful_captures": 30,
+    "validation_errors": 0,
+    "visual_review": "Actual final NVIDIA baseline and compiled Control-after captures inspected; default layout text and disabled state are visible.",
+    "published_image": {
+      "path": "docs/evidence/m2-ui-control-presentation.png",
+      "sha256": "391c9986f64a9e817e13f2ee53a37af53928b946b60de54947758f728ace3e40"
+    }
+  },
+  "desktop_owner": {
+    "passed": true,
+    "checks": [
+      "Notification resumes once without advancing Tick; lost-response retry after manual pause does not resume or reexecute.",
+      "Fresh resume and pause apply at fixed Tick; an older resume receipt cannot override a later intent.",
+      "Load replaces the session and pauses; old resume and Load receipts neither revive nor mutate restored state."
+    ],
+    "calls": 45,
+    "hashes": {
+      "bridge": "83cc97fa3ed672aeb7ecf06192acf9e9fddd01494c9cf2965b92d7d3914a5e5f",
+      "binary": "20962f9c3157902c5632e75cae4ca24705be918f3cac80c296ee84f5cf6b1fba",
+      "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+      "gameplay_bridge": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+      "assembly": "c5ad0197651e4e9b930a7435a0cf409a8932f9edb749499ac8bd84e8f38aedb1"
+    },
+    "evidence": {
+      "path": "build/ui-control-desktop-freshness-final/6291a8a688de458893db51b1b6c38682/evidence.json",
+      "sha256": "6d43e409b88da659e9dbe5ac341e45ed6c16c95b39860bd75ea273da320a1dd3"
+    }
+  },
+  "regressions": {
+    "linux_runtime": {
+      "passed": true,
+      "selected_tests": 8,
+      "seconds": 13.61,
+      "log": {
+        "path": "build/ui-control-freshness-final-regression.log",
+        "sha256": "e7cabe0d75478e0f8e15d61780b1b743d2034f858481706e3fa782a2a0a68ae1"
+      }
+    },
+    "linux_authoring_only": {
+      "passed": true,
+      "selected_tests": 5,
+      "seconds": 4.43,
+      "log": {
+        "path": "build/ui-control-authoring-ctest.log",
+        "sha256": "17d88e75604d3a599d48f495fc4d1c959d7b25744f211f06abeaa22f06a93fa2"
+      }
+    },
+    "project_packaging": {
+      "passed": true,
+      "tests": 13,
+      "skipped": 2,
+      "calls": 46,
+      "evidence": {
+        "path": "build/ui-control-project-contract.json",
+        "sha256": "b5227a781b8af68ddba0d0288485158f21bddabb3fdce16a499e2b931e63531e"
+      },
+      "note": "Metadata/export source unchanged by final Control revision fix; earlier CLI hash retained in evidence."
+    },
+    "project_gameplay": {
+      "passed": true,
+      "log": {
+        "path": "build/ui-control-project-gameplay-regression.log",
+        "sha256": "11b6b9e227c6cc65c4ff70591684e266c57ae054bd8942567492270461629d88"
+      },
+      "note": "Ran before the isolated Control gameplay-revision fix."
+    },
+    "managed_service_abi": {
+      "passed": true,
+      "checks": 48,
+      "evidence": {
+        "path": "build/gameplay-ui-service-abi.json",
+        "sha256": "981c36c46c4db7016942e78ea046f85688b55287f54b2f9bb6bdbd43d48e453e"
+      }
+    },
+    "desktop_save_model": {
+      "passed": true,
+      "log": {
+        "path": "build/editor-save-control-sequence-test.log",
+        "sha256": "334c4dd57bc4e1e5c729cf1715611024d690b8377615b731d31a6191403c6bc1"
+      }
+    },
+    "ui_presenter": {
+      "passed": true,
+      "log": {
+        "path": "build/ui-presenter-test.log",
+        "sha256": "3cf41d365767b76431b4106139b75b6e9c8af777a420134fdc760029e869b968"
+      }
+    },
+    "editor_build": {
+      "passed": true,
+      "errors": 0,
+      "warnings": 2,
+      "log": {
+        "path": "build/ui-control-editor-build.log",
+        "sha256": "a22137805cddde104ce0d0398e76df70ec2481c9a09ed636370895920ec07031"
+      }
+    }
+  },
+  "issues_and_limits": [
+    "Final source review identified same-tick gameplay draft freshness; final artifacts increment gameplay revision on accepted Control and test stale-edit rejection.",
+    "Two earlier RPC harness failures assumed authored-entity removal and rejection of exact retained old-session receipts. Fixtures were corrected; original failed records remain in local build evidence.",
+    "Initial Windows build request used a nonexistent target name; corrected to poima_desktop. Native builds completed; existing warning sites remain in retained logs.",
+    "No installed desktop package activation or full GUI regression claim. Desktop tests call the C ABI; no physical pointer/gamepad UI routing is implemented.",
+    "Default vertical layout is bounded and may overflow the viewport; no general style/layout authoring, scrolling controls, text input, localization or accessibility qualification.",
+    "Windows laptop GPU captures only; no Linux graphics, console, clean-machine deployment, relocated UI game bundle or production-performance qualification.",
+    "Pending save resolution is covered by owner logic review and existing storage fault tests; this cohort does not inject uncertain filesystem publication through the CLI.",
+    "Game-save compatibility remains exact content/module/schema; rebuilding services ABI requires matching game/bridge artifacts, not automatic save migration."
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "586d1bb27c8bfe5f2f2ab0c070939fdec46c0c4c2464e29a2a207607e8934650",
+    "cmake/embed_ui_font.cmake": "df9726cb63ab3eaa402c901d8370a0e5a76abcdf3d22823feaff5457a38687c9",
+    "cmake/runtime.json.in": "98cdee3035b341a083cb25d662991103f71f437118ff48cdda7a9a0729bc1b96",
+    "desktop/Poima.Editor/SaveEditorModel.cs": "49b4a3aea4152e6377d785a1376c9e0e60aad81cedf0fc14a68a616724873b03",
+    "include/poima/gameplay.hpp": "deef71090477fcb1cba7c83726ca158c678dc91119962c25198509fdb5ed9189",
+    "include/poima/gameplay_abi.h": "b424ce83f3ee520dede1f54d2c37ae5732ce5c4762a45a17afc0774e4ae0655e",
+    "include/poima/runtime.hpp": "f0221d535f8a8c17510bca01de86b721f7b230f929bdf96ccf9768353dc6c952",
+    "include/poima/scene.hpp": "f86b1f46927d466200ae5697b9d8ab2dfef6084163f0f5bfadce8fafe9bcab33",
+    "include/poima/ui_model.hpp": "65107f868e7944b0c3f9fe2b5e4dd3d3691de18b082839cde2cd2e683886f6fd",
+    "include/poima/ui_presenter.hpp": "7ba6370805f830c552735dc5a9a9af2556d360e3ee98794971cf290f90362457",
+    "include/poima/world.hpp": "9bc64d42be7f5ba8de545164092d236682e1f178edf7b5d4ab23ccba2a23b3f5",
+    "managed/Poima.Gameplay/Gameplay.cs": "b4419cb4e844414098ae6b2bd15f1c4cedbaea0ac0f23f65429c806a65c4bb53",
+    "managed/Poima.Gameplay/Lifecycle.cs": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172",
+    "managed/Poima.Gameplay/Ui.cs": "d0ae6589dc3b97bc79c35204ae050f7c8f765d938de7545edd93f2431adbcca4",
+    "managed/Poima.ManagedBridge/Entry.cs": "ad623536dcd42429bb2a94739b9ec0649bcfaeaa88ace15e8f79c65ecea7896b",
+    "managed/Poima.NativeGame.Generator/Program.cs": "73a20f404dd7b6abc9de01c8c6e67d09755fb65719b5f3a4df1a88d5db570577",
+    "managed/Poima.NativeGame/Entry.cs": "3d6497dd2b6c66ef40812077df3ef375e0b24354afb95816f55f42c8ad5b9437",
+    "scripts/publish_native_gameplay.py": "fb87c522a4eaab61574787c88f5d55f13c732cef9fb8f6c63006230fb8063915",
+    "src/desktop_bridge.cpp": "3c77b525fe56b2f37b33e337fc29deb88b3ce44e0b03cc29efed5651925fe47a",
+    "src/gameplay.cpp": "6e16391bb8d83f3ef0b4097958c927e2cad295297a356346d9f6ca9659e9d802",
+    "src/native_gameplay_artifact.cpp": "080372917cacd3912ea107fc697c483d2605929a84f539217efd0d8ffc09b6e1",
+    "src/project.cpp": "fc4f7a169eb955790bf9f167e3bba875687fc249a4a916ae39d8fbcf03486a36",
+    "src/render_smoke.cpp": "d423fd0fd998cba34699813ba2973549b4541025df38676a00a56de04829b862",
+    "src/runtime.cpp": "ecf41bda9543ed5d0d789cc64af6cbc3fe026dd8f9b563d51c909f550553a8c1",
+    "src/runtime_disabled.cpp": "c081089aa09f286a87b044fe43ed97697cc7aad49fc539bbb2d8941ebc9bdd25",
+    "src/runtime_save.inc": "a0343abbcbd9228cb2643ef43095b2a9a4ef7636038fc5136e1659fba1c5c29c",
+    "src/runtime_ui.inc": "00757647f2b92e0e7d96e45be5c324a6f80b05462e416b1381ed72ce411eb7f4",
+    "src/ui_model.cpp": "e90491f543aaceb2703880f84d7fef9261996b927399668cade652e79917a34b",
+    "src/ui_presenter.cpp": "6b374904111828c3df76c3f509e2aedfcdeb44b5214f18151b808f0ea99ba594",
+    "src/world.cpp": "16dae9d75239fb3162b585bb0d921e279e1061823ca3d857b18c3a9f509cbbaf",
+    "src/world_control.inc": "4f6b0f04cd800a126a9d94eb4b9a648c6a02bb0d23c35486be82154379cb70a4",
+    "src/world_save.inc": "77c141682f8e00de833996f4fd9f44c64c3c1121d90c9f6a839b42a880a4b25f",
+    "src/world_ui.inc": "d0dfef3cbcaeb66152468ce628ece09c94df70a6299ca9d38abe70e7e74665e9",
+    "tests/components_gameplay_bundle.py": "bb42d952d3dd6cad4c456b7e21b0b52c236e82691cd6880ca055fa8d2c4b9a86",
+    "tests/desktop_ui_control.py": "1251d3c72937598a3b5d91bc43610c4c61546af171be1383712b4192f13e9c24",
+    "tests/fixtures/editor_save_model/Program.cs": "3214351b87f693389146887350ab9109ed29565306f02717622ae25685141358",
+    "tests/gameplay_save_bundle.py": "109713909c2bc72c4c0f05082ce5104e4df2f7b9bc0b1f631397987d7c5156bb",
+    "tests/managed_service_abi/Program.cs": "0430dfec9f4bdecb855da5236bffec431e5bf47eaa34901ad023f1b070b368f7",
+    "tests/managed_ui_gameplay/ManagedUiGame.cs": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+    "tests/managed_ui_gameplay/Poima.ManagedUiGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/managed_ui_gameplay/README.md": "7b9166fdef63a59ccdacce73ba593178c60db5b023ca4d04bc9afe6374c8b0a1",
+    "tests/profiler_contract.py": "76fedf9bdbae5aff119b38d050577d195affc34aa58a63e75eeebd3dc11bd076",
+    "tests/project_contract.py": "d8d1ddff5d33d2bb3ef1698374a2fa62eb5308320a1d32c8b3614aa5174c648e",
+    "tests/project_gameplay_contract.py": "dd1c78fc67ad12e46609e6ab23fe7f1dd1a6c7518c7b66c02eadf848b382dae1",
+    "tests/runtime_ui_contract.py": "f72a4cbdbe94d059559972563bf20a01de05d30946b2489b9a138a380b1bcde6",
+    "tests/runtime_ui_control_contract.py": "96fbecc1c8974c477645760bfe59ecf11c08efb27457064f63e9f6391cb43b26",
+    "tests/runtime_ui_control_native.cpp": "2f677bb8b656e1c123a9eb904f8252f8632a323ca33e174f02d1c6e98b786af8",
+    "tests/runtime_ui_native.cpp": "9cb10da788783ea99e7895dffdbd967f4c003ec7e14d5e3cc3bfd05722d58750",
+    "tests/runtime_ui_render_contract.py": "fdd7edcd9dfe6e393103596ad299e4d30a2e9e2f6007a116892b4ba87f48768e",
+    "tests/ui_presenter.cpp": "263c3d6e90de58dc90493a872d8e5f5494f2bb41f8bfa91acc2237a11c6aea52",
+    "tests/world_components_contract.py": "ab7ef4004ca5a650e991c21b02e9a51546083234f1be8e6a3fe795e48d873cea",
+    "tests/world_session_native.cpp": "316d765585f358cc34cabea7306d613a02e8241c44e586f6a101db48a79fb47f",
+    "tests/world_templates_contract.py": "c2e5ca4a55a5b90f85f76ebf69e159bd10156579fa997be307a7c1950b555f68",
+    "tests/world_ui_contract.py": "7b9ad3ea22d318ab35e6620dbe8de198b1d028b1ff314b3632c489de1f519033"
+  },
+  "artifact_sha256": {
+    "build/runtime-headless/poima": "fa12eef9335f23a6ce5e25d4e3cb3df563ccda43651a11b099d4f7d95e8c3ee6",
+    "build/headless/poima": "d4b6a090e773b4f786f3bb8907e8d1ad93b412ccecbfe30da3592369e012cd3d",
+    "build/windows-runtime/poima.exe": "20962f9c3157902c5632e75cae4ca24705be918f3cac80c296ee84f5cf6b1fba",
+    "build/runtime-headless/poima-runtime-ui-control-test": "7848772d2e78f0282671610eadb254d360dab8aec528e1857ecd8b2a64c7cb21",
+    "build/windows-runtime/poima-runtime-ui-control-test.exe": "b5dea888b28689bace786f73a37e759ed3b2377e0b03d3b251bdfe7b56f03386",
+    "build/windows-runtime/poima_desktop.dll": "83cc97fa3ed672aeb7ecf06192acf9e9fddd01494c9cf2965b92d7d3914a5e5f",
+    "managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+    "managed/Poima.Gameplay/bin/Release/net10.0/Poima.Gameplay.dll": "432d9f1139058314ec0466560f7bb0722b0b24b8f99872bc61358916e819e133",
+    "build/managed-ui-gameplay/game/Poima.ManagedUiGame.dll": "c5ad0197651e4e9b930a7435a0cf409a8932f9edb749499ac8bd84e8f38aedb1",
+    "desktop/Poima.Editor/bin/Release/net10.0/win-x64/Poima.Editor.dll": "2801e331e323ce49480c450561edf5dc5a553bb66a8e368167e1bd19be40edb2",
+    "build/managed-ui-native-linux/native-gameplay.json": "83ae02a9965404d10ef9aa88bb6af512cbfb0cb7e76dc93bcd876556eac59cf0",
+    "build/managed-ui-native-linux/Poima.NativeGame.so": "dd6d7f726d5d01e0c776d912f598e99520fc3b858014bfc7dafb8e38899e33ca",
+    "build/managed-ui-native-windows/native-gameplay.json": "f4ef1ff96bb2208568a27359a7e7e450374bfbaa7277a82eb5fdd6e044dd8ee3",
+    "build/managed-ui-native-windows/Poima.NativeGame.dll": "1ed874b02ebc61734bc451c8ccd4119399af00a19ec78d4787e24b35ce34376b"
+  }
+}

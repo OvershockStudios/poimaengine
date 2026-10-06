@@ -4,7 +4,7 @@ Poima's Native AOT route compiles one C# `Game<TState>` into a native shared lib
 
 The 0.0.35 integration has recorded Linux and Windows native execution, CoreCLR/native state comparisons and a relocated Windows Vulkan game replay. These are bounded fixture results; clean-machine deployment, consoles and production workloads remain unqualified. See the [checkpoint evidence](evidence/m2-native-gameplay.json) and [implementation status](IMPLEMENTATION_STATUS.md).
 
-The [custom component API](CUSTOM_COMPONENTS.md) requires rebuilding with services ABI 6. Older compiled artifacts must be republished.
+The [custom component API](CUSTOM_COMPONENTS.md) requires rebuilding with services ABI 7. Older compiled artifacts must be republished.
 
 ## Publish
 
@@ -28,7 +28,7 @@ Native AOT includes runtime services, including garbage collection. It is native
 
 A dedicated artifact directory contains `native-gameplay.json`, one library, and the included dependency notices. Intermediate IL assemblies, debug symbols, generated source and build logs belong outside that directory.
 
-The descriptor declares the exact engine version, Linux/Windows x86_64 target, call ABI 1, services ABI 6, fixed `poima_gameplay_entry` export, game identity/type and complete state schema. Its payload inventory records relative paths, byte counts, SHA-256 hashes and roles (`library`, `dependency`, `notice`, `metadata`).
+The descriptor declares the exact engine version, Linux/Windows x86_64 target, call ABI 1, services ABI 7, fixed `poima_gameplay_entry` export, game identity/type and complete state schema. Its payload inventory records relative paths, byte counts, SHA-256 hashes and roles (`library`, `dependency`, `notice`, `metadata`).
 
 Read-only inspection validates the schema, file inventory and native image headers without executing code. It accepts foreign-target metadata for export workflows. Actual loading additionally requires the running engine's platform, generated schema and native diagnostics to agree. Hashes check integrity against the supplied inventory; they are not signatures or an authenticity guarantee.
 

@@ -2,7 +2,7 @@
   "format": "poima.runtime",
   "version": 1,
   "engine_version": "@PROJECT_VERSION@",
-  "gameplay_services_version": 6,
+  "gameplay_services_version": 7,
   "target_os": "@CMAKE_SYSTEM_NAME@",
   "target_arch": "@POIMA_TARGET_ARCH@",
   "executable": "bin/poima@CMAKE_EXECUTABLE_SUFFIX@",
@@ -12,6 +12,7 @@
     "audio": @POIMA_RUNTIME_AUDIO@,
     "managed": @POIMA_RUNTIME_MANAGED_GAMEPLAY@,
     "native_gameplay": @POIMA_RUNTIME_NATIVE_GAMEPLAY@,
+    "game_ui": @POIMA_RUNTIME_GAME_UI@,
     "editor": @POIMA_RUNTIME_EDITOR@
   }
 }

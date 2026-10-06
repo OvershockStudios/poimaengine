@@ -37,6 +37,7 @@ public sealed class SaveEditorModel : IDisposable
          SlotDraft != SlotObservation["slot"]?.GetValue<string>() || RootDirty ||
          RuntimeObservation?["session_id"]?.GetValue<string>() != editor.RuntimeId ||
          RuntimeObservation?["tick"]?.GetValue<long>() != (editor.RuntimeId is null ? null : editor.Tick) ||
+         RuntimeObservation?["control_sequence"]?.GetValue<long>() != editor.Host.State["runtime"]?["control_sequence"]?.GetValue<long>() ||
          RuntimeObservation?["ui_revision"]?.GetValue<long>() != editor.Host.State["runtime"]?["ui_revision"]?.GetValue<long>() ||
          RuntimeObservation?["structure_revision"]?.GetValue<long>() != editor.Host.State["runtime"]?["structure_revision"]?.GetValue<long>() ||
          RuntimeObservation?["authored_revision"]?.GetValue<long>() != editor.Revision ||
@@ -99,7 +100,8 @@ public sealed class SaveEditorModel : IDisposable
             ["gameplay_revision"] = active ? gameplay["runtime"]?["revision"]?.DeepClone() : null,
             ["component_revision"] = active ? components?["revision"]?.DeepClone() : null,
             ["structure_revision"] = structure?["structure_revision"]?.DeepClone(),
-            ["ui_revision"] = structure?["ui_revision"]?.DeepClone()
+            ["ui_revision"] = structure?["ui_revision"]?.DeepClone(),
+            ["control_sequence"] = structure?["control_sequence"]?.DeepClone()
         };
         SlotObservation = EditorModel.Clone(slot); RuntimeObservation = observation; GameplayObservation = EditorModel.Clone(gameplay);
         observationSuperseded = false; ResetRecovery(); Error = null; ++DraftVersion; Notify();
@@ -143,6 +145,7 @@ public sealed class SaveEditorModel : IDisposable
         request["expected_component_revision"] = RuntimeObservation["component_revision"]!.DeepClone();
         request["expected_structure_revision"] = RuntimeObservation["structure_revision"]!.DeepClone();
         request["expected_ui_revision"] = RuntimeObservation["ui_revision"]!.DeepClone();
+        request["expected_control_sequence"] = RuntimeObservation["control_sequence"]!.DeepClone();
         Execute("save.write", request, rootBaseline);
     }
     public void Load()
@@ -159,6 +162,7 @@ public sealed class SaveEditorModel : IDisposable
         if (RuntimeObservation["session_id"] is not null) request["expected_component_revision"] = RuntimeObservation["component_revision"]!.DeepClone();
         if (RuntimeObservation["session_id"] is not null) request["expected_structure_revision"] = RuntimeObservation["structure_revision"]!.DeepClone();
         if (RuntimeObservation["session_id"] is not null) request["expected_ui_revision"] = RuntimeObservation["ui_revision"]!.DeepClone();
+        if (RuntimeObservation["session_id"] is not null) request["expected_control_sequence"] = RuntimeObservation["control_sequence"]!.DeepClone();
         if (RuntimeObservation["session_id"] is null)
         {
             var current = editor.Host.Call("desktop.gameplay.inspect");

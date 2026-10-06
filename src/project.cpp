@@ -259,7 +259,7 @@ Json runtime_spec(const std::string& bytes) {
     if(value.contains("gameplay_services_version"))require(value.at("gameplay_services_version").is_number_integer() && integer(value.at("gameplay_services_version"))>0,"Runtime gameplay_services_version must be a positive integer.");
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
-    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
+    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
@@ -312,6 +312,7 @@ VerifiedGame verify_game(const std::string& filename) {
     WorldPackageContent content;{ WorldSession session(text(world),WorldOpenMode::read_only_runtime);content=session.package_content(); }
     require(read(world,16*1024*1024)==world_bytes,"Bundle world changed during validation.");
     require(content.revision==revision,"Bundle source revision differs from world revision.");entry_validate(spec.at("entry"),parse(content.document));
+    require(parse(content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Game requires a game-UI-enabled runtime.");
     std::set<std::string> required_assets;for(const auto& asset:content.assets) { const auto path="content/world.json.assets/"+asset.filename;expect(path,"asset");require(inventory.at(path).at("sha256")==asset.sha256 && inventory.at(path).at("size")==asset.bytes,"Asset closure differs from inventory.");required_assets.insert(path); }
     if(spec.contains("input_profile")) { require(spec.at("input_profile")=="content/default.poima-input.json","Unexpected bundle input profile path.");expect(spec.at("input_profile"),"input");const auto path=contained(root,spec.at("input_profile"));input_profiles::load_read_only(path);result.definition.input_profile=text(path); }
     std::map<std::string,std::string> gameplay_paths;
@@ -323,7 +324,7 @@ VerifiedGame verify_game(const std::string& filename) {
         component_bindings_validate(content.document,artifact.schema);
         require(artifact.descriptor_sha256==inventory.at("gameplay/native-gameplay.json").at("sha256").get<std::string>(),"Gameplay descriptor changed since inventory verification.");
         require(runtime.at("features").value("native_gameplay",false),"Game requires a native-gameplay runtime.");
-        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==6,"Native gameplay requires runtime gameplay_services_version 6.");
+        require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==7,"Native gameplay requires runtime gameplay_services_version 7.");
         require(artifact.target_os==runtime.at("target_os").get<std::string>() && artifact.target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay target differs from runtime target.");
         result.definition.gameplay_values=validate_gameplay_values(artifact.schema,config.at("values").dump());
         result.definition.gameplay_descriptor=text(descriptor);result.definition.gameplay_descriptor_sha256=artifact.descriptor_sha256;gameplay_paths.emplace("gameplay/native-gameplay.json","gameplay_descriptor");
@@ -376,9 +377,10 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
     return operation("project.build",[&] {
         const auto p=project(manifest);require(fs::is_directory(fs::symlink_status(path_of(runtime_root))),"Runtime root must be a directory without symlink.");const auto runtime_path=fs::canonical(path_of(runtime_root));const auto descriptor=read(contained(runtime_path,"runtime.json"),65536);const auto runtime=runtime_spec(descriptor);
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
+        require(parse(p.content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Project requires a game-UI-enabled runtime.");
         if(p.gameplay) {
             require(runtime.at("features").value("native_gameplay",false),"Project requires a native-gameplay runtime.");
-            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==6,"Native gameplay requires runtime gameplay_services_version 6.");
+            require(runtime.contains("gameplay_services_version") && runtime.at("gameplay_services_version")==7,"Native gameplay requires runtime gameplay_services_version 7.");
             require(p.gameplay->target_os==runtime.at("target_os").get<std::string>() && p.gameplay->target_arch==runtime.at("target_arch").get<std::string>(),"Gameplay artifact target differs from installed runtime.");
         }
 #ifdef _WIN32

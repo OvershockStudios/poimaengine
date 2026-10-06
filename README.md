@@ -30,7 +30,7 @@ No particular AI provider is required. Codex, Claude or another client can use t
 | Profiling | [Shared native captures](docs/PROFILER.md), editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. |
 | Assets | glTF/GLB import into editable hierarchies; cooked models, PNG/JPEG textures and WAV audio. Supported formats and limits are explicit. |
 | Audio | Optional Steam Audio integration, direct-path obstruction/HRTF processing, persistent sound events, native-player output and bounded editor audio processing. |
-| Game UI foundation | [Native logical controls](docs/GAME_UI.md) support authored hierarchy, guarded runtime edits and portable saves. Separate RmlUi layout composes through Vulkan. Automatic layout binding, gameplay callbacks and live player/editor routing remain unfinished. |
+| Game UI foundation | [Native logical controls](docs/GAME_UI.md) support authored hierarchy, guarded runtime edits, portable saves and compiled C# control callbacks without a physics tick. An optional default layout composes through Vulkan. Live pointer/gamepad routing and a general UI authoring toolkit remain unfinished. |
 | Desktop | Independent dockable Scene and Game panels, saved Modified Tall layouts, hierarchy, typed Inspector fields and animation controls, Project browser, native navigation and transform gizmos; clocked Play with keyboard/mouse Game controls, C# launch configuration, typed live fields and compatible assembly reload. |
 | Packaging | Project manifests and native game bundles with validated content, runtime files, compiled C# gameplay artifacts, integrity checks and read-only game launch. |
 

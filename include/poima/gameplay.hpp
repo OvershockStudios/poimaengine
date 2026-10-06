@@ -38,6 +38,7 @@ public:
     // are allowed, every non-null schema-declared entity field must resolve.
     void validate_entity_references(components::EntityExists,void* context) const;
     std::vector<std::uint64_t>& state();
+    void control(const PoimaGameServices&,std::uint64_t tick);
     void tick(const PoimaGameServices&,std::span<const PoimaGameInput>,std::uint64_t tick);
 };
 }

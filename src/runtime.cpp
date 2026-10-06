@@ -139,7 +139,15 @@ struct Runtime::Impl {
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
     std::unique_ptr<RuntimeComponents> components;
-    std::unique_ptr<ui::Model> ui_model;
+    std::shared_ptr<ui::Model> ui_model;
+    enum class GamePhase { idle,tick,control };
+    GamePhase game_phase=GamePhase::idle;
+    std::uint64_t control_sequence=0;
+    PoimaGameUiControlEvent control_event{};
+    RuntimeControlIntent control_intent=RuntimeControlIntent::none;
+    std::map<std::string,ui::Edit> ui_commands;
+    std::optional<std::string> ui_modal;
+    std::size_t ui_calls=0,ui_text_bytes=0;
     std::uint64_t game_revision=0,structure_revision=0;
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
@@ -393,7 +401,7 @@ struct Runtime::Impl {
         }
         entity_ids.emplace(authored_ids);
         components=std::make_unique<RuntimeComponents>(registry,candidate->identities,definition);
-        ui_model=std::make_unique<ui::Model>(definition.ui);
+        ui_model=std::make_shared<ui::Model>(definition.ui);
         physics.OptimizeBroadPhase();
         for (auto e : candidate->characters) registry.get<Controller>(e).character->PostSimulation(0.05f);
         sync();
@@ -423,6 +431,7 @@ struct Runtime::Impl {
     template<class F> static int32_t callback(PoimaGameError* error,F&& f) noexcept {
         try { f();return 0; }catch(const std::exception& e) { if(error)std::snprintf(error->text,sizeof(error->text),"%s",e.what());return -1; }catch(...) { if(error)std::snprintf(error->text,sizeof(error->text),"Native gameplay callback failed.");return -1; }
     }
+#include "runtime_ui.inc"
     static int32_t POIMA_CALL component_query(void* context,const PoimaGameComponentType* type,const PoimaEntityId* after,PoimaEntityId* output,uint32_t capacity,uint32_t* written,PoimaGameError* error) {
         return callback(error,[&] {
             require(type && after && output && written && capacity>=1 && capacity<=256,"Invalid component query pointers/capacity.");*written=0;
@@ -437,6 +446,7 @@ struct Runtime::Impl {
     }
     static int32_t POIMA_CALL component_set(void* context,const PoimaGameComponentType* type,const PoimaEntityId* entity,const void* value,uint32_t bytes,PoimaGameError* error) {
         return callback(error,[&] {
+            static_cast<Impl*>(context)->require_tick();
             require(type && entity && value && bytes<=components::max_fields*components::cell_bytes,"Invalid component write pointers/size.");
             static_cast<Impl*>(context)->components->stage_pending_checked(*type,*entity,std::span(static_cast<const std::byte*>(value),bytes));
         });
@@ -462,7 +472,7 @@ struct Runtime::Impl {
     }
     static int32_t POIMA_CALL spawn_entity(void* context,const PoimaTemplateId* source,const PoimaGameTransform* transform,PoimaEntityId* output,PoimaGameError* error) {
         return callback(error,[&] {
-            require(source && output,"Spawn template/output is absent.");*output={};auto& self=*static_cast<Impl*>(context);
+            require(source && output,"Spawn template/output is absent.");*output={};auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_structure_calls+self.scheduled_structure_calls<4096,"Combined structural command budget exceeded.");
             RuntimeSpawnRequest request;request.template_id=gameplay_id(PoimaEntityId{source->high,source->low});
             if(transform) {
@@ -484,7 +494,7 @@ struct Runtime::Impl {
     }
     static int32_t POIMA_CALL despawn_entity(void* context,const PoimaEntityId* source,PoimaGameError* error) {
         return callback(error,[&] {
-            require(source,"Despawn entity is absent.");auto& self=*static_cast<Impl*>(context);
+            require(source,"Despawn entity is absent.");auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_structure_calls+self.scheduled_structure_calls<4096,"Combined structural command budget exceeded.");
             const auto pending=std::find_if(self.game_spawns.begin(),self.game_spawns.end(),[&](const auto& birth){return birth.id.high==source->high && birth.id.low==source->low;});
             if(pending!=self.game_spawns.end()) {
@@ -537,6 +547,7 @@ struct Runtime::Impl {
             if(!request->slot || request->slot_bytes<1 || request->slot_bytes>64 || request->has_expected_generation>1 || request->allow_recovery>1 ||
                 (!request->has_expected_generation && request->expected_generation!=0)) { output->rejection=static_cast<uint32_t>(GameplaySaveRejection::invalid);return; }
             auto& self=*static_cast<Impl*>(context);
+            self.require_callback();
             const auto accepted=self.save_queue.enqueue(static_cast<GameplaySaveKind>(request->kind),std::string_view(request->slot,request->slot_bytes),
                 request->has_expected_generation ? std::optional<std::uint64_t>(request->expected_generation) : std::nullopt,request->allow_recovery!=0,self.tick);
             output->ticket=save_ticket(accepted.ticket);output->rejection=static_cast<uint32_t>(accepted.rejection);
@@ -572,6 +583,7 @@ struct Runtime::Impl {
     }
     static int32_t POIMA_CALL move_body(void* context,const PoimaGameMotion* source,PoimaGameError* error) {
         return callback(error,[&] {
+            static_cast<Impl*>(context)->require_tick();
             auto& commands=static_cast<Impl*>(context)->game_commands;require(commands.size()<128,"Gameplay exceeded 128 motion commands in one tick.");
             KinematicTarget target;target.entity=gameplay_id(source->entity);target.duration_ticks=source->duration_ticks;std::copy_n(source->position,3,target.position.begin());std::copy_n(source->rotation,4,target.rotation.begin());commands.push_back(std::move(target));
         });
@@ -600,6 +612,7 @@ struct Runtime::Impl {
     }
     static int32_t POIMA_CALL set_animation(void* context,const PoimaGameAnimationCommand* source,PoimaGameError* error) {
         return callback(error,[&] {
+            static_cast<Impl*>(context)->require_tick();
             auto& commands=static_cast<Impl*>(context)->game_animation_commands;
             require(commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
             require(source->clip>=-1 && source->loop<=1 && source->playing<=1,"Invalid gameplay animation command encoding.");
@@ -617,7 +630,7 @@ struct Runtime::Impl {
     }
     static int32_t POIMA_CALL sound_event(void* context,const PoimaGameSound* command,std::uint64_t* voice,PoimaGameError* error) {
         return callback(error,[&] {
-            auto& self=*static_cast<Impl*>(context);require(++self.game_sound_calls<=64,"Gameplay exceeded 64 sound commands in one tick.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();require(++self.game_sound_calls<=64,"Gameplay exceeded 64 sound commands in one tick.");
             if(command->stop) { self.sounds.stop(command->voice,self.tick);*voice=command->voice; }
             else *voice=self.play_sound(gameplay_id(command->emitter),command->gain);
         });
@@ -796,7 +809,7 @@ struct Runtime::Impl {
         require(!checkpoint.IsFailed(),"Cannot prepare the physics rollback checkpoint.");
         const auto previous_tick=tick;
         require(!save_queue.pending() || !save_queue.pending()->committed,"Resolve the pending save operation before another simulation batch.");
-        const auto save_checkpoint=save_queue;
+        const auto save_checkpoint=save_queue;const auto ui_checkpoint=ui_model;
         auto game_checkpoint=game ? game->state() : std::vector<std::uint64_t>{};
         auto sound_checkpoint=sounds;
         auto animation_checkpoint=animations->checkpoint();
@@ -845,11 +858,14 @@ struct Runtime::Impl {
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
-                    const PoimaGameServices services{6,sizeof(PoimaGameServices),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,&save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,&spawn_entity,&despawn_entity,&template_component_get};
+                    clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(services,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game_phase=GamePhase::idle;
                     }
+                    if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
+                    clear_ui_commands();
                     profiling::Scope commands_profile("runtime.gameplay.commands");
                     require(game_animation_commands.size()+(frame==0 ? animation_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation commands in one tick.");
                     for(const auto& command:game_animation_commands)
@@ -925,7 +941,7 @@ struct Runtime::Impl {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
-            save_queue=save_checkpoint;
+            save_queue=save_checkpoint;ui_model=ui_checkpoint;game_phase=GamePhase::idle;clear_ui_commands();
             animations->restore(animation_checkpoint);
             for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
             sounds=std::move(sound_checkpoint);
@@ -1062,9 +1078,11 @@ void Runtime::gameplay_edit(const std::string& values) {
 const std::vector<components::Schema>& Runtime::component_schemas() const { return impl_->components->schemas(); }
 std::uint64_t Runtime::component_revision() const { return impl_->components->revision(); }
 const ui::Model& Runtime::ui_model() const { return *impl_->ui_model; }
+std::uint64_t Runtime::control_sequence() const { return impl_->control_sequence; }
+RuntimeControlResult Runtime::control(std::uint64_t expected_ui,std::uint64_t expected_sequence,const std::string& element) { return impl_->control(expected_ui,expected_sequence,element); }
 void Runtime::ui_edit(std::uint64_t expected_revision,const std::vector<ui::Edit>& edits,std::optional<std::string> modal) {
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before UI editing.");
-    impl_->ui_model->edit(expected_revision,edits,std::move(modal));
+    auto candidate=std::make_shared<ui::Model>(*impl_->ui_model);candidate->edit(expected_revision,edits,std::move(modal));impl_->ui_model.swap(candidate);
 }
 std::optional<components::Payload> Runtime::component_read(const std::string& type,const std::string& entity) const { return impl_->components->read(type,entity); }
 std::vector<std::string> Runtime::component_query(const std::string& type,const std::string& after,std::uint32_t limit) const { return impl_->components->query(type,after,limit); }
@@ -1096,6 +1114,7 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     require(impl_->registry.all_of<RuntimeCamera>(e),"Runtime entity has no Camera component.");
     const auto& lens=impl_->registry.get<RuntimeCamera>(e);
     auto result=snapshot();result.camera_id=camera;
+    if(!impl_->ui_model->definition().empty())result.logical_ui=impl_->ui_model->presentation();
     result.camera_world=impl_->registry.get<Node>(e).world;result.vertical_fov=lens.vertical_fov;result.near_plane=lens.near_plane;result.far_plane=lens.far_plane;
     require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
     return result;

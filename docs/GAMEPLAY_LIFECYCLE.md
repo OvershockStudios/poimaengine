@@ -1,6 +1,6 @@
 # Spawning and removing props from C#
 
-The development lifecycle API uses **services ABI 6 (144 bytes)**. Rebuild `Poima.Gameplay`, the managed bridge and game assemblies together; republish Native AOT artifacts. Call ABI remains 1. This supports frozen, standalone root-prop templates with optional box physics, static presentation and registered custom components. Dynamic cameras, characters, animation rigs, audio emitters and arbitrary authored-entity removal are not implemented by this API.
+The development lifecycle API uses **services ABI 7 (176 bytes)**. Rebuild `Poima.Gameplay`, the managed bridge and game assemblies together; republish Native AOT artifacts. Call ABI remains 1. This supports frozen, standalone root-prop templates with optional box physics, static presentation and registered custom components. Dynamic cameras, characters, animation rigs, audio emitters and arbitrary authored-entity removal are not implemented by this API.
 
 ## Create and initialize
 

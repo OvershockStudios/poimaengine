@@ -209,6 +209,54 @@ class ProjectContract(unittest.TestCase):
             self.assertEqual(tree(runtime), original)
         self.assertEqual(tree(self.project), source)
 
+    def test_authored_ui_requires_explicit_runtime_capability(self):
+        runtime = self.root/'UI metadata runtime'
+        (runtime/'bin').mkdir(parents=True)
+        notices = runtime/'share/poima'; notices.mkdir(parents=True)
+        for name in ('LICENSE', 'THIRD_PARTY_NOTICES.md'):
+            (notices/name).write_text('Metadata-only test fixture.\n')
+        target = 'Windows' if args.windows_interop or os.name == 'nt' else 'Linux'
+        executable = 'bin/poima.exe' if target == 'Windows' else 'bin/poima'
+        (runtime/executable).write_bytes(b'Metadata-only fixture; never executed.\n')
+        (runtime/executable).chmod(0o755)
+        spec = dict(format='poima.runtime', version=1, engine_version=self.run_cli('version')['version'],
+                    target_os=target, target_arch='x86_64', executable=executable,
+                    features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False))
+        world = self.project/self.document['entry']['world']
+        revision = json.loads(world.read_text())['revision']
+        self.world_rpc('world.transact', request_id=uuid.uuid4().hex, base_revision=revision, ops=[
+            dict(op='ui.element.set', id='1'*32, element=dict(parent=None, name='Status', kind='label',
+                 text='Health 100', action=None, visible=True, enabled=True))])
+        for lock in self.project.rglob('*.lock'): lock.unlink()
+        source = tree(self.project)
+        for flag in (None, False, 'true'):
+            if flag is None: spec['features'].pop('game_ui', None)
+            else: spec['features']['game_ui'] = flag
+            (runtime/'runtime.json').write_text(json.dumps(spec))
+            destination = self.root/('Rejected UI '+str(flag))
+            self.run_cli('project', 'build', native(self.manifest), '--runtime', native(runtime),
+                         '--output', native(destination), success=False)
+            self.assertIn('Boolean' if isinstance(flag, str) else 'game-UI-enabled',
+                          json.dumps(CALLS[-1]['reply']))
+            self.assertFalse(destination.exists())
+        spec['features']['game_ui'] = True
+        (runtime/'runtime.json').write_text(json.dumps(spec))
+        bundle = self.root/'UI bundle'
+        self.run_cli('project', 'build', native(self.manifest), '--runtime', native(runtime), '--output', native(bundle))
+        self.run_cli('game', 'inspect', native(bundle/'game.json'))
+        # Rehash a coherent inventory after removing the capability: inspection
+        # must enforce the content requirement, independently of hash checking.
+        descriptor = bundle/'runtime/runtime.json'
+        spec['features'].pop('game_ui')
+        descriptor.write_text(json.dumps(spec))
+        manifest = bundle/'game.json'; game = json.loads(manifest.read_text())
+        row = next(row for row in game['files'] if row['path'] == 'runtime/runtime.json')
+        row.update(size=descriptor.stat().st_size, sha256=hashlib.sha256(descriptor.read_bytes()).hexdigest())
+        manifest.write_text(json.dumps(game))
+        self.run_cli('game', 'inspect', native(manifest), success=False)
+        self.assertIn('game-UI-enabled', json.dumps(CALLS[-1]['reply']))
+        self.assertEqual(tree(self.project), source)
+
     @unittest.skipUnless(args.runtime, 'Requires explicit installed runtime root.')
     def test_export_inventory_inspection_tamper_and_source_unchanged(self):
         before = tree(self.project)

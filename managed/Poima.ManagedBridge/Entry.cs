@@ -44,14 +44,15 @@ public static unsafe class Entry
         call->Output[0]=0;
         try
         {
-            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=144 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
-                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid())
+            if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=176 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
                 case 1: Load(call);break;
                 case 2: Run(call,false);break;
                 case 3: Run(call,true);break;
+                case 6: Run(call,true,true);break;
                 case 4: Release(call->Handle);break;
                 case 5:
                     for(int i=0;i<8 && retired.Any(r=>r.IsAlive);++i) { GC.Collect();GC.WaitForPendingFinalizers();GC.Collect(); }
@@ -127,19 +128,22 @@ public static unsafe class Entry
         finally { if(!published) { retired.Add(new(context));context.Unload(); } }
     }
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void Run(NativeCall* call,bool tick)
+    private static void Run(NativeCall* call,bool tick,bool control=false)
     {
         Module module=modules[call->Handle];
         if(call->State==null || call->StateBytes!=module.Bytes)throw new ArgumentException("Gameplay state size mismatch.");
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
-        // Check the stable header before reading any v6 tail pointer. An old
+        // Check the stable header before reading any v7 tail pointer. An old
         // engine/bridge pair must be rebuilt together, never partially invoked.
-        if(call->Services==null || call->Services->Version!=6 || call->Services->Bytes!=144 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
-            throw new ArgumentException("Gameplay service ABI mismatch: services v6/144 bytes required.");
+        if(call->Services==null || call->Services->Version!=7 || call->Services->Bytes!=176 || call->InputCount>32 || (call->InputCount>0 && call->Inputs==null))
+            throw new ArgumentException("Gameplay service ABI mismatch: services v7/176 bytes required.");
         if(call->Services->Entity==null || call->Services->Raycast==null || call->Services->Move==null || call->Services->Sound==null ||
-            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null || call->Services->Spawn==null || call->Services->Despawn==null || call->Services->TemplateComponentGet==null)throw new ArgumentException("Gameplay service callback is absent.");
-        module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));
+            call->Services->AnimationGet==null || call->Services->AnimationSet==null || call->Services->SaveInfo==null || call->Services->SaveRequest==null || call->Services->SaveResult==null || call->Services->ComponentQuery==null || call->Services->ComponentGet==null || call->Services->ComponentSet==null || call->Services->EntityAlive==null || call->Services->Spawn==null || call->Services->Despawn==null || call->Services->TemplateComponentGet==null || call->Services->UiGet==null || call->Services->UiEdit==null || call->Services->ControlInfo==null || call->Services->ControlRequest==null)throw new ArgumentException("Gameplay service callback is absent.");
+        if(control) {
+            if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
+            module.Game.Control(state,new ControlContext(call->Services,call->Tick));
+        } else module.Game.Tick(state,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));
     }
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void Release(ulong handle)

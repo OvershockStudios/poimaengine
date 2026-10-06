@@ -265,6 +265,9 @@ std::string validate_gameplay_values(const std::string& schema,const std::string
     validate_gameplay_schema(schema);const auto metadata=Json::parse(schema);std::vector<std::uint64_t> storage((metadata.at("bytes").get<std::size_t>()+7)/8);
     return apply_values(metadata,storage,values).dump();
 }
+void Gameplay::control(const PoimaGameServices& services,std::uint64_t tick) {
+    PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&services;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+}
 void Gameplay::tick(const PoimaGameServices& services,std::span<const PoimaGameInput> inputs,std::uint64_t tick) {
     PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&services;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
 }

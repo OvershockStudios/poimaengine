@@ -33,7 +33,15 @@ using System.Buffers.Binary;
     public delegate* unmanaged[Cdecl]<void*, RecipeId*, Transform*, Id*, void*, int> Spawn;
     public delegate* unmanaged[Cdecl]<void*, Id*, void*, int> Despawn;
     public delegate* unmanaged[Cdecl]<void*, ComponentType*, RecipeId*, void*, uint, uint*, void*, int> TemplateGet;
+    public delegate* unmanaged[Cdecl]<void*,Id*,UiState*,byte*,uint,uint*,void*,int> UiGet;
+    public delegate* unmanaged[Cdecl]<void*,UiPatch*,uint,UiModal*,void*,int> UiEdit;
+    public delegate* unmanaged[Cdecl]<void*,UiEvent*,void*,int> ControlInfo;
+    public delegate* unmanaged[Cdecl]<void*,uint,void*,int> ControlRequest;
 }
+[StructLayout(LayoutKind.Sequential)] struct UiState { public ulong Revision;public uint Kind,Visible,Enabled,EffectiveVisible,EffectiveEnabled,Eligible,TextBytes,Reserved; }
+[StructLayout(LayoutKind.Sequential)] unsafe struct UiPatch { public Id Id;public byte* Text;public uint TextBytes,Mask,Visible,Enabled; }
+[StructLayout(LayoutKind.Sequential)] struct UiModal { public Id Id;public uint Change,Reserved; }
+[StructLayout(LayoutKind.Sequential)] unsafe struct UiEvent { public Id Element;public ulong Sequence;public uint ActionBytes,Reserved;public fixed byte Action[128]; }
 [StructLayout(LayoutKind.Sequential)] struct RecipeId { public ulong High,Low; }
 [StructLayout(LayoutKind.Sequential)] unsafe struct Transform { public fixed double Position[3];public fixed double Rotation[4];public fixed double Scale[3]; }
 [StructLayout(LayoutKind.Sequential)] struct ComponentType { public Id Id;public ulong A,B,C,D;public uint Bytes,Reserved; }
@@ -65,7 +73,19 @@ public sealed class UnsupportedTemplateGame : Game<UnsupportedTemplateState>
     public override void Initialize(ref UnsupportedTemplateState state) { }
     public override void Tick(ref UnsupportedTemplateState state,GameContext context) { }
 }
-[GameModule("poima-test-services-v6")]
+[GameModule("poima-test-ui-services-v7")]
+public sealed class UiProbeGame : Game<ProbeState>
+{
+    public override void Initialize(ref ProbeState state) {state.Count=10;}
+    public override void Tick(ref ProbeState state,GameContext context) { context.SetUi(new(1,2),"New é",true,false); }
+    public override void Control(ref ProbeState state,ControlContext context)
+    {
+        if(context.Tick!=123 || context.Sequence!=42 || context.Element!=new UiId(1,3) || context.Action!="save")throw new Exception("Control event mismatch.");
+        var value=context.GetUi(new(1,2));if(value.Revision!=9 || value.Kind!=UiKind.Label || value.Text!="Old" || !value.Visible || value.Eligible)throw new Exception("UI snapshot mismatch.");
+        context.SetUi(new(1,2),"New é",true,false);context.SetModal(null);context.RequestResume();context.RequestPause();++state.Count;
+    }
+}
+[GameModule("poima-test-services-v7")]
 public sealed class ProbeGame : Game<ProbeState>
 {
     public override void Initialize(ref ProbeState state) { state.Count=7; }
@@ -291,6 +311,27 @@ static unsafe class Program
         var wire=new Span<byte>(output,(int)bytes);wire.Clear();BinaryPrimitives.WriteSingleLittleEndian(wire,99);
         BinaryPrimitives.WriteInt32LittleEndian(wire[16..],100);BinaryPrimitives.WriteInt64LittleEndian(wire[32..],long.MinValue);return 0;
     }
+    static int uiReads,uiWrites,controlReads,resumeCalls,pauseCalls;
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int UiGet(void* context,Id* id,UiState* result,byte* text,uint capacity,uint* written,void* error)
+    {
+        ++uiReads;if((nint)context!=0x1234 || id->High!=1 || id->Low!=2 || capacity!=16384)badPayload=true;
+        *result=new(){Revision=9,Kind=1,Visible=1,Enabled=1,EffectiveVisible=1,EffectiveEnabled=1,TextBytes=3};*written=3;text[0]=(byte)'O';text[1]=(byte)'l';text[2]=(byte)'d';return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int UiEdit(void* context,UiPatch* patch,uint count,UiModal* modal,void* error)
+    {
+        ++uiWrites;if((nint)context!=0x1234)badPayload=true;
+        if(count==1) {if(patch==null || modal!=null || patch->Id.High!=1 || patch->Id.Low!=2 || patch->Mask!=7 || patch->Visible!=1 || patch->Enabled!=0 || Encoding.UTF8.GetString(new ReadOnlySpan<byte>(patch->Text,(int)patch->TextBytes))!="New é")badPayload=true;}
+        else if(count!=0 || patch!=null || modal==null || modal->Change!=1 || modal->Reserved!=0 || modal->Id.High!=0 || modal->Id.Low!=0)badPayload=true;
+        return 0;
+    }
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int ControlInfo(void* context,UiEvent* e,void* error)
+    {++controlReads;*e=new(){Element=new(){High=1,Low=3},Sequence=42,ActionBytes=4};e->Action[0]=(byte)'s';e->Action[1]=(byte)'a';e->Action[2]=(byte)'v';e->Action[3]=(byte)'e';return 0;}
+    [UnmanagedCallersOnly(CallConvs=[typeof(CallConvCdecl)])]
+    static int ControlRequest(void* context,uint intent,void* error)
+    {if(intent==1)++resumeCalls;else if(intent==2)++pauseCalls;else badPayload=true;return 0;}
     static void Check(bool condition,string message) { if(!condition)throw new Exception(message); }
     static string Output(byte* output) => Marshal.PtrToStringUTF8((nint)output)!;
     static void Reject(Call* call,List<string> checks,string name,Services candidate,bool nullServices=false)
@@ -307,11 +348,16 @@ static unsafe class Program
         var checks=new List<string>();
         try
         {
-            Check(sizeof(Call)==80 && sizeof(Services)==144 && sizeof(ComponentType)==56 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
+            Check(sizeof(Call)==80 && sizeof(Services)==176 && sizeof(ComponentType)==56 && sizeof(Command)==48 && sizeof(Transition)==56 && sizeof(Animation)==120 &&
                 sizeof(Ticket)==24 && sizeof(SaveRequest)==32 && sizeof(SaveEnqueue)==32 && sizeof(SaveResult)==344 && sizeof(SaveInfo)==104 && sizeof(RecipeId)==16 && sizeof(Transform)==80,"Independent ABI sizes.");
             Check(Marshal.OffsetOf<Services>(nameof(Services.Spawn)).ToInt64()==120 && Marshal.OffsetOf<Services>(nameof(Services.Despawn)).ToInt64()==128 &&
                 Marshal.OffsetOf<Services>(nameof(Services.TemplateGet)).ToInt64()==136 && Marshal.OffsetOf<Transform>(nameof(Transform.Rotation)).ToInt64()==24 &&
                 Marshal.OffsetOf<Transform>(nameof(Transform.Scale)).ToInt64()==56,"Independent lifecycle offsets.");
+            Check(sizeof(UiState)==40 && sizeof(UiPatch)==40 && sizeof(UiModal)==24 && sizeof(UiEvent)==160 &&
+                Marshal.OffsetOf<Services>(nameof(Services.UiGet)).ToInt64()==144 && Marshal.OffsetOf<Services>(nameof(Services.UiEdit)).ToInt64()==152 &&
+                Marshal.OffsetOf<Services>(nameof(Services.ControlInfo)).ToInt64()==160 && Marshal.OffsetOf<Services>(nameof(Services.ControlRequest)).ToInt64()==168 &&
+                Marshal.OffsetOf<UiState>(nameof(UiState.TextBytes)).ToInt64()==32 && Marshal.OffsetOf<UiPatch>(nameof(UiPatch.Mask)).ToInt64()==28 &&
+                Marshal.OffsetOf<UiEvent>(nameof(UiEvent.Action)).ToInt64()==32,"Independent UI ABI offsets/sizes.");
             Check(TemplateId.Parse("fedcba98765432100000000000000016")==new TemplateId(0xfedcba9876543210,22),"Template ID parsing.");
             foreach(var invalid in new[]{new string('0',32),new string('A',32),"template"}) {
                 bool failed=false;try {TemplateId.Parse(invalid);}catch(ArgumentException){failed=true;}Check(failed,"Invalid template identity accepted.");
@@ -328,10 +374,10 @@ static unsafe class Program
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             Check(((ProbeState*)state)->Count==7,"Initialize state.");
             nint unused=(nint)(delegate* unmanaged[Cdecl]<int>)&Unused;
-            Services good=new(){Version=6,Bytes=144,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result,Query=&Query,ComponentGet=&ComponentGet,ComponentSet=&ComponentSet,Alive=&Alive,Spawn=&Spawn,Despawn=&Despawn,TemplateGet=&TemplateGet};
+            Services good=new(){Version=7,Bytes=176,Context=(void*)0x1234,Entity=unused,Raycast=unused,Move=unused,Sound=unused,Get=&Get,Set=&Set,SaveInfo=&Info,SaveRequest=&Request,SaveResult=&Result,Query=&Query,ComponentGet=&ComponentGet,ComponentSet=&ComponentSet,Alive=&Alive,Spawn=&Spawn,Despawn=&Despawn,TemplateGet=&TemplateGet,UiGet=&UiGet,UiEdit=&UiEdit,ControlInfo=&ControlInfo,ControlRequest=&ControlRequest};
             call.Operation=3;call.Tick=123;
             Reject(&call,checks,"null services rejected before Tick",good,true);
-            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,120),(5,121),(6,120),(6,136),(6,143),(6,145),(7,144),(6,0)})
+            foreach(var pair in new (uint Version,uint Bytes)[]{(2,48),(3,64),(3,88),(4,64),(4,87),(4,88),(4,120),(5,88),(5,119),(5,120),(5,121),(6,120),(6,136),(6,143),(6,144),(6,145),(7,144),(7,175),(7,177),(8,176),(6,0)})
             { var candidate=good;candidate.Version=pair.Version;candidate.Bytes=pair.Bytes;Reject(&call,checks,$"services {pair.Version}/{pair.Bytes} rejected before Tick",candidate); }
             var missing=good;missing.Get=null;Reject(&call,checks,"null animation get rejected",missing);
             missing=good;missing.Set=null;Reject(&call,checks,"null animation set rejected",missing);
@@ -349,11 +395,17 @@ static unsafe class Program
             missing=good;missing.Spawn=null;Reject(&call,checks,"null spawn rejected",missing);
             missing=good;missing.Despawn=null;Reject(&call,checks,"null despawn rejected",missing);
             missing=good;missing.TemplateGet=null;Reject(&call,checks,"null template component get rejected",missing);
+            missing=good;missing.UiGet=null;Reject(&call,checks,"null UI read rejected",missing);
+            missing=good;missing.UiEdit=null;Reject(&call,checks,"null UI edit rejected",missing);
+            missing=good;missing.ControlInfo=null;Reject(&call,checks,"null control info rejected",missing);
+            missing=good;missing.ControlRequest=null;Reject(&call,checks,"null control request rejected",missing);
             call.Services=&good;
             Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
-            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && queries==2 && componentGets==3 && componentSets==3 && aliveCalls==3 && spawns==4 && despawns==3 && templateGets==5 && !badPayload,"Successful v6 invocation payload/state mismatch.");
-            checks.Add("matching v6 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation");
+            Check(((ProbeState*)state)->Count==8 && gets==3 && sets==1 && infos==1 && requests==3 && results==3 && queries==2 && componentGets==3 && componentSets==3 && aliveCalls==3 && spawns==4 && despawns==3 && templateGets==5 && !badPayload,"Successful v7 invocation payload/state mismatch.");
+            checks.Add("matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation");
             checks.Add("lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors");
+            call.Operation=6;Check(Entry.Invoke((nint)(&call),sizeof(Call))!=0 && Output(output).Contains("no UI control handler") && ((ProbeState*)state)->Count==8,"Tick-only game silently accepted control.");
+            controlReads=0;
             call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             for(int iteration=0;iteration<100;++iteration)
             {
@@ -364,6 +416,15 @@ static unsafe class Program
                 call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
             }
             checks.Add("100 additional generated-code module lifetimes invoke and retire without retained Type caches");
+            var uiRequest=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(UiProbeGame).FullName})+"\0");
+            call.Operation=1;fixed(byte* text=uiRequest){call.Text=text;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));}
+            using(var uiManifest=JsonDocument.Parse(Output(output)))call.Handle=uiManifest.RootElement.GetProperty("handle").GetUInt64();
+            call.Operation=2;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+            call.Operation=6;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+            Check(((ProbeState*)state)->Count==11 && uiReads==1 && uiWrites==2 && controlReads==1 && resumeCalls==1 && pauseCalls==1 && !badPayload,"UI control ABI payload/state mismatch.");
+            call.Operation=3;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0 && uiWrites==3,"Tick UI SDK binding failed.");
+            call.Operation=4;Check(Entry.Invoke((nint)(&call),sizeof(Call))==0,Output(output));
+            checks.Add("op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too");
             var unsupported=Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new {assembly=Assembly.GetExecutingAssembly().Location,type=typeof(UnsupportedTemplateGame).FullName})+"\0");
             call.Operation=1;fixed(byte* text=unsupported) {
                 call.Text=text;Check(Entry.Invoke((nint)(&call),sizeof(Call))!=0 && Output(output).Contains("Unsupported state field"),"TemplateId was silently accepted as persisted EntityId state.");
