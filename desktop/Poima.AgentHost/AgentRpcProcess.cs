@@ -22,7 +22,8 @@ public sealed class AgentRpcException(JsonNode error) : Exception(error["message
 /// <summary>
 /// One owned stdio JSON-RPC process. No shell expansion, automatic retries, logging,
 /// provider authentication, or assumptions that cancellation undoes side effects.
-/// The owner must consume Events to service provider requests and avoid backpressure.
+/// The owner must consume Events to service provider requests. Event overflow
+/// closes the connection explicitly instead of blocking unrelated RPC responses.
 /// </summary>
 public sealed class AgentRpcProcess : IAsyncDisposable
 {
@@ -40,7 +41,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
     private readonly Task readerTask, errorTask, exitTask;
     private long nextId;
     private bool terminal;
-    private int disposing;
+    private Task? disposal;
     public ChannelReader<JsonObject> Events => events.Reader;
     public string DiagnosticTail { get { lock (diagnostics) return diagnostics.ToString(); } }
 
@@ -120,12 +121,21 @@ public sealed class AgentRpcProcess : IAsyncDisposable
         if (text.Length > MaximumFrameCharacters) throw new ArgumentException("Agent request exceeds the frame limit.");
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellation, lifetime.Token);
         await writer.WaitAsync(linked.Token);
+        var started = false;
         try
         {
             lock (stateLock) if (terminal) throw new IOException("Agent connection is closed.");
             beginning?.Invoke(); // A failed partial write may still have reached the peer.
+            started = true;
             await process.StandardInput.WriteLineAsync(text.AsMemory(), linked.Token);
             await process.StandardInput.FlushAsync(linked.Token);
+        }
+        catch (Exception error)
+        {
+            // Once writing starts the peer may have an incomplete frame. Never
+            // allow a later request to append to it or flush canceled content.
+            if (started) Finish(error);
+            throw;
         }
         finally { writer.Release(); }
     }
@@ -166,7 +176,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
         catch (Exception error) { Finish(error); }
     }
 
-    private async Task DispatchAsync(string line)
+    private Task DispatchAsync(string line)
     {
         var message = JsonNode.Parse(line, documentOptions: new() { MaxDepth = 64 }) as JsonObject
             ?? throw new InvalidDataException("Agent frame must be an object.");
@@ -178,8 +188,9 @@ public sealed class AgentRpcProcess : IAsyncDisposable
                 || message.ContainsKey("result") || message.ContainsKey("error")
                 || (message.ContainsKey("id") && !ValidId(message["id"])))
                 throw new InvalidDataException("Invalid agent request or notification.");
-            await events.Writer.WriteAsync(message, lifetime.Token);
-            return;
+            if (!events.Writer.TryWrite(message))
+                throw new InvalidDataException("Agent event buffer is full; consume events continuously.");
+            return Task.CompletedTask;
         }
         if (message.ContainsKey("result") == message.ContainsKey("error") || !ValidId(message["id"]))
             throw new InvalidDataException("Invalid agent response.");
@@ -194,6 +205,7 @@ public sealed class AgentRpcProcess : IAsyncDisposable
             if (message["error"] is JsonNode problem) source.TrySetException(new AgentRpcException(problem));
             else source.TrySetResult(message["result"]?.DeepClone());
         }
+        return Task.CompletedTask;
     }
 
     private async Task DrainErrorsAsync()
@@ -242,18 +254,32 @@ public sealed class AgentRpcProcess : IAsyncDisposable
         lifetime.Cancel();
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref disposing, 1) != 0) return;
+        lock (stateLock) return new ValueTask(disposal ??= DisposeCoreAsync());
+    }
+
+    private async Task DisposeCoreAsync()
+    {
         Finish(new ObjectDisposedException(nameof(AgentRpcProcess)));
         try
         {
-            process.StandardInput.Close();
+            // Cancellation does not join a pending StreamWriter operation.
+            // Closing it concurrently can throw and abandon the child process.
+            await writer.WaitAsync();
+            try { process.StandardInput.Close(); }
+            catch (Exception error) when (error is IOException or InvalidOperationException) { }
+            finally { writer.Release(); }
             if (!process.HasExited)
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
                 try { await process.WaitForExitAsync(timeout.Token); }
-                catch (OperationCanceledException) { process.Kill(entireProcessTree: true); await process.WaitForExitAsync(); }
+                catch (OperationCanceledException)
+                {
+                    try { process.Kill(entireProcessTree: true); }
+                    catch (InvalidOperationException) when (process.HasExited) { }
+                    await process.WaitForExitAsync();
+                }
             }
             await Task.WhenAll(readerTask, errorTask, exitTask);
         }
