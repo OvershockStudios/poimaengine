@@ -96,6 +96,48 @@ class WorldContract(unittest.TestCase):
         client = Client(self.path); self.clients.append(client)
         return client
 
+    def test_targeted_discovery_is_exact_and_observational(self):
+        client = self.open()
+        client.txn(0, [create(1)])
+        before = self.path.read_bytes()
+        state, history = client.rpc('world.inspect'), client.rpc('world.history')
+        full = client.rpc('world.describe')
+        self.assertEqual(client.rpc('world.describe', {'view': 'full'}), full)
+        metadata_keys = {'protocol_version', 'schema_revision', 'mode', 'read_only', 'runtime_available',
+                         'session_scope', 'editor_discovery', 'unavailable_methods', 'unavailable_mutations'}
+        metadata = {key: value for key, value in full.items() if key in metadata_keys}
+        sections = sorted(set(full) - metadata_keys - {'methods', 'components'})
+        catalog = client.rpc('world.describe', {'view': 'catalog'})
+        self.assertEqual(catalog, {**metadata, 'partial': True, 'view': 'catalog',
+                                  'methods': sorted(full['methods']), 'components': sorted(full['components']),
+                                  'sections': sections})
+        for view, key, names in [('method', 'methods', ['world.describe', 'world.transact', 'world.capture']),
+                                 ('component', 'components', ['Transform', 'Camera']),
+                                 ('section', 'sections', sections)]:
+            for name in names:
+                source = full[name] if view == 'section' else full[key][name]
+                self.assertEqual(client.rpc('world.describe', {'view': view, 'name': name}),
+                                 {**metadata, 'partial': True, 'view': view, key: {name: source}})
+        invalid = [[], True, 1, 'catalog', {'extra': 1}, {'name': 'Transform'},
+                   {'view': 'full', 'name': 'Transform'}, {'view': 'catalog', 'name': 'Transform'}]
+        invalid += [{'view': value} for value in (None, True, 1, [], {}, '', 'FULL', 'unknown')]
+        for view in ('method', 'component', 'section'):
+            invalid.append({'view': view})
+            invalid += [{'view': view, 'name': value} for value in (None, True, 1, [], {}, '', 'missing.name')]
+            invalid.append({'view': view, 'name': 'world.describe', 'extra': 1})
+        invalid += [{'view': 'section', 'name': name} for name in (*metadata_keys, 'methods', 'components')]
+        for params in invalid:
+            with self.subTest(params=params):
+                client.rpc('world.describe', params, error=-32602)
+                self.assertEqual(client.rpc('world.inspect'), state)
+                self.assertEqual(client.rpc('world.history'), history)
+                self.assertEqual(self.path.read_bytes(), before)
+        # Explicit null differs from omitted params; Client.rpc normalizes None.
+        result = client.raw(json.dumps({'jsonrpc': '2.0', 'id': 'null-params', 'method': 'world.describe', 'params': None}))
+        self.assertEqual(result['error']['code'], -32602)
+        self.assertEqual(client.rpc('world.describe'), full)
+        self.assertEqual(self.path.read_bytes(), before)
+
     def test_authoring_preview_atomicity_restart_and_receipts(self):
         client = self.open()
         self.assertFalse(client.rpc('world.inspect')['persisted'])

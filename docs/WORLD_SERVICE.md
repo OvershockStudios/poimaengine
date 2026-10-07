@@ -4,6 +4,23 @@
 
 People using Poima’s desktop editor or CLI and external agents use the same authoritative operations. The editor is a first-class part of Poima; this shared implementation keeps human and automated edits consistent. `WorldSession` in `poima/world.hpp` exposes an in-process client with owned authored/runtime snapshots and an external inspection camera; the CLI adapts this service to stdin/stdout. Clients serialize access within a session. `serve` and editor `--endpoint` now expose [shared local sessions](SHARED_SESSIONS.md) through `connect`. An MCP adapter remains future work. Discovery is available through `poima schema world`, then `world.describe` inside a session.
 
+## Focused discovery (development)
+
+`world.describe` without parameters retains the full descriptor. Clients can request a smaller response when they only need an operation, built-in component or contract section:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"world.describe","params":{"view":"catalog"}}
+{"jsonrpc":"2.0","id":2,"method":"world.describe","params":{"view":"method","name":"entity.query"}}
+{"jsonrpc":"2.0","id":3,"method":"world.describe","params":{"view":"component","name":"Transform"}}
+{"jsonrpc":"2.0","id":4,"method":"world.describe","params":{"view":"section","name":"invariants"}}
+```
+
+The catalog returns sorted `methods`, `components` and `sections` name arrays. A selected entry returns a one-entry object under the corresponding key; sections use `sections`. Partial responses include `partial: true`, their `view`, schema/build availability and applicable session metadata. `view: "full"` is equivalent to omitting parameters. `name` is required for `method`, `component` and `section`, and forbidden for `full` or `catalog`. Unknown or unavailable names and malformed selectors return `-32602`.
+
+Focused schemas are selected after read-only and shared-session restrictions. They cannot expose a schema hidden from that session's full descriptor. Built-in component discovery is separate from project-defined schemas, which use `component.schemas`. Read the `invariants` and relevant subsystem sections before editing: individual parameter schemas do not express every semantic constraint. Discovery does not advance simulation or mutate authored state. This reduces response size; it does not promise faster descriptor construction or implement an agent provider/MCP adapter.
+
+Linux protocol and in-process native tests cover malformed selectors, exact schema projection, state preservation and all three session scopes in authoring/read-only modes. The measured catalog is 2,092 bytes and the `entity.query` response 860 bytes, versus 110,867 bytes for full discovery. Counts include the JSON-RPC envelope and newline. Windows engine, desktop bridge and native test fixture compile successfully; Windows execution remains unqualified. [Evidence](evidence/m2-focused-discovery.json).
+
 Schema revision 21 added `runtime.status` and scope-aware shared-session discovery. Schema revision 20 added `world.history`, `world.undo` and `world.redo`. Undo/redo use `request_id` and `base_revision`, advance the revision, preserve known entity identities and store durable retry receipts. History is session-local, capped at 32 edits and 16 MiB of compact serialized entity snapshots. A new committed edit clears redo. Failed edits/previews preserve history. See the [history contract and native API](EDITOR.md#shared-service-and-history) for limits and restart behavior.
 
 ## Example

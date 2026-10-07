@@ -1,0 +1,79 @@
+{
+  "checkpoint": "0.0.40 development",
+  "schema_revision": 46,
+  "scope": "Focused discovery over the existing authoritative world descriptor",
+  "qualified": {
+    "linux_protocol": true,
+    "linux_native_session_scopes": true,
+    "windows_compilation": true,
+    "windows_execution": false,
+    "provider_integration": false
+  },
+  "behavior": [
+    "Omitted parameters and view=full retain full discovery.",
+    "Catalog and selected entries reflect read-only and shared-session filtering.",
+    "Invalid selectors leave authored bytes, revision and history unchanged.",
+    "Scope checks run in-process and do not establish IPC transport qualification."
+  ],
+  "measurement": {
+    "scope": "Actual native Linux JSON-RPC response bytes, UTF-8 including newline; no token, latency or CPU speed claim",
+    "binary_sha256": "1fe8ccbd51e8405951debb5b40d89fb2ab4e9e4611f5db7df650d0d1a67e9c6a",
+    "rows": [
+      {
+        "selector": {},
+        "response_bytes": 110867,
+        "response_sha256": "e9aa61fe3e6ddc0ddc1f7c2604deb82a5f54eb4bf88879d958505a3fb1e8dfb9"
+      },
+      {
+        "selector": {
+          "view": "catalog"
+        },
+        "response_bytes": 2092,
+        "response_sha256": "ebde47ffaf619f0550b7efc66d19111063a4c7fb6349c90acf2d1fd138cd8013"
+      },
+      {
+        "selector": {
+          "view": "method",
+          "name": "entity.query"
+        },
+        "response_bytes": 860,
+        "response_sha256": "8659a903fa017a981ddb51f6bc3af412c30c1755080c6e8f7a48260207a8f34b"
+      },
+      {
+        "selector": {
+          "view": "component",
+          "name": "Transform"
+        },
+        "response_bytes": 681,
+        "response_sha256": "2bb02c8173955eb3dcd406246521771dbe144ef6ede0ddc526a121a081e8c68a"
+      },
+      {
+        "selector": {
+          "view": "section",
+          "name": "invariants"
+        },
+        "response_bytes": 8204,
+        "response_sha256": "9e6cda43a7d05546082dfb692678b1054c1c9a4667d127f030a42f9aea82a2ce"
+      }
+    ]
+  },
+  "limits": [
+    "Response bytes are measured, not model tokens or wall-clock performance.",
+    "Focused responses still construct the full descriptor internally.",
+    "Codex/Claude adapters and MCP remain unfinished.",
+    "Windows engine, desktop bridge and native test fixture cross-compile successfully; Windows execution remains unqualified."
+  ],
+  "source_sha256": {
+    "src/world.cpp": "8d83d2e0930dcb592abbbbc417b160dd423688cc661c35f280f55df1b4ad24e5",
+    "tests/world_contract.py": "4f0dc990d8d3f0b22ed566964b90475117f3b3c0bf4663fc262adcedbffd2245",
+    "tests/world_session_native.cpp": "f3241aa767d7068e467a92356bc100e866650b060612d2ec358f849113fc9d61"
+  },
+  "evidence_sha256": {
+    "v0040-focused-discovery-build.log": "df9c805173db267c098a6d782b4b1b4d6f192091f1a0dea9f3bee3d2456903af",
+    "v0040-focused-discovery-native-build.log": "cec776d4f32213dfaf51b926fbc1efc89ca58a1aad9c6c5c817b16fe3dd6fa68",
+    "v0040-focused-discovery-protocol.log": "88750056c9a94a25a871ecc4e6ed5c694e790817aebeb1a99b26375461033695",
+    "v0040-focused-discovery-native.log": "9f654e3b59491949e4c4573eb5bdae4672e60840e85e1ea926c40511324c3c87",
+    "v0040-discovery-sizes.json": "cba39f736b59291775477dd86413e2564b75c6f5315566282b0d0bf30ce89865",
+    "v0040-focused-discovery-windows-build.log": "b9c3f8d3e72ccfbef1e621ffcce62dd4cf874369830d2bf63221df6cd9df48d7"
+  }
+}

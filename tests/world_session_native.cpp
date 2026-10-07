@@ -23,6 +23,49 @@ std::string read(const fs::path& path) { std::ifstream f(path,std::ios::binary);
 void write(const fs::path& path,const std::string& bytes) { std::ofstream stream(path,std::ios::binary);stream.write(bytes.data(),static_cast<std::streamsize>(bytes.size()));check(bool(stream),"Fixture write failed."); }
 std::string hash(const std::string& bytes) { return poima::sha256(std::as_bytes(std::span(bytes.data(),bytes.size()))); }
 std::map<std::string,std::string> tree(const fs::path& root) { std::map<std::string,std::string> files;for(const auto& entry:fs::recursive_directory_iterator(root))if(entry.is_regular_file())files.emplace(entry.path().lexically_relative(root).generic_string(),read(entry.path()));return files; }
+// Projection must operate on the already scope-filtered discovery document.
+void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope scope) {
+    const auto request=[&](Json params) {
+        return Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",41},{"method","world.describe"},{"params",params}}.dump(),scope));
+    };
+    const auto result=[&](Json params) {
+        auto reply=request(params);check(reply.contains("result"),"Discovery projection unexpectedly rejected.");return reply.at("result");
+    };
+    const auto full=result(Json::object());
+    check(result({{"view","full"}})==full,"Explicit full discovery differs from legacy discovery.");
+    Json metadata=Json::object();
+    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations"})
+        if(full.contains(key))metadata[key]=full.at(key);
+    Json methods=Json::array(),components=Json::array(),sections=Json::array();
+    for(const auto& [key,value]:full.at("methods").items()){(void)value;methods.push_back(key);}
+    for(const auto& [key,value]:full.at("components").items()){(void)value;components.push_back(key);}
+    for(const auto& [key,value]:full.items()){(void)value;if(key!="methods"&&key!="components"&&!metadata.contains(key))sections.push_back(key);}
+    auto expected=metadata;expected["partial"]=true;expected["view"]="catalog";expected["methods"]=methods;expected["components"]=components;expected["sections"]=sections;
+    check(result({{"view","catalog"}})==expected,"Scoped discovery catalog leaked names or lost metadata.");
+    for(const auto* view:{"method","component","section"}) {
+        const auto key=std::string(view)=="method" ? "methods" : std::string(view)=="component" ? "components" : "sections";
+        const auto& names=std::string(view)=="method" ? methods : std::string(view)=="component" ? components : sections;
+        check(!names.empty(),"Missing discovery projection fixture names.");
+        const auto name=names.front().get<std::string>();
+        expected=metadata;expected["partial"]=true;expected["view"]=view;
+        expected[key]={{name,std::string(view)=="section" ? full.at(name) : full.at(key).at(name)}};
+        check(result({{"view",view},{"name",name}})==expected,"Scoped target schema differs from full response.");
+        for(const Json name_value:{Json(nullptr),Json(true),Json(1),Json::array(),Json::object(),Json(""),Json("missing.name")})
+            check(request({{"view",view},{"name",name_value}})["error"]["code"]==-32602,"Scoped discovery accepted invalid target.");
+        check(request({{"view",view}})["error"]["code"]==-32602,"Scoped discovery accepted missing target.");
+    }
+    for(const auto* list:{"unavailable_methods","unavailable_mutations"})if(full.contains(list))for(const auto& name:full.at(list))
+        if(name.is_string())check(request({{"view","method"},{"name",name}})["error"]["code"]==-32602,"Scoped target disclosed unavailable schema.");
+    if(scope!=poima::WorldRequestScope::standalone) {
+        check(!full.at("methods").contains("session.close"),"Shared discovery exposes session.close.");
+        check(request({{"view","method"},{"name","session.close"}})["error"]["code"]==-32602,"Shared projection exposes session.close.");
+        if(scope==poima::WorldRequestScope::shared_headless) {
+            check(full.at("methods").contains("host.shutdown"),"Headless discovery lacks host.shutdown.");
+            check(result({{"view","method"},{"name","host.shutdown"}}).at("methods").at("host.shutdown")==full.at("methods").at("host.shutdown"),"Headless shutdown projection differs.");
+        } else check(request({{"view","method"},{"name","host.shutdown"}})["error"]["code"]==-32602,"Editor projection exposes headless shutdown.");
+    }
+    check(result(Json::object())==full&&!session.closed(),"Discovery changed state or closed shared session.");
+}
 void custom_read_only_regression(const fs::path& directory) {
     const auto path=directory/"custom-read-only.json";const std::string type(32,'1'),field(32,'2'),entity(32,'3'),session_id(32,'4');
     const Json schema={{"id",type},{"name","Health"},{"version",1},{"fields",Json::array({{{"id",field},{"name","Current"},{"kind","int64"},{"default","0"}}})}};
@@ -204,6 +247,7 @@ int main() {
             }
             const auto discovery=Json::parse(session.request(R"({"jsonrpc":"2.0","id":8,"method":"world.describe"})",poima::WorldRequestScope::shared_editor))["result"];
             check(discovery["session_scope"]=="shared_editor" && !discovery["methods"].contains("session.close") && !discovery["methods"].contains("world.capture") && discovery["editor_discovery"]=="editor.describe","Shared editor discovery advertised unsupported operations.");
+            for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             const auto empty=session.authored_snapshot(camera);check(empty.objects.empty() && !fs::exists(path),"Empty snapshot persisted a world.");
             call(session,"world.transact",{{"request_id",std::string(32,'1')},{"base_revision",0},{"ops",Json::array({
                 {{"op","entity.create"},{"id",entity},{"name","Cube"}},
@@ -257,6 +301,7 @@ int main() {
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
             check(discovery["schema_revision"]==45,"Read-only discovery schema revision differs.");
+            for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
                 const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",9},{"method",method},{"params",{{"source","missing"},{"path","forbidden.poima-input.json"}}}}.dump(),scope));

@@ -49,6 +49,36 @@ void fields(const Json& value, std::initializer_list<const char*> allowed,
     }
     for (auto key : required) require(value.contains(key), std::string("Missing field: ") + key);
 }
+std::string discovery_view(const Json& params) {
+    fields(params,{"view","name"});
+    const auto view=params.value("view",std::string("full"));
+    require(view=="full" || view=="catalog" || view=="method" || view=="component" || view=="section","Unknown discovery view.");
+    const bool named=view=="method" || view=="component" || view=="section";
+    require(params.contains("name")==named,"Discovery name is required only for method, component or section views.");
+    if(named)require(params.at("name").is_string() && !params.at("name").get_ref<const std::string&>().empty(),"Discovery name must be a nonempty string.");
+    return view;
+}
+Json project_discovery(Json description,const Json& params) {
+    const auto view=discovery_view(params);
+    if(view=="full")return description;
+    Json result={{"partial",true},{"view",view}};
+    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations"})
+        if(description.contains(key)) { result[key]=std::move(description[key]);description.erase(key); }
+    auto methods=std::move(description.at("methods"));description.erase("methods");
+    auto components=std::move(description.at("components"));description.erase("components");
+    if(view=="catalog") {
+        for(const auto* key:{"methods","components","sections"})result[key]=Json::array();
+        for(const auto& [name,value]:methods.items())result["methods"].push_back(name);
+        for(const auto& [name,value]:components.items())result["components"].push_back(name);
+        for(const auto& [name,value]:description.items())result["sections"].push_back(name);
+    } else {
+        const auto name=params.at("name").get<std::string>();
+        const auto& values=view=="method" ? methods : view=="component" ? components : description;
+        require(values.contains(name),"Unknown or unavailable discovery name: "+name);
+        result[view=="method" ? "methods" : view=="component" ? "components" : "sections"]={{name,values.at(name)}};
+    }
+    return result;
+}
 std::string identifier(const Json& value) {
     require(value.is_string(), "ID must be 32 lowercase hexadecimal characters.");
     const auto result = value.get<std::string>();
@@ -370,7 +400,10 @@ Json describe() {
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
     Json result = {{"protocol_version", 1}, {"schema_revision", 45}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
-            {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
+            {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry. Read the invariants section before mutations."},{"oneOf",Json::array({
+                object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
+                object_schema({{"view",{{"enum",{"method","component","section"}}}},{"name",{{"type","string"},{"minLength",1}}}},{"view","name"})
+            })}}}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
             {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", component_type}}, {"id"})},
@@ -1212,7 +1245,7 @@ public:
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") {
-            fields(params, {});auto result=describe();result["methods"].update(profiling::Service::schemas());result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            (void)discovery_view(params);auto result=describe();result["methods"].update(profiling::Service::schemas());result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
         }
@@ -2964,6 +2997,9 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
                 result["editor_discovery"]="editor.describe";
             }
         }
+        // Project only after scope restrictions, so focused discovery cannot
+        // advertise an operation hidden from the full session descriptor.
+        if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()));
         response={{"jsonrpc","2.0"},{"id",id},{"result",result}};
         if(method=="session.close" || method=="host.shutdown")impl_->closed=true;
     }catch(const Error& error) {
