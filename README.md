@@ -27,7 +27,7 @@ See the [world API](docs/WORLD_SERVICE.md) and [shared sessions](docs/SHARED_SES
 | System | Available today |
 | --- | --- |
 | Authoring and editor | Persistent hierarchy, typed Inspector, Project browser, transform gizmos, independent Scene/Game panels and transactional edits. |
-| Rendering and assets | Vulkan PBR rendering with bounded frame submission, shared HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and depth/normal/motion inspection; glTF/GLB, PNG/JPEG and WAV import. |
+| Rendering and assets | Vulkan PBR rendering with bounded frame submission, shared HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and depth/normal/motion inspection; optional experimental [FSR reconstruction](docs/RECONSTRUCTION.md); glTF/GLB, PNG/JPEG and WAV import. |
 | Simulation and animation | Fixed-step Jolt physics, capsule movement, static triangle meshes, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
 | C# gameplay | Native-owned components, generated accessors, compatible development reload and Native AOT game bundles; bounded collections have Linux CoreCLR development qualification. |
 | Saves | Durable slots, guarded restoration and corruption recovery. Explicit scalar save upgrades have Linux CoreCLR development qualification. |
@@ -36,7 +36,7 @@ See the [world API](docs/WORLD_SERVICE.md) and [shared sessions](docs/SHARED_SES
 
 Each implementation has limits. [Implementation status](docs/IMPLEMENTATION_STATUS.md) links the contracts and evidence, including platform and device qualification. Use `poima capabilities` and `world.describe` to inspect what your build exposes.
 
-Advanced GI, temporal upscaling/frame generation, comprehensive water/weather, multiplayer, production VFX/UI tooling and console backends remain planned. Animation layers, IK, retargeting and direct FBX workflows are unfinished. Save-upgrade integration on Windows and Native AOT is not yet qualified.
+Advanced GI, frame generation, comprehensive water/weather, multiplayer, production VFX/UI tooling and console backends remain planned. Animation layers, IK, retargeting and direct FBX workflows are unfinished. Save-upgrade integration on Windows and Native AOT is not yet qualified.
 
 ## Get started
 

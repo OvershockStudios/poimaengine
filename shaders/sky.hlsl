@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "scene_frame.hlsli"
 // Asset-free artistic sky: linear-light gradient and an angular sun disk.
 // This is a background, not atmospheric scattering, IBL or scene illumination.
 struct SkyConstants {
@@ -21,9 +22,10 @@ VertexOutput vertex_main(uint vertex : SV_VertexID) {
     return result;
 }
 float4 pixel_main(VertexOutput input) : SV_Target0 {
+    const float2 ndc=input.ndc-float2(2,-2)*temporal_jitter.xy/cluster_viewport.zw;
     const float3 ray=normalize(sky.forward_srgb.xyz+
-        input.ndc.x*sky.right_tan.xyz*sky.right_tan.w+
-        input.ndc.y*sky.up_tan.xyz*sky.up_tan.w);
+        ndc.x*sky.right_tan.xyz*sky.right_tan.w+
+        ndc.y*sky.up_tan.xyz*sky.up_tan.w);
     const float blend=pow(saturate(abs(ray.y)),sky.horizon_falloff.w);
     float3 color=lerp(sky.horizon_falloff.xyz,
         ray.y>=0 ? sky.zenith_exposure.xyz : sky.ground_radius.xyz,blend);

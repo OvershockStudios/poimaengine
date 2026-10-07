@@ -91,6 +91,30 @@ class RuntimeContract(unittest.TestCase):
                 self.assertEqual([self.result(r) for r in responses[index+1:index+4]],baseline)
         self.assertFalse(target.exists())
 
+    def test_reconstruction_options_preserve_authoritative_state(self):
+        target=Path(self.directory.name)/'invalid-reconstruction.bmp'
+        capture={'session_id':uid(900),'tick':0,'camera':uid(101),'path':self.native(target)}
+        play={'session_id':uid(900),'request_id':uid(5002),'expected_tick':0,'controller':uid(100),
+              'camera':uid(101),'mode':'replay','sequence':[{'ticks':1}],'path':self.native(target)}
+        observe=[rpc('runtime.inspect',{'session_id':uid(900)}),inspect_entity(),rpc('world.inspect',{})]
+        rows=[FIXTURE,start(),*observe];cases=[]
+        for method,base in (('runtime.capture',capture),('runtime.play',play)):
+            bad_options=[{'reconstruction': value} for value in (None, True, False, 0, [], {}, '', 'fsr3', 'FSR3_NATIVE')]
+            for mode in ('fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'):
+                bad_options.append({'reconstruction':mode,'samples':4})
+                bad_options.extend({'reconstruction':mode,'samples':1,'scene_debug_view':view}
+                                   for view in ('depth','shading_normal','motion','motion_validity'))
+            bad_options.extend({'capture_frames':value} for value in (None, True, False, 0, -1, 129, 1.0, 128.0, '2', [], {}))
+            if method=='runtime.play':bad_options.extend({'capture_frames':value} for value in (1,2,128))
+            for invalid in bad_options:
+                cases.append((len(rows),method,invalid));rows.extend([rpc(method,{**base,**invalid}),*observe])
+        responses=self.run_requests(rows);baseline=[self.result(row) for row in responses[2:5]]
+        for index,method,invalid in cases:
+            with self.subTest(method=method,options=invalid):
+                self.error(responses[index],-32602)
+                self.assertEqual([self.result(row) for row in responses[index+1:index+4]],baseline)
+        self.assertFalse(target.exists())
+
     def test_collision_jump_retries_and_live_authoring_separation(self):
         forward=step(120,180,[input_value(move=(0,1))],request_id=uid(10000))
         requests=[FIXTURE,start(),step(0,120),inspect_entity(),inspect_entity(3),forward,forward,inspect_entity(tick=300),

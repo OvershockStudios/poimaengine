@@ -58,6 +58,7 @@ VertexOutput vertex_main(VertexInput input) {
     const float3 previous_world=float3(dot(draw.previous_model_row0,previous_local),dot(draw.previous_model_row1,previous_local),dot(draw.previous_model_row2,previous_local));
     output.previous_clip=mul(previous_view_projection,float4(previous_world,1));output.motion_valid=draw.history.x;
 #endif
+    output.position.xy+=float2(2,-2)*temporal_jitter.xy/cluster_viewport.zw*output.position.w;
     output.uv=input.uv;
     output.tangent=float4(dot(draw.model_row0.xyz,input.tangent.xyz),dot(draw.model_row1.xyz,input.tangent.xyz),dot(draw.model_row2.xyz,input.tangent.xyz),input.tangent.w);
     return output;

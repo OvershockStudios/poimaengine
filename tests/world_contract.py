@@ -106,6 +106,14 @@ class WorldContract(unittest.TestCase):
                              {'type': 'integer', 'minimum': 1, 'maximum': 2, 'default': 2})
             self.assertEqual(descriptor['methods'][method]['properties']['scene_debug_view']['enum'],
                              ['color', 'depth', 'shading_normal', 'motion', 'motion_validity'])
+        for method in ('world.capture', 'runtime.capture', 'asset.animation.capture', 'runtime.play'):
+            self.assertEqual(descriptor['methods'][method]['properties']['reconstruction'],
+                             {'enum': ['none', 'fsr3_native', 'fsr3_quality', 'fsr3_balanced', 'fsr3_performance'], 'default': 'none'})
+            if method == 'runtime.play':
+                self.assertNotIn('capture_frames', descriptor['methods'][method]['properties'])
+            else:
+                self.assertEqual(descriptor['methods'][method]['properties']['capture_frames'],
+                                 {'type': 'integer', 'minimum': 1, 'maximum': 128, 'default': 2})
         original = {'request_id': uuid.uuid4().hex, 'base_revision': 0,
                     'ops': [create(2, uid(1)), {**create(1), 'name': '大厅 🌊'}]}
         client.rpc('world.transact', original)
@@ -177,6 +185,18 @@ class WorldContract(unittest.TestCase):
             self.assertEqual(self.path.read_bytes(), saved)
             self.assertEqual(client.rpc('world.history'), history)
             self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
+        reconstruction_cases = [{'reconstruction': value} for value in (None, True, False, 0, [], {}, '', 'fsr3', 'FSR3_NATIVE')]
+        reconstruction_cases += [{'capture_frames': value} for value in (None, True, False, 0, -1, 129, 1.0, 128.0, '2', [], {})]
+        for mode in ('fsr3_native', 'fsr3_quality', 'fsr3_balanced', 'fsr3_performance'):
+            reconstruction_cases += [{'reconstruction': mode, 'samples': 4}]
+            reconstruction_cases += [{'reconstruction': mode, 'samples': 1, 'scene_debug_view': view}
+                                     for view in ('depth', 'shading_normal', 'motion', 'motion_validity')]
+        for invalid in reconstruction_cases:
+            client.rpc('world.capture', {**capture, **invalid}, error=-32602)
+            client.rpc('asset.animation.capture', {**capture, 'asset': '0'*64, 'time': 0, **invalid}, error=-32602)
+            self.assertEqual(self.path.read_bytes(), saved)
+            self.assertEqual(client.rpc('world.history'), history)
+            self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         for bad in (None, True, 1, [], {}, 'normals', ''):
             client.rpc('world.capture', {**capture, 'samples': 1, 'scene_debug_view': bad}, error=-32602)
         for mode in ('depth', 'shading_normal', 'motion', 'motion_validity'):
@@ -190,7 +210,18 @@ class WorldContract(unittest.TestCase):
         self.assertEqual(client.rpc('world.history'), history)
         self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         capabilities = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
-        if not capabilities['scene_capture']: client.rpc('world.capture', capture, error=-32003)
+        if not capabilities['scene_capture']:
+            client.rpc('world.capture', capture, error=-32003)
+            for frames in (1,128):
+                for mode in ('none','fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'):
+                    client.rpc('world.capture', {**capture,'samples':1,'reconstruction':mode,'capture_frames':frames}, error=-32003)
+        elif not capabilities['fsr3_upscaler']:
+            for frames in (1,128):
+                for mode in ('fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'):
+                    error = client.rpc('world.capture', {**capture,'samples':1,'reconstruction':mode,'capture_frames':frames}, error=-32003)
+                    self.assertIn('FSR3 reconstruction is unavailable', error['message'])
+                    self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
+            self.assertEqual(client.rpc('world.history'), history)
         self.assertEqual(self.path.read_bytes(), saved)
         client.txn(1, [{'op': 'component.remove', 'id': uid(2), 'type': 'Transform'}], error=-32602)
         client.txn(1, [{'op': 'component.remove', 'id': uid(2), 'type': 'MeshRenderer'}])

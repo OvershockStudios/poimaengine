@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -52,13 +53,36 @@ constexpr std::string_view scene_debug_view_name(SceneDebugView view) {
     return "invalid";
 }
 
+enum class ReconstructionMode : std::uint32_t { none, fsr3_native, fsr3_quality, fsr3_balanced, fsr3_performance };
+constexpr std::string_view reconstruction_mode_name(ReconstructionMode mode) {
+    switch(mode) {
+    case ReconstructionMode::none: return "none";
+    case ReconstructionMode::fsr3_native: return "fsr3_native";
+    case ReconstructionMode::fsr3_quality: return "fsr3_quality";
+    case ReconstructionMode::fsr3_balanced: return "fsr3_balanced";
+    case ReconstructionMode::fsr3_performance: return "fsr3_performance";
+    }
+    return "invalid";
+}
+
 struct SceneProductProbe { std::uint32_t x=0,y=0; };
+// Native qualification data from the pinned SDK; not a portable radiance format.
+struct Fsr3HistorySample {
+    std::array<float,4> masks{},previous_history{},current_history{};
+    float luma_instability=0;
+    bool previous_history_available=false,previous_history_used=false;
+    std::uint64_t sdk_dispatch_sequence=0;
+    std::array<std::uint32_t,4> sdk_resource_indices{};
+};
 struct SceneProductSample {
     std::uint32_t x=0,y=0;
     float depth=1;
     std::array<float,3> shading_normal{};
     std::array<float,2> motion{};
     bool surface_valid=false,motion_valid=false;
+    std::array<float,3> raw_hdr{},resolved_hdr{};
+    std::uint32_t resolved_x=0,resolved_y=0;
+    std::optional<Fsr3HistorySample> fsr3_history;
 };
 struct RenderOptions {
     std::uint32_t frames = 120;
@@ -70,11 +94,13 @@ struct RenderOptions {
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
     SceneDebugView scene_debug_view = SceneDebugView::color;
+    ReconstructionMode reconstruction = ReconstructionMode::none;
     std::vector<SceneProductProbe> scene_product_probes; // At most 64; sampled only by captures at one sample.
     bool clustered_lighting = true; // False selects the complete all-light reference path.
     std::uint32_t frames_in_flight = 2; // Bounded submission slots; 1 selects serialized retirement.
     bool profile = false;
     bool capture_exclusive = false; // Native host policy; not a user-controlled RPC parameter.
+    bool fsr3_history_probes = false; // Native SDK qualification only; requires enabled reconstruction and capture probes.
 };
 
 struct TimingSummary { std::uint64_t samples=0;double total_ms=0,min_ms=0,max_ms=0,last_ms=0; };
@@ -107,7 +133,18 @@ struct SceneProductsDiagnostics {
     std::uint64_t normal_buffer_bytes=0;
     SceneDebugView view=SceneDebugView::color;
 };
+struct ReconstructionDiagnostics {
+    ReconstructionMode mode=ReconstructionMode::none;
+    bool active=false;
+    std::uint32_t render_width=0,render_height=0,output_width=0,output_height=0;
+    std::array<float,2> jitter_pixels{};
+    bool history_reset=true;
+    std::uint64_t history_sequence=0,logical_bytes=0;
+    std::string reset_reason,sdk_version;
+    TimingSummary gpu;
+};
 struct RenderDiagnostics {
+    ReconstructionDiagnostics reconstruction;
     SceneProductsDiagnostics scene_products;
     bool culling=true,profile_requested=false,gpu_timestamps=false;
     std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;

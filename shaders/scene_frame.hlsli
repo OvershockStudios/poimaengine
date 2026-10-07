@@ -13,5 +13,9 @@ cbuffer Frame : register(b1) {
     float4 cluster_depth; // log2(near), logarithmic slice width, near, far
     uint4 cluster_grid; // x, y, z, enabled
     column_major float4x4 previous_view_projection;
+    float4 temporal_jitter; // pixel raster displacement xy, enabled, sky enabled
+    float4 temporal_right; // camera basis and tangent half FOV
+    float4 temporal_up;
+    float4 temporal_forward;
 };
 StructuredBuffer<SceneLight> lights : register(t6);

@@ -1,0 +1,275 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "engine_version": "0.0.39-development",
+  "scope": "Optional Windows Vulkan FSR3.1.4 integration; bounded capture API, radiance, lifecycle, sky and UI observations; quality and performance unqualified",
+  "passed": true,
+  "qualification_status": "bounded_experimental_integration",
+  "quality_qualified": false,
+  "performance_qualified": false,
+  "default_build_enabled": false,
+  "default_rendering_enabled": false,
+  "devices_observed": [
+    "AMD Radeon(TM) Graphics",
+    "NVIDIA GeForce RTX 4070 Laptop GPU"
+  ],
+  "modes": [
+    "fsr3_native",
+    "fsr3_quality",
+    "fsr3_balanced",
+    "fsr3_performance"
+  ],
+  "observed_cohorts": {
+    "basic_lifecycle": {
+      "captures_per_device": 100,
+      "frame_slots": [
+        1,
+        2
+      ],
+      "scope": [
+        "constant emissive HDR radiance",
+        "render/output dimensions and sparse probe mapping",
+        "cut/source reset",
+        "exposure",
+        "hidden frames",
+        "resize",
+        "interleaved independent views"
+      ]
+    },
+    "capture_api": {
+      "captures_per_device": 6,
+      "rejection_checks_per_device": 10,
+      "scope": [
+        "all four modes through world.capture",
+        "GPU-skinned animation preview through Quality",
+        "runtime Balanced capture at unchanged tick3",
+        "ordered duplicate probes",
+        "authoritative state unchanged on rejected requests"
+      ],
+      "interactive_play_qualified": false
+    },
+    "quality_capture": {
+      "captures_per_device": 480,
+      "scope": "None and all four modes across two48-frame analytic sequences; capture success is not overall quality acceptance"
+    },
+    "history_diagnostics": {
+      "exact_reference_images_per_device": 96,
+      "scope": "Borrowed SDK buffer inspection preserves captured pixels; finite bounded samples and first-history availability checked"
+    },
+    "sky": {
+      "modes": [
+        "fsr3_native",
+        "fsr3_quality"
+      ],
+      "capture_pairs_per_mode_per_device": 23,
+      "scope": "Gradient sky translation invariance, smooth rotation, cut/continuation and raw ray oracle; no textured sky/sun/cloud qualification"
+    },
+    "ui_composition": {
+      "passed": true,
+      "modes": [
+        "none",
+        "fsr3_native",
+        "fsr3_quality",
+        "fsr3_balanced",
+        "fsr3_performance"
+      ],
+      "devices": [
+        "AMD Radeon(TM) Graphics",
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "pixels_per_image": 76800,
+      "exposure_values": [
+        0,
+        1,
+        64
+      ],
+      "exact_equal_to_none": true,
+      "scope": "Opaque UI-owned output pixels only; original blend, clip, transform and texture checks plus non-UI exposure control",
+      "strict_vulkan_validation": true,
+      "evidence_sha256": "ae1cdf1e62d535924d90a84a83fe07f87d7321c037bf6deaa8ccbfe283b75529",
+      "device_report_sha256": [
+        "6768b827f10a01e3938dc5553d13e0b445412365b586d32072a4c2726900df44",
+        "0171a54d0fca9d8df89adc2e6d25c5bd0f803afd74da051928ac13fb0c144d8b"
+      ]
+    }
+  },
+  "known_issue": {
+    "status": "unresolved",
+    "description": "Persistent color contamination near a stationary boundary after a foreground surface moves away. Average edge-error improvements do not establish acceptable temporal quality.",
+    "matched_control_samples_per_device": 1296,
+    "control_result": "Equal geometry, depth, motion, surface validity and disocclusion channel; replacing boundary color removes the observed trail. Color-derived shading-change values also differ, so this does not isolate a single SDK rejection or rectification cause.",
+    "sdk_rejection_heuristics_changed": false
+  },
+  "dependency": {
+    "sdk": "FidelityFX SDK1.1.4",
+    "upscaler": "3.1.4",
+    "revision": "c6efa6bf7f2027b3ec94f28578bb5965eabb9e55",
+    "license": "MIT",
+    "original_checkout_modified": false,
+    "compiled_patches": [
+      "EffectContext scratch alignment and capacity reserve",
+      "GLSL luma-history rgba16f declaration matching allocated image"
+    ],
+    "shader_patch": {
+      "patch": "luma-history-rgba16f-v1",
+      "original_sha256": "875c2b8d8df93716fb46271886c768a9ef40c5ccc11ade39397952b4a4e54321",
+      "patched_sha256": "fed604a5c81078815131d42434d1b6e4f8d48d0b66a2acb59799da3cab206b94"
+    },
+    "shader_manifest_sha256": "7112a8e2d2e2672d63280278bec8d0be911c5e94ebb6e32daa0fc37296878399",
+    "frame_generation": false,
+    "backend_patch": {
+      "patch": "effect-context-alignment-v1",
+      "original_sha256": "9fa430949184fadb357e6949d7564cf0f8e4653ead683a99755a6f15c4a76589",
+      "patched_sha256": "325effba391f2d53277d2106e3a963a334214386045df7e6c4c2fbdadcd7b55e",
+      "patch_script_sha256": "e9de6f0fc8707051216566165784b723d6d634d7491058974fd3e0a99d19a466",
+      "changes": [
+        "Reserve alignof(EffectContext)-1 scratch bytes",
+        "Align actual EffectContext array address to alignof(EffectContext)"
+      ]
+    }
+  },
+  "pending": [],
+  "limitations": [
+    "Observations come from two laptop GPUs, not a hardware compatibility matrix.",
+    "No overall temporal quality, FPS improvement or performance qualification.",
+    "No Linux rendering, console, installed desktop or physical-input qualification.",
+    "No DLSS, frame generation, ray reconstruction or transparent-material temporal qualification.",
+    "Earlier observations remain bound to their recorded binaries; final source hashes do not imply that every earlier cohort used the final binary; the mechanical diagnostic rename is reconciled separately.",
+    "Standalone live rendering currently supplies a fixed 60 Hz SDK interval; live temporal clock policy needs separate qualification."
+  ],
+  "raw_evidence": {
+    "basic_lifecycle": {
+      "path": "build/fsr-basic-gpu/e47e775fefce41139db87fd75d310b0a/evidence.json",
+      "sha256": "e1e23ad8ad83dc15713354331774b120e09679f36f4cf1ff7155eddd96ab9c28",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "capture_api": {
+      "path": "build/fsr-rpc-gpu/9ef038d3fc754cdebb3f32f96e4ae8cf/evidence.json",
+      "sha256": "71e1fb95f3058a0632bfb614fff72db5993098e387b616de9a016cac667458d1",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "quality_capture": {
+      "path": "build/fsr-quality-gpu/0de0645d76434650bc38b9e4c53e03ba/evidence.json",
+      "sha256": "0a35bae981040e459c9db900730297cbd21763addccd3c4136ad871e2699ddcf",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "quality_analysis": {
+      "path": "build/fsr-quality-gpu/0de0645d76434650bc38b9e4c53e03ba/quality-summary.json",
+      "sha256": "d1a94b72f756d239506fd7dd79f7e084be936bc94985afdf1c35133a2a0481f8",
+      "quality_qualified": false
+    },
+    "history_diagnostics": {
+      "path": "build/fsr-history-gpu/561f666b01724f0cb9da18ce746a1aa9/evidence.json",
+      "sha256": "9486d62e8ad3798196ec9f4b69c2a097752933d8c157e723f23298f2a0e077ef",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "sky": {
+      "path": "build/fsr-sky-gpu/d202895d3a334804b9a3935771a343ad/evidence.json",
+      "sha256": "f8327b4cf3b5627146bbc44d43218d1a5d7793dc1e463bec69540dde2959085d",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "flat_color_control": {
+      "path": "build/fsr-flat-control-gpu/571acacfc5ba4ecd9786ab69841e6fd9/evidence.json",
+      "sha256": "0c316c3076a1a7bd55e95cefe6f1ed8c75d6f3fb4b7d44f96c0f07177fc15317",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "matched_control_analysis": {
+      "path": "build/fsr-flat-control-gpu/571acacfc5ba4ecd9786ab69841e6fd9/matched-control-analysis.json",
+      "sha256": "23b78c64a40140714ea523621fe0f2119cae51067265a2f1efe377cf16576a5f",
+      "quality_qualified": false
+    },
+    "ui_composition": {
+      "path": "build/fsr-ui-gpu/538865c7ef854fb08ed8a2ec1ab5963e/evidence.json",
+      "sha256": "ae1cdf1e62d535924d90a84a83fe07f87d7321c037bf6deaa8ccbfe283b75529",
+      "reported_passed": true,
+      "strict_validation_logs_checked": true
+    },
+    "default_none_regressions": {
+      "path": "build/fsr-none-final-regressions/evidence.json",
+      "sha256": "7556db23653554d411cc933369f77690038b1cc06a12384c4ed00ed5bf30141a",
+      "reported_passed": true,
+      "scope": "Enabled build with reconstruction=none; not SDK-disabled build",
+      "groups": 15
+    },
+    "sdk_disabled_renderer": {
+      "path": "build/fsr-default-off-check/052b790319f745fd9fe21e87f22936f4/evidence.json",
+      "sha256": "702153dbb5d6fd5a2fd3b409423d7b3a4bc456bdfef4204eb408996af93a2645",
+      "reported_passed": true,
+      "scope": "Windows renderer built without FSR, runtime simulation disabled; no default-off GPU fidelity claim"
+    }
+  },
+  "review": {
+    "adapter_and_renderer_lifetime": "Read-only review found no actionable correctness issue; no independent quality or performance qualification.",
+    "covered": [
+      "enabled and disabled adapter",
+      "pinned dependency verification and generated patches",
+      "context cleanup and resize drains",
+      "dispatch/submission fault guards",
+      "diagnostic readback lifetimes"
+    ]
+  },
+  "source_reconciliation": {
+    "change_after_gpu_cohorts": "Mechanical local variable rename history to history_sample in bounded SDK diagnostic decode; no expression or control-flow changes.",
+    "pre_rename_renderer_sha256": "c035c4075dbfd7550278b9291367f608a8d16f2f0fdc31d9d262fa3bfcae16a6",
+    "post_rename_renderer_sha256": "ecc4fb959ab812c855edcabd2ca081b343ca85f085b64230a9809bb39800d98b",
+    "inverse_rename_restores_qualified_source_hash": true,
+    "qualification_boundary": "GPU cohorts retain their recorded binary hashes; enabled and disabled targets were rebuilt after the rename, and disabled capability/rejection tests were rerun. No claim that older captures used the final binary."
+  },
+  "source_sha256": {
+    "include/poima/fsr3.hpp": "f71d56e9783081005f6cc57262d5ea8390dd935b4017d3288ff65a061c280c92",
+    "src/fsr3.cpp": "2b22fd2a438ace95918af5e841926cd3af2bac0f802aa29e7afbd0118c31d858",
+    "src/fsr3_disabled.cpp": "32f071a3e96003c1cc67066b5679d49883c1fb44570e3ee5a3344afc24228322",
+    "src/fsr3_no_frame_generation.cpp": "b93ec259cdb3f5acf66b8919812f305bd4a3717697831513545eaa8ce8a07b4e",
+    "scripts/prepare_fsr3.py": "7d684aebe457f4a2bc3920bd0e6d1e86af2769638a3959d2e9b0a8e76968dccf",
+    "scripts/patch_fsr3_backend.py": "e9de6f0fc8707051216566165784b723d6d634d7491058974fd3e0a99d19a466",
+    "cmake/fsr3.cmake": "1ed8ab6a2655ae02c107bafe3b9058f798b9e8995ce16790510ec36a52c19609",
+    "cmake/fsr3_compat.hpp": "4a827479d2c4f7c43ff329e7d05366fe133e789ca8c291db1921565783d21e62",
+    "include/poima/core.hpp": "c04e345789e322237713282aa3a54f0faa82ead912725e2c8cfaefb31c8b7575",
+    "include/poima/render_schedule.hpp": "3343745b0dc4e6cb6aa40c50c83b3401e115ef16a9c718e6398077dc71a0c198",
+    "src/render_smoke.cpp": "ecc4fb959ab812c855edcabd2ca081b343ca85f085b64230a9809bb39800d98b",
+    "src/world.cpp": "eb0ce744d0abe3ddc72b418b5be23745decc0d917d27ffd6b030b0f9021d7458",
+    "src/core.cpp": "33dc60f3e859231862dbb0f44fedd946bbb30aab9467cdb8ac7ff334c6495fc7",
+    "shaders/temporal_inputs.hlsl": "21818455c86d9be0d8d0a39f144bce49f0d80920d5001ab304f1268bd515a9b6",
+    "shaders/scene.hlsl": "8bf4c01a5ad32e369e3002b00dd19d0a11b5b97659a402ad8a1faa05928a2d2d",
+    "shaders/scene_output.hlsl": "f8d263ae4750d14dbecbd3c6e18fad9fdb19190d1217e28f98f8927634550e0b",
+    "shaders/sky.hlsl": "bcb51e5d66d9385f7328c337213f11184d55551e0265054a07c7d1f813c71286",
+    "tests/reconstruction_native.cpp": "7eec28251f49e6a055c19d2e4290b2d832ecece5153d95b29b44847804dd76e8",
+    "tests/reconstruction_quality_native.cpp": "db188eb21559c421aadcdf475fd19fddab5a0e4c56c69e70a6a08dc22720d904",
+    "tests/reconstruction_quality.py": "95565523221c9367a7c1b9b7ff87238a663623add1110a94fd9cfbb85103d796",
+    "tests/reconstruction_history_quality.py": "cbd0c8c771978eb0d6d4ec0a7219cbe0d73bf306125fa959f133d14a64a67d92",
+    "tests/reconstruction_sky_native.cpp": "3796a2e439fe4a98e4b19bffed50d6cd629e4f9b6d247ec97912a1c7395ccf4d",
+    "tests/reconstruction_contract_capture.py": "8d79687aa77c72b2523cffc4d4f68a8ec52f459922a1969e919b9a3cc7901d38",
+    "CMakeLists.txt": "dffd73e2dbf75185a682d5fe6afb9cc5e5e4c1e1d6b7db73f9acc302c7671f9b",
+    "cmake/render_smoke.cmake": "648c83ead49cecdde1d57eb0da134a5cbfa7eef32ec80c9595b495edc56e5c2d",
+    "shaders/scene_frame.hlsli": "66c7c860b628c6febe1dc8aeb9a9e655f3e78b9ba2e7952fd7c089fe389dd7b8",
+    "tests/ui_capture_native.cpp": "d961505d3c4a69dacba4b312f7e96c644c2acf008d1e1ddf087516c990010a86",
+    "tests/reconstruction_ui_capture.py": "f24c3876b7b63107e1656b8b0dd3959e9f53e62782d21b788154c3152bb657f9",
+    "tests/world_contract.py": "370b6c849b5de2a938cc6eb708d31b9ef7fc61659005f9c218506b516f4cc4f4"
+  },
+  "final_builds": {
+    "enabled": {
+      "log": "build/fsr-final-diagnostic-name-build.log",
+      "log_sha256": "56bcd1baa03d412808bb6d0334cccca230114fab9e22d75d2ed3cb7d9bd9f672",
+      "exit_code": 0
+    },
+    "disabled": {
+      "log": "build/fsr-default-off-cleanup-build.log",
+      "log_sha256": "7ad9b1b0646a93a5fa4e16a1ddcf20eb888d80fe39a06e5b3d5d91c355184070",
+      "exit_code": 0
+    }
+  },
+  "final_binary_sha256": {
+    "build/windows-runtime/poima.exe": "1702d5668a3351bd6efa03c95fa7284b7ae9c5f8c32bd74a0e68b05834ead1cf",
+    "build/windows-runtime/poima_desktop.dll": "a8cce339379ade5c40f4258f32a6edb77875a02a60f2766e4f8d30f39fdada44",
+    "build/windows-runtime/poima-reconstruction-test.exe": "50a65f984fa299082d590afa6f9566803cc335e7fd07baac726e42cb8d35dd0b",
+    "build/windows-runtime/poima-reconstruction-quality-test.exe": "06a42be0c7f2c2d7fe302fd5788b7102c8756d8bb21ecf11195604f92edd1b41",
+    "build/windows-runtime/poima-ui-capture-test.exe": "11e5c2dfa87686385a1cef4f40f8239a18982dd2bd30308312427fdd114672ec",
+    "build/windows-render/poima.exe": "5aa866167c1d65b2589c519ad3a36b62fb2b974978118d9f45b038f022ce4a4a"
+  }
+}

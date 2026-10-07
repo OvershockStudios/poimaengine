@@ -207,5 +207,46 @@ void motion_contracts(){
         bad("probe region unspecified",[&](auto& p){p.frame.resources[copy.destination].region=Region::whole;});
     }
 }
+void reconstruction_contracts(){
+    auto settings=rich();settings.products=settings.reconstruction=true;
+    Fixture fixture(settings,1,true);
+    auto image=[&](Format format){auto id=fixture.add(Kind::texture,Lifetime::shared);fixture.f.resources[id].format=format;return id;};
+    auto& f=fixture.f;
+    f.resources[f.hdr].format=Format::rgba16_float;
+    f.reconstructed=image(Format::rgba16_float);f.dense_motion=image(Format::rg32_float);f.reactive=image(Format::r8_unorm);
+    f.dilated_depth=image(Format::r32_float);f.dilated_motion=image(Format::rg16_float);f.reconstructed_depth=image(Format::r32_uint);
+    auto original=fixture.plan();original.validate();++accepted;
+    // A compact lower-resolution scene is legal; display/UI keeps its own extent.
+    auto upscale=original;
+    for(const auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}){
+        upscale.frame.resources[id].width=192;upscale.frame.resources[id].height=108;
+    }
+    upscale.validate();++accepted;
+    auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
+    bad("reconstruction non-HDR input",[](auto& p){p.frame.resources[p.frame.hdr].format=Format::r8_unorm;});
+    bad("reconstruction downsamples width",[](auto& p){--p.frame.resources[p.frame.reconstructed].width;});
+    bad("reconstruction downsamples height",[](auto& p){--p.frame.resources[p.frame.reconstructed].height;});
+    bad("reconstruction with diagnostic display",[](auto& p){p.settings.products_debug=true;});
+    bad("reconstruction without scene products",[](auto& p){p.settings.products=false;});
+    for(auto id:{PassId::temporal_inputs,PassId::reconstruction})
+        bad("missing temporal pass",[&](auto& p){std::erase_if(p.passes,[&](const auto& pass){return pass.id==id;});});
+    for(auto id:{f.normal,f.motion,f.motion_valid})
+        bad("temporal input omitted",[&](auto& p){erase_access(p,PassId::temporal_inputs,id,Use::sampled);});
+    for(auto id:{f.dense_motion,f.reactive})
+        bad("temporal input output omitted",[&](auto& p){erase_access(p,PassId::temporal_inputs,id,Use::image_write);});
+    for(auto id:{f.hdr,f.depth,f.dense_motion,f.reactive})
+        bad("FSR input omitted",[&](auto& p){erase_access(p,PassId::reconstruction,id,Use::sampled);});
+    for(auto id:{f.reconstructed,f.dilated_depth,f.dilated_motion,f.reconstructed_depth})
+        bad("FSR output omitted",[&](auto& p){erase_access(p,PassId::reconstruction,id,Use::image_write);});
+    bad("display bypasses reconstruction",[&](auto& p){erase_access(p,PassId::output,f.reconstructed,Use::sampled);});
+    for(auto id:{f.reconstructed,f.dense_motion,f.reactive,f.dilated_depth,f.dilated_motion,f.reconstructed_depth}){
+        bad("temporal image aliases input",[&](auto& p){p.frame.resources[id].identity=p.frame.resources[f.hdr].identity;});
+        bad("temporal image format missing",[&](auto& p){p.frame.resources[id].format=Format::unspecified;});
+        bad("temporal image multisampled",[&](auto& p){p.frame.resources[id].samples=4;});
+        bad("temporal image not writable",[&](auto& p){p.frame.resources[id].supported &= ~use_bit(Use::image_write);});
+        if(id!=f.reconstructed)bad("temporal input size mismatch",[&](auto& p){++p.frame.resources[id].width;});
+    }
 }
-int main(){try{matrix();faults();products();motion_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

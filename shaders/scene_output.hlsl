@@ -15,7 +15,9 @@ struct OutputConstants {
     float far_plane;
     float viewport_width;
     float viewport_height;
-    float reserved;
+    float reconstructed;
+    float4 display_rect;
+    float4 source_extent;
 };
 [[vk::push_constant]] ConstantBuffer<OutputConstants> output;
 float4 vertex_main(uint vertex : SV_VertexID) : SV_Position {
@@ -54,7 +56,13 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
 #endif
     // Integer load prevents filtering/coordinate drift between Scene, player
     // and capture targets. Bounds follow the full-size output framebuffer.
-    const float3 radiance=scene_radiance.Load(int3(int2(position.xy),0)).rgb;
+    int2 source_pixel=int2(position.xy);
+    if(output.reconstructed>.5) {
+        const float2 uv=(position.xy-output.display_rect.xy)/output.display_rect.zw;
+        if(any(uv<0) || any(uv>=1))return float4(0,0,0,1);
+        source_pixel=clamp(int2(uv*output.source_extent.xy),int2(0,0),int2(output.source_extent.xy)-1);
+    }
+    const float3 radiance=scene_radiance.Load(int3(source_pixel,0)).rgb;
     const float3 exposed=radiance*output.exposure;
     const float3 mapped=exposed/(1+exposed);
     return float4(output.attachment_srgb>.5 ? mapped : linear_to_srgb(mapped),1);

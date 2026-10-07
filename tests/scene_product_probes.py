@@ -32,7 +32,7 @@ def main():
         product=result['render_diagnostics']['scene_products'];check(product['available']and product['motion_available']and product['view']==view,product)
         check(product['normal_format']=='RGBA16_FLOAT' and product['normal_space']=='world' and product['normal_alpha']=='surface validity','Normal metadata')
         check(product['depth_convention']=='device depth [0,1], near 0, far/clear 1','Depth metadata')
-        check(product['motion_convention']=='previous UV minus current UV; top-left scene viewport; no jitter','Motion convention')
+        check(product['motion_convention']=='previous unjittered UV minus current unjittered UV; top-left scene render viewport','Motion convention')
         check(product['history_sequence']==2 and product['history_valid'] is True,'Fresh two-frame capture did not report its second submission')
         values=product['probes'];check(len(values)==len(points),'Probe count/order mismatch');image=pixels(run/(name+'.bmp'))
         for point,value in zip(points,values):

@@ -9,6 +9,8 @@
 #include "poima/hosted_viewport.hpp"
 #include "poima/profiler.hpp"
 #include "poima/render_schedule.hpp"
+#include "poima/fsr3.hpp"
+#include "poima/temporal_inputs_cs.hpp"
 #include <unordered_map>
 #if POIMA_GAME_UI
 #include "poima/ui_presenter.hpp"
@@ -211,9 +213,9 @@ inline constexpr std::uint32_t cluster_x=16,cluster_y=9,cluster_z=24,cluster_cap
 inline constexpr std::uint32_t cluster_cells=cluster_x*cluster_y*cluster_z;
 struct FrameConstants {
     float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
-    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];
+    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];float temporal_jitter[4]{},temporal_right[4]{},temporal_up[4]{},temporal_forward[4]{};
 };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1520);
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1584);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
 struct GpuJoint { float rows[3][4]; };
@@ -288,6 +290,7 @@ struct Context {
         bool history_valid=false,capture_probes=false;
         std::uint64_t history_sequence=0;
         std::string history_reset;
+        ReconstructionDiagnostics reconstruction;
     };
     std::array<FrameSlot,2> slots;
     std::uint64_t next_slot=0,retire_slot=0;
@@ -311,7 +314,21 @@ struct Context {
     nvrhi::TextureHandle multisample_color;
     nvrhi::TextureHandle scene_hdr,scene_normal,scene_motion,scene_motion_valid;
     std::vector<SceneProductProbe> product_probes;
-    std::array<nvrhi::StagingTextureHandle,4> probe_staging;
+    std::array<nvrhi::StagingTextureHandle,6> probe_staging;
+    bool fsr3_history_probes=false;
+    nvrhi::BufferHandle fsr3_history_readback;
+    fsr3::DiagnosticResources fsr3_probe_resources{};
+    ReconstructionMode reconstruction_mode=ReconstructionMode::none;
+    std::unique_ptr<fsr3::Context> reconstruction;
+    fsr3::Extent render_extent{},output_extent{};
+    nvrhi::TextureHandle reconstructed,dense_motion,reactive,dilated_depth,dilated_motion,reconstructed_depth;
+    nvrhi::ShaderHandle temporal_cs;
+    nvrhi::BindingLayoutHandle temporal_layout;
+    nvrhi::BindingSetHandle temporal_bindings;
+    nvrhi::ComputePipelineHandle temporal_pipeline;
+    std::uint64_t temporal_phase=0;
+    ReconstructionDiagnostics pending_reconstruction;
+    SteadyClock::time_point accepted_temporal_time{};
     struct ObjectHistory {std::array<float,12> model{};std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;bool skinned=false;};
     struct ViewHistory {
         std::string source,world,camera;
@@ -331,6 +348,7 @@ struct Context {
     nvrhi::ShaderHandle output_vs,output_ps;
     nvrhi::BindingLayoutHandle output_layout;
     nvrhi::BindingSetHandle output_bindings;
+    bool output_reconstruction_bound=false;
     nvrhi::GraphicsPipelineHandle output_pipeline;
     nvrhi::BufferHandle vertices;
     nvrhi::InputLayoutHandle input_layout;
@@ -460,7 +478,8 @@ struct Context {
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
         vertex_shader = nullptr;
         pixel_shader = nullptr;
-        staging = nullptr;for(auto& texture:probe_staging)texture=nullptr;object_buffer=nullptr;history={};pending_history={};
+        reconstruction.reset();reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;temporal_bindings=nullptr;temporal_pipeline=nullptr;temporal_layout=nullptr;temporal_cs=nullptr;
+        staging = nullptr;for(auto& texture:probe_staging)texture=nullptr;fsr3_history_readback=nullptr;object_buffer=nullptr;history={};pending_history={};
         bindings = nullptr;
         binding_layout = nullptr;
         input_layout = nullptr;
@@ -513,6 +532,11 @@ struct Context {
         require(options.scene_product_probes.size()<=64,"At most 64 scene product probes are supported.");
         require(options.scene_product_probes.empty() || (scene && options.samples==1),"Scene product probes require a single-sample scene.");
         product_probes=options.scene_product_probes;
+        reconstruction_mode=options.reconstruction;
+        fsr3_history_probes=options.fsr3_history_probes;
+        require(!fsr3_history_probes || (reconstruction_mode!=ReconstructionMode::none && !product_probes.empty()),"SDK history probes require reconstruction and explicit probe coordinates.");
+        require(reconstruction_mode>=ReconstructionMode::none && reconstruction_mode<=ReconstructionMode::fsr3_performance,"Invalid reconstruction mode.");
+        require(reconstruction_mode==ReconstructionMode::none || (scene && options.samples==1 && scene_debug_view==SceneDebugView::color),"FSR reconstruction requires a single-sample color scene.");
         samples = scene ? options.samples : 1;
         require(samples==1 || samples==2 || samples==4 || samples==8,"Scene samples must be 1, 2, 4 or 8.");
         SDL_SetMainReady();
@@ -570,6 +594,7 @@ struct Context {
             if (!features12.timelineSemaphore || !features13.synchronization2 || !features13.dynamicRendering) continue;
             const auto queues = candidate.getQueueFamilyProperties(dispatch);
             for (std::uint32_t family = 0; family < queues.size(); ++family) {
+                if (reconstruction_mode!=ReconstructionMode::none && !(queues[family].queueFlags & vk::QueueFlagBits::eCompute))continue;
                 if (!(queues[family].queueFlags & vk::QueueFlagBits::eGraphics) || !candidate.getSurfaceSupportKHR(family,surface,dispatch)) continue;
                 const int score = props.deviceType == vk::PhysicalDeviceType::eDiscreteGpu ? 30 : (is_hardware ? 20 : 10);
                 if (score > best_score) {
@@ -606,7 +631,17 @@ struct Context {
         }
         diagnostics.frame_execution.presentation_fences=maintenance1;
         if(maintenance1)diagnostics.frame_execution.presentation_retirement="maintenance1 present fences";
+        vk::PhysicalDeviceFeatures enabled_features;
+        if(reconstruction_mode!=ReconstructionMode::none) {
+            const auto supported=physical.getFeatures(dispatch);
+            require(supported.shaderStorageImageExtendedFormats && supported.shaderStorageImageWriteWithoutFormat,"FSR requires storage image extended formats and formatless writes.");
+            enabled_features.shaderStorageImageExtendedFormats=true;enabled_features.shaderStorageImageWriteWithoutFormat=true;
+            vk::PhysicalDeviceSubgroupProperties subgroup;vk::PhysicalDeviceProperties2 properties;properties.pNext=&subgroup;physical.getProperties2(&properties,dispatch);
+            const auto required=vk::SubgroupFeatureFlagBits::eBasic|vk::SubgroupFeatureFlagBits::eQuad;
+            require((subgroup.supportedStages&vk::ShaderStageFlagBits::eCompute) && (subgroup.supportedOperations&required)==required,"FSR requires compute subgroup basic and quad operations.");
+        }
         vk::DeviceCreateInfo device_info;
+        device_info.pEnabledFeatures=&enabled_features;
         device_info.pNext = &enabled12;
         device_info.queueCreateInfoCount = 1;
         device_info.pQueueCreateInfos = &queue_info;
@@ -748,7 +783,8 @@ struct Context {
         if(object_data.empty())object_data.push_back({});
     }
     void commit_history() {
-        if(!scene)return;
+        if(!scene || (reconstruction && !scene_visible))return;
+        if(pending_reconstruction.active) {temporal_phase=pending_reconstruction.history_reset ? 1 : temporal_phase+1;accepted_temporal_time=SteadyClock::now();}
         ++history_sequence;
         for(auto& draw:draws)if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
             draw.skin->accepted_index=draw.skin->write_index;draw.skin->accepted_sequence=history_sequence;
@@ -785,7 +821,7 @@ struct Context {
         // per configured slot (readbacks are allocated lazily during warmup).
         info.buffer_bytes=max_scene_lights*sizeof(GpuLight)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
         for(const auto& light:gpu_lights)if(light.position_kind[3]<.5f || light.direction_range[3]==0)++info.global_lights;
-        const auto viewport=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+        const auto viewport=raster_viewport();
         frame_constants.cluster_viewport[0]=viewport.minX;frame_constants.cluster_viewport[1]=viewport.minY;
         frame_constants.cluster_viewport[2]=viewport.maxX-viewport.minX;frame_constants.cluster_viewport[3]=viewport.maxY-viewport.minY;
         frame_constants.cluster_grid[0]=cluster_x;frame_constants.cluster_grid[1]=cluster_y;frame_constants.cluster_grid[2]=cluster_z;frame_constants.cluster_grid[3]=0;
@@ -832,7 +868,7 @@ struct Context {
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,6),nullptr,dispatch);
+        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,8),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -846,8 +882,8 @@ struct Context {
     }
     void collect_timestamps(FrameSlot& slot,double cpu_interval_ms) {
         if(!slot.timing)return;
-        std::array<std::uint64_t,6> values{};
-        const auto status=device.getQueryPoolResults(slot.timestamps,0,6,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
+        std::array<std::uint64_t,8> values{};
+        const auto status=device.getQueryPoolResults(slot.timestamps,0,8,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
@@ -858,6 +894,7 @@ struct Context {
         if(diagnostics.profile_requested) {
             timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.light_assignment_gpu,ms(1,2));
             timing_sample(diagnostics.shadow_gpu,ms(2,3));timing_sample(diagnostics.opaque_gpu,ms(3,4));
+            if(slot.reconstruction.active)timing_sample(diagnostics.reconstruction.gpu,ms(6,7));
             timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
         }
         // GPU values are queue durations observed after completion, not CPU
@@ -868,6 +905,7 @@ struct Context {
                 profiling::deferred_counter(slot.profile,name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
         };
         sample("gpu.skinning.ns",0,1);sample("gpu.light_assignment.ns",1,2);sample("gpu.shadows.ns",2,3);sample("gpu.opaque.ns",3,4);
+        if(slot.reconstruction.active)sample("gpu.reconstruction.ns",6,7);
         sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
     }
 
@@ -1129,9 +1167,9 @@ struct Context {
             sky_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_sky_vs);
             sky_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_sky_ps);
             sky_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SkyConstants))));
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(SkyConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
             require(sky_vs && sky_ps && sky_layout,"Procedural sky shader/layout creation failed.");
-            sky_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(SkyConstants))),sky_layout);
+            sky_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(SkyConstants))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)),sky_layout);
             require(bool(sky_bindings),"Procedural sky bindings creation failed.");
         }
         if(!sky_pipeline) {
@@ -1145,9 +1183,116 @@ struct Context {
     void render_sky(std::uint32_t image_index) {
         if(!scene || !scene_visible || !sky_enabled)return;
         nvrhi::GraphicsState state;state.pipeline=sky_pipeline;state.framebuffer=sky_framebuffers.at(image_index);state.bindings.push_back(sky_bindings);
-        state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height))));
+        state.viewport.addViewportAndScissorRect(raster_viewport());
         commands->setGraphicsState(state);commands->setPushConstants(&sky_constants,sizeof(sky_constants));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+    }
+    nvrhi::Viewport raster_viewport() const {
+        if(reconstruction_mode!=ReconstructionMode::none)return nvrhi::Viewport(static_cast<float>(render_extent.width),static_cast<float>(render_extent.height));
+        return scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+    }
+    SceneProductProbe resolved_probe(SceneProductProbe point) const {
+        if(!reconstructed || !scene_visible)return point;
+        return {static_cast<std::uint32_t>((std::uint64_t(point.x)*2+1)*output_extent.width/(std::uint64_t(render_extent.width)*2)),
+            static_cast<std::uint32_t>((std::uint64_t(point.y)*2+1)*output_extent.height/(std::uint64_t(render_extent.height)*2))};
+    }
+    void prepare_reconstruction() {
+        if(reconstruction_mode==ReconstructionMode::none)return;
+        require(scene && !scene->presentation_source_id.empty(),"FSR reconstruction requires an authoritative presentation source.");
+        require(rigid_transform(scene->camera_world),"FSR reconstruction requires a rigid camera transform.");
+        if(!scene_visible && reconstruction)return;
+        const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+        const fsr3::Extent output{std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxX-display.minX))),std::max(1u,static_cast<std::uint32_t>(std::lround(display.maxY-display.minY)))};
+        const double ratio=reconstruction_mode==ReconstructionMode::fsr3_quality ? 1.5 : reconstruction_mode==ReconstructionMode::fsr3_balanced ? 1.7 : reconstruction_mode==ReconstructionMode::fsr3_performance ? 2.0 : 1.0;
+        const fsr3::Extent render{std::max(1u,static_cast<std::uint32_t>(output.width/ratio)),std::max(1u,static_cast<std::uint32_t>(output.height/ratio))};
+        for(const auto& point:product_probes)require(point.x<render.width && point.y<render.height,"Scene product probe lies outside the reconstruction render extent.");
+        if(reconstruction && render.width==render_extent.width && render.height==render_extent.height && output.width==output_extent.width && output.height==output_extent.height)return;
+        retire_frames(true);reconstruction.reset();temporal_bindings=nullptr;output_bindings=nullptr;
+        framebuffers.clear();sky_framebuffers.clear();sky_pipeline=nullptr;
+        history={};temporal_phase=0;accepted_temporal_time={};render_extent=render;output_extent=output;
+        auto allocate=[&](nvrhi::Format pixel_format,vk::Format vk_format,fsr3::Extent size,const char* name,bool target,bool uav) {
+            const auto properties=physical.getFormatProperties(vk_format,dispatch).optimalTilingFeatures;
+            auto features=vk::FormatFeatureFlags(vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst);
+            if(target)features|=vk_format==vk::Format::eD32Sfloat ? vk::FormatFeatureFlagBits::eDepthStencilAttachment : vk::FormatFeatureFlagBits::eColorAttachment;
+            if(uav)features|=vk::FormatFeatureFlagBits::eStorageImage;
+            require((properties&features)==features,"Selected GPU lacks required reconstruction image format features.");
+            nvrhi::TextureDesc desc;desc.width=size.width;desc.height=size.height;desc.format=pixel_format;desc.isShaderResource=true;desc.isRenderTarget=target;desc.isUAV=uav;
+            desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName=name;
+            auto texture=checked->createTexture(desc);require(bool(texture),std::string("Reconstruction image allocation failed: ")+name);return texture;
+        };
+        const auto render_pixels=std::uint64_t(render.width)*render.height,output_pixels=std::uint64_t(output.width)*output.height;
+        require(render_pixels*50+output_pixels*8<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
+        scene_hdr=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact scene radiance",true,false);
+        scene_normal=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact shading normal",true,false);
+        scene_motion=allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,render,"Compact unjittered object motion",true,false);
+        scene_motion_valid=allocate(nvrhi::Format::R8_UNORM,vk::Format::eR8Unorm,render,"Compact object correspondence",true,false);
+        depth=allocate(nvrhi::Format::D32,vk::Format::eD32Sfloat,render,"Compact scene depth",true,false);
+        reconstructed=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,output,"FSR reconstructed scene radiance",false,true);
+        dense_motion=allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,render,"FSR dense scene and sky motion",false,true);
+        reactive=allocate(nvrhi::Format::R8_UNORM,vk::Format::eR8Unorm,render,"FSR correspondence rejection mask",false,true);
+        dilated_depth=allocate(nvrhi::Format::R32_FLOAT,vk::Format::eR32Sfloat,render,"FSR dilated depth",false,true);
+        dilated_motion=allocate(nvrhi::Format::RG16_FLOAT,vk::Format::eR16G16Sfloat,render,"FSR dilated motion",false,true);
+        reconstructed_depth=allocate(nvrhi::Format::R32_UINT,vk::Format::eR32Uint,render,"FSR reconstructed previous depth",false,true);
+        for(std::size_t i=0;i<images.size();++i) {
+            framebuffers.push_back(checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_hdr).addColorAttachment(scene_normal).addColorAttachment(scene_motion).addColorAttachment(scene_motion_valid).setDepthAttachment(depth)));
+            sky_framebuffers.push_back(checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_hdr).setDepthAttachment(depth)));
+            require(framebuffers.back() && sky_framebuffers.back(),"Compact scene framebuffer creation failed.");
+        }
+        if(!temporal_layout) {
+            temporal_cs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_temporal_inputs_cs);
+            temporal_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
+                .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2))
+                .addItem(nvrhi::BindingLayoutItem::Texture_UAV(0)).addItem(nvrhi::BindingLayoutItem::Texture_UAV(1)));
+            require(temporal_cs && temporal_layout,"Temporal input shader/layout creation failed.");
+            nvrhi::ComputePipelineDesc pipeline_desc;pipeline_desc.CS=temporal_cs;pipeline_desc.bindingLayouts.push_back(temporal_layout);
+            temporal_pipeline=checked->createComputePipeline(pipeline_desc);require(bool(temporal_pipeline),"Temporal input pipeline creation failed.");
+        }
+        temporal_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_motion_valid))
+            .addItem(nvrhi::BindingSetItem::Texture_UAV(0,dense_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,reactive)),temporal_layout);
+        require(bool(temporal_bindings),"Temporal input bindings creation failed.");
+        reconstruction=std::make_unique<fsr3::Context>(static_cast<VkDevice>(device),static_cast<VkPhysicalDevice>(physical),dispatch.vkGetDeviceProcAddr,render,output);
+        require(reconstruction->gpu_bytes()+render_pixels*50+output_pixels*8<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
+        diagnostics.scene_products.normal_buffer_bytes=render_pixels*8;diagnostics.scene_products.motion_buffer_bytes=render_pixels*9;
+        checked->runGarbageCollection();
+    }
+    void prepare_temporal_submission() {
+        std::fill_n(frame_constants.temporal_jitter,4,0.0f);pending_reconstruction={};pending_reconstruction.mode=reconstruction_mode;
+        if(!reconstruction || !scene_visible)return;
+        const auto phase=pending_history_valid ? temporal_phase : 0;
+        const auto jitter=fsr3::jitter(phase,render_extent,output_extent);
+        // SDK accumulation samples current raster at output UV + jitter/renderSize;
+        // apply the same right/down raster displacement to scene projection.
+        frame_constants.temporal_jitter[0]=jitter[0];frame_constants.temporal_jitter[1]=jitter[1];frame_constants.temporal_jitter[2]=1;frame_constants.temporal_jitter[3]=sky_enabled ? 1.0f : 0.0f;
+        const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
+        const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
+        for(std::size_t k=0;k<3;++k) {frame_constants.temporal_right[k]=static_cast<float>(scene->camera_world[k]);frame_constants.temporal_up[k]=static_cast<float>(scene->camera_world[4+k]);frame_constants.temporal_forward[k]=static_cast<float>(-scene->camera_world[8+k]);}
+        frame_constants.temporal_right[3]=static_cast<float>(tan_y*aspect);frame_constants.temporal_up[3]=static_cast<float>(tan_y);
+        pending_reconstruction.active=true;pending_reconstruction.render_width=render_extent.width;pending_reconstruction.render_height=render_extent.height;
+        pending_reconstruction.output_width=output_extent.width;pending_reconstruction.output_height=output_extent.height;pending_reconstruction.jitter_pixels=jitter;
+        pending_reconstruction.history_reset=!pending_history_valid || temporal_phase==0;pending_reconstruction.reset_reason=pending_history_reset;pending_reconstruction.history_sequence=history_sequence+1;
+        pending_reconstruction.sdk_version="FSR 3.1.4 / FidelityFX SDK 1.1.4";
+        pending_reconstruction.logical_bytes=reconstruction->gpu_bytes()+std::uint64_t(render_extent.width)*render_extent.height*21+std::uint64_t(output_extent.width)*output_extent.height*8;
+    }
+    void dispatch_temporal_inputs() {
+        nvrhi::ComputeState state;state.pipeline=temporal_pipeline;state.bindings.push_back(temporal_bindings);
+        commands->setComputeState(state);commands->dispatch((render_extent.width+7)/8,(render_extent.height+7)/8,1);
+    }
+    void dispatch_reconstruction() {
+        for(auto* image:{scene_hdr.Get(),depth.Get(),dense_motion.Get(),reactive.Get()})commands->setTextureState(image,nvrhi::AllSubresources,nvrhi::ResourceStates::NonPixelShaderResource);
+        for(auto* image:{reconstructed.Get(),dilated_depth.Get(),dilated_motion.Get(),reconstructed_depth.Get()})commands->setTextureState(image,nvrhi::AllSubresources,nvrhi::ResourceStates::UnorderedAccess);
+        commands->commitBarriers();
+        auto image=[](nvrhi::ITexture* texture,VkFormat native_format) {const auto& desc=texture->getDesc();const auto object=texture->getNativeObject(nvrhi::ObjectTypes::VK_Image);require(object.pointer!=nullptr,"FSR native image unavailable.");return fsr3::Image{static_cast<VkImage>(object.pointer),native_format,{desc.width,desc.height}};};
+        fsr3::Dispatch args;args.commands=static_cast<VkCommandBuffer>(native_commands());
+        args.color=image(scene_hdr,VK_FORMAT_R16G16B16A16_SFLOAT);args.depth=image(depth,VK_FORMAT_D32_SFLOAT);args.motion=image(dense_motion,VK_FORMAT_R32G32_SFLOAT);args.reactive=image(reactive,VK_FORMAT_R8_UNORM);args.output=image(reconstructed,VK_FORMAT_R16G16B16A16_SFLOAT);
+        args.dilated_depth=image(dilated_depth,VK_FORMAT_R32_SFLOAT);args.dilated_motion=image(dilated_motion,VK_FORMAT_R16G16_SFLOAT);args.reconstructed_depth=image(reconstructed_depth,VK_FORMAT_R32_UINT);
+        args.jitter_pixels=pending_reconstruction.jitter_pixels;args.near_plane=static_cast<float>(scene->near_plane);args.far_plane=static_cast<float>(scene->far_plane);args.vertical_fov_radians=static_cast<float>(scene->vertical_fov*0.01745329251994329577);
+        args.delta_milliseconds=capture_exclusive || (!hosted && !editor) || accepted_temporal_time==SteadyClock::time_point{} ? 1000.0f/60.0f : static_cast<float>(std::clamp(elapsed_ms(accepted_temporal_time),1.0,100.0));
+        args.reset=pending_reconstruction.history_reset;
+        reconstruction->dispatch(args);
+        // The pinned SDK unregisters external images back to their entry states.
+        // Its commands invalidate bindings, while NVRHI state tracking remains valid.
+        commands->clearState();
     }
     void prepare_scene_output() {
         if(!scene)return;
@@ -1156,14 +1301,17 @@ struct Context {
             const auto ps=nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
             output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_ps) : create_embedded_shader(checked,ps,poima_scene_output_ps);
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,64)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
             if(scene_normal)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(3)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
             output_layout=checked->createBindingLayout(layout);
             require(output_vs && output_ps && output_layout,"Scene output shader/layout creation failed.");
         }
+        const bool use_reconstructed=reconstruction && scene_visible;
+        if(output_reconstruction_bound!=use_reconstructed)output_bindings=nullptr;
+        output_reconstruction_bound=use_reconstructed;
         if(!output_bindings) {
-            auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,scene_hdr));
+            auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,use_reconstructed ? reconstructed.Get() : scene_hdr.Get()));
             if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
             output_bindings=checked->createBindingSet(bindings_desc,output_layout);
             require(bool(output_bindings),"Scene output HDR bindings creation failed.");
@@ -1180,19 +1328,21 @@ struct Context {
         if(!scene)return;
         nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=game_ui_framebuffers.at(image_index);state.bindings.push_back(output_bindings);
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-        const float parameters[8]={frame_constants.ambient_exposure[3],
+        const auto display=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+        const float parameters[16]={frame_constants.ambient_exposure[3],
             (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,
-            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],0};
+            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],reconstructed ? 1.0f : 0.0f,
+            display.minX,display.minY,display.maxX-display.minX,display.maxY-display.minY,static_cast<float>(output_reconstruction_bound ? output_extent.width : scene_hdr->getDesc().width),static_cast<float>(output_reconstruction_bound ? output_extent.height : scene_hdr->getDesc().height),0,0};
         commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
     void update_scene() {
-        if(scene_debug_view!=SceneDebugView::color) {
+        if(scene_debug_view!=SceneDebugView::color || reconstruction_mode!=ReconstructionMode::none) {
             const auto near_plane=static_cast<float>(scene->near_plane),far_plane=static_cast<float>(scene->far_plane);
             require(std::isfinite(near_plane) && std::isfinite(far_plane) && near_plane>0 && far_plane>near_plane,
                 "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
         }
-        validate_game_ui();prepare_scene_output();prepare_object_buffer();
+        prepare_reconstruction();validate_game_ui();prepare_scene_output();prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();object_data.clear();pending_draws={};
         retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
@@ -1254,7 +1404,9 @@ struct Context {
         configure_light_assignment();
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
-        const auto camera_frustum=frustum(frame_constants.view_projection);
+        std::array<float,16> culling_projection;std::copy_n(frame_constants.view_projection,16,culling_projection.begin());
+        if(reconstruction_mode!=ReconstructionMode::none)for(std::size_t k=0;k<4;++k) {culling_projection[k*4]/=1+2.0f/static_cast<float>(render_extent.width);culling_projection[k*4+1]/=1+2.0f/static_cast<float>(render_extent.height);}
+        const auto camera_frustum=frustum(culling_projection.data());
         std::vector<Frustum> shadow_frusta;for(std::size_t i=0;i<shadow_plan.size();++i)shadow_frusta.push_back(frustum(frame_constants.shadows[i].view_projection));
         pending_draws.objects=scene->objects.size();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=scene->objects.size()*shadow_plan.size();
         std::set<std::string> active_skins;
@@ -1327,6 +1479,7 @@ struct Context {
         swapchain_dirty=true;
         retire_frames(true);
         retire_presentation();
+        reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;accepted_temporal_time={};
         commands=nullptr;
         sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
@@ -1336,6 +1489,7 @@ struct Context {
 #endif
         framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
+        fsr3_history_readback=nullptr;
         history={};
         diagnostics.scene_products.available=false;diagnostics.scene_products.motion_available=false;diagnostics.scene_products.normal_buffer_bytes=0;diagnostics.scene_products.motion_buffer_bytes=0;
 #if POIMA_EDITOR
@@ -1542,13 +1696,18 @@ struct Context {
         }
         initialized.resize(images.size(), false);
         if(!product_probes.empty()) {
-            const std::array<nvrhi::Format,4> probe_formats={nvrhi::Format::D32,nvrhi::Format::RGBA16_FLOAT,nvrhi::Format::RG32_FLOAT,nvrhi::Format::R8_UNORM};
+            const std::array<nvrhi::Format,6> probe_formats={nvrhi::Format::D32,nvrhi::Format::RGBA16_FLOAT,nvrhi::Format::RG32_FLOAT,nvrhi::Format::R8_UNORM,nvrhi::Format::RGBA16_FLOAT,nvrhi::Format::RGBA16_FLOAT};
             for(std::size_t i=0;i<probe_staging.size();++i) {
                 // Pinned NVRHI Vulkan treats staging X as a byte offset. Use row origins instead;
                 // four texels keep even R8 rows aligned to the required four-byte copy offset.
                 nvrhi::TextureDesc desc;desc.width=4;desc.height=static_cast<std::uint32_t>(product_probes.size());desc.format=probe_formats[i];desc.debugName="Sparse scene product capture";
                 probe_staging[i]=checked->createStagingTexture(desc,nvrhi::CpuAccessMode::Read);
                 require(bool(probe_staging[i]),"Scene product probe staging allocation failed.");
+            }
+            if(fsr3_history_probes) {
+                nvrhi::BufferDesc desc;desc.byteSize=product_probes.size()*64;desc.cpuAccess=nvrhi::CpuAccessMode::Read;
+                desc.initialState=nvrhi::ResourceStates::CopyDest;desc.keepInitialState=true;desc.debugName="Bounded native FSR history probes";
+                fsr3_history_readback=checked->createBuffer(desc);require(bool(fsr3_history_readback),"FSR history probe allocation failed.");
             }
         }
         for(auto& slot:slots)if(!slot.acquired)slot.acquired=device.createSemaphore({},nullptr,dispatch);
@@ -1560,9 +1719,40 @@ struct Context {
         return true;
     }
 
+    void record_fsr3_history_probes() {
+        if(!fsr3_history_probes)return;
+        require(reconstruction && fsr3_history_readback,"FSR history capture resources missing.");
+        fsr3_probe_resources=reconstruction->diagnostic_resources();
+        commands->setBufferState(fsr3_history_readback,nvrhi::ResourceStates::CopyDest);commands->commitBarriers();
+        const auto object=fsr3_history_readback->getNativeObject(nvrhi::ObjectTypes::VK_Buffer);
+        require(object.pointer!=nullptr,"FSR history readback buffer unavailable.");
+        const vk::Buffer buffer(static_cast<VkBuffer>(object.pointer));const auto command=native_commands();
+        for(std::size_t resource=0;resource<fsr3_probe_resources.images.size();++resource) {
+            const auto& source=fsr3_probe_resources.images[resource];if(!source.available)continue;
+            const vk::Image image(source.image.image);
+            vk::ImageMemoryBarrier barrier(vk::AccessFlags(source.access),vk::AccessFlagBits::eTransferRead,
+                vk::ImageLayout(source.layout),vk::ImageLayout::eTransferSrcOptimal,VK_QUEUE_FAMILY_IGNORED,VK_QUEUE_FAMILY_IGNORED,
+                image,vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor,0,1,0,1));
+            command.pipelineBarrier(vk::PipelineStageFlags(source.stages),vk::PipelineStageFlagBits::eTransfer,{},0,nullptr,0,nullptr,1,&barrier,dispatch);
+            for(std::size_t i=0;i<product_probes.size();++i) {
+                const auto point=(resource==1 || resource==2) ? resolved_probe(product_probes[i]) : product_probes[i];
+                require(point.x<source.image.extent.width && point.y<source.image.extent.height,"FSR history probe outside SDK image.");
+                const vk::BufferImageCopy region(i*64+resource*16,0,0,vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor,0,0,1),
+                    vk::Offset3D(static_cast<int>(point.x),static_cast<int>(point.y),0),vk::Extent3D(1,1,1));
+                command.copyImageToBuffer(image,vk::ImageLayout::eTransferSrcOptimal,buffer,1,&region,dispatch);
+            }
+            barrier.srcAccessMask=vk::AccessFlagBits::eTransferRead;barrier.dstAccessMask=vk::AccessFlags(source.access);
+            barrier.oldLayout=vk::ImageLayout::eTransferSrcOptimal;barrier.newLayout=vk::ImageLayout(source.layout);
+            command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,vk::PipelineStageFlags(source.stages),{},0,nullptr,0,nullptr,1,&barrier,dispatch);
+        }
+        const vk::BufferMemoryBarrier host(vk::AccessFlagBits::eTransferWrite,vk::AccessFlagBits::eHostRead,
+            VK_QUEUE_FAMILY_IGNORED,VK_QUEUE_FAMILY_IGNORED,buffer,0,VK_WHOLE_SIZE);
+        command.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,vk::PipelineStageFlagBits::eHost,{},0,nullptr,1,&host,0,nullptr,dispatch);
+        commands->clearState();
+    }
     void collect_product_probes() {
         std::vector<SceneProductSample> samples_out(product_probes.size());
-        for(std::size_t i=0;i<samples_out.size();++i) {samples_out[i].x=product_probes[i].x;samples_out[i].y=product_probes[i].y;}
+        for(std::size_t i=0;i<samples_out.size();++i) {samples_out[i].x=product_probes[i].x;samples_out[i].y=product_probes[i].y;const auto mapped=resolved_probe(product_probes[i]);samples_out[i].resolved_x=mapped.x;samples_out[i].resolved_y=mapped.y;}
         auto half=[](std::uint16_t bits) {
             const float sign=(bits&0x8000u) ? -1.0f : 1.0f;
             const unsigned exponent=(bits>>10)&31u,mantissa=bits&1023u;
@@ -1580,14 +1770,37 @@ struct Context {
                     std::uint16_t components[4]{};std::memcpy(components,pixel,8);
                     for(std::size_t k=0;k<3;++k)sample.shading_normal[k]=half(components[k]);sample.surface_valid=half(components[3])>.5f;
                 } else if(product==2)std::memcpy(sample.motion.data(),pixel,8);
-                else sample.motion_valid=*pixel>=128;
+                else if(product==3)sample.motion_valid=*pixel>=128;
+                else {std::uint16_t components[4]{};std::memcpy(components,pixel,8);auto& color=product==4 ? sample.raw_hdr : sample.resolved_hdr;for(std::size_t k=0;k<3;++k)color[k]=half(components[k]);}
             }
             checked->unmapStagingTexture(probe_staging[product]);
+        }
+        if(fsr3_history_probes) {
+            const auto* mapped=static_cast<const unsigned char*>(checked->mapBuffer(fsr3_history_readback,nvrhi::CpuAccessMode::Read));
+            require(mapped!=nullptr,"FSR history readback mapping failed.");
+            for(std::size_t i=0;i<samples_out.size();++i) {
+                Fsr3HistorySample history_sample;const auto* pixel=mapped+i*64;
+                for(std::size_t c=0;c<4;++c)history_sample.masks[c]=pixel[c]/255.f;
+                history_sample.previous_history_available=fsr3_probe_resources.images[1].available;
+                history_sample.previous_history_used=fsr3_probe_resources.previous_history_used;
+                history_sample.sdk_dispatch_sequence=fsr3_probe_resources.recorded_dispatches;
+                for(std::size_t r=0;r<4;++r)history_sample.sdk_resource_indices[r]=fsr3_probe_resources.images[r].sdk_resource_index;
+                for(std::size_t r=1;r<=2;++r)if(fsr3_probe_resources.images[r].available) {
+                    std::uint16_t values[4]{};std::memcpy(values,pixel+r*16,8);
+                    auto& color=r==1 ? history_sample.previous_history : history_sample.current_history;
+                    for(std::size_t c=0;c<4;++c)color[c]=half(values[c]);
+                }
+                std::uint16_t luma=0;std::memcpy(&luma,pixel+48,2);history_sample.luma_instability=half(luma);
+                samples_out[i].fsr3_history=history_sample;
+            }
+            checked->unmapBuffer(fsr3_history_readback);
         }
         for(const auto& sample:samples_out) {
             require(std::isfinite(sample.depth),"Scene depth probe is nonfinite.");
             for(float value:sample.shading_normal)require(std::isfinite(value),"Scene normal probe is nonfinite.");
             for(float value:sample.motion)require(std::isfinite(value),"Scene motion probe is nonfinite.");
+            for(float value:sample.raw_hdr)require(std::isfinite(value),"Raw HDR probe is nonfinite.");
+            for(float value:sample.resolved_hdr)require(std::isfinite(value),"Resolved HDR probe is nonfinite.");
         }
         diagnostics.scene_products.probes=std::move(samples_out);
     }
@@ -1826,7 +2039,7 @@ struct Context {
 
 #if POIMA_EDITOR
     void create_ui_scene_bindings() {
-        ui_scene_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
+        ui_scene_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,ui_scene)).addItem(nvrhi::BindingSetItem::Sampler(0,ui_sampler)),ui_layout);
         require(bool(ui_scene_bindings),"Editor Scene compositing bindings failed.");
     }
@@ -1851,9 +2064,9 @@ struct Context {
             nvrhi::VertexAttributeDesc().setName("COLOR").setFormat(nvrhi::Format::RGBA8_UNORM).setOffset(offsetof(ImDrawVert,col)).setElementStride(sizeof(ImDrawVert))};
         ui_input=checked->createInputLayout(attrs,3,ui_vs);
         ui_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
+            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,64)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)).addItem(nvrhi::BindingLayoutItem::Sampler(0)));
         require(ui_vs && ui_ps && ui_input && ui_layout && ui_sampler,"Editor UI shader/layout creation failed.");
-        ui_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
+        ui_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,64))
             .addItem(nvrhi::BindingSetItem::Texture_SRV(0,ui_font)).addItem(nvrhi::BindingSetItem::Sampler(0,ui_sampler)),ui_layout);
         create_ui_scene_bindings();
         nvrhi::GraphicsPipelineDesc pd;pd.VS=ui_vs;pd.PS=ui_ps;pd.inputLayout=ui_input;pd.bindingLayouts.push_back(ui_layout);
@@ -1947,6 +2160,7 @@ struct Context {
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
                 validate_skin_dispatch(slot);collect_light_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
+                auto reconstruction_gpu=diagnostics.reconstruction.gpu;diagnostics.reconstruction=slot.reconstruction;diagnostics.reconstruction.gpu=reconstruction_gpu;
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;
                 diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
                 diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
@@ -1964,7 +2178,7 @@ struct Context {
         namespace rs=render_schedule;
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
-        settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;
+        settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
         auto insert=[&](rs::Resource resource) {
@@ -1996,9 +2210,11 @@ struct Context {
             require(value!=nullptr,"Render schedule texture binding is null.");const auto& desc=value->getDesc();
             rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::texture;
             r.format=desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : desc.format==nvrhi::Format::RG32_FLOAT ? rs::Format::rg32_float : desc.format==nvrhi::Format::R8_UNORM ? rs::Format::r8_unorm : rs::Format::unspecified;
+            if(desc.format==nvrhi::Format::R32_FLOAT)r.format=rs::Format::r32_float;else if(desc.format==nvrhi::Format::RG16_FLOAT)r.format=rs::Format::rg16_float;else if(desc.format==nvrhi::Format::R32_UINT)r.format=rs::Format::r32_uint;
             r.lifetime=lifetime;r.initialized=initial_contents;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
             if(desc.isShaderResource)r.supported|=rs::use_bit(rs::Use::sampled);
+            if(desc.isUAV)r.supported|=rs::use_bit(rs::Use::image_write);
             if(desc.isRenderTarget) {
                 if(desc.format==nvrhi::Format::D32)r.supported|=rs::use_bit(rs::Use::depth)|rs::use_bit(rs::Use::clear_depth);
                 else r.supported|=rs::use_bit(rs::Use::color)|rs::use_bit(rs::Use::color_overwrite)|rs::use_bit(rs::Use::clear_color)|rs::use_bit(rs::Use::resolve_source)|rs::use_bit(rs::Use::resolve_destination);
@@ -2016,6 +2232,7 @@ struct Context {
         if(scene) {
             f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);f.objects=buffer(object_buffer,rs::Lifetime::shared,false,object_data.size()*sizeof(ObjectData));
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
+            if(settings.reconstruction) {f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);f.reactive=texture(reactive,rs::Lifetime::shared,false);f.dilated_depth=texture(dilated_depth,rs::Lifetime::shared,false);f.dilated_motion=texture(dilated_motion,rs::Lifetime::shared,false);f.reconstructed_depth=texture(reconstructed_depth,rs::Lifetime::shared,false);}
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
             f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
             if(settings.clustered) {
@@ -2072,7 +2289,7 @@ struct Context {
 #endif
         if(capture_frame && !product_probes.empty()) {
             for(const auto& point:product_probes)f.probe_points.push_back({point.x,point.y});
-            const rs::ResourceId sources[]={f.depth,f.normal,f.motion,f.motion_valid};
+            const rs::ResourceId sources[]={f.depth,f.normal,f.motion,f.motion_valid,f.hdr,f.reconstructed!=rs::none ? f.reconstructed : f.hdr};
             for(std::size_t i=0;i<probe_staging.size();++i) {
                 require(bool(probe_staging[i]),"Product probe staging is unavailable.");const auto& desc=probe_staging[i]->getDesc();
                 rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(probe_staging[i].Get());r.name="Sparse product probe staging";
@@ -2138,7 +2355,7 @@ struct Context {
                 }
             }
             framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
-            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.hdr : binding.slot==1 ? f.depth : binding.slot==2 ? f.normal : binding.slot==3 ? f.motion : f.motion_valid,binding.resourceHandle);
+            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? (plan.settings.reconstruction ? f.reconstructed : f.hdr) : binding.slot==1 ? f.depth : binding.slot==2 ? f.normal : binding.slot==3 ? f.motion : f.motion_valid,binding.resourceHandle);
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
         if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
@@ -2151,12 +2368,19 @@ struct Context {
             if(f.editor_indices!=rs::none)identity(f.editor_indices,ui_indices.Get());
         }
 #endif
+        if(plan.settings.reconstruction) {
+            for(const auto& binding:temporal_bindings->getDesc()->bindings) {
+                if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
+                if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.normal : binding.slot==1 ? f.motion : f.motion_valid,binding.resourceHandle);
+                if(binding.type==nvrhi::ResourceType::Texture_UAV)identity(binding.slot==0 ? f.dense_motion : f.reactive,binding.resourceHandle);
+            }
+            identity(f.reconstructed,reconstructed.Get());identity(f.dense_motion,dense_motion.Get());identity(f.reactive,reactive.Get());identity(f.dilated_depth,dilated_depth.Get());identity(f.dilated_motion,dilated_motion.Get());identity(f.reconstructed_depth,reconstructed_depth.Get());}
         if(plan.settings.capture)identity(f.capture,staging.Get());
         for(std::size_t i=0;i<f.probe_copies.size();++i)identity(f.probe_copies[i].destination,probe_staging.at(i).Get());
     }
     void render_opaque(std::uint32_t index) {
         nvrhi::GraphicsState state;state.pipeline=pipeline;state.framebuffer=framebuffers[index];
-        state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height))));
+        state.viewport.addViewportAndScissorRect(raster_viewport());
         if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(1));state.bindings.push_back(bindings);}
         commands->setGraphicsState(state);
         if(scene) {
@@ -2194,7 +2418,7 @@ struct Context {
             require(bool(slot.skin_readback),"Frame skin readback allocation failed.");
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
-        prepare_game_ui();prepare_submission_history();
+        prepare_game_ui();prepare_submission_history();prepare_temporal_submission();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if(profiling::active() && !timestamp_prepared)prepare_timestamps();
@@ -2236,7 +2460,7 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,6,dispatch);
+        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,8,dispatch);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -2274,7 +2498,9 @@ struct Context {
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
-            case render_schedule::PassId::opaque:render_opaque(index);timestamp(4);break;
+            case render_schedule::PassId::opaque:render_opaque(index);timestamp(4);if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}break;
+            case render_schedule::PassId::temporal_inputs:timestamp(6);dispatch_temporal_inputs();break;
+            case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
             case render_schedule::PassId::resolve:
                 commands->resolveTexture(planned_texture(resources.hdr),nvrhi::AllSubresources,planned_texture(resources.color),nvrhi::AllSubresources);break;
             case render_schedule::PassId::output:render_scene_output(index);break;
@@ -2289,11 +2515,12 @@ struct Context {
                 break;
             case render_schedule::PassId::product_probes:
                 for(const auto& copy:resources.probe_copies)for(std::size_t i=0;i<resources.probe_points.size();++i) {
-                    const auto& point=resources.probe_points[i];
+                    const auto point=copy.source==resources.reconstructed ? resolved_probe(product_probes[i]) : product_probes[i];
                     commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(copy.destination).identity),
                         nvrhi::TextureSlice().setOrigin(0,static_cast<std::uint32_t>(i)).setSize(1,1,1),planned_texture(copy.source),
                         nvrhi::TextureSlice().setOrigin(point.x,point.y).setSize(1,1,1));
                 }
+                record_fsr3_history_probes();
                 break;
             case render_schedule::PassId::capture:
                 commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(resources.capture).identity),{},planned_texture(resources.swapchain),{});break;
@@ -2312,7 +2539,7 @@ struct Context {
         slot.skin_ids.clear();for(const auto& draw:draws)slot.skin_ids.push_back(draw.entity_id);
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
-        slot.capture_probes=capture_frame && !product_probes.empty();
+        slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.submission=checked->executeCommandList(commands);
         require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
         commit_history();

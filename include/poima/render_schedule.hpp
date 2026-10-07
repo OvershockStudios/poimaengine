@@ -13,22 +13,23 @@ namespace poima::render_schedule {
 using ResourceId=std::uint32_t;
 inline constexpr ResourceId none=std::numeric_limits<ResourceId>::max();
 enum class Kind { buffer,texture };
-enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm };
+enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint };
 enum class Lifetime { imported,shared,history,slot,capture,swapchain };
 // Prefix describes the used prefix, not the larger physical allocation.
 // Cluster members are only the entries selected by the accompanying count buffer.
 // probe_pixels denotes only x=0,y=i in a four-texel-wide staging row per capture point.
 // Padding keeps R8 row origins four-byte aligned; padding contents are undefined.
 enum class Region { whole,prefix,cluster_members,probe_pixels };
-enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present };
+enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,resolve,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,resolve,temporal_inputs,reconstruction,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
     case PassId::shadows:return "render.pass.shadows";case PassId::scene_clear:return "render.pass.scene_clear";
     case PassId::sky:return "render.pass.sky";case PassId::opaque:return "render.pass.opaque";
+    case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::resolve:return "render.pass.resolve";case PassId::output:return "render.pass.output";
     case PassId::game_ui:return "render.pass.game_ui";case PassId::overlay:return "render.pass.overlay";
     case PassId::editor_clear:return "render.pass.editor_clear";case PassId::editor_ui:return "render.pass.editor_ui";
@@ -59,6 +60,7 @@ struct ProbeCopy {ResourceId source=none,destination=none;};
 struct FrameResources {
     std::vector<Resource> resources;
     ResourceId swapchain=none,color=none,depth=none,normal=none,motion=none,motion_valid=none,hdr=none,output=none,frame=none,objects=none,lights=none;
+    ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
     std::vector<ResourceId> game_textures,editor_textures;
@@ -68,7 +70,7 @@ struct FrameResources {
     std::vector<DrawInputs> camera_draws,shadow_draws;
 };
 struct Settings {
-    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false;
+    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false;
     std::uint32_t slot=0,image=0;
     std::uint64_t history_sequence=0;
 };
@@ -105,6 +107,20 @@ struct Schedule {
             if(resource(frame.normal).kind!=Kind::texture || resource(frame.normal).format!=Format::rgba16_float || resource(frame.depth).format!=Format::depth32)fail("invalid scene product format");
             if(!(resource(frame.normal).supported&use_bit(Use::sampled)) || !(resource(frame.depth).supported&use_bit(Use::sampled)))fail("scene products must be shader readable");
         } else if(frame.normal!=none)fail("normal attachment without scene products");
+        if(settings.reconstruction) {
+            if(!settings.products || settings.products_debug)fail("reconstruction requires color scene products");
+            if(resource(frame.hdr).format!=Format::rgba16_float)fail("reconstruction requires HDR radiance");
+            std::unordered_set<ResourceId> distinct={frame.hdr,frame.normal,frame.depth,frame.motion,frame.motion_valid,frame.output};
+            const ResourceId targets[]={frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth};
+            const Format formats[]={Format::rgba16_float,Format::rg32_float,Format::r8_unorm,Format::r32_float,Format::rg16_float,Format::r32_uint};
+            for(std::size_t i=0;i<6;++i) {
+                required(targets[i]);const auto& r=resource(targets[i]);
+                if(!distinct.insert(targets[i]).second || r.kind!=Kind::texture || r.samples!=1 || r.format!=formats[i] || !(r.supported&use_bit(Use::image_write)))fail("invalid reconstruction image");
+                if(i && (r.width!=resource(frame.hdr).width || r.height!=resource(frame.hdr).height))fail("reconstruction input extent mismatch");
+            }
+            for(const auto id:{frame.depth,frame.normal,frame.motion,frame.motion_valid})if(resource(id).width!=resource(frame.hdr).width || resource(id).height!=resource(frame.hdr).height)fail("reconstruction scene extent mismatch");
+            if(resource(frame.hdr).width>resource(frame.reconstructed).width || resource(frame.hdr).height>resource(frame.reconstructed).height)fail("reconstruction output smaller than input");
+        }
         if(settings.clustered) {if(!settings.scene)fail("clustered pass without a scene");required(frame.lights);required(frame.counts);required(frame.indices);required(frame.cluster_readback);}
         if(settings.capture)required(frame.capture);
         if(!frame.skins.empty()) {required(frame.skin_errors);required(frame.skin_readback);}
@@ -112,14 +128,14 @@ struct Schedule {
         for(const auto* list:{&frame.camera_draws,&frame.shadow_draws})for(const auto& d:*list)required(d.vertices);
         if(settings.products)for(const auto& d:frame.camera_draws)required(d.previous_vertices);
         if(!frame.probe_points.empty()) {
-            if(!settings.capture || !settings.products || frame.probe_points.size()>64 || frame.probe_copies.size()!=4)fail("product probes require a bounded single-sample capture");
-            const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid};
-            for(std::size_t i=0;i<4;++i) {
+            if(!settings.capture || !settings.products || frame.probe_points.size()>64 || (frame.probe_copies.size()!=4 && frame.probe_copies.size()!=6))fail("product probes require a bounded single-sample capture");
+            const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,frame.reconstructed!=none ? frame.reconstructed : frame.hdr};
+            for(std::size_t i=0;i<frame.probe_copies.size();++i) {
                 const auto& copy=frame.probe_copies[i];required(copy.destination);
                 if(copy.source!=sources[i])fail("product probe source role mismatch");
                 const auto& src=resource(copy.source);const auto& dst=resource(copy.destination);
                 if(dst.kind!=Kind::texture || dst.lifetime!=Lifetime::capture || dst.samples!=1 || dst.region!=Region::probe_pixels || dst.format!=src.format || dst.width!=4 || dst.height!=frame.probe_points.size())fail("invalid sparse product staging target");
-                for(const auto& point:frame.probe_points)if(point.x>=src.width || point.y>=src.height)fail("product probe lies outside current extent");
+                for(const auto& point:frame.probe_points)if(point.x>=resource(frame.hdr).width || point.y>=resource(frame.hdr).height)fail("product probe lies outside current extent");
             }
         } else if(!frame.probe_copies.empty())fail("probe storage without requested probes");
         std::unordered_set<std::uintptr_t> identities;
@@ -134,12 +150,25 @@ struct Schedule {
             if(r.lifetime==Lifetime::swapchain && !before_acquire && r.owner!=settings.image)fail("wrong swapchain image");
             initialized.push_back(r.initialized);
         }
-        bool exported=false,captured=false,probed=false;unsigned previous=0;bool first=true;
+        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false;unsigned previous=0;bool first=true;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
             first=false;previous=order;
             auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+            if(pass.id==PassId::temporal_inputs) {
+                if(!settings.reconstruction)fail("unexpected temporal input pass");
+                for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::sampled))fail("missing temporal input");
+                if(!has(frame.frame,Use::constant) || !has(frame.dense_motion,Use::image_write) || !has(frame.reactive,Use::image_write))fail("missing temporal input outputs");
+                prepared=true;
+            }
+            if(pass.id==PassId::reconstruction) {
+                if(!settings.reconstruction || !prepared)fail("reconstruction precedes input preparation");
+                for(const auto id:{frame.hdr,frame.depth,frame.dense_motion,frame.reactive})if(!has(id,Use::sampled))fail("missing reconstruction input");
+                for(const auto id:{frame.reconstructed,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth})if(!has(id,Use::image_write))fail("missing reconstruction output");
+                reconstructed=true;
+            }
+            if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(frame.reconstructed,Use::sampled)))fail("display precedes reconstruction");
             if(settings.products) {
                 if(pass.id==PassId::scene_clear && (!has(frame.normal,Use::clear_color) || !has(frame.motion,Use::clear_color) || !has(frame.motion_valid,Use::clear_color)))fail("missing normal validity clear");
                 if(pass.id==PassId::opaque && (!has(frame.normal,Use::color) || !has(frame.motion,Use::color) || !has(frame.motion_valid,Use::color)))fail("missing opaque normal output");
@@ -167,9 +196,9 @@ struct Schedule {
                 const auto& r=resource(a.resource);
                 if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
                 const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
-                const bool texture_use=a.use==Use::sampled || a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::resolve_source || a.use==Use::resolve_destination || a.use==Use::present;
+                const bool texture_use=a.use==Use::image_write || a.use==Use::sampled || a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::resolve_source || a.use==Use::resolve_destination || a.use==Use::present;
                 if((buffer_use && r.kind!=Kind::buffer) || (texture_use && r.kind!=Kind::texture))fail("resource kind does not support access");
-                const bool write=a.use==Use::upload || a.use==Use::storage_write || a.use==Use::color_overwrite || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::copy_destination || a.use==Use::resolve_destination;
+                const bool write=a.use==Use::image_write || a.use==Use::upload || a.use==Use::storage_write || a.use==Use::color_overwrite || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::copy_destination || a.use==Use::resolve_destination;
                 if(!write && !initialized[a.resource])fail("read or partial write has no initialized producer");
                 if(a.initialize && !write)fail("partial/raster access cannot initialize a whole resource");
                 if(write && (r.lifetime==Lifetime::imported || r.lifetime==Lifetime::history))fail("write to immutable imported resource");
@@ -201,6 +230,7 @@ struct Schedule {
                 if(pass.id==PassId::capture)captured=true;
             }
         }
+        if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(!exported)fail("missing presentation export");
         if(!frame.probe_points.empty() && !probed)fail("missing product probe pass");
     }
@@ -232,11 +262,19 @@ inline Schedule build(FrameResources frame,Settings settings) {
     auto& shadows=pass(PassId::shadows);
     if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);geometry(shadows,f.shadow_draws,false);add(shadows,f.shadow,Use::depth);}
     auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);if(settings.products) {add(clear,f.normal,Use::clear_color,true);add(clear,f.motion,Use::clear_color,true);add(clear,f.motion_valid,Use::clear_color,true);}
-    if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);}
+    if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}
     auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);geometry(opaque,f.camera_draws,true);if(settings.clustered) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
-    if(settings.scene) {auto& output=pass(PassId::output);add(output,f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
+    if(settings.reconstruction) {
+        auto& inputs=pass(PassId::temporal_inputs);add(inputs,f.frame,Use::constant);
+        for(auto id:{f.normal,f.motion,f.motion_valid})add(inputs,id,Use::sampled);
+        for(auto id:{f.dense_motion,f.reactive})add(inputs,id,Use::image_write,true);
+        auto& reconstruct=pass(PassId::reconstruction);
+        for(auto id:{f.hdr,f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
+        for(auto id:{f.reconstructed,f.dilated_depth,f.dilated_motion,f.reconstructed_depth})add(reconstruct,id,Use::image_write,true);
+    }
+    if(settings.scene) {auto& output=pass(PassId::output);add(output,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
     if(settings.game_ui) {auto& ui=pass(PassId::game_ui);add(ui,f.game_vertices,Use::upload,true);add(ui,f.game_indices,Use::upload,true);add(ui,f.game_vertices,Use::vertex);add(ui,f.game_indices,Use::index);for(auto t:f.game_textures)add(ui,t,Use::sampled);add(ui,f.output,Use::color);}
     if(settings.overlay) {auto& overlay=pass(PassId::overlay);add(overlay,f.overlay_vertices,Use::upload,true);add(overlay,f.overlay_vertices,Use::vertex);add(overlay,f.swapchain,Use::color);}
     if(settings.editor) {

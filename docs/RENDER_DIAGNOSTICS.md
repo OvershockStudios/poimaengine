@@ -6,7 +6,7 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 
 ## Request controls
 
-`world.describe` schema revision 43 exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`:
+`world.describe` schema revision 44 exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`:
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
@@ -15,6 +15,7 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 | `frames_in_flight` | 2 | Integer from 1 to 2. Two bounds queued submissions; one provides a serialized reference. |
 | `scene_debug_view` | `color` | Select `depth`, `shading_normal`, `motion` or `motion_validity` with `samples: 1`; see [scene products](SCENE_PRODUCTS.md) for encoding and qualification. |
 | `scene_product_probes` | `[]` | Up to 64 ordered `{x,y}` pixel requests for raw depth, shading normal, motion and validity; requires a capture path and `samples: 1`. |
+| `reconstruction` | `none` | Optional FSR NativeAA or fixed-ratio upscaling; requires an enabled build, `samples: 1` and the color view. See the [reconstruction contract and qualification boundary](RECONSTRUCTION.md). |
 | `profile` | false | Collect CPU intervals and, when supported, graphics-queue GPU timestamps. False records no timing samples or query commands. Draw counters remain available. |
 
 ```json
@@ -22,6 +23,8 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 ```
 
 These controls are observation/player options, not persistent world components. Existing revision/session/tick guards and capture destination rules still apply. Wrong types and values outside the declared bounds fail with `-32602`. Play retry receipts retain the original diagnostics; an identical retry does not rerun the player or resample timings.
+
+The three capture operations also accept `capture_frames` (1–128, default 2). They repeatedly render a frozen snapshot without advancing simulation. `runtime.play` does not accept this option. Sparse probes now include raw and resolved scene-linear HDR; when reconstruction is enabled, their requested coordinates address the compact render input. See [probe mapping](RECONSTRUCTION.md#numeric-observations-and-diagnostics).
 
 ## Visibility decisions
 
@@ -83,6 +86,8 @@ GPU intervals:
 | `total` | The complete timestamp span, excluding swapchain acquire, presentation completion, CPU simulation and file writing. |
 
 The start stamp uses top-of-pipe and later boundaries use bottom-of-pipe. These are approximate intervals on an overlapping GPU pipeline, not isolated shader costs. Timestamps themselves add synchronization/measurement overhead. Neither totals nor their reciprocals establish playable FPS. A two-frame capture includes cold/warm effects and the final readback; use controlled longer workloads for performance comparisons. The CPU can retain two submissions, but a cross-submission dependency still orders shared GPU scratch. This does not establish concurrent GPU frame execution or production frame pacing.
+
+Optional reconstruction adds two timestamps for temporal input preparation and SDK dispatch. Its `diagnostics.reconstruction.gpu` duration is contained within `gpu.post`; do not add both together. The default rendering path retains its existing timestamp layout.
 
 The pinned NVRHI timer implementation reads 32-bit results. Poima uses its supported native-command-buffer access for these 64-bit query operations without changing NVRHI source or graphics binding state.
 
