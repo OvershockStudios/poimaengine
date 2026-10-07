@@ -75,3 +75,17 @@ python tests/agent_observation_trace.py claude EVENTS.jsonl CAPTURE.bmp
 This is one simple image per client on the NVIDIA development GPU. It establishes delivery and bounded interpretation, not a general vision benchmark, reduced-image accuracy or autonomous game creation. Poima's optional [MCP image parameter](MCP.md#image-observations-development) retains the native capture receipt alongside the image.
 
 Official references: [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp), [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code programmatic use](https://code.claude.com/docs/en/headless). CLI options can change; the recorded versions above identify what was exercised.
+
+## Embedded workspace transport (development)
+
+`desktop/Poima.AgentHost` provides a reusable .NET 10 stdio JSON-RPC process transport with no external packages. It correlates concurrent requests, forwards provider notifications and approval requests, preserves server request IDs in replies, and bounds incoming frames and retained diagnostics. The owner must continuously consume its bounded event stream and explicitly handle approvals. Transport cancellation does not imply that a provider or engine mutation was rolled back; a missing response after sending is reported as an unknown outcome and is never automatically retried.
+
+This is transport groundwork, not an embedded chat interface or a qualified persistent provider session. Provider-specific initialization, thread management and desktop integration remain unfinished. It does not manage credentials or write global provider configuration.
+
+The process-level contract fixture launches a synthetic peer and exercises concurrent correlation, Unicode, RPC errors, approval replies, cancellation, late responses, bounded diagnostics, truncated output, malformed responses and oversized frames:
+
+```text
+dotnet run --project tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj
+```
+
+The fixture requires .NET 10. Its synthetic peer does not establish provider compatibility; the real-client qualifications above cover the separate MCP integration.
