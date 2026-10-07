@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "passed": true,
+  "scope": "Shared direct-light evaluator extraction; existing forward output only, no deferred backend or performance claim",
+  "devices": [
+    "AMD Radeon(TM) Graphics",
+    "NVIDIA GeForce RTX 4070 Laptop GPU"
+  ],
+  "scene_image_comparisons_per_device": 16,
+  "triangle_reference_comparison": true,
+  "validation": "Khronos validation with synchronization checks; no recorded validation warnings/errors",
+  "source_sha256": {
+    "shaders/scene.hlsl": "158893ba20b6decefa68045efd5e6c95b0263acdff3f352a0cea753826265d15",
+    "shaders/scene_lighting.hlsli": "2a7fc0eef7e39fd8c3217662a59f8d1569fae994e9eb18c41d8ef6ee368a9d96",
+    "cmake/render_smoke.cmake": "af868c18fa925e06a7bb52aa26fda7a3b08f980d11a031f77180d8e705f6bb91"
+  },
+  "raw_evidence": {
+    "path": "build/deferred-lighting-extraction-regressions/evidence.json",
+    "sha256": "fde0931db308d4320545fd1d792ce3c6ff0a5d133427aaed1dd0d2f93d5f3a3d"
+  },
+  "shader_comparison": {
+    "path": "build/deferred-lighting-extraction-shader-comparison.json",
+    "sha256": "a15a74c06eea5b0eeb5632e531f257e260d0f968ea83dd26cd51123d4816b638",
+    "unchanged": [
+      "scene vertex",
+      "scene products vertex",
+      "shadow vertex",
+      "scene output"
+    ],
+    "changed": [
+      "scene pixel",
+      "scene products pixel"
+    ]
+  },
+  "limitations": [
+    "Exact display-image comparisons in existing fixtures do not establish general floating-point equivalence or game-scale performance.",
+    "Deferred geometry buffers and lighting dispatch are not implemented by this extraction."
+  ]
+}

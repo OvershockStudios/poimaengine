@@ -74,6 +74,9 @@ foreach(stage vs ps cs)
     if(shader STREQUAL "scene" OR shader STREQUAL "scene_products" OR shader STREQUAL "shadow" OR shader STREQUAL "cluster_lights" OR shader STREQUAL "temporal_inputs" OR shader STREQUAL "sky")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli")
     endif()
+    if(shader STREQUAL "scene" OR shader STREQUAL "scene_products" OR shader STREQUAL "shadow")
+        list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_lighting.hlsli")
+    endif()
     set(header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.hpp")
     add_custom_command(OUTPUT "${header}"
         BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
