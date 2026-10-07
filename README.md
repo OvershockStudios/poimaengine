@@ -1,42 +1,43 @@
 # Poima Engine
 
-**An agent-native 3D game engine for human and AI-assisted development.**
+**An agent-native game engine, built for people and the agents they work with.**
 
-Poima puts authoring, simulation and inspection in a native engine service. The CLI, external agents and desktop editor work through the same operations and share the same world state. Agents can build and test without opening the editor; people can inspect and edit that work visually.
+Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graphics and **C#** gameplay. Its CLI and desktop editor share an authoritative engine service: an agent can inspect, edit, run and observe a world through structured commands, while you work in the editor.
 
-The engine and player use **C++20**, graphics use **Vulkan**, and gameplay is written in **C#**. The Windows desktop editor uses C#/Avalonia with native Scene and Game viewports.
-
-[Get started](#get-started) · [Sample game](examples/collection-game) · [Documentation](#documentation) · [Implementation status](docs/IMPLEMENTATION_STATUS.md)
-
-> **0.0.39 development — engine prototype.** Important systems are incomplete, and APIs and file formats may change. Recorded tests establish specific supported workflows, not production readiness or game-scale performance.
+[Get started](#get-started) · [Try a sample](examples/collection-game) · [Documentation](#documentation) · [Implementation status](docs/IMPLEMENTATION_STATUS.md) · [Changelog](CHANGELOG.md)
 
 ![Poima desktop editor showing independent Scene and Game panels](docs/evidence/m2-desktop-dual-view.png)
 
-*Recorded editor checkpoint. Scene and Game panels can be docked or floated independently.*
+*Editor checkpoint showing independently dockable Scene and Game views.*
 
-## Agent-native development
+> **Early development · 0.0.40.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
-Authoring operations are available directly through the CLI and newline-delimited JSON-RPC. A client can discover schemas, inspect components, apply atomic transactions and request rendered observations. Revision guards reject stale edits; retry receipts prevent an acknowledged edit from being applied twice.
+## Built for iteration
 
-The same service supports human and agent editing in a shared session. Bounded authoring undo/redo, runtime batch rollback and scripted input replay provide recovery and repeatable checks within their documented contracts. They do not require a particular AI provider: Codex, Claude and other clients can use the public interfaces.
+Poima makes engine operations directly available to tools. External agents such as Codex and Claude can use the CLI or newline-delimited JSON-RPC without opening an editor or relying on screen coordinates.
 
-See the [world API](docs/WORLD_SERVICE.md) and [shared sessions](docs/SHARED_SESSIONS.md).
+- **Discover and inspect.** Query available operations, component schemas and the current world before making changes.
+- **Edit together.** Humans and agents use shared sessions. Atomic transactions apply related edits together; revision guards reject stale changes, and retry receipts prevent duplicate application.
+- **Run and observe.** Exercise gameplay with scripted input, request rendered captures and inspect simulation state and profiling data.
+- **Recover and repeat.** Bounded authoring undo/redo, runtime rollback and input replay support reproducible checks within their documented contracts.
 
-## Current capabilities
+The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows.
 
-| System | Available today |
+Read the [world API](docs/WORLD_SERVICE.md), [shared-session guide](docs/SHARED_SESSIONS.md) and [C# gameplay guide](docs/MANAGED_GAMEPLAY.md).
+
+## What works today
+
+| Area | Implemented foundations |
 | --- | --- |
-| Authoring and editor | Persistent hierarchy, typed Inspector, Project browser, transform gizmos, independent Scene/Game panels and transactional edits. |
-| Rendering and assets | Vulkan PBR rendering with optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md), bounded frame submission, shared HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and depth/normal/motion inspection; optional experimental [FSR reconstruction](docs/RECONSTRUCTION.md); glTF/GLB, PNG/JPEG and WAV import. |
-| Simulation and animation | Fixed-step Jolt physics, capsule movement, static triangle meshes, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
-| C# gameplay | Native-owned components, generated accessors, compatible development reload and Native AOT game bundles; bounded collections have Linux CoreCLR development qualification. |
-| Saves | Durable slots, guarded restoration and corruption recovery. Explicit scalar save upgrades have Linux CoreCLR development qualification. |
-| Input, UI and audio | Keyboard/mouse/gamepad profiles, native logical UI controls and callbacks, optional Vulkan UI presentation and Steam Audio integration. |
-| Diagnostics and packaging | CPU timeline, GPU duration samples, trace export, project manifests and validated native game bundles. |
+| Graphics | Vulkan PBR, HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
+| Gameplay | Fixed-step Jolt physics, capsule movement, static triangle-mesh collision, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
+| C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. Bounded collections and explicit scalar save upgrades have Linux CoreCLR development qualification. |
+| Player systems | Keyboard, mouse and gamepad profiles; native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
+| Content and tools | glTF/GLB, PNG/JPEG and WAV import; project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |
 
-Each implementation has limits. [Implementation status](docs/IMPLEMENTATION_STATUS.md) links the contracts and evidence, including platform and device qualification. Use `poima capabilities` and `world.describe` to inspect what your build exposes.
+These are bounded implementations, not production or game-scale performance claims. Windows graphics/editor workflows and Linux headless workflows have recorded qualification. Browser and console backends, advanced 2D, multiplayer, comprehensive water/weather, GI and production VFX tooling remain future work. Animation layers, IK, retargeting and direct FBX import are unfinished.
 
-Advanced GI, frame generation, comprehensive water/weather, multiplayer, production VFX/UI tooling and console backends remain planned. Animation layers, IK, retargeting and direct FBX workflows are unfinished. Save-upgrade integration on Windows and Native AOT is not yet qualified.
+Use `poima capabilities` and `world.describe` to discover your build's interfaces. The [status document](docs/IMPLEMENTATION_STATUS.md) records feature-specific limits, platform coverage and evidence.
 
 ## Get started
 
