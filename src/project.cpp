@@ -289,6 +289,20 @@ void require_gameplay_contract(const NativeGameplayArtifact& artifact,const Json
     const auto error=gameplay_abi::compatibility_error(artifact.requirements,runtime_gameplay_contract(runtime));
     require(error.empty(),error);
 }
+// Collection schemas are native world content even when no gameplay module is
+// configured. The installed reader must advertise support independently of AOT.
+void require_content_contract(const std::string& document,const Json& runtime) {
+    const auto content=parse(document);
+    if(!content.contains("component_schemas"))return;
+    for(const auto& schema:content.at("component_schemas")) {
+        if(schema.at("version")!=2)continue;
+        require(runtime.contains("gameplay_features"),"Collection content requires an explicit runtime feature contract.");
+        const auto& features=runtime.at("gameplay_features");
+        require(std::find(features.begin(),features.end(),gameplay_abi::collections_feature)!=features.end(),
+                "Collection content requires component_collections_v1.");
+        return;
+    }
+}
 Json runtime_spec(const std::string& bytes) {
     const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
     require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");require(value.at("engine_version")==POIMA_VERSION,"Runtime engine version must exactly match the exporting engine.");
@@ -353,6 +367,7 @@ VerifiedGame verify_game(const std::string& filename) {
     require(read(world,16*1024*1024)==world_bytes,"Bundle world changed during validation.");
     require(content.revision==revision,"Bundle source revision differs from world revision.");entry_validate(spec.at("entry"),parse(content.document));
     require(parse(content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Game requires a game-UI-enabled runtime.");
+    require_content_contract(content.document,runtime);
     std::set<std::string> required_assets;for(const auto& asset:content.assets) { const auto path="content/world.json.assets/"+asset.filename;expect(path,"asset");require(inventory.at(path).at("sha256")==asset.sha256 && inventory.at(path).at("size")==asset.bytes,"Asset closure differs from inventory.");required_assets.insert(path); }
     if(spec.contains("input_profile")) { require(spec.at("input_profile")=="content/default.poima-input.json","Unexpected bundle input profile path.");expect(spec.at("input_profile"),"input");const auto path=contained(root,spec.at("input_profile"));input_profiles::load_read_only(path);result.definition.input_profile=text(path); }
     std::map<std::string,std::string> gameplay_paths;
@@ -418,6 +433,7 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
         const auto p=project(manifest);require(fs::is_directory(fs::symlink_status(path_of(runtime_root))),"Runtime root must be a directory without symlink.");const auto runtime_path=fs::canonical(path_of(runtime_root));const auto descriptor=read(contained(runtime_path,"runtime.json"),65536);const auto runtime=runtime_spec(descriptor);
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
         require(parse(p.content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Project requires a game-UI-enabled runtime.");
+        require_content_contract(p.content.document,runtime);
         if(p.gameplay) {
             require(runtime.at("features").value("native_gameplay",false),"Project requires a native-gameplay runtime.");
             require_gameplay_contract(*p.gameplay,runtime);

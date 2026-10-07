@@ -100,9 +100,14 @@ class Contract(unittest.TestCase):
 
     def test_discovery_and_explicit_upgrade_only(self):
         d = self.ok('world.describe')
-        self.assertEqual(d['schema_revision'], 38)
+        self.assertEqual(d['schema_revision'], 39)
         for name in ('component.schemas', 'component.schema.import', 'runtime.components', 'runtime.component.get', 'runtime.component.query', 'runtime.component.edit'):
             self.assertIn(name, d['methods'])
+        declared = d['methods']['component.schema.import']['properties']['manifest']['properties']['schemas']['items']['oneOf']
+        self.assertEqual([entry['properties']['version']['const'] for entry in declared], [1, 2])
+        array = declared[1]['properties']['fields']['contains']
+        self.assertEqual(array['properties']['kind']['const'], 'array')
+        self.assertEqual(array['properties']['capacity']['maximum'], 31)
         self.assertEqual(self.ok('component.schemas')['schemas'], [])
         self.tx(0, [create(A)])
         self.assertEqual(json.loads(self.world.read_text())['version'], 1)

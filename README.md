@@ -29,7 +29,7 @@ See the [world API](docs/WORLD_SERVICE.md) and [shared sessions](docs/SHARED_SES
 | Authoring and editor | Persistent hierarchy, typed Inspector, Project browser, transform gizmos, independent Scene/Game panels and transactional edits. |
 | Rendering and assets | Vulkan PBR rendering, direct lights and shadows, procedural sky, MSAA, GPU skinning and captures; glTF/GLB, PNG/JPEG and WAV import. |
 | Simulation and animation | Fixed-step Jolt physics, capsule movement, static triangle meshes, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
-| C# gameplay | Native-owned scalar components, generated accessors, compatible development reload and Native AOT game bundles. |
+| C# gameplay | Native-owned components, generated accessors, compatible development reload and Native AOT game bundles; bounded collections have Linux CoreCLR development qualification. |
 | Saves | Durable slots, guarded restoration and corruption recovery. Explicit scalar save upgrades have Linux CoreCLR development qualification. |
 | Input, UI and audio | Keyboard/mouse/gamepad profiles, native logical UI controls and callbacks, optional Vulkan UI presentation and Steam Audio integration. |
 | Diagnostics and packaging | CPU timeline, GPU duration samples, trace export, project manifests and validated native game bundles. |
@@ -87,7 +87,8 @@ The [wiki](https://github.com/OvershockStudios/poimaengine/wiki) provides anothe
 
 ## Credits and license
 
-**Creator, architect and project owner:** Divesh Gupta ([Legendile7](https://github.com/Legendile7)), publishing as Overshock Studios.  
+**Creator, architect and project owner:** Divesh Gupta ([Legendile7](https://github.com/Legendile7)), publishing as Overshock Studios.
+
 **AI implementation:** GPT-6-Astra, under Divesh Gupta's direction.
 
 Poima is licensed under [Apache-2.0](LICENSE). Dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md). The Poima name is covered separately by the [branding notice](TRADEMARKS.md).

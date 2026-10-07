@@ -1,0 +1,128 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "date": "2026-10-06",
+  "checkpoint": "0.0.39-development",
+  "scope": "Bounded component collections: Linux native core and compiled CoreCLR gameplay",
+  "passed": true,
+  "schema_revision": 39,
+  "engine_sha256": "5f60397e28f5fbc8a4adeb189292d6a68f26724164b0e21fbee59141a97d7c04",
+  "source_sha256": {
+    "CMakeLists.txt": "4aa36ef37886f1bfbba2c5bd9974f02113b6541e573f07626b794a778b13a090",
+    "cmake/runtime.json.in": "84eb64afbf3d94b514e7856cb45c01d9d599e7568690ca16ddb4eba7664af116",
+    "include/poima/components.hpp": "5494fa87959c2ed03ae82317fee9b4e7a8132cc0f4510da9dba11828a6b3b95b",
+    "include/poima/gameplay_compatibility.hpp": "44870aca9c396dfa4040322cf1e19f6a2b7a37a839734d49172a013ba6996d02",
+    "src/components.cpp": "6033b59d8905ff2202a87fc13d1258b728b018bd8fdaa0b63a1be03c9d0865f2",
+    "src/runtime_components.cpp": "63478871acf533a73fefd607557acaf1e8e48a8c9019eda82dcba9a30b008239",
+    "src/save_upgrade.cpp": "fd68b51ae50a5665d40da45af2c7189204adb7f1f72137ab127b59ecf609a4e3",
+    "src/native_gameplay_artifact.cpp": "f3c590a58289425acea7d0cc530118f569124c0a136adc022be9749c0763133c",
+    "src/project.cpp": "8ab00e26defb4856de81a6119d0e6f6b82df32c0a2ec4f9a015018ce84a69e2c",
+    "src/world.cpp": "7ba897a77fe2870bfbd14ea1a53da82a4641cf3cd48bb6786c4ee41810186bae",
+    "scripts/publish_native_gameplay.py": "3a917bae79778008daf41fa1e15fe68338f505e1a1e0bde4817917626fd6babd",
+    "tests/component_collections_native.cpp": "6cfaf4519c3d15274fc1097dd46eb91966f81f8aa4c6be074d2ebddd497c2943",
+    "tests/runtime_components_native.cpp": "8f87db4b7ec858ec3c64f49c16e28c1ded98c8dfaaa620e87a7f6e544ae2a0f4",
+    "tests/gameplay_compatibility_native.cpp": "8650f8486a4899747113ea8dfd00e4594a53c24e18c6fd53b9986135ad144e90",
+    "tests/project_gameplay_contract.py": "d2b579c29b96b0344ca330624c8ca7e99acaaea46ca59e4f5e37ef30af0e96d1",
+    "tests/world_components_contract.py": "0cb609b72000f6d3f8a5db4b534136e668496814d803767bccf0317e03184ca5",
+    "managed/Poima.Gameplay/Buffers.cs": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f",
+    "managed/Poima.Components.Generator/Generator.cs": "0fc907b247d2a29dcb7053c4409e93d2da93d5de3f92177d5c346f1d93971612",
+    "managed/Poima.Components.Generator/Buffers.cs": "94c6719e9b00491e5a26ae0f3e8cd5876583fcfc0654c0b621e560162416109d",
+    "tests/buffer_gameplay/Program.cs": "f0a691269ffa976c946877a7c7e4c488677323e17f442db7dc5e4a766c501204",
+    "tests/buffer_gameplay/Poima.BufferProbe.csproj": "1546d292baa4f0560106a672522cd90caf8919a7c5e3371830ee39c6ed0a3dbf",
+    "tests/buffer_generator_contract/Program.cs": "bd19cd23f492f9125cb02efa8d64fae4469fd4d030b759b50a8cd96c609e9088",
+    "tests/buffer_generator_contract/Poima.BufferGeneratorContract.csproj": "94573813b5288a024d2db0159259d5bcdf2a2b51e13f0488aabbef3f4d718811",
+    "tests/collection_gameplay/CollectionGameplay.cs": "2ae9d7f3423d98944247d0c88a8dfb101162547271051b7a720b30e27a587300",
+    "tests/collection_gameplay/Poima.CollectionGameplay.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+    "tests/collection_gameplay_contract.py": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+    "desktop/Poima.Editor/ComponentEditorModel.cs": "78c39b184f15bb7939ea88ddacfd7e6cc60744de235db6bada512e1018a2fbe6",
+    "tests/fixtures/editor_component_model/Program.cs": "2a16b122e6b55696fc05db80e64fed2a77a1f2bae028228b4fd22ae7525dede3",
+    "tests/fixtures/editor_component_model/Poima.ComponentModel.Contract.csproj": "93c784e20277ace13e1850721d43bddcb7260d5f8106588f4b02b0825cc38a67"
+  },
+  "artifact_sha256": {
+    "hostfxr-linux-x64": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+    "build/component-buffers/integration/bin/Poima.ManagedBridge/release/Poima.ManagedBridge.dll": "435c897cb09e572a0ca9920e0f2f504bbf7273fb9da0444805ae026cd07ba7a1",
+    "build/component-buffers/integration/bin/Poima.CollectionGameplay/release/Poima.CollectionGameplay.dll": "903562f232a45469e7da194fbc9c28887ef0100d7dc9ac5b7de4ef12a6dbd232",
+    "build/component-buffers/integration/bin/Poima.NativeGame.Generator/release/Poima.NativeGame.Generator.dll": "3acf4da053572d1d4bcd24a03604cc3dd2bb47caaaca65537028a2f5763aa588",
+    "build/component-buffers/managed/bin/Poima.Components.Generator/release/Poima.Components.Generator.dll": "e2f059c86ff9ac190d2e32791a545be0976ec5ab0e3ae7a85c1396d859ac7045",
+    "build/component-buffers/collection-manifest.json": "f2a80ec821ffe6d088559b1217c8c8195826112935a5600bf1ebb004a7c8d598",
+    "build/component-buffers/integration/bin/Poima.ManagedBridge/release/Poima.Gameplay.dll": "51c71dab9e8f77873443f0ad32c2bf6b4f476ae16a7e0b7dac81479381f5660b",
+    "build/component-buffers/integration/bin/Poima.CollectionGameplay/release/Poima.Gameplay.dll": "51c71dab9e8f77873443f0ad32c2bf6b4f476ae16a7e0b7dac81479381f5660b",
+    "build/component-buffers/integration/bin/Poima.NativeGame.Generator/release/Poima.Gameplay.dll": "51c71dab9e8f77873443f0ad32c2bf6b4f476ae16a7e0b7dac81479381f5660b"
+  },
+  "native_checks": [
+    "components",
+    "runtime-components",
+    "gameplay-compatibility",
+    "save-upgrade",
+    "world-session",
+    "retained-abi7-0",
+    "retained-abi7-1",
+    "component-collections",
+    "world_components_contract",
+    "world_ui_contract",
+    "world_templates_contract",
+    "runtime_save_contract"
+  ],
+  "codec_rejection_cases": 262,
+  "managed_checks": {
+    "element_kinds": 5,
+    "corrupted_length_unchanged_state_checks": 15,
+    "invalid_declaration_cases": 14,
+    "compiled_positive_cases": 4,
+    "native_golden_fingerprint_match": true,
+    "retained_schema1_manifest_exact_bytes": true
+  },
+  "actual_game": {
+    "backend": "coreclr",
+    "rpc_calls": 151,
+    "checks": [
+      "Generated Get/Set fills capacity4, rejects overflow without mutation, preserves published reads",
+      "Dangling first/last references, index failure, queued-write exception and later-tick batch failure preserve complete world-save bytes",
+      "Actual template spawn, Init-bypassed fresh exact restore, first/last reference repair+despawn, generation2 and fresh continuation passed"
+    ],
+    "cleanup_errors": [],
+    "initial_saved_tick": 8,
+    "second_saved_tick": 10,
+    "final_tick": 11,
+    "original_payload_sha256": "c97ac7aa094e777e00289ae6a27a44114e9d4a006dbd37c78dd6e0daa3b9b9c2"
+  },
+  "project_contract": {
+    "passed": true,
+    "tests": 18,
+    "skipped": 4,
+    "synthetic_artifacts_are_metadata_only": true,
+    "checks": [
+      "collection module explicit feature requirement",
+      "installed runtime export and resealed-bundle feature checks",
+      "collection content without any gameplay module needs capable runtime",
+      "old scalar legacy descriptors remain accepted"
+    ],
+    "initial_attempt": "Two synthetic collection cases failed because their metadata inventory was incomplete; fixture now supplies native-canonical component metadata. Engine validation was retained. Original failed evidence is preserved."
+  },
+  "editor_model": {
+    "passed": true,
+    "checks": 83,
+    "scope": "Linked production component model under .NET; no GUI/native device claim"
+  },
+  "profiler": {
+    "passed": true,
+    "checks": 3,
+    "rpc_calls": 128
+  },
+  "raw_evidence_sha256": {
+    "build/component-collections-native-check/aggregate.json": "54b9b3bfa42551b06b8a50f87446087850f64091c002947d2d583f4194fd53d0",
+    "build/component-collections-native-check/project_gameplay_contract-fixed.json": "735e0b0b17db9782bf6b718cd2c6a3cb807c32a4f00e8aef2ba7b8504dfead58",
+    "build/component-buffers/qualification-corrected.json": "35df7e29218801b8bb52f8952ddaf7b56b84bd62a5cbe68c9b3ff5e3f53b3e2c",
+    "build/component-editor-arrays/evidence.json": "9d4b5f5b4147664ae152f1fa6e65750ac36c65209c9468bf78f32b814e8aa63f",
+    "build/component-collections-game-linux/evidence.json": "d3decb6a396971a581aba3de9f17f33c77ae3405a21f06547b07b58855907ba9",
+    "build/component-collections-native-check/profiler/40f8f81a996e4ad29371d7e92e6c24b7/evidence.json": "4ca7c9b3ec6bf15d6d95d43baf57c2516f5e5b46021515237407e898f8a2d358"
+  },
+  "limits": [
+    "Windows and Native AOT collection gameplay have not been qualified. Retained Native AOT ABI tests cover old scalar games only.",
+    "No rendered output, physical input, GUI presentation or performance benchmark; installed desktop package unchanged.",
+    "Buffers must be declared in the component game assembly; referenced-assembly reuse is unsupported.",
+    "Only five scalar element kinds, capacities1..31, aggregate512-byte component payload; no nested collections or global-state collections.",
+    "Scalar save upgrades reject mapped collection schemas; resizing/migration policy is unfinished.",
+    "Four project-contract tests requiring a real published artifact or installed runtime were explicitly skipped. Metadata-only artifacts were never executed."
+  ]
+}

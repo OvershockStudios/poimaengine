@@ -13,6 +13,7 @@ inline constexpr std::uint32_t call_version=1,call_bytes=80;
 inline constexpr std::uint32_t services_version=7,services_bytes=176;
 inline constexpr const char* baseline_feature="baseline_v7";
 inline constexpr const char* persistence_feature="gameplay_persistence_v1";
+inline constexpr const char* collections_feature="component_collections_v1";
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -26,7 +27,7 @@ struct Contract {
 };
 
 inline Contract available_contract() {
-    Contract result;result.features.push_back(persistence_feature);return result;
+    Contract result;result.features.push_back(persistence_feature);result.features.push_back(collections_feature);return result;
 }
 
 // Existing compiled bridges/modules require exactly 176 bytes. Current engine
@@ -60,7 +61,7 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(std::find(required.features.begin(),required.features.end(),baseline_feature)==required.features.end())return "Gameplay requirements must declare baseline_v7.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

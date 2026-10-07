@@ -1,8 +1,8 @@
 # Custom C# gameplay components
 
-Custom components attach typed gameplay data to entities. The native world owns that data; C# reads copies and queues writes through generated accessors. The Inspector and world service edit the same authored fields. This is an initial scalar component API; root-prop templates can supply components for runtime births.
+Custom components attach typed gameplay data to entities. The native world owns that data; C# reads copies and queues writes through generated accessors. The Inspector and world service edit the same authored fields. Scalar fields and development [bounded collections](COMPONENT_COLLECTIONS.md) use the same native ownership model; root-prop templates can supply components for runtime births.
 
-Use the matching engine, `Poima.Gameplay` SDK and managed bridge. The component API requires services ABI **7 (176 bytes)**; rebuild game assemblies and republish Native AOT artifacts. Call ABI remains 1. Existing worlds without custom schemas retain their version 1 format.
+Use the matching engine, `Poima.Gameplay` SDK and managed bridge. The component API requires services ABI **7 (176 bytes)**; new collection games require a matching SDK/generator/bridge and the `component_collections_v1` feature. Existing scalar ABI 7 artifacts retain their contract. Call ABI remains 1. Existing worlds without custom schemas retain their version 1 format.
 
 ## Declare a component
 
@@ -104,7 +104,7 @@ Saves with custom schemas use runtime snapshot version 2 and include component r
 
 ## Current bounds
 
-A world permits up to 64 component schemas, each with 1–32 scalar fields. Instances use canonical 16-byte cells per field, up to 512 bytes. The runtime permits 32,768 total instances and 16 MiB of payloads. A tick accepts up to 4,096 component writes and 2 MiB of staged data. The shared manifest limit is 512 KiB.
+A world permits up to 64 component schemas, each with 1–32 fields. Scalars use canonical 16-byte cells; collection fields add a 16-byte header plus capacity × 16 bytes. The total remains at most 512 bytes. The runtime permits 32,768 total instances and 16 MiB of payloads. A tick accepts up to 4,096 component writes and 2 MiB of staged data. The shared manifest limit is 512 KiB.
 
 Floating fields must be finite; wire padding is zero and negative zero normalizes to positive zero. JSON represents `long` as a canonical decimal string to retain all 64 bits. Components do not yet support strings, arrays, dictionaries, nested objects, inheritance or arbitrary managed references.
 

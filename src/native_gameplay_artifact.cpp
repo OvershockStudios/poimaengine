@@ -147,6 +147,11 @@ NativeGameplayArtifact load_native_gameplay_artifact(const std::string& filename
     if(spec.at("schema").contains("persistent"))
         check(std::find(result.requirements.features.begin(),result.requirements.features.end(),gameplay_abi::persistence_feature)!=result.requirements.features.end(),
               "Persistent gameplay schema requires gameplay_persistence_v1.");
+    if(spec.at("schema").contains("components"))
+        for(const auto& component:spec.at("schema").at("components"))
+            if(component.at("version")==2)
+                check(std::find(result.requirements.features.begin(),result.requirements.features.end(),gameplay_abi::collections_feature)!=result.requirements.features.end(),
+                      "Collection component schema requires component_collections_v1.");
     check(spec.at("schema").at("identity")==spec.at("identity"),"Native gameplay descriptor/schema identity differs.");
     const auto library=relative(spec.at("library")),descriptor_name=relative(text(path.filename()));
     check(spec.at("files").is_array() && !spec.at("files").empty() && spec.at("files").size()<=256,"Native gameplay inventory must contain 1..256 files.");

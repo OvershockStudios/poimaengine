@@ -112,6 +112,7 @@ ComponentMappingResult map_component_scalars(const std::string& source_schema,co
     const std::string& source_values,const std::string& plan_bytes,ComponentValueEncoding encoding) {
     require(encoding==ComponentValueEncoding::field_ids || encoding==ComponentValueEncoding::compact,"Unknown component value encoding.");
     const auto source=components::parse_schema(source_schema),target=components::parse_schema(target_schema);
+    require(source.version==1 && target.version==1,"Scalar save mapping does not support collection schemas.");
     require(source.id==target.id,"Component save mapping requires the same stable type ID.");
     const auto payload=components::parse_values(source,source_values,encoding==ComponentValueEncoding::compact);
     components::validate_payload(source,payload);

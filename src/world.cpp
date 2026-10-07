@@ -366,7 +366,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 38}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 39}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -396,7 +396,7 @@ Json describe() {
             "Camera requires 0.001 <= near < far <= 10000000 and an unscaled world transform.",
             "Box primitive is centered at the origin with unit side lengths; albedo is linear RGB.",
             "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",
-            "Custom scalar components use registered stable schemas and game:<type-id> keys; structural runtime membership is frozen. Prefabs and keep_world reparenting remain unsupported.",
+            "Custom components use registered stable scalar/collection schemas and game:<type-id> keys; collection capacities count toward the 512-byte component budget. Prefabs and keep_world reparenting remain unsupported.",
             "Simulation is optional; runtime.start freezes authored state at a revision.",
             "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; controller camera must be a direct child.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
@@ -560,11 +560,20 @@ Json describe() {
     const Json custom_key={{"type","string"},{"pattern","^game:[0-9a-f]{32}$"}};
     const Json stable_type={{"type","string"},{"pattern","^(?!0{32}$)[0-9a-f]{32}$"}};
     const Json scalar={{"anyOf",Json::array({Json{{"type","integer"}},Json{{"type","number"}},Json{{"type","string"}}})}};
-    const Json custom_values={{"type","object"},{"minProperties",1},{"maxProperties",32},{"propertyNames",id},{"additionalProperties",scalar}};
+    const Json value={{"anyOf",Json::array({scalar,Json{{"type","array"},{"maxItems",31},{"items",scalar}}})}};
+    const Json custom_values={{"type","object"},{"minProperties",1},{"maxProperties",32},{"propertyNames",id},{"additionalProperties",value}};
     const auto field=object_schema({{"id",stable_type},{"name",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"kind",{{"enum",{"int32","int64","float32","float64","entity"}}}},
         {"default",scalar},{"unit",{{"type","string"},{"maxLength",24}}}},{"id","name","kind","default"});
-    const auto schema=object_schema({{"id",stable_type},{"name",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"version",{{"const",1}}},
+    const auto scalar_schema=object_schema({{"id",stable_type},{"name",{{"type","string"},{"minLength",1},{"maxLength",64}}},{"version",{{"const",1}}},
         {"fingerprint",{{"type","string"},{"pattern","^[0-9a-f]{64}$"}}},{"fields",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",field}}}},{"id","name","version","fields"});
+    const auto array_field=object_schema({{"id",stable_type},{"name",{{"type","string"},{"minLength",1},{"maxLength",64}}},
+        {"kind",{{"const","array"}}},{"element_kind",{{"enum",{"int32","int64","float32","float64","entity"}}}},
+        {"capacity",{{"type","integer"},{"minimum",1},{"maximum",31}}},{"default",{{"type","array"},{"maxItems",0}}},
+        {"unit",{{"type","string"},{"maxLength",24}}}},{"id","name","kind","element_kind","capacity","default"});
+    auto collection_schema=scalar_schema;collection_schema["properties"]["version"]={{"const",2}};
+    collection_schema["properties"]["fields"]["items"]={{"oneOf",Json::array({field,array_field})}};
+    collection_schema["properties"]["fields"]["contains"]=array_field;
+    const Json schema={{"oneOf",Json::array({scalar_schema,collection_schema})}};
     const auto manifest=object_schema({{"format",{{"const","poima.components"}}},{"version",{{"const",1}}},{"schemas",{{"type","array"},{"maxItems",64},{"items",schema}}}},{"format","version","schemas"});
     methods["component.schemas"]=object_schema({{"id",stable_type}});
     methods["component.schema.import"]=object_schema({{"request_id",id},{"base_revision",rev},{"manifest",manifest}},{"request_id","base_revision","manifest"});

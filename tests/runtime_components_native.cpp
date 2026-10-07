@@ -426,8 +426,36 @@ void runtime_snapshots() {
     bad=d;bad.component_schemas[0].fields[0].initial[4]=std::byte{1};rejects([&]{Runtime candidate(bad);},"Direct runtime normalized malformed default padding silently.");
     bad=d;std::swap(bad.component_schemas[0].fields[0],bad.component_schemas[0].fields[1]);rejects([&]{Runtime candidate(bad);},"Direct runtime accepted ambiguous noncanonical field layout.");
 }
+void collection_reference_lifecycle() {
+    const Json declaration={{"id",id(100)},{"name","Inventory"},{"version",2},{"fields",Json::array({
+        {{"id",id(1)},{"name","Items"},{"kind","array"},{"element_kind","entity"},{"capacity",3},{"default",Json::array()}},
+        {{"id",id(2)},{"name","Owner"},{"kind","entity"},{"default",id(0)}}})}};
+    const auto schema=components::parse_schema(declaration.dump());
+    const auto payload=[&](Json items,const std::string& owner=id(0)) {
+        return components::parse_values(schema,Json{{id(1),std::move(items)},{id(2),owner}}.dump());
+    };
+    RuntimeDefinition d;d.world_id=id(99);d.component_schemas={schema};
+    for(unsigned i=1;i<=3;++i) {RuntimeEntityDefinition e;e.id=id(i);if(i==1)e.components[schema.id]=payload(Json::array({id(2),id(3)}));d.entities.push_back(std::move(e));}
+    Store owned(d);auto& store=*owned.store;const auto before=store.save();const auto descriptor=binding(schema);
+    const std::array<PoimaEntityId,1> removed{gameplay_id(id(3))};
+    store.begin_batch();rejects([&]{store.prepare_tick({},removed);},"Collection reference survived target deletion.");
+    rollback_no_alloc(store);check(store.save()==before,"Rejected collection deletion changed state.");
+    store.begin_batch();const auto repaired=payload(Json::array({id(2)}));store.stage(descriptor,gameplay_id(id(1)),repaired);
+    store.prepare_tick({},removed);store.publish_tick();check(!store.alive(gameplay_id(id(3))),"Collection repair failed to allow deletion.");
+    rollback_no_alloc(store);check(store.save()==before,"Collection repair and deletion failed rollback.");
+    // A scalar reference following the collection must use its real byte offset.
+    store.begin_batch();const auto scalar=payload(Json::array(),id(3));store.stage(descriptor,gameplay_id(id(1)),scalar);
+    rejects([&]{store.prepare_tick({},removed);},"Scalar reference after collection used the wrong offset.");rollback_no_alloc(store);
+    auto bad=payload(Json::array({id(999)}));store.begin_batch();store.stage(descriptor,gameplay_id(id(1)),bad);
+    rejects([&]{store.prepare_tick();},"Dangling collection item survived preparation.");rollback_no_alloc(store);
+    store.edit(schema.id,id(1),payload(Json::array({id(3),id(2),id(3)})));const auto full=store.save();
+    store.edit(schema.id,id(1),payload(Json::array()));store.load(full);check(store.save()==full,"Collection save/load lost order or duplicates.");
+    const std::string hash(64,'a');Runtime runtime(d);const auto snapshot=runtime.save_snapshot(hash);
+    check(Runtime::from_snapshot(d,hash,snapshot)->save_snapshot(hash)==snapshot,"Collection runtime snapshot changed.");
+}
+
 }
 int main() {
-    try { storage_and_journal();budgets();staging_allocation_failures();lifecycle_rollback_and_stability();candidate_references_and_guards();pending_births();pending_payload_budget();pending_reservation_guarantees();preparation_allocation_failures();lifecycle_budgets();runtime_snapshots();std::cout<<"Runtime components: storage/query/journal/lifecycle/pending-birth/fault-injection/budgets/snapshot tests passed.\n";return 0; }
+    try { collection_reference_lifecycle();storage_and_journal();budgets();staging_allocation_failures();lifecycle_rollback_and_stability();candidate_references_and_guards();pending_births();pending_payload_budget();pending_reservation_guarantees();preparation_allocation_failures();lifecycle_budgets();runtime_snapshots();std::cout<<"Runtime components: storage/query/journal/lifecycle/pending-birth/fault-injection/budgets/snapshot tests passed.\n";return 0; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

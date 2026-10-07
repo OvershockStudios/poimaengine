@@ -211,8 +211,65 @@ class GameplayProjects(unittest.TestCase):
         self.descriptor.write_text(json.dumps(declared));self.inspect()
         self.descriptor.write_text(json.dumps(good));self.inspect()
 
+    def collection_fixture(self):
+        descriptor = self.artifact_fixture()
+        descriptor.update(version=2, call_bytes=80, minimum_services_bytes=176,
+                          required_features=['baseline_v7', 'component_collections_v1'])
+        component = dict(id='00000000000000000000000000000061', name='Inventory', version=2,
+                         fields=[dict(id='00000000000000000000000000000062', name='Items',
+                                      kind='array', element_kind='int32', capacity=3, default=[])])
+        descriptor['schema']['components'] = [component]
+        # Register the real schema through authoring; fake library bytes remain
+        # metadata only and are never loaded into this or the bundled runtime.
+        world = self.project / self.spec['entry']['world']
+        request = dict(jsonrpc='2.0', id=1, method='world.transact', params=dict(
+            request_id=uuid.uuid4().hex, base_revision=1,
+            ops=[dict(op='component.schema.set', schema=component)]))
+        proc = subprocess.run([str(ARGS.binary.resolve()), 'world', native(world)],
+                              input=json.dumps(request)+'\n', capture_output=True, text=True,
+                              encoding='utf-8', timeout=120)
+        replies = [json.loads(line) for line in proc.stdout.splitlines()]
+        CALLS.append(dict(test=self.id(), requests=[request], responses=replies,
+                          exit_code=proc.returncode, stderr=proc.stderr))
+        self.assertEqual(proc.returncode, 0, proc.stderr)
+        self.assertEqual(len(replies), 1)
+        self.assertIn('result', replies[0], replies)
+        canonical = json.loads(world.read_text())['component_schemas'][component['id']]
+        descriptor['schema']['components'] = [canonical]
+        metadata = self.artifact / 'game.poima-components.json'
+        metadata.write_text(json.dumps(dict(format='poima.components', version=1, schemas=[canonical]))+'\n')
+        descriptor['files'].append(dict(path=metadata.name, size=metadata.stat().st_size,
+                                        sha256=digest(metadata), role='metadata'))
+        return descriptor
+
+    def test_collection_schema_requires_explicit_capability(self):
+        good = self.collection_fixture()
+        self.descriptor.write_text(json.dumps(good))
+        self.assertEqual(self.inspect()['gameplay']['requirements']['required_features'], good['required_features'])
+        for features in [['baseline_v7'], ['baseline_v7', 'gameplay_persistence_v1'],
+                         ['component_collections_v1'], ['baseline_v7', 'component_collections_v1', 'component_collections_v1']]:
+            with self.subTest(features=features):
+                candidate=copy.deepcopy(good);candidate['required_features']=features
+                self.descriptor.write_text(json.dumps(candidate));self.inspect(False)
+        legacy=copy.deepcopy(good);legacy['version']=1
+        for key in ['call_bytes', 'minimum_services_bytes', 'required_features']:legacy.pop(key)
+        self.descriptor.write_text(json.dumps(legacy));self.inspect(False)
+        self.descriptor.write_text(json.dumps(good));self.inspect()
+
+    def test_collection_feature_required_at_export_and_resealed_bundle_inspection(self):
+        self.check_feature_export(self.collection_fixture(), 'component_collections_v1')
+
+    def test_collection_content_without_gameplay_requires_runtime_feature(self):
+        self.collection_fixture()
+        self.spec.pop('gameplay');self.spec['version']=1;self.write()
+        self.inspect()
+        self.check_feature_export(None, 'component_collections_v1')
+
     def test_persistent_feature_required_at_export_and_resealed_bundle_inspection(self):
-        artifact=self.persistent_fixture();self.descriptor.write_text(json.dumps(artifact))
+        self.check_feature_export(self.persistent_fixture(), 'gameplay_persistence_v1')
+
+    def check_feature_export(self, artifact, feature):
+        if artifact is not None:self.descriptor.write_text(json.dumps(artifact))
         runtime=self.root/'Persistence runtime';(runtime/'bin').mkdir(parents=True)
         notices=runtime/'share/poima';notices.mkdir(parents=True)
         for name in ['LICENSE', 'THIRD_PARTY_NOTICES.md']:(notices/name).write_text('Metadata fixture only.')
@@ -221,8 +278,8 @@ class GameplayProjects(unittest.TestCase):
         spec=dict(format='poima.runtime', version=1, engine_version=self.version,
                   target_os=self.target, target_arch='x86_64', executable=executable,
                   gameplay_services_version=7, gameplay_call_version=1, gameplay_call_bytes=80,
-                  gameplay_services_bytes=176, gameplay_features=['baseline_v7', 'gameplay_persistence_v1'],
-                  features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=True))
+                  gameplay_services_bytes=176, gameplay_features=['baseline_v7', feature],
+                  features=dict(simulation=True, renderer=True, audio=False, managed=False, editor=False, native_gameplay=artifact is not None))
         path=runtime/'runtime.json';path.write_text(json.dumps(spec));bundle=self.root/'Persistence bundle'
         self.cli('project','build',native(self.manifest),'--runtime',native(runtime),'--output',native(bundle))
         self.cli('game','inspect',native(bundle/'game.json'));game=json.loads((bundle/'game.json').read_text())
@@ -235,6 +292,7 @@ class GameplayProjects(unittest.TestCase):
             resealed=copy.deepcopy(game);row=next(row for row in resealed['files'] if row['path']=='runtime/runtime.json')
             row.update(size=bundled.stat().st_size,sha256=digest(bundled));(bundle/'game.json').write_text(json.dumps(resealed))
             before=tree(bundle);self.cli('game','inspect',native(bundle/'game.json'),success=False);self.assertEqual(tree(bundle),before)
+        if artifact is None:return  # Content alone already exercised both compatibility gates.
         # Missing descriptor requirements cannot be hidden by resealing inventory.
         (bundle/'runtime/runtime.json').write_text(json.dumps(spec))
         # Bundle layout is defined by the manifest, not the source project path.

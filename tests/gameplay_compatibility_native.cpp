@@ -48,6 +48,11 @@ void policy() {
     }
     auto changed=baseline;changed.features.push_back("unimplemented_tail");check(!compatibility_error(changed,extended).empty(),"Unknown required feature accepted.");
     changed=baseline;changed.features.push_back(baseline_feature);check(!compatibility_error(changed,baseline).empty(),"Duplicate feature accepted.");
+    auto collections=baseline;collections.features.push_back(collections_feature);
+    check(!compatibility_error(collections,baseline).empty(),"Collection game accepted by scalar-only runtime.");
+    check(compatibility_error(collections,available_contract()).empty(),"Collection game rejected by capable runtime.");
+    check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
+    check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");

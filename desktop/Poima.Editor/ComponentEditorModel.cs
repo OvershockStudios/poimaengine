@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Poima.Editor;
@@ -14,6 +15,7 @@ public static class ComponentFields
         var kind = field["kind"]!.GetValue<string>();
         switch (kind)
         {
+            case "array": return ParseArray(field, text);
             case "int32": if (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var i)) return JsonValue.Create(i)!; break;
             case "int64": if (long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var l)) return JsonValue.Create(l.ToString(CultureInfo.InvariantCulture))!; break;
             case "float32": if (float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) && float.IsFinite(f)) return JsonValue.Create(f == 0 ? 0f : f)!; break;
@@ -21,6 +23,49 @@ public static class ComponentFields
             case "entity": if (text.Length == 32 && text.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f')) return JsonValue.Create(text)!; break;
         }
         throw new InvalidOperationException($"{field["name"]} must be a valid {kind}. Floating values must be finite.");
+    }
+    private static JsonArray ParseArray(JsonObject field, string text)
+    {
+        const string invalid = "Array values require bounded JSON with the declared scalar element kind.";
+        try
+        {
+            if (text.Length > 16 * 1024 || field["capacity"] is not JsonValue capacityValue ||
+                !capacityValue.TryGetValue<int>(out var capacity) || capacity is < 1 or > 31)
+                throw new InvalidOperationException(invalid);
+            var kind = field["element_kind"]?.GetValue<string>();
+            if (kind is not ("int32" or "int64" or "float32" or "float64" or "entity"))
+                throw new InvalidOperationException(invalid);
+            using var document = JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 2 });
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() > capacity)
+                throw new InvalidOperationException(invalid);
+            var result = new JsonArray();
+            foreach (var item in root.EnumerateArray())
+            {
+                switch (kind)
+                {
+                    case "int32" when item.ValueKind == JsonValueKind.Number && item.TryGetInt32(out var integer):
+                        result.Add(integer); break;
+                    case "int64" when item.ValueKind == JsonValueKind.String:
+                        var decimalText = item.GetString()!;
+                        if (!long.TryParse(decimalText, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var wide) ||
+                            wide.ToString(CultureInfo.InvariantCulture) != decimalText) throw new InvalidOperationException(invalid);
+                        result.Add(decimalText); break;
+                    case "float32" when item.ValueKind == JsonValueKind.Number && item.TryGetSingle(out var single) && float.IsFinite(single):
+                        result.Add(single == 0 ? 0f : single); break;
+                    case "float64" when item.ValueKind == JsonValueKind.Number && item.TryGetDouble(out var number) && double.IsFinite(number):
+                        result.Add(number == 0 ? 0d : number); break;
+                    case "entity" when item.ValueKind == JsonValueKind.String:
+                        var entity = item.GetString()!;
+                        if (entity.Length != 32 || !entity.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f'))
+                            throw new InvalidOperationException(invalid);
+                        result.Add(entity); break;
+                    default: throw new InvalidOperationException(invalid);
+                }
+            }
+            return result;
+        }
+        catch (JsonException error) { throw new InvalidOperationException(invalid, error); }
     }
     public static JsonObject Defaults(JsonObject schema)
     {

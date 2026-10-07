@@ -49,8 +49,14 @@ RuntimeComponents::RuntimeComponents(entt::registry& registry,const std::map<std
         while(registry.storage(pool_id)) { check(pool_id!=std::numeric_limits<entt::id_type>::max(),"Component pool identity space exhausted.");++pool_id; }
         rows.push_back(std::make_shared<Rows>());
         types_.push_back({gameplay_id(schemas_[i].id),i,&registry.storage<Cell>(pool_id),rows.back(),{}, {}});++pool_id;
-        for(std::size_t field=0;field<schemas_[i].fields.size();++field)
-            if(schemas_[i].fields[field].kind==components::Kind::entity)types_.back().entity_offsets.push_back(field*components::cell_bytes);
+        for(const auto& field:schemas_[i].fields) {
+            if(field.kind==components::Kind::entity)types_.back().entity_offsets.push_back(field.offset);
+            else if(field.kind==components::Kind::array && field.element_kind==components::Kind::entity)
+                for(std::size_t element=0;element<field.capacity;++element)
+                    types_.back().entity_offsets.push_back(field.offset+components::cell_bytes*(element+1));
+        }
+        // Full wire validation requires inactive collection cells to be zero,
+        // so this fixed list safely validates all capacity slots after staging.
     }
     for(const auto& entity:definition.entities)for(const auto& [id,payload]:entity.components) {
         const auto& t=type(parse_id(id));const auto index=t.schema;
