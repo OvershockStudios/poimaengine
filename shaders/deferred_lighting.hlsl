@@ -3,6 +3,9 @@
 Texture2D<float4> material_buffer : register(t0);
 Texture2D<float4> surface_buffer : register(t1);
 Texture2D<float4> correspondence_buffer : register(t2);
+#if POIMA_AMBIENT_OCCLUSION
+Texture2D<float> indirect_visibility : register(t4);
+#endif
 Texture2D<float> scene_depth : register(t3);
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> scene_hdr : register(u0);
 [[vk::image_format("rgba16f")]] RWTexture2D<float4> shading_normal : register(u1);
@@ -37,7 +40,11 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     const float2 ndc=float2(uv.x*2-1,1-uv.y*2);
     const float3 ray=temporal_forward.xyz+ndc.x*temporal_right.xyz*temporal_right.w+ndc.y*temporal_up.xyz*temporal_up.w;
     const float3 world=camera.xyz+ray*view_z;
-    scene_hdr[id.xy]=float4(shade_surface(material,world,pixel),1);
+    float visibility=1;
+#if POIMA_AMBIENT_OCCLUSION
+    visibility=indirect_visibility.Load(int3(id.xy,0));
+#endif
+    scene_hdr[id.xy]=float4(shade_surface(material,world,pixel,visibility),1);
     shading_normal[id.xy]=float4(material.normal,normal_is_valid ? 1 : 0);
     surface_motion[id.xy]=correspondence.xy;motion_valid[id.xy]=normal_is_valid && (flags&4u)!=0 ? 1 : 0;
 }

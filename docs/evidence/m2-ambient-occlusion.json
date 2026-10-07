@@ -1,0 +1,99 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Optional spatial GTAO integration on Windows Vulkan",
+  "qualification": {
+    "linux_api_and_schedule": true,
+    "windows_compilation": true,
+    "gpu_basic": true,
+    "gpu_api": true,
+    "gpu_reconstruction": true,
+    "gpu_ui": true,
+    "default_saved_reference_comparison": true,
+    "general_visual_quality": false,
+    "temporal_quality": false,
+    "performance": false,
+    "installed_desktop_activation": false
+  },
+  "devices": [
+    "AMD Radeon(TM) Graphics",
+    "NVIDIA GeForce RTX 4070 Laptop GPU"
+  ],
+  "validation": {
+    "layer": "VK_LAYER_KHRONOS_validation",
+    "synchronization_validation": true,
+    "errors_or_warnings_in_accepted_runs": 0
+  },
+  "captures_per_device": {
+    "basic": 12,
+    "api": 21,
+    "reconstruction": 100,
+    "ui": 50,
+    "default_reference": 16
+  },
+  "checks": [
+    "Flat-plane visibility and corner occlusion; ambient radiance scales with visibility while direct/emission remain unchanged.",
+    "Defaults, quality/radius, sloped geometry, normal-map independence, background and exposure-independent debug.",
+    "Reconstruction extents, resize/history resets, planar visibility, independent views and four FSR modes.",
+    "Occluded geometry under UI; full-image UI comparisons with matching AO-disabled modes/exposures.",
+    "Default forward renderer matches 16 saved reference captures per device exactly."
+  ],
+  "corrections_found_on_hardware": [
+    "Distance falloff toward the back-view horizon erased sampled wall occlusion. Falloff now references the projected geometric hemisphere for front-facing normals, retaining a full-interval fallback for rear-facing normals.",
+    "Test-created native objects had uninitialized preview albedo. Both affected fixtures now initialize it explicitly."
+  ],
+  "limits": [
+    "Screen-space, spatial-only estimator; no hidden/offscreen geometry or AO temporal history.",
+    "Fixtures establish bounded integration correctness, not game-scale performance or general visual quality.",
+    "Logical AO storage is 4 bytes per internal pixel, excluding allocation/driver overhead."
+  ],
+  "source_sha256": {
+    "shaders/ambient_occlusion.hlsl": "0a7c542e6aa06d267eb45c963fdfcb8d0c56647d0c2bfeb60b81c4f9ffa6ca85",
+    "shaders/ambient_occlusion_filter.hlsl": "ba6681a39e2d5bc1c3ded5e6cf00ddeb1e4cbb9ec24f6fdeaee65996ce6a9eed",
+    "shaders/deferred_lighting.hlsl": "e54c373ce1024bdd7b1d75d113203f8d67a72889d03662ffab5489aff69c1bcd",
+    "shaders/scene_surface.hlsli": "b488aab18ef82175cebb03e273dd1c64c54a14851d2b423f4ad6586e859b70fb",
+    "shaders/scene_output.hlsl": "ef311bc843f42903f4495e8a4dfe70af31c738d4c1eaae3e0d1ffbb67ea26959",
+    "src/render_smoke.cpp": "5a55d2b305bb4899597c960d77de6628be8e6ccb667bb74922b7227ddc5a4e17",
+    "src/world.cpp": "8d83d2e0930dcb592abbbbc417b160dd423688cc661c35f280f55df1b4ad24e5",
+    "include/poima/core.hpp": "834d7c62e2d340cd7663224b9817104ac1da2aa1aea99a9a461b27167c24551f",
+    "include/poima/render_schedule.hpp": "b43e83a28c2b232cc526910f7fff4fb75b98a1a9dd96c1a57ad3c56ce3e157e9",
+    "tests/ambient_occlusion_native.cpp": "0448ff588f380be934ee52f5958a636da7ac3be7d60801b387649240e114aa90",
+    "tests/ambient_occlusion_capture.py": "2bf8bb429b67758eea081883a9bfda08e30eb3ea9f8f1208befe72a0dc693411",
+    "tests/reconstruction_native.cpp": "23f734a28d7650078d3f8a31583c4504bc8cf87f66431f88cd9c72790c8d4f28",
+    "tests/ui_capture_native.cpp": "5051aed020e9fc02e807dab0cc8ff7bacb8f234c639b11286d488871ac35a388",
+    "tests/reconstruction_ui_capture.py": "24cd59f11f3b4bcf9df03ddba989d04457ad2ecc919c55c530e5f11c52fd83d7"
+  },
+  "binary_sha256": {
+    "poima.exe": "05df699312413b72965b632800113562bdf074770f2132a75eb0ab7992fd8bf6",
+    "poima-ambient-occlusion-test.exe": "e92b6a0cac4dd1611c63747aca938c2cf65f903d7df2cd73e539f01734dcc4ba",
+    "poima-reconstruction-test.exe": "e4bc48d3d4e9df63795c73ebfd6d1982f6f14649a6c751ae827d434895982af1",
+    "poima-ui-capture-test.exe": "3c3d65b9cdcfdfcfa41b86cc6b26da1668000c5818c9a78ed6b369fc7ec9b156"
+  },
+  "evidence": {
+    "basic": {
+      "path": "build/ambient-occlusion-basic-gpu/937da557604d4433bad6f485e02e0f16/evidence.json",
+      "sha256": "d2cf6516a53faf65b8a79d46c51c694cfec97b941ec5ec1f78d646d7754f5d9a"
+    },
+    "api": {
+      "path": "build/ambient-occlusion-api-gpu/eec3e98033b74b67b4db0cd761c973eb/evidence.json",
+      "sha256": "407ceecc034e0ee4b47144a292a52cc0ecd8c34ee3b4465e101efbddab81350e"
+    },
+    "reconstruction": {
+      "path": "build/ambient-occlusion-fsr-gpu/45e46639aa8346c4aa210752d07f1f70/evidence.json",
+      "sha256": "dbfcd35d15f653db50f50fbb3144c9bd4837eec64ac69681b433d4faa2c6554e"
+    },
+    "ui": {
+      "path": "build/ambient-occlusion-ui-gpu/b8e1d80dd6e94066acaaab0cfc849342/evidence.json",
+      "sha256": "3b133fc6b2d7aee81cd27a6bd2d6f9545ff336997326eb8deca88b2b09c3b399"
+    },
+    "default_reference": {
+      "path": "build/deferred-forward-saved-regressions/ba98bd202c814c67bb3a3815d6ea6019/evidence.json",
+      "sha256": "8f52b260d8ed08bb82dcb51ae7c8b41c3864cf8aafc4b54dde4613ce31fb8d4d"
+    }
+  },
+  "linux_contracts": {
+    "groups": 10,
+    "passed": 10,
+    "seconds": 21.08,
+    "log_sha256": "af5898762c2f2d90b19c08226750aeedd5de9cfddcb77b27158858139c395304"
+  }
+}

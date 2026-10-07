@@ -41,7 +41,7 @@ struct DoctorOptions {
     bool require_hardware = false;
 };
 
-enum class SceneDebugView : std::uint32_t { color, depth, shading_normal, motion, motion_validity };
+enum class SceneDebugView : std::uint32_t { color, depth, shading_normal, motion, motion_validity, ambient_occlusion };
 constexpr std::string_view scene_debug_view_name(SceneDebugView view) {
     switch(view) {
     case SceneDebugView::color: return "color";
@@ -49,9 +49,30 @@ constexpr std::string_view scene_debug_view_name(SceneDebugView view) {
     case SceneDebugView::shading_normal: return "shading_normal";
     case SceneDebugView::motion: return "motion";
     case SceneDebugView::motion_validity: return "motion_validity";
+    case SceneDebugView::ambient_occlusion: return "ambient_occlusion";
     }
     return "invalid";
 }
+
+enum class AmbientOcclusionMode : std::uint32_t { none, gtao };
+enum class AmbientOcclusionQuality : std::uint32_t { low, medium, high };
+constexpr std::string_view ambient_occlusion_mode_name(AmbientOcclusionMode mode) {
+    switch(mode) { case AmbientOcclusionMode::none: return "none"; case AmbientOcclusionMode::gtao: return "gtao"; }
+    return "invalid";
+}
+constexpr std::string_view ambient_occlusion_quality_name(AmbientOcclusionQuality quality) {
+    switch(quality) {
+    case AmbientOcclusionQuality::low: return "low";
+    case AmbientOcclusionQuality::medium: return "medium";
+    case AmbientOcclusionQuality::high: return "high";
+    }
+    return "invalid";
+}
+struct AmbientOcclusionOptions {
+    AmbientOcclusionMode mode=AmbientOcclusionMode::none;
+    AmbientOcclusionQuality quality=AmbientOcclusionQuality::medium;
+    float radius=1;
+};
 
 enum class ReconstructionMode : std::uint32_t { none, fsr3_native, fsr3_quality, fsr3_balanced, fsr3_performance };
 constexpr std::string_view reconstruction_mode_name(ReconstructionMode mode) {
@@ -77,6 +98,7 @@ struct Fsr3HistorySample {
 struct SceneProductSample {
     std::uint32_t x=0,y=0;
     float depth=1;
+    float raw_ambient_visibility=1,ambient_visibility=1;
     std::array<float,3> shading_normal{};
     std::array<float,2> motion{};
     bool surface_valid=false,motion_valid=false;
@@ -94,6 +116,7 @@ struct RenderOptions {
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
     bool deferred = false; // Single-sample opaque material/lighting split.
+    AmbientOcclusionOptions ambient_occlusion;
     SceneDebugView scene_debug_view = SceneDebugView::color;
     ReconstructionMode reconstruction = ReconstructionMode::none;
     std::vector<SceneProductProbe> scene_product_probes; // At most 64; sampled only by captures at one sample.
@@ -148,6 +171,9 @@ struct RenderDiagnostics {
     bool deferred=false;
     std::uint64_t deferred_buffer_bytes=0;
     TimingSummary deferred_lighting_gpu;
+    AmbientOcclusionOptions ambient_occlusion;
+    std::uint64_t ambient_occlusion_buffer_bytes=0;
+    TimingSummary ambient_occlusion_gpu,ambient_occlusion_filter_gpu;
     ReconstructionDiagnostics reconstruction;
     SceneProductsDiagnostics scene_products;
     bool culling=true,profile_requested=false,gpu_timestamps=false;

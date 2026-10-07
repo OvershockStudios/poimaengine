@@ -13,7 +13,7 @@ namespace poima::render_schedule {
 using ResourceId=std::uint32_t;
 inline constexpr ResourceId none=std::numeric_limits<ResourceId>::max();
 enum class Kind { buffer,texture };
-enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint,rgba32_float };
+enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint,rgba32_float,r16_float };
 enum class Lifetime { imported,shared,history,slot,capture,swapchain };
 // Prefix describes the used prefix, not the larger physical allocation.
 // Cluster members are only the entries selected by the accompanying count buffer.
@@ -23,12 +23,14 @@ enum class Region { whole,prefix,cluster_members,probe_pixels };
 enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,deferred_lighting,resolve,temporal_inputs,reconstruction,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,ambient_occlusion,ambient_occlusion_filter,deferred_lighting,resolve,temporal_inputs,reconstruction,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
     case PassId::shadows:return "render.pass.shadows";case PassId::scene_clear:return "render.pass.scene_clear";
     case PassId::sky:return "render.pass.sky";case PassId::opaque:return "render.pass.opaque";
+    case PassId::ambient_occlusion:return "render.pass.ambient_occlusion";
+    case PassId::ambient_occlusion_filter:return "render.pass.ambient_occlusion_filter";
     case PassId::deferred_lighting:return "render.pass.deferred_lighting";
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::resolve:return "render.pass.resolve";case PassId::output:return "render.pass.output";
@@ -62,6 +64,7 @@ struct FrameResources {
     std::vector<Resource> resources;
     ResourceId swapchain=none,color=none,depth=none,normal=none,motion=none,motion_valid=none,hdr=none,output=none,frame=none,objects=none,lights=none;
     ResourceId material_base=none,material_surface=none,material_correspondence=none;
+    ResourceId ao_raw=none,ao_filtered=none,ao_constants=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
@@ -72,7 +75,7 @@ struct FrameResources {
     std::vector<DrawInputs> camera_draws,shadow_draws;
 };
 struct Settings {
-    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false;
+    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false,ambient_occlusion=false;
     std::uint32_t slot=0,image=0;
     std::uint64_t history_sequence=0;
 };
@@ -125,6 +128,21 @@ struct Schedule {
                 if(r.samples!=1 || r.width!=hdr.width || r.height!=hdr.height)fail("deferred output extent mismatch");
             }
         }
+        if(settings.ambient_occlusion) {
+            if(!settings.deferred || !settings.scene || !settings.products || resource(frame.hdr).samples!=1)fail("ambient occlusion requires single-sample deferred scene products");
+            required(frame.ao_raw);required(frame.ao_filtered);required(frame.ao_constants);
+            std::unordered_set<ResourceId> distinct={frame.hdr,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.shadow,frame.swapchain,frame.material_base,frame.material_surface,frame.material_correspondence,
+                frame.reconstructed,frame.dense_motion,frame.reactive,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth,frame.frame,frame.objects,frame.lights,frame.counts,frame.indices,frame.cluster_readback,frame.skin_errors,frame.skin_readback,frame.capture,frame.game_vertices,frame.game_indices,frame.overlay_vertices,frame.editor_vertices,frame.editor_indices};
+            for(const auto& skin:frame.skins)for(auto id:{skin.source,skin.influences,skin.palette,skin.output})distinct.insert(id);
+            for(const auto* draws:{&frame.camera_draws,&frame.shadow_draws})for(const auto& draw:*draws) {distinct.insert(draw.vertices);distinct.insert(draw.indices);distinct.insert(draw.previous_vertices);for(auto id:draw.textures)distinct.insert(id);}
+            const auto& hdr=resource(frame.hdr);
+            for(auto id:{frame.ao_raw,frame.ao_filtered}) {
+                const auto& r=resource(id);
+                if(!distinct.insert(id).second || r.kind!=Kind::texture || r.format!=Format::r16_float || r.samples!=1 || r.width!=hdr.width || r.height!=hdr.height || !(r.supported&use_bit(Use::sampled)) || !(r.supported&use_bit(Use::image_write)))fail("invalid ambient occlusion target");
+            }
+            const auto& constants=resource(frame.ao_constants);
+            if(!distinct.insert(frame.ao_constants).second || constants.kind!=Kind::buffer || !(constants.supported&use_bit(Use::constant)) || !(constants.supported&use_bit(Use::upload)))fail("invalid ambient occlusion constants");
+        }
         if(settings.reconstruction) {
             if(!settings.products || settings.products_debug)fail("reconstruction requires color scene products");
             if(resource(frame.hdr).format!=Format::rgba16_float)fail("reconstruction requires HDR radiance");
@@ -146,8 +164,8 @@ struct Schedule {
         for(const auto* list:{&frame.camera_draws,&frame.shadow_draws})for(const auto& d:*list)required(d.vertices);
         if(settings.products)for(const auto& d:frame.camera_draws)required(d.previous_vertices);
         if(!frame.probe_points.empty()) {
-            if(!settings.capture || !settings.products || frame.probe_points.size()>64 || (frame.probe_copies.size()!=4 && frame.probe_copies.size()!=6))fail("product probes require a bounded single-sample capture");
-            const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,frame.reconstructed!=none ? frame.reconstructed : frame.hdr};
+            if(!settings.capture || !settings.products || frame.probe_points.size()>64 || (frame.probe_copies.size()!=4 && frame.probe_copies.size()!=6 && !(settings.ambient_occlusion && frame.probe_copies.size()==8)))fail("product probes require a bounded single-sample capture");
+            const ResourceId sources[]={frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.hdr,frame.reconstructed!=none ? frame.reconstructed : frame.hdr,frame.ao_raw,frame.ao_filtered};
             for(std::size_t i=0;i<frame.probe_copies.size();++i) {
                 const auto& copy=frame.probe_copies[i];required(copy.destination);
                 if(copy.source!=sources[i])fail("product probe source role mismatch");
@@ -168,7 +186,7 @@ struct Schedule {
             if(r.lifetime==Lifetime::swapchain && !before_acquire && r.owner!=settings.image)fail("wrong swapchain image");
             initialized.push_back(r.initialized);
         }
-        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false;unsigned previous=0;bool first=true;
+        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false,ao_generated=false,ao_filtered=false;unsigned previous=0;bool first=true;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
@@ -182,8 +200,21 @@ struct Schedule {
                 if(!has(frame.depth,Use::depth))fail("missing deferred depth output");
                 for(const auto& a:pass.accesses)if(a.resource==frame.normal || a.resource==frame.motion || a.resource==frame.motion_valid)fail("deferred raster must not write final products");
             }
+            if(settings.ambient_occlusion && pass.id==PassId::skinning && !has(frame.ao_constants,Use::upload))fail("missing ambient occlusion constants upload");
+            if(pass.id==PassId::ambient_occlusion || pass.id==PassId::ambient_occlusion_filter) {
+                const bool filter=pass.id==PassId::ambient_occlusion_filter;
+                if(!settings.ambient_occlusion || !deferred_opaque || (filter && !ao_generated))fail("unexpected or premature ambient occlusion pass");
+                for(auto id:{frame.depth,frame.material_surface,frame.material_correspondence})if(!has(id,Use::sampled))fail("missing ambient occlusion surface input");
+                if(!has(frame.frame,Use::constant) || !has(frame.ao_constants,Use::constant))fail("missing ambient occlusion constants");
+                if(filter && !has(frame.ao_raw,Use::sampled))fail("missing ambient occlusion filter input");
+                if(!has(filter ? frame.ao_filtered : frame.ao_raw,Use::image_write))fail("missing ambient occlusion output");
+                std::unordered_set<ResourceId> accessed;
+                for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("ambient occlusion resource has conflicting duplicate accesses");
+                if(filter)ao_filtered=true;else ao_generated=true;
+            }
             if(pass.id==PassId::deferred_lighting) {
                 if(!settings.deferred || !deferred_opaque)fail("unexpected or premature deferred lighting");
+                if(settings.ambient_occlusion && (!ao_filtered || !has(frame.ao_filtered,Use::sampled)))fail("deferred lighting requires filtered ambient occlusion");
                 for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence,frame.depth,frame.shadow})if(!has(id,Use::sampled))fail("missing deferred lighting input");
                 if(!has(frame.frame,Use::constant) || (frame.lights!=none && !has(frame.lights,Use::storage_read)) || !has(frame.hdr,Use::image_read_write))fail("missing deferred lighting state");
                 if(settings.clustered && (!has(frame.counts,Use::storage_read) || !has(frame.indices,Use::storage_read)))fail("missing deferred cluster inputs");
@@ -206,6 +237,7 @@ struct Schedule {
                 for(const auto id:{frame.reconstructed,frame.dilated_depth,frame.dilated_motion,frame.reconstructed_depth})if(!has(id,Use::image_write))fail("missing reconstruction output");
                 reconstructed=true;
             }
+            if(pass.id==PassId::output && settings.ambient_occlusion && settings.products_debug && !has(frame.ao_filtered,Use::sampled))fail("missing ambient occlusion diagnostic input");
             if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(frame.reconstructed,Use::sampled)))fail("display precedes reconstruction");
             if(settings.products) {
                 if(pass.id==PassId::scene_clear && (!has(frame.normal,Use::clear_color) || !has(frame.motion,Use::clear_color) || !has(frame.motion_valid,Use::clear_color)))fail("missing normal validity clear");
@@ -269,6 +301,7 @@ struct Schedule {
                 if(pass.id==PassId::capture)captured=true;
             }
         }
+        if(settings.ambient_occlusion && (!ao_generated || !ao_filtered))fail("missing ambient occlusion passes");
         if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(!exported)fail("missing presentation export");
@@ -288,6 +321,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
     };
     auto& skin=pass(PassId::skinning);
     if(settings.scene) {add(skin,f.frame,Use::upload,true);add(skin,f.objects,Use::upload,true);}
+    if(settings.ambient_occlusion)add(skin,f.ao_constants,Use::upload,true);
     if(!f.skins.empty()) {
         add(skin,f.skin_errors,Use::storage_write,true);
         for(const auto& s:f.skins) {add(skin,s.palette,Use::upload,true);add(skin,s.source,Use::storage_read);add(skin,s.influences,Use::storage_read);add(skin,s.palette,Use::storage_read);add(skin,s.output,Use::storage_write,true);}
@@ -308,7 +342,17 @@ inline Schedule build(FrameResources frame,Settings settings) {
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.deferred) {
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);
+        if(settings.ambient_occlusion) {
+            for(auto id:{PassId::ambient_occlusion,PassId::ambient_occlusion_filter}) {
+                auto& ao=pass(id);
+                for(auto input:{f.depth,f.material_surface,f.material_correspondence})add(ao,input,Use::sampled);
+                add(ao,f.frame,Use::constant);add(ao,f.ao_constants,Use::constant);
+                if(id==PassId::ambient_occlusion_filter)add(ao,f.ao_raw,Use::sampled);
+                add(ao,id==PassId::ambient_occlusion_filter ? f.ao_filtered : f.ao_raw,Use::image_write,true);
+            }
+        }
         auto& lighting=pass(PassId::deferred_lighting);
+        if(settings.ambient_occlusion)add(lighting,f.ao_filtered,Use::sampled);
         for(auto id:{f.material_base,f.material_surface,f.material_correspondence,f.depth,f.shadow})add(lighting,id,Use::sampled);
         add(lighting,f.frame,Use::constant);add(lighting,f.lights,Use::storage_read);
         if(settings.clustered) {add(lighting,f.counts,Use::storage_read);add(lighting,f.indices,Use::storage_read);}
@@ -324,7 +368,7 @@ inline Schedule build(FrameResources frame,Settings settings) {
         for(auto id:{f.hdr,f.depth,f.dense_motion,f.reactive})add(reconstruct,id,Use::sampled);
         for(auto id:{f.reconstructed,f.dilated_depth,f.dilated_motion,f.reconstructed_depth})add(reconstruct,id,Use::image_write,true);
     }
-    if(settings.scene) {auto& output=pass(PassId::output);add(output,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
+    if(settings.scene) {auto& output=pass(PassId::output);add(output,settings.reconstruction ? f.reconstructed : f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);add(output,f.motion,Use::sampled);add(output,f.motion_valid,Use::sampled);if(settings.ambient_occlusion)add(output,f.ao_filtered,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
     if(settings.game_ui) {auto& ui=pass(PassId::game_ui);add(ui,f.game_vertices,Use::upload,true);add(ui,f.game_indices,Use::upload,true);add(ui,f.game_vertices,Use::vertex);add(ui,f.game_indices,Use::index);for(auto t:f.game_textures)add(ui,t,Use::sampled);add(ui,f.output,Use::color);}
     if(settings.overlay) {auto& overlay=pass(PassId::overlay);add(overlay,f.overlay_vertices,Use::upload,true);add(overlay,f.overlay_vertices,Use::vertex);add(overlay,f.swapchain,Use::color);}
     if(settings.editor) {

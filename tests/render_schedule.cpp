@@ -31,6 +31,11 @@ struct Fixture {
                 f.material_surface=add(Kind::texture,Lifetime::shared);f.resources[f.material_surface].format=Format::rgba16_float;
                 f.material_correspondence=add(Kind::texture,Lifetime::shared);f.resources[f.material_correspondence].format=Format::rgba32_float;
             }
+            if(s.ambient_occlusion) {
+                f.ao_raw=add(Kind::texture,Lifetime::shared);f.resources[f.ao_raw].format=Format::r16_float;
+                f.ao_filtered=add(Kind::texture,Lifetime::shared);f.resources[f.ao_filtered].format=Format::r16_float;
+                f.ao_constants=add(Kind::buffer,Lifetime::shared);
+            }
             f.frame=add(Kind::buffer,Lifetime::shared);f.objects=add(Kind::buffer,Lifetime::shared);
             f.lights=add(Kind::buffer,Lifetime::shared);f.shadow=add(Kind::texture,Lifetime::shared);
             const auto material=add(Kind::texture,Lifetime::imported,true);
@@ -330,5 +335,80 @@ void deferred_contracts(){
     rejects("temporal preparation without deferred lighting",[&]{upscale.validate();});
 }
 
+void ambient_occlusion_contracts(){
+    for(bool debug:{false,true})for(bool sky:{false,true})for(bool skin:{false,true})for(bool clustered:{false,true}) {
+        auto settings=rich();settings.products=settings.deferred=settings.ambient_occlusion=true;
+        settings.products_debug=debug;settings.sky=sky;settings.clustered=clustered;
+        auto p=Fixture(settings,1,skin).plan();p.validate();++accepted;
+        std::vector<PassId> sequence;
+        p.execute([&](const Pass& work,const Schedule&){sequence.push_back(work.id);});
+        auto position=[&](PassId id){return std::find(sequence.begin(),sequence.end(),id)-sequence.begin();};
+        check(position(PassId::opaque)<position(PassId::ambient_occlusion) && position(PassId::ambient_occlusion)<position(PassId::ambient_occlusion_filter) && position(PassId::ambient_occlusion_filter)<position(PassId::deferred_lighting),"AO producers not ordered before lighting");
+        const auto& output=pass(p,PassId::output).accesses;
+        check(std::any_of(output.begin(),output.end(),[&](const Access& a){return a.resource==p.frame.ao_filtered && a.use==Use::sampled;})==debug,"AO debug output contract differs");
+    }
+    auto settings=rich();settings.products=settings.deferred=settings.ambient_occlusion=settings.products_debug=true;
+    Fixture fixture(settings,1,true);const auto original=fixture.plan();const auto& f=fixture.f;
+    auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
+    bad("AO requires deferred",[](auto& p){p.settings.deferred=false;});
+    bad("AO requires scene",[](auto& p){p.settings.scene=false;});
+    bad("AO requires products",[](auto& p){p.settings.products=false;});
+    bad("unexpected AO passes",[](auto& p){p.settings.ambient_occlusion=false;});
+    bad("AO multisampled",[](auto& p){p.frame.resources[p.frame.hdr].samples=4;});
+    bad("AO constants upload omitted",[&](auto& p){erase_access(p,PassId::skinning,f.ao_constants,Use::upload);});
+    bad("AO lighting input omitted",[&](auto& p){erase_access(p,PassId::deferred_lighting,f.ao_filtered,Use::sampled);});
+    bad("AO debug input omitted",[&](auto& p){erase_access(p,PassId::output,f.ao_filtered,Use::sampled);});
+    bad("AO filter input omitted",[&](auto& p){erase_access(p,PassId::ambient_occlusion_filter,f.ao_raw,Use::sampled);});
+    for(auto id:{PassId::ambient_occlusion,PassId::ambient_occlusion_filter}) {
+        bad("AO producer pass omitted",[&](auto& p){std::erase_if(p.passes,[&](const Pass& work){return work.id==id;});});
+        for(auto input:{f.depth,f.material_surface,f.material_correspondence})
+            bad("AO surface input omitted",[&](auto& p){erase_access(p,id,input,Use::sampled);});
+        for(auto input:{f.frame,f.ao_constants})
+            bad("AO constant input omitted",[&](auto& p){erase_access(p,id,input,Use::constant);});
+        const auto output=id==PassId::ambient_occlusion ? f.ao_raw : f.ao_filtered;
+        bad("AO output omitted",[&](auto& p){erase_access(p,id,output,Use::image_write);});
+        bad("AO output not initialized",[&](auto& p){for(auto& a:pass(p,id).accesses)if(a.resource==output)a.initialize=false;});
+        bad("AO duplicate conflicting access",[&](auto& p){pass(p,id).accesses.push_back({output,Use::sampled,false});});
+    }
+    bad("AO filter before producer",[](auto& p){std::swap(pass(p,PassId::ambient_occlusion),pass(p,PassId::ambient_occlusion_filter));});
+    bad("AO before geometry",[](auto& p){std::swap(pass(p,PassId::opaque),pass(p,PassId::ambient_occlusion));});
+    bad("AO lighting before filter",[](auto& p){std::swap(pass(p,PassId::deferred_lighting),pass(p,PassId::ambient_occlusion_filter));});
+    for(auto role:{&FrameResources::ao_raw,&FrameResources::ao_filtered,&FrameResources::ao_constants}) {
+        bad("AO role omitted",[&](auto& p){p.frame.*role=none;});
+        for(auto alias:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.material_base,f.material_surface,f.material_correspondence,f.frame,f.objects,f.lights,f.counts,f.indices,f.skins[0].palette})
+            bad("AO role aliases scene resource",[&](auto& p){p.frame.*role=alias;});
+    }
+    bad("AO targets alias",[](auto& p){p.frame.ao_filtered=p.frame.ao_raw;});
+    bad("AO constants alias frame",[](auto& p){p.frame.ao_constants=p.frame.frame;});
+    for(auto id:{f.ao_raw,f.ao_filtered}) {
+        bad("AO wrong format",[&](auto& p){p.frame.resources[id].format=Format::r32_float;});
+        bad("AO wrong width",[&](auto& p){++p.frame.resources[id].width;});
+        bad("AO wrong height",[&](auto& p){++p.frame.resources[id].height;});
+        bad("AO target multisampled",[&](auto& p){p.frame.resources[id].samples=4;});
+        bad("AO physical alias",[&](auto& p){p.frame.resources[id].identity=p.frame.resources[f.hdr].identity;});
+        for(auto use:{Use::sampled,Use::image_write})bad("AO unsupported usage",[&](auto& p){p.frame.resources[id].supported &= ~use_bit(use);});
+    }
+    for(auto use:{Use::constant,Use::upload})bad("AO constants unsupported usage",[&](auto& p){p.frame.resources[f.ao_constants].supported &= ~use_bit(use);});
+    // Extended probes keep the existing prefix and append raw/filtered AO.
+    for(unsigned count:{4u,6u,8u}) {
+        auto capture=fixture;capture.f.probe_points={{0,0},{383,215}};
+        const ResourceId sources[]={f.depth,f.normal,f.motion,f.motion_valid,f.hdr,f.hdr,f.ao_raw,f.ao_filtered};
+        for(unsigned i=0;i<count;++i) {
+            auto target=capture.add(Kind::texture,Lifetime::capture);
+            auto& r=capture.f.resources[target];r.format=capture.f.resources[sources[i]].format;r.width=4;r.height=2;r.region=Region::probe_pixels;
+            capture.f.probe_copies.push_back({sources[i],target});
+        }
+        auto p=capture.plan();p.validate();++accepted;
+        if(count==8) {
+            auto wrong=p;wrong.frame.probe_copies[6].source=f.ao_filtered;
+            rejects("AO probe source swapped",[&]{wrong.validate();});
+            wrong=p;wrong.settings.ambient_occlusion=false;
+            rejects("AO extended probes disabled",[&]{wrong.validate();});
+            wrong=p;wrong.frame.probe_copies.pop_back();
+            rejects("AO incomplete probe pair",[&]{wrong.validate();});
+        }
+    }
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();ambient_occlusion_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

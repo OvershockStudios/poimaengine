@@ -18,14 +18,14 @@ float3 decode_normal(float2 oct) {
     if(n.z<0)n.xy=(1-abs(n.yx))*normal_sign(n.xy);
     return normalize(n);
 }
-float3 shade_surface(SceneSurface material,float3 world,float2 pixel) {
+float3 shade_surface(SceneSurface material,float3 world,float2 pixel,float ambient_visibility=1) {
     float3 color;
     if(material.legacy) {
-        if(light_count.x==0)color=material.base*.18;
-        else color=material.base*(0.18+0.82*saturate(dot(material.normal,-lights[0].direction_range.xyz)));
+        if(light_count.x==0)color=material.base*(.18*ambient_visibility);
+        else color=material.base*(0.18*ambient_visibility+0.82*saturate(dot(material.normal,-lights[0].direction_range.xyz)));
     } else {
         const float3 v=normalize(camera.xyz-world);
-        color=material.base*(1-material.metallic)*ambient_exposure.rgb*material.occlusion+material.emission;
+        color=material.base*(1-material.metallic)*ambient_exposure.rgb*material.occlusion*ambient_visibility+material.emission;
         accumulate_direct_lighting(color,world,pixel,material.geometric_normal,material.normal,v,material.base,material.metallic,material.roughness);
     }
     // Bound final linear radiance before half-float storage, as in forward.

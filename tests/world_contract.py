@@ -147,8 +147,15 @@ class WorldContract(unittest.TestCase):
             self.assertEqual(descriptor['methods'][method]['properties']['frames_in_flight'],
                              {'type': 'integer', 'minimum': 1, 'maximum': 2, 'default': 2})
             self.assertEqual(descriptor['methods'][method]['properties']['scene_debug_view']['enum'],
-                             ['color', 'depth', 'shading_normal', 'motion', 'motion_validity'])
+                             ['color', 'depth', 'shading_normal', 'motion', 'motion_validity', 'ambient_occlusion'])
         for method in ('world.capture', 'runtime.capture', 'asset.animation.capture', 'runtime.play'):
+            ao = descriptor['methods'][method]['properties']['ambient_occlusion']
+            self.assertEqual(ao['type'], 'object')
+            self.assertFalse(ao['additionalProperties'])
+            self.assertEqual(ao['properties'], {
+                'mode': {'enum': ['none', 'gtao'], 'default': 'none'},
+                'quality': {'enum': ['low', 'medium', 'high'], 'default': 'medium'},
+                'radius': {'type': 'number', 'minimum': .01, 'maximum': 100, 'default': 1}})
             self.assertEqual(descriptor['methods'][method]['properties']['lighting_path'],
                              {'enum': ['forward', 'deferred'], 'default': 'forward'})
             self.assertEqual(descriptor['methods'][method]['properties']['reconstruction'],
@@ -232,11 +239,28 @@ class WorldContract(unittest.TestCase):
         reconstruction_cases = [{'reconstruction': value} for value in (None, True, False, 0, [], {}, '', 'fsr3', 'FSR3_NATIVE')]
         reconstruction_cases += [{'lighting_path': value} for value in (None, True, False, 0, [], {}, '', 'DEFERRED', 'clustered')]
         reconstruction_cases += [{'lighting_path': 'deferred', 'samples': 4}, {'lighting_path': 'deferred'}]
+        reconstruction_cases += [{'ambient_occlusion': value} for value in (None, True, False, 0, 1, [], '', 'gtao')]
+        for key, values in (
+                ('mode', (None, True, 1, [], {}, '', 'GTAO', 'ssao')),
+                ('quality', (None, True, 1, [], {}, '', 'ultra', 'MEDIUM')),
+                ('radius', (None, True, False, [], {}, '1', 0, -.01, .009, 100.01, 1e308)),
+                ('unknown', (1,))):
+            reconstruction_cases += [{'ambient_occlusion': {key: value}} for value in values]
+        reconstruction_cases += [
+            {'ambient_occlusion': {'mode': 'gtao'}},
+            {'ambient_occlusion': {'mode': 'gtao'}, 'samples': 1},
+            {'ambient_occlusion': {'mode': 'gtao'}, 'lighting_path': 'deferred', 'samples': 4},
+            {'scene_debug_view': 'ambient_occlusion', 'lighting_path': 'deferred', 'samples': 1},
+            {'scene_debug_view': 'ambient_occlusion', 'lighting_path': 'deferred', 'samples': 1,
+             'ambient_occlusion': {'mode': 'none'}}]
         reconstruction_cases += [{'capture_frames': value} for value in (None, True, False, 0, -1, 129, 1.0, 128.0, '2', [], {})]
         for mode in ('fsr3_native', 'fsr3_quality', 'fsr3_balanced', 'fsr3_performance'):
             reconstruction_cases += [{'reconstruction': mode, 'samples': 4}]
             reconstruction_cases += [{'reconstruction': mode, 'samples': 1, 'scene_debug_view': view}
                                      for view in ('depth', 'shading_normal', 'motion', 'motion_validity')]
+        reconstruction_cases += [{'reconstruction': mode, 'samples': 1, 'lighting_path': 'deferred',
+                                 'ambient_occlusion': {'mode': 'gtao'}, 'scene_debug_view': 'ambient_occlusion'}
+                                 for mode in ('fsr3_native', 'fsr3_quality', 'fsr3_balanced', 'fsr3_performance')]
         for invalid in reconstruction_cases:
             client.rpc('world.capture', {**capture, **invalid}, error=-32602)
             client.rpc('asset.animation.capture', {**capture, 'asset': '0'*64, 'time': 0, **invalid}, error=-32602)
@@ -258,6 +282,11 @@ class WorldContract(unittest.TestCase):
         capabilities = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
         if not capabilities['scene_capture']:
             client.rpc('world.capture', capture, error=-32003)
+            for ao in ({}, {'mode':'none'}, {'quality':'low','radius':.01},
+                       {'mode':'gtao','quality':'medium','radius':1}, {'mode':'gtao','quality':'high','radius':100}):
+                client.rpc('world.capture', {**capture,'samples':1,'lighting_path':'deferred','ambient_occlusion':ao}, error=-32003)
+            client.rpc('world.capture', {**capture,'samples':1,'lighting_path':'deferred',
+                       'ambient_occlusion':{'mode':'gtao'},'scene_debug_view':'ambient_occlusion'}, error=-32003)
             for frames in (1,128):
                 for mode in ('none','fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'):
                     client.rpc('world.capture', {**capture,'samples':1,'reconstruction':mode,'capture_frames':frames}, error=-32003)

@@ -7,6 +7,9 @@ Texture2D<float4> scene_normal : register(t2);
 Texture2D<float2> scene_motion : register(t3);
 Texture2D<float> scene_motion_valid : register(t4);
 #endif
+#if POIMA_AMBIENT_OCCLUSION
+Texture2D<float> ambient_visibility : register(t5);
+#endif
 struct OutputConstants {
     float exposure;
     float attachment_srgb;
@@ -37,6 +40,10 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
         const float4 normal=scene_normal.Load(texel);
         float3 display=0;
         if(normal.a>.5) {
+            #if POIMA_AMBIENT_OCCLUSION
+            if(output.debug_view>4.5)display=ambient_visibility.Load(texel);
+            else
+#endif
             if(output.debug_view<1.5) {
                 const float depth=scene_depth.Load(texel);
                 // Positive view distance divided by far; preserves the existing

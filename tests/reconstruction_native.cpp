@@ -45,10 +45,25 @@ void close_to(float actual,float expected,float tolerance,const char* why){check
 int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::array()}};
     try{
         SetUnhandledExceptionFilter(report_crash);
-        check(argc==3 || (argc==4 && std::string(argv[3])=="deferred"),"Usage: reconstruction-test OUTPUT_PREFIX GPU [deferred]");
-        const bool deferred=argc==4;evidence["deferred"]=deferred;SetProcessDPIAware();std::string prefix=argv[1];int gpu=std::stoi(argv[2]);
+        check(argc==3 || ((argc==4 || argc==5) && std::string(argv[3])=="deferred" && (argc==4 || std::string(argv[4])=="gtao")),"Usage: reconstruction-test OUTPUT_PREFIX GPU [deferred [gtao]]");
+        const bool deferred=argc>=4,ao_enabled=argc==5;evidence["deferred"]=deferred;evidence["ambient_occlusion"]=ao_enabled ? "gtao" : "none";SetProcessDPIAware();std::string prefix=argv[1];int gpu=std::stoi(argv[2]);
+        auto check_ao=[&](const RenderDiagnostics& diagnostics,const AmbientOcclusionOptions& requested){
+            check(diagnostics.ambient_occlusion.mode==requested.mode && diagnostics.ambient_occlusion.quality==requested.quality && diagnostics.ambient_occlusion.radius==requested.radius,"AO options changed across view lifecycle");
+            const auto& reconstruction=diagnostics.reconstruction;
+            check(diagnostics.ambient_occlusion_buffer_bytes==(ao_enabled ? std::uint64_t(reconstruction.render_width)*reconstruction.render_height*4 : 0),"AO storage does not follow compact render extent");
+            for(const auto& probe:diagnostics.scene_products.probes) {
+                check(std::isfinite(probe.raw_ambient_visibility) && probe.raw_ambient_visibility>=0 && probe.raw_ambient_visibility<=1 && std::isfinite(probe.ambient_visibility) && probe.ambient_visibility>=0 && probe.ambient_visibility<=1,"Invalid AO probe visibility");
+                // This fixture contains a single flat plane, no occluders. Camera
+                // jitter, extent changes and emission changes cannot occlude it.
+                close_to(probe.raw_ambient_visibility,1,.002f,"Unoccluded plane has raw AO shadowing");
+                close_to(probe.ambient_visibility,1,.002f,"Unoccluded plane has filtered AO shadowing");
+            }
+            return Json{{"mode",ambient_occlusion_mode_name(diagnostics.ambient_occlusion.mode)},
+                {"quality",ambient_occlusion_quality_name(diagnostics.ambient_occlusion.quality)},
+                {"radius",diagnostics.ambient_occlusion.radius},{"buffer_bytes",diagnostics.ambient_occlusion_buffer_bytes}};
+        };
         for(auto mode:{ReconstructionMode::fsr3_native,ReconstructionMode::fsr3_quality,ReconstructionMode::fsr3_balanced,ReconstructionMode::fsr3_performance})for(unsigned slots:{1u,2u}){
-            Window w;auto state=scene();RenderOptions options;options.deferred=deferred;options.gpu=gpu;options.samples=1;options.reconstruction=mode;options.frames_in_flight=slots;
+            Window w;auto state=scene();RenderOptions options;options.deferred=deferred;if(ao_enabled)options.ambient_occlusion.mode=AmbientOcclusionMode::gtao;options.gpu=gpu;options.samples=1;options.reconstruction=mode;options.frames_in_flight=slots;
             options.width=320;options.height=240;options.profile=true;options.capture_exclusive=true;options.scene_product_probes={{40,40},{80,60}};
             HostedViewport view(options,state,w.child);
             evidence["cases"].push_back({{"mode",reconstruction_mode_name(mode)},{"slots",slots},{"captures",Json::array()}});
@@ -67,8 +82,9 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                 draw(&path);auto r=view.report();const auto& d=r.diagnostics.reconstruction;
                 row["last_attempt"]={{"label",label},{"path",path},{"success",r.success},{"hardware",r.hardware},{"gpu",r.gpu_name},{"detail",r.detail},
                     {"errors",r.validation_errors},{"deferred",r.diagnostics.deferred},{"deferred_buffer_bytes",r.diagnostics.deferred_buffer_bytes},{"active",d.active},{"reset",d.history_reset},{"reset_reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"probes",Json::array()}};
-                for(const auto& p:r.diagnostics.scene_products.probes)row["last_attempt"]["probes"].push_back({{"input",{p.x,p.y}},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr}});
+                for(const auto& p:r.diagnostics.scene_products.probes)row["last_attempt"]["probes"].push_back({{"input",{p.x,p.y}},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility}});
                 check(r.success&&r.hardware&&r.capture_written&&r.validation_errors==0,"Hardware capture failed");
+                const auto ao=check_ao(r.diagnostics,options.ambient_occlusion);
                 check(r.diagnostics.deferred==deferred && r.diagnostics.deferred_buffer_bytes==(deferred ? std::uint64_t(d.render_width)*d.render_height*32 : 0),"Deferred mode/storage accounting differs");
                 check(d.active&&d.mode==mode&&d.history_reset==expect_reset,"Reconstruction activation/reset differs");
                 check(d.output_width==output_width&&d.output_height==output_height&&d.render_width>0&&d.render_height>0,"Output dimensions differ");
@@ -86,9 +102,9 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                     for(unsigned c=0;c<3;++c){auto expected=state.objects[0].material->emissive[c];
                         close_to(p.raw_hdr[c],expected,.005f,"Raw HDR differs from constant emissive oracle");
                         close_to(p.resolved_hdr[c],expected,.03f,"Reconstruction changes constant HDR radiance");}
-                    probes.push_back({{"input",{p.x,p.y}},{"output",{p.resolved_x,p.resolved_y}},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr}});
+                    probes.push_back({{"input",{p.x,p.y}},{"output",{p.resolved_x,p.resolved_y}},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"raw_ambient_visibility",p.raw_ambient_visibility},{"ambient_visibility",p.ambient_visibility}});
                 }
-                row["captures"].push_back({{"label",label},{"path",path},{"gpu",r.gpu_name},{"render_extent",{d.render_width,d.render_height}},
+                row["captures"].push_back({{"ambient_occlusion",ao},{"label",label},{"path",path},{"gpu",r.gpu_name},{"render_extent",{d.render_width,d.render_height}},
                     {"output_extent",{d.output_width,d.output_height}},{"reset",d.history_reset},{"reset_reason",d.reset_reason},
                     {"deferred",r.diagnostics.deferred},{"deferred_buffer_bytes",r.diagnostics.deferred_buffer_bytes},{"history_sequence",d.history_sequence},{"jitter",d.jitter_pixels},{"logical_bytes",d.logical_bytes},{"sdk",d.sdk_version},{"probes",probes}});
             };
@@ -116,7 +132,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
             Window a_window,b_window;auto a_scene=scene(),b_scene=scene();
             b_scene.objects[0].material->emissive={1.f,.0625f,.25f};
             check(a_scene.presentation_source_id!=b_scene.presentation_source_id,"View source identities collide");
-            RenderOptions a_options;a_options.deferred=deferred;a_options.gpu=gpu;a_options.samples=1;a_options.reconstruction=ReconstructionMode::fsr3_quality;
+            RenderOptions a_options;a_options.deferred=deferred;if(ao_enabled)a_options.ambient_occlusion.mode=AmbientOcclusionMode::gtao;a_options.gpu=gpu;a_options.samples=1;a_options.reconstruction=ReconstructionMode::fsr3_quality;
             a_options.width=320;a_options.height=240;a_options.frames_in_flight=2;a_options.capture_exclusive=true;a_options.scene_product_probes={{40,40},{80,60}};
             auto b_options=a_options;b_options.reconstruction=ReconstructionMode::fsr3_performance;
             HostedViewport a(a_options,a_scene,a_window.child),b(b_options,b_scene,b_window.child);
@@ -129,6 +145,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                     check(std::chrono::steady_clock::now()<deadline,"Interleaved capture timeout");std::this_thread::sleep_for(std::chrono::milliseconds(1));}
                 const auto report=view.report();const auto& d=report.diagnostics.reconstruction;
                 check(report.success&&report.hardware&&report.capture_written&&report.validation_errors==0,"Interleaved hardware capture failed");
+                const auto ao=check_ao(report.diagnostics,a_options.ambient_occlusion);
                 check(report.diagnostics.deferred==deferred && report.diagnostics.deferred_buffer_bytes==(deferred ? std::uint64_t(d.render_width)*d.render_height*32 : 0),"Interleaved deferred mode/storage accounting differs");
                 check(d.active&&d.mode==mode&&d.history_reset==reset,"Another view changed activation/reset");
                 check(d.history_sequence==sequence&&report.diagnostics.scene_products.history_sequence==sequence&&report.diagnostics.frame_execution.submitted==sequence&&report.diagnostics.completed_submissions==sequence&&report.diagnostics.frame_execution.outstanding==0,"Independent view history sequence differs");
@@ -138,7 +155,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                 for(const auto& p:probes){check(p.surface_valid,"Interleaved surface disappeared");
                     check(p.resolved_x==static_cast<unsigned>((p.x+.5)*out_width/d.render_width)&&p.resolved_y==static_cast<unsigned>((p.y+.5)*out_height/d.render_height),"Interleaved probe mapping differs");
                     for(unsigned c=0;c<3;++c){close_to(p.raw_hdr[c],state.objects[0].material->emissive[c],.005f,"Another view changed raw HDR");close_to(p.resolved_hdr[c],state.objects[0].material->emissive[c],.03f,"Another view changed resolved HDR");}}
-                evidence["interleaved"]["captures"].push_back({{"view",name},{"deferred",report.diagnostics.deferred},{"deferred_buffer_bytes",report.diagnostics.deferred_buffer_bytes},{"phase",phase},{"path",path},{"source",state.presentation_source_id},{"sequence",sequence},{"reset",d.history_reset},{"reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"output_extent",{d.output_width,d.output_height}},{"jitter",d.jitter_pixels},{"raw_hdr",probes[0].raw_hdr},{"resolved_hdr",probes[0].resolved_hdr}});
+                evidence["interleaved"]["captures"].push_back({{"ambient_occlusion",ao},{"raw_ambient_visibility",probes[0].raw_ambient_visibility},{"ambient_visibility",probes[0].ambient_visibility},{"view",name},{"deferred",report.diagnostics.deferred},{"deferred_buffer_bytes",report.diagnostics.deferred_buffer_bytes},{"phase",phase},{"path",path},{"source",state.presentation_source_id},{"sequence",sequence},{"reset",d.history_reset},{"reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"output_extent",{d.output_width,d.output_height}},{"jitter",d.jitter_pixels},{"raw_hdr",probes[0].raw_hdr},{"resolved_hdr",probes[0].resolved_hdr}});
                 return d;
             };
             const auto a_first=observe(a,a_scene,"a","first",true,a_sequence,320,240,a_options.reconstruction);

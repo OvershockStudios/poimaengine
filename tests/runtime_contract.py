@@ -102,10 +102,26 @@ class RuntimeContract(unittest.TestCase):
             bad_options=[{'reconstruction': value} for value in (None, True, False, 0, [], {}, '', 'fsr3', 'FSR3_NATIVE')]
             bad_options.extend({'lighting_path':value} for value in (None, True, False, 0, [], {}, '', 'DEFERRED', 'clustered'))
             bad_options.extend(({'lighting_path':'deferred','samples':4},{'lighting_path':'deferred'}))
+            bad_options.extend({'ambient_occlusion':value} for value in (None, True, False, 0, 1, [], '', 'gtao'))
+            for key, values in (
+                    ('mode', (None, True, 1, [], {}, '', 'GTAO', 'ssao')),
+                    ('quality', (None, True, 1, [], {}, '', 'ultra', 'MEDIUM')),
+                    ('radius', (None, True, False, [], {}, '1', 0, -.01, .009, 100.01, 1e308)),
+                    ('unknown', (1,))):
+                bad_options.extend({'ambient_occlusion':{key:value}} for value in values)
+            bad_options.extend((
+                {'ambient_occlusion':{'mode':'gtao'}},
+                {'ambient_occlusion':{'mode':'gtao'},'samples':1},
+                {'ambient_occlusion':{'mode':'gtao'},'lighting_path':'deferred','samples':4},
+                {'scene_debug_view':'ambient_occlusion','lighting_path':'deferred','samples':1},
+                {'scene_debug_view':'ambient_occlusion','lighting_path':'deferred','samples':1,'ambient_occlusion':{'mode':'none'}}))
             for mode in ('fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'):
                 bad_options.append({'reconstruction':mode,'samples':4})
                 bad_options.extend({'reconstruction':mode,'samples':1,'scene_debug_view':view}
                                    for view in ('depth','shading_normal','motion','motion_validity'))
+            bad_options.extend({'reconstruction':mode,'samples':1,'lighting_path':'deferred',
+                                'ambient_occlusion':{'mode':'gtao'},'scene_debug_view':'ambient_occlusion'}
+                               for mode in ('fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'))
             bad_options.extend({'capture_frames':value} for value in (None, True, False, 0, -1, 129, 1.0, 128.0, '2', [], {}))
             if method=='runtime.play':bad_options.extend({'capture_frames':value} for value in (1,2,128))
             for invalid in bad_options:
