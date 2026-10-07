@@ -1,0 +1,50 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Real official agent CLI MCP authoring, independently verified from events and persisted state",
+  "qualification": {
+    "codex_linux_authoring": true,
+    "claude_windows_authoring": true,
+    "image_interpretation": false,
+    "embedded_chat": false,
+    "general_game_creation": false
+  },
+  "clients": {
+    "codex": {
+      "version": "0.160.1",
+      "result": {
+        "passed": true,
+        "provider": "codex",
+        "tool_calls": 18,
+        "operations": 9,
+        "final_revision": 3,
+        "final_entities": 1,
+        "events_sha256": "b060e8ea76865bf8a3ecfa9b684a65c34b9475fb71f587666c061cef0e34c47e",
+        "world_sha256": "a7937cfde990e9bc7720474d62d436d491065467681687e378e9a94866898f59"
+      }
+    },
+    "claude": {
+      "version": "2.1.290",
+      "result": {
+        "passed": true,
+        "provider": "claude",
+        "tool_calls": 16,
+        "operations": 9,
+        "final_revision": 3,
+        "final_entities": 1,
+        "events_sha256": "f3f6f1df01647a45d1a5aa61253baddfc2c94867e797349806e79205e7f49d61",
+        "world_sha256": "ebdb0bd82e19a98008091e2267a0ecb827881a2b6f9d88fbe967a424aa816beb"
+      }
+    }
+  },
+  "verification": {
+    "source": "tests/agent_authoring_trace.py",
+    "sha256": "965c69604b569480fe643c335272cfc1e6e4ae1b33c3e55a2f964ada98347bb9",
+    "negative_check": "Changed retry receipt is rejected."
+  },
+  "limits": [
+    "One bounded exercise per client; not a reliability distribution or token/performance benchmark.",
+    "Authoring only; no rendered-image interpretation or embedded workspace qualification.",
+    "Raw private transcripts and account details are not published.",
+    "Codex operation tool required explicit per-tool authorization in the isolated test; never approval policy alone rejected it."
+  ]
+}
