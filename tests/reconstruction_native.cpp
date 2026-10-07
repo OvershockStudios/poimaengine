@@ -44,9 +44,10 @@ void close_to(float actual,float expected,float tolerance,const char* why){check
 int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::array()}};
     try{
         SetUnhandledExceptionFilter(report_crash);
-        check(argc==3,"Usage: reconstruction-test OUTPUT_PREFIX GPU");SetProcessDPIAware();std::string prefix=argv[1];int gpu=std::stoi(argv[2]);
+        check(argc==3 || (argc==4 && std::string(argv[3])=="deferred"),"Usage: reconstruction-test OUTPUT_PREFIX GPU [deferred]");
+        const bool deferred=argc==4;evidence["deferred"]=deferred;SetProcessDPIAware();std::string prefix=argv[1];int gpu=std::stoi(argv[2]);
         for(auto mode:{ReconstructionMode::fsr3_native,ReconstructionMode::fsr3_quality,ReconstructionMode::fsr3_balanced,ReconstructionMode::fsr3_performance})for(unsigned slots:{1u,2u}){
-            Window w;auto state=scene();RenderOptions options;options.gpu=gpu;options.samples=1;options.reconstruction=mode;options.frames_in_flight=slots;
+            Window w;auto state=scene();RenderOptions options;options.deferred=deferred;options.gpu=gpu;options.samples=1;options.reconstruction=mode;options.frames_in_flight=slots;
             options.width=320;options.height=240;options.profile=true;options.capture_exclusive=true;options.scene_product_probes={{40,40},{80,60}};
             HostedViewport view(options,state,w.child);
             evidence["cases"].push_back({{"mode",reconstruction_mode_name(mode)},{"slots",slots},{"captures",Json::array()}});
@@ -64,9 +65,10 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                 std::string path=prefix+"-"+std::string(reconstruction_mode_name(mode))+"-"+std::to_string(slots)+"-"+label+".bmp";
                 draw(&path);auto r=view.report();const auto& d=r.diagnostics.reconstruction;
                 row["last_attempt"]={{"label",label},{"path",path},{"success",r.success},{"hardware",r.hardware},{"gpu",r.gpu_name},{"detail",r.detail},
-                    {"errors",r.validation_errors},{"active",d.active},{"reset",d.history_reset},{"reset_reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"probes",Json::array()}};
+                    {"errors",r.validation_errors},{"deferred",r.diagnostics.deferred},{"deferred_buffer_bytes",r.diagnostics.deferred_buffer_bytes},{"active",d.active},{"reset",d.history_reset},{"reset_reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"probes",Json::array()}};
                 for(const auto& p:r.diagnostics.scene_products.probes)row["last_attempt"]["probes"].push_back({{"input",{p.x,p.y}},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr}});
                 check(r.success&&r.hardware&&r.capture_written&&r.validation_errors==0,"Hardware capture failed");
+                check(r.diagnostics.deferred==deferred && r.diagnostics.deferred_buffer_bytes==(deferred ? std::uint64_t(d.render_width)*d.render_height*32 : 0),"Deferred mode/storage accounting differs");
                 check(d.active&&d.mode==mode&&d.history_reset==expect_reset,"Reconstruction activation/reset differs");
                 check(d.output_width==output_width&&d.output_height==output_height&&d.render_width>0&&d.render_height>0,"Output dimensions differ");
                 check(d.history_sequence==accepted&&r.diagnostics.scene_products.history_sequence==accepted&&r.diagnostics.completed_submissions==accepted&&r.diagnostics.frame_execution.submitted==accepted&&r.diagnostics.frame_execution.outstanding==0,"Capture history differs from exact accepted sequence");
@@ -87,7 +89,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                 }
                 row["captures"].push_back({{"label",label},{"path",path},{"gpu",r.gpu_name},{"render_extent",{d.render_width,d.render_height}},
                     {"output_extent",{d.output_width,d.output_height}},{"reset",d.history_reset},{"reset_reason",d.reset_reason},
-                    {"history_sequence",d.history_sequence},{"jitter",d.jitter_pixels},{"logical_bytes",d.logical_bytes},{"sdk",d.sdk_version},{"probes",probes}});
+                    {"deferred",r.diagnostics.deferred},{"deferred_buffer_bytes",r.diagnostics.deferred_buffer_bytes},{"history_sequence",d.history_sequence},{"jitter",d.jitter_pixels},{"logical_bytes",d.logical_bytes},{"sdk",d.sdk_version},{"probes",probes}});
             };
             capture("first",true);for(int i=0;i<16;++i)draw(nullptr);capture("settled",false);
             const auto initial_jitter=row["captures"][0]["jitter"];
@@ -113,7 +115,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
             Window a_window,b_window;auto a_scene=scene(),b_scene=scene();
             b_scene.objects[0].material->emissive={1.f,.0625f,.25f};
             check(a_scene.presentation_source_id!=b_scene.presentation_source_id,"View source identities collide");
-            RenderOptions a_options;a_options.gpu=gpu;a_options.samples=1;a_options.reconstruction=ReconstructionMode::fsr3_quality;
+            RenderOptions a_options;a_options.deferred=deferred;a_options.gpu=gpu;a_options.samples=1;a_options.reconstruction=ReconstructionMode::fsr3_quality;
             a_options.width=320;a_options.height=240;a_options.frames_in_flight=2;a_options.capture_exclusive=true;a_options.scene_product_probes={{40,40},{80,60}};
             auto b_options=a_options;b_options.reconstruction=ReconstructionMode::fsr3_performance;
             HostedViewport a(a_options,a_scene,a_window.child),b(b_options,b_scene,b_window.child);
@@ -126,6 +128,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                     check(std::chrono::steady_clock::now()<deadline,"Interleaved capture timeout");std::this_thread::sleep_for(std::chrono::milliseconds(1));}
                 const auto report=view.report();const auto& d=report.diagnostics.reconstruction;
                 check(report.success&&report.hardware&&report.capture_written&&report.validation_errors==0,"Interleaved hardware capture failed");
+                check(report.diagnostics.deferred==deferred && report.diagnostics.deferred_buffer_bytes==(deferred ? std::uint64_t(d.render_width)*d.render_height*32 : 0),"Interleaved deferred mode/storage accounting differs");
                 check(d.active&&d.mode==mode&&d.history_reset==reset,"Another view changed activation/reset");
                 check(d.history_sequence==sequence&&report.diagnostics.scene_products.history_sequence==sequence&&report.diagnostics.frame_execution.submitted==sequence&&report.diagnostics.completed_submissions==sequence&&report.diagnostics.frame_execution.outstanding==0,"Independent view history sequence differs");
                 const double ratio=mode==ReconstructionMode::fsr3_quality?1.5:2.0;
@@ -134,7 +137,7 @@ int main(int argc,char**argv){Json evidence={{"passed",false},{"cases",Json::arr
                 for(const auto& p:probes){check(p.surface_valid,"Interleaved surface disappeared");
                     check(p.resolved_x==static_cast<unsigned>((p.x+.5)*out_width/d.render_width)&&p.resolved_y==static_cast<unsigned>((p.y+.5)*out_height/d.render_height),"Interleaved probe mapping differs");
                     for(unsigned c=0;c<3;++c){close_to(p.raw_hdr[c],state.objects[0].material->emissive[c],.005f,"Another view changed raw HDR");close_to(p.resolved_hdr[c],state.objects[0].material->emissive[c],.03f,"Another view changed resolved HDR");}}
-                evidence["interleaved"]["captures"].push_back({{"view",name},{"phase",phase},{"path",path},{"source",state.presentation_source_id},{"sequence",sequence},{"reset",d.history_reset},{"reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"output_extent",{d.output_width,d.output_height}},{"jitter",d.jitter_pixels},{"raw_hdr",probes[0].raw_hdr},{"resolved_hdr",probes[0].resolved_hdr}});
+                evidence["interleaved"]["captures"].push_back({{"view",name},{"deferred",report.diagnostics.deferred},{"deferred_buffer_bytes",report.diagnostics.deferred_buffer_bytes},{"phase",phase},{"path",path},{"source",state.presentation_source_id},{"sequence",sequence},{"reset",d.history_reset},{"reason",d.reset_reason},{"render_extent",{d.render_width,d.render_height}},{"output_extent",{d.output_width,d.output_height}},{"jitter",d.jitter_pixels},{"raw_hdr",probes[0].raw_hdr},{"resolved_hdr",probes[0].resolved_hdr}});
                 return d;
             };
             const auto a_first=observe(a,a_scene,"a","first",true,a_sequence,320,240,a_options.reconstruction);

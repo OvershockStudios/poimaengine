@@ -14,7 +14,7 @@ struct ObjectData {
 struct DrawIndices {uint object_index;uint shadow_layer;uint2 reserved;};
 [[vk::push_constant]] ConstantBuffer<DrawIndices> draw_indices;
 StructuredBuffer<ObjectData> objects : register(t9);
-#include "scene_lighting.hlsli"
+#include "scene_surface.hlsli"
 Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
 Texture2D emissive_map : register(t2);
@@ -66,12 +66,7 @@ float4 shadow_vertex_main(VertexInput input) : SV_Position {
     const float3 world=float3(dot(draw.model_row0,p),dot(draw.model_row1,p),dot(draw.model_row2,p));
     return mul(shadows[draw_indices.shadow_layer].view_projection,float4(world,1));
 }
-#if POIMA_SCENE_PRODUCTS
-struct ScenePixel {float4 color : SV_Target0;float4 shading_normal : SV_Target1;float2 motion : SV_Target2;float motion_valid : SV_Target3;};
-ScenePixel pixel_main(VertexOutput input, bool front : SV_IsFrontFace) {
-#else
-float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 {
-#endif
+SceneSurface evaluate_material(VertexOutput input,bool front) {
     const ObjectData draw=objects[draw_indices.object_index];
     float3 n=normalize(input.normal);
     // Smooth vertex normals describe shading, not the rasterized triangle plane.
@@ -82,12 +77,15 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     const float3 geometric_normal=triangle_length2>1e-20 ?
         triangle_normal*((dot(triangle_normal,facing_normal)<0 ? -1 : 1)*rsqrt(triangle_length2)) : facing_normal;
 
-    float3 color;
+    SceneSurface material;
+    material.normal=n;material.geometric_normal=geometric_normal;
+    material.base=draw.base_metallic.rgb;material.metallic=0;material.roughness=1;material.emission=0;material.occlusion=1;
+    material.legacy=draw.base_metallic.w<0;
     if(draw.base_metallic.w<0) {
-        color=draw.base_metallic.rgb*(0.18+0.82*saturate(dot(n,-lights[0].direction_range.xyz)));
+        // Legacy preview deliberately keeps its original unflipped vertex normal.
     } else {
         // Opaque metallic/roughness; ambient is an authored fill, not GI/IBL.
-        float3 v=normalize(camera.xyz-input.world_position);
+
         if(draw.normal_row2.w>0.5) {
             const float3 raw_t=input.tangent.xyz-n*dot(n,input.tangent.xyz);
             const float3 t=raw_t*rsqrt(max(dot(raw_t,raw_t),1e-12));
@@ -104,30 +102,54 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
         const float roughness=max(draw.emissive_roughness.w*mr.g,0.045);
         const float3 emission=draw.emissive_roughness.rgb*emissive_map.Sample(emissive_sampler,input.uv).rgb;
         const float occlusion=lerp(1,occlusion_map.Sample(occlusion_sampler,input.uv).r,draw.normal_row0.w);
-        color=base*(1-metallic)*ambient_exposure.rgb*occlusion+emission;
-        accumulate_direct_lighting(color,input.world_position,input.position.xy,geometric_normal,n,v,base,metallic,roughness);
+        material.base=base;material.metallic=metallic;material.roughness=roughness;
+        material.emission=emission;material.occlusion=occlusion;
     }
-    // RGBA16_FLOAT has finite radiance range. Bound before storage; exposure
-    // and display mapping occur only after the linear multisample resolve.
-    color=select(isnan(color),0,clamp(color,0,65504));
+    material.normal=n;return material;
+}
+
+#if POIMA_SCENE_DEFERRED
+struct ScenePixel {float4 base_metallic : SV_Target0;float4 surface : SV_Target1;float4 emission_roughness : SV_Target2;float4 correspondence : SV_Target3;};
+#elif POIMA_SCENE_PRODUCTS
+struct ScenePixel {float4 color : SV_Target0;float4 shading_normal : SV_Target1;float2 motion : SV_Target2;float motion_valid : SV_Target3;};
+#endif
 #if POIMA_SCENE_PRODUCTS
-    ScenePixel result;result.color=float4(color,1);
-    // This is exactly the world-space normal used by the selected lighting
-    // branch, including normal mapping/backface handling in the PBR branch.
-    result.shading_normal=all(isfinite(n)) ? float4(n,1) : float4(0,0,0,0);
-    result.motion=0;result.motion_valid=0;
-    if(result.shading_normal.a>.5 && input.motion_valid!=0 && all(isfinite(input.previous_clip)) && input.previous_clip.w>0 && all(isfinite(input.current_clip)) && input.current_clip.w>0) {
+ScenePixel pixel_main(VertexOutput input, bool front : SV_IsFrontFace) {
+#else
+float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 {
+#endif
+    const SceneSurface material=evaluate_material(input,front);
+    const float3 n=material.normal;
+#if POIMA_SCENE_PRODUCTS
+    float2 motion=0;float motion_valid=0;
+    const bool normal_valid=all(isfinite(n)) && dot(n,n)>1e-20;
+    if(normal_valid && input.motion_valid!=0 && all(isfinite(input.previous_clip)) && input.previous_clip.w>0 && all(isfinite(input.current_clip)) && input.current_clip.w>0) {
         const float2 previous_ndc=input.previous_clip.xy/input.previous_clip.w;
         const float2 previous_uv=float2(previous_ndc.x*.5+.5,.5-previous_ndc.y*.5);
-        // Both clips use the same perspective-correct material-point interpolation.
-        // Mixing previous clip with raster SV_Position introduces subpixel snapping bias.
+        // Match the same interpolated material point, without raster snapping bias.
         const float2 current_ndc=input.current_clip.xy/input.current_clip.w;
         const float2 current_uv=float2(current_ndc.x*.5+.5,.5-current_ndc.y*.5);
         const float2 displacement=previous_uv-current_uv;
-        if(all(isfinite(displacement))) {result.motion=displacement;result.motion_valid=1;}
+        if(all(isfinite(displacement))) {motion=displacement;motion_valid=1;}
     }
+#endif
+#if POIMA_SCENE_DEFERRED
+    ScenePixel result;
+    result.base_metallic=float4(material.base,material.metallic);
+    // Presence and valid shading normal are distinct: bad geometry must not become sky.
+    const uint flags=1u | (material.legacy ? 2u : 0u) | (motion_valid>.5 ? 4u : 0u) | (normal_valid ? 8u : 0u);
+    result.surface=float4(encode_normal(n),material.occlusion,float(flags));
+    result.emission_roughness=float4(material.emission,material.roughness);
+    result.correspondence=float4(motion,encode_normal(material.geometric_normal));
     return result;
 #else
+    const float3 color=shade_surface(material,input.world_position,input.position.xy);
+#if POIMA_SCENE_PRODUCTS
+    ScenePixel result;result.color=float4(color,1);
+    result.shading_normal=normal_valid ? float4(n,1) : float4(0,0,0,0);
+    result.motion=motion;result.motion_valid=motion_valid;return result;
+#else
     return float4(color,1);
+#endif
 #endif
 }

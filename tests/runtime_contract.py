@@ -100,6 +100,8 @@ class RuntimeContract(unittest.TestCase):
         rows=[FIXTURE,start(),*observe];cases=[]
         for method,base in (('runtime.capture',capture),('runtime.play',play)):
             bad_options=[{'reconstruction': value} for value in (None, True, False, 0, [], {}, '', 'fsr3', 'FSR3_NATIVE')]
+            bad_options.extend({'lighting_path':value} for value in (None, True, False, 0, [], {}, '', 'DEFERRED', 'clustered'))
+            bad_options.extend(({'lighting_path':'deferred','samples':4},{'lighting_path':'deferred'}))
             for mode in ('fsr3_native','fsr3_quality','fsr3_balanced','fsr3_performance'):
                 bad_options.append({'reconstruction':mode,'samples':4})
                 bad_options.extend({'reconstruction':mode,'samples':1,'scene_debug_view':view}

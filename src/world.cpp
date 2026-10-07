@@ -367,7 +367,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 44}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 45}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -379,7 +379,7 @@ Json describe() {
                 {"width", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 960}}},
                 {"height", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 540}}},
                 {"gpu", {{"type", "integer"}, {"minimum", 0}, {"maximum", 4095}}},
-                {"reconstruction",{{"enum",{"none","fsr3_native","fsr3_quality","fsr3_balanced","fsr3_performance"}},{"default","none"}}},{"capture_frames",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",2}}},{"scene_product_probes",{{"type","array"},{"maxItems",64},{"items",object_schema({{"x",{{"type","integer"},{"minimum",0},{"maximum",4095}}},{"y",{{"type","integer"},{"minimum",0},{"maximum",4095}}}},{"x","y"})}}},{"scene_debug_view",{{"enum",{"color","depth","shading_normal","motion","motion_validity"}},{"default","color"},{"description","Non-color views require samples=1; sky has no surface product."}}},{"samples", {{"enum", {1, 4}}, {"default", 4}}},{"culling",{{"type","boolean"},{"default",true}}},{"clustered_lighting",{{"type","boolean"},{"default",true}}},{"frames_in_flight",{{"type","integer"},{"minimum",1},{"maximum",2},{"default",2}}},{"profile",{{"type","boolean"},{"default",false}}}}, {"revision", "camera", "path"})},
+                {"lighting_path",{{"enum",{"forward","deferred"}},{"default","forward"}}},{"reconstruction",{{"enum",{"none","fsr3_native","fsr3_quality","fsr3_balanced","fsr3_performance"}},{"default","none"}}},{"capture_frames",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",2}}},{"scene_product_probes",{{"type","array"},{"maxItems",64},{"items",object_schema({{"x",{{"type","integer"},{"minimum",0},{"maximum",4095}}},{"y",{{"type","integer"},{"minimum",0},{"maximum",4095}}}},{"x","y"})}}},{"scene_debug_view",{{"enum",{"color","depth","shading_normal","motion","motion_validity"}},{"default","color"},{"description","Non-color views require samples=1; sky has no surface product."}}},{"samples", {{"enum", {1, 4}}, {"default", 4}}},{"culling",{{"type","boolean"},{"default",true}}},{"clustered_lighting",{{"type","boolean"},{"default",true}}},{"frames_in_flight",{{"type","integer"},{"minimum",1},{"maximum",2},{"default",2}}},{"profile",{{"type","boolean"},{"default",false}}}}, {"revision", "camera", "path"})},
             {"entity.query", object_schema({{"revision", rev}, {"parent", parent}, {"after", id}, {"component", component_type},
                 {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 256}, {"default", 64}}}})},
             {"world.transact", object_schema({{"request_id", id}, {"base_revision", rev},
@@ -476,7 +476,7 @@ Json describe() {
     auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
     segment["properties"]["motions"]=motions;segment["properties"]["sounds"]=sounds;
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
-    for(const auto* key:{"path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","reconstruction","profile"}) play["properties"][key]=capture["properties"][key];
+    for(const auto* key:{"path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","reconstruction","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
     play["properties"]["input_profile"]=input_path;
     play["properties"]["input_revision"]=rev;
@@ -487,6 +487,7 @@ Json describe() {
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play clustered_lighting defaults true. False evaluates the full light table as a reference. Cluster overflow falls back to all lights; directional and range-zero lights are never distance-culled. Assignment diagnostics distinguish requested mode, active mode and measured GPU statistics.");
+    result["invariants"].push_back("Capture/play lighting_path is forward (default) or deferred. Deferred requires samples=1; this option does not change authored content or imply renderer qualification.");
     result["invariants"].push_back("Capture/play reconstruction is none, fsr3_native, fsr3_quality, fsr3_balanced or fsr3_performance. Enabled reconstruction requires samples=1 and scene_debug_view=color and must be available in this build. Capture-only capture_frames is 1..128 (default 2), repeatedly rendering one frozen snapshot; runtime.play does not accept it. Probe x/y are render-input pixels; resolved_x/y identify mapped reconstruction-output pixels. Raw and resolved HDR values are pre-tone-map radiance.");
     result["invariants"].push_back("Capture/play scene_debug_view is color, depth, shading_normal, motion or motion_validity. Non-color views require samples=1 and bypass exposure/output tone mapping. Single-sample scene products contain device depth, final world-space shading normals and previous-minus-current UV motion with explicit validity. Up to 64 scene_product_probes return raw captured values; probes require samples=1 and a capture path. History advances on accepted per-view submission, independently of simulation tick; missing continuity, cuts and replaced objects invalidate correspondence.");
     result["invariants"].push_back("Capture/play frames_in_flight is 1 or 2, default 2. One selects serialized completion; two bounds outstanding graphics submissions. Frame execution diagnostics distinguish submission, completion and explicit waits; neither completion nor presentation-fence retirement proves monitor scanout.");
@@ -1318,7 +1319,8 @@ public:
         for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
             {"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid},{"raw_hdr",p.raw_hdr},{"resolved_hdr",p.resolved_hdr},{"resolved_x",p.resolved_x},{"resolved_y",p.resolved_y}});
         const auto& reconstruction=d.reconstruction;
-        return {{"reconstruction",{{"mode",reconstruction_mode_name(reconstruction.mode)},{"active",reconstruction.active},
+        return {{"lighting_path",d.deferred ? "deferred" : "forward"},{"deferred_buffer_bytes",d.deferred_buffer_bytes},{"deferred_lighting_gpu",timing(d.deferred_lighting_gpu)},
+            {"reconstruction",{{"mode",reconstruction_mode_name(reconstruction.mode)},{"active",reconstruction.active},
                 {"render_width",reconstruction.render_width},{"render_height",reconstruction.render_height},{"output_width",reconstruction.output_width},{"output_height",reconstruction.output_height},
                 {"jitter_pixels",reconstruction.jitter_pixels},{"history_reset",reconstruction.history_reset},{"history_sequence",reconstruction.history_sequence},
                 {"logical_bytes",reconstruction.logical_bytes},{"reset_reason",reconstruction.reset_reason},{"sdk_version",reconstruction.sdk_version},{"gpu",timing(reconstruction.gpu)}}},
@@ -1744,6 +1746,14 @@ public:
         options.samples = integer("samples", 4, 1, 4);
         options.frames_in_flight = integer("frames_in_flight", 2, 1, 2);
         options.frames = integer("capture_frames", 2, 1, 128);
+        if(params.contains("lighting_path")) {
+            const auto& path=params.at("lighting_path");
+            require(path.is_string(),"lighting_path must be forward or deferred.");
+            if(path=="forward")options.deferred=false;
+            else if(path=="deferred")options.deferred=true;
+            else throw Error(-32602,"lighting_path must be forward or deferred.");
+        }
+        require(!options.deferred || options.samples==1,"Deferred lighting_path requires samples=1.");
         if(params.contains("reconstruction")) {
             const auto& mode=params.at("reconstruction");require(mode.is_string(),"reconstruction must be a supported mode string.");
             if(mode=="none")options.reconstruction=ReconstructionMode::none;
@@ -1787,13 +1797,13 @@ public:
     }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         if(live) {
-            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","reconstruction","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","reconstruction","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","reconstruction","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
-            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "reconstruction", "capture_frames", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","reconstruction","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "reconstruction", "capture_frames", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));
@@ -2221,7 +2231,7 @@ public:
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","reconstruction","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","reconstruction","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
             {"session_id","request_id","expected_tick","camera","mode"});
         identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";

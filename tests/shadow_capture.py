@@ -13,9 +13,9 @@ from texture_fixture import quad
 from gltf_fixture import glb
 from scene_capture import pixels
 
-parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--gpu',type=int,default=0)
+parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--gpu',type=int,default=0);parser.add_argument('--lighting-path',choices=('forward','deferred'),default='forward')
 args=parser.parse_args();run=args.output/uuid.uuid4().hex;run.mkdir(parents=True);world=run/'shadows.world.json';rev=0
-record={'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'gpu_index':args.gpu,'runs':[],'samples':[]}
+record={'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'test_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),'gpu_index':args.gpu,'lighting_path':args.lighting_path,'capture_samples':1 if args.lighting_path=='deferred' else 4,'runs':[],'samples':[]}
 def uid(n):return f'{n:032x}'
 def native(p):return subprocess.check_output(['wslpath','-w',str(p.resolve())],text=True).strip() if args.windows_interop else str(p.resolve())
 def batch(requests):
@@ -26,7 +26,10 @@ def batch(requests):
     for reply in replies:
         assert 'result' in reply,reply
         value=reply['result']
-        if 'capture_written' in value:assert value['capture_written'] and value['hardware'] and value['nvrhi_errors']==0,value
+        if 'capture_written' in value:
+            assert value['capture_written'] and value['hardware'] and value['nvrhi_errors']==0,value
+            assert value['render_diagnostics']['lighting_path']==args.lighting_path,value
+            assert value['samples']==record['capture_samples'],value
     return [r['result'] for r in replies]
 def transaction(ops):return ('world.transact',{'request_id':uuid.uuid4().hex,'base_revision':rev,'ops':ops})
 def create(n,parent=None):return {'op':'entity.create','id':uid(n),'name':f'Lighting {n}','parent':parent}
@@ -38,7 +41,7 @@ def edit(ops):
     global rev
     batch([transaction(ops)]);rev+=1
 def capture(name,session=None,tick=0):
-    p={'camera':uid(1),'path':native(run/(name+'.bmp')),'gpu':args.gpu,'samples':4}
+    p={'camera':uid(1),'path':native(run/(name+'.bmp')),'gpu':args.gpu,'samples':1 if args.lighting_path=='deferred' else 4,'lighting_path':args.lighting_path}
     return ('runtime.capture',{**p,'session_id':session,'tick':tick}) if session else ('world.capture',{**p,'revision':rev})
 def check(name,expected,tolerance=3):
     actual=pixels(run/(name+'.bmp'))[270][480];record['samples'].append({'name':name,'actual':actual,'expected':expected,'tolerance':tolerance});assert max(abs(a-b) for a,b in zip(actual,expected))<=tolerance,(name,actual,expected)

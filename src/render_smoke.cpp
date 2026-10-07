@@ -30,6 +30,9 @@
 #include <map>
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
+#include "poima/scene_deferred_vs.hpp"
+#include "poima/scene_deferred_ps.hpp"
+#include "poima/deferred_lighting_cs.hpp"
 #include "poima/scene_products_ps.hpp"
 #include "poima/scene_products_vs.hpp"
 #include "poima/scene_output_products_ps.hpp"
@@ -314,6 +317,13 @@ struct Context {
     nvrhi::TextureHandle depth;
     nvrhi::TextureHandle multisample_color;
     nvrhi::TextureHandle scene_hdr,scene_normal,scene_motion,scene_motion_valid;
+    bool deferred=false;
+    nvrhi::TextureHandle material_base,material_surface,material_correspondence;
+    nvrhi::ShaderHandle deferred_cs;
+    nvrhi::BindingLayoutHandle deferred_layout;
+    nvrhi::BindingSetHandle deferred_bindings;
+    nvrhi::ComputePipelineHandle deferred_pipeline;
+    std::array<const void*,13> deferred_binding_key{};
     std::vector<SceneProductProbe> product_probes;
     std::array<nvrhi::StagingTextureHandle,6> probe_staging;
     bool fsr3_history_probes=false;
@@ -475,6 +485,7 @@ struct Context {
 #endif
         skin_instances.clear();skin_sources.clear();skin_pipeline=nullptr;skin_layout=nullptr;skin_shader=nullptr;skin_errors=nullptr;skin_readback=nullptr;
         shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_layout=nullptr;shadow_shader=nullptr;shadow_framebuffers.clear();shadow_texture=nullptr;
+        deferred_bindings=nullptr;deferred_pipeline=nullptr;deferred_layout=nullptr;deferred_cs=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;
         pipeline = nullptr; culled_pipeline=nullptr;
         sky_pipeline=nullptr;sky_bindings=nullptr;sky_layout=nullptr;sky_vs=nullptr;sky_ps=nullptr;
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
@@ -522,6 +533,8 @@ struct Context {
 #endif
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;
+        deferred=options.deferred;diagnostics.deferred=deferred;
+        require(!deferred || (source && options.samples==1),"Deferred lighting requires a scene and samples=1.");
         hosted=external_window!=nullptr;
         live_temporal=live_temporal_clock(player,hosted,replay);
         require(options.frames_in_flight>=1 && options.frames_in_flight<=2,"frames_in_flight must be 1 or 2.");
@@ -635,6 +648,10 @@ struct Context {
         diagnostics.frame_execution.presentation_fences=maintenance1;
         if(maintenance1)diagnostics.frame_execution.presentation_retirement="maintenance1 present fences";
         vk::PhysicalDeviceFeatures enabled_features;
+        if(deferred) {
+            require(physical.getFeatures(dispatch).shaderStorageImageExtendedFormats,"Deferred lighting requires storage image extended formats.");
+            enabled_features.shaderStorageImageExtendedFormats=true;
+        }
         if(reconstruction_mode!=ReconstructionMode::none) {
             const auto supported=physical.getFeatures(dispatch);
             require(supported.shaderStorageImageExtendedFormats && supported.shaderStorageImageWriteWithoutFormat,"FSR requires storage image extended formats and formatless writes.");
@@ -678,8 +695,8 @@ struct Context {
         require(create_swapchain(options),"The initial window has an empty rendering extent.");
         const nvrhi::ShaderDesc vs_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const nvrhi::ShaderDesc ps_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-        vertex_shader = scene ? (samples==1 ? create_embedded_shader(checked,vs_desc,poima_scene_products_vs) : create_embedded_shader(checked,vs_desc,poima_scene_vs)) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
-        pixel_shader = scene ? (samples==1 ? create_embedded_shader(checked,ps_desc,poima_scene_products_ps) : create_embedded_shader(checked,ps_desc,poima_scene_ps)) : create_embedded_shader(checked,ps_desc,poima_smoke_ps);
+        vertex_shader = scene ? (deferred ? create_embedded_shader(checked,vs_desc,poima_scene_deferred_vs) : samples==1 ? create_embedded_shader(checked,vs_desc,poima_scene_products_vs) : create_embedded_shader(checked,vs_desc,poima_scene_vs)) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
+        pixel_shader = scene ? (deferred ? create_embedded_shader(checked,ps_desc,poima_scene_deferred_ps) : samples==1 ? create_embedded_shader(checked,ps_desc,poima_scene_products_ps) : create_embedded_shader(checked,ps_desc,poima_scene_ps)) : create_embedded_shader(checked,ps_desc,poima_smoke_ps);
         require(vertex_shader && pixel_shader, "Compiled SPIR-V shader creation failed.");
         nvrhi::GraphicsPipelineDesc pipeline_desc;
         pipeline_desc.VS = vertex_shader;
@@ -827,6 +844,7 @@ struct Context {
         const auto viewport=raster_viewport();
         frame_constants.cluster_viewport[0]=viewport.minX;frame_constants.cluster_viewport[1]=viewport.minY;
         frame_constants.cluster_viewport[2]=viewport.maxX-viewport.minX;frame_constants.cluster_viewport[3]=viewport.maxY-viewport.minY;
+        frame_constants.cluster_depth[2]=static_cast<float>(scene->near_plane);frame_constants.cluster_depth[3]=static_cast<float>(scene->far_plane);
         frame_constants.cluster_grid[0]=cluster_x;frame_constants.cluster_grid[1]=cluster_y;frame_constants.cluster_grid[2]=cluster_z;frame_constants.cluster_grid[3]=0;
         if(!clustered_requested)info.fallback_reason="All-light reference requested.";
         else if(info.global_lights==info.light_count)info.fallback_reason="All lights have unbounded influence.";
@@ -871,7 +889,7 @@ struct Context {
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,8),nullptr,dispatch);
+        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,10),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -885,8 +903,8 @@ struct Context {
     }
     void collect_timestamps(FrameSlot& slot,double cpu_interval_ms) {
         if(!slot.timing)return;
-        std::array<std::uint64_t,8> values{};
-        const auto status=device.getQueryPoolResults(slot.timestamps,0,8,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
+        std::array<std::uint64_t,10> values{};
+        const auto status=device.getQueryPoolResults(slot.timestamps,0,10,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
@@ -897,6 +915,7 @@ struct Context {
         if(diagnostics.profile_requested) {
             timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.light_assignment_gpu,ms(1,2));
             timing_sample(diagnostics.shadow_gpu,ms(2,3));timing_sample(diagnostics.opaque_gpu,ms(3,4));
+            if(deferred)timing_sample(diagnostics.deferred_lighting_gpu,ms(8,9));
             if(slot.reconstruction.active)timing_sample(diagnostics.reconstruction.gpu,ms(6,7));
             timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
         }
@@ -908,6 +927,7 @@ struct Context {
                 profiling::deferred_counter(slot.profile,name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
         };
         sample("gpu.skinning.ns",0,1);sample("gpu.light_assignment.ns",1,2);sample("gpu.shadows.ns",2,3);sample("gpu.opaque.ns",3,4);
+        if(deferred)sample("gpu.deferred_lighting.ns",8,9);
         if(slot.reconstruction.active)sample("gpu.reconstruction.ns",6,7);
         sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
     }
@@ -1199,6 +1219,60 @@ struct Context {
         return {static_cast<std::uint32_t>((std::uint64_t(point.x)*2+1)*output_extent.width/(std::uint64_t(render_extent.width)*2)),
             static_cast<std::uint32_t>((std::uint64_t(point.y)*2+1)*output_extent.height/(std::uint64_t(render_extent.height)*2))};
     }
+    nvrhi::FramebufferDesc opaque_framebuffer() const {
+        nvrhi::FramebufferDesc desc;
+        if(deferred)desc.addColorAttachment(material_base).addColorAttachment(material_surface).addColorAttachment(scene_hdr).addColorAttachment(material_correspondence);
+        else desc.addColorAttachment(scene_hdr).addColorAttachment(scene_normal).addColorAttachment(scene_motion).addColorAttachment(scene_motion_valid);
+        return desc.setDepthAttachment(depth);
+    }
+    void allocate_deferred_materials() {
+        if(!deferred)return;
+        deferred_bindings=nullptr;deferred_binding_key={};
+        const auto& hdr=scene_hdr->getDesc();
+        auto allocate=[&](nvrhi::Format pixel_format,vk::Format native_format,const char* name) {
+            const auto needed=vk::FormatFeatureFlagBits::eColorAttachment|vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferDst;
+            require((physical.getFormatProperties(native_format,dispatch).optimalTilingFeatures&needed)==needed,"Deferred material format is unavailable.");
+            auto desc=hdr;desc.format=pixel_format;desc.isUAV=false;desc.debugName=name;
+            auto image=checked->createTexture(desc);require(bool(image),"Deferred material allocation failed.");return image;
+        };
+        for(auto storage_format:{vk::Format::eR16G16B16A16Sfloat,vk::Format::eR32G32Sfloat,vk::Format::eR8Unorm})
+            require(bool(physical.getFormatProperties(storage_format,dispatch).optimalTilingFeatures&vk::FormatFeatureFlagBits::eStorageImage),"Deferred output storage format is unavailable.");
+        material_base=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"Deferred base and metallic");
+        material_surface=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,"Deferred normal, occlusion and flags");
+        material_correspondence=allocate(nvrhi::Format::RGBA32_FLOAT,vk::Format::eR32G32B32A32Sfloat,"Deferred motion and geometric normal");
+        diagnostics.deferred_buffer_bytes=std::uint64_t(hdr.width)*hdr.height*32;
+    }
+    void prepare_deferred_lighting() {
+        if(!deferred)return;
+        if(!deferred_layout) {
+            deferred_cs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_deferred_lighting_cs);
+            auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
+            for(std::uint32_t i=0;i<4;++i)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(i)).addItem(nvrhi::BindingLayoutItem::Texture_UAV(i));
+            layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
+            for(std::uint32_t i=6;i<=8;++i)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(i));
+            deferred_layout=checked->createBindingLayout(layout);require(deferred_cs && deferred_layout,"Deferred shader/layout creation failed.");
+            deferred_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(deferred_cs).addBindingLayout(deferred_layout));
+            require(bool(deferred_pipeline),"Deferred lighting pipeline creation failed.");
+        }
+        const std::array<const void*,13> key={frame_buffer.Get(),material_base.Get(),material_surface.Get(),material_correspondence.Get(),depth.Get(),shadow_texture.Get(),light_buffer.Get(),cluster_counts.Get(),cluster_indices.Get(),scene_hdr.Get(),scene_normal.Get(),scene_motion.Get(),scene_motion_valid.Get()};
+        if(deferred_bindings && key==deferred_binding_key)return;
+        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(0,material_base)).addItem(nvrhi::BindingSetItem::Texture_SRV(1,material_surface))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(2,material_correspondence)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,depth))
+            .addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices))
+            .addItem(nvrhi::BindingSetItem::Texture_UAV(0,scene_hdr)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,scene_normal))
+            .addItem(nvrhi::BindingSetItem::Texture_UAV(2,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(3,scene_motion_valid));
+        deferred_bindings=checked->createBindingSet(desc,deferred_layout);require(bool(deferred_bindings),"Deferred lighting binding creation failed.");deferred_binding_key=key;
+    }
+    void dispatch_deferred_lighting() {
+        timestamp(8);
+        if(scene_visible) {
+            nvrhi::ComputeState state;state.pipeline=deferred_pipeline;state.bindings.push_back(deferred_bindings);commands->setComputeState(state);
+            const auto& desc=scene_hdr->getDesc();commands->dispatch((desc.width+7)/8,(desc.height+7)/8,1);
+        }
+        timestamp(9);
+    }
     void prepare_reconstruction() {
         if(reconstruction_mode==ReconstructionMode::none)return;
         require(scene && !scene->presentation_source_id.empty(),"FSR reconstruction requires an authoritative presentation source.");
@@ -1224,11 +1298,11 @@ struct Context {
             auto texture=checked->createTexture(desc);require(bool(texture),std::string("Reconstruction image allocation failed: ")+name);return texture;
         };
         const auto render_pixels=std::uint64_t(render.width)*render.height,output_pixels=std::uint64_t(output.width)*output.height;
-        require(render_pixels*50+output_pixels*8<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
-        scene_hdr=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact scene radiance",true,false);
-        scene_normal=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact shading normal",true,false);
-        scene_motion=allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,render,"Compact unjittered object motion",true,false);
-        scene_motion_valid=allocate(nvrhi::Format::R8_UNORM,vk::Format::eR8Unorm,render,"Compact object correspondence",true,false);
+        require(render_pixels*(deferred ? 82 : 50)+output_pixels*8<=768ull*1024*1024,"Reconstruction engine attachments exceed the 768 MiB payload budget.");
+        scene_hdr=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact scene radiance",true,deferred);
+        scene_normal=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,render,"Compact shading normal",true,deferred);
+        scene_motion=allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,render,"Compact unjittered object motion",true,deferred);
+        scene_motion_valid=allocate(nvrhi::Format::R8_UNORM,vk::Format::eR8Unorm,render,"Compact object correspondence",true,deferred);
         depth=allocate(nvrhi::Format::D32,vk::Format::eD32Sfloat,render,"Compact scene depth",true,false);
         reconstructed=allocate(nvrhi::Format::RGBA16_FLOAT,vk::Format::eR16G16B16A16Sfloat,output,"FSR reconstructed scene radiance",false,true);
         dense_motion=allocate(nvrhi::Format::RG32_FLOAT,vk::Format::eR32G32Sfloat,render,"FSR dense scene and sky motion",false,true);
@@ -1236,8 +1310,9 @@ struct Context {
         dilated_depth=allocate(nvrhi::Format::R32_FLOAT,vk::Format::eR32Sfloat,render,"FSR dilated depth",false,true);
         dilated_motion=allocate(nvrhi::Format::RG16_FLOAT,vk::Format::eR16G16Sfloat,render,"FSR dilated motion",false,true);
         reconstructed_depth=allocate(nvrhi::Format::R32_UINT,vk::Format::eR32Uint,render,"FSR reconstructed previous depth",false,true);
+        allocate_deferred_materials();
         for(std::size_t i=0;i<images.size();++i) {
-            framebuffers.push_back(checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_hdr).addColorAttachment(scene_normal).addColorAttachment(scene_motion).addColorAttachment(scene_motion_valid).setDepthAttachment(depth)));
+            framebuffers.push_back(checked->createFramebuffer(opaque_framebuffer()));
             sky_framebuffers.push_back(checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_hdr).setDepthAttachment(depth)));
             require(framebuffers.back() && sky_framebuffers.back(),"Compact scene framebuffer creation failed.");
         }
@@ -1255,22 +1330,24 @@ struct Context {
             .addItem(nvrhi::BindingSetItem::Texture_UAV(0,dense_motion)).addItem(nvrhi::BindingSetItem::Texture_UAV(1,reactive)),temporal_layout);
         require(bool(temporal_bindings),"Temporal input bindings creation failed.");
         reconstruction=std::make_unique<fsr3::Context>(static_cast<VkDevice>(device),static_cast<VkPhysicalDevice>(physical),dispatch.vkGetDeviceProcAddr,render,output);
-        require(reconstruction->gpu_bytes()+render_pixels*50+output_pixels*8<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
+        require(reconstruction->gpu_bytes()+render_pixels*(deferred ? 82 : 50)+output_pixels*8<=1536ull*1024*1024,"Reconstruction total logical image payload exceeds the 1536 MiB budget.");
         diagnostics.scene_products.normal_buffer_bytes=render_pixels*8;diagnostics.scene_products.motion_buffer_bytes=render_pixels*9;
         checked->runGarbageCollection();
     }
     void prepare_temporal_submission() {
         std::fill_n(frame_constants.temporal_jitter,4,0.0f);pending_reconstruction={};pending_reconstruction.mode=reconstruction_mode;
+        if(deferred || reconstruction) {
+        const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
+        const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
+        for(std::size_t k=0;k<3;++k) {frame_constants.temporal_right[k]=static_cast<float>(scene->camera_world[k]);frame_constants.temporal_up[k]=static_cast<float>(scene->camera_world[4+k]);frame_constants.temporal_forward[k]=static_cast<float>(-scene->camera_world[8+k]);}
+        frame_constants.temporal_right[3]=static_cast<float>(tan_y*aspect);frame_constants.temporal_up[3]=static_cast<float>(tan_y);
+        }
         if(!reconstruction || !scene_visible)return;
         const auto phase=pending_history_valid ? temporal_phase : 0;
         const auto jitter=fsr3::jitter(phase,render_extent,output_extent);
         // SDK accumulation samples current raster at output UV + jitter/renderSize;
         // apply the same right/down raster displacement to scene projection.
         frame_constants.temporal_jitter[0]=jitter[0];frame_constants.temporal_jitter[1]=jitter[1];frame_constants.temporal_jitter[2]=1;frame_constants.temporal_jitter[3]=sky_enabled ? 1.0f : 0.0f;
-        const double aspect=scene_viewport ? static_cast<double>(scene_viewport->maxX-scene_viewport->minX)/(scene_viewport->maxY-scene_viewport->minY) : static_cast<double>(extent.width)/extent.height;
-        const double tan_y=std::tan(scene->vertical_fov*0.0087266462599716478846);
-        for(std::size_t k=0;k<3;++k) {frame_constants.temporal_right[k]=static_cast<float>(scene->camera_world[k]);frame_constants.temporal_up[k]=static_cast<float>(scene->camera_world[4+k]);frame_constants.temporal_forward[k]=static_cast<float>(-scene->camera_world[8+k]);}
-        frame_constants.temporal_right[3]=static_cast<float>(tan_y*aspect);frame_constants.temporal_up[3]=static_cast<float>(tan_y);
         pending_reconstruction.active=true;pending_reconstruction.render_width=render_extent.width;pending_reconstruction.render_height=render_extent.height;
         pending_reconstruction.output_width=output_extent.width;pending_reconstruction.output_height=output_extent.height;pending_reconstruction.jitter_pixels=jitter;
         pending_reconstruction.history_reset=!pending_history_valid || temporal_phase==0;pending_reconstruction.reset_reason=pending_history_reset;pending_reconstruction.history_sequence=history_sequence+1;
@@ -1340,10 +1417,18 @@ struct Context {
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
     void update_scene() {
-        if(scene_debug_view!=SceneDebugView::color || reconstruction_mode!=ReconstructionMode::none) {
+        if(deferred || scene_debug_view!=SceneDebugView::color || reconstruction_mode!=ReconstructionMode::none) {
             const auto near_plane=static_cast<float>(scene->near_plane),far_plane=static_cast<float>(scene->far_plane);
             require(std::isfinite(near_plane) && std::isfinite(far_plane) && near_plane>0 && far_plane>near_plane,
                 "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
+        }
+        require(!deferred || rigid_transform(scene->camera_world),"Deferred lighting requires a rigid camera transform.");
+        if(deferred)for(const auto& object:scene->objects) {
+            for(float value:object.albedo)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred preview base exceeds half-float storage.");
+            if(object.material) {
+                for(float value:object.material->base_color)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred base exceeds half-float storage.");
+                for(float value:object.material->emissive)require(std::isfinite(value) && std::abs(value)<=65504,"Deferred emission exceeds half-float storage.");
+            }
         }
         prepare_reconstruction();validate_game_ui();prepare_scene_output();prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
@@ -1490,7 +1575,7 @@ struct Context {
 #if POIMA_EDITOR
         ui_framebuffers.clear();ui_scene_bindings=nullptr;
 #endif
-        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;staging=nullptr;
+        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;material_base=nullptr;material_surface=nullptr;material_correspondence=nullptr;deferred_bindings=nullptr;deferred_binding_key={};staging=nullptr;
         for(auto& texture:probe_staging)texture=nullptr;
         fsr3_history_readback=nullptr;
         history={};
@@ -1605,7 +1690,7 @@ struct Context {
             const auto hdr_bytes=std::uint64_t(extent.width)*extent.height*8u*(samples>1 ? samples+1u : 1u);
             const auto normal_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*8u : 0u;
             const auto motion_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*9u : 0u;
-            require(hdr_bytes+normal_bytes+motion_bytes<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
+            require(hdr_bytes+normal_bytes+motion_bytes+(deferred ? std::uint64_t(extent.width)*extent.height*32 : 0)<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
             const auto hdr_format=vk::Format::eR16G16B16A16Sfloat;
             const auto properties=physical.getFormatProperties(hdr_format,dispatch).optimalTilingFeatures;
             const auto needed=vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eSampledImage |
@@ -1620,7 +1705,7 @@ struct Context {
                 "Selected GPU lacks requested RGBA16_FLOAT extent/MSAA support.");
             nvrhi::TextureDesc scene_desc = texture_desc;
             scene_desc.format=nvrhi::Format::RGBA16_FLOAT;
-            scene_desc.isShaderResource=true;
+            scene_desc.isShaderResource=true;scene_desc.isUAV=deferred;
             scene_desc.initialState=nvrhi::ResourceStates::ShaderResource;scene_desc.keepInitialState=true;
             scene_desc.debugName="Resolved linear HDR scene";
             scene_hdr=checked->createTexture(scene_desc);require(bool(scene_hdr),"HDR scene target creation failed.");
@@ -1652,6 +1737,7 @@ struct Context {
                 multisample_color = checked->createTexture(scene_desc);
                 require(static_cast<bool>(multisample_color), "Scene MSAA color creation failed.");
             }
+            scene_desc.isUAV=false;
             scene_desc.format = nvrhi::Format::D32;
             scene_desc.isShaderResource=samples==1;scene_desc.debugName="Scene depth";
             scene_desc.initialState = nvrhi::ResourceStates::DepthWrite;
@@ -1660,6 +1746,7 @@ struct Context {
             diagnostics.scene_products.available=bool(scene_normal);diagnostics.scene_products.normal_buffer_bytes=normal_bytes;
             diagnostics.scene_products.motion_available=bool(scene_motion);diagnostics.scene_products.motion_buffer_bytes=motion_bytes;
         }
+        if(scene)allocate_deferred_materials();
         for (const auto image : device.getSwapchainImagesKHR(swapchain,dispatch)) {
             auto texture = checked->createHandleForNativeTexture(nvrhi::ObjectTypes::VK_Image,
                 nvrhi::Object(static_cast<VkImage>(image)), texture_desc);
@@ -1672,6 +1759,7 @@ struct Context {
             auto framebuffer_desc = nvrhi::FramebufferDesc().addColorAttachment(scene ? (multisample_color ? multisample_color.Get() : scene_hdr.Get()) : scene_target);
             if(scene_normal)framebuffer_desc.addColorAttachment(scene_normal).addColorAttachment(scene_motion).addColorAttachment(scene_motion_valid);
             if (depth) framebuffer_desc.setDepthAttachment(depth);
+            if(deferred)framebuffer_desc=opaque_framebuffer();
             auto framebuffer = checked->createFramebuffer(framebuffer_desc);
             require(static_cast<bool>(framebuffer), "NVRHI framebuffer creation failed.");
             framebuffers.push_back(framebuffer);
@@ -2181,7 +2269,7 @@ struct Context {
         namespace rs=render_schedule;
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
-        settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;
+        settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;settings.reconstruction=pending_reconstruction.active;settings.deferred=deferred;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
         auto insert=[&](rs::Resource resource) {
@@ -2214,10 +2302,11 @@ struct Context {
             rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::texture;
             r.format=desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : desc.format==nvrhi::Format::RG32_FLOAT ? rs::Format::rg32_float : desc.format==nvrhi::Format::R8_UNORM ? rs::Format::r8_unorm : rs::Format::unspecified;
             if(desc.format==nvrhi::Format::R32_FLOAT)r.format=rs::Format::r32_float;else if(desc.format==nvrhi::Format::RG16_FLOAT)r.format=rs::Format::rg16_float;else if(desc.format==nvrhi::Format::R32_UINT)r.format=rs::Format::r32_uint;
+            if(desc.format==nvrhi::Format::RGBA32_FLOAT)r.format=rs::Format::rgba32_float;
             r.lifetime=lifetime;r.initialized=initial_contents;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
             if(desc.isShaderResource)r.supported|=rs::use_bit(rs::Use::sampled);
-            if(desc.isUAV)r.supported|=rs::use_bit(rs::Use::image_write);
+            if(desc.isUAV)r.supported|=rs::use_bit(rs::Use::image_write)|rs::use_bit(rs::Use::image_read_write);
             if(desc.isRenderTarget) {
                 if(desc.format==nvrhi::Format::D32)r.supported|=rs::use_bit(rs::Use::depth)|rs::use_bit(rs::Use::clear_depth);
                 else r.supported|=rs::use_bit(rs::Use::color)|rs::use_bit(rs::Use::color_overwrite)|rs::use_bit(rs::Use::clear_color)|rs::use_bit(rs::Use::resolve_source)|rs::use_bit(rs::Use::resolve_destination);
@@ -2236,6 +2325,7 @@ struct Context {
             f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);f.objects=buffer(object_buffer,rs::Lifetime::shared,false,object_data.size()*sizeof(ObjectData));
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
             if(settings.reconstruction) {f.reconstructed=texture(reconstructed,rs::Lifetime::shared,false);f.dense_motion=texture(dense_motion,rs::Lifetime::shared,false);f.reactive=texture(reactive,rs::Lifetime::shared,false);f.dilated_depth=texture(dilated_depth,rs::Lifetime::shared,false);f.dilated_motion=texture(dilated_motion,rs::Lifetime::shared,false);f.reconstructed_depth=texture(reconstructed_depth,rs::Lifetime::shared,false);}
+            if(deferred) {f.material_base=texture(material_base,rs::Lifetime::shared,false);f.material_surface=texture(material_surface,rs::Lifetime::shared,false);f.material_correspondence=texture(material_correspondence,rs::Lifetime::shared,false);}
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
             f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
             if(settings.clustered) {
@@ -2319,7 +2409,22 @@ struct Context {
             if(color!=rs::none) {require(desc.colorAttachments.size()==(normal_id==rs::none ? 1u : 4u),"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);if(normal_id!=rs::none) {identity(normal_id,desc.colorAttachments[1].texture);identity(f.motion,desc.colorAttachments[2].texture);identity(f.motion_valid,desc.colorAttachments[3].texture);}}
             if(depth_id!=rs::none)identity(depth_id,desc.depthAttachment.texture);
         };
-        identity(f.swapchain,images.at(index).Get());framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
+        identity(f.swapchain,images.at(index).Get());
+        if(deferred) {
+            const auto& desc=framebuffers.at(index)->getDesc();require(desc.colorAttachments.size()==4,"Deferred framebuffer binding count changed.");
+            identity(f.material_base,desc.colorAttachments[0].texture);identity(f.material_surface,desc.colorAttachments[1].texture);
+            identity(f.hdr,desc.colorAttachments[2].texture);identity(f.material_correspondence,desc.colorAttachments[3].texture);identity(f.depth,desc.depthAttachment.texture);
+            for(const auto& binding:deferred_bindings->getDesc()->bindings) {
+                if(binding.type==nvrhi::ResourceType::Texture_SRV) {
+                    const auto id=binding.slot==0 ? f.material_base : binding.slot==1 ? f.material_surface : binding.slot==2 ? f.material_correspondence : binding.slot==3 ? f.depth : f.shadow;identity(id,binding.resourceHandle);
+                } else if(binding.type==nvrhi::ResourceType::Texture_UAV) {
+                    const auto id=binding.slot==0 ? f.hdr : binding.slot==1 ? f.normal : binding.slot==2 ? f.motion : f.motion_valid;identity(id,binding.resourceHandle);
+                } else if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
+                else if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
+                    const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : f.indices;if(id!=rs::none)identity(id,binding.resourceHandle);
+                }
+            }
+        } else framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(scene) {
             identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
             if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
@@ -2421,7 +2526,7 @@ struct Context {
             require(bool(slot.skin_readback),"Frame skin readback allocation failed.");
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
-        prepare_game_ui();prepare_submission_history();prepare_temporal_submission();
+        prepare_game_ui();prepare_submission_history();prepare_temporal_submission();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if(profiling::active() && !timestamp_prepared)prepare_timestamps();
@@ -2463,7 +2568,7 @@ struct Context {
             vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
         native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
-        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,8,dispatch);
+        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,10,dispatch);
         timestamp(0);
         // Only the acquired image is late-bound. All other resources were
         // resolved after preparation; no recording pass allocates/rebinds them.
@@ -2498,10 +2603,12 @@ struct Context {
                     commands->clearTextureFloat(planned_texture(resources.motion),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
                     commands->clearTextureFloat(planned_texture(resources.motion_valid),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
                 }
+                if(deferred)for(auto id:{resources.material_base,resources.material_surface,resources.material_correspondence})commands->clearTextureFloat(planned_texture(id),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
-            case render_schedule::PassId::opaque:render_opaque(index);timestamp(4);if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}break;
+            case render_schedule::PassId::opaque:render_opaque(index);timestamp(4);if(!deferred) {timestamp(8);timestamp(9);}if(!pending_reconstruction.active) {timestamp(6);timestamp(7);}break;
+            case render_schedule::PassId::deferred_lighting:dispatch_deferred_lighting();break;
             case render_schedule::PassId::temporal_inputs:timestamp(6);dispatch_temporal_inputs();break;
             case render_schedule::PassId::reconstruction:dispatch_reconstruction();timestamp(7);break;
             case render_schedule::PassId::resolve:

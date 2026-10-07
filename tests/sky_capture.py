@@ -82,6 +82,7 @@ def main():
     parser.add_argument('binary', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--lighting-path', choices=('forward','deferred'), default='forward')
     parser.add_argument('--windows-interop', action='store_true')
     args = parser.parse_args()
     args.output = args.output.resolve()
@@ -120,7 +121,7 @@ def main():
         return component(3, 'Light', {'kind': 'directional', 'color': [1, 1, 1], 'intensity': 0, 'enabled': enabled})
 
     try:
-        for samples in (1, 4):
+        for samples in ((1,) if args.lighting_path=='deferred' else (1, 4)):
             rows, captures = [], {}
             revision = 0
 
@@ -137,7 +138,7 @@ def main():
             def capture(name, session=None, tick=0):
                 path = run/f'{samples}x-{name}.bmp'
                 params = {'camera': uid(1), 'path': native(path), 'width': WIDTH, 'height': HEIGHT,
-                          'samples': samples, 'gpu': args.gpu}
+                          'samples': samples, 'gpu': args.gpu, 'lighting_path': args.lighting_path}
                 if session:
                     params.update(session_id=session, tick=tick)
                 else:
@@ -200,7 +201,7 @@ def main():
             player_path = run/f'{samples}x-player.bmp'
             player = request('runtime.play', {'session_id': session, 'request_id': uuid.uuid4().hex, 'expected_tick': 1,
                              'controller': uid(10), 'camera': uid(1), 'mode': 'replay', 'sequence': [{'ticks': 1}],
-                             'width': WIDTH, 'height': HEIGHT, 'samples': samples, 'gpu': args.gpu, 'path': native(player_path)})
+                             'width': WIDTH, 'height': HEIGHT, 'samples': samples, 'gpu': args.gpu, 'lighting_path': args.lighting_path, 'path': native(player_path)})
             captures['player'] = (player, player_path)
             capture('player-independent', session, 2)
             world = run/f'{samples}x.world.json'
@@ -219,6 +220,7 @@ def main():
             for name, (index, path) in captures.items():
                 report = responses[index]['result']
                 assert report['capture_written'] and report['hardware'] and report['nvrhi_errors'] == 0, report
+                assert report['render_diagnostics']['lighting_path'] == args.lighting_path, report
                 assert report['samples'] == samples and report['width'] == WIDTH and report['height'] == HEIGHT, report
                 images[name] = bitmap(path)
                 record['images'][f'{samples}x-{name}'] = {'path': str(path), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'report': report}
@@ -276,7 +278,7 @@ def main():
         raise
     finally:
         (args.output/f'gpu-{args.gpu}.json').write_text(json.dumps(record, indent=2)+'\n')
-    print(json.dumps({'passed': True, 'gpu': args.gpu, 'samples': [1, 4], 'evidence': str(args.output/f'gpu-{args.gpu}.json')}))
+    print(json.dumps({'passed': True, 'gpu': args.gpu, 'lighting_path': args.lighting_path, 'samples': [1] if args.lighting_path=='deferred' else [1, 4], 'evidence': str(args.output/f'gpu-{args.gpu}.json')}))
 
 
 if __name__ == '__main__':

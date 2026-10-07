@@ -13,22 +13,23 @@ namespace poima::render_schedule {
 using ResourceId=std::uint32_t;
 inline constexpr ResourceId none=std::numeric_limits<ResourceId>::max();
 enum class Kind { buffer,texture };
-enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint };
+enum class Format { unspecified,rgba16_float,depth32,rg32_float,r8_unorm,r32_float,rg16_float,r32_uint,rgba32_float };
 enum class Lifetime { imported,shared,history,slot,capture,swapchain };
 // Prefix describes the used prefix, not the larger physical allocation.
 // Cluster members are only the entries selected by the accompanying count buffer.
 // probe_pixels denotes only x=0,y=i in a four-texel-wide staging row per capture point.
 // Padding keeps R8 row origins four-byte aligned; padding contents are undefined.
 enum class Region { whole,prefix,cluster_members,probe_pixels };
-enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write };
+enum class Use { upload,storage_read,storage_write,vertex,index,constant,sampled,color,color_overwrite,depth,clear_color,clear_depth,copy_source,copy_destination,resolve_source,resolve_destination,present,image_write,image_read_write };
 using Uses=std::uint64_t;
 constexpr Uses use_bit(Use use) {return Uses{1}<<static_cast<unsigned>(use);}
-enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,resolve,temporal_inputs,reconstruction,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
+enum class PassId { skinning,light_assignment,shadows,scene_clear,sky,opaque,deferred_lighting,resolve,temporal_inputs,reconstruction,output,game_ui,overlay,editor_clear,editor_ui,product_probes,capture,present };
 inline const char* pass_name(PassId id) {
     switch(id) {
     case PassId::skinning:return "render.pass.skinning";case PassId::light_assignment:return "render.pass.light_assignment";
     case PassId::shadows:return "render.pass.shadows";case PassId::scene_clear:return "render.pass.scene_clear";
     case PassId::sky:return "render.pass.sky";case PassId::opaque:return "render.pass.opaque";
+    case PassId::deferred_lighting:return "render.pass.deferred_lighting";
     case PassId::temporal_inputs:return "render.pass.temporal_inputs";case PassId::reconstruction:return "render.pass.reconstruction";
     case PassId::resolve:return "render.pass.resolve";case PassId::output:return "render.pass.output";
     case PassId::game_ui:return "render.pass.game_ui";case PassId::overlay:return "render.pass.overlay";
@@ -60,6 +61,7 @@ struct ProbeCopy {ResourceId source=none,destination=none;};
 struct FrameResources {
     std::vector<Resource> resources;
     ResourceId swapchain=none,color=none,depth=none,normal=none,motion=none,motion_valid=none,hdr=none,output=none,frame=none,objects=none,lights=none;
+    ResourceId material_base=none,material_surface=none,material_correspondence=none;
     ResourceId reconstructed=none,dense_motion=none,reactive=none,dilated_depth=none,dilated_motion=none,reconstructed_depth=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
@@ -70,7 +72,7 @@ struct FrameResources {
     std::vector<DrawInputs> camera_draws,shadow_draws;
 };
 struct Settings {
-    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false;
+    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false,reconstruction=false,deferred=false;
     std::uint32_t slot=0,image=0;
     std::uint64_t history_sequence=0;
 };
@@ -107,6 +109,22 @@ struct Schedule {
             if(resource(frame.normal).kind!=Kind::texture || resource(frame.normal).format!=Format::rgba16_float || resource(frame.depth).format!=Format::depth32)fail("invalid scene product format");
             if(!(resource(frame.normal).supported&use_bit(Use::sampled)) || !(resource(frame.depth).supported&use_bit(Use::sampled)))fail("scene products must be shader readable");
         } else if(frame.normal!=none)fail("normal attachment without scene products");
+        if(settings.deferred) {
+            if(!settings.scene || !settings.products || frame.color!=frame.hdr)fail("deferred opaque requires single-sample scene products");
+            std::unordered_set<ResourceId> distinct={frame.hdr,frame.depth,frame.normal,frame.motion,frame.motion_valid,frame.output,frame.shadow,frame.swapchain};
+            const ResourceId targets[]={frame.material_base,frame.material_surface,frame.material_correspondence};
+            const Format formats[]={Format::rgba16_float,Format::rgba16_float,Format::rgba32_float};
+            const auto& hdr=resource(frame.hdr);
+            if(hdr.kind!=Kind::texture || hdr.samples!=1 || hdr.format!=Format::rgba16_float)fail("invalid deferred HDR target");
+            for(std::size_t i=0;i<3;++i) {
+                required(targets[i]);const auto& r=resource(targets[i]);
+                if(!distinct.insert(targets[i]).second || r.kind!=Kind::texture || r.samples!=1 || r.format!=formats[i] || r.width!=hdr.width || r.height!=hdr.height)fail("invalid deferred material target");
+            }
+            for(const auto id:{frame.depth,frame.normal,frame.motion,frame.motion_valid}) {
+                const auto& r=resource(id);
+                if(r.samples!=1 || r.width!=hdr.width || r.height!=hdr.height)fail("deferred output extent mismatch");
+            }
+        }
         if(settings.reconstruction) {
             if(!settings.products || settings.products_debug)fail("reconstruction requires color scene products");
             if(resource(frame.hdr).format!=Format::rgba16_float)fail("reconstruction requires HDR radiance");
@@ -150,12 +168,32 @@ struct Schedule {
             if(r.lifetime==Lifetime::swapchain && !before_acquire && r.owner!=settings.image)fail("wrong swapchain image");
             initialized.push_back(r.initialized);
         }
-        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false;unsigned previous=0;bool first=true;
+        bool exported=false,captured=false,probed=false,prepared=false,reconstructed=false,deferred_lit=false,deferred_opaque=false;unsigned previous=0;bool first=true;
         for(const auto& pass:passes) {
             const auto order=static_cast<unsigned>(pass.id);
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
             first=false;previous=order;
             auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+            if(settings.deferred && pass.id==PassId::scene_clear)
+                for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence})if(!has(id,Use::clear_color))fail("missing deferred material clear");
+            if(settings.deferred && pass.id==PassId::opaque) {
+                deferred_opaque=true;
+                for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence,frame.hdr})if(!has(id,Use::color))fail("missing deferred material output");
+                if(!has(frame.depth,Use::depth))fail("missing deferred depth output");
+                for(const auto& a:pass.accesses)if(a.resource==frame.normal || a.resource==frame.motion || a.resource==frame.motion_valid)fail("deferred raster must not write final products");
+            }
+            if(pass.id==PassId::deferred_lighting) {
+                if(!settings.deferred || !deferred_opaque)fail("unexpected or premature deferred lighting");
+                for(const auto id:{frame.material_base,frame.material_surface,frame.material_correspondence,frame.depth,frame.shadow})if(!has(id,Use::sampled))fail("missing deferred lighting input");
+                if(!has(frame.frame,Use::constant) || (frame.lights!=none && !has(frame.lights,Use::storage_read)) || !has(frame.hdr,Use::image_read_write))fail("missing deferred lighting state");
+                if(settings.clustered && (!has(frame.counts,Use::storage_read) || !has(frame.indices,Use::storage_read)))fail("missing deferred cluster inputs");
+                for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::image_write))fail("missing deferred product output");
+                if(std::count_if(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.hdr;})!=1)fail("deferred HDR cannot alias another access");
+                std::unordered_set<ResourceId> accessed;
+                for(const auto& access:pass.accesses)if(!accessed.insert(access.resource).second)fail("deferred lighting resource has conflicting duplicate accesses");
+                deferred_lit=true;
+            }
+            if(settings.deferred && (pass.id==PassId::temporal_inputs || pass.id==PassId::output) && !deferred_lit)fail("display or reconstruction precedes deferred lighting");
             if(pass.id==PassId::temporal_inputs) {
                 if(!settings.reconstruction)fail("unexpected temporal input pass");
                 for(const auto id:{frame.normal,frame.motion,frame.motion_valid})if(!has(id,Use::sampled))fail("missing temporal input");
@@ -171,7 +209,7 @@ struct Schedule {
             if(pass.id==PassId::output && settings.reconstruction && (!reconstructed || !has(frame.reconstructed,Use::sampled)))fail("display precedes reconstruction");
             if(settings.products) {
                 if(pass.id==PassId::scene_clear && (!has(frame.normal,Use::clear_color) || !has(frame.motion,Use::clear_color) || !has(frame.motion_valid,Use::clear_color)))fail("missing normal validity clear");
-                if(pass.id==PassId::opaque && (!has(frame.normal,Use::color) || !has(frame.motion,Use::color) || !has(frame.motion_valid,Use::color)))fail("missing opaque normal output");
+                if(pass.id==PassId::opaque && !settings.deferred && (!has(frame.normal,Use::color) || !has(frame.motion,Use::color) || !has(frame.motion_valid,Use::color)))fail("missing opaque normal output");
                 if(pass.id==PassId::sky && std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.normal || a.resource==frame.motion || a.resource==frame.motion_valid;}))fail("sky must preserve invalid normal background");
                 if(pass.id==PassId::output && settings.products_debug && (!has(frame.depth,Use::sampled) || !has(frame.normal,Use::sampled) || !has(frame.motion,Use::sampled) || !has(frame.motion_valid,Use::sampled)))fail("missing diagnostic product inputs");
             }
@@ -196,9 +234,10 @@ struct Schedule {
                 const auto& r=resource(a.resource);
                 if(!(r.supported&use_bit(a.use)))fail("unsupported resource usage");
                 const bool buffer_use=a.use==Use::upload || a.use==Use::storage_read || a.use==Use::storage_write || a.use==Use::vertex || a.use==Use::index || a.use==Use::constant;
-                const bool texture_use=a.use==Use::image_write || a.use==Use::sampled || a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::resolve_source || a.use==Use::resolve_destination || a.use==Use::present;
+                const bool texture_use=a.use==Use::image_read_write || a.use==Use::image_write || a.use==Use::sampled || a.use==Use::color || a.use==Use::color_overwrite || a.use==Use::depth || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::resolve_source || a.use==Use::resolve_destination || a.use==Use::present;
                 if((buffer_use && r.kind!=Kind::buffer) || (texture_use && r.kind!=Kind::texture))fail("resource kind does not support access");
-                const bool write=a.use==Use::image_write || a.use==Use::upload || a.use==Use::storage_write || a.use==Use::color_overwrite || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::copy_destination || a.use==Use::resolve_destination;
+                const bool write=a.use==Use::image_read_write || a.use==Use::image_write || a.use==Use::upload || a.use==Use::storage_write || a.use==Use::color_overwrite || a.use==Use::clear_color || a.use==Use::clear_depth || a.use==Use::copy_destination || a.use==Use::resolve_destination;
+                if(a.use==Use::image_read_write && (pass.id!=PassId::deferred_lighting || !settings.deferred || a.resource!=frame.hdr || a.initialize || !initialized[a.resource]))fail("invalid deferred in-place HDR access");
                 if(!write && !initialized[a.resource])fail("read or partial write has no initialized producer");
                 if(a.initialize && !write)fail("partial/raster access cannot initialize a whole resource");
                 if(write && (r.lifetime==Lifetime::imported || r.lifetime==Lifetime::history))fail("write to immutable imported resource");
@@ -230,6 +269,7 @@ struct Schedule {
                 if(pass.id==PassId::capture)captured=true;
             }
         }
+        if(settings.deferred && !deferred_lit)fail("missing deferred lighting pass");
         if(settings.reconstruction && !reconstructed)fail("missing reconstruction pass");
         if(!exported)fail("missing presentation export");
         if(!frame.probe_points.empty() && !probed)fail("missing product probe pass");
@@ -262,9 +302,19 @@ inline Schedule build(FrameResources frame,Settings settings) {
     auto& shadows=pass(PassId::shadows);
     if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);add(shadows,f.objects,Use::storage_read);geometry(shadows,f.shadow_draws,false);add(shadows,f.shadow,Use::depth);}
     auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);if(settings.products) {add(clear,f.normal,Use::clear_color,true);add(clear,f.motion,Use::clear_color,true);add(clear,f.motion_valid,Use::clear_color,true);}
+    if(settings.deferred)for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(clear,id,Use::clear_color,true);
     if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);add(sky,f.frame,Use::constant);}
-    auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
-    if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);geometry(opaque,f.camera_draws,true);if(settings.clustered) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
+    auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products && !settings.deferred) {add(opaque,f.normal,Use::color);add(opaque,f.motion,Use::color);add(opaque,f.motion_valid,Use::color);}
+    if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.objects,Use::storage_read);if(!settings.deferred) {add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);}geometry(opaque,f.camera_draws,true);if(settings.clustered && !settings.deferred) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
+    if(settings.deferred) {
+        for(auto id:{f.material_base,f.material_surface,f.material_correspondence})add(opaque,id,Use::color);
+        auto& lighting=pass(PassId::deferred_lighting);
+        for(auto id:{f.material_base,f.material_surface,f.material_correspondence,f.depth,f.shadow})add(lighting,id,Use::sampled);
+        add(lighting,f.frame,Use::constant);add(lighting,f.lights,Use::storage_read);
+        if(settings.clustered) {add(lighting,f.counts,Use::storage_read);add(lighting,f.indices,Use::storage_read);}
+        add(lighting,f.hdr,Use::image_read_write);
+        for(auto id:{f.normal,f.motion,f.motion_valid})add(lighting,id,Use::image_write,true);
+    }
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
     if(settings.reconstruction) {
         auto& inputs=pass(PassId::temporal_inputs);add(inputs,f.frame,Use::constant);

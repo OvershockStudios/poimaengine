@@ -14,7 +14,7 @@ void quad(UiFrame& frame,float x,float y,float w,float h,std::array<std::uint8_t
 }
 nlohmann::json report(const RenderReport& r) {
     return {{"success",r.success},{"hardware",r.hardware},{"capture_written",r.capture_written},{"gpu",r.gpu_name},
-        {"reconstruction",{{"active",r.diagnostics.reconstruction.active},{"mode",reconstruction_mode_name(r.diagnostics.reconstruction.mode)},
+        {"deferred",r.diagnostics.deferred},{"reconstruction",{{"active",r.diagnostics.reconstruction.active},{"mode",reconstruction_mode_name(r.diagnostics.reconstruction.mode)},
             {"render_extent",{r.diagnostics.reconstruction.render_width,r.diagnostics.reconstruction.render_height}},
             {"output_extent",{r.diagnostics.reconstruction.output_width,r.diagnostics.reconstruction.output_height}}}},
         {"samples",r.samples},{"width",r.width},{"height",r.height},{"validation_errors",r.validation_errors},{"detail",r.detail}};
@@ -22,14 +22,20 @@ nlohmann::json report(const RenderReport& r) {
 }
 int main(int argc,char** argv) {
     try {
-        if(argc!=4&&argc!=5)throw std::runtime_error("Usage: ui-capture-test OUTPUT_PREFIX GPU_INDEX SAMPLES [RECONSTRUCTION_MODE]");
+        if(argc!=4&&argc!=5&&argc!=6)throw std::runtime_error("Usage: ui-capture-test OUTPUT_PREFIX GPU_INDEX SAMPLES [RECONSTRUCTION_MODE [forward|deferred]]");
         RenderOptions options;options.width=320;options.height=240;options.frames=1;options.gpu=std::stoi(argv[2]);options.samples=static_cast<std::uint32_t>(std::stoul(argv[3]));options.capture_exclusive=true;
-        if(argc==5) {
+        if(argc>=5) {
             const std::string requested=argv[4]; bool found=false;
             for(auto mode:{ReconstructionMode::none,ReconstructionMode::fsr3_native,ReconstructionMode::fsr3_quality,ReconstructionMode::fsr3_balanced,ReconstructionMode::fsr3_performance})
                 if(requested==reconstruction_mode_name(mode)){options.reconstruction=mode;found=true;break;}
             if(!found)throw std::runtime_error("Unknown reconstruction mode");
             if(options.reconstruction!=ReconstructionMode::none&&options.samples!=1)throw std::runtime_error("Reconstruction requires samples=1");
+        }
+        if(argc==6) {
+            const std::string path=argv[5];
+            if(path!="forward"&&path!="deferred")throw std::runtime_error("Unknown lighting path");
+            options.deferred=path=="deferred";
+            if(options.deferred&&options.samples!=1)throw std::runtime_error("Deferred requires samples=1");
         }
         SceneSnapshot scene;scene.camera_world=identity_matrix();scene.lighting.preview=false;
         if(options.reconstruction!=ReconstructionMode::none) {
@@ -59,7 +65,7 @@ int main(int argc,char** argv) {
         options.capture=std::string(argv[1])+"-ui-exposure-high.bmp";const auto high=run_render_scene(options,scene);
         const auto revision=scene.ui->revision;scene.ui.reset();scene.lighting.environment.exposure=0;
         options.capture=std::string(argv[1])+"-baseline-zero.bmp";const auto dark=run_render_scene(options,scene);
-        std::cout<<nlohmann::json{{"requested_reconstruction",reconstruction_mode_name(options.reconstruction)},{"baseline",report(baseline)},{"ui",report(rendered)},{"ui_zero",report(zero)},
+        std::cout<<nlohmann::json{{"requested_lighting_path",options.deferred?"deferred":"forward"},{"requested_reconstruction",reconstruction_mode_name(options.reconstruction)},{"baseline",report(baseline)},{"ui",report(rendered)},{"ui_zero",report(zero)},
             {"ui_high",report(high)},{"baseline_zero",report(dark)},{"packet_revision",revision}}.dump()<<'\n';
         for(const auto* result:{&baseline,&rendered,&zero,&high,&dark})
             if(!result->success || !result->capture_written || result->validation_errors!=0)return 1;

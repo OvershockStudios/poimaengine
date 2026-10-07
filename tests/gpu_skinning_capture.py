@@ -7,9 +7,9 @@ from animation_fixture import ribbon
 from gltf_fixture import glb
 from texture_fixture import png
 from scene_capture import pixels
-parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--gpu',type=int,default=0)
+parser=argparse.ArgumentParser();parser.add_argument('binary',type=Path);parser.add_argument('--output',type=Path,required=True);parser.add_argument('--windows-interop',action='store_true');parser.add_argument('--gpu',type=int,default=0);parser.add_argument('--lighting-path',choices=('forward','deferred'),default='forward')
 args=parser.parse_args();run=args.output/uuid.uuid4().hex;run.mkdir(parents=True);world=run/'skinning.world.json';revision=0
-record={'passed':False,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'runs':[],'comparisons':{},'captures':[]}
+record={'passed':False,'lighting_path':args.lighting_path,'binary_sha256':hashlib.sha256(args.binary.read_bytes()).hexdigest(),'runs':[],'comparisons':{},'captures':[]}
 def uid(n):return f'{n:032x}'
 def native(p):return subprocess.check_output(['wslpath','-w',str(p.resolve())],text=True).strip() if args.windows_interop else str(p.resolve())
 def batch(requests,error=None):
@@ -32,10 +32,12 @@ def asset(name,doc,blob):
     path=run/(name+'.glb');path.write_bytes(glb(doc,blob));result=batch([('asset.import',{'source':native(path)})])[0]['asset'];path.unlink();return result
 
 def capture(name,asset,mode='gpu',culling=True,error=None):
-    path=run/(name+'.bmp');params={'revision':revision,'camera':uid(1),'path':native(path),'width':640,'height':480,'gpu':args.gpu,'samples':4,'profile':True,'asset':asset,'clip':0,'time':1,'skinning':mode,'culling':culling}
+    path=run/(name+'.bmp');params={'revision':revision,'camera':uid(1),'path':native(path),'width':640,'height':480,'gpu':args.gpu,'samples':1 if args.lighting_path=='deferred' else 4,'lighting_path':args.lighting_path,'profile':True,'asset':asset,'clip':0,'time':1,'skinning':mode,'culling':culling}
     before=world.read_bytes();result=batch([('asset.animation.capture',params)],error=error)[0];assert before==world.read_bytes()
     if error is not None:assert not path.exists();return result
     assert result['capture_written'] and result['hardware'] and result['nvrhi_errors']==0,result
+    assert result['render_diagnostics']['lighting_path']==args.lighting_path,result
+    assert result['samples']==(1 if args.lighting_path=='deferred' else 4),result
     assert result['animation']['skinning']==('gpu_compute' if mode=='gpu' else 'cpu_reference')
     assert result['render_diagnostics']['last_draws']['skinned_instances']==0 if mode=='cpu' else result['render_diagnostics']['last_draws']['skinned_instances']>0
     record['captures'].append(result);return result

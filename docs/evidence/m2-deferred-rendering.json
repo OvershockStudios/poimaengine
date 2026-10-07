@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "passed": true,
+  "scope": "Optional Windows Vulkan single-sample deferred opaque integration; bounded correctness on two laptop GPUs",
+  "performance_qualified": false,
+  "game_scale_qualified": false,
+  "devices": [
+    "AMD Radeon(TM) Graphics",
+    "NVIDIA GeForce RTX 4070 Laptop GPU"
+  ],
+  "validation": "Khronos validation with synchronization checks; passing GPU cohorts reject recorded validation warnings and errors",
+  "checks": {
+    "analytic_scenes_per_device": 8,
+    "analytic_captures_per_device": 16,
+    "reconstruction_captures_per_device": 100,
+    "motion_captures_per_device": 80,
+    "ui": "All five reconstruction selections; exposure 0, 1 and 64; unchanged full UI pixel and composition oracles",
+    "lighting": "Scalar direct-light references, frozen runtime authoring, moving runtime lights, shadows/cascades and clustered overflow/all-light comparisons",
+    "sky_skin": "Procedural sky including runtime replay and independent camera observations; GPU/CPU skinning image comparisons",
+    "forward": "16 images per device exactly match preserved successful reference captures; new runs use bounded no-submission warmup retries",
+    "render_schedule": {
+      "valid": 241,
+      "rejected": 466,
+      "platforms": [
+        "Linux",
+        "Windows"
+      ]
+    },
+    "linux_contract_suites": 10,
+    "windows_world_runtime_contract_cases": 18
+  },
+  "memory": {
+    "extra_material_bytes_per_render_pixel": 32,
+    "expanded_products_lazy": false,
+    "measured_total_vram": false
+  },
+  "raw_evidence": {
+    "analytic": {
+      "path": "build/deferred-basic-gpu/3dd517661cdb43a2b24f11fc722543fa/evidence.json",
+      "sha256": "7be89a0c73092434ec3372b5945a5ba8028fb15502809aa315dc0fe69dc9c998"
+    },
+    "reconstruction": {
+      "path": "build/deferred-fsr-gpu/e818a642279b4dceb875e9ec883e9773/evidence.json",
+      "sha256": "455ea8afd8211beb8c53bca631d270e529a0dab160ee1126c5b09c040ff3c79b"
+    },
+    "ui": {
+      "path": "build/deferred-ui-gpu/6576b007d06b430a9f8bb0f1722e665c/evidence.json",
+      "sha256": "c3840127245c754007e1ec13d1d791a5f7267caa02ee2d058bd17b391719d9a5"
+    },
+    "lighting": {
+      "path": "build/deferred-lighting-gpu/d7e1522fef1a4377a915ced7c7a134a5/evidence.json",
+      "sha256": "ac6893119b9e3b46e7244cccc06015f2b60a1e3e53f35f77bacbd6020aa99656"
+    },
+    "motion": {
+      "path": "build/deferred-motion-gpu/2090ed0681914dfdadf91f6b1efa9234/evidence.json",
+      "sha256": "5a49e67679695c8e0156769ebcc839401530665db956a156936e4d5c07fb61e6"
+    },
+    "sky_skin": {
+      "path": "build/deferred-sky-skin-gpu/5053a4250e1c4df6b9781e451a8cd28a/evidence.json",
+      "sha256": "1c9c1d3d23e89181518dd31b2c9f731fa2df9822a2bb54ac218650f0e86aee6d"
+    },
+    "forward_reference": {
+      "path": "build/deferred-forward-saved-regressions/f01744a7efde481d994f40325da69316/evidence.json",
+      "sha256": "3b23c0d0c0a84b28a0f2ec30ef6b9339724a229226f0bf9cc1daba19c239e263"
+    }
+  },
+  "source_sha256": {
+    "src/render_smoke.cpp": "0eabe437b1f16e1de9d385ce87cbad817528107975c04a0bec0bc542f4016cc5",
+    "src/world.cpp": "c6687f9eeb0f09e04fb4534bdc41e170231d009e67ae2c3116a62677ff15af01",
+    "include/poima/core.hpp": "67a0a053135845e4e91b8ef3c4ebbbbbbffc5d9b0043ddc2a2eeb7637c1c0cf6",
+    "include/poima/render_schedule.hpp": "8739df814b49fd6e489c6d575819ba635db02fa4f842638ede374abff872c2a9",
+    "shaders/scene.hlsl": "9390cf957c244577719f6d20a0d8472ffda6ef304dbfef5931fcb35396b2910e",
+    "shaders/scene_surface.hlsli": "d2b4ab5c81568943e16cd71e0f31fcadb1cb507597614914a57cf6bd9b0759ac",
+    "shaders/deferred_lighting.hlsl": "ccee16c7c68849841f20873c782291608514a218756a3fea60b1fafb70b9bed5",
+    "shaders/scene_lighting.hlsli": "2a7fc0eef7e39fd8c3217662a59f8d1569fae994e9eb18c41d8ef6ee368a9d96",
+    "cmake/render_smoke.cmake": "7bc8dcb7261fa66e835b107d5dbdc54f934ede0fbced8c892c4120f2305b0320",
+    "tests/deferred_native.cpp": "69a79c96b48cc30493ee2ef46ce29aa0d5dca2093ca4b4622b7c13f693255bc1",
+    "tests/render_schedule.cpp": "0c725ce5736ad9de4f57094741c6d224d9fd4457eb0cf3977908a848a38b9713",
+    "tests/frame_execution_native.cpp": "78b0fe1a567919b46198c571ac027cb41e146ff19514359eb7020af7cbf08541",
+    "tests/reconstruction_native.cpp": "80a9139f7d13681daf862bc4b9d471175e0be8d93b1914bd6f97152b1b8d04d1",
+    "tests/ui_capture_native.cpp": "98b09a04d93e6322175c2467f3c582c82c203f1f9d12c7682e09385164544008",
+    "tests/scene_motion.cpp": "94af69ec8f215113d8302066cbf83be719f9486b3f4acc8d9fa878fe0634bd4a",
+    "tests/sky_capture.py": "ef02c142320e147029d82f6926f974eb004dd3f404aabc0a06a02b5be8d59040",
+    "tests/gpu_skinning_capture.py": "d1d36aecfd0d7ad7319db1e8c75250568c70fea088a1deafc97fb51acd823609",
+    "tests/lighting_capture.py": "202730d79cf1d4cabde6f499c50883fa567848f6c06d4c6f98933ce202a67f31",
+    "tests/shadow_capture.py": "48ed1b7724a9df201331c636c155bc81f4c02cae4698f81a8cd45cbd5c966229",
+    "tests/clustered_lighting_capture.py": "ba49e6646c32717aca6f2058ac318a96f514bb06fdb3cc9da5330ce86e1a076b"
+  },
+  "build_logs": {
+    "build/deferred-linux-build.log": "99ae20c666b32ee8dc5407727d5a4dadee6305e07da1f9da9619b0125d24b631",
+    "build/deferred-linux-tests.log": "5f403b3aa0e63ba30af6eecabaefb920c123308289893410a98cfdd04c5f4b84",
+    "build/deferred-expanded-windows-build.log": "b32c07fefa3beb41d91b549eabf00b6758155c5c9ed750c8d22d5e487d681d7b",
+    "build/deferred-motion-build.log": "31815f338357e1a0d8e4c304069e0daf4872edeec1c06db271a99c5d646ad9e5",
+    "build/deferred-forward-fixture-build.log": "6bd4f43fc81531fdc59c28b0bdeaa6ad52760ff76cb6496ac0279a0c2ec595c0"
+  },
+  "limitations": [
+    "Default path remains forward. Deferred requires samples=1 and a rigid camera transform.",
+    "No GI, new transparency path, performance win or representative game workload is established.",
+    "Expanded normal/motion products remain allocated; extra G-buffer storage is 32 bytes per render pixel.",
+    "FSR near-edge color residue remains unresolved; passing deferred integration does not qualify temporal image quality.",
+    "The installed desktop package is unchanged; there is no desktop preference for this selection.",
+    "The Vulkan build tested here includes the optional FSR SDK. Linux headless qualification does not establish Linux desktop or console rendering."
+  ],
+  "preserved_failed_runs": [
+    {
+      "path": "build/deferred-forward-regressions/5fe842c4d7af494485b04a7215ca2599/evidence.json",
+      "sha256": "edff79229c52ca3ec5651379224b817a3e4c1882d30a89df8a5472926614ed16",
+      "reason": "Immutable reference fixture required every warm-up draw attempt to submit; legal acquisition skips stopped the run before comparison."
+    },
+    {
+      "path": "build/deferred-forward-regressions/5c78947c3d9149e68acd5e9b3b98e543/evidence.json",
+      "sha256": "f5b842f1b0a966ed1f8234d0f32d348f1c21af54b93e41c454e8524a7bc34b51",
+      "reason": "Immutable reference fixture required every warm-up draw attempt to submit; legal acquisition skips stopped the run before comparison."
+    }
+  ]
+}

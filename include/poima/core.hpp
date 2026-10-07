@@ -93,6 +93,7 @@ struct RenderOptions {
     std::string capture;
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
+    bool deferred = false; // Single-sample opaque material/lighting split.
     SceneDebugView scene_debug_view = SceneDebugView::color;
     ReconstructionMode reconstruction = ReconstructionMode::none;
     std::vector<SceneProductProbe> scene_product_probes; // At most 64; sampled only by captures at one sample.
@@ -144,6 +145,9 @@ struct ReconstructionDiagnostics {
     TimingSummary gpu;
 };
 struct RenderDiagnostics {
+    bool deferred=false;
+    std::uint64_t deferred_buffer_bytes=0;
+    TimingSummary deferred_lighting_gpu;
     ReconstructionDiagnostics reconstruction;
     SceneProductsDiagnostics scene_products;
     bool culling=true,profile_requested=false,gpu_timestamps=false;

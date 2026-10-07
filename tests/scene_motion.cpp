@@ -39,7 +39,7 @@ void check_near(double actual,double expected,double tolerance,const char* why){
 }
 int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::array()}};
     try{
-        check(argc==3,"Usage: scene-motion-test OUTPUT_PREFIX GPU");SetProcessDPIAware();const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);std::string gpu_name;
+        check(argc==3 || (argc==4 && std::string(argv[3])=="deferred"),"Usage: scene-motion-test OUTPUT_PREFIX GPU [deferred]");const bool deferred=argc==4;evidence["deferred"]=deferred;SetProcessDPIAware();const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);std::string gpu_name;
         const auto rigid=quad(false),skinned=quad(true);
         // Independent pinhole oracle. Motion stores previous minus current UV;
         // positive world X moves right, positive world Y moves up on screen.
@@ -48,7 +48,7 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
         const auto my=[&](double dy){return dy/(8*tangent);};
         for(unsigned limit:{1u,2u}){
             evidence["modes"].push_back({{"slots",limit},{"captures",Json::array()}});auto& mode=evidence["modes"].back();
-            Window window;auto state=scene(rigid);RenderOptions options;options.gpu=gpu;options.samples=1;options.width=320;options.height=240;options.frames_in_flight=limit;
+            Window window;auto state=scene(rigid);RenderOptions options;options.deferred=deferred;options.gpu=gpu;options.samples=1;options.width=320;options.height=240;options.frames_in_flight=limit;
             options.scene_debug_view=SceneDebugView::motion;options.scene_product_probes={{160,120},{3,235}};options.capture_exclusive=true;
             HostedViewport view(options,state,window.hwnd);std::uint64_t submitted=0;unsigned ordinal=0;
             auto draw=[&](const std::string* path=nullptr){const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
@@ -61,7 +61,7 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
                     check(std::chrono::steady_clock::now()<deadline,"Timed out acquiring visible image");std::this_thread::sleep_for(std::chrono::milliseconds(1));}
             };
             auto capture=[&](const char* label,bool history,bool valid,double dx=0,double dy=0){
-                const auto path=prefix+"-"+std::to_string(limit)+"-"+std::to_string(++ordinal)+"-"+label+".bmp";draw(&path);const auto r=view.report();const auto& d=r.diagnostics.scene_products;
+                const auto path=prefix+"-"+std::to_string(limit)+"-"+std::to_string(++ordinal)+"-"+label+".bmp";draw(&path);const auto r=view.report();check(r.diagnostics.deferred==deferred,"Lighting path differs");const auto& d=r.diagnostics.scene_products;
                 Json row={{"label",label},{"path",path},{"gpu",r.gpu_name},{"width",r.width},{"height",r.height},{"samples",r.samples},{"errors",r.validation_errors},
                     {"history_valid",d.history_valid},{"history_sequence",d.history_sequence},{"reset_reason",d.history_reset_reason},{"expected_motion",{dx,dy}},{"expected_valid",valid},{"probes",Json::array()}};
                 for(const auto& p:d.probes)row["probes"].push_back(sample(p));mode["captures"].push_back(std::move(row));
@@ -119,7 +119,7 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
                     if(after!=before){mode["interleaved_interruption"]={{"context",owner},{"label",label},{"before_submitted",before},{"after_submitted",after}};throw std::runtime_error("Accepted interleaved submission was not presented; analytic cohort interrupted");}
                     check(std::chrono::steady_clock::now()<deadline,"Interleaved acquire retry deadline exceeded");std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
-                const auto r=target.report();const auto& d=r.diagnostics.scene_products;
+                const auto r=target.report();check(r.diagnostics.deferred==deferred,"Interleaved lighting path differs");const auto& d=r.diagnostics.scene_products;
                 Json row={{"context",owner},{"label",label},{"path",path},{"gpu",r.gpu_name},{"width",r.width},{"height",r.height},{"history_sequence",d.history_sequence},{"history_valid",d.history_valid},
                     {"reset_reason",d.history_reset_reason},{"expected_sequence",sequence},{"expected_valid",valid},{"expected_motion",{dx,0}},{"probes",Json::array()}};
                 for(const auto& p:d.probes)row["probes"].push_back(sample(p));mode["interleaved"].push_back(std::move(row));

@@ -1,8 +1,10 @@
 # Implementation status
 
-Updated 2026-10-07 for **0.0.39**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-07 for **0.0.39**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Optional [single-sample deferred rendering](DEFERRED_RENDERING.md) passes bounded analytic lighting, shadows, clustered-light fallback, sky, skinning, motion, reconstruction and UI checks on both laptop GPUs under strict Vulkan validation. The default forward path retains exact saved-reference image comparisons. Deferred adds 32 bytes of material storage per render pixel; expanded products remain allocated. These checks establish integration correctness, not a performance gain, GI or game-scale readiness. The installed desktop package is unchanged. [Evidence](evidence/m2-deferred-rendering.json).
 
 Optional [FSR 3.1.4 reconstruction](RECONSTRUCTION.md) is implemented for the Windows Vulkan renderer, disabled by default. Native AA and three fixed upscaling ratios pass bounded HDR, reset/resize, independent-view, capture API and UI-composition checks on both laptop GPUs under strict Vulkan validation. Existing rendering with reconstruction disabled retains exact reference comparisons. The separate SDK-disabled renderer builds and rejects unavailable FSR requests. Static edge improvement coexists with persistent near-edge color residue in moving scenes; temporal quality and performance are not qualified. Frame generation, DLSS, live-player timing qualification and installed desktop activation remain unfinished. [Evidence and limitations](evidence/m2-reconstruction.json).
 

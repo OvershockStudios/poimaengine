@@ -32,6 +32,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--gpu', type=int, default=0)
     parser.add_argument('--windows-interop', action='store_true')
+    parser.add_argument('--lighting-path', choices=('forward','deferred'), default='forward')
     args = parser.parse_args()
     require(not sys.flags.optimize, 'Shared BMP reader requires assertions')
     output = args.output.resolve(); output.mkdir(parents=True, exist_ok=True)
@@ -42,7 +43,7 @@ def main():
     inputs = [binary, Path(__file__).resolve(), Path(__file__).with_name('ui_capture.py').resolve(), Path(__file__).with_name('ui_capture_native.cpp').resolve()]
     original_hashes = {str(path):sha(path) for path in inputs}
     evidence = {'passed':False, 'quality_qualified':False, 'scope':'UI composition only; no scene reconstruction quality claim',
-                'gpu_index':args.gpu, 'input_hashes_before':original_hashes, 'cases':[]}
+                'gpu_index':args.gpu, 'lighting_path':args.lighting_path, 'input_hashes_before':original_hashes, 'cases':[]}
     actual_gpu = None; baseline_ui = None
     try:
         for mode in MODES:
@@ -50,7 +51,7 @@ def main():
             if args.windows_interop:
                 argument = subprocess.check_output(['wslpath','-w',argument],text=True).strip()
             row = {'mode':mode, 'passed':False}; evidence['cases'].append(row)
-            command = [str(binary), argument, str(args.gpu), '1', mode]
+            command = [str(binary), argument, str(args.gpu), '1', mode, args.lighting_path]
             row['command'] = command
             try:
                 result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', timeout=180)
@@ -63,12 +64,14 @@ def main():
             require(result.returncode == 0, 'Native UI fixture failed: '+mode)
             response = json.loads(result.stdout); row['response'] = response
             require(response['requested_reconstruction'] == mode, 'Requested mode differs')
+            require(response['requested_lighting_path'] == args.lighting_path, 'Requested lighting path differs')
             for name in ('baseline','ui','ui_zero','ui_high','baseline_zero'):
                 report = response[name]
                 require(report['success'] and report['hardware'] and report['capture_written'] and report['validation_errors'] == 0, 'Capture failed: '+name)
                 require(report['samples'] == 1 and (report['width'],report['height']) == (320,240), 'Capture extent/sample count differs')
                 actual_gpu = actual_gpu or report['gpu']
                 require(report['gpu'] == actual_gpu, 'Actual GPU changed between captures')
+                require(report['deferred'] == (args.lighting_path == 'deferred'), 'Actual lighting path differs')
                 reconstruction = report['reconstruction']
                 require(reconstruction['active'] == (mode != 'none') and reconstruction['mode'] == mode, 'Requested reconstruction was not used')
                 if mode != 'none':

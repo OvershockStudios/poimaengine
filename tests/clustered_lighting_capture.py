@@ -28,11 +28,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--windows-interop', action='store_true')
     parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--lighting-path', choices=('forward', 'deferred'), default='forward')
     args = parser.parse_args()
     run = args.output / uuid.uuid4().hex
     run.mkdir(parents=True)
     world = run / 'clustered.world.json'
-    record = {'passed': False, 'gpu_index': args.gpu, 'runs': [], 'comparisons': [],
+    record = {'passed': False, 'gpu_index': args.gpu, 'lighting_path': args.lighting_path,
+              'sample_policy': 'Deferred forces samples1; forward retains each case original sample count', 'runs': [], 'comparisons': [],
               'binary_sha256': hashlib.sha256(args.binary.read_bytes()).hexdigest(),
               'test_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'observation': 'Vulkan renderer readback; no physical input or timing claim'}
@@ -56,6 +58,9 @@ def main():
         require(len(replies) == len(rows), entry)
         for request, reply in zip(rows, replies):
             require(reply.get('jsonrpc') == '2.0' and reply.get('id') == request['id'] and 'result' in reply, reply)
+            if 'capture_written' in reply['result']:
+                require(reply['result']['render_diagnostics']['lighting_path'] == args.lighting_path, reply)
+                require(reply['result']['samples'] == request['params']['samples'], reply)
         return [reply['result'] for reply in replies]
 
     def uid(n): return f'{n:032x}'
@@ -71,9 +76,10 @@ def main():
             batch([('world.transact', {'request_id': uuid.uuid4().hex, 'base_revision': revision, 'ops': ops[start:start+240]})])
             revision += 1
     def compare(name, samples=1, require_energy=True, expected_lights=None, overflow=False, active=True, captured_results=None):
+        samples = 1 if args.lighting_path == 'deferred' else samples
         paths = [run / f'{name}-{mode}.bmp' for mode in ('clustered', 'brute')]
         results = captured_results if captured_results is not None else batch([('world.capture', {'revision': revision, 'camera': uid(1), 'path': native(path),
-                          'gpu': args.gpu, 'width': 384, 'height': 216, 'samples': samples,
+                          'gpu': args.gpu, 'width': 384, 'height': 216, 'samples': samples, 'lighting_path': args.lighting_path,
                           'clustered_lighting': clustered}) for path, clustered in zip(paths, (True, False))])
         for result in results:
             require(result.get('capture_written') and result.get('hardware') and result.get('nvrhi_errors') == 0, result)
@@ -97,7 +103,7 @@ def main():
         require(len(images[0]) == len(images[1]) and all(len(a) == len(b) for a, b in zip(*images)), 'Capture dimensions differ')
         difference = max(abs(a-b) for ra, rb in zip(*images) for pa, pb in zip(ra, rb) for a, b in zip(pa, pb))
         lit = sum(max(pixel) > 45 for row in images[1] for pixel in row)
-        item = {'name': name, 'samples': samples, 'max_channel_difference': difference,
+        item = {'name': name, 'samples': samples, 'lighting_path': args.lighting_path, 'max_channel_difference': difference,
                 'brute_lit_pixels': lit, 'reports': results,
                 'images': [{'path': str(path.resolve()), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()} for path in paths]}
         record['comparisons'].append(item)
@@ -185,7 +191,7 @@ def main():
         def runtime_pair(name, tick):
             return [('runtime.capture', {'session_id': session, 'tick': tick, 'camera': uid(1),
                      'path': native(run / f'{name}-{mode}.bmp'), 'gpu': args.gpu, 'width': 384, 'height': 216,
-                     'samples': 4, 'clustered_lighting': enabled})
+                     'samples': 1 if args.lighting_path == 'deferred' else 4, 'lighting_path': args.lighting_path, 'clustered_lighting': enabled})
                     for mode, enabled in (('clustered', True), ('brute', False))]
         rows = batch([('runtime.start', {'session_id': session, 'revision': revision}),
                       *runtime_pair('runtime-initial', 0),

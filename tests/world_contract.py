@@ -107,6 +107,8 @@ class WorldContract(unittest.TestCase):
             self.assertEqual(descriptor['methods'][method]['properties']['scene_debug_view']['enum'],
                              ['color', 'depth', 'shading_normal', 'motion', 'motion_validity'])
         for method in ('world.capture', 'runtime.capture', 'asset.animation.capture', 'runtime.play'):
+            self.assertEqual(descriptor['methods'][method]['properties']['lighting_path'],
+                             {'enum': ['forward', 'deferred'], 'default': 'forward'})
             self.assertEqual(descriptor['methods'][method]['properties']['reconstruction'],
                              {'enum': ['none', 'fsr3_native', 'fsr3_quality', 'fsr3_balanced', 'fsr3_performance'], 'default': 'none'})
             if method == 'runtime.play':
@@ -186,6 +188,8 @@ class WorldContract(unittest.TestCase):
             self.assertEqual(client.rpc('world.history'), history)
             self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         reconstruction_cases = [{'reconstruction': value} for value in (None, True, False, 0, [], {}, '', 'fsr3', 'FSR3_NATIVE')]
+        reconstruction_cases += [{'lighting_path': value} for value in (None, True, False, 0, [], {}, '', 'DEFERRED', 'clustered')]
+        reconstruction_cases += [{'lighting_path': 'deferred', 'samples': 4}, {'lighting_path': 'deferred'}]
         reconstruction_cases += [{'capture_frames': value} for value in (None, True, False, 0, -1, 129, 1.0, 128.0, '2', [], {})]
         for mode in ('fsr3_native', 'fsr3_quality', 'fsr3_balanced', 'fsr3_performance'):
             reconstruction_cases += [{'reconstruction': mode, 'samples': 4}]

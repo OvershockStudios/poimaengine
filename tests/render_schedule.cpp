@@ -25,6 +25,12 @@ struct Fixture {
                 f.motion=add(Kind::texture,Lifetime::shared);f.resources[f.motion].format=Format::rg32_float;
                 f.motion_valid=add(Kind::texture,Lifetime::shared);f.resources[f.motion_valid].format=Format::r8_unorm;
             }
+            if(s.deferred) {
+                f.resources[f.hdr].format=Format::rgba16_float;
+                f.material_base=add(Kind::texture,Lifetime::shared);f.resources[f.material_base].format=Format::rgba16_float;
+                f.material_surface=add(Kind::texture,Lifetime::shared);f.resources[f.material_surface].format=Format::rgba16_float;
+                f.material_correspondence=add(Kind::texture,Lifetime::shared);f.resources[f.material_correspondence].format=Format::rgba32_float;
+            }
             f.frame=add(Kind::buffer,Lifetime::shared);f.objects=add(Kind::buffer,Lifetime::shared);
             f.lights=add(Kind::buffer,Lifetime::shared);f.shadow=add(Kind::texture,Lifetime::shared);
             const auto material=add(Kind::texture,Lifetime::imported,true);
@@ -248,5 +254,81 @@ void reconstruction_contracts(){
     }
 }
 
+void deferred_contracts(){
+    for(bool sky:{false,true})for(bool clustered:{false,true})for(bool debug:{false,true})for(bool skin:{false,true}){
+        auto settings=rich();settings.products=settings.deferred=true;settings.sky=sky;settings.clustered=clustered;settings.products_debug=debug;
+        auto p=Fixture(settings,1,skin).plan();p.validate();++accepted;
+        unsigned lighting=0;p.execute([&](const Pass& work,const Schedule&){if(work.id==PassId::deferred_lighting)++lighting;});
+        check(lighting==1,"Deferred builder did not execute one lighting pass");
+    }
+    // Empty direct-light storage is valid for emissive/ambient-only scenes.
+    // Clustered assignment still requires an actual light resource.
+    {
+        auto zero_settings=rich();zero_settings.products=zero_settings.deferred=true;zero_settings.clustered=false;
+        Fixture zero(zero_settings);zero.f.lights=none;
+        auto plan=zero.plan();plan.validate();++accepted;
+        check(std::none_of(pass(plan,PassId::deferred_lighting).accesses.begin(),pass(plan,PassId::deferred_lighting).accesses.end(),
+            [](const Access& access){return access.resource==none;}),"Zero-light schedule contains an absent binding");
+    }
+    auto settings=rich();settings.products=settings.deferred=true;
+    Fixture fixture(settings,1,true);const auto original=fixture.plan();const auto& f=fixture.f;
+    auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
+    bad("deferred scene missing",[](auto& p){p.settings.scene=false;});
+    bad("deferred products missing",[](auto& p){p.settings.products=false;});
+    bad("deferred unexpectedly disabled",[](auto& p){p.settings.deferred=false;});
+    bad("deferred multisampling",[](auto& p){p.frame.resources[p.frame.hdr].samples=4;});
+    bad("deferred HDR format",[](auto& p){p.frame.resources[p.frame.hdr].format=Format::rgba32_float;});
+    bad("deferred lighting removed",[](auto& p){std::erase_if(p.passes,[](const Pass& work){return work.id==PassId::deferred_lighting;});});
+    bad("deferred opaque removed",[](auto& p){std::erase_if(p.passes,[](const Pass& work){return work.id==PassId::opaque;});});
+    for(auto id:{f.material_base,f.material_surface,f.material_correspondence}){
+        bad("deferred material uninitialized",[&](auto& p){erase_access(p,PassId::scene_clear,id,Use::clear_color);});
+        bad("deferred material raster output missing",[&](auto& p){erase_access(p,PassId::opaque,id,Use::color);});
+        bad("deferred material input missing",[&](auto& p){erase_access(p,PassId::deferred_lighting,id,Use::sampled);});
+        bad("deferred material wrong kind",[&](auto& p){p.frame.resources[id].kind=Kind::buffer;});
+        bad("deferred material wrong format",[&](auto& p){p.frame.resources[id].format=Format::unspecified;});
+        bad("deferred material width",[&](auto& p){++p.frame.resources[id].width;});
+        bad("deferred material height",[&](auto& p){++p.frame.resources[id].height;});
+        bad("deferred material samples",[&](auto& p){p.frame.resources[id].samples=4;});
+        bad("deferred material physical alias",[&](auto& p){p.frame.resources[id].identity=p.frame.resources[f.hdr].identity;});
+        bad("deferred material not readable",[&](auto& p){p.frame.resources[id].supported &= ~use_bit(Use::sampled);});
+    }
+    for(auto role:{&FrameResources::material_base,&FrameResources::material_surface,&FrameResources::material_correspondence}){
+        bad("deferred material role missing",[&](auto& p){p.frame.*role=none;});
+        for(auto alias:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.output,f.shadow})
+            bad("deferred material role aliases existing attachment",[&](auto& p){p.frame.*role=alias;});
+    }
+    bad("deferred materials share role",[](auto& p){p.frame.material_surface=p.frame.material_base;});
+    for(auto id:{f.normal,f.motion,f.motion_valid}){
+        bad("deferred compute product missing",[&](auto& p){erase_access(p,PassId::deferred_lighting,id,Use::image_write);});
+        bad("deferred raster touches final product",[&](auto& p){pass(p,PassId::opaque).accesses.push_back({id,Use::color,false});});
+        bad("deferred final product extent",[&](auto& p){++p.frame.resources[id].height;});
+        bad("deferred product sampled while written",[&](auto& p){pass(p,PassId::deferred_lighting).accesses.push_back({id,Use::sampled,false});});
+    }
+    for(auto id:{f.depth,f.shadow})bad("deferred sampled state missing",[&](auto& p){erase_access(p,PassId::deferred_lighting,id,Use::sampled);});
+    check(f.lights!=none,"Missing-light-binding mutation requires an actual resource");
+    for(auto id:{f.lights,f.counts,f.indices})bad("deferred light state missing",[&](auto& p){erase_access(p,PassId::deferred_lighting,id,Use::storage_read);});
+    bad("deferred frame constants missing",[&](auto& p){erase_access(p,PassId::deferred_lighting,f.frame,Use::constant);});
+    bad("deferred HDR readwrite missing",[&](auto& p){erase_access(p,PassId::deferred_lighting,f.hdr,Use::image_read_write);});
+    bad("deferred HDR readwrite is not initialization",[&](auto& p){for(auto& a:pass(p,PassId::deferred_lighting).accesses)if(a.use==Use::image_read_write)a.initialize=true;});
+    bad("deferred HDR not cleared",[&](auto& p){erase_access(p,PassId::scene_clear,f.hdr,Use::clear_color);});
+    bad("deferred HDR conflicting sampled alias",[&](auto& p){pass(p,PassId::deferred_lighting).accesses.push_back({f.hdr,Use::sampled,false});});
+    bad("deferred readwrite unsupported",[&](auto& p){p.frame.resources[f.hdr].supported &= ~use_bit(Use::image_read_write);});
+    bad("readwrite outside deferred lighting",[&](auto& p){pass(p,PassId::output).accesses.push_back({f.hdr,Use::image_read_write,false});});
+    bad("readwrite arbitrary texture",[&](auto& p){pass(p,PassId::deferred_lighting).accesses.push_back({f.material_base,Use::image_read_write,false});});
+    // Full production builder ordering also covers compact deferred inputs and FSR.
+    fixture.settings.reconstruction=true;
+    auto image=[&](Format format){auto id=fixture.add(Kind::texture,Lifetime::shared);fixture.f.resources[id].format=format;return id;};
+    fixture.f.reconstructed=image(Format::rgba16_float);fixture.f.dense_motion=image(Format::rg32_float);fixture.f.reactive=image(Format::r8_unorm);
+    fixture.f.dilated_depth=image(Format::r32_float);fixture.f.dilated_motion=image(Format::rg16_float);fixture.f.reconstructed_depth=image(Format::r32_uint);
+    auto upscale=fixture.plan();
+    for(auto id:{f.hdr,f.depth,f.normal,f.motion,f.motion_valid,f.material_base,f.material_surface,f.material_correspondence,
+                 fixture.f.dense_motion,fixture.f.reactive,fixture.f.dilated_depth,fixture.f.dilated_motion,fixture.f.reconstructed_depth}){
+        upscale.frame.resources[id].width=192;upscale.frame.resources[id].height=108;
+    }
+    upscale.validate();++accepted;
+    std::erase_if(upscale.passes,[](const Pass& work){return work.id==PassId::deferred_lighting;});
+    rejects("temporal preparation without deferred lighting",[&]{upscale.validate();});
 }
-int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+
+}
+int main(){try{matrix();faults();products();motion_contracts();reconstruction_contracts();deferred_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

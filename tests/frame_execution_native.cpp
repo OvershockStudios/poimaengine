@@ -114,15 +114,33 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
             // A stable resource packet permits queue depth independent of texture
             // upload drains. This records CPU retirement depth, NOT GPU overlap.
             const auto stable=scene(geometry,33);
-            // Exclude initial packet/texture upload and warm both frame slots.
-            for(unsigned i=0;i<4;++i){pump();check(primary->draw(stable) && secondary->draw(stable),"Warm-up draw skipped");}
-            const auto primary_before=primary->report(),secondary_before=secondary->report();
-            std::vector<double> primary_wall,secondary_wall;primary_wall.reserve(24);secondary_wall.reserve(24);
-            auto measured_draw=[&](HostedViewport& viewport,std::vector<double>& times){
-                const auto begin=std::chrono::steady_clock::now();check(viewport.draw(stable),"Stable draw skipped");
-                times.push_back(std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-begin).count());
+            // False with no accepted submission is legal for a bounded hosted
+            // acquire. Never retry accepted-but-unpresented work as the same frame.
+            auto primary_expected=primary->report().diagnostics.frame_execution.submitted;
+            auto secondary_expected=secondary->report().diagnostics.frame_execution.submitted;
+            mode["warm_skipped_attempts"]=Json::array();
+            auto stable_draw=[&](HostedViewport& viewport,std::uint64_t& expected,const char* name,const char* phase,std::vector<double>* times){
+                const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+                for(;;){
+                    const auto begin=std::chrono::steady_clock::now();const bool drawn=viewport.draw(stable);
+                    const double milliseconds=std::chrono::duration<double,std::milli>(std::chrono::steady_clock::now()-begin).count();
+                    if(drawn){++expected;if(times)times->push_back(milliseconds);return;}
+                    const auto current=viewport.report();
+                    mode["warm_skipped_attempts"].push_back({{"view",name},{"phase",phase},{"expected_submitted",expected},
+                        {"actual_submitted",current.diagnostics.frame_execution.submitted},{"draw_wall_ms",milliseconds}});
+                    check(current.diagnostics.frame_execution.submitted==expected,"Skipped warm draw accepted a submission; refusing retry");
+                    accounting(current,limit);
+                    check(std::chrono::steady_clock::now()<deadline,"Warm HWND stayed unavailable for five seconds");
+                    pump();
+                }
             };
-            for(unsigned i=0;i<24;++i){pump();measured_draw(*primary,primary_wall);measured_draw(*secondary,secondary_wall);}
+            // Exclude initial packet/texture upload and warm both frame slots.
+            for(unsigned i=0;i<4;++i){pump();stable_draw(*primary,primary_expected,"primary","warmup",nullptr);stable_draw(*secondary,secondary_expected,"secondary","warmup",nullptr);}
+            const auto primary_before=primary->report(),secondary_before=secondary->report();
+            check(primary_before.diagnostics.frame_execution.submitted==primary_expected && secondary_before.diagnostics.frame_execution.submitted==secondary_expected,"Warm-up submission count differs");
+            const auto warmup_skips=mode["warm_skipped_attempts"].size();
+            std::vector<double> primary_wall,secondary_wall;primary_wall.reserve(24);secondary_wall.reserve(24);
+            for(unsigned i=0;i<24;++i){pump();stable_draw(*primary,primary_expected,"primary","stable",&primary_wall);stable_draw(*secondary,secondary_expected,"secondary","stable",&secondary_wall);}
             const auto primary_after=primary->report(),secondary_after=secondary->report();
             accounting(primary_after,limit);accounting(secondary_after,limit);
             auto warm_delta=[&](const RenderReport& before,const RenderReport& after,const std::vector<double>& times){
@@ -135,7 +153,8 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
             };
             mode["warm_stable"]={{"primary",warm_delta(primary_before,primary_after,primary_wall)},
                 {"secondary",warm_delta(secondary_before,secondary_after,secondary_wall)},
-                {"measurement","CPU wall duration around each draw call; two devices interleave, message pumping and report polling excluded; not FPS or GPU execution time"}};
+                {"warmup_interrupted",warmup_skips!=0},{"interrupted",mode["warm_skipped_attempts"].size()!=warmup_skips},
+                {"measurement","CPU wall duration around each of24 successful draw calls; failed-attempt durations recorded separately; two devices interleave, message pumping and report polling excluded; not FPS or GPU execution time"}};
             mode["observations"].push_back({{"stage","stable"},{"primary",report(primary_after)},{"secondary",report(secondary_after)}});
             // completed_submissions is the ordered retirement ordinal. Polling
             // can skip intermediate completions, so validate every newly observed
