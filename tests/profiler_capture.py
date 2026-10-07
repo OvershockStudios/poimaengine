@@ -108,7 +108,7 @@ def main():
                 'renderer.capture_readback_write', 'renderer.camera_draws',
                 'renderer.camera_triangles', 'renderer.texture_payload_bytes'} <= names, names
         gpu = [e for e in observed if e['kind'] == 'gpu']
-        for name in ('skinning', 'shadows', 'opaque', 'post', 'total'):
+        for name in ('skinning', 'light_assignment', 'shadows', 'opaque', 'post', 'total'):
             samples = [e for e in gpu if e['name'] == f'gpu.{name}.ns']
             assert len(samples) == frame_count, (name, frame_count, samples)
             assert all(e['duration_ns'] == 0 and isinstance(e['value'], int) and e['value'] >= 0 for e in samples)

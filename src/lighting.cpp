@@ -42,7 +42,7 @@ void validate_shadow_budget(std::size_t views,std::uint32_t resolution) {
 }
 void append_light(SceneLighting& state,const std::string& id,const Light& light,const Matrix4& world) {
     validate_light(light);state.preview=false;if(!light.enabled)return;
-    require(state.lights.size()<max_scene_lights,"A scene supports at most 64 enabled lights in the initial forward path.");
+    require(state.lights.size()<max_scene_lights,"A scene exceeds the enabled-light limit.");
     SceneLight result;result.entity_id=id;result.light=light;result.position={world[12],world[13],world[14]};
     for(auto x:result.position)require(std::isfinite(x),"Invalid light world position.");
     if(light.kind!=LightKind::point) {

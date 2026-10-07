@@ -40,7 +40,10 @@ class LightingContract(unittest.TestCase):
         self.assertGreaterEqual(d['schema_revision'],8)
         for name in ('world.lighting','runtime.lighting'):self.assertIn(name,d['methods'])
         self.assertEqual(len(d['components']['Light']['oneOf']),3)
-        self.assertEqual(d['limits']['enabled_lights'],64)
+        self.assertEqual(d['limits']['enabled_lights'],1024)
+        for method in ('world.capture','runtime.capture','runtime.play'):
+            option=d['methods'][method]['properties']['clustered_lighting']
+            self.assertEqual(option,{'type':'boolean','default':True})
         original=c.rpc('world.lighting');self.assertTrue(original['preview_fallback']);self.assertFalse(self.path.exists())
         request={'base_revision':0,'request_id':uuid.uuid4().hex,'ops':[create(1),light(1,enabled=False)]}
         c.rpc('world.transact',{**request,'preview':True});self.assertEqual(c.rpc('world.lighting'),original)
@@ -67,11 +70,33 @@ class LightingContract(unittest.TestCase):
         before=self.path.read_bytes()
         for op in invalid:
             c.txn(1,[transform(1,(99,0,0)),op],error=-32602);self.assertEqual(self.path.read_bytes(),before)
-        c.txn(1,[op for n in range(2,65) for op in (create(n),light(n))]);self.assertEqual(len(c.rpc('world.lighting')['lights']),64)
-        before=self.path.read_bytes();c.txn(2,[create(65),light(65)],error=-32602);self.assertEqual(self.path.read_bytes(),before)
-        c.txn(2,[create(65),light(65,enabled=False),environment(1)])
-        c.txn(3,[environment(2)],error=-32602);c.txn(3,[light(65)],error=-32602)
-        c.txn(3,[light(1,enabled=False),light(65)]);self.assertEqual(len(c.rpc('world.lighting')['lights']),64)
+        discovery=c.rpc('world.describe')
+        limit=discovery['limits']['enabled_lights']
+        max_ops=discovery['methods']['world.transact']['properties']['ops']['maxItems']
+        self.assertGreaterEqual(max_ops,2)
+        revision=1
+        # Two operations per new light; obey transaction limits independently
+        # of scene capacity rather than accidentally testing oversized requests.
+        per_batch=max_ops//2
+        for first in range(2,limit+1,per_batch):
+            c.txn(revision,[op for n in range(first,min(first+per_batch,limit+1)) for op in (create(n),light(n))])
+            revision+=1
+        resolved=c.rpc('world.lighting')
+        self.assertEqual({entry['id'] for entry in resolved['lights']},{uid(n) for n in range(1,limit+1)})
+        extra=limit+1;before=self.path.read_bytes();history=c.rpc('world.history')
+        c.txn(revision,[create(extra),light(extra)],error=-32602)
+        self.assertEqual(self.path.read_bytes(),before);self.assertEqual(c.rpc('world.history'),history)
+        self.assertEqual(c.rpc('world.lighting'),resolved)
+        c.txn(revision,[create(extra),light(extra,enabled=False),environment(1)]);revision+=1
+        before=self.path.read_bytes();history=c.rpc('world.history')
+        for ops in ([environment(2)],[light(extra)]):
+            c.txn(revision,ops,error=-32602)
+            self.assertEqual(self.path.read_bytes(),before);self.assertEqual(c.rpc('world.history'),history)
+        # Final-state validation permits replacing one enabled light atomically.
+        c.txn(revision,[light(1,enabled=False),light(extra)]);revision+=1
+        final=c.rpc('world.lighting')
+        self.assertEqual({entry['id'] for entry in final['lights']},{uid(n) for n in range(2,extra+1)})
+        c.close();c=self.open();self.assertEqual(c.rpc('world.lighting'),final)
     def test_shadow_defaults_validation_and_resource_limits(self):
         c=self.open();d=c.rpc('world.describe');self.assertGreaterEqual(d['schema_revision'],9)
         self.assertEqual(d['limits']['shadow_views'],16);self.assertEqual(d['limits']['shadow_bytes'],128*1024*1024)

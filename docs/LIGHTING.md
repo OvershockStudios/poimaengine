@@ -1,10 +1,10 @@
 # Authored lighting
 
-Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure to the native world service, Vulkan capture and player. Agents can author these through the same atomic transactions as meshes and materials, then inspect the resolved poses without a GPU. This is direct lighting; Poima 0.0.11 adds optional [shadow maps](SHADOWS.md). Poima 0.0.30 adds an asset-free procedural sky background. Environment reflections, GI, volumetric lighting and production light culling remain outstanding.
+Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure to the native world service, Vulkan capture and player. Agents can author these through the same atomic transactions as meshes and materials, then inspect the resolved poses without a GPU. This is direct lighting; Poima 0.0.11 adds optional [shadow maps](SHADOWS.md). Poima 0.0.30 adds an asset-free procedural sky background. The current renderer adds bounded clustered light assignment. Environment reflections, GI, volumetric lighting and production-scale performance qualification remain outstanding.
 
 ## Components and units
 
-Use `component.set` on an existing entity. `world.describe` schema revision 23 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
+Use `component.set` on an existing entity. `world.describe` schema revision 40 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
 
 ```json
 {"op":"component.set","id":"00000000000000000000000000000002","type":"Light","value":{"kind":"spot","color":[1,0.65,0.3],"intensity":100,"enabled":true,"range":12,"inner_angle":15,"outer_angle":40}}
@@ -70,7 +70,7 @@ A scene with **no Light or LightingEnvironment components** retains the old prev
 
 Capture and player results also include the resolved lighting. These responses let an agent check the light state alongside the resulting image. Existing revision/tick conflicts use `-32009`; invalid component data or global counts use `-32602`.
 
-Transactions support preview, persisted retry receipts, atomic rejection and component removal. The initial forward path allows **64 enabled lights** and **one environment**; authoring rejects overflow rather than dropping lights silently. Disabled lights count toward the ordinary entity/document limits. These are current implementation bounds, not the planned production scene scale.
+Transactions support preview, persisted retry receipts, atomic rejection and component removal. The current path allows **1,024 enabled lights** and **one environment**; authoring rejects overflow rather than dropping lights silently. Disabled lights count toward the ordinary entity/document limits. These are current implementation bounds, not the planned production scene scale.
 
 ## Runtime ownership
 
@@ -82,7 +82,26 @@ Materials use the existing GGX/Smith/Schlick specular and Lambert diffuse terms.
 
 Point/spot intensity follows inverse-square attenuation, with squared distance clamped to 0.0001 m² to bound the singularity within 1 cm. A finite range multiplies it by `clamp(1 - (distance/range)^4, 0, 1)`. Spot falloff is the square of the normalized cosine interval between outer and inner cones. Colors from all lights accumulate in linear space. The renderer stores bounded half-float radiance and resolves MSAA before shared exposure, Reinhard mapping and sRGB encoding. Ambient fill affects diffuse color and receives material AO; emission receives exposure but no direct-light multiplier. The renderer uses float precision; extremely narrow cones and extreme world scales are not precision-qualified.
 
-Lights with enabled [shadow maps](SHADOWS.md) are occluded by visible opaque geometry; unshadowed lights retain their previous behavior. Metallic surfaces receive direct highlights but lack environment reflections. Work is linear in enabled lights per shaded pixel; there is no clustered light assignment, shadow cache or performance claim for 64 overlapping lights. The player still waits for the GPU each frame. NVRHI error checks are not full Vulkan validation.
+Lights with enabled [shadow maps](SHADOWS.md) are occluded by visible opaque geometry; unshadowed lights retain their previous behavior. Metallic surfaces receive direct highlights but lack environment reflections. Clustered assignment reduces the candidate list for finite-range lights; overflow and unsupported camera configurations retain the complete light loop. There is no shadow cache or measured production performance claim. The player still waits for the GPU each frame. NVRHI error checks are not full Vulkan validation.
+
+## Clustered assignment and reference mode
+
+Lights live in a structured GPU buffer with capacity 1,024. A compute pass assigns conservative finite point/spot influence spheres to a **16 × 9 × 24** camera grid (3,456 clusters), with logarithmic depth slices and **64 retained candidates per cluster**. Spot assignment uses the enclosing range sphere; the material shader still evaluates the actual cone. Candidates retain original light order and shadow indices. The existing limits of **16 shadow views and 128 MiB of shadow depth texels** are unchanged; 1,024 enabled lights does not mean 1,024 shadowed lights.
+
+A cluster exceeding 64 candidates uses the full light loop instead of truncating illumination. Directional lights and zero-range local lights have unbounded influence and cannot be culled by a finite sphere. An all-global scene bypasses assignment. Non-rigid cameras, extreme projection parameters, extreme camera translation and empty viewports also use the complete reference path; inspection reports the reason. These conservative fallbacks preserve illumination, but can retain full per-pixel lighting cost.
+
+`world.capture`, `runtime.capture` and `runtime.play` accept optional **`clustered_lighting`**, a strict Boolean defaulting to `true`. Setting it to `false` selects the all-light reference loop for comparison. It changes rendering only, not authored lights or simulation state. Capture/player results expose `render_diagnostics.light_assignment`:
+
+| Field | Meaning |
+| --- | --- |
+| `requested`, `active`, `fallback_reason` | Requested mode, whether assignment ran, and the reason for reference fallback. |
+| `grid`, `cluster_count`, `capacity` | Current bounded grid and retained per-cluster capacity. |
+| `light_count`, `global_lights` | Enabled GPU lights and those with unbounded influence. |
+| `statistics_available` | Whether actual assignment results were read back. |
+| `candidate_references`, `overflow_clusters`, `max_candidates` | Actual assignment counts; `null` when statistics are unavailable. These are not fragment counts or measured shading operations. |
+| `buffer_bytes` | Light and cluster buffer payload: currently 994,304 bytes, excluding driver overhead and the rest of the renderer. |
+
+An overflow count is diagnostic, not a dropped-light count. A zero assignment count without checking `statistics_available` is not evidence of zero lighting work. GPU profiling exposes a separate light-assignment interval when timestamps are available.
 
 ## Reproduce and verify
 
@@ -102,7 +121,16 @@ python3 tests/lighting_capture.py build/windows-runtime/poima.exe --windows-inte
 python3 tests/player_contract.py build/windows-runtime/poima.exe --windows-interop --authored-lights --output build/lighting-player-authored --gpu 0
 ```
 
-The headless suite exercises discovery, preview/fallback, retry/persistence, transformed lights, invalid data, global limits and atomic rejection. The optional runtime case checks frozen settings and a light following a falling parent. GPU tests compare numerical references with actual captured pixels for direct lights, distance/range/cone falloff, colored accumulation, ambient/exposure, the last of 64 uniform slots, a moving runtime light, primitive defaults and emission. The authored-light player variant attaches lamps to a falling body and a moving camera, then compares final light poses and pixels after 371 ticks against independent headless stepping. See [recorded evidence](evidence/m2-lighting.json) for the builds, GPU results and current qualification limits.
+The headless suite exercises discovery, preview/fallback, retry/persistence, transformed lights, invalid data, global limits and atomic rejection. The optional runtime case checks frozen settings and a light following a falling parent. GPU tests compare numerical references with actual captured pixels for direct lights, distance/range/cone falloff, colored accumulation, ambient/exposure, the original slot-63 regression, a moving runtime light, primitive defaults and emission. The authored-light player variant attaches lamps to a falling body and a moving camera, then compares final light poses and pixels after 371 ticks against independent headless stepping. The [original lighting evidence](evidence/m2-lighting.json) records the earlier 64-light implementation and its qualification; it is not evidence for the newer 1,024-light bound.
+
+Clustered/reference comparison:
+
+```sh
+python3 tests/clustered_lighting_capture.py build/windows-runtime/poima.exe --windows-interop --output build/clustered-lighting-gpu1 --gpu 1
+python3 tests/clustered_lighting_capture.py build/windows-runtime/poima.exe --windows-interop --output build/clustered-lighting-gpu0 --gpu 0
+```
+
+The [clustered lighting evidence](evidence/m2-clustered-lighting.json) records **17 paired captures per GPU**, on the Windows RTX 4070 Laptop GPU and AMD integrated GPU. Every paired image matched exactly (maximum channel difference 0). Cases cover 129 sparse lights, contribution from enabled slot 1,023, dense overflow, global/reference fallbacks, mixed finite/global and shadowed lights, boundary geometry, and moving runtime lights. The same cohort also passed 11 HDR-composition captures and 18 existing lighting captures per GPU. This is bounded Windows rendering correctness evidence: it establishes neither frame-rate improvement nor Linux rendering qualification, and it does not establish production-scale performance.
 
 ![Actual NVIDIA Vulkan capture with warm/cool local lights and a top spotlight](evidence/m2-lighting-grid.png)
 

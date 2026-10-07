@@ -27,6 +27,7 @@
 #include "poima/scene_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
+#include "poima/cluster_lights_cs.hpp"
 #include "poima/sky_vs.hpp"
 #include "poima/sky_ps.hpp"
 #include "poima/shadow_vs.hpp"
@@ -190,8 +191,13 @@ struct SkyConstants {
 static_assert(sizeof(SkyConstants)==128);
 struct GpuLight { float position_kind[4],direction_range[4],color_intensity[4],cone[4],shadow[4]; };
 struct GpuShadow { float view_projection[16],splits[4]; };
-struct FrameConstants { float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];GpuLight lights[max_scene_lights];GpuShadow shadows[max_shadow_views]; };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==6528);
+inline constexpr std::uint32_t cluster_x=16,cluster_y=9,cluster_z=24,cluster_capacity=64;
+inline constexpr std::uint32_t cluster_cells=cluster_x*cluster_y*cluster_z;
+struct FrameConstants {
+    float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
+    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];
+};
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1456);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
 struct GpuJoint { float rows[3][4]; };
@@ -275,6 +281,13 @@ struct Context {
     std::vector<DrawItem> draws;
     FrameConstants frame_constants{};
     nvrhi::BufferHandle frame_buffer;
+    std::vector<GpuLight> gpu_lights;
+    nvrhi::BufferHandle light_buffer,cluster_counts,cluster_indices,cluster_readback;
+    nvrhi::ShaderHandle cluster_shader;
+    nvrhi::BindingLayoutHandle cluster_layout;
+    nvrhi::BindingSetHandle cluster_bindings;
+    nvrhi::ComputePipelineHandle cluster_pipeline;
+    bool clustered_requested=true;
     SkyConstants sky_constants{};
     bool sky_enabled=false;
     nvrhi::ShaderHandle sky_vs,sky_ps;
@@ -389,6 +402,8 @@ struct Context {
         bindings = nullptr;
         binding_layout = nullptr;
         input_layout = nullptr;
+        cluster_pipeline=nullptr;cluster_bindings=nullptr;cluster_layout=nullptr;cluster_shader=nullptr;
+        light_buffer=nullptr;cluster_counts=nullptr;cluster_indices=nullptr;cluster_readback=nullptr;
         vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear(); material_cache.clear();texture_cache.clear();sampler_cache.clear();
         framebuffers.clear();
 #if POIMA_EDITOR
@@ -422,6 +437,7 @@ struct Context {
         scene = source;capture_exclusive=options.capture_exclusive;
         hosted=external_window!=nullptr;
         diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
+        clustered_requested=options.clustered_lighting;diagnostics.light_assignment.requested=clustered_requested;
         samples = scene ? options.samples : 1;
         require(samples==1 || samples==2 || samples==4 || samples==8,"Scene samples must be 1, 2, 4 or 8.");
         SDL_SetMainReady();
@@ -555,11 +571,13 @@ struct Context {
                 .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
             for(std::uint32_t slot=0;slot<5;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
+            for(std::uint32_t slot=6;slot<=8;++slot)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
             binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
             frame_desc.initialState=nvrhi::ResourceStates::ConstantBuffer;frame_desc.keepInitialState=true;frame_desc.debugName="Scene frame uniforms";
             frame_buffer=checked->createBuffer(frame_desc);require(static_cast<bool>(frame_buffer),"Frame uniform buffer creation failed.");
+            prepare_light_resources();
             pipeline_desc.inputLayout = input_layout;
             pipeline_desc.bindingLayouts.push_back(binding_layout);
         }
@@ -579,6 +597,72 @@ struct Context {
         if (scene) { prepare_shadows();prepare_scene(); }
     }
 
+    void prepare_light_resources() {
+        nvrhi::BufferDesc lights;lights.byteSize=max_scene_lights*sizeof(GpuLight);lights.structStride=sizeof(GpuLight);
+        lights.initialState=nvrhi::ResourceStates::ShaderResource;lights.keepInitialState=true;lights.debugName="Structured scene lights";
+        light_buffer=checked->createBuffer(lights);
+        nvrhi::BufferDesc cells;cells.byteSize=cluster_cells*sizeof(std::uint32_t);cells.structStride=sizeof(std::uint32_t);
+        cells.canHaveUAVs=true;cells.initialState=nvrhi::ResourceStates::ShaderResource;cells.keepInitialState=true;cells.debugName="Cluster light counts";
+        cluster_counts=checked->createBuffer(cells);
+        cells.byteSize=cluster_cells*cluster_capacity*sizeof(std::uint32_t);cells.debugName="Cluster sorted light indices";
+        cluster_indices=checked->createBuffer(cells);
+        nvrhi::BufferDesc readback;readback.byteSize=cluster_cells*sizeof(std::uint32_t);readback.cpuAccess=nvrhi::CpuAccessMode::Read;
+        readback.initialState=nvrhi::ResourceStates::CopyDest;readback.keepInitialState=true;readback.debugName="Cluster statistics readback";
+        cluster_readback=checked->createBuffer(readback);
+        cluster_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Compute).setEntryName("compute_main"),poima_cluster_lights_cs);
+        cluster_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Compute)
+            .addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(6))
+            .addItem(nvrhi::BindingLayoutItem::StructuredBuffer_UAV(0)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_UAV(1)));
+        require(light_buffer && cluster_counts && cluster_indices && cluster_readback && cluster_shader && cluster_layout,"Clustered light resources unavailable.");
+        cluster_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,cluster_counts))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(1,cluster_indices)),cluster_layout);
+        cluster_pipeline=checked->createComputePipeline(nvrhi::ComputePipelineDesc().setComputeShader(cluster_shader).addBindingLayout(cluster_layout));
+        require(cluster_bindings && cluster_pipeline,"Clustered light compute pipeline creation failed.");
+    }
+    void configure_light_assignment() {
+        auto& info=diagnostics.light_assignment;info={};info.requested=clustered_requested;
+        info.grid={cluster_x,cluster_y,cluster_z};info.cluster_count=cluster_cells;info.capacity=cluster_capacity;info.light_count=gpu_lights.size();
+        info.buffer_bytes=max_scene_lights*sizeof(GpuLight)+cluster_cells*(cluster_capacity+2)*sizeof(std::uint32_t);
+        for(const auto& light:gpu_lights)if(light.position_kind[3]<.5f || light.direction_range[3]==0)++info.global_lights;
+        const auto viewport=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
+        frame_constants.cluster_viewport[0]=viewport.minX;frame_constants.cluster_viewport[1]=viewport.minY;
+        frame_constants.cluster_viewport[2]=viewport.maxX-viewport.minX;frame_constants.cluster_viewport[3]=viewport.maxY-viewport.minY;
+        frame_constants.cluster_grid[0]=cluster_x;frame_constants.cluster_grid[1]=cluster_y;frame_constants.cluster_grid[2]=cluster_z;frame_constants.cluster_grid[3]=0;
+        if(!clustered_requested)info.fallback_reason="All-light reference requested.";
+        else if(info.global_lights==info.light_count)info.fallback_reason="All lights have unbounded influence.";
+        else if(!rigid_transform(scene->camera_world))info.fallback_reason="Non-rigid camera uses all-light reference.";
+        else if(scene->near_plane<1e-4 || scene->far_plane>1e7 || scene->far_plane/scene->near_plane>1e7 || scene->vertical_fov<1 || scene->vertical_fov>175)
+            info.fallback_reason="Extreme camera projection uses all-light reference.";
+        else if(std::abs(scene->camera_world[12])>1e6 || std::abs(scene->camera_world[13])>1e6 || std::abs(scene->camera_world[14])>1e6)
+            info.fallback_reason="Extreme camera translation uses all-light reference.";
+        else if(!(frame_constants.cluster_viewport[2]>0 && frame_constants.cluster_viewport[3]>0))info.fallback_reason="Empty viewport uses all-light reference.";
+        else {
+            frame_constants.cluster_depth[0]=static_cast<float>(std::log2(scene->near_plane));
+            frame_constants.cluster_depth[1]=static_cast<float>(std::log2(scene->far_plane/scene->near_plane)/cluster_z);
+            frame_constants.cluster_depth[2]=static_cast<float>(scene->near_plane);frame_constants.cluster_depth[3]=static_cast<float>(scene->far_plane);
+            info.active=true;frame_constants.cluster_grid[3]=1;
+        }
+    }
+    void dispatch_light_assignment() {
+        if(!diagnostics.light_assignment.active)return;
+        nvrhi::ComputeState state;state.pipeline=cluster_pipeline;state.bindings.push_back(cluster_bindings);commands->setComputeState(state);
+        commands->dispatch((cluster_cells+63)/64);
+        commands->copyBuffer(cluster_readback,0,cluster_counts,0,cluster_cells*sizeof(std::uint32_t));
+    }
+    void collect_light_assignment() {
+        auto& info=diagnostics.light_assignment;if(!scene || !info.active)return;
+        const void* mapped=checked->mapBuffer(cluster_readback,nvrhi::CpuAccessMode::Read);require(mapped!=nullptr,"Cluster light statistics readback failed.");
+        std::array<std::uint32_t,cluster_cells> counts{};std::memcpy(counts.data(),mapped,sizeof(counts));checked->unmapBuffer(cluster_readback);
+        info.candidate_references=0;info.overflow_clusters=0;info.max_candidates=0;
+        for(const auto count:counts) {
+            require(count<=gpu_lights.size(),"GPU cluster count exceeds the uploaded light table.");
+            info.candidate_references+=count;info.max_candidates=std::max(info.max_candidates,static_cast<std::uint64_t>(count));
+            if(count>cluster_capacity)++info.overflow_clusters;
+        }
+        info.statistics_available=true;
+        profiling::counter("renderer.cluster_candidates",info.candidate_references);profiling::counter("renderer.cluster_overflow",info.overflow_clusters);
+    }
     void prepare_timestamps() {
         if(timestamp_prepared)return;
         timestamp_prepared=true;
@@ -588,7 +672,7 @@ struct Context {
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        timestamp_pool=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,5),nullptr,dispatch);
+        timestamp_pool=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,6),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -602,8 +686,8 @@ struct Context {
     }
     void collect_timestamps(double cpu_interval_ms) {
         if(!timestamp_recording)return;
-        std::array<std::uint64_t,5> values{};
-        const auto status=device.getQueryPoolResults(timestamp_pool,0,5,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
+        std::array<std::uint64_t,6> values{};
+        const auto status=device.getQueryPoolResults(timestamp_pool,0,6,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
@@ -612,8 +696,9 @@ struct Context {
         const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
         auto ms=[&](std::size_t a,std::size_t b) { return static_cast<double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns*1e-6; };
         if(diagnostics.profile_requested) {
-            timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.shadow_gpu,ms(1,2));timing_sample(diagnostics.opaque_gpu,ms(2,3));
-            timing_sample(diagnostics.post_gpu,ms(3,4));timing_sample(diagnostics.total_gpu,ms(0,4));
+            timing_sample(diagnostics.skinning_gpu,ms(0,1));timing_sample(diagnostics.light_assignment_gpu,ms(1,2));
+            timing_sample(diagnostics.shadow_gpu,ms(2,3));timing_sample(diagnostics.opaque_gpu,ms(3,4));
+            timing_sample(diagnostics.post_gpu,ms(4,5));timing_sample(diagnostics.total_gpu,ms(0,5));
         }
         // GPU values are queue durations observed after completion, not CPU
         // timeline timestamps. Never fabricate cross-clock synchronization.
@@ -622,8 +707,8 @@ struct Context {
             if(std::isfinite(ns) && ns>=0 && ns<static_cast<long double>(std::numeric_limits<std::uint64_t>::max()))
                 profiling::counter(name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
         };
-        sample("gpu.skinning.ns",0,1);sample("gpu.shadows.ns",1,2);sample("gpu.opaque.ns",2,3);
-        sample("gpu.post.ns",3,4);sample("gpu.total.ns",0,4);
+        sample("gpu.skinning.ns",0,1);sample("gpu.light_assignment.ns",1,2);sample("gpu.shadows.ns",2,3);sample("gpu.opaque.ns",3,4);
+        sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
     }
 
     void prepare_shadows() {
@@ -828,7 +913,10 @@ struct Context {
             auto levels=nvrhi::AllSubresources;if(map.min_filter==9728 || map.min_filter==9729)levels.setMipLevels(0,1);
             desc.addItem(nvrhi::BindingSetItem::Texture_SRV(slot,texture,nvrhi::Format::UNKNOWN,levels)).addItem(nvrhi::BindingSetItem::Sampler(slot,sampler));
         }
-        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture));
+        desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts))
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices));
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
     }
     void retain_scene_resources() {
@@ -970,8 +1058,9 @@ struct Context {
         for(std::size_t k=0;k<3;++k)frame_constants.camera_forward[k]=number(-scene->camera_world[8+k]);
         shadow_plan=shadow_views(*scene,aspect);
         frame_constants.light_count[2]=static_cast<std::uint32_t>(shadow_plan.size());
+        gpu_lights.resize(lighting.lights.size());
         for(std::size_t i=0;i<lighting.lights.size();++i) {
-            const auto& source=lighting.lights[i];validate_light(source.light);auto& light=frame_constants.lights[i];light={};
+            const auto& source=lighting.lights[i];validate_light(source.light);auto& light=gpu_lights[i];light={};
             for(std::size_t k=0;k<3;++k) { light.position_kind[k]=number(source.position[k]);light.direction_range[k]=number(source.direction[k]);light.color_intensity[k]=source.light.color[k]; }
             light.position_kind[3]=static_cast<float>(source.light.kind);light.direction_range[3]=source.light.range;light.color_intensity[3]=source.light.intensity;
             light.cone[0]=std::cos(source.light.inner_angle*0.017453292519943295f);light.cone[1]=std::cos(source.light.outer_angle*0.017453292519943295f);
@@ -979,11 +1068,12 @@ struct Context {
             light.shadow[2]=source.light.shadow.bias;light.shadow[3]=source.light.shadow.normal_bias;
         }
         for(std::size_t i=0;i<shadow_plan.size();++i) {
-            const auto& source=shadow_plan[i];auto& view=frame_constants.shadows[i];auto& light=frame_constants.lights[source.light_index];
+            const auto& source=shadow_plan[i];auto& view=frame_constants.shadows[i];auto& light=gpu_lights[source.light_index];
             if(light.shadow[1]==0)light.shadow[0]=static_cast<float>(i);light.shadow[1]+=1;
             for(std::size_t k=0;k<16;++k)view.view_projection[k]=number(source.view_projection[k]);
             view.splits[0]=number(source.split_near);view.splits[1]=number(source.split_far);
         }
+        configure_light_assignment();
         // Use the actual rounded GPU matrices for clipping decisions.
         auto frustum=[](const float* matrix) { Matrix4 value;std::copy_n(matrix,16,value.begin());return make_frustum(value); };
         const auto camera_frustum=frustum(frame_constants.view_projection);
@@ -1600,12 +1690,20 @@ struct Context {
         {
         profiling::Scope record_scope("render.record");
         const auto record_started=SteadyClock::now();commands->open();
-        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,5,dispatch);
+        if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,6,dispatch);
         timestamp(0);
-        if(scene) { commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));dispatch_skinning(); }
+        if(scene) {
+            commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));
+            dispatch_skinning();
+        }
         timestamp(1);
-        if(scene)render_shadows();
+        if(scene) {
+            if(!gpu_lights.empty())commands->writeBuffer(light_buffer,gpu_lights.data(),gpu_lights.size()*sizeof(GpuLight));
+            dispatch_light_assignment();
+        }
         timestamp(2);
+        if(scene)render_shadows();
+        timestamp(3);
         commands->beginTrackingTextureState(texture, nvrhi::AllSubresources,
             initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
         auto* scene_target=texture.Get();
@@ -1638,7 +1736,7 @@ struct Context {
                 else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
             }
         } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
-        timestamp(3);
+        timestamp(4);
         if(scene && multisample_color)commands->resolveTexture(scene_hdr,nvrhi::AllSubresources,multisample_color,nvrhi::AllSubresources);
         render_scene_output(index);
         render_game_ui(index);
@@ -1653,7 +1751,7 @@ struct Context {
 #endif
         if (capture_frame) commands->copyTexture(staging, {}, texture, {});
         commands->setTextureState(texture, nvrhi::AllSubresources, nvrhi::ResourceStates::Present);
-        commands->commitBarriers();timestamp(4);
+        commands->commitBarriers();timestamp(5);
         commands->close();
         record_ms=elapsed_ms(record_started);
         }
@@ -1677,7 +1775,7 @@ struct Context {
         initialized[index] = true;
         // Deliberately serialized for this correctness test, not a frame-time benchmark.
         { profiling::Scope wait_scope("render.wait");require(checked->waitForIdle(), "NVRHI device wait failed."); }
-        validate_skin_dispatch();
+        validate_skin_dispatch();collect_light_assignment();
         checked->runGarbageCollection();
         require(messages.errors == 0, "NVRHI reported a validation/backend error; inspect stderr.");
         ++diagnostics.completed_submissions;diagnostics.last_draws=pending_draws;

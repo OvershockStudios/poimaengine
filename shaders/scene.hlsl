@@ -10,17 +10,9 @@ struct DrawConstants {
     float4 emissive_roughness;
 };
 [[vk::push_constant]] ConstantBuffer<DrawConstants> draw;
-struct SceneLight { float4 position_kind;float4 direction_range;float4 color_intensity;float4 cone;float4 shadow; };
-struct ShadowView { column_major float4x4 view_projection;float4 splits; };
-cbuffer Frame : register(b1) {
-    column_major float4x4 view_projection;
-    float4 camera; // .xyz: world position; .w: target performs sRGB encoding
-    float4 ambient_exposure;
-    uint4 light_count;
-    float4 camera_forward;
-    SceneLight lights[64];
-    ShadowView shadows[16];
-};
+#include "scene_frame.hlsli"
+StructuredBuffer<uint> cluster_counts : register(t7);
+StructuredBuffer<uint> cluster_indices : register(t8);
 Texture2D base_map : register(t0);
 Texture2D mr_map : register(t1);
 Texture2D emissive_map : register(t2);
@@ -153,7 +145,22 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
         const float3 emission=draw.emissive_roughness.rgb*emissive_map.Sample(emissive_sampler,input.uv).rgb;
         const float occlusion=lerp(1,occlusion_map.Sample(occlusion_sampler,input.uv).r,draw.normal_row0.w);
         color=base*(1-metallic)*ambient_exposure.rgb*occlusion+emission;
-        for(uint index=0;index<light_count.x;++index) {
+        uint cell=0,count=light_count.x;bool clustered=false;
+        if(cluster_grid.w!=0) {
+            const float depth=dot(view_projection[3],float4(input.world_position,1));
+            const float2 local=(input.position.xy-cluster_viewport.xy)/cluster_viewport.zw;
+            // Out-of-volume/invalid interpolants retain the complete reference
+            // path instead of indexing a clipped cell with unrelated bounds.
+            if(all(local>=0) && all(local<1) && depth>=cluster_depth.z && depth<=cluster_depth.w) {
+                const uint2 tile=min(uint2(local*float2(cluster_grid.xy)),cluster_grid.xy-1);
+                const uint slice=min((uint)max(0,floor((log2(depth)-cluster_depth.x)/cluster_depth.y)),cluster_grid.z-1);
+                cell=tile.x+cluster_grid.x*(tile.y+cluster_grid.y*slice);
+                const uint candidates=cluster_counts[cell];
+                if(candidates<=64) {count=candidates;clustered=true;}
+            }
+        }
+        for(uint slot=0;slot<count;++slot) {
+            const uint index=clustered ? cluster_indices[cell*64+min(slot,63u)] : slot;
             const SceneLight source=lights[index];float3 l=-source.direction_range.xyz;float attenuation=1;
             if(source.position_kind.w>0.5) {
                 const float3 delta=source.position_kind.xyz-input.world_position;

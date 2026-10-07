@@ -1,0 +1,1283 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "engine_version": "0.0.39-development",
+  "scope": "Windows native clustered-light correctness and Linux headless authoring/runtime contracts",
+  "passed": true,
+  "windows_binary_sha256": "481011b9395ac05ed6a5801d35be79ab859985638495ac36fd3a8d6eb980f26b",
+  "enabled_light_limit": 1024,
+  "assignment": {
+    "grid": [
+      16,
+      9,
+      24
+    ],
+    "cluster_capacity": 64,
+    "overflow": "Complete original light loop; no truncation",
+    "resources_bytes": 994304
+  },
+  "gpu_results": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "gpu_index": 0,
+      "passed": true,
+      "paired_captures": 17,
+      "raw_evidence_sha256": "eb5c986d747e1f82d60c6dac0a7513ff943b3f5ca769678fb8128de4e6be2208",
+      "cases": [
+        {
+          "name": "sparse-129",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 38587,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 3316,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 25,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "2c605b6e0d5d8375398ab1e697f8c1956e7842d9ea0dd6e732118b8db37a4741",
+            "2c605b6e0d5d8375398ab1e697f8c1956e7842d9ea0dd6e732118b8db37a4741"
+          ]
+        },
+        {
+          "name": "sparse-129-msaa",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 38587,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 3316,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 25,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "2ddfbd21ba0b02a7757986f6ec4eb406cb828759d1280f38a484906f2fa33634",
+            "2ddfbd21ba0b02a7757986f6ec4eb406cb828759d1280f38a484906f2fa33634"
+          ]
+        },
+        {
+          "name": "last-index-128",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4667,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 6178,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 26,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "52ee2f6f7ed260989f4cfcebc29b7a55c53e77d38f6cd34f60cb9d026499794d",
+            "52ee2f6f7ed260989f4cfcebc29b7a55c53e77d38f6cd34f60cb9d026499794d"
+          ]
+        },
+        {
+          "name": "all-zero",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 0,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 6178,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 26,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "ea2614dfafb5931650acd2013526042156e50c6479e7b47d438b9950874ce9fe",
+            "ea2614dfafb5931650acd2013526042156e50c6479e7b47d438b9950874ce9fe"
+          ]
+        },
+        {
+          "name": "last-index-1023",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4644,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 9058,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1024,
+            "max_candidates": 27,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "6b970595fed36df48edfa09f974d742623fe9d16618d7661fd484c87a0c48d94",
+            "6b970595fed36df48edfa09f974d742623fe9d16618d7661fd484c87a0c48d94"
+          ]
+        },
+        {
+          "name": "dense-overflow-65",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4114,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 187200,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 65,
+            "max_candidates": 65,
+            "overflow_clusters": 2880,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "124a7d7cebc6d7163816cbb605853b995a6ea5c06db1dd940c4cf2bb80bc67d8",
+            "124a7d7cebc6d7163816cbb605853b995a6ea5c06db1dd940c4cf2bb80bc67d8"
+          ]
+        },
+        {
+          "name": "global-unbounded",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 28944,
+          "light_assignment": {
+            "active": false,
+            "buffer_bytes": 994304,
+            "candidate_references": null,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "All lights have unbounded influence.",
+            "global_lights": 3,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 3,
+            "max_candidates": null,
+            "overflow_clusters": null,
+            "requested": true,
+            "statistics_available": false
+          },
+          "image_sha256": [
+            "983e46eae9da7183e0718b05fa19e014e1b045c7b20a24aef09f0ff818e0ed8d",
+            "983e46eae9da7183e0718b05fa19e014e1b045c7b20a24aef09f0ff818e0ed8d"
+          ]
+        },
+        {
+          "name": "camera-rigid-finite",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 38850,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 3338,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 30,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "a1fe253864332768240667d6f84520fd605afe23d5b71fc519e6c8d2cecd8c89",
+            "a1fe253864332768240667d6f84520fd605afe23d5b71fc519e6c8d2cecd8c89"
+          ]
+        },
+        {
+          "name": "camera-depth-extremes",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 26415,
+          "light_assignment": {
+            "active": false,
+            "buffer_bytes": 994304,
+            "candidate_references": null,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "Extreme camera projection uses all-light reference.",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": null,
+            "overflow_clusters": null,
+            "requested": true,
+            "statistics_available": false
+          },
+          "image_sha256": [
+            "4bc495d5dc44de20d13b683c74012ebbc06ddcd44ab9a7e327b9fe0ab782044d",
+            "4bc495d5dc44de20d13b683c74012ebbc06ddcd44ab9a7e327b9fe0ab782044d"
+          ]
+        },
+        {
+          "name": "mixed-shadow-offscreen",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 16366,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 5844,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 1,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 3,
+            "max_candidates": 3,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "49a247505bf958400aed1b379edac51eb1926e6a3841c6f6729f8b2ae1f24154",
+            "49a247505bf958400aed1b379edac51eb1926e6a3841c6f6729f8b2ae1f24154"
+          ]
+        },
+        {
+          "name": "mixed-without-offscreen",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 15648,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 5760,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 1,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 2,
+            "max_candidates": 2,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "a9bb2af6bb0f5f13daeb1d3b512480be8949453feacaf9f41b4af4d1a95e8669",
+            "a9bb2af6bb0f5f13daeb1d3b512480be8949453feacaf9f41b4af4d1a95e8669"
+          ]
+        },
+        {
+          "name": "depth-boundary--1",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 1436,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 24,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "82127bc1012d7f096131bf51343b7c03ae368f0b4a97ba8dcdde50c8aacad761",
+            "82127bc1012d7f096131bf51343b7c03ae368f0b4a97ba8dcdde50c8aacad761"
+          ]
+        },
+        {
+          "name": "depth-boundary-1",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 1436,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 24,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "27f29a6f3a0a56d2ca43be4e80a0eda3e8927944d6f4559fce09946488700c3e",
+            "27f29a6f3a0a56d2ca43be4e80a0eda3e8927944d6f4559fce09946488700c3e"
+          ]
+        },
+        {
+          "name": "runtime-initial",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4144,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 192,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "a8113fe168a2f25cd2f437deeefa5e3c60c92475a4fdf173734baae392434b57",
+            "a8113fe168a2f25cd2f437deeefa5e3c60c92475a4fdf173734baae392434b57"
+          ]
+        },
+        {
+          "name": "runtime-moved",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4146,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 224,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "b0741993852601b86ae732a4264a929acd9015c6aaa59fa286c9599a72248dec",
+            "b0741993852601b86ae732a4264a929acd9015c6aaa59fa286c9599a72248dec"
+          ]
+        },
+        {
+          "name": "extreme-light-control",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4144,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 192,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "a8113fe168a2f25cd2f437deeefa5e3c60c92475a4fdf173734baae392434b57",
+            "a8113fe168a2f25cd2f437deeefa5e3c60c92475a4fdf173734baae392434b57"
+          ]
+        },
+        {
+          "name": "extreme-light-position",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4144,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 192,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 2,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "a8113fe168a2f25cd2f437deeefa5e3c60c92475a4fdf173734baae392434b57",
+            "a8113fe168a2f25cd2f437deeefa5e3c60c92475a4fdf173734baae392434b57"
+          ]
+        }
+      ]
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "gpu_index": 1,
+      "passed": true,
+      "paired_captures": 17,
+      "raw_evidence_sha256": "7e947b4b5831672b410eaaf900d6b6e464298275900145ec97970d6f617e376e",
+      "cases": [
+        {
+          "name": "sparse-129",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 38587,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 3316,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 25,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "36b0624cbf10b0ccdb48d260f99bb2062f6c7e85ea79f6f646438afcfcd0a93e",
+            "36b0624cbf10b0ccdb48d260f99bb2062f6c7e85ea79f6f646438afcfcd0a93e"
+          ]
+        },
+        {
+          "name": "sparse-129-msaa",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 38587,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 3316,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 25,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "fd1de0cdfaccaa0e6515ba7e02dc1d9380fbbcb07a274eaa7c914b7c90610163",
+            "fd1de0cdfaccaa0e6515ba7e02dc1d9380fbbcb07a274eaa7c914b7c90610163"
+          ]
+        },
+        {
+          "name": "last-index-128",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4667,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 6178,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 26,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "a283c8727e149249f55a4a982c99ef6aa6973a3a026a19177acb294deb0481e4",
+            "a283c8727e149249f55a4a982c99ef6aa6973a3a026a19177acb294deb0481e4"
+          ]
+        },
+        {
+          "name": "all-zero",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 0,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 6178,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 26,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "ea2614dfafb5931650acd2013526042156e50c6479e7b47d438b9950874ce9fe",
+            "ea2614dfafb5931650acd2013526042156e50c6479e7b47d438b9950874ce9fe"
+          ]
+        },
+        {
+          "name": "last-index-1023",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4644,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 9058,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1024,
+            "max_candidates": 27,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "13a25de96bc0eba39e32f2f4688a19f4c5308112bab088d7852cbcf211f9a64a",
+            "13a25de96bc0eba39e32f2f4688a19f4c5308112bab088d7852cbcf211f9a64a"
+          ]
+        },
+        {
+          "name": "dense-overflow-65",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4114,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 187200,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 65,
+            "max_candidates": 65,
+            "overflow_clusters": 2880,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "b1d173e95a8524db5e671084dff5a9ec086804abcdea087be02fd5a173346e38",
+            "b1d173e95a8524db5e671084dff5a9ec086804abcdea087be02fd5a173346e38"
+          ]
+        },
+        {
+          "name": "global-unbounded",
+          "samples": 1,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 28944,
+          "light_assignment": {
+            "active": false,
+            "buffer_bytes": 994304,
+            "candidate_references": null,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "All lights have unbounded influence.",
+            "global_lights": 3,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 3,
+            "max_candidates": null,
+            "overflow_clusters": null,
+            "requested": true,
+            "statistics_available": false
+          },
+          "image_sha256": [
+            "8796cd7ce2433d3933e7636fa004b1a6bcab5bb6a5f3fbc4c9fc2aeb5cd4e9f7",
+            "8796cd7ce2433d3933e7636fa004b1a6bcab5bb6a5f3fbc4c9fc2aeb5cd4e9f7"
+          ]
+        },
+        {
+          "name": "camera-rigid-finite",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 38850,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 3338,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": 30,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "1bfad686b3fbc9bda39eded36efcc562b74782fc0e804943aff5d9bdf3662c8f",
+            "1bfad686b3fbc9bda39eded36efcc562b74782fc0e804943aff5d9bdf3662c8f"
+          ]
+        },
+        {
+          "name": "camera-depth-extremes",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 26415,
+          "light_assignment": {
+            "active": false,
+            "buffer_bytes": 994304,
+            "candidate_references": null,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "Extreme camera projection uses all-light reference.",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 129,
+            "max_candidates": null,
+            "overflow_clusters": null,
+            "requested": true,
+            "statistics_available": false
+          },
+          "image_sha256": [
+            "cb627ef377f018b9044600ddeeb0763d9cf2f4b9268d475d5d98b8aa18c2cbe5",
+            "cb627ef377f018b9044600ddeeb0763d9cf2f4b9268d475d5d98b8aa18c2cbe5"
+          ]
+        },
+        {
+          "name": "mixed-shadow-offscreen",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 16366,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 5844,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 1,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 3,
+            "max_candidates": 3,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "484d3ed9a0143f779c26823776b591ec10f7420ac335a53b17a86247164a7b24",
+            "484d3ed9a0143f779c26823776b591ec10f7420ac335a53b17a86247164a7b24"
+          ]
+        },
+        {
+          "name": "mixed-without-offscreen",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 15648,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 5760,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 1,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 2,
+            "max_candidates": 2,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "268225e40d10aa63a387974d9c355eeb6ca1a06a5f7bcaa089e8a62d65e54410",
+            "268225e40d10aa63a387974d9c355eeb6ca1a06a5f7bcaa089e8a62d65e54410"
+          ]
+        },
+        {
+          "name": "depth-boundary--1",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 1436,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 24,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "240bbb42531fcc67941aeec5a587e63ef94e07820eb2c5ab392820aac1bce9c6",
+            "240bbb42531fcc67941aeec5a587e63ef94e07820eb2c5ab392820aac1bce9c6"
+          ]
+        },
+        {
+          "name": "depth-boundary-1",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 1436,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 24,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "5d8562066d0822def383cb9d6d5d2144649b39e8ad2ee0bb70cf0d84bba6a0be",
+            "5d8562066d0822def383cb9d6d5d2144649b39e8ad2ee0bb70cf0d84bba6a0be"
+          ]
+        },
+        {
+          "name": "runtime-initial",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4144,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 192,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "f5388e55b77e939f006cdd6199700aded4ec180627ef04afd46c3e33a88b8a24",
+            "f5388e55b77e939f006cdd6199700aded4ec180627ef04afd46c3e33a88b8a24"
+          ]
+        },
+        {
+          "name": "runtime-moved",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4146,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 224,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "8b514e5ce4c0038d9aa1b68c85e34431c55dbb53815199b6fe09f97ee102fc75",
+            "8b514e5ce4c0038d9aa1b68c85e34431c55dbb53815199b6fe09f97ee102fc75"
+          ]
+        },
+        {
+          "name": "extreme-light-control",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4144,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 192,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 1,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "f5388e55b77e939f006cdd6199700aded4ec180627ef04afd46c3e33a88b8a24",
+            "f5388e55b77e939f006cdd6199700aded4ec180627ef04afd46c3e33a88b8a24"
+          ]
+        },
+        {
+          "name": "extreme-light-position",
+          "samples": 4,
+          "max_channel_difference": 0,
+          "reference_lit_pixels": 4144,
+          "light_assignment": {
+            "active": true,
+            "buffer_bytes": 994304,
+            "candidate_references": 192,
+            "capacity": 64,
+            "cluster_count": 3456,
+            "fallback_reason": "",
+            "global_lights": 0,
+            "grid": [
+              16,
+              9,
+              24
+            ],
+            "light_count": 2,
+            "max_candidates": 1,
+            "overflow_clusters": 0,
+            "requested": true,
+            "statistics_available": true
+          },
+          "image_sha256": [
+            "f5388e55b77e939f006cdd6199700aded4ec180627ef04afd46c3e33a88b8a24",
+            "f5388e55b77e939f006cdd6199700aded4ec180627ef04afd46c3e33a88b8a24"
+          ]
+        }
+      ]
+    }
+  ],
+  "regressions": [
+    {
+      "cohort": "clustered-light-regressions",
+      "aggregate_sha256": "715bad6ff4e4b0398463b0515aed29b41515a93b8aca9e04a1ed14cf523dd01f",
+      "groups": [
+        {
+          "suite": "hdr_composition_capture",
+          "gpu_index": 0,
+          "devices": [
+            "AMD Radeon(TM) Graphics"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "1828cc515a82c94184b826830734daa5dc865597ec14bda361b2929ecee2c789"
+          ]
+        },
+        {
+          "suite": "hdr_composition_capture",
+          "gpu_index": 1,
+          "devices": [
+            "NVIDIA GeForce RTX 4070 Laptop GPU"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "d92ecad46b5f727fa49e718597e72e36c02ad71dc605c7fbd3529821454c25f6"
+          ]
+        },
+        {
+          "suite": "lighting_capture",
+          "gpu_index": 0,
+          "devices": [
+            "AMD Radeon(TM) Graphics"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "8708a220a9d4ee7ab8cd4af35f2693af92d17bc807bd93a3a5b5cefa1e5ee264"
+          ]
+        },
+        {
+          "suite": "lighting_capture",
+          "gpu_index": 1,
+          "devices": [
+            "NVIDIA GeForce RTX 4070 Laptop GPU"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "2fda78db8c6bd7a5ed2b9485843dfc32f3c284d035cb053882ef6f503ae97567"
+          ]
+        }
+      ]
+    },
+    {
+      "cohort": "clustered-light-diagnostics",
+      "aggregate_sha256": "ca27c366f7426a1091d961866861a40924e9c6327e2a690f168fa535ac7cf20c",
+      "groups": [
+        {
+          "suite": "culling_capture",
+          "gpu_index": 0,
+          "devices": [
+            "AMD Radeon(TM) Graphics"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "4ec5ceb6cc67f2affc03a5c99c805ed63e4e94ceef64db84cf5c6f2f0b3a4b9a"
+          ]
+        },
+        {
+          "suite": "culling_capture",
+          "gpu_index": 1,
+          "devices": [
+            "NVIDIA GeForce RTX 4070 Laptop GPU"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "fb1cc883f0e7436eedc0e8ff7cf6f1e16b290df04f5b0852776d05426004d9e8"
+          ]
+        },
+        {
+          "suite": "profiler_capture",
+          "gpu_index": 0,
+          "devices": [
+            "AMD Radeon(TM) Graphics"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "d4d490b295e0f7bd3fbd60e3754b2aba76e7b46ef0558b8959bc7a9c1f49e860"
+          ]
+        },
+        {
+          "suite": "profiler_capture",
+          "gpu_index": 1,
+          "devices": [
+            "NVIDIA GeForce RTX 4070 Laptop GPU"
+          ],
+          "passed": true,
+          "evidence_sha256": [
+            "39f3024d89977aeefb3556ea6a0646a12b7c640fdd40109f125b8ef18488b0c8"
+          ]
+        }
+      ]
+    }
+  ],
+  "device_identity_audit": "Every corrected paired capture reports the same device within its run; the two runs cover distinct GPU names. Device enumeration indices changed during the initial failed cohort; no fixed index-to-vendor mapping is assumed.",
+  "integration": {
+    "raw_evidence_sha256": "6a16153445c1750651f33ccab6a1897439ac140a0935b7dde55fa4d7e0c5b219",
+    "groups": [
+      {
+        "name": "ui-gpu1-msaa1",
+        "devices": [
+          "NVIDIA GeForce RTX 4070 Laptop GPU"
+        ],
+        "passed": true
+      },
+      {
+        "name": "ui-gpu1-msaa4",
+        "devices": [
+          "NVIDIA GeForce RTX 4070 Laptop GPU"
+        ],
+        "passed": true
+      },
+      {
+        "name": "ui-gpu0-msaa1",
+        "devices": [
+          "AMD Radeon(TM) Graphics"
+        ],
+        "passed": true
+      },
+      {
+        "name": "ui-gpu0-msaa4",
+        "devices": [
+          "AMD Radeon(TM) Graphics"
+        ],
+        "passed": true
+      },
+      {
+        "name": "player-gpu1",
+        "devices": [
+          "NVIDIA GeForce RTX 4070 Laptop GPU"
+        ],
+        "passed": true
+      },
+      {
+        "name": "player-gpu0",
+        "devices": [
+          "AMD Radeon(TM) Graphics"
+        ],
+        "passed": true
+      },
+      {
+        "name": "hosted-gpu1-msaa4",
+        "devices": [
+          "NVIDIA GeForce RTX 4070 Laptop GPU"
+        ],
+        "passed": true
+      },
+      {
+        "name": "hosted-gpu0-msaa4",
+        "devices": [
+          "AMD Radeon(TM) Graphics"
+        ],
+        "passed": true
+      }
+    ]
+  },
+  "protocol": {
+    "scope": "Windows native protocol qualification; no rendering/performance claim",
+    "binary_sha256": "481011b9395ac05ed6a5801d35be79ab859985638495ac36fd3a8d6eb980f26b",
+    "results": [
+      {
+        "test": "lighting_contract",
+        "source_sha256": "dbf02734b3d0ae1f0e4d68b9e9cac3e26195d179200be3c0fa36d325d7c179c4",
+        "log": "clustered-light-contract.log",
+        "log_sha256": "243949242910b5000d1d392e07906b55d69c51b5aa2fcb9b5c7279de18e5a128",
+        "passed": true
+      },
+      {
+        "test": "world_contract",
+        "source_sha256": "fe6df3dfaee4819e317b8a98fe20002da4291600a177e82a4255728fced62385",
+        "log": "clustered-world-contract.log",
+        "log_sha256": "54c82ae6cd25bd674e625da6be3f277aa199561f83e7b9d7939ef09efbb511e2",
+        "passed": true
+      },
+      {
+        "test": "runtime_contract",
+        "source_sha256": "77fd1eb916d019c9d68a21ac83ca35c3b01664143732c0f26e64f654254462ee",
+        "log": "clustered-runtime-contract.log",
+        "log_sha256": "03ae3ea30d9c00abe6967aa5ed0fe3386c5dc8db451af9e2fa18641f68afdc42",
+        "passed": true
+      },
+      {
+        "test": "world_components_contract",
+        "source_sha256": "d36c57a9b66c7f870102aacdbb7d2b2f1ea4ddd25c1c5d253edd8d3063917c35",
+        "log": "clustered-components-contract.log",
+        "log_sha256": "684b65c319209e4b5c3b0c938e6a8b592dc75014a180a27186bf673520eff627",
+        "passed": true
+      },
+      {
+        "test": "profiler_contract",
+        "source_sha256": "94042f1f67e7f0283ac27a5a6c750822b011b1ab4bc8f5f13321fd36d134bd5a",
+        "log": "clustered-profiler-contract.log",
+        "log_sha256": "ed1ceeb602540bdd59f381ec307b2fb540d1af21a0b53d094c16fdfa027dee7e",
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "qualification_history": [
+    "Initial index-selected runs matched through nine cases, then failed the mixed-scene visible-signal guard. The fixture lighting was too dim.",
+    "Corrected fixture increased two light intensities and added an offscreen-light-disabled control requiring more than 100 visibly changed pixels. Signal and pixel-difference assertions were retained. All 17 corrected pairs match exactly on both GPUs.",
+    "Extreme-distance review and captures confirm the existing shader preserves nearby illumination; no numerical workaround was needed."
+  ],
+  "limitations": [
+    "Two GPUs in one laptop, not broad hardware qualification.",
+    "Bounded scenes establish correctness, not game-scale performance or a production FPS target.",
+    "GPU candidate counts are conservative memberships, not executed shading operations.",
+    "Overflow falls back to a full light loop; dense scenes may retain the original shading cost.",
+    "The renderer still waits for the GPU each frame.",
+    "Native owned-HWND and renderer readback checks do not qualify Avalonia screenshots or physical input.",
+    "Linux rendering, consoles, GI, temporal upscaling and frame generation are not qualified by this milestone.",
+    "No installed desktop package was activated."
+  ],
+  "source_sha256": {
+    "include/poima/core.hpp": "e7a479a6b839425ca38886871844fbfe9113c9f9399e3c9e107183ff9efb50c8",
+    "include/poima/scene.hpp": "73b7124273e9bec3dded7617d384334bb1244876af54174bc813de8d5046a732",
+    "src/lighting.cpp": "0941862f2c2cf29af3085b37f174e7b6ef800b59240c87173e2e7403bca93ac5",
+    "src/world.cpp": "3407cfce4c34ed281c40e1967ab46f041a10ff9af986863982934ae8847d7e1c",
+    "src/render_smoke.cpp": "587e3a235ed2df998422c29ca662ea8173dae59c2e9d3dc32fc73e25f626e5da",
+    "shaders/scene.hlsl": "87a172d3e94d8a727146e64adee10d7f8ae8819e05c4cae4d3149d0c64279a10",
+    "shaders/scene_frame.hlsli": "ec567b713fc63c1e3b908e8516aa9cc629ebbbc4fe88ace11622693f1de5de3b",
+    "shaders/cluster_lights.hlsl": "77c04aa19b606082477b5d2f2dcdcbd28d64588c5a01b2a3d4f1d6b416b5a994",
+    "cmake/render_smoke.cmake": "c94cbc9b22a7734ac8c3dacefc2ca360e3d1b62c7ac3fe8b5c58a46e6f349894",
+    "tests/clustered_lighting_capture.py": "0e5fe35db4f97057e3dec5831d0199d93a8aed303df46c4fc3ba9abb9a24ba4a",
+    "tests/lighting_contract.py": "dbf02734b3d0ae1f0e4d68b9e9cac3e26195d179200be3c0fa36d325d7c179c4",
+    "tests/world_contract.py": "fe6df3dfaee4819e317b8a98fe20002da4291600a177e82a4255728fced62385",
+    "tests/runtime_contract.py": "77fd1eb916d019c9d68a21ac83ca35c3b01664143732c0f26e64f654254462ee",
+    "tests/culling_capture.py": "b4e93b190d93242b3cceac63a0a1173b53c645016e70863cf9b85f061fc7eae7",
+    "tests/profiler_capture.py": "1dc6001568786a26ce0f3058709879235e4c371709afc123eaac95141ff59eaf"
+  },
+  "linux_headless": {
+    "passed": true,
+    "binary_sha256": "4a092e7578e2008fe5e3c7037dd45b6d7353c39b23061f589dc60185de2e89cb",
+    "tests": [
+      "profiler_contract",
+      "world_session_native",
+      "world_templates_contract",
+      "world_ui_contract",
+      "world_components_contract",
+      "lighting_contract",
+      "runtime_contract",
+      "world_contract"
+    ],
+    "raw_evidence_sha256": "893813965eed9b157c34a297a8d2325f5b2f1804961526c502cf17544dbc00b5",
+    "junit_sha256": "e94fa20015940c1579d346f12943f83b64c1cc682081d09a48a32941df4ec51f"
+  },
+  "builds": {
+    "windows_log_sha256": "da8544b601913a4f817461e586a68c35af1796bf9a13a098f4367a9171095d18",
+    "linux_log_sha256": "fa05b921a50cd680c0b4269158ff3ce97a5edc2475fb54622824aa46d7fa1a81"
+  }
+}

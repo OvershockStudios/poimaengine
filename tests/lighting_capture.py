@@ -70,7 +70,8 @@ try:
     edit([env((.1,.2,.3),2)]);batch([capture('ambient-exposure')]);check('ambient-exposure',expected([0]*3,ambient=[.1,.2,.3],exposure=2))
     edit([env(),transform(2),light(color=[1,0,0]),create(4),light(4,color=[0,1,0],intensity=2*math.pi)])
     batch([capture('colored-sum')]);check('colored-sum',expected([math.pi,2*math.pi,0]))
-    # Exercise the entire uniform array, including slot 63, with 64 enabled lights.
+    # Retain the original 64-light regression, including slot 63.
+    # clustered_lighting_capture.py additionally exercises slot 1023.
     edit([light(intensity=0),light(4,intensity=0)]+[op for n in range(10,72) for op in (create(n),light(n,intensity=math.pi if n==71 else 0))])
     batch([capture('last-slot')]);check('last-slot',expected([math.pi]*3))
     edit([{'op':'entity.delete','id':uid(n),'recursive':True} for n in [4,*range(10,72)]])

@@ -42,7 +42,7 @@ struct SceneLighting {
     LightingEnvironment environment;
     bool preview=true;
 };
-inline constexpr std::size_t max_scene_lights=64;
+inline constexpr std::size_t max_scene_lights=1024;
 inline constexpr std::size_t max_shadow_views=16;
 inline constexpr std::size_t max_shadow_bytes=128*1024*1024;
 std::size_t shadow_view_count(const Light& light);

@@ -58,7 +58,7 @@ class RuntimeContract(unittest.TestCase):
 
     def test_player_validation_does_not_advance_runtime(self):
         play={'session_id':uid(900),'request_id':uid(5000),'expected_tick':0,'controller':uid(100),'camera':uid(101),'mode':'replay','sequence':[{'ticks':1}]}
-        invalid=[({**play,'culling':1},-32602),({**play,'profile':'yes'},-32602),({**play,'mode':'unknown'},-32602),({**play,'sequence':[]},-32602),
+        invalid=[({**play,'clustered_lighting':1},-32602),({**play,'clustered_lighting':None},-32602),({**play,'culling':1},-32602),({**play,'profile':'yes'},-32602),({**play,'mode':'unknown'},-32602),({**play,'sequence':[]},-32602),
             ({**play,'sequence':[{'ticks':0}]},-32602),({**play,'sequence':[{'ticks':601}]},-32602),
             ({**play,'sequence':[{'ticks':600}]*61},-32602),({**play,'sequence':[{'ticks':1,'move':[2,0]}]},-32602),
             ({**play,'sequence':[{'ticks':1,'look':[0,181]}]},-32602),({**play,'sequence':[{'ticks':1,'jump':1}]},-32602),

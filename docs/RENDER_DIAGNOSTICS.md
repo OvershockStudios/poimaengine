@@ -6,18 +6,19 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 
 ## Request controls
 
-`world.describe` schema revision 13 exposes two optional Boolean parameters on `world.capture`, `runtime.capture` and `runtime.play`:
+`world.describe` schema revision 40 exposes these optional Boolean parameters on `world.capture`, `runtime.capture` and `runtime.play`:
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
 | `culling` | true | Reject object bounds entirely outside each render view. False submits every renderable to every view for comparison. |
+| `clustered_lighting` | true | Conservatively assign finite lights to view-space cells. False evaluates the complete light table as a reference. |
 | `profile` | false | Collect CPU intervals and, when supported, graphics-queue GPU timestamps. False records no timing samples or query commands. Draw counters remain available. |
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"world.capture","params":{"revision":1,"camera":"00000000000000000000000000000001","path":"build/profile.bmp","culling":true,"profile":true}}
 ```
 
-Both controls are observation/player options, not persistent world components. Existing revision/session/tick guards and capture destination rules still apply. Non-Boolean values fail with `-32602`. Play retry receipts retain the original diagnostics; an identical retry does not rerun the player or resample timings.
+These controls are observation/player options, not persistent world components. Existing revision/session/tick guards and capture destination rules still apply. Non-Boolean values fail with `-32602`. Play retry receipts retain the original diagnostics; an identical retry does not rerun the player or resample timings.
 
 ## Visibility decisions
 
@@ -34,6 +35,7 @@ Successful capture and all returned player reports include `render_diagnostics`:
 - `culling`, `profile_requested`: selected options.
 - `completed_submissions`: command submissions completed through the renderer's existing GPU wait. An out-of-date presentation may still have completed GPU work, so this is distinct from presented frames.
 - `last_draws`: counts for the last completed submission, not lifetime totals.
+- `light_assignment`: selected path, grid and buffer bounds, and actual GPU candidate counts when available. Unsampled candidate statistics are null.
 - `cpu`: timing summaries for scene preparation, command recording and the render call.
 - `gpu`: timestamp availability, valid bits, nanoseconds per tick, dropped samples, interpretation detail, and pass summaries.
 
@@ -61,15 +63,17 @@ CPU measurements use the native monotonic clock:
 - `record`: command recording and closing, excluding submission/presentation/wait and preceding scene preparation.
 - `render_call`: acquire, recording, submit/present and the existing serialized GPU wait. It excludes simulation, snapshot extraction before `update_scene`, event handling and image file encoding. It is not an end-to-end game frame time.
 
-GPU measurements use four 64-bit Vulkan timestamps on the same graphics queue. Availability is checked using the device period and selected queue's valid bits. Durations use the valid-bit mask; a CPU interval long enough to make wrap ambiguity possible is discarded. Readback occurs after the existing GPU wait without a new busy-wait. Unsupported queues report unavailable timing while rendering and CPU profiling remain usable. `samples_dropped` reports unavailable/ambiguous completed samples rather than reusing prior values.
+GPU measurements use six 64-bit Vulkan timestamps on the same graphics queue. Availability is checked using the device period and selected queue's valid bits. Durations use the valid-bit mask; a CPU interval long enough to make wrap ambiguity possible is discarded. Readback occurs after the existing GPU wait without a new busy-wait. Unsupported queues report unavailable timing while rendering and CPU profiling remain usable. `samples_dropped` reports unavailable/ambiguous completed samples rather than reusing prior values.
 
 GPU intervals:
 
 | Summary | Approximate included work |
 | --- | --- |
-| `shadows` | Start of command buffer through frame-uniform upload, shadow clears/draws and transition to sampling. With no shadows this still includes setup. |
+| `skinning` | Frame-uniform upload and skinning dispatch. |
+| `light_assignment` | Light-table upload, candidate assignment and the GPU copy of counts for diagnostics. CPU mapping/scanning is outside this interval. |
+| `shadows` | Shadow clears/draws and transition to sampling. |
 | `opaque` | Main target/depth clears, optional procedural sky, and opaque draws. |
-| `post` | MSAA resolve, optional image readback copy, and transition for presentation. Capture frames include a copy that ordinary player frames lack. |
+| `post` | Linear MSAA resolve, scene output mapping, UI/overlays, optional image readback copy, and transition for presentation. Capture frames include a copy that ordinary player frames lack. |
 | `total` | The complete timestamp span, excluding swapchain acquire, presentation completion, CPU simulation and file writing. |
 
 The start stamp uses top-of-pipe and later boundaries use bottom-of-pipe. These are approximate intervals on an overlapping GPU pipeline, not isolated shader costs. Timestamps themselves add synchronization/measurement overhead. Neither totals nor their reciprocals establish playable FPS. A two-frame capture includes cold/warm effects and the final readback; use controlled longer workloads for performance comparisons. Current rendering still serializes frames and has no production frame-pacing qualification.

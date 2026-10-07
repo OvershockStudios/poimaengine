@@ -161,6 +161,11 @@ class WorldContract(unittest.TestCase):
             client.rpc('world.capture', {**capture, 'path': native(Path(str(self.path)+'.PENDING'))}, error=-32602)
         for extra in [{'width': 127}, {'height': 4097}, {'gpu': -1}, {'samples': 2}]:
             client.rpc('world.capture', {**capture, **extra}, error=-32602)
+        for bad in (0, 1, 'true', None, [], {}):
+            response = client.rpc('world.capture', {**capture, 'clustered_lighting': bad}, error=-32602)
+            self.assertIn('clustered_lighting', response['message'])
+            self.assertEqual(self.path.read_bytes(), saved)
+            self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         capabilities = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
         if not capabilities['scene_capture']: client.rpc('world.capture', capture, error=-32003)
         self.assertEqual(self.path.read_bytes(), saved)

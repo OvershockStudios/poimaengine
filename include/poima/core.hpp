@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -48,6 +49,7 @@ struct RenderOptions {
     std::string capture;
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
+    bool clustered_lighting = true; // False selects the complete all-light reference path.
     bool profile = false;
     bool capture_exclusive = false; // Native host policy; not a user-controlled RPC parameter.
 };
@@ -58,13 +60,23 @@ struct DrawCounts {
     std::uint64_t skinned_instances=0,skinned_vertices=0;
     std::uint64_t shadow_views=0,shadow_candidates=0,shadow_draws=0,shadow_culled=0,shadow_triangles=0;
 };
+struct LightAssignmentDiagnostics {
+    bool requested=true,active=false,statistics_available=false;
+    std::array<std::uint32_t,3> grid{};
+    std::uint64_t light_count=0,global_lights=0,cluster_count=0,capacity=0;
+    // Logical conservative memberships, including overflowing clusters; not
+    // executed shading operations or a performance estimate.
+    std::uint64_t candidate_references=0,overflow_clusters=0,max_candidates=0,buffer_bytes=0;
+    std::string fallback_reason;
+};
 struct RenderDiagnostics {
     bool culling=true,profile_requested=false,gpu_timestamps=false;
     std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;
     std::uint64_t completed_submissions=0,gpu_samples_dropped=0;
     std::string gpu_timing_detail="Profiling not requested.";
     DrawCounts last_draws;
-    TimingSummary prepare_cpu,record_cpu,render_call_cpu,skinning_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
+    LightAssignmentDiagnostics light_assignment;
+    TimingSummary prepare_cpu,record_cpu,render_call_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
 };
 
 struct RenderReport {
