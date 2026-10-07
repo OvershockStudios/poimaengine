@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "passed": true,
+  "scope": "Accepted-dispatch temporal clock policy and frozen-capture GPU regressions",
+  "clock_checks_per_platform": 28,
+  "platforms": [
+    "Linux",
+    "Windows"
+  ],
+  "checks": [
+    "First use and history reset use fixed interval",
+    "Abandoned begin does not advance accepted timestamp",
+    "Elapsed time follows accepted dispatch sampling rather than acceptance completion",
+    "Live intervals clamp to 1\u2013100 milliseconds",
+    "Captures and replay ignore wall-clock spacing",
+    "Independent view clocks and mode selection"
+  ],
+  "gpu_regression": {
+    "evidence_path": "build/fsr-basic-gpu/6bf36aa2796349d3bb867f3acb2b32d5/evidence.json",
+    "sha256": "579be1d4f883358b790ce8a390362138001206c47f3c78f10d34e90b9861fdc1",
+    "captures_per_device": 100,
+    "devices": [
+      "AMD Radeon(TM) Graphics",
+      "NVIDIA GeForce RTX 4070 Laptop GPU"
+    ],
+    "strict_validation": true,
+    "modes": 4,
+    "scope": "Frozen captures, HDR, cuts, resizing, hidden views and independent histories"
+  },
+  "source_sha256": {
+    "include/poima/temporal_clock.hpp": "6fad32b563b573997135d02abaa9caa2ea0ff69f3f12811c41502addba00ff6e",
+    "tests/temporal_clock.cpp": "6b1b1d70ace4099172d478f3b9ad18094240e40c8e0d86710d782baa356dd2af",
+    "src/render_smoke.cpp": "dd080812e44324846d7dd8f302df0ba7d3f87565e331955a41158d2e39a0f52b",
+    "CMakeLists.txt": "48fae4cc59373122ded1bf3294e5d20bf360788716b73f5bfc4997ebb81b06aa"
+  },
+  "build_logs": {
+    "build/temporal-clock-linux-build.log": "7926e0d000d316abd9597c8f734e4c07122623decd624ec0243dc1a7047e90d0",
+    "build/temporal-clock-windows-build.log": "9c83876efc8b49746b243fbc536a726edb90495250fe172275f5985c21222da0"
+  },
+  "binary_sha256": {
+    "build/runtime-headless/poima-temporal-clock-test": "e67ec13874182c4c3f7f9655d65bf9faff25fa0b9ada94c4cd66bc29cbd2a087",
+    "build/windows-runtime/poima-temporal-clock-test.exe": "5f67690ffe50f539d1190be07c3d1d35ebd6f9ff61fdd5d33f6e0a61682e66f8",
+    "build/windows-runtime/poima.exe": "3866ebbae52036094282db5094e7050aaea79967751a41fde86a6780ecc0e327",
+    "build/windows-runtime/poima_desktop.dll": "82f992c4fb3608ef547f3259e135b6007af568fff525753f88adee438cbaace4",
+    "build/windows-runtime/poima-reconstruction-test.exe": "ee423a0206f16a4890cf5a554756ac0ba0f54a59945f10a12ca45fc452c1a040"
+  },
+  "limitations": [
+    "Synthetic timestamps qualify clock policy; no live-player pacing or temporal image-quality qualification.",
+    "No performance improvement claim; existing near-edge ghosting remains unresolved.",
+    "Installed desktop package unchanged."
+  ]
+}

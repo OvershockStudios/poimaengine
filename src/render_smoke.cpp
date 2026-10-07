@@ -10,6 +10,7 @@
 #include "poima/profiler.hpp"
 #include "poima/render_schedule.hpp"
 #include "poima/fsr3.hpp"
+#include "poima/temporal_clock.hpp"
 #include "poima/temporal_inputs_cs.hpp"
 #include <unordered_map>
 #if POIMA_GAME_UI
@@ -328,7 +329,8 @@ struct Context {
     nvrhi::ComputePipelineHandle temporal_pipeline;
     std::uint64_t temporal_phase=0;
     ReconstructionDiagnostics pending_reconstruction;
-    SteadyClock::time_point accepted_temporal_time{};
+    TemporalClock temporal_clock;
+    bool live_temporal=false;
     struct ObjectHistory {std::array<float,12> model{};std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;bool skinned=false;};
     struct ViewHistory {
         std::string source,world,camera;
@@ -513,7 +515,7 @@ struct Context {
         if (sdl_initialized) SDL_QuitSubSystem(SDL_INIT_VIDEO);
     }
 
-    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false,void* external_window=nullptr) {
+    void initialize(const RenderOptions& options, const SceneSnapshot* source, bool player=false,void* external_window=nullptr,bool replay=false) {
         require(!source || !source->ui || !source->logical_ui,"A scene cannot supply both a UI packet and a logical UI presentation.");
 #if !POIMA_GAME_UI
         require(!source || !source->logical_ui || source->logical_ui->elements.empty(),"This renderer was built without native game UI presentation support.");
@@ -521,6 +523,7 @@ struct Context {
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;
         hosted=external_window!=nullptr;
+        live_temporal=live_temporal_clock(player,hosted,replay);
         require(options.frames_in_flight>=1 && options.frames_in_flight<=2,"frames_in_flight must be 1 or 2.");
         diagnostics.frame_execution.limit=options.frames_in_flight;
         diagnostics.frame_execution.presentation_retirement="bounded idle compatibility cleanup (not a presentation completion proof)";
@@ -784,7 +787,7 @@ struct Context {
     }
     void commit_history() {
         if(!scene || (reconstruction && !scene_visible))return;
-        if(pending_reconstruction.active) {temporal_phase=pending_reconstruction.history_reset ? 1 : temporal_phase+1;accepted_temporal_time=SteadyClock::now();}
+        if(pending_reconstruction.active) {temporal_phase=pending_reconstruction.history_reset ? 1 : temporal_phase+1;temporal_clock.accept();}
         ++history_sequence;
         for(auto& draw:draws)if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
             draw.skin->accepted_index=draw.skin->write_index;draw.skin->accepted_sequence=history_sequence;
@@ -1209,7 +1212,7 @@ struct Context {
         if(reconstruction && render.width==render_extent.width && render.height==render_extent.height && output.width==output_extent.width && output.height==output_extent.height)return;
         retire_frames(true);reconstruction.reset();temporal_bindings=nullptr;output_bindings=nullptr;
         framebuffers.clear();sky_framebuffers.clear();sky_pipeline=nullptr;
-        history={};temporal_phase=0;accepted_temporal_time={};render_extent=render;output_extent=output;
+        history={};temporal_phase=0;temporal_clock.reset();render_extent=render;output_extent=output;
         auto allocate=[&](nvrhi::Format pixel_format,vk::Format vk_format,fsr3::Extent size,const char* name,bool target,bool uav) {
             const auto properties=physical.getFormatProperties(vk_format,dispatch).optimalTilingFeatures;
             auto features=vk::FormatFeatureFlags(vk::FormatFeatureFlagBits::eSampledImage|vk::FormatFeatureFlagBits::eTransferSrc|vk::FormatFeatureFlagBits::eTransferDst);
@@ -1287,7 +1290,7 @@ struct Context {
         args.color=image(scene_hdr,VK_FORMAT_R16G16B16A16_SFLOAT);args.depth=image(depth,VK_FORMAT_D32_SFLOAT);args.motion=image(dense_motion,VK_FORMAT_R32G32_SFLOAT);args.reactive=image(reactive,VK_FORMAT_R8_UNORM);args.output=image(reconstructed,VK_FORMAT_R16G16B16A16_SFLOAT);
         args.dilated_depth=image(dilated_depth,VK_FORMAT_R32_SFLOAT);args.dilated_motion=image(dilated_motion,VK_FORMAT_R16G16_SFLOAT);args.reconstructed_depth=image(reconstructed_depth,VK_FORMAT_R32_UINT);
         args.jitter_pixels=pending_reconstruction.jitter_pixels;args.near_plane=static_cast<float>(scene->near_plane);args.far_plane=static_cast<float>(scene->far_plane);args.vertical_fov_radians=static_cast<float>(scene->vertical_fov*0.01745329251994329577);
-        args.delta_milliseconds=capture_exclusive || (!hosted && !editor) || accepted_temporal_time==SteadyClock::time_point{} ? 1000.0f/60.0f : static_cast<float>(std::clamp(elapsed_ms(accepted_temporal_time),1.0,100.0));
+        args.delta_milliseconds=temporal_clock.begin(SteadyClock::now(),live_temporal,pending_reconstruction.history_reset);
         args.reset=pending_reconstruction.history_reset;
         reconstruction->dispatch(args);
         // The pinned SDK unregisters external images back to their entry states.
@@ -1479,7 +1482,7 @@ struct Context {
         swapchain_dirty=true;
         retire_frames(true);
         retire_presentation();
-        reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;accepted_temporal_time={};
+        reconstruction.reset();temporal_bindings=nullptr;reconstructed=nullptr;dense_motion=nullptr;reactive=nullptr;dilated_depth=nullptr;dilated_motion=nullptr;reconstructed_depth=nullptr;render_extent={};output_extent={};temporal_phase=0;temporal_clock.reset();
         commands=nullptr;
         sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
@@ -2810,7 +2813,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
     try {
         require((options.controller.empty() && !options.replay) || session.controller_valid(options.controller),"Player requires an active CharacterController when selected; replay requires a controller.");
         snapshot=session.snapshot(options.camera);
-        context.initialize(options.render,&snapshot,true);
+        context.initialize(options.render,&snapshot,true,nullptr,options.replay);
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio)audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera));
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;

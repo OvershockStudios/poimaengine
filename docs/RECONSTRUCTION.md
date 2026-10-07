@@ -60,7 +60,7 @@ For example, these are additional options for a capture request; the selected se
 
 `capture_frames` accepts integers from 1 through 128 and defaults to 2. Capture repeatedly renders one frozen scene snapshot; these frames do not advance simulation or animation time. They do advance accepted renderer history and jitter. Explicitly request sufficient frames for the observation being made; the default two frames are not a convergence guarantee. `runtime.play` does not accept `capture_frames`.
 
-Standalone and capture-exclusive rendering use a fixed 60 Hz SDK frame interval, independent of disk writes and readback time. Hosted viewports currently use the capture-exclusive policy. The nonexclusive legacy editor uses elapsed time between accepted submissions, clamped to 1–100 ms. This interval is an SDK input, not a measured frame-rate claim.
+Frozen captures and recorded-input replays use a fixed 60 Hz SDK frame interval, independent of disk writes and readback time. Live players, hosted viewports and the legacy editor use elapsed steady-clock time between accepted reconstruction dispatch timestamps, clamped to 1–100 ms. The first dispatch and history resets use the fixed interval. Preparing a dispatch does not advance the clock until submission is accepted; hidden views do not advance it. Capture/readback exclusivity controls synchronization, not timing policy. This interval is an SDK input, not a measured frame-rate claim. Live temporal image quality remains unqualified.
 
 ## Coordinates, history and composition
 
