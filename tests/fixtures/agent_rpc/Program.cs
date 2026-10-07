@@ -3,6 +3,8 @@ using System.Reflection;
 using System.Text.Json.Nodes;
 using Poima.AgentHost;
 
+if (args.Length > 0 && args[0] == "--codex") { await CodexIntegration.RunAsync(args); return; }
+
 if (args.Length > 0 && args[0] == "peer")
 {
     while (await Console.In.ReadLineAsync() is { } line)

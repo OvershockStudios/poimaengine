@@ -80,7 +80,9 @@ Official references: [Codex MCP configuration](https://learn.chatgpt.com/docs/ex
 
 `desktop/Poima.AgentHost` provides a reusable .NET 10 stdio JSON-RPC process transport with no external packages. It correlates concurrent requests, forwards provider notifications and approval requests, preserves server request IDs in replies, and bounds incoming frames and retained diagnostics. The owner must continuously consume its bounded event stream and explicitly handle approvals. Transport cancellation does not imply that a provider or engine mutation was rolled back; a missing response after sending is reported as an unknown outcome and is never automatically retried.
 
-This is transport groundwork, not an embedded chat interface or a qualified persistent provider session. Provider-specific initialization, thread management and desktop integration remain unfinished. It does not manage credentials or write global provider configuration.
+`CodexSession` adds official app-server initialization, persistent thread creation/resume, text turns, interrupt requests, paginated history and Poima MCP discovery. Its process-local MCP configuration attaches to an existing shared endpoint. Codex retains account ownership and its existing user configuration; Poima does not manage credentials or write global provider configuration. Approval requests remain explicit events for the caller to handle.
+
+This is backend groundwork, not an embedded chat interface. A Linux integration check with Codex CLI 0.160.1 discovered both Poima tools, completed one short text turn, restarted the app-server process, resumed the same thread and retrieved the exact saved assistant response. Streaming notifications were received. Windows session integration, actual approval UI, interrupt completion, Claude's persistent adapter and desktop integration remain unqualified or unfinished. The interrupt response alone does not establish that a turn finished or an engine edit was undone.
 
 The process-level contract fixture launches a synthetic peer and exercises concurrent correlation, Unicode, RPC errors, approval replies, cancellation, late responses, bounded diagnostics, truncated output, malformed responses and oversized frames:
 
@@ -89,3 +91,11 @@ dotnet run --project tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj
 ```
 
 The fixture requires .NET 10. Its synthetic peer does not establish provider compatibility; the real-client qualifications above cover the separate MCP integration.
+
+For the explicit provider-backed session check, first start a disposable shared host, then run:
+
+```text
+dotnet run --project tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj -- --codex CODEX_EXECUTABLE ABSOLUTE_POIMA_EXECUTABLE ENDPOINT WORKING_DIRECTORY
+```
+
+This uses the installed Codex account, performs one short model turn and creates provider-owned conversation history. It rejects server approval requests during the check. Raw provider history stays outside the repository.
