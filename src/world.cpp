@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "poima/core.hpp"
 #include <limits>
 #include "poima/world.hpp"
 #include "poima/animation.hpp"

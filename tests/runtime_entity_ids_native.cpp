@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "runtime_entity_ids.hpp"
 #include <array>
+#include <cstdint>
 #include <iostream>
 #include <limits>
 #include <type_traits>

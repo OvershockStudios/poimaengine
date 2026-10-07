@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #define NOMINMAX
 #include <windows.h>
+#include "poima/core.hpp"
 #include "poima/hosted_viewport.hpp"
 #include "poima/assets.hpp"
 #include <nlohmann/json.hpp>

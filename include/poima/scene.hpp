@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
-#include "poima/core.hpp"
 #include "poima/ui.hpp"
 #include "poima/ui_model.hpp"
 #include <array>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 namespace poima {
+struct RenderOptions;
+struct RenderReport;
 // Column-major matrices multiplying column vectors. Right-handed, Y-up,
 // camera looks along local -Z; projection depth is [0, 1].
 using Matrix4 = std::array<double, 16>;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
+#include "poima/core.hpp"
 #include "poima/scene.hpp"
 #include <memory>
 #include <string>

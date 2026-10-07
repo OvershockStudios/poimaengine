@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+#include "poima/core.hpp"
 #include "poima/desktop_bridge.h"
 #include "poima/world.hpp"
 #include "poima/local_session.hpp"
