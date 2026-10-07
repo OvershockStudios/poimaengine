@@ -2,7 +2,7 @@
 
 Poima exposes its authoritative world operations through a compiled stdio MCP server. It uses the same world service as the CLI and editor, including schema validation, revision conflicts, undo and durable retry receipts. No Python or Node runtime is required by this server.
 
-Linux native protocol tests pass. Real subprocess authoring/persistence tests and shared headless endpoint tests pass on both Linux and Windows, including cross-client receipts, stale-edit rejection and detachment without host shutdown. [Initial protocol evidence](evidence/m2-native-mcp.json), [cross-platform authoring evidence](evidence/m2-mcp-shared.json). It does not embed an agent, manage provider accounts or replace the CLI. Bounded authoring exercises also pass with the official Codex and Claude Code CLIs; see [client setup and qualification](AGENT_CLIENTS.md). Rendered-image interpretation, embedded chat and attachment to a live desktop endpoint require separate verification.
+Linux native protocol tests pass. Real subprocess authoring/persistence tests and shared headless endpoint tests pass on both Linux and Windows, including cross-client receipts, stale-edit rejection and detachment without host shutdown. [Initial protocol evidence](evidence/m2-native-mcp.json), [cross-platform authoring evidence](evidence/m2-mcp-shared.json). It does not embed an agent, manage provider accounts or replace the CLI. Bounded authoring exercises also pass with the official Codex and Claude Code CLIs; see [client setup and qualification](AGENT_CLIENTS.md). Simple rendered-image interpretation also passes for both clients; see [observation evidence](evidence/m2-agent-observation.json). Embedded chat and attachment to a live desktop endpoint require separate verification.
 
 ## Launch
 
@@ -37,7 +37,7 @@ Results include both structured JSON and a text serialization for client compati
 
 If the native response is lost or invalid, the result reports `outcome_unknown: true`. An edit may already have committed. Inspect the authoritative state before deciding whether to retry; preserve the original durable request identifier when the operation supports receipts. Editor controls and other operations without receipts must not be blindly replayed.
 
-Shared editor restrictions still apply. Use `desktop.describe` through `poima_call` to discover editor operations. Captures retain their native file-based output. The image-observation extension below passed its Linux codec and MCP tests, including conversion of an archived SDL capture. [Image qualification evidence](evidence/m2-mcp-images.json). Windows engine, desktop bridge and image/MCP test fixtures also cross-compile. Actual agent-client image consumption remains unqualified.
+Shared editor restrictions still apply. Use `desktop.describe` through `poima_call` to discover editor operations. Captures retain their native file-based output. The image-observation extension below passed its Linux codec and MCP tests, including conversion of an archived SDL capture. [Image qualification evidence](evidence/m2-mcp-images.json). Windows engine, desktop bridge and image/MCP test fixtures also cross-compile. Fresh rendered image consumption and simple color identification pass with both tested agent CLIs. General visual reasoning remains unqualified.
 
 ## Image observations (development)
 

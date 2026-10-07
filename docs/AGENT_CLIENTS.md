@@ -2,7 +2,7 @@
 
 Poima's native MCP server can be used by the official Codex and Claude Code CLIs. The engine remains the authority for schemas, revisions, edits, receipts and runtime state. The clients supply the agent and their own authentication; Poima does not store provider credentials.
 
-Bounded authoring exercises pass with Codex CLI **0.160.1** on Linux and Claude Code **2.1.290** on Windows. Both agents discovered schemas, created an entity, replayed the exact transaction, observed stale-revision rejection, queried state, then undid and redid the edit. A separate trace verifier checked the actual tool calls and persisted world. These exercises do not qualify general game creation, embedded chat, cancellation or rendered-image interpretation. [Evidence](evidence/m2-agent-authoring.json).
+Bounded authoring exercises pass with Codex CLI **0.160.1** on Linux and Claude Code **2.1.290** on Windows. Both agents discovered schemas, created an entity, replayed the exact transaction, observed stale-revision rejection, queried state, then undid and redid the edit. A separate trace verifier checked the actual tool calls and persisted world. These exercises do not qualify general game creation, embedded chat or cancellation. A separate simple rendered-observation exercise also passes for both clients; see below. [Evidence](evidence/m2-agent-authoring.json).
 
 ## Connect a project
 
@@ -60,5 +60,18 @@ python tests/agent_authoring_trace.py claude EVENTS.jsonl WORLD.json
 ```
 
 Provider-backed exercises are explicit integration checks, not part of the default test suite. Raw transcripts and account data do not belong in the engine repository. Qualification records contain bounded results and hashes.
+
+## Rendered observations
+
+Both tested clients receive Poima's MCP PNG image blocks. In a separate exercise, each identified the left/right colors of two rendered objects without being told the colors. A verifier checked that only discovery and one capture occurred, that the receipt hash matched the fresh BMP, that a PNG image block reached the client, and that the answer matched independently measured source pixels. [Observation evidence](evidence/m2-agent-observation.json).
+
+The exercise uses a camera at `(0, 0, 5)` looking along local `-Z`, with two unit boxes at `(-1, 0, 0)` and `(1, 0, 0)`. Object names are neutral; choose two distinct dominant RGB albedos independently of the agent prompt. Ask for one `world.capture` at 640×400 with four samples and the adapter option `"image": {"max_edge": 640}`. Restrict this exercise to discovery and capture, then request a JSON answer containing `left` and `right` colors.
+
+```text
+python tests/agent_observation_trace.py codex EVENTS.jsonl CAPTURE.bmp
+python tests/agent_observation_trace.py claude EVENTS.jsonl CAPTURE.bmp
+```
+
+This is one simple image per client on the NVIDIA development GPU. It establishes delivery and bounded interpretation, not a general vision benchmark, reduced-image accuracy or autonomous game creation. Poima's optional [MCP image parameter](MCP.md#image-observations-development) retains the native capture receipt alongside the image.
 
 Official references: [Codex MCP configuration](https://learn.chatgpt.com/docs/extend/mcp), [Codex app-server](https://learn.chatgpt.com/docs/app-server), [Claude Code programmatic use](https://code.claude.com/docs/en/headless). CLI options can change; the recorded versions above identify what was exercised.

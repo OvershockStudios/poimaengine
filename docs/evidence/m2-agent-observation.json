@@ -1,0 +1,75 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Fresh Windows Vulkan captures delivered through MCP and interpreted by official agent CLIs",
+  "qualification": {
+    "codex_image_observation": true,
+    "claude_image_observation": true,
+    "general_visual_reasoning": false,
+    "agent_reliability_benchmark": false,
+    "embedded_chat": false
+  },
+  "client_versions": {
+    "codex": "0.160.1",
+    "claude": "2.1.290"
+  },
+  "platforms": {
+    "codex": "Linux CLI launching Windows Poima through WSL interoperability",
+    "claude": "Windows native CLI and Windows Poima"
+  },
+  "clients": {
+    "codex": {
+      "passed": true,
+      "provider": "codex",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "answer": {
+        "left": "red",
+        "right": "blue"
+      },
+      "image_dimensions": [
+        640,
+        400
+      ],
+      "tool_calls": 2,
+      "events_sha256": "b62d7024d7e35f1b04d793f951aa21962f5f6e43b72143987bb873ff322f5d02",
+      "capture_sha256": "82621b3fee187163b795ca6b697ecfe5f7ed441ab262656666ff48b4641ba4b5",
+      "delivered_png_sha256": "829fbc606b24e86e1a8d013bb031ab8ab17fd1fdca640765402ed8c7a66e8e40",
+      "delivered_png_bytes": 746
+    },
+    "claude": {
+      "passed": true,
+      "provider": "claude",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "answer": {
+        "left": "red",
+        "right": "green"
+      },
+      "image_dimensions": [
+        640,
+        400
+      ],
+      "tool_calls": 2,
+      "events_sha256": "bd0a7769c340e5bab653ad769f05ce7b87e57f823199fdb9b83224b3acc4c387",
+      "capture_sha256": "afc9d5327a4948ac4402c131a0305d6c1a1dad2439962da20aa9e9dcdb0f0aeb",
+      "delivered_png_sha256": "a711fed5cfcf73fd441bb7ee71a1c1aacc82c9d130c6b608f3dd591fe7e257cb",
+      "delivered_png_bytes": 746
+    }
+  },
+  "method": [
+    "Author a temporary world with a camera and two neutrally named box entities. Randomly choose distinct dominant RGB colors without disclosing them in the prompt.",
+    "Permit only schema discovery and one world.capture MCP call with image option; reject traces containing entity queries, file reads or other tool activity.",
+    "Verify native hardware capture receipt, source BMP hash, dimensions and actual PNG image block in each agent event stream.",
+    "Compare final left/right color answer against independently measured dominant-color pixel masks in the source BMP."
+  ],
+  "verification": {
+    "source": "tests/agent_observation_trace.py",
+    "sha256": "f65dccc72bbbabf01d53538a5ce7ebad593f2eb5e85e8269dcc1253fd3a6d385",
+    "negative_check": "Removing the image block rejects the trace."
+  },
+  "limits": [
+    "One simple image per client on NVIDIA RTX 4070 Laptop GPU; no broad accuracy or reliability claim.",
+    "Unscaled 640x400 image path; reduced image interpretation not exercised here.",
+    "Receipt reports zero NVRHI errors; this client exercise did not explicitly enable Vulkan validation layers.",
+    "Independent fixture selection and answer verification are test tooling, not engine intelligence.",
+    "No raw account data or provider transcripts are published."
+  ]
+}
