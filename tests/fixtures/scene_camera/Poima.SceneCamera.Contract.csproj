@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../desktop/Poima.Editor/SceneCameraMotion.cs" Link="SceneCameraMotion.cs" />
+    <Compile Include="../../../desktop/Poima.Editor/SceneNavigation.cs" Link="SceneNavigation.cs" />
+    <Compile Include="../../../desktop/Poima.Editor/ViewportInputEvent.cs" Link="ViewportInputEvent.cs" />
+  </ItemGroup>
+</Project>

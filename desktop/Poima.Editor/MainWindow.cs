@@ -365,9 +365,14 @@ public sealed partial class MainWindow : Window
         }
         var space = ToolButton("World transform axes", () => Navigation.ConfigureGizmo(Navigation.GizmoMode, Navigation.GizmoSpace == "world" ? "local" : "world"), "world");
         controls.Children.Add(space); controls.Children.Add(ToolButton("Frame selected", Navigation.FrameSelection, "frame"));
+        var smooth = new CheckBox { Content = "Smooth camera", IsChecked = Navigation.SmoothCamera, Margin = new Thickness(8,0,0,0), VerticalAlignment = VerticalAlignment.Center };
+        AutomationProperties.SetName(smooth, "Smooth Scene camera");
+        smooth.IsCheckedChanged += (_, _) => { if (smooth.IsChecked != Navigation.SmoothCamera) Navigation.SetSmoothing(smooth.IsChecked == true); };
+        controls.Children.Add(smooth);
         ToolTip.SetTip(controls, "Q select · W move · E rotate · R scale · Ctrl snap · RMB + WASD fly · MMB pan · Alt orbit · F frame");
         void SyncTools(object? sender, EventArgs args)
         {
+            smooth.IsChecked = Navigation.SmoothCamera;
             foreach (var pair in modes) pair.Value.Background = EditorTheme.Brush(pair.Key == Navigation.GizmoMode ? "#34547B" : "#28292D");
             space.Content = EditorIcons.Make(Navigation.GizmoSpace);
             var local = Navigation.GizmoSpace == "local";

@@ -70,6 +70,7 @@ internal sealed class DesktopScript
                     case "save_layout": window.SaveLayout(); result["layout"] = window.InspectLayout(); break;
                     case "load_layout": window.LoadLayout(); break;
                     case "scene_frame": window.Navigation.FrameSelection(); break;
+                    case "scene_smoothing": window.Navigation.SetSmoothing(action["enabled"]!.GetValue<bool>()); break;
                     case "scene_step": window.Navigation.Tick(action["seconds"]!.GetValue<double>()); break;
                     case "gizmo_configure": result["gizmo"] = window.Navigation.ConfigureGizmo(Text("mode"), action["space"]?.GetValue<string>()); break;
                     case "gizmo_inspect": result["gizmo"] = window.Navigation.InspectGizmo(); break;

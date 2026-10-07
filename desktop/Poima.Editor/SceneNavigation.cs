@@ -22,6 +22,10 @@ public sealed class SceneNavigation : IViewportInteraction
     public string GizmoMode { get; private set; } = "move";
     public string GizmoSpace { get; private set; } = "world";
     public bool Flying => drag == ViewportMouseButton.Right;
+    private readonly SceneCameraMotion motion = new();
+    private JsonObject? expectedCamera;
+    private long currentCut, expectedCut;
+    public bool SmoothCamera { get; private set; } = true;
     private double orbitDistance = 10;
     public double FlySpeed { get; private set; } = 5;
     public IntPtr Window { get; private set; }
@@ -50,6 +54,7 @@ public sealed class SceneNavigation : IViewportInteraction
         {
             var active = gizmoDrag; gizmoDrag = null;
             drag = ViewportMouseButton.None; keys.Clear(); orbit = false; moved = false;
+            motion.Cancel(); expectedCamera = null;
             if (active is not null && model.Host.State["closing"]?.GetValue<bool>() != true)
                 try { model.Host.Call("desktop.gizmo.cancel"); }
                 catch (Exception error) { ++ErrorCount; model.Note(error.Message); Error?.Invoke(error.Message); }
@@ -62,7 +67,18 @@ public sealed class SceneNavigation : IViewportInteraction
         try { action(); }
         catch (Exception error) { Cancel(); ++ErrorCount; model.Note(error.Message); Error?.Invoke(error.Message); }
     }
-    private JsonObject Camera() => model.Host.Call("desktop.inspect")["camera"]!.AsObject();
+    private JsonObject Camera()
+    {
+        var state = model.Host.Call("desktop.inspect");
+        currentCut = state["views"]?["scene"]?["view_cut_generation"]?.GetValue<long>() ?? 0;
+        return state["camera"]!.AsObject();
+    }
+    private bool MotionOwnsCamera(JsonObject camera) => expectedCamera is null ||
+        currentCut == expectedCut && JsonNode.DeepEquals(expectedCamera, camera);
+    public void SetSmoothing(bool enabled)
+    {
+        Cancel(); SmoothCamera = enabled; Changed?.Invoke(this, EventArgs.Empty);
+    }
     private static double[] Position(JsonObject camera) => camera["position"]!.AsArray().Select(n => n!.GetValue<double>()).ToArray();
     private static (double[] right, double[] up, double[] back) Basis(double yaw, double pitch)
     {
@@ -73,7 +89,8 @@ public sealed class SceneNavigation : IViewportInteraction
     private static JsonArray Array(double[] values) => new(values.Select(v => (JsonNode?)JsonValue.Create(v)).ToArray());
     private void SetCamera(double[] position, double yaw, double pitch)
     {
-        model.Host.Call("desktop.camera", new() { ["position"] = Array(position), ["yaw"] = yaw, ["pitch"] = pitch });
+        expectedCamera = model.Host.Call("desktop.camera", new() { ["position"] = Array(position), ["yaw"] = yaw, ["pitch"] = pitch });
+        expectedCut = currentCut;
     }
     public void SetSpeed(double speed)
     {
@@ -188,7 +205,7 @@ public sealed class SceneNavigation : IViewportInteraction
                 { UpdateGizmo(e.X, e.Y, e.Control); CommitGizmo(); break; }
                 moved |= Math.Abs(e.X-downX) + Math.Abs(e.Y-downY) > 5;
                 var select = drag == ViewportMouseButton.Left && !orbit && !moved;
-                drag = ViewportMouseButton.None; orbit = false;
+                drag = ViewportMouseButton.None; orbit = false; motion.Cancel(); expectedCamera = null;
                 if (select) Pick(e.X, e.Y, clickCount > 1);
                 break;
             case ViewportInputKind.PointerMove:
@@ -217,11 +234,19 @@ public sealed class SceneNavigation : IViewportInteraction
                 SetCamera(pos,yaw,pitch); break;
             case ViewportInputKind.PointerWheel:
                 if (e.HorizontalWheel || e.WheelDelta == 0) break;
+                if (drag is ViewportMouseButton.Middle or ViewportMouseButton.Left || e.Control || e.Alt) break;
                 if (drag != ViewportMouseButton.Right && (input is null || e.X < 0 || e.Y < 0 || e.X >= input.Width || e.Y >= input.Height)) break;
                 var multiplier = Math.Exp(Math.Clamp(-e.WheelDelta/120.0*.12,-3,3));
                 if (drag == ViewportMouseButton.Right) { SetSpeed(Math.Clamp(FlySpeed/multiplier,.1,200)); break; }
-                Cancel();
                 var wheelCamera = Camera(); var wheelPosition = Position(wheelCamera);
+                if (!MotionOwnsCamera(wheelCamera)) { motion.Cancel(); expectedCamera = null; }
+                if (SmoothCamera)
+                {
+                    motion.QueueZoom(orbitDistance, multiplier);
+                    expectedCamera = wheelCamera.DeepClone().AsObject(); expectedCut = currentCut;
+                    break;
+                }
+                Cancel();
                 var wheelYaw = wheelCamera["yaw"]!.GetValue<double>(); var wheelPitch = wheelCamera["pitch"]!.GetValue<double>();
                 var wheelBack = Basis(wheelYaw,wheelPitch).back;
                 var distance = Math.Clamp(orbitDistance*multiplier,.05,1e6);
@@ -247,19 +272,33 @@ public sealed class SceneNavigation : IViewportInteraction
                 else if (model.Dirty || model.RuntimeId is not null) Cancel();
             }
         }
-        if (input is null || drag != ViewportMouseButton.Right || !double.IsFinite(seconds)) return;
+        if (input is null || !double.IsFinite(seconds) || seconds <= 0 || !Flying && !motion.Zooming) return;
+        var camera=Camera();
+        if (!MotionOwnsCamera(camera)) { Cancel(); return; }
+        var position=Position(camera); var yaw=camera["yaw"]!.GetValue<double>(); var pitch=camera["pitch"]!.GetValue<double>();
+        var basis=Basis(yaw,pitch);
+        if (motion.Zooming)
+        {
+            var distance = motion.StepZoom(orbitDistance, seconds);
+            for (var i=0; i<3; ++i) position[i] += basis.back[i]*(distance-orbitDistance);
+            orbitDistance = distance; SetCamera(position,yaw,pitch); return;
+        }
         int Axis(uint positive,uint negative) => (keys.Contains(positive) ? 1 : 0)-(keys.Contains(negative) ? 1 : 0);
         var f=Axis(0x57,0x53); var r=Axis(0x44,0x41); var u=Axis(0x45,0x51);
-        if (f==0 && r==0 && u==0) return;
-        var camera=Camera(); var position=Position(camera); var yaw=camera["yaw"]!.GetValue<double>(); var pitch=camera["pitch"]!.GetValue<double>();
-        var basis=Basis(yaw,pitch); var direction=new double[3];
+        var direction=new double[3];
         for(int i=0;i<3;++i) direction[i]=-basis.back[i]*f+basis.right[i]*r+(i==1 ? u : 0);
         var length=Math.Sqrt(direction.Sum(v=>v*v));
-        var speed=FlySpeed*(fast || keys.Contains(0x10) || keys.Contains(0xA0) || keys.Contains(0xA1) ? 4 : 1)*Math.Clamp(seconds,0,.1);
-        if(length>1e-8) for(int i=0;i<3;++i) position[i] += direction[i]/length*speed;
-        SetCamera(position,yaw,pitch);
+        var speed=FlySpeed*(fast || keys.Contains(0x10) || keys.Contains(0xA0) || keys.Contains(0xA1) ? 4 : 1);
+        var delta = SmoothCamera ? motion.StepFlight(direction,speed,seconds) :
+            direction.Select(v => length > 1e-8 ? v/length*speed*Math.Clamp(seconds,0,.1) : 0).ToArray();
+        if (delta.Any(v => v != 0))
+        {
+            for(int i=0;i<3;++i) position[i] += delta[i];
+            SetCamera(position,yaw,pitch);
+        }
     });
     public JsonObject Inspect() => new() { ["attached"] = input is not null, ["width"] = input?.Width ?? 0, ["height"] = input?.Height ?? 0,
+        ["smooth_camera"] = SmoothCamera, ["zoom_pending"] = motion.Zooming, ["flight_velocity"] = motion.Speed,
         ["fly_speed"] = FlySpeed, ["orbit_distance"] = orbitDistance, ["drag"] = drag.ToString(), ["pressed_keys"] = keys.Count,
         ["gizmo_mode"] = GizmoMode, ["gizmo_space"] = GizmoSpace, ["gizmo_drag_id"] = gizmoDrag,
         ["input_error"] = input?.LastError, ["error_count"] = ErrorCount, ["last_input_modifiers"] = (int)lastInputModifiers,

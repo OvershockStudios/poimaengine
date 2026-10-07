@@ -78,7 +78,7 @@ The inspection camera is independent of authored Camera components; moving it do
 | Right button + Q/E | Move vertically; Shift increases speed fourfold. |
 | Middle-drag | Pan in the camera plane. |
 | Alt + left-drag | Orbit around the current focus distance. |
-| Wheel | Dolly toward/away from focus; while holding right, change fly speed. |
+| Wheel | Smoothly dolly toward/away from focus; while holding right, change fly speed. |
 | F or Scene **Frame** | Frame the selected object and its visible descendants. |
 | Left click | Select the nearest visible geometry; empty space clears selection. |
 | Q / W / E / R | Select / Move / Rotate / Scale, except while right-button flying. |
@@ -87,6 +87,8 @@ The inspection camera is independent of authored Camera components; moving it do
 | Escape, focus/capture loss | Cancel navigation or an uncommitted transform and clear held input. |
 
 Input comes from the Scene's owned native child window through a Win32 subclass. It preserves SDL window processing and is removed before viewport detachment. Pointer coordinates use physical viewport pixels. Scene navigation does not lock/warp the cursor for unlimited mouse travel; captured Game controls use the separate relative-motion path described above. Native double-click framing depends on the window class delivering double-click messages; F/Frame are always available. Camera speed defaults to 5 world units/s, with right-button wheel adjustment bounded to 0.1–200. Camera pose/speed are not yet persisted with layout preferences.
+
+**Smooth camera** is enabled by default in the development Scene toolbar. Wheel zoom eases toward its focus distance, accumulates repeated input and responds immediately when reversed. Flying uses a short acceleration/deceleration response while the right button is held; releasing it stops movement. Mouse look, pan and orbit remain immediate. Disable the toggle for immediate zoom and flight. Focus/capture loss, resize, framing, scene edits and an external camera pose change or cut clear pending motion. These are inspection-camera preferences, not authored world changes or gameplay smoothing; the toggle is currently session-local. Production math/navigation checks pass on Linux and Windows, and the Windows desktop regression passes 232 actions plus four layout restart checks on NVIDIA. This does not qualify physical camera feel or the newly reported click-selection issue. [Evidence](evidence/m2-scene-camera-smoothing.json).
 
 Picking is a CPU geometry query with per-object bounds rejection and triangle tests, including current skin poses and backface/clip rules. It is not a GPU ID-buffer or pixel-exact raster result, and its linear triangle traversal is not production-scale picking acceleration. Framing uses conservative bounds; empty/nonrendered objects use a unit bound at their world position.
 
