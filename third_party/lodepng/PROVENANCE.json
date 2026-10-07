@@ -1,0 +1,15 @@
+{
+  "component": "LodePNG",
+  "version": "20200306",
+  "source_repository": "https://github.com/mikke89/RmlUi",
+  "source_commit": "ba95ffe8bfb6370efb2cdcca927eaad4710c5413",
+  "source_directory": "Tests/Dependencies/lodepng",
+  "upstream": "https://github.com/lvandeve/lodepng",
+  "license": "Zlib",
+  "modifications": "None. Compile-time options disable decoder, disk I/O and ancillary chunks; encoder consumes validated bounded RGB buffers.",
+  "files": {
+    "lodepng.h": "e7846c83e253008484153dcc4274222398d36b81aa3b0c6d266bbe0eac62bead",
+    "lodepng.cpp": "c55a19ba0f80ff68c5a4ac36138194c851cc2b1a9a0fbcd0be9ece02f1097e5d",
+    "LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c"
+  }
+}

@@ -6,6 +6,12 @@
 
 Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 
+## LodePNG (native observation images)
+
+- LodePNG version `20200306`, copyright Lode Vandevenne, under the zlib license retained in `third_party/lodepng/LICENSE.txt`.
+- Unmodified source is taken from [RmlUi's pinned dependency copy](https://github.com/mikke89/RmlUi/tree/ba95ffe8bfb6370efb2cdcca927eaad4710c5413/Tests/Dependencies/lodepng). File hashes and provenance are recorded in `third_party/lodepng/PROVENANCE.json`.
+- Poima compiles the encoder for bounded native capture-to-PNG conversion. Decoder, disk I/O and ancillary-chunk support are disabled through compile definitions. Poima validates BMP capture input separately. The notice is installed with the engine.
+
 ## RmlUi and FreeType (opt-in native game UI)
 
 - RmlUi release `6.3`, commit `ba95ffe8bfb6370efb2cdcca927eaad4710c5413`; [upstream source](https://github.com/mikke89/RmlUi/tree/ba95ffe8bfb6370efb2cdcca927eaad4710c5413).
