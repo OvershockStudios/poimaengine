@@ -8,6 +8,8 @@
 #include "poima/editor_viewport.hpp"
 #include "poima/hosted_viewport.hpp"
 #include "poima/profiler.hpp"
+#include "poima/render_schedule.hpp"
+#include <unordered_map>
 #if POIMA_GAME_UI
 #include "poima/ui_presenter.hpp"
 #endif
@@ -1758,6 +1760,195 @@ struct Context {
             require(messages.errors==0,"NVRHI reported a validation/backend error; inspect stderr.");
         } catch(...) {renderer_fault=true;throw;}
     }
+    render_schedule::Schedule make_schedule(bool capture_frame) {
+        namespace rs=render_schedule;
+        rs::FrameResources f;
+        rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
+        settings.sky=scene && scene_visible && sky_enabled;settings.editor=editor;settings.capture=capture_frame;
+        settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);
+        std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
+        auto insert=[&](rs::Resource resource) {
+            if(const auto it=ids.find(resource.identity);resource.identity && it!=ids.end()) {
+                auto& existing=f.resources[it->second];
+                require(existing.kind==resource.kind && existing.lifetime==resource.lifetime && existing.initialized==resource.initialized,
+                    "Render schedule has conflicting resource ownership.");
+                existing.bytes=std::max(existing.bytes,resource.bytes);return it->second;
+            }
+            const auto id=static_cast<rs::ResourceId>(f.resources.size());
+            if(resource.identity)ids.emplace(resource.identity,id);
+            f.resources.push_back(std::move(resource));return id;
+        };
+        auto buffer=[&](nvrhi::IBuffer* value,rs::Lifetime lifetime,bool initialized,std::uint64_t used=0) {
+            require(value!=nullptr,"Render schedule buffer binding is null.");const auto& desc=value->getDesc();
+            rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::buffer;
+            r.lifetime=lifetime;r.initialized=initialized;r.owner=settings.slot;r.allocation_bytes=desc.byteSize;r.bytes=used ? used : desc.byteSize;
+            r.region=used ? rs::Region::prefix : rs::Region::whole;
+            r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
+            if(desc.cpuAccess!=nvrhi::CpuAccessMode::Read)r.supported|=rs::use_bit(rs::Use::upload);
+            if(desc.structStride || desc.canHaveRawViews)r.supported|=rs::use_bit(rs::Use::storage_read);
+            if(desc.canHaveUAVs)r.supported|=rs::use_bit(rs::Use::storage_write);
+            if(desc.isVertexBuffer)r.supported|=rs::use_bit(rs::Use::vertex);
+            if(desc.isIndexBuffer)r.supported|=rs::use_bit(rs::Use::index);
+            if(desc.isConstantBuffer)r.supported|=rs::use_bit(rs::Use::constant);
+            return insert(std::move(r));
+        };
+        auto texture=[&](nvrhi::ITexture* value,rs::Lifetime lifetime,bool initialized) {
+            require(value!=nullptr,"Render schedule texture binding is null.");const auto& desc=value->getDesc();
+            rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::texture;
+            r.lifetime=lifetime;r.initialized=initialized;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
+            r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
+            if(desc.isShaderResource)r.supported|=rs::use_bit(rs::Use::sampled);
+            if(desc.isRenderTarget) {
+                if(desc.format==nvrhi::Format::D32)r.supported|=rs::use_bit(rs::Use::depth)|rs::use_bit(rs::Use::clear_depth);
+                else r.supported|=rs::use_bit(rs::Use::color)|rs::use_bit(rs::Use::color_overwrite)|rs::use_bit(rs::Use::clear_color)|rs::use_bit(rs::Use::resolve_source)|rs::use_bit(rs::Use::resolve_destination);
+            }
+            return insert(std::move(r));
+        };
+        rs::Resource swap;swap.kind=rs::Kind::texture;swap.lifetime=rs::Lifetime::swapchain;swap.late_bound=true;
+        swap.name="Acquired swapchain image";swap.width=extent.width;swap.height=extent.height;
+        swap.supported=rs::use_bit(rs::Use::color)|rs::use_bit(rs::Use::color_overwrite)|rs::use_bit(rs::Use::clear_color)|rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::present);
+        f.swapchain=insert(std::move(swap));f.output=f.swapchain;
+#if POIMA_EDITOR
+        if(editor)f.output=texture(ui_scene,rs::Lifetime::shared,false);
+#endif
+        f.color=f.output;
+        if(scene) {
+            f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);
+            if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
+            f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
+            f.depth=texture(depth,rs::Lifetime::shared,false);f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
+            if(settings.clustered) {
+                f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
+                f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
+                f.cluster_readback=buffer(cluster_readback,rs::Lifetime::slot,false);
+            }
+            for(const auto& draw:draws) {
+                if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
+                    const auto& skin=*draw.skin;const auto* mesh=skin.mesh.get();
+                    f.skins.push_back({buffer(geometry_cache.at(mesh).vertices,rs::Lifetime::imported,true),
+                        buffer(skin_sources.at(mesh).influences,rs::Lifetime::imported,true),buffer(skin.palette,rs::Lifetime::shared,false),
+                        buffer(skin.vertices,rs::Lifetime::shared,false)});
+                }
+            }
+            if(!f.skins.empty()) {f.skin_errors=buffer(skin_errors,rs::Lifetime::shared,false);f.skin_readback=buffer(skin_readback,rs::Lifetime::slot,false);}
+            for(const auto& draw:draws) {
+                const bool camera=scene_visible && draw.camera_visible;const bool shadow=draw.shadow_mask!=0;
+                if(!camera && !shadow)continue;
+                rs::DrawInputs input;input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
+                if(draw.geometry.indices)input.indices=buffer(draw.geometry.indices,rs::Lifetime::imported,true);
+                if(shadow)f.shadow_draws.push_back(input);
+                if(camera) {
+                    for(const auto& binding:draw.bindings->getDesc()->bindings)
+                        if(binding.type==nvrhi::ResourceType::Texture_SRV && binding.slot<5)
+                            input.textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
+                    f.camera_draws.push_back(std::move(input));
+                }
+            }
+        }
+        settings.game_ui=game_ui_frame && (!game_ui_frame->vertices.empty() || !game_ui_frame->indices.empty());
+        if(settings.game_ui) {
+            if(!game_ui_frame->vertices.empty())f.game_vertices=buffer(game_ui_vertices,rs::Lifetime::shared,false,game_ui_frame->vertices.size()*sizeof(UiVertex));
+            if(!game_ui_frame->indices.empty())f.game_indices=buffer(game_ui_indices,rs::Lifetime::shared,false,game_ui_frame->indices.size()*sizeof(std::uint32_t));
+            for(const auto& draw:game_ui_frame->draws)if(draw.index_count && draw.scissor[0]!=draw.scissor[2] && draw.scissor[1]!=draw.scissor[3])
+                for(const auto& binding:game_ui_bindings.at(draw.texture==ui_white_texture ? game_ui_frame->textures.size() : draw.texture)->getDesc()->bindings)
+                    if(binding.type==nvrhi::ResourceType::Texture_SRV)f.game_textures.push_back(texture(static_cast<nvrhi::ITexture*>(binding.resourceHandle),rs::Lifetime::imported,true));
+        }
+        settings.overlay=hosted && !overlay_data.empty();
+        if(settings.overlay)f.overlay_vertices=buffer(overlay_vertices,rs::Lifetime::shared,false,overlay_data.size()*sizeof(EditorOverlayVertex));
+#if POIMA_EDITOR
+        if(editor && ui_data && !ui_vertex_data.empty()) {
+            f.editor_vertices=buffer(ui_vertices,rs::Lifetime::shared,false,ui_vertex_data.size()*sizeof(ImDrawVert));
+            if(!ui_index_data.empty())f.editor_indices=buffer(ui_indices,rs::Lifetime::shared,false,ui_index_data.size()*sizeof(ImDrawIdx));
+            for(int list=0;list<ui_data->CmdListsCount;++list)for(const auto& draw:ui_data->CmdLists[list]->CmdBuffer) {
+                if(draw.UserCallback || !draw.ElemCount)continue;
+                f.editor_textures.push_back(draw.GetTexID()==static_cast<ImTextureID>(2) ? f.output : texture(ui_font,rs::Lifetime::imported,true));
+            }
+        }
+#endif
+        if(capture_frame) {
+            require(bool(staging),"Render schedule capture staging is unavailable.");const auto& desc=staging->getDesc();
+            rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(staging.Get());r.name="Capture staging";r.kind=rs::Kind::texture;
+            r.lifetime=rs::Lifetime::capture;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;r.supported=rs::use_bit(rs::Use::copy_destination);
+            f.capture=insert(std::move(r));
+        }
+        return rs::build(std::move(f),settings);
+    }
+    void verify_schedule_bindings(const render_schedule::Schedule& plan,std::uint32_t index) {
+        namespace rs=render_schedule;const auto& f=plan.frame;
+        auto identity=[&](rs::ResourceId id,const void* actual) {
+            require(id!=rs::none && plan.resource(id).identity==reinterpret_cast<std::uintptr_t>(actual),"Recorded resource differs from its validated schedule binding.");
+        };
+        auto framebuffer=[&](nvrhi::IFramebuffer* value,rs::ResourceId color,rs::ResourceId depth_id) {
+            const auto& desc=value->getDesc();
+            if(color!=rs::none) {require(desc.colorAttachments.size()==1,"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);}
+            if(depth_id!=rs::none)identity(depth_id,desc.depthAttachment.texture);
+        };
+        identity(f.swapchain,images.at(index).Get());framebuffer(framebuffers.at(index),f.color,f.depth);
+        if(scene) {
+            identity(f.frame,frame_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());
+            if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
+            if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
+            if(!f.skins.empty()) {identity(f.skin_errors,skin_errors.Get());identity(f.skin_readback,skin_readback.Get());}
+            for(const auto& shadow:shadow_framebuffers)framebuffer(shadow,rs::none,f.shadow);
+            std::size_t skin_index=0,camera_index=0,shadow_index=0;
+            for(const auto& draw:draws) {
+                if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
+                    const auto& s=f.skins.at(skin_index++);const auto& skin=*draw.skin;
+                    identity(s.output,skin.vertices.Get());identity(s.palette,skin.palette.Get());
+                    for(const auto& binding:skin.bindings->getDesc()->bindings) {
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV && binding.slot==0)identity(s.source,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV && binding.slot==1)identity(s.influences,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV && binding.slot==2)identity(s.palette,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(s.output,binding.resourceHandle);
+                    }
+                }
+                auto geometry=[&](const rs::DrawInputs& input) {identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());};
+                if(draw.shadow_mask)geometry(f.shadow_draws.at(shadow_index++));
+                if(scene_visible && draw.camera_visible) {
+                    const auto& input=f.camera_draws.at(camera_index++);geometry(input);std::size_t material_index=0;
+                    for(const auto& binding:draw.bindings->getDesc()->bindings) {
+                        if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot<5 ? input.textures.at(material_index++) : f.shadow,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
+                        if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
+                            const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : f.indices;
+                            if(id!=rs::none)identity(id,binding.resourceHandle);
+                        }
+                    }
+                }
+            }
+            framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
+            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(f.hdr,binding.resourceHandle);
+        }
+        if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
+        if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
+        if(plan.settings.game_ui)framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
+        if(plan.settings.overlay) {identity(f.overlay_vertices,overlay_vertices.Get());framebuffer(overlay_framebuffers.at(index),f.swapchain,rs::none);}
+#if POIMA_EDITOR
+        if(editor) {
+            identity(f.output,ui_scene.Get());framebuffer(ui_framebuffers.at(index),f.swapchain,rs::none);
+            if(f.editor_vertices!=rs::none)identity(f.editor_vertices,ui_vertices.Get());
+            if(f.editor_indices!=rs::none)identity(f.editor_indices,ui_indices.Get());
+        }
+#endif
+        if(plan.settings.capture)identity(f.capture,staging.Get());
+    }
+    void render_opaque(std::uint32_t index) {
+        nvrhi::GraphicsState state;state.pipeline=pipeline;state.framebuffer=framebuffers[index];
+        state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height))));
+        if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));state.bindings.push_back(bindings);}
+        commands->setGraphicsState(state);
+        if(scene) {
+            for(const auto& draw:draws) {
+                if(!scene_visible || !draw.camera_visible)continue;
+                state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
+                state.vertexBuffers[0].buffer=draw.geometry.vertices;
+                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
+                commands->setGraphicsState(state);commands->setPushConstants(&draw.constants,sizeof(draw.constants));
+                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+            }
+        } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
+    }
     bool frame(bool capture_frame) {
         profiling::Scope profile_scope("render.frame");
         require(!renderer_fault,"Renderer synchronization failed; recreate the renderer session.");
@@ -1786,6 +1977,8 @@ struct Context {
         if(profiling::active() && !timestamp_prepared)prepare_timestamps();
         timestamp_pool=slot.timestamps;
         timestamp_recording=bool(timestamp_pool) && (diagnostics.profile_requested || profiling::active());
+        auto plan=make_schedule(capture_frame);
+        plan.validate(true);
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
         try { profiling::Scope acquire_scope("render.acquire");next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,slot.acquired,{},dispatch); }
@@ -1805,7 +1998,9 @@ struct Context {
             require(device.waitForFences(1,&present_fences[index],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,"Previous image presentation did not retire.");
             require(device.resetFences(1,&present_fences[index],dispatch)==vk::Result::eSuccess,"Presentation fence reset failed.");present_pending[index]=false;
         }
-        auto texture = images.at(index);
+        plan.bind_swapchain(reinterpret_cast<std::uintptr_t>(images.at(index).Get()),index);
+        plan.validate();
+        verify_schedule_bindings(plan,index);
         native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, slot.acquired, 0);
         double record_ms=0;
         {
@@ -1820,66 +2015,57 @@ struct Context {
             {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
         if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,6,dispatch);
         timestamp(0);
-        if(scene) {
-            commands->writeBuffer(frame_buffer,&frame_constants,sizeof(frame_constants));
-            dispatch_skinning();
-        }
-        timestamp(1);
-        if(scene) {
-            if(!gpu_lights.empty())commands->writeBuffer(light_buffer,gpu_lights.data(),gpu_lights.size()*sizeof(GpuLight));
-            dispatch_light_assignment();
-        }
-        timestamp(2);
-        if(scene)render_shadows();
-        timestamp(3);
-        commands->beginTrackingTextureState(texture, nvrhi::AllSubresources,
-            initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
-        auto* scene_target=texture.Get();
+        // Only the acquired image is late-bound. All other resources were
+        // resolved after preparation; no recording pass allocates/rebinds them.
+        const auto& resources=plan.frame;
+        auto planned_texture=[&](render_schedule::ResourceId id) {
+            const auto& resource=plan.resource(id);require(resource.kind==render_schedule::Kind::texture,"Scheduled texture has the wrong kind.");
+            return reinterpret_cast<nvrhi::ITexture*>(resource.identity);
+        };
+        auto planned_buffer=[&](render_schedule::ResourceId id) {
+            const auto& resource=plan.resource(id);require(resource.kind==render_schedule::Kind::buffer,"Scheduled buffer has the wrong kind.");
+            return reinterpret_cast<nvrhi::IBuffer*>(resource.identity);
+        };
+        plan.execute([&](const render_schedule::Pass& pass,const render_schedule::Schedule&) {
+            profiling::Scope pass_scope(render_schedule::pass_name(pass.id));
+            switch(pass.id) {
+            case render_schedule::PassId::skinning:
+                if(scene) {commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));dispatch_skinning();}
+                timestamp(1);break;
+            case render_schedule::PassId::light_assignment:
+                if(scene) {
+                    if(!gpu_lights.empty())commands->writeBuffer(planned_buffer(resources.lights),gpu_lights.data(),gpu_lights.size()*sizeof(GpuLight));
+                    dispatch_light_assignment();
+                }
+                timestamp(2);break;
+            case render_schedule::PassId::shadows:if(scene)render_shadows();timestamp(3);break;
+            case render_schedule::PassId::scene_clear:
+                commands->beginTrackingTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,
+                    initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
+                commands->clearTextureFloat(planned_texture(resources.color),nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));
+                if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
+                break;
+            case render_schedule::PassId::sky:render_sky(index);break;
+            case render_schedule::PassId::opaque:render_opaque(index);timestamp(4);break;
+            case render_schedule::PassId::resolve:
+                commands->resolveTexture(planned_texture(resources.hdr),nvrhi::AllSubresources,planned_texture(resources.color),nvrhi::AllSubresources);break;
+            case render_schedule::PassId::output:render_scene_output(index);break;
+            case render_schedule::PassId::game_ui:render_game_ui(index);break;
+            case render_schedule::PassId::overlay:render_overlay(index);break;
+            case render_schedule::PassId::editor_clear:
+                commands->clearTextureFloat(planned_texture(resources.swapchain),nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));break;
+            case render_schedule::PassId::editor_ui:
 #if POIMA_EDITOR
-        if(editor)scene_target=ui_scene.Get();
+                render_ui(index);
 #endif
-        commands->clearTextureFloat(scene ? (multisample_color ? multisample_color.Get() : scene_hdr.Get()) : scene_target, nvrhi::AllSubresources, nvrhi::Color(0.025f, 0.035f, 0.055f, 1.0f));
-        if (depth) commands->clearDepthStencilTexture(depth, nvrhi::AllSubresources, true, 1.0f, false, 0);
-        // Sky covers only the actual Scene viewport. It leaves depth untouched,
-        // so opaque geometry and its MSAA edge samples naturally cover it.
-        render_sky(index);
-        nvrhi::GraphicsState state;
-        state.pipeline = pipeline;
-        state.framebuffer = framebuffers[index];
-        state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width), static_cast<float>(extent.height))));
-        if (scene) {
-            state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));
-            state.bindings.push_back(bindings);
-        }
-        commands->setGraphicsState(state);
-        if (scene) {
-            for (const auto& draw : draws) {
-                if(!scene_visible || !draw.camera_visible)continue;
-                state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
-                state.vertexBuffers[0].buffer=draw.geometry.vertices;
-                state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
-                commands->setGraphicsState(state);
-                commands->setPushConstants(&draw.constants,sizeof(draw.constants));
-                if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
-                else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
+                break;
+            case render_schedule::PassId::capture:
+                commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(resources.capture).identity),{},planned_texture(resources.swapchain),{});break;
+            case render_schedule::PassId::present:
+                commands->setTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,nvrhi::ResourceStates::Present);
+                commands->commitBarriers();timestamp(5);break;
             }
-        } else commands->draw(nvrhi::DrawArguments().setVertexCount(3));
-        timestamp(4);
-        if(scene && multisample_color)commands->resolveTexture(scene_hdr,nvrhi::AllSubresources,multisample_color,nvrhi::AllSubresources);
-        render_scene_output(index);
-        render_game_ui(index);
-        render_overlay(index);
-#if POIMA_EDITOR
-        if(editor) {
-            // Composite only through the Scene image command. Window/dock
-            // backgrounds and floating panels now obey ImGui's draw order.
-            commands->clearTextureFloat(texture,nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));
-            render_ui(index);
-        }
-#endif
-        if (capture_frame) commands->copyTexture(staging, {}, texture, {});
-        commands->setTextureState(texture, nvrhi::AllSubresources, nvrhi::ResourceStates::Present);
-        commands->commitBarriers();timestamp(5);
+        });
         commands->close();
         record_ms=elapsed_ms(record_started);
         }

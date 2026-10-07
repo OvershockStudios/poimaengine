@@ -58,6 +58,8 @@ Native instrumentation covers runtime batch validation/checkpointing, fixed tick
 
 `renderer.submitted_submissions` and `renderer.outstanding_submissions` are recorded at submission, before presentation or report polling can retire work. They show logical queue depth at that point; they do not prove simultaneous GPU execution.
 
+The [typed render schedule](RENDER_SCHEDULE.md) emits `render.pass.*` CPU scopes under `render.record` for the passes actually executed. These measure command recording, not GPU execution. Headless profiler regression checks verify required passes, nesting and fixed order on both laptop GPUs.
+
 GPU pass observations distinguish skinning, light assignment, shadows, opaque rendering, post/output work and total queue duration. Light-assignment timing includes its upload and statistics-copy commands. Cluster counts and draw diagnostics describe the last retired submission, which may lag the latest submitted frame.
 
 Scopes reserve complete-event slots before executing their bodies and fill durations on exit. The recorder allocates its fixed event array at start; recording does not allocate or throw. It uses the native monotonic clock and one owner thread. Nested bindings keep separate sessions isolated. Capture-array bytes exclude the recorder's lifetime identity, read/export buffers, GUI objects and engine allocations. Relative clock values saturate at the safe JSON integer limit after approximately 104 days, with `clock_saturated` set; such a capture no longer supplies accurate later timings.

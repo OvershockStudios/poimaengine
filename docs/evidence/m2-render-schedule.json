@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "engine_version": "0.0.39-development",
+  "scope": "Fixed executable render schedule and resource-contract validation",
+  "passed": true,
+  "portable_contracts": {
+    "platforms": [
+      "Linux",
+      "Windows"
+    ],
+    "valid_variants_per_run": 204,
+    "rejection_checks_per_run": 250,
+    "rejection_check_note": "Includes 204 unacquired-image guard checks across valid variants and 46 other rejection checks."
+  },
+  "reference_comparison": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "exact_image_comparisons": 16,
+      "submission_limits": [
+        1,
+        2
+      ],
+      "max_channel_difference": 0,
+      "report_sha256": "96afb797becf54c465cbfe803555d1e2a780e65aa1d4f3a56d2673fd0fea9321"
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "exact_image_comparisons": 16,
+      "submission_limits": [
+        1,
+        2
+      ],
+      "max_channel_difference": 0,
+      "report_sha256": "4d2eabdf315bcb4afda1911701df099805f02771ce7ab304df7055aa124724df"
+    }
+  ],
+  "triangle_path": {
+    "devices": [
+      "AMD Radeon(TM) Graphics",
+      "NVIDIA GeForce RTX 4070 Laptop GPU"
+    ],
+    "reference_and_candidate_exit_code": 0,
+    "validation": "Khronos validation with synchronization validation enabled"
+  },
+  "regressions": [
+    {
+      "suite": "gpu_skinning_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "report_sha256": [
+        "5e0592f9e9c3e1ece313a7999ceef3196f9807b2408839f17e9cc6413870f5e0"
+      ]
+    },
+    {
+      "suite": "gpu_skinning_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "report_sha256": [
+        "c02334ab399700c809396c36fb91b8c1d7f287bc34309acc7003991c747119ab"
+      ]
+    },
+    {
+      "suite": "hdr_composition_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "report_sha256": [
+        "47fdb083a02943b0929bd1ef064850168ce659d83b13a8823a85495cad395a59"
+      ]
+    },
+    {
+      "suite": "hdr_composition_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "report_sha256": [
+        "92810636a41ddf6727adeee1812d1521b5955df4629ff55f4ce43dc2cb31cc1b"
+      ]
+    },
+    {
+      "suite": "clustered_lighting_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "report_sha256": [
+        "224b0256a2ce1547f3b2ec46fb5a8bffa48e84df9e6997b8f74345bb33148bb2"
+      ]
+    },
+    {
+      "suite": "clustered_lighting_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "report_sha256": [
+        "49f9ee8545ea8ecae266121df2d878d471fda0b315af523c0ca2c478616ae009"
+      ]
+    },
+    {
+      "suite": "culling_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "report_sha256": [
+        "b19f5cd878169327ccc186f320d6d6f1696cb0c846f01c24336e2963dcfa5a0c"
+      ]
+    },
+    {
+      "suite": "culling_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "report_sha256": [
+        "a241acef06abecaaf81156cf6fc790b8b1879c8b92d6435b38e42237eae9642f"
+      ]
+    },
+    {
+      "suite": "profiler_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "report_sha256": [
+        "1c5b7d35cdf055f9092e3bfef163a5f4687dfe0e7710e1e7d7b73b0e445f79b2"
+      ]
+    },
+    {
+      "suite": "profiler_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "report_sha256": [
+        "df6220164fc1700deffc2502ce6f4fa592745005e945399973b24a365ee800e8"
+      ]
+    }
+  ],
+  "integration": [
+    {
+      "name": "ui-gpu1-msaa1",
+      "passed": true,
+      "report_sha256": "37f56ab7744acc6ab92c3f1f119d4295731533c2b5cf2f827c3337b06d11b878"
+    },
+    {
+      "name": "ui-gpu1-msaa4",
+      "passed": true,
+      "report_sha256": "1a28d3340054a07fc372894d9f885a15153017dabb1ec33524e0fe013be15e38"
+    },
+    {
+      "name": "ui-gpu0-msaa1",
+      "passed": true,
+      "report_sha256": "110bb49419e6c1d62f0e8fa6cdf1437ddc0c046774102d569933fe87b431ecb6"
+    },
+    {
+      "name": "ui-gpu0-msaa4",
+      "passed": true,
+      "report_sha256": "dd557d41124adf15623cdc4cf29476aa128d4aea35d80adcc5d9d4d1096e0b8f"
+    },
+    {
+      "name": "player-gpu1",
+      "passed": true,
+      "report_sha256": "940b54068d0cecd08df93883ec4159194e1d04861e40543b003b9ca3b7f0644b"
+    },
+    {
+      "name": "player-gpu0",
+      "passed": true,
+      "report_sha256": "0888cadc6f5d59c9dba12a495fc2d03931dacf5709eaa44badcf927881e3d629"
+    },
+    {
+      "name": "hosted-gpu1-msaa4",
+      "passed": true,
+      "report_sha256": "d541ef43c829598fb846efdb287be1afe314004c8aebcf335b9a68993697047a"
+    },
+    {
+      "name": "hosted-gpu0-msaa4",
+      "passed": true,
+      "report_sha256": "e2fa5784c1e9355350b6f468a1e554aac11c9f30057b99560a1421ae63aba13f"
+    }
+  ],
+  "legacy_editor_layouts": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "samples": 1,
+      "passed": true,
+      "sampled_scene_pixels": 25,
+      "max_sampled_channel_difference": 0,
+      "allowed_channel_difference": 1,
+      "report_sha256": "0f1c2e77e7bf396c52239d614dcebb6239a5f840b48e4fe9e0346af1ae6a773c"
+    },
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "samples": 4,
+      "passed": true,
+      "sampled_scene_pixels": 25,
+      "max_sampled_channel_difference": 0,
+      "allowed_channel_difference": 1,
+      "report_sha256": "ad3fe48b99983e2cb45f3b9a5c2983e7c106fde2ab89728fda6a6ea6b8a274e9"
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 1,
+      "passed": true,
+      "sampled_scene_pixels": 25,
+      "max_sampled_channel_difference": 0,
+      "allowed_channel_difference": 1,
+      "report_sha256": "2fa84ef375a3e62405075171834bd1058e85f51b16b3e90024b631e6b5f9b457"
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "passed": true,
+      "sampled_scene_pixels": 25,
+      "max_sampled_channel_difference": 0,
+      "allowed_channel_difference": 1,
+      "report_sha256": "9918fb67cfcd1941591fcba25a6d4f97c146217a538b10d5b1821d2840ce8fb2"
+    }
+  ],
+  "legacy_layout_checks": [
+    "Default, floating, re-tabbed, hidden and reset Scene views",
+    "Bounded layout persistence across restart and oversized layout rejection",
+    "Scene compositor sampled color agreement against ordinary world capture"
+  ],
+  "cohort": {
+    "current_source_and_binary_hashes_verified": true,
+    "regression_before_after_hashes_equal": true,
+    "sha256": {
+      "CMakeLists.txt": "34d4c332935a58376e3c4aa2682515999ee16bd793ca089a8e963153cb7d6eed",
+      "build/abi7-linux/poima-render-schedule-test": "f3ef3c5fb03cb7af9375821f765f2678e32e563dd4808927927180e4ec0451ff",
+      "build/pass-schedule-reference/poima-frame-execution-test.exe": "6746d925d29ab0a963e6a5460d80f3b221a15719b1bd7b5c4fcd8dc09c83ed76",
+      "build/pass-schedule-reference/poima.exe": "b79a360ed5eaf450d0ba9875a33083b6192382cf7bcfdf427c3e6cd5b4e1b787",
+      "build/windows-runtime/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+      "build/windows-runtime/poima-frame-execution-test.exe": "2a063d613cd1179380fdf2efeb4fefee724162f8df7a8aced7fadd210b8b4270",
+      "build/windows-runtime/poima-render-schedule-test.exe": "87c3730a76624b1ec97f303d5eb0e6d9093e264f297b3958b3534521a8f93f73",
+      "build/windows-runtime/poima-ui-capture-test.exe": "9495d49acac5beb62d38942ff22fb1e426b96949ae9684e0bf8414cf8a554526",
+      "build/windows-runtime/poima.exe": "2389e18eb5b3c1ef2fba0fc359398b495261e5cebb6a2ab81955f451d38fe773",
+      "build/windows-runtime/poima_desktop.dll": "ca2de4c172260f9b70ca0e6f4ef3d3e04e46bce9629e4c60f5b1ba60120b6a3e",
+      "cmake/render_smoke.cmake": "c94cbc9b22a7734ac8c3dacefc2ca360e3d1b62c7ac3fe8b5c58a46e6f349894",
+      "examples/physics-room.jsonl": "ada2e3cf02013bc43a3de14a9cae80ab914740b449e3ed323ba311af8f3e5ddf",
+      "include/poima/render_schedule.hpp": "9bb392651ff50e5055e63873dd32fde194ca7eb46a039dfd57efacfd47785b04",
+      "shaders/cluster_lights.hlsl": "77c04aa19b606082477b5d2f2dcdcbd28d64588c5a01b2a3d4f1d6b416b5a994",
+      "shaders/scene.hlsl": "87a172d3e94d8a727146e64adee10d7f8ae8819e05c4cae4d3149d0c64279a10",
+      "shaders/scene_frame.hlsli": "ec567b713fc63c1e3b908e8516aa9cc629ebbbc4fe88ace11622693f1de5de3b",
+      "shaders/scene_output.hlsl": "ab7db3e008302f425b8fbc4e2237f3605540b18b9738a76aaee1b53e2bfb5653",
+      "shaders/sky.hlsl": "ad4e55c4af0f6b26e7248d47f2b67fbd20c38904c1836f5c5a297e1d1a909b07",
+      "src/render_smoke.cpp": "01fc5980ea8cec45a36e569e98f059944f2c866f81c3ee0947881fe5deb60ce9",
+      "tests/clustered_lighting_capture.py": "0e5fe35db4f97057e3dec5831d0199d93a8aed303df46c4fc3ba9abb9a24ba4a",
+      "tests/culling_capture.py": "b4e93b190d93242b3cceac63a0a1173b53c645016e70863cf9b85f061fc7eae7",
+      "tests/desktop_dual_view.py": "626281b14a82bad849abad1a46cc1cf07b7565fcb86a2c99a45ab6ab8e08ec8b",
+      "tests/frame_execution_capture.py": "0884756707e3d044f647dd628534e99dd63ede5af46e71ee76e1f32ed9bc7c86",
+      "tests/frame_execution_native.cpp": "2b960af7fe31aa7b79f49cb9cf4044fb90ef853dfb4a554a5b6810d1e488642f",
+      "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+      "tests/gpu_skinning_capture.py": "6587cc05af5105df03c4faf754c5ad789582cf30f319aea683e3618b30f15b05",
+      "tests/hdr_composition_capture.py": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740",
+      "tests/player_contract.py": "1e1ecf3ba727cb4ece44e86ff2536d721530055e6549798226630a66d9993326",
+      "tests/profiler_capture.py": "6508f24a064dcf305b85acac23bbaa3e1c902801ae0ef6fada8b125a69cff4df",
+      "tests/render_schedule.cpp": "e0e180fdaf0352a9806ae0f40ecdd2efa245f8ac61cae28816b593b736d3081c",
+      "tests/render_schedule_capture.py": "e5369c12b36e2cfa4452c6c63cd2981b6f82a7388d6290a495de43e717fa2429",
+      "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+      "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+      "tests/ui_capture.py": "ce24ad616eef45fecf6633a3ab41088e2706fbf2f9a8afb5ec1ef133abe342c6",
+      "tests/ui_capture_native.cpp": "16a0905303fe3b275608bbc7344ed86e13ce5dcd3d2b0febfa1a7c7ccc084637"
+    }
+  },
+  "raw_evidence_sha256": {
+    "build/render-schedule-contract-final/evidence.json": "0738352492472fb1e3bbc0996c975fc7bfb0f7edeff971e40f1c40ef37b5a3e1",
+    "build/render-schedule-gpu-initial/evidence.json": "6cfe10e0e53ba9388324344fbe985c2b6b479c46cc3312690ce77710c78fa5a9",
+    "build/render-schedule-gpu-initial/gpu0/frames/dda2364117f5458988b964dac42d6d49/candidate/926fb333cfb640e4bc9535211bcb1586/evidence.json": "0a8a760f41ed1208caf971fb50dbd895401c9d75b0b31bc794f710aae974319e",
+    "build/render-schedule-gpu-initial/gpu0/frames/dda2364117f5458988b964dac42d6d49/evidence.json": "96afb797becf54c465cbfe803555d1e2a780e65aa1d4f3a56d2673fd0fea9321",
+    "build/render-schedule-gpu-initial/gpu0/frames/dda2364117f5458988b964dac42d6d49/reference/11565ba75ddb49faa38a296598e949ae/evidence.json": "19a5d58bcbae6f17f9444f746fcb70e8ad5b683e1de4443cdc81f4c5c542baaf",
+    "build/render-schedule-gpu-initial/gpu1/frames/35b76f528e644ca0ade89282bf4a703a/candidate/9f2bf1a65f2a4898b2cf251457f117c7/evidence.json": "7ecc0e11a2df0b35414306941329060b50076b1fd5341572704254b75d379c50",
+    "build/render-schedule-gpu-initial/gpu1/frames/35b76f528e644ca0ade89282bf4a703a/evidence.json": "4d2eabdf315bcb4afda1911701df099805f02771ce7ab304df7055aa124724df",
+    "build/render-schedule-gpu-initial/gpu1/frames/35b76f528e644ca0ade89282bf4a703a/reference/6b339699708b47c88b6ea89eb82588b1/evidence.json": "8accecd0143c83f3c11c6928229629afbac0aaa3323243ad5ac601ed833ff3a7",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/evidence.json": "c525bf44c0e188adc6fd76cda77347745018bd32464396fbab414f0e475454df",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/hosted-gpu0-msaa4/run-768c875756e44be0b734d1f5ef4b3072/result.json": "e2fa5784c1e9355350b6f468a1e554aac11c9f30057b99560a1421ae63aba13f",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/hosted-gpu1-msaa4/run-f29dc4c45dae455fb1250048a22d1884/result.json": "d541ef43c829598fb846efdb287be1afe314004c8aebcf335b9a68993697047a",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/player-gpu0/gpu-0.json": "0888cadc6f5d59c9dba12a495fc2d03931dacf5709eaa44badcf927881e3d629",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/player-gpu1/gpu-1.json": "940b54068d0cecd08df93883ec4159194e1d04861e40543b003b9ca3b7f0644b",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/ui-gpu0-msaa1/ui-gpu0-msaa1.json": "110bb49419e6c1d62f0e8fa6cdf1437ddc0c046774102d569933fe87b431ecb6",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/ui-gpu0-msaa4/ui-gpu0-msaa4.json": "dd557d41124adf15623cdc4cf29476aa128d4aea35d80adcc5d9d4d1096e0b8f",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/ui-gpu1-msaa1/ui-gpu1-msaa1.json": "37f56ab7744acc6ab92c3f1f119d4295731533c2b5cf2f827c3337b06d11b878",
+    "build/render-schedule-integration/run-20261007T060953Z-bb2d96339011445ea804004f9a097dbf/ui-gpu1-msaa4/ui-gpu1-msaa4.json": "1a28d3340054a07fc372894d9f885a15153017dabb1ec33524e0fe013be15e38",
+    "build/render-schedule-legacy-layout/gpu0-samples1/5f6ddfd798f543dca8ac0f7f343fead9/evidence.json": "0f1c2e77e7bf396c52239d614dcebb6239a5f840b48e4fe9e0346af1ae6a773c",
+    "build/render-schedule-legacy-layout/gpu0-samples4/ebad876b4209423cb24e30bdcd39d843/evidence.json": "ad3fe48b99983e2cb45f3b9a5c2983e7c106fde2ab89728fda6a6ea6b8a274e9",
+    "build/render-schedule-legacy-layout/gpu1-samples1/b253bc1a96644b939dbb1874b50e39f1/evidence.json": "2fa84ef375a3e62405075171834bd1058e85f51b16b3e90024b631e6b5f9b457",
+    "build/render-schedule-legacy-layout/gpu1-samples4/72670d051e5247e4960d5a3e35f67e04/evidence.json": "9918fb67cfcd1941591fcba25a6d4f97c146217a538b10d5b1821d2840ce8fb2",
+    "build/render-schedule-regressions/aggregate.json": "da84afc44e6d75548fa0de6097fbeb3d628443c2dc49ecd81c77ce356f660199",
+    "build/render-schedule-regressions/clustered_lighting_capture-gpu0/0117da6cf2b34da2ad459dc27df1ded5/evidence.json": "224b0256a2ce1547f3b2ec46fb5a8bffa48e84df9e6997b8f74345bb33148bb2",
+    "build/render-schedule-regressions/clustered_lighting_capture-gpu1/a22ad6bef3524f0dbb781b434954e95c/evidence.json": "49f9ee8545ea8ecae266121df2d878d471fda0b315af523c0ca2c478616ae009",
+    "build/render-schedule-regressions/culling_capture-gpu0/gpu-0.json": "b19f5cd878169327ccc186f320d6d6f1696cb0c846f01c24336e2963dcfa5a0c",
+    "build/render-schedule-regressions/culling_capture-gpu1/gpu-1.json": "a241acef06abecaaf81156cf6fc790b8b1879c8b92d6435b38e42237eae9642f",
+    "build/render-schedule-regressions/gpu_skinning_capture-gpu0/3da2e0dc500241bd9e71471315b8b879/evidence.json": "5e0592f9e9c3e1ece313a7999ceef3196f9807b2408839f17e9cc6413870f5e0",
+    "build/render-schedule-regressions/gpu_skinning_capture-gpu1/d580e6aac1ba472496f9c8d615560ae5/evidence.json": "c02334ab399700c809396c36fb91b8c1d7f287bc34309acc7003991c747119ab",
+    "build/render-schedule-regressions/hdr_composition_capture-gpu0/e2c639abfde04da6985cc44d68044332/evidence.json": "47fdb083a02943b0929bd1ef064850168ce659d83b13a8823a85495cad395a59",
+    "build/render-schedule-regressions/hdr_composition_capture-gpu1/bd34cb7317ff405696e13fdd5667196e/evidence.json": "92810636a41ddf6727adeee1812d1521b5955df4629ff55f4ce43dc2cb31cc1b",
+    "build/render-schedule-regressions/profiler_capture-gpu0/107db307993849b8814e03f5c6cd5315/evidence.json": "1c5b7d35cdf055f9092e3bfef163a5f4687dfe0e7710e1e7d7b73b0e445f79b2",
+    "build/render-schedule-regressions/profiler_capture-gpu1/a8f767f078114616ae8948203886070d/evidence.json": "df6220164fc1700deffc2502ce6f4fa592745005e945399973b24a365ee800e8"
+  },
+  "limitations": [
+    "GPU qualification is Windows Vulkan on the two named devices; Linux qualification here covers the portable native schedule only.",
+    "Images are renderer readbacks. Scripted native UI/player/hosted and legacy ImGui layout tests do not qualify physical input or Avalonia editor usability.",
+    "The schedule validates declared resource contracts and actual renderer bindings, not arbitrary shader memory accesses.",
+    "NVRHI transitions and explicit cross-submission ordering remain required. No automatic pass parallelism, transient aliasing, deferred rendering, GI or performance improvement is claimed.",
+    "Existing presentation lifetime policy remains: maintenance1 fences where available, bounded device-idle compatibility cleanup otherwise; the latter is not a formal presentation-completion proof.",
+    "Raw reports and binaries are local qualification artifacts identified by relative paths and hashes, not bundled with this summary."
+  ],
+  "reference_commit": "0ed158dd8a47843b81539178cc2dced2ebdfff34"
+}

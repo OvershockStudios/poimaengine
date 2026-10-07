@@ -107,6 +107,23 @@ def main():
                 'render.submit', 'render.present', 'render.retire',
                 'renderer.capture_readback_write', 'renderer.camera_draws',
                 'renderer.camera_triangles', 'renderer.texture_payload_bytes'} <= names, names
+        pass_order = ('skinning', 'light_assignment', 'shadows', 'scene_clear', 'sky',
+                      'opaque', 'resolve', 'output', 'game_ui', 'overlay',
+                      'editor_clear', 'editor_ui', 'capture', 'present')
+        ranks = {f'render.pass.{name}': i for i, name in enumerate(pass_order)}
+        recorded_passes = defaultdict(list)
+        for event in observed:
+            if event['name'].startswith('render.pass.'):
+                assert event['kind'] == 'cpu' and event['name'] in ranks, event
+                assert by_id[event['parent']]['name'] == 'render.record', event
+                recorded_passes[event['parent']].append(event['name'])
+        assert len(recorded_passes) == frame_count, recorded_passes
+        required_passes = {f'render.pass.{name}' for name in
+                           ('skinning', 'light_assignment', 'shadows', 'scene_clear', 'opaque', 'output', 'present')}
+        for sequence in recorded_passes.values():
+            assert required_passes <= set(sequence), sequence
+            assert len(set(sequence)) == len(sequence), sequence
+            assert sequence == sorted(sequence, key=ranks.__getitem__), sequence
         gpu = [e for e in observed if e['kind'] == 'gpu']
         for name in ('skinning', 'light_assignment', 'shadows', 'opaque', 'post', 'total'):
             samples = [e for e in gpu if e['name'] == f'gpu.{name}.ns']
