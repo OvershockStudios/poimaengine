@@ -21,6 +21,7 @@ struct WorldRuntimeStatus {
     bool available=false,active=false;
     std::string session_id;
     std::uint64_t tick=0,authored_revision=0,structure_revision=0,ui_revision=0,control_sequence=0;
+    std::string presentation_source_id;
 };
 struct WorldGameplayStatus {
     bool active=false;

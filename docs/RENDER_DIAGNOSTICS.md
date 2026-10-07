@@ -6,14 +6,15 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 
 ## Request controls
 
-`world.describe` schema revision 42 exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`:
+`world.describe` schema revision 43 exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`:
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
 | `culling` | true | Reject object bounds entirely outside each render view. False submits every renderable to every view for comparison. |
 | `clustered_lighting` | true | Conservatively assign finite lights to view-space cells. False evaluates the complete light table as a reference. |
 | `frames_in_flight` | 2 | Integer from 1 to 2. Two bounds queued submissions; one provides a serialized reference. |
-| `scene_debug_view` | `color` | Select `depth` or `shading_normal` with `samples: 1`; see [scene products](SCENE_PRODUCTS.md) for encoding and qualification. |
+| `scene_debug_view` | `color` | Select `depth`, `shading_normal`, `motion` or `motion_validity` with `samples: 1`; see [scene products](SCENE_PRODUCTS.md) for encoding and qualification. |
+| `scene_product_probes` | `[]` | Up to 64 ordered `{x,y}` pixel requests for raw depth, shading normal, motion and validity; requires a capture path and `samples: 1`. |
 | `profile` | false | Collect CPU intervals and, when supported, graphics-queue GPU timestamps. False records no timing samples or query commands. Draw counters remain available. |
 
 ```json

@@ -12,5 +12,6 @@ cbuffer Frame : register(b1) {
     float4 cluster_viewport; // top-left in pixels, width, height
     float4 cluster_depth; // log2(near), logarithmic slice width, near, far
     uint4 cluster_grid; // x, y, z, enabled
+    column_major float4x4 previous_view_projection;
 };
 StructuredBuffer<SceneLight> lights : register(t6);

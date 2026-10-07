@@ -40,16 +40,26 @@ struct DoctorOptions {
     bool require_hardware = false;
 };
 
-enum class SceneDebugView : std::uint32_t { color, depth, shading_normal };
+enum class SceneDebugView : std::uint32_t { color, depth, shading_normal, motion, motion_validity };
 constexpr std::string_view scene_debug_view_name(SceneDebugView view) {
     switch(view) {
     case SceneDebugView::color: return "color";
     case SceneDebugView::depth: return "depth";
     case SceneDebugView::shading_normal: return "shading_normal";
+    case SceneDebugView::motion: return "motion";
+    case SceneDebugView::motion_validity: return "motion_validity";
     }
     return "invalid";
 }
 
+struct SceneProductProbe { std::uint32_t x=0,y=0; };
+struct SceneProductSample {
+    std::uint32_t x=0,y=0;
+    float depth=1;
+    std::array<float,3> shading_normal{};
+    std::array<float,2> motion{};
+    bool surface_valid=false,motion_valid=false;
+};
 struct RenderOptions {
     std::uint32_t frames = 120;
     std::uint32_t width = 960;
@@ -60,6 +70,7 @@ struct RenderOptions {
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
     SceneDebugView scene_debug_view = SceneDebugView::color;
+    std::vector<SceneProductProbe> scene_product_probes; // At most 64; sampled only by captures at one sample.
     bool clustered_lighting = true; // False selects the complete all-light reference path.
     std::uint32_t frames_in_flight = 2; // Bounded submission slots; 1 selects serialized retirement.
     bool profile = false;
@@ -89,7 +100,10 @@ struct FrameExecutionDiagnostics {
     std::string presentation_retirement;
 };
 struct SceneProductsDiagnostics {
-    bool available=false;
+    bool available=false,motion_available=false,history_valid=false;
+    std::uint64_t motion_buffer_bytes=0,history_sequence=0;
+    std::string history_reset_reason;
+    std::vector<SceneProductSample> probes;
     std::uint64_t normal_buffer_bytes=0;
     SceneDebugView view=SceneDebugView::color;
 };

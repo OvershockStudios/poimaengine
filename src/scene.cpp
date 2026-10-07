@@ -2,6 +2,7 @@
 #include "poima/scene.hpp"
 #include <cmath>
 #include <numbers>
+#include <random>
 #include <stdexcept>
 
 namespace poima {
@@ -10,6 +11,13 @@ void finite(const Matrix4& value) {
     for (double item : value) if (!std::isfinite(item))
         throw std::runtime_error("Transform composition exceeds numeric range.");
 }
+}
+std::string new_presentation_source_id() {
+    std::random_device random;
+    constexpr char hex[]="0123456789abcdef";
+    std::string result(32,'0');
+    for(auto& value:result)value=hex[random()&15];
+    return result;
 }
 Matrix4 identity_matrix() { return {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1}; }
 Matrix4 multiply(const Matrix4& a, const Matrix4& b) {

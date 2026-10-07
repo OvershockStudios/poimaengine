@@ -28,6 +28,7 @@
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
 #include "poima/scene_products_ps.hpp"
+#include "poima/scene_products_vs.hpp"
 #include "poima/scene_output_products_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
@@ -196,6 +197,9 @@ struct DrawConstants {
     float emissive_roughness[4];
 };
 static_assert(sizeof(DrawConstants)==128);
+struct DrawIndices {std::uint32_t object=0,shadow=0,reserved[2]{};};
+struct ObjectData {DrawConstants current{};float previous_model[3][4]{};std::uint32_t history[4]{};};
+static_assert(sizeof(DrawIndices)==16 && sizeof(ObjectData)==192);
 struct SkyConstants {
     float right_tan[4],up_tan[4],forward_srgb[4],zenith_exposure[4];
     float horizon_falloff[4],ground_radius[4],sun_intensity[4],sun_color[4];
@@ -207,9 +211,9 @@ inline constexpr std::uint32_t cluster_x=16,cluster_y=9,cluster_z=24,cluster_cap
 inline constexpr std::uint32_t cluster_cells=cluster_x*cluster_y*cluster_z;
 struct FrameConstants {
     float view_projection[16];float camera[4];float ambient_exposure[4];std::uint32_t light_count[4];float camera_forward[4];
-    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];
+    GpuShadow shadows[max_shadow_views];float cluster_viewport[4],cluster_depth[4];std::uint32_t cluster_grid[4];float previous_view_projection[16];
 };
-static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1456);
+static_assert(sizeof(GpuLight)==80 && sizeof(GpuShadow)==80 && sizeof(FrameConstants)==1520);
 struct Geometry { nvrhi::BufferHandle vertices,indices;std::uint32_t count=0; };
 struct GpuInfluence { std::uint32_t joints[4];float weights[4]; };
 struct GpuJoint { float rows[3][4]; };
@@ -218,11 +222,15 @@ struct SkinSource { std::shared_ptr<const MeshAsset> mesh;nvrhi::BufferHandle in
 struct SkinInstance {
     std::shared_ptr<const MeshAsset> mesh;
     nvrhi::BufferHandle vertices,palette;
+    std::array<nvrhi::BufferHandle,2> outputs;
+    std::array<nvrhi::BindingSetHandle,2> output_bindings;
     nvrhi::BindingSetHandle bindings;
+    std::uint32_t write_index=0,accepted_index=0;
+    std::uint64_t accepted_sequence=0;
     std::vector<GpuJoint> joints;
     std::size_t bytes=0;
 };
-struct DrawItem { std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false,camera_visible=true;std::uint32_t shadow_mask=0; };
+struct DrawItem { std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh; nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false,camera_visible=true;std::uint32_t shadow_mask=0; };
 using SteadyClock=std::chrono::steady_clock;
 double elapsed_ms(SteadyClock::time_point start) { return std::chrono::duration<double,std::milli>(SteadyClock::now()-start).count(); }
 void timing_sample(TimingSummary& value,double ms) {
@@ -277,6 +285,9 @@ struct Context {
         LightAssignmentDiagnostics lights;
         std::vector<std::string> skin_ids;
         profiling::DeferredContext profile;
+        bool history_valid=false,capture_probes=false;
+        std::uint64_t history_sequence=0;
+        std::string history_reset;
     };
     std::array<FrameSlot,2> slots;
     std::uint64_t next_slot=0,retire_slot=0;
@@ -298,7 +309,24 @@ struct Context {
     std::uint32_t samples = 1;
     nvrhi::TextureHandle depth;
     nvrhi::TextureHandle multisample_color;
-    nvrhi::TextureHandle scene_hdr,scene_normal;
+    nvrhi::TextureHandle scene_hdr,scene_normal,scene_motion,scene_motion_valid;
+    std::vector<SceneProductProbe> product_probes;
+    std::array<nvrhi::StagingTextureHandle,4> probe_staging;
+    struct ObjectHistory {std::array<float,12> model{};std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh;bool skinned=false;};
+    struct ViewHistory {
+        std::string source,world,camera;
+        std::uint64_t generation=0,cut=0,sequence=0;
+        std::array<float,16> view_projection{};
+        std::array<float,4> viewport{};
+        std::array<double,3> lens{};
+        std::map<std::string,ObjectHistory> objects;
+    } history,pending_history;
+    bool pending_history_valid=false;
+    std::string pending_history_reset;
+    std::uint64_t history_sequence=0;
+    nvrhi::BufferHandle object_buffer;
+    std::size_t object_capacity=0;
+    std::vector<ObjectData> object_data;
     SceneDebugView scene_debug_view=SceneDebugView::color;
     nvrhi::ShaderHandle output_vs,output_ps;
     nvrhi::BindingLayoutHandle output_layout;
@@ -432,7 +460,7 @@ struct Context {
         output_pipeline=nullptr;output_bindings=nullptr;output_layout=nullptr;output_vs=nullptr;output_ps=nullptr;
         vertex_shader = nullptr;
         pixel_shader = nullptr;
-        staging = nullptr;
+        staging = nullptr;for(auto& texture:probe_staging)texture=nullptr;object_buffer=nullptr;history={};pending_history={};
         bindings = nullptr;
         binding_layout = nullptr;
         input_layout = nullptr;
@@ -445,7 +473,7 @@ struct Context {
 #endif
         images.clear();
         depth = nullptr;
-        multisample_color = nullptr;scene_hdr=nullptr;scene_normal=nullptr;
+        multisample_color = nullptr;scene_hdr=nullptr;scene_normal=nullptr;scene_motion=nullptr;scene_motion_valid=nullptr;
         for(auto& slot:slots) {slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;}
         checked = nullptr;
         native = nullptr;
@@ -480,8 +508,11 @@ struct Context {
         diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
         clustered_requested=options.clustered_lighting;diagnostics.light_assignment.requested=clustered_requested;
         scene_debug_view=options.scene_debug_view;diagnostics.scene_products.view=scene_debug_view;
-        require(scene_debug_view==SceneDebugView::color || scene_debug_view==SceneDebugView::depth || scene_debug_view==SceneDebugView::shading_normal,"Invalid scene debug view.");
+        require(scene_debug_view==SceneDebugView::color || scene_debug_view==SceneDebugView::depth || scene_debug_view==SceneDebugView::shading_normal || scene_debug_view==SceneDebugView::motion || scene_debug_view==SceneDebugView::motion_validity,"Invalid scene debug view.");
         require(scene_debug_view==SceneDebugView::color || (scene && options.samples==1),"Scene diagnostic views require a scene and samples=1.");
+        require(options.scene_product_probes.size()<=64,"At most 64 scene product probes are supported.");
+        require(options.scene_product_probes.empty() || (scene && options.samples==1),"Scene product probes require a single-sample scene.");
+        product_probes=options.scene_product_probes;
         samples = scene ? options.samples : 1;
         require(samples==1 || samples==2 || samples==4 || samples==8,"Scene samples must be 1, 2, 4 or 8.");
         SDL_SetMainReady();
@@ -609,7 +640,7 @@ struct Context {
         require(create_swapchain(options),"The initial window has an empty rendering extent.");
         const nvrhi::ShaderDesc vs_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const nvrhi::ShaderDesc ps_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
-        vertex_shader = scene ? create_embedded_shader(checked, vs_desc, poima_scene_vs) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
+        vertex_shader = scene ? (samples==1 ? create_embedded_shader(checked,vs_desc,poima_scene_products_vs) : create_embedded_shader(checked,vs_desc,poima_scene_vs)) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
         pixel_shader = scene ? (samples==1 ? create_embedded_shader(checked,ps_desc,poima_scene_products_ps) : create_embedded_shader(checked,ps_desc,poima_scene_ps)) : create_embedded_shader(checked,ps_desc,poima_smoke_ps);
         require(vertex_shader && pixel_shader, "Compiled SPIR-V shader creation failed.");
         nvrhi::GraphicsPipelineDesc pipeline_desc;
@@ -619,24 +650,25 @@ struct Context {
         pipeline_desc.renderState.depthStencilState.depthWriteEnable = scene != nullptr;
         pipeline_desc.renderState.depthStencilState.depthFunc = nvrhi::ComparisonFunc::LessOrEqual;
         if (scene) {
-            const nvrhi::VertexAttributeDesc attributes[] = {
+            std::vector<nvrhi::VertexAttributeDesc> attributes = {
                 nvrhi::VertexAttributeDesc().setName("POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)),
                 nvrhi::VertexAttributeDesc().setName("NORMAL").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(12).setElementStride(sizeof(Vertex)),
                 nvrhi::VertexAttributeDesc().setName("TEXCOORD").setFormat(nvrhi::Format::RG32_FLOAT).setOffset(24).setElementStride(sizeof(Vertex)),
                 nvrhi::VertexAttributeDesc().setName("TANGENT").setFormat(nvrhi::Format::RGBA32_FLOAT).setOffset(32).setElementStride(sizeof(Vertex))};
-            input_layout = checked->createInputLayout(attributes, 4, vertex_shader);
+            if(samples==1)attributes.push_back(nvrhi::VertexAttributeDesc().setName("PREVIOUS_POSITION").setFormat(nvrhi::Format::RGB32_FLOAT).setOffset(0).setElementStride(sizeof(Vertex)).setBufferIndex(1));
+            input_layout = checked->createInputLayout(attributes.data(),static_cast<std::uint32_t>(attributes.size()),vertex_shader);
             require(static_cast<bool>(input_layout), "Scene vertex layout creation failed.");
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0, sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1));
             for(std::uint32_t slot=0;slot<5;++slot)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(slot)).addItem(nvrhi::BindingLayoutItem::Sampler(slot));
             layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(5));
-            for(std::uint32_t slot=6;slot<=8;++slot)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
+            for(std::uint32_t slot=6;slot<=9;++slot)layout.addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(slot));
             binding_layout = checked->createBindingLayout(layout);
             require(static_cast<bool>(binding_layout), "Scene push constant layout creation failed.");
             nvrhi::BufferDesc frame_desc;frame_desc.byteSize=sizeof(FrameConstants);frame_desc.isConstantBuffer=true;
             frame_desc.initialState=nvrhi::ResourceStates::ConstantBuffer;frame_desc.keepInitialState=true;frame_desc.debugName="Scene frame uniforms";
             frame_buffer=checked->createBuffer(frame_desc);require(static_cast<bool>(frame_buffer),"Frame uniform buffer creation failed.");
-            prepare_light_resources();
+            prepare_object_buffer();prepare_light_resources();
             pipeline_desc.inputLayout = input_layout;
             pipeline_desc.bindingLayouts.push_back(binding_layout);
         }
@@ -656,6 +688,73 @@ struct Context {
         if (scene) { prepare_shadows();prepare_scene(); }
     }
 
+    void prepare_object_buffer() {
+        const auto count=std::max<std::size_t>(1,scene ? scene->objects.size() : 0);
+        require(count<=16u*1024u*1024u/sizeof(ObjectData),"Structured object data exceeds the 16 MiB budget.");
+        if(object_buffer && object_capacity>=count)return;
+        object_capacity=count;
+        nvrhi::BufferDesc desc;desc.byteSize=count*sizeof(ObjectData);desc.structStride=sizeof(ObjectData);
+        desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Current and prior accepted object data";
+        object_buffer=checked->createBuffer(desc);require(bool(object_buffer),"Structured object buffer allocation failed.");
+        material_cache.clear();bindings=nullptr;
+        if(shadow_layout) {
+            shadow_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices)))
+                .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer)),shadow_layout);
+            require(bool(shadow_bindings),"Shadow object data rebinding failed.");
+        }
+    }
+    void prepare_history() {
+        pending_history={};pending_history.source=scene->presentation_source_id;pending_history.world=scene->world_id;pending_history.camera=scene->camera_id;
+        pending_history.generation=scene->presentation_generation;pending_history.cut=scene->view_cut_generation;
+        pending_history.sequence=history_sequence+1;
+        std::copy_n(frame_constants.view_projection,16,pending_history.view_projection.begin());
+        std::copy_n(frame_constants.cluster_viewport,4,pending_history.viewport.begin());
+        pending_history.lens={scene->vertical_fov,scene->near_plane,scene->far_plane};
+        pending_history_reset.clear();
+        if(!scene_motion)pending_history_reset="products_unavailable";
+        else if(pending_history.source.empty())pending_history_reset="source_unavailable";
+        else if(!history.sequence)pending_history_reset="first_submission_or_resize";
+        else if(history.source!=pending_history.source)pending_history_reset="source_changed";
+        else if(history.world!=pending_history.world)pending_history_reset="world_changed";
+        else if(history.generation!=pending_history.generation)pending_history_reset="source_generation_changed";
+        else if(history.cut!=pending_history.cut)pending_history_reset="view_cut";
+        else if(history.camera!=pending_history.camera)pending_history_reset="camera_changed";
+        else if(history.viewport!=pending_history.viewport)pending_history_reset="viewport_changed";
+        else if(history.lens!=pending_history.lens)pending_history_reset="projection_changed";
+        pending_history_valid=pending_history_reset.empty();
+        const auto& previous=pending_history_valid ? history.view_projection : pending_history.view_projection;
+        std::copy(previous.begin(),previous.end(),frame_constants.previous_view_projection);
+    }
+    void prepare_submission_history() {
+        if(!scene)return;
+        prepare_history();object_data.clear();
+        for(auto& item:draws) {
+            if(item.skin) {
+                auto& skin=*item.skin;skin.write_index=samples==1 && skin.accepted_sequence ? 1u-skin.accepted_index : 0u;
+                skin.vertices=skin.outputs[skin.write_index];skin.bindings=skin.output_bindings[skin.write_index];item.geometry.vertices=skin.vertices;
+            }
+            ObjectData gpu_object{};gpu_object.current=item.constants;
+            auto previous=history.objects.find(item.entity_id);
+            bool valid=pending_history_valid && item.incarnation && previous!=history.objects.end() && previous->second.incarnation==item.incarnation && previous->second.mesh==item.mesh && previous->second.skinned==bool(item.skin);
+            if(item.skin)valid=valid && item.skin->accepted_sequence==history.sequence;
+            std::copy_n(valid ? previous->second.model.data() : &item.constants.model[0][0],12,&gpu_object.previous_model[0][0]);
+            gpu_object.history[0]=valid ? 1u : 0u;
+            item.previous_vertices=item.skin && valid ? item.skin->outputs[item.skin->accepted_index] : item.geometry.vertices;
+            object_data.push_back(gpu_object);
+            ObjectHistory accepted;std::copy_n(&item.constants.model[0][0],12,accepted.model.begin());
+            accepted.incarnation=item.incarnation;accepted.mesh=item.mesh;accepted.skinned=bool(item.skin);
+            require(pending_history.objects.emplace(item.entity_id,std::move(accepted)).second,"Scene object IDs must be unique within a submission.");
+        }
+        if(object_data.empty())object_data.push_back({});
+    }
+    void commit_history() {
+        if(!scene)return;
+        ++history_sequence;
+        for(auto& draw:draws)if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
+            draw.skin->accepted_index=draw.skin->write_index;draw.skin->accepted_sequence=history_sequence;
+        }
+        history=std::move(pending_history);
+    }
     void prepare_light_resources() {
         nvrhi::BufferDesc lights;lights.byteSize=max_scene_lights*sizeof(GpuLight);lights.structStride=sizeof(GpuLight);
         lights.initialState=nvrhi::ResourceStates::ShaderResource;lights.keepInitialState=true;lights.debugName="Structured scene lights";
@@ -796,10 +895,10 @@ struct Context {
         }
         shadow_shader=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("shadow_vertex_main"),poima_shadow_vs);
         shadow_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::Vertex)
-            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawConstants))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)));
+            .addItem(nvrhi::BindingLayoutItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingLayoutItem::ConstantBuffer(1)).addItem(nvrhi::BindingLayoutItem::StructuredBuffer_SRV(9)));
         require(shadow_shader && shadow_layout,"Shadow shader/layout creation failed.");
-        shadow_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawConstants)))
-            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)),shadow_layout);
+        shadow_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices)))
+            .addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer)),shadow_layout);
         nvrhi::GraphicsPipelineDesc pd;pd.VS=shadow_shader;pd.inputLayout=input_layout;pd.bindingLayouts.push_back(shadow_layout);
         pd.renderState.depthStencilState.depthTestEnable=true;pd.renderState.depthStencilState.depthWriteEnable=true;pd.renderState.depthStencilState.depthFunc=nvrhi::ComparisonFunc::LessOrEqual;
         pd.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;pd.renderState.rasterState.frontCounterClockwise=true;
@@ -813,12 +912,14 @@ struct Context {
             nvrhi::GraphicsState state;state.pipeline=shadow_pipeline;state.framebuffer=shadow_framebuffers.at(layer);state.bindings.push_back(shadow_bindings);
             const auto size=static_cast<float>(shadow_texture->getDesc().width);state.viewport.addViewportAndScissorRect(nvrhi::Viewport(size,size));
             state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(0));
+            if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setSlot(1));
             for(const auto& draw:draws) {
                 if(!(draw.shadow_mask & (1u<<layer)))continue;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
+                if(samples==1)state.vertexBuffers[1].buffer=draw.previous_vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
-                commands->setGraphicsState(state);auto constants=draw.constants;constants.normal[0][3]=static_cast<float>(layer);
-                commands->setPushConstants(&constants,sizeof(constants));
+                commands->setGraphicsState(state);const DrawIndices indices{draw.object_index,static_cast<std::uint32_t>(layer)};
+                commands->setPushConstants(&indices,sizeof(indices));
                 if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
                 else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
             }
@@ -896,21 +997,26 @@ struct Context {
         auto& deformation=skin_instances[object.entity_id];
         if(deformation.mesh!=object.mesh || deformation.joints.size()!=palette.size()) {
             skin_bytes-=deformation.bytes;deformation={};
-            const auto bytes=object.mesh->vertices.size()*sizeof(Vertex)+palette.size()*sizeof(GpuJoint);
+            const auto bytes=object.mesh->vertices.size()*sizeof(Vertex)*(samples==1 ? 2u : 1u)+palette.size()*sizeof(GpuJoint);
             require(bytes<=128*1024*1024-skin_bytes,"GPU skinned deformation buffers exceed the initial 128 MiB budget.");
             nvrhi::BufferDesc desc;desc.byteSize=object.mesh->vertices.size()*sizeof(Vertex);desc.structStride=sizeof(Vertex);
             desc.isVertexBuffer=true;desc.canHaveUAVs=true;desc.initialState=nvrhi::ResourceStates::VertexBuffer;desc.keepInitialState=true;desc.debugName="Computed skin vertices";
-            deformation.vertices=checked->createBuffer(desc);
+            deformation.outputs[0]=checked->createBuffer(desc);
+            deformation.outputs[1]=samples==1 ? checked->createBuffer(desc) : deformation.outputs[0];
+            deformation.vertices=deformation.outputs[0];
             desc.byteSize=palette.size()*sizeof(GpuJoint);desc.structStride=sizeof(GpuJoint);desc.isVertexBuffer=false;desc.canHaveUAVs=false;
             desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.debugName="Instance skin palette";deformation.palette=checked->createBuffer(desc);
-            require(deformation.vertices && deformation.palette,"Skin deformation buffer allocation failed.");
-            deformation.bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,16))
+            require(deformation.outputs[0] && deformation.outputs[1] && deformation.palette,"Skin deformation buffer allocation failed.");
+            for(std::size_t output=0;output<2;++output) {
+            deformation.output_bindings[output]=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,16))
                 .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(0,geometry.vertices))
                 .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(1,source.influences))
                 .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(2,deformation.palette))
-                .addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,deformation.vertices))
+                .addItem(nvrhi::BindingSetItem::StructuredBuffer_UAV(0,deformation.outputs[output]))
                 .addItem(nvrhi::BindingSetItem::RawBuffer_UAV(1,skin_errors)),skin_layout);
-            require(bool(deformation.bindings),"Skin compute binding creation failed.");
+            require(bool(deformation.output_bindings[output]),"Skin compute binding creation failed.");
+            }
+            deformation.bindings=deformation.output_bindings[0];
             deformation.mesh=object.mesh;deformation.joints.resize(palette.size());deformation.bytes=bytes;skin_bytes+=bytes;
         }
         for(std::size_t i=0;i<palette.size();++i) {
@@ -959,7 +1065,7 @@ struct Context {
     nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override) {
         const auto key_material=std::make_pair(mesh,override);
         if(const auto found=material_cache.find(key_material);found!=material_cache.end())return found->second;
-        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawConstants))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer));
+        auto desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,sizeof(DrawIndices))).addItem(nvrhi::BindingSetItem::ConstantBuffer(1,frame_buffer));
         for(std::uint32_t slot=0;slot<5;++slot) {
             const TextureMap map=override ? override->maps[slot] : mesh ? mesh->textures[slot] : TextureMap{};
             const auto texture=upload_texture(map.image ? map.image : white_image);
@@ -977,7 +1083,7 @@ struct Context {
         desc.addItem(nvrhi::BindingSetItem::Texture_SRV(5,shadow_texture))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(6,light_buffer))
             .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(7,cluster_counts))
-            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices));
+            .addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(8,cluster_indices)).addItem(nvrhi::BindingSetItem::StructuredBuffer_SRV(9,object_buffer));
         auto result=checked->createBindingSet(desc,binding_layout);require(bool(result),"Material texture bindings failed.");material_cache.emplace(key_material,result);return result;
     }
     void retain_scene_resources() {
@@ -1051,14 +1157,14 @@ struct Context {
             output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_ps) : create_embedded_shader(checked,ps,poima_scene_output_ps);
             auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
                 .addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
-            if(scene_normal)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+            if(scene_normal)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(3)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(4));
             output_layout=checked->createBindingLayout(layout);
             require(output_vs && output_ps && output_layout,"Scene output shader/layout creation failed.");
         }
         if(!output_bindings) {
             auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
                 .addItem(nvrhi::BindingSetItem::Texture_SRV(0,scene_hdr));
-            if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal));
+            if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal)).addItem(nvrhi::BindingSetItem::Texture_SRV(3,scene_motion)).addItem(nvrhi::BindingSetItem::Texture_SRV(4,scene_motion_valid));
             output_bindings=checked->createBindingSet(bindings_desc,output_layout);
             require(bool(output_bindings),"Scene output HDR bindings creation failed.");
         }
@@ -1076,7 +1182,7 @@ struct Context {
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         const float parameters[8]={frame_constants.ambient_exposure[3],
             (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,
-            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),0,0,0};
+            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),frame_constants.cluster_viewport[2],frame_constants.cluster_viewport[3],0};
         commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
@@ -1086,9 +1192,9 @@ struct Context {
             require(std::isfinite(near_plane) && std::isfinite(far_plane) && near_plane>0 && far_plane>near_plane,
                 "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
         }
-        validate_game_ui();prepare_scene_output();
+        validate_game_ui();prepare_scene_output();prepare_object_buffer();
         profiling::Scope profile_scope("renderer.prepare");
-        const auto started=SteadyClock::now();draws.clear();pending_draws={};
+        const auto started=SteadyClock::now();draws.clear();object_data.clear();pending_draws={};
         retain_scene_resources();prepare_shadows();bindings=mesh_bindings(nullptr,nullptr);
         auto lighting=scene->lighting;finalize_lighting(lighting);
         require(lighting.lights.size()<=max_scene_lights,"Too many lights for the forward renderer.");
@@ -1153,7 +1259,7 @@ struct Context {
         pending_draws.objects=scene->objects.size();pending_draws.shadow_views=shadow_plan.size();pending_draws.shadow_candidates=scene->objects.size()*shadow_plan.size();
         std::set<std::string> active_skins;
         for(const auto& object:scene->objects) {
-            DrawItem item;item.entity_id=object.entity_id;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
+            DrawItem item;item.object_index=static_cast<std::uint32_t>(draws.size());item.incarnation=object.incarnation;item.mesh=object.mesh;item.entity_id=object.entity_id;auto& draw=item.constants;const auto inverse=inverse_affine(object.world);
             for(std::size_t row=0;row<3;++row) {
                 for(std::size_t col=0;col<4;++col)draw.model[row][col]=number(object.world[col*4+row]);
                 for(std::size_t col=0;col<3;++col)draw.normal[row][col]=number(inverse[row*4+col]);
@@ -1228,8 +1334,10 @@ struct Context {
 #if POIMA_EDITOR
         ui_framebuffers.clear();ui_scene_bindings=nullptr;
 #endif
-        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; staging=nullptr;
-        diagnostics.scene_products.available=false;diagnostics.scene_products.normal_buffer_bytes=0;
+        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; scene_motion=nullptr;scene_motion_valid=nullptr;staging=nullptr;
+        for(auto& texture:probe_staging)texture=nullptr;
+        history={};
+        diagnostics.scene_products.available=false;diagnostics.scene_products.motion_available=false;diagnostics.scene_products.normal_buffer_bytes=0;diagnostics.scene_products.motion_buffer_bytes=0;
 #if POIMA_EDITOR
         ui_scene=nullptr;
 #endif
@@ -1339,7 +1447,8 @@ struct Context {
             // Limit these new transient attachments independently of staging.
             const auto hdr_bytes=std::uint64_t(extent.width)*extent.height*8u*(samples>1 ? samples+1u : 1u);
             const auto normal_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*8u : 0u;
-            require(hdr_bytes+normal_bytes<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
+            const auto motion_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*9u : 0u;
+            require(hdr_bytes+normal_bytes+motion_bytes<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
             const auto hdr_format=vk::Format::eR16G16B16A16Sfloat;
             const auto properties=physical.getFormatProperties(hdr_format,dispatch).optimalTilingFeatures;
             const auto needed=vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eSampledImage |
@@ -1361,6 +1470,19 @@ struct Context {
             if(samples==1) {
                 scene_desc.debugName="World shading normal and surface validity";
                 scene_normal=checked->createTexture(scene_desc);require(bool(scene_normal),"Scene shading normal target creation failed.");
+                require(physical.getProperties(dispatch).limits.maxColorAttachments>=4,"Scene motion products require four color attachments.");
+                for(const auto product_format:{vk::Format::eR32G32Sfloat,vk::Format::eR8Unorm}) {
+                    const auto flags=physical.getFormatProperties(product_format,dispatch).optimalTilingFeatures;
+                    require((flags&needed)==needed,"Selected GPU lacks sampled/color/transfer motion product formats.");
+                    const auto product_support=physical.getImageFormatProperties(product_format,vk::ImageType::e2D,vk::ImageTiling::eOptimal,usage,{},dispatch);
+                    require((product_support.sampleCounts&vk::SampleCountFlagBits::e1) && extent.width<=product_support.maxExtent.width && extent.height<=product_support.maxExtent.height,"Selected GPU lacks the requested motion product extent.");
+                }
+                scene_desc.format=nvrhi::Format::RG32_FLOAT;scene_desc.debugName="Backward unjittered scene UV motion";
+                scene_motion=checked->createTexture(scene_desc);
+                scene_desc.format=nvrhi::Format::R8_UNORM;scene_desc.debugName="Accepted correspondence validity";
+                scene_motion_valid=checked->createTexture(scene_desc);
+                require(scene_motion && scene_motion_valid,"Motion product allocation failed.");
+                scene_desc.format=nvrhi::Format::RGBA16_FLOAT;
                 const auto depth_properties=physical.getFormatProperties(vk::Format::eD32Sfloat,dispatch).optimalTilingFeatures;
                 require(bool(depth_properties&vk::FormatFeatureFlagBits::eSampledImage),"Selected GPU lacks sampled D32 scene depth support.");
             }
@@ -1379,6 +1501,7 @@ struct Context {
             depth = checked->createTexture(scene_desc);
             require(static_cast<bool>(depth), "Scene depth creation failed.");
             diagnostics.scene_products.available=bool(scene_normal);diagnostics.scene_products.normal_buffer_bytes=normal_bytes;
+            diagnostics.scene_products.motion_available=bool(scene_motion);diagnostics.scene_products.motion_buffer_bytes=motion_bytes;
         }
         for (const auto image : device.getSwapchainImagesKHR(swapchain,dispatch)) {
             auto texture = checked->createHandleForNativeTexture(nvrhi::ObjectTypes::VK_Image,
@@ -1390,7 +1513,7 @@ struct Context {
             if(editor)scene_target=ui_scene.Get();
 #endif
             auto framebuffer_desc = nvrhi::FramebufferDesc().addColorAttachment(scene ? (multisample_color ? multisample_color.Get() : scene_hdr.Get()) : scene_target);
-            if(scene_normal)framebuffer_desc.addColorAttachment(scene_normal);
+            if(scene_normal)framebuffer_desc.addColorAttachment(scene_normal).addColorAttachment(scene_motion).addColorAttachment(scene_motion_valid);
             if (depth) framebuffer_desc.setDepthAttachment(depth);
             auto framebuffer = checked->createFramebuffer(framebuffer_desc);
             require(static_cast<bool>(framebuffer), "NVRHI framebuffer creation failed.");
@@ -1418,6 +1541,16 @@ struct Context {
             if(maintenance1) {present_fences.push_back(device.createFence({},nullptr,dispatch));present_pending.push_back(false);}
         }
         initialized.resize(images.size(), false);
+        if(!product_probes.empty()) {
+            const std::array<nvrhi::Format,4> probe_formats={nvrhi::Format::D32,nvrhi::Format::RGBA16_FLOAT,nvrhi::Format::RG32_FLOAT,nvrhi::Format::R8_UNORM};
+            for(std::size_t i=0;i<probe_staging.size();++i) {
+                // Pinned NVRHI Vulkan treats staging X as a byte offset. Use row origins instead;
+                // four texels keep even R8 rows aligned to the required four-byte copy offset.
+                nvrhi::TextureDesc desc;desc.width=4;desc.height=static_cast<std::uint32_t>(product_probes.size());desc.format=probe_formats[i];desc.debugName="Sparse scene product capture";
+                probe_staging[i]=checked->createStagingTexture(desc,nvrhi::CpuAccessMode::Read);
+                require(bool(probe_staging[i]),"Scene product probe staging allocation failed.");
+            }
+        }
         for(auto& slot:slots)if(!slot.acquired)slot.acquired=device.createSemaphore({},nullptr,dispatch);
         if (capture_enabled) {
             texture_desc.isRenderTarget = false;
@@ -1427,6 +1560,37 @@ struct Context {
         return true;
     }
 
+    void collect_product_probes() {
+        std::vector<SceneProductSample> samples_out(product_probes.size());
+        for(std::size_t i=0;i<samples_out.size();++i) {samples_out[i].x=product_probes[i].x;samples_out[i].y=product_probes[i].y;}
+        auto half=[](std::uint16_t bits) {
+            const float sign=(bits&0x8000u) ? -1.0f : 1.0f;
+            const unsigned exponent=(bits>>10)&31u,mantissa=bits&1023u;
+            if(exponent==31)return mantissa ? std::numeric_limits<float>::quiet_NaN() : sign*std::numeric_limits<float>::infinity();
+            return sign*std::ldexp(static_cast<float>(exponent ? mantissa+1024u : mantissa),exponent ? static_cast<int>(exponent)-25 : -24);
+        };
+        for(std::size_t product=0;product<probe_staging.size();++product) {
+            std::size_t pitch=0;
+            const auto* mapped=static_cast<const unsigned char*>(checked->mapStagingTexture(probe_staging[product],{},nvrhi::CpuAccessMode::Read,&pitch));
+            require(mapped!=nullptr,"Scene product probe mapping failed.");
+            for(std::size_t i=0;i<samples_out.size();++i) {
+                const auto* pixel=mapped+i*pitch;auto& sample=samples_out[i];
+                if(product==0)std::memcpy(&sample.depth,pixel,4);
+                else if(product==1) {
+                    std::uint16_t components[4]{};std::memcpy(components,pixel,8);
+                    for(std::size_t k=0;k<3;++k)sample.shading_normal[k]=half(components[k]);sample.surface_valid=half(components[3])>.5f;
+                } else if(product==2)std::memcpy(sample.motion.data(),pixel,8);
+                else sample.motion_valid=*pixel>=128;
+            }
+            checked->unmapStagingTexture(probe_staging[product]);
+        }
+        for(const auto& sample:samples_out) {
+            require(std::isfinite(sample.depth),"Scene depth probe is nonfinite.");
+            for(float value:sample.shading_normal)require(std::isfinite(value),"Scene normal probe is nonfinite.");
+            for(float value:sample.motion)require(std::isfinite(value),"Scene motion probe is nonfinite.");
+        }
+        diagnostics.scene_products.probes=std::move(samples_out);
+    }
     void capture(const std::string& path) {
         profiling::Scope profile_scope("renderer.capture_readback_write");
         std::size_t row_pitch = 0;
@@ -1784,6 +1948,9 @@ struct Context {
                 }
                 validate_skin_dispatch(slot);collect_light_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
                 diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;
+                diagnostics.scene_products.history_valid=slot.history_valid;diagnostics.scene_products.history_sequence=slot.history_sequence;
+                diagnostics.scene_products.history_reset_reason=slot.history_reset;diagnostics.scene_products.probes.clear();
+                if(slot.capture_probes)collect_product_probes();
                 ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
                 profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
                 checked->resetEventQuery(slot.completion);slot.occupied=false;++retire_slot;
@@ -1791,14 +1958,14 @@ struct Context {
             }
             checked->runGarbageCollection();
             require(messages.errors==0,"NVRHI reported a validation/backend error; inspect stderr.");
-        } catch(...) {renderer_fault=true;throw;}
+        } catch(...) {renderer_fault=true;history={};pending_history={};throw;}
     }
     render_schedule::Schedule make_schedule(bool capture_frame) {
         namespace rs=render_schedule;
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
         settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;
-        settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);
+        settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);settings.history_sequence=history.sequence;
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
         auto insert=[&](rs::Resource resource) {
             if(const auto it=ids.find(resource.identity);resource.identity && it!=ids.end()) {
@@ -1811,11 +1978,11 @@ struct Context {
             if(resource.identity)ids.emplace(resource.identity,id);
             f.resources.push_back(std::move(resource));return id;
         };
-        auto buffer=[&](nvrhi::IBuffer* value,rs::Lifetime lifetime,bool initialized,std::uint64_t used=0) {
+        auto buffer=[&](nvrhi::IBuffer* value,rs::Lifetime lifetime,bool initial_contents,std::uint64_t used=0) {
             require(value!=nullptr,"Render schedule buffer binding is null.");const auto& desc=value->getDesc();
             rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::buffer;
-            r.lifetime=lifetime;r.initialized=initialized;r.owner=settings.slot;r.allocation_bytes=desc.byteSize;r.bytes=used ? used : desc.byteSize;
-            r.region=used ? rs::Region::prefix : rs::Region::whole;
+            r.lifetime=lifetime;r.initialized=initial_contents;r.owner=settings.slot;r.allocation_bytes=desc.byteSize;r.bytes=used ? used : desc.byteSize;
+            r.region=used ? rs::Region::prefix : rs::Region::whole;if(lifetime==rs::Lifetime::history)r.version=history.sequence;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
             if(desc.cpuAccess!=nvrhi::CpuAccessMode::Read)r.supported|=rs::use_bit(rs::Use::upload);
             if(desc.structStride || desc.canHaveRawViews)r.supported|=rs::use_bit(rs::Use::storage_read);
@@ -1825,11 +1992,11 @@ struct Context {
             if(desc.isConstantBuffer)r.supported|=rs::use_bit(rs::Use::constant);
             return insert(std::move(r));
         };
-        auto texture=[&](nvrhi::ITexture* value,rs::Lifetime lifetime,bool initialized) {
+        auto texture=[&](nvrhi::ITexture* value,rs::Lifetime lifetime,bool initial_contents) {
             require(value!=nullptr,"Render schedule texture binding is null.");const auto& desc=value->getDesc();
             rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::texture;
-            r.format=desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : rs::Format::unspecified;
-            r.lifetime=lifetime;r.initialized=initialized;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
+            r.format=desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : desc.format==nvrhi::Format::RG32_FLOAT ? rs::Format::rg32_float : desc.format==nvrhi::Format::R8_UNORM ? rs::Format::r8_unorm : rs::Format::unspecified;
+            r.lifetime=lifetime;r.initialized=initial_contents;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
             if(desc.isShaderResource)r.supported|=rs::use_bit(rs::Use::sampled);
             if(desc.isRenderTarget) {
@@ -1847,10 +2014,10 @@ struct Context {
 #endif
         f.color=f.output;
         if(scene) {
-            f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);
+            f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);f.objects=buffer(object_buffer,rs::Lifetime::shared,false,object_data.size()*sizeof(ObjectData));
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
-            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal)f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
+            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal) {f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.motion=texture(scene_motion,rs::Lifetime::shared,false);f.motion_valid=texture(scene_motion_valid,rs::Lifetime::shared,false);}f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
             if(settings.clustered) {
                 f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
                 f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
@@ -1870,6 +2037,10 @@ struct Context {
                 if(!camera && !shadow)continue;
                 rs::DrawInputs input;input.vertices=buffer(draw.geometry.vertices,draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,!draw.skin);
                 if(draw.geometry.indices)input.indices=buffer(draw.geometry.indices,rs::Lifetime::imported,true);
+                if(settings.products) {
+                    const bool prior=draw.skin && draw.previous_vertices!=draw.geometry.vertices;
+                    input.previous_vertices=buffer(draw.previous_vertices,prior ? rs::Lifetime::history : draw.skin ? rs::Lifetime::shared : rs::Lifetime::imported,prior || !draw.skin);
+                }
                 if(shadow)f.shadow_draws.push_back(input);
                 if(camera) {
                     for(const auto& binding:draw.bindings->getDesc()->bindings)
@@ -1899,6 +2070,17 @@ struct Context {
             }
         }
 #endif
+        if(capture_frame && !product_probes.empty()) {
+            for(const auto& point:product_probes)f.probe_points.push_back({point.x,point.y});
+            const rs::ResourceId sources[]={f.depth,f.normal,f.motion,f.motion_valid};
+            for(std::size_t i=0;i<probe_staging.size();++i) {
+                require(bool(probe_staging[i]),"Product probe staging is unavailable.");const auto& desc=probe_staging[i]->getDesc();
+                rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(probe_staging[i].Get());r.name="Sparse product probe staging";
+                r.kind=rs::Kind::texture;r.lifetime=rs::Lifetime::capture;r.region=rs::Region::probe_pixels;
+                r.format=desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::RG32_FLOAT ? rs::Format::rg32_float : desc.format==nvrhi::Format::R8_UNORM ? rs::Format::r8_unorm : rs::Format::unspecified;r.width=desc.width;r.height=desc.height;r.samples=1;r.supported=rs::use_bit(rs::Use::copy_destination);
+                f.probe_copies.push_back({sources[i],insert(std::move(r))});
+            }
+        }
         if(capture_frame) {
             require(bool(staging),"Render schedule capture staging is unavailable.");const auto& desc=staging->getDesc();
             rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(staging.Get());r.name="Capture staging";r.kind=rs::Kind::texture;
@@ -1914,16 +2096,20 @@ struct Context {
         };
         auto framebuffer=[&](nvrhi::IFramebuffer* value,rs::ResourceId color,rs::ResourceId depth_id,rs::ResourceId normal_id=rs::none) {
             const auto& desc=value->getDesc();
-            if(color!=rs::none) {require(desc.colorAttachments.size()==(normal_id==rs::none ? 1u : 2u),"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);if(normal_id!=rs::none)identity(normal_id,desc.colorAttachments[1].texture);}
+            if(color!=rs::none) {require(desc.colorAttachments.size()==(normal_id==rs::none ? 1u : 4u),"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);if(normal_id!=rs::none) {identity(normal_id,desc.colorAttachments[1].texture);identity(f.motion,desc.colorAttachments[2].texture);identity(f.motion_valid,desc.colorAttachments[3].texture);}}
             if(depth_id!=rs::none)identity(depth_id,desc.depthAttachment.texture);
         };
         identity(f.swapchain,images.at(index).Get());framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(scene) {
-            identity(f.frame,frame_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());if(f.normal!=rs::none)identity(f.normal,scene_normal.Get());
+            identity(f.frame,frame_buffer.Get());identity(f.objects,object_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());if(f.normal!=rs::none) {identity(f.normal,scene_normal.Get());identity(f.motion,scene_motion.Get());identity(f.motion_valid,scene_motion_valid.Get());}
             if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
             if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
             if(!f.skins.empty()) {identity(f.skin_errors,skin_errors.Get());identity(f.skin_readback,skin_readback.Get());}
             for(const auto& shadow:shadow_framebuffers)framebuffer(shadow,rs::none,f.shadow);
+            for(const auto& binding:shadow_bindings->getDesc()->bindings) {
+                if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
+                if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV)identity(f.objects,binding.resourceHandle);
+            }
             framebuffer(sky_framebuffers.at(index),f.color,f.depth);
             std::size_t skin_index=0,camera_index=0,shadow_index=0;
             for(const auto& draw:draws) {
@@ -1937,7 +2123,7 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_UAV)identity(s.output,binding.resourceHandle);
                     }
                 }
-                auto geometry=[&](const rs::DrawInputs& input) {identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());};
+                auto geometry=[&](const rs::DrawInputs& input) {identity(input.vertices,draw.geometry.vertices.Get());if(input.indices!=rs::none)identity(input.indices,draw.geometry.indices.Get());if(input.previous_vertices!=rs::none)identity(input.previous_vertices,draw.previous_vertices.Get());};
                 if(draw.shadow_mask)geometry(f.shadow_draws.at(shadow_index++));
                 if(scene_visible && draw.camera_visible) {
                     const auto& input=f.camera_draws.at(camera_index++);geometry(input);std::size_t material_index=0;
@@ -1945,14 +2131,14 @@ struct Context {
                         if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot<5 ? input.textures.at(material_index++) : f.shadow,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::ConstantBuffer)identity(f.frame,binding.resourceHandle);
                         if(binding.type==nvrhi::ResourceType::StructuredBuffer_SRV) {
-                            const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : f.indices;
+                            const auto id=binding.slot==6 ? f.lights : binding.slot==7 ? f.counts : binding.slot==8 ? f.indices : f.objects;
                             if(id!=rs::none)identity(id,binding.resourceHandle);
                         }
                     }
                 }
             }
             framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
-            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.hdr : binding.slot==1 ? f.depth : f.normal,binding.resourceHandle);
+            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.hdr : binding.slot==1 ? f.depth : binding.slot==2 ? f.normal : binding.slot==3 ? f.motion : f.motion_valid,binding.resourceHandle);
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
         if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
@@ -1966,19 +2152,21 @@ struct Context {
         }
 #endif
         if(plan.settings.capture)identity(f.capture,staging.Get());
+        for(std::size_t i=0;i<f.probe_copies.size();++i)identity(f.probe_copies[i].destination,probe_staging.at(i).Get());
     }
     void render_opaque(std::uint32_t index) {
         nvrhi::GraphicsState state;state.pipeline=pipeline;state.framebuffer=framebuffers[index];
         state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height))));
-        if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));state.bindings.push_back(bindings);}
+        if(scene) {state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(0).setOffset(0));if(samples==1)state.vertexBuffers.push_back(nvrhi::VertexBufferBinding().setBuffer(vertices).setSlot(1));state.bindings.push_back(bindings);}
         commands->setGraphicsState(state);
         if(scene) {
             for(const auto& draw:draws) {
                 if(!scene_visible || !draw.camera_visible)continue;
                 state.pipeline=draw.cull ? culled_pipeline : pipeline;state.bindings[0]=draw.bindings;
                 state.vertexBuffers[0].buffer=draw.geometry.vertices;
+                if(samples==1)state.vertexBuffers[1].buffer=draw.previous_vertices;
                 state.indexBuffer=draw.geometry.indices ? nvrhi::IndexBufferBinding(draw.geometry.indices,nvrhi::Format::R32_UINT,0) : nvrhi::IndexBufferBinding();
-                commands->setGraphicsState(state);commands->setPushConstants(&draw.constants,sizeof(draw.constants));
+                commands->setGraphicsState(state);const DrawIndices indices{draw.object_index};commands->setPushConstants(&indices,sizeof(indices));
                 if(draw.geometry.indices)commands->drawIndexed(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
                 else commands->draw(nvrhi::DrawArguments().setVertexCount(draw.geometry.count));
             }
@@ -2006,7 +2194,7 @@ struct Context {
             require(bool(slot.skin_readback),"Frame skin readback allocation failed.");
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
-        prepare_game_ui();
+        prepare_game_ui();prepare_submission_history();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if(profiling::active() && !timestamp_prepared)prepare_timestamps();
@@ -2025,9 +2213,9 @@ struct Context {
         // or an open/submitted command list. Recreating the session is the
         // supported recovery; retrying the same resources is not safe.
         struct FrameFailure {
-            bool& failed;bool complete=false;
-            ~FrameFailure() { if(!complete)failed=true; }
-        } failure{renderer_fault};
+            Context& context;bool complete=false;
+            ~FrameFailure() { if(!complete) {context.renderer_fault=true;context.history={};context.pending_history={};} }
+        } failure{*this};
         const auto index = next.value;
         if(maintenance1 && present_pending[index]) {
             require(device.waitForFences(1,&present_fences[index],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,"Previous image presentation did not retire.");
@@ -2065,7 +2253,7 @@ struct Context {
             profiling::Scope pass_scope(render_schedule::pass_name(pass.id));
             switch(pass.id) {
             case render_schedule::PassId::skinning:
-                if(scene) {commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));dispatch_skinning();}
+                if(scene) {commands->writeBuffer(planned_buffer(resources.frame),&frame_constants,sizeof(frame_constants));commands->writeBuffer(planned_buffer(resources.objects),object_data.data(),object_data.size()*sizeof(ObjectData));dispatch_skinning();}
                 timestamp(1);break;
             case render_schedule::PassId::light_assignment:
                 if(scene) {
@@ -2078,7 +2266,11 @@ struct Context {
                 commands->beginTrackingTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,
                     initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
                 commands->clearTextureFloat(planned_texture(resources.color),nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));
-                if(resources.normal!=render_schedule::none)commands->clearTextureFloat(planned_texture(resources.normal),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
+                if(resources.normal!=render_schedule::none) {
+                    commands->clearTextureFloat(planned_texture(resources.normal),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
+                    commands->clearTextureFloat(planned_texture(resources.motion),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
+                    commands->clearTextureFloat(planned_texture(resources.motion_valid),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
+                }
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;
@@ -2094,6 +2286,14 @@ struct Context {
 #if POIMA_EDITOR
                 render_ui(index);
 #endif
+                break;
+            case render_schedule::PassId::product_probes:
+                for(const auto& copy:resources.probe_copies)for(std::size_t i=0;i<resources.probe_points.size();++i) {
+                    const auto& point=resources.probe_points[i];
+                    commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(copy.destination).identity),
+                        nvrhi::TextureSlice().setOrigin(0,static_cast<std::uint32_t>(i)).setSize(1,1,1),planned_texture(copy.source),
+                        nvrhi::TextureSlice().setOrigin(point.x,point.y).setSize(1,1,1));
+                }
                 break;
             case render_schedule::PassId::capture:
                 commands->copyTexture(reinterpret_cast<nvrhi::IStagingTexture*>(plan.resource(resources.capture).identity),{},planned_texture(resources.swapchain),{});break;
@@ -2111,7 +2311,11 @@ struct Context {
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
         slot.skin_ids.clear();for(const auto& draw:draws)slot.skin_ids.push_back(draw.entity_id);
         slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
+        slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
+        slot.capture_probes=capture_frame && !product_probes.empty();
         slot.submission=checked->executeCommandList(commands);
+        require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
+        commit_history();
         checked->setEventQuery(slot.completion,nvrhi::CommandQueue::Graphics);
         slot.occupied=true;++next_slot;++diagnostics.frame_execution.submitted;
         ++diagnostics.frame_execution.outstanding;

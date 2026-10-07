@@ -11,6 +11,8 @@ namespace poima {
 // Column-major matrices multiplying column vectors. Right-handed, Y-up,
 // camera looks along local -Z; projection depth is [0, 1].
 using Matrix4 = std::array<double, 16>;
+// Opaque, nonserialized identity for one presentation source lifetime.
+std::string new_presentation_source_id();
 Matrix4 identity_matrix();
 Matrix4 multiply(const Matrix4& left, const Matrix4& right);
 Matrix4 local_matrix(const std::array<double, 3>& position,
@@ -73,6 +75,8 @@ struct SceneObject {
     std::optional<PbrMaterial> material;
     std::shared_ptr<const MaterialTextures> textures;
     std::shared_ptr<const SkinPose> skin{};
+    // Zero opts out of temporal correspondence; authority changes this on replacement.
+    std::uint64_t incarnation=0;
 };
 // An immutable presentation copy; no pointers into authored or simulation state.
 struct SceneSnapshot {
@@ -87,6 +91,10 @@ struct SceneSnapshot {
     SceneLighting lighting;
     std::shared_ptr<const UiFrame> ui;
     std::shared_ptr<const poima::ui::Presentation> logical_ui;
+    // Independent of authored revision and simulation tick. Empty source opts out.
+    std::string presentation_source_id;
+    std::uint64_t presentation_generation=0;
+    std::uint64_t view_cut_generation=0;
 };
 struct ShadowView { Matrix4 view_projection;std::size_t light_index=0;double split_near=0,split_far=0; };
 std::vector<ShadowView> shadow_views(const SceneSnapshot& scene,double aspect);

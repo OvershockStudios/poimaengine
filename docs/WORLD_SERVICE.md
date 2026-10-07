@@ -29,7 +29,7 @@ The successful transaction returns revision 1, `committed: true`, `replayed: fal
 | `entity.get` | One entity, or its selected built-in component; optional revision guard. |
 | `entity.world_transform` | Evaluated column-major world matrix; optional revision guard. |
 | `world.lighting` | Resolved enabled lights, ambient fill, exposure and fallback status; optional revision guard. |
-| `world.capture` | Capture an exact authored revision using a selected Camera; optional graphics build. |
+| `world.capture` | Capture an exact authored revision using a selected Camera; optional graphics build. Single-sample [scene products](SCENE_PRODUCTS.md) include diagnostic views and bounded raw pixel probes. |
 | `entity.query` | Compact, ID-sorted hierarchy pages. Omit `parent` for all entities, use null for roots or an ID for direct children. |
 | `world.transact` | Validate a complete operation batch, preview it or persist it atomically. |
 | `session.close` | Return a response and close; valid as a notification too. |

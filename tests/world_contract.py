@@ -105,7 +105,7 @@ class WorldContract(unittest.TestCase):
             self.assertEqual(descriptor['methods'][method]['properties']['frames_in_flight'],
                              {'type': 'integer', 'minimum': 1, 'maximum': 2, 'default': 2})
             self.assertEqual(descriptor['methods'][method]['properties']['scene_debug_view']['enum'],
-                             ['color', 'depth', 'shading_normal'])
+                             ['color', 'depth', 'shading_normal', 'motion', 'motion_validity'])
         original = {'request_id': uuid.uuid4().hex, 'base_revision': 0,
                     'ops': [create(2, uid(1)), {**create(1), 'name': '大厅 🌊'}]}
         client.rpc('world.transact', original)
@@ -179,9 +179,14 @@ class WorldContract(unittest.TestCase):
             self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         for bad in (None, True, 1, [], {}, 'normals', ''):
             client.rpc('world.capture', {**capture, 'samples': 1, 'scene_debug_view': bad}, error=-32602)
-        for mode in ('depth', 'shading_normal'):
+        for mode in ('depth', 'shading_normal', 'motion', 'motion_validity'):
             client.rpc('world.capture', {**capture, 'scene_debug_view': mode}, error=-32602)
             client.rpc('world.capture', {**capture, 'samples': 4, 'scene_debug_view': mode}, error=-32602)
+        for probes in (None, True, {}, [None], [{'x': 0}], [{'x': True, 'y': 0}],
+                       [{'x': -1, 'y': 0}], [{'x': 960, 'y': 0}], [{'x': 0, 'y': 540}],
+                       [{'x': 0, 'y': 0, 'extra': 1}], [{'x': 0, 'y': 0}]*65):
+            client.rpc('world.capture', {**capture, 'samples': 1, 'scene_product_probes': probes}, error=-32602)
+        client.rpc('world.capture', {**capture, 'scene_product_probes': [{'x': 0, 'y': 0}]}, error=-32602)
         self.assertEqual(client.rpc('world.history'), history)
         self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         capabilities = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']

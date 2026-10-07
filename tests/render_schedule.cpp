@@ -20,8 +20,12 @@ struct Fixture {
         if(s.scene){
             f.hdr=add(Kind::texture,Lifetime::shared);f.color=samples==1?f.hdr:add(Kind::texture,Lifetime::shared,false,samples);
             f.depth=add(Kind::texture,Lifetime::shared,false,samples);f.resources[f.depth].format=Format::depth32;
-            if(s.products){f.normal=add(Kind::texture,Lifetime::shared);f.resources[f.normal].format=Format::rgba16_float;}
-            f.frame=add(Kind::buffer,Lifetime::shared);
+            if(s.products){
+                f.normal=add(Kind::texture,Lifetime::shared);f.resources[f.normal].format=Format::rgba16_float;
+                f.motion=add(Kind::texture,Lifetime::shared);f.resources[f.motion].format=Format::rg32_float;
+                f.motion_valid=add(Kind::texture,Lifetime::shared);f.resources[f.motion_valid].format=Format::r8_unorm;
+            }
+            f.frame=add(Kind::buffer,Lifetime::shared);f.objects=add(Kind::buffer,Lifetime::shared);
             f.lights=add(Kind::buffer,Lifetime::shared);f.shadow=add(Kind::texture,Lifetime::shared);
             const auto material=add(Kind::texture,Lifetime::imported,true);
             const auto vertices=add(Kind::buffer,Lifetime::imported,true),indices=add(Kind::buffer,Lifetime::imported,true);
@@ -31,7 +35,7 @@ struct Fixture {
                 f.skins.push_back({vertices,influences,palette,output});drawn=output;
                 f.skin_errors=add(Kind::buffer,Lifetime::shared);f.skin_readback=add(Kind::buffer,Lifetime::slot);
             }
-            f.camera_draws.push_back({drawn,indices,{material}});f.shadow_draws.push_back({drawn,indices,{}});
+            f.camera_draws.push_back({drawn,indices,{material},drawn});f.shadow_draws.push_back({drawn,indices,{}});
             if(s.clustered){
                 f.counts=add(Kind::buffer,Lifetime::shared);f.indices=add(Kind::buffer,Lifetime::shared);
                 f.resources[f.indices].region=Region::cluster_members;f.resources[f.indices].counts=f.counts;
@@ -149,5 +153,59 @@ void products(){
     rejects("debug requested with absent products",[&]{absent.validate();});
 }
 
+void motion_contracts(){
+    auto settings=rich();settings.products=settings.products_debug=true;settings.history_sequence=19;
+    Fixture fixture(settings,1,true);
+    const auto prior=fixture.add(Kind::buffer,Lifetime::history,true);
+    fixture.f.resources[prior].version=19;
+    fixture.f.camera_draws[0].previous_vertices=prior;
+    fixture.f.probe_points={{0,0},{383,215}};
+    for(const auto source:{fixture.f.depth,fixture.f.normal,fixture.f.motion,fixture.f.motion_valid}){
+        const auto destination=fixture.add(Kind::texture,Lifetime::capture);
+        auto& target=fixture.f.resources[destination];target.format=fixture.f.resources[source].format;
+        target.width=4;target.height=2;target.region=Region::probe_pixels;
+        fixture.f.probe_copies.push_back({source,destination});
+    }
+    const auto original=fixture.plan();original.validate();++accepted;
+    auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
+    bad("missing object table",[](auto& p){p.frame.objects=none;});
+    bad("object table not uploaded",[](auto& p){erase_access(p,PassId::skinning,p.frame.objects,Use::upload);});
+    bad("missing prior vertex role",[](auto& p){p.frame.camera_draws[0].previous_vertices=none;});
+    bad("missing prior vertex input",[&](auto& p){erase_access(p,PassId::opaque,prior,Use::vertex);});
+    bad("stale accepted deformation",[&](auto& p){--p.frame.resources[prior].version;});
+    bad("future deformation",[&](auto& p){++p.frame.resources[prior].version;});
+    bad("unversioned deformation",[&](auto& p){p.frame.resources[prior].version=0;});
+    bad("uninitialized prior deformation",[&](auto& p){p.frame.resources[prior].initialized=false;});
+    bad("history write",[&](auto& p){pass(p,PassId::skinning).accesses.push_back({prior,Use::storage_write,true});});
+    bad("current deformation aliases prior",[&](auto& p){p.frame.resources[p.frame.skins[0].output].identity=p.frame.resources[prior].identity;});
+    for(bool validity:{false,true}){
+        const auto product=validity?original.frame.motion_valid:original.frame.motion;
+        bad("missing motion role",[&](auto& p){(validity?p.frame.motion_valid:p.frame.motion)=none;});
+        bad("motion clear absent",[&](auto& p){erase_access(p,PassId::scene_clear,product,Use::clear_color);});
+        bad("motion output absent",[&](auto& p){erase_access(p,PassId::opaque,product,Use::color);});
+        bad("motion sampled input absent",[&](auto& p){erase_access(p,PassId::output,product,Use::sampled);});
+        bad("motion format mismatch",[&](auto& p){p.frame.resources[product].format=Format::rgba16_float;});
+        bad("motion extent mismatch",[&](auto& p){++p.frame.resources[product].width;});
+        bad("motion multisampling",[&](auto& p){p.frame.resources[product].samples=4;});
+        bad("sky modifies motion",[&](auto& p){pass(p,PassId::sky).accesses.push_back({product,Use::color,false});});
+    }
+    bad("motion validity alias",[](auto& p){p.frame.motion_valid=p.frame.motion;});
+    bad("probes without capture",[](auto& p){p.settings.capture=false;});
+    bad("too many probes",[](auto& p){p.frame.probe_points.resize(65);});
+    bad("probe x exceeds extent",[](auto& p){p.frame.probe_points[0].x=384;});
+    bad("probe y exceeds extent",[](auto& p){p.frame.probe_points[0].y=216;});
+    bad("missing probe copy",[](auto& p){p.frame.probe_copies.pop_back();});
+    bad("probe source role mismatch",[](auto& p){p.frame.probe_copies[0].source=p.frame.normal;});
+    bad("probe pass absent",[](auto& p){std::erase_if(p.passes,[](const auto& pass){return pass.id==PassId::product_probes;});});
+    bad("probe storage without requests",[](auto& p){p.frame.probe_points.clear();});
+    for(const auto& copy:original.frame.probe_copies){
+        bad("probe copy source absent",[&](auto& p){erase_access(p,PassId::product_probes,copy.source,Use::copy_source);});
+        bad("probe copy destination absent",[&](auto& p){erase_access(p,PassId::product_probes,copy.destination,Use::copy_destination);});
+        bad("probe format differs",[&](auto& p){p.frame.resources[copy.destination].format=Format::unspecified;});
+        bad("probe row too short",[&](auto& p){p.frame.resources[copy.destination].width=3;});
+        bad("probe staging height",[&](auto& p){p.frame.resources[copy.destination].height=3;});
+        bad("probe region unspecified",[&](auto& p){p.frame.resources[copy.destination].region=Region::whole;});
+    }
 }
-int main(){try{matrix();faults();products();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+}
+int main(){try{matrix();faults();products();motion_contracts();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

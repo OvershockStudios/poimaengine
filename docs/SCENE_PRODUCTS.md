@@ -1,4 +1,4 @@
-# Scene depth and shading-normal views
+# Scene products and presentation history
 
 This document describes the scene-product contract. Check capability discovery before using it; the bounded qualification results are recorded below.
 
@@ -47,7 +47,37 @@ Capture and player results expose the product description under `render_diagnost
 - `normal_format`, `normal_space`, and `normal_alpha`: normal encoding and validity conventions.
 - `depth_convention` and `depth_visualization`: the distinction between stored device depth and its display mapping.
 
-Use `available` rather than inferring availability from the descriptive format fields. These diagnostics describe the rendered products; they do not return the underlying floating-point pixel arrays.
+Use `available` rather than inferring availability from the descriptive format fields. The qualified depth/normal milestone does not return floating-point pixel arrays; the motion/probe extension below adds bounded numeric samples.
+
+## Motion, history and numeric probes
+
+**Qualified in the bounded cohort recorded below.** Schema version 43 adds `motion` and `motion_validity` views and `scene_product_probes`. The earlier depth/normal qualification record does not qualify these additions. Capability discovery remains the authority for the running build.
+
+Motion is `previous_uv - current_uv`, measured relative to the active scene viewport with a top-left origin, positive X right and positive Y down. It is displacement between accepted renders, not velocity per second or displacement per simulation tick. Current rendering has no projection jitter. Camera, object and skinned deformation correspondence use retained previous render state where available.
+
+The `motion` display maps valid displacement to `R/G = clamp(0.5 + motion_in_pixels / 64, 0, 1)` and B = 0. A valid stationary surface therefore appears approximately `(0.5, 0.5, 0)`. Invalid correspondence is black. The `motion_validity` display is white for valid correspondence and black otherwise. Both views require one sample, bypass scene exposure/tone mapping and retain supported UI overlays. Display colors are visualizations, not the numeric motion values.
+
+**Geometric correspondence validity does not establish temporal sample acceptance.** A valid vector identifies a previous projected location for the same surface; that location may be off-screen, outside the previous depth clip range, or previously occluded. The current validity test requires finite correspondence and positive previous clip W; it does not require previous UV in `[0,1]`. This extension does not perform previous-depth disocclusion rejection, accumulate history color or decide whether an upscaler should trust a history sample. Sky/background has no surface correspondence. Zero motion must be distinguished from invalid motion using the separate validity value.
+
+History belongs to each renderer view and advances after accepted graphics submission. A CPU frame-slot index, swapchain image or simulation tick is not its identity. Repeated renders at one tick can have different camera positions; separate Scene and Game views maintain separate history. Source replacement, explicit cuts and incompatible view configuration invalidate continuity. Object incarnation changes prevent correspondence with replaced geometry even when an entity identifier is unchanged. An empty source identity or zero object incarnation opts out of correspondence. Missing immediately preceding skin output invalidates that object. View configuration includes camera, lens and viewport; resize resets history. An accepted submission can advance history even if later presentation reports an out-of-date swapchain; it does not prove monitor display. These presentation identities are not serialized game state.
+
+Desktop camera navigation preserves the explicit cut generation. `desktop.camera` accepts optional `cut: true` for a Scene discontinuity; framing and camera selection changes also advance the affected view's generation. `desktop.inspect.views` exposes `view_cut_generation`. Game camera selection changes affect Game independently. A rejected camera request must not advance the generation. Capture receipts also retain identity/cut guards so runtime replacement cannot silently complete an older queued capture against a different source.
+
+For bounded numeric inspection, append probe coordinates to an otherwise valid capture request:
+
+```json
+{
+  "samples": 1,
+  "scene_debug_view": "motion",
+  "scene_product_probes": [{"x": 160, "y": 120}]
+}
+```
+
+This is a parameter fragment: existing camera, revision/session/tick and output-path requirements still apply. A nonempty probe list requires a capture path and `samples: 1`; it accepts at most 64 integer pixel coordinates inside the requested capture extent. Coordinates address the attachment from its top-left corner, rather than normalized Scene coordinates. `runtime.play` samples probes at its requested final capture. Ordinary color captures can also request probes without switching their displayed view.
+
+Results are under `render_diagnostics.scene_products.probes`. Each entry contains `x`, `y`, device `depth`, world-space `shading_normal`, UV `motion`, `surface_valid`, and `motion_valid`. These are captured attachment values, with `RGBA16_FLOAT` normal precision and `RG32_FLOAT` motion precision, rather than values recovered from the BMP visualization. They provide sparse samples, not a full floating-point image export. Overlaid UI does not become scene depth or motion data.
+
+Additional diagnostics report `motion_available`, `motion_buffer_bytes`, `history_valid`, `history_sequence`, `history_reset_reason`, `motion_convention`, and `motion_visualization`. History diagnostics describe the correspondence used by the completed submission, and `history_sequence` counts accepted submissions. View-level `history_valid` does not imply that every pixel has valid object correspondence; inspect per-pixel `motion_valid` where needed. These fields describe geometric correspondence, not a completed temporal reconstruction or vendor upscaler integration.
 
 ## Reproduce checks
 
@@ -69,6 +99,16 @@ python tests/frame_execution_capture.py PATH_TO_FRAME_EXECUTION_TEST \
 
 Repeat with `--scene-view shading_normal` and `--scene-view color1`, using separate output directories. Repeat on another GPU index where available. Add `--windows-interop` when running Linux Python against Windows executables through WSL.
 
+The motion fixture uses its own native executable and an output filename prefix:
+
+```sh
+PATH_TO_SCENE_MOTION_TEST build/motion-check 0
+python tests/scene_product_probes.py PATH_TO_POIMA \
+  --gpu 0 --output build/motion-rpc-check
+```
+
+The native fixture exercises one- and two-slot submissions and interleaved view histories. The RPC harness checks raw depth, normals and stationary motion through actual capture requests, including ordered duplicate coordinates and the 64-probe limit. Each RPC capture creates a fresh renderer context and renders two frames: its second-frame stationary correspondence is valid. It does not establish cross-request history.
+
 These harnesses do not automatically install or enable Vulkan validation layers. The recorded strict-validation runs configured Khronos validation and synchronization validation separately; reproduce that environment when checking API and synchronization diagnostics.
 
 ## Scope and qualification
@@ -79,4 +119,4 @@ The completed cohort includes 220 valid portable schedule variants and 269 rejec
 
 BMP checks measure the displayed products. They are quantized display images, not lossless exports of the native depth or normal attachments.
 
-Native floating-point product export, motion vectors, temporal history and temporal reconstruction are not implemented by this milestone. The products do not establish DLSS/FSR support or a complete deferred material buffer. Multisample surface selection, transparency coverage and temporal consumers require separate contracts and qualification.
+That earlier record excludes the later motion/history/probe extension. Its [separate qualification record](evidence/m2-scene-motion.json) records checks on both named GPUs: 80 native captures and four RPC captures per device. Native cases cover initial invalidity, rigid and camera movement, subpixel displacement, queued previous poses, cuts, source and object replacement, hidden skips, resize, skinned movement, opt-out identities and independent interleaved views. Nine Linux contracts and the Windows portable schedule checks passed; the desktop C ABI checks use hidden owned windows without rendering. Ten renderer regression groups, eight native integration groups and four legacy editor layout groups passed. The final native integration run uses the UI fixture rebuilt against the current core. Existing depth/normal and single-sample color fixtures pass again, and multisampled color retains 16 exact reference comparisons per device. The Windows schedule covers 221 valid variants and 328 rejection checks, including 204 repeated unacquired-image guards. GPU runs use externally configured Khronos synchronization validation; these results make no performance, physical-input, installed-desktop or Linux-rendering claim. Full floating-point image export and temporal reconstruction remain outside its scope. The products do not establish DLSS/FSR support or a complete deferred material buffer. Multisample surface selection, transparency coverage and temporal consumers require separate contracts and qualification.

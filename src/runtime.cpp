@@ -163,6 +163,7 @@ struct Runtime::Impl {
     SoundState sounds;
     std::vector<AcousticGeometry> acoustic_geometry;
     std::uint32_t game_sound_calls=0;
+    const std::string presentation_source_id=new_presentation_source_id();
     std::string world_id;
     std::uint64_t revision=0, tick=0;
     ~Impl() {
@@ -1119,11 +1120,12 @@ SceneSnapshot Runtime::snapshot(const std::string& camera) const {
     require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
     return result;
 }
+const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
 SceneSnapshot Runtime::snapshot() const {
-    SceneSnapshot result;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;
+    SceneSnapshot result;result.presentation_source_id=impl_->presentation_source_id;result.camera_world=identity_matrix();result.lighting=lighting();result.world_id=impl_->world_id;result.revision=impl_->revision;
     for(auto object:impl_->topology->order) if(const auto* mesh=impl_->registry.try_get<RuntimeMesh>(object); mesh && mesh->visible) {
         const auto& node=impl_->registry.get<Node>(object); result.objects.push_back({node.id,node.world,mesh->albedo,mesh->mesh,mesh->material,mesh->textures,
-            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; })});
+            impl_->animations->skin(node.id,[&](const std::string& id)->const Matrix4& { return impl_->registry.get<Node>(impl_->find(id)).world; }),1});
     }
     return result;
 }

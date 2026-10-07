@@ -6,7 +6,7 @@ The portable builder lives in [render_schedule.hpp](../include/poima/render_sche
 
 ## Passes
 
-The fixed order is skinning, light assignment, shadows, scene clear, sky, opaque geometry, MSAA resolve, display output, game UI, hosted overlay, legacy editor composition, capture and presentation export. Settings determine which optional passes and resource accesses are present. Stage boundaries can remain even when no corresponding work is needed.
+The fixed order is skinning, light assignment, shadows, scene clear, sky, opaque geometry, MSAA resolve, display output, game UI, hosted overlay, legacy editor composition, sparse product probes, capture and presentation export. Settings determine which optional passes and resource accesses are present. Stage boundaries can remain even when no corresponding work is needed.
 
 Existing helpers still record their draws and compute dispatches. Resource IDs directly select scheduled uploads, clears, resolve targets, capture copies and presentation transitions. Before execution, binding checks connect helper resources to the same identities described by the schedule.
 
@@ -14,7 +14,7 @@ Each executed schedule stage records a CPU scope named `render.pass.<stage>`, su
 
 ## Resource contracts
 
-The schedule distinguishes buffers from textures and records supported uses, resource identity, initialization, dimensions, sample count and ownership. Ownership categories cover immutable imported data, shared GPU resources, frame-slot readbacks, capture storage and the acquired swapchain image.
+The schedule distinguishes buffers from textures and records supported uses, resource identity, initialization, dimensions, sample count and ownership. Ownership categories cover immutable imported data, versioned prior-submission deformation, shared GPU resources, frame-slot readbacks, capture storage and the acquired swapchain image.
 
 Validation checks include:
 
@@ -22,6 +22,8 @@ Validation checks include:
 - Producers before reads or partial writes. A blended or clipped raster pass cannot claim to initialize an entire attachment.
 - Buffer used-byte bounds separately from physical allocation size. Light tables and dynamic UI uploads can initialize only a used prefix.
 - Cluster-member storage paired with initialized count storage. Only the entries selected by each count are meaningful; unused list capacity is not declared initialized data. The existing overflow path evaluates the complete light table.
+- Prior deformation must belong to the immediately preceding accepted submission and cannot be written by the current frame.
+- Sparse probe copies require matching formats, bounded coordinates and separately aligned staging rows; unused row padding is not valid product data.
 - Diagnostic copy sizes and ownership of the selected frame-slot readback. Readback storage is not a GPU shading input.
 - Attachment dimensions and sample counts, resolve source/destination compatibility, and capture before presentation export.
 
@@ -65,4 +67,6 @@ On AMD Radeon(TM) Graphics and NVIDIA GeForce RTX 4070 Laptop GPU, the reference
 
 These are bounded correctness observations. GPU images are renderer readbacks; the checks do not qualify physical input, Avalonia editor usability, Linux rendering or broad hardware compatibility. They establish no performance improvement.
 
-Single-sample scenes also clear and write a world-space normal/validity attachment. Diagnostic output samples it and scene depth; the sky uses a color-only framebuffer to preserve invalid background normals. The schedule checks product formats, required writes/reads and attachment-role aliasing. See [scene products](SCENE_PRODUCTS.md) for the output contract and qualification status.
+Single-sample scenes also clear and write world-space normal/validity, motion and motion-validity attachments. Diagnostic output can sample them and scene depth; the sky uses a color-only framebuffer to preserve invalid background products. The schedule checks product formats, required writes/reads and attachment-role aliasing. See [scene products](SCENE_PRODUCTS.md) for the output contract and qualification status.
+
+The [motion checkpoint](evidence/m2-scene-motion.json) extends portable qualification to 221 valid configurations and 328 rejection checks, including 204 repeated unacquired-image guards. Its tests cover prior deformation versions, motion attachment roles and sparse probe readback contracts.

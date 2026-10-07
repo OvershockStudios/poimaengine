@@ -1,0 +1,302 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "engine_version": "0.0.39-development",
+  "scope": "Single-sample geometric motion, per-view presentation history and sparse raw scene-product probes",
+  "passed": true,
+  "qualification_status": "complete",
+  "gpu": [
+    {
+      "device": "AMD Radeon(TM) Graphics",
+      "native_captures": 80,
+      "frame_slots": [
+        1,
+        2
+      ],
+      "cases_per_slot": [
+        "first",
+        "static",
+        "rigid-right",
+        "rigid-up",
+        "subpixel",
+        "camera-right",
+        "camera-static",
+        "queued-prior-pose",
+        "cut",
+        "after-cut",
+        "source-generation",
+        "after-generation",
+        "source-replacement",
+        "after-source",
+        "object-replaced",
+        "after-object-replaced",
+        "object-reappeared",
+        "after-reappearance",
+        "after-hidden-skip",
+        "resize",
+        "after-resize",
+        "skin-binding",
+        "skin-static",
+        "skin-motion",
+        "skin-y",
+        "skin-repeated",
+        "object-optout",
+        "source-optout"
+      ],
+      "interleaved_views_captures_per_slot": 12,
+      "rpc_captures": 4,
+      "rpc_checks": [
+        "Raw analytic perspective depth and world normal agree at covered interior pixels.",
+        "Sky/background depth, normal and motion clear with both validity flags false.",
+        "64 probes accepted; duplicate coordinates and input ordering preserved.",
+        "Motion and validity display agree with raw stationary valid motion; source captures restart their two-submission sequence.",
+        "Actual runtime.capture at tick3 returns the same analytic products."
+      ]
+    },
+    {
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "native_captures": 80,
+      "frame_slots": [
+        1,
+        2
+      ],
+      "cases_per_slot": [
+        "first",
+        "static",
+        "rigid-right",
+        "rigid-up",
+        "subpixel",
+        "camera-right",
+        "camera-static",
+        "queued-prior-pose",
+        "cut",
+        "after-cut",
+        "source-generation",
+        "after-generation",
+        "source-replacement",
+        "after-source",
+        "object-replaced",
+        "after-object-replaced",
+        "object-reappeared",
+        "after-reappearance",
+        "after-hidden-skip",
+        "resize",
+        "after-resize",
+        "skin-binding",
+        "skin-static",
+        "skin-motion",
+        "skin-y",
+        "skin-repeated",
+        "object-optout",
+        "source-optout"
+      ],
+      "interleaved_views_captures_per_slot": 12,
+      "rpc_captures": 4,
+      "rpc_checks": [
+        "Raw analytic perspective depth and world normal agree at covered interior pixels.",
+        "Sky/background depth, normal and motion clear with both validity flags false.",
+        "64 probes accepted; duplicate coordinates and input ordering preserved.",
+        "Motion and validity display agree with raw stationary valid motion; source captures restart their two-submission sequence.",
+        "Actual runtime.capture at tick3 returns the same analytic products."
+      ]
+    }
+  ],
+  "validation": {
+    "layer": "VK_LAYER_KHRONOS_validation",
+    "synchronization_validation": true,
+    "note": "Configured externally for the GPU cohort; harnesses do not install or enable the layer themselves."
+  },
+  "portable_contracts": {
+    "platform": "Windows",
+    "valid_variants": 221,
+    "rejection_checks": 328,
+    "note": "Includes 204 repeated unacquired-image guard checks and 124 other rejection checks."
+  },
+  "linux_contracts": [
+    "profiler_contract",
+    "world_session_native",
+    "scene_history_source",
+    "world_templates_contract",
+    "world_ui_contract",
+    "world_components_contract",
+    "lighting_contract",
+    "runtime_contract",
+    "world_contract"
+  ],
+  "desktop_abi": {
+    "passed": true,
+    "checks": [
+      "Navigation preserves cuts; explicit cuts advance Scene only; invalid requests preserve state.",
+      "Game camera changes, deselection and away/back are isolated; same selection and failed selection do not advance.",
+      "Legacy mode switches and each accepted frame advance only their actual viewport slot.",
+      "Queued capture rejects actual same-tick save replacement into a fresh session and explicit cut; no stale file written."
+    ],
+    "scope": [
+      "Real C ABI and a hidden owned HWND without draw; no GPU rendering, native history pixel output, physical input or GUI qualification."
+    ]
+  },
+  "renderer_regressions": {
+    "status": "passed",
+    "groups": [
+      "Windows portable contracts",
+      "reference smoke GPU0",
+      "candidate smoke GPU0",
+      "reference frame comparison GPU0",
+      "analytic scene products GPU0",
+      "continuous color1 GPU0",
+      "continuous depth GPU0",
+      "continuous shading_normal GPU0",
+      "reference smoke GPU1",
+      "candidate smoke GPU1",
+      "reference frame comparison GPU1",
+      "analytic scene products GPU1",
+      "continuous color1 GPU1",
+      "continuous depth GPU1",
+      "continuous shading_normal GPU1"
+    ]
+  },
+  "broader_regressions": {
+    "renderer_groups": [
+      {
+        "suite": "gpu_skinning_capture",
+        "gpu_index": 0
+      },
+      {
+        "suite": "gpu_skinning_capture",
+        "gpu_index": 1
+      },
+      {
+        "suite": "hdr_composition_capture",
+        "gpu_index": 0
+      },
+      {
+        "suite": "hdr_composition_capture",
+        "gpu_index": 1
+      },
+      {
+        "suite": "clustered_lighting_capture",
+        "gpu_index": 0
+      },
+      {
+        "suite": "clustered_lighting_capture",
+        "gpu_index": 1
+      },
+      {
+        "suite": "culling_capture",
+        "gpu_index": 0
+      },
+      {
+        "suite": "culling_capture",
+        "gpu_index": 1
+      },
+      {
+        "suite": "profiler_capture",
+        "gpu_index": 0
+      },
+      {
+        "suite": "profiler_capture",
+        "gpu_index": 1
+      }
+    ],
+    "native_integration_groups": [
+      "ui-gpu1-msaa1",
+      "ui-gpu1-msaa4",
+      "ui-gpu0-msaa1",
+      "ui-gpu0-msaa4",
+      "player-gpu1",
+      "player-gpu0",
+      "hosted-gpu1-msaa4",
+      "hosted-gpu0-msaa4"
+    ],
+    "legacy_layout_groups": 4
+  },
+  "limitations": [
+    "Geometric correspondence is not previous visibility, disocclusion rejection, temporal history sample acceptance, reconstruction or an integrated upscaler.",
+    "Sparse D32/RGBA16_FLOAT/RG32_FLOAT probes are native attachment samples; BMP views remain quantized display products. No full floating-point image export.",
+    "Products require samples1. No multisample surface resolve, sky or transparency motion, or jitter contract qualified.",
+    "No performance, physical input, installed desktop application or Linux GPU-rendering claim.",
+    "Earlier failed fixture/validation runs are retained locally; this record identifies the corrected, bounded final cohort."
+  ],
+  "input_sha256": {
+    "CMakeLists.txt": "2917b1c28d7c23df1edccdbaab0757379e6fc1499563885af859e54fd1a8e0d0",
+    "build/abi7-linux/poima": "39ea538560a621935e3175e3529d4247ba7023c6bfabc07945d575b604176e23",
+    "build/abi7-linux/poima-scene-history-source-test": "9747e6b74ea38d46da22e987dc586dd75bcadfbb505893cc2b0ecf66f11f0d7a",
+    "build/abi7-linux/poima-world-session-test": "c2ee748bcdca237b61ca92114f118e903c08e0a29a9b6bb9670e2ca60ff7b306",
+    "build/motion-history-reference/poima-frame-execution-test.exe": "52c917d9d16ef8430381da0f903c03c93945ced92ba10653a50989f1b380f955",
+    "build/motion-history-reference/poima.exe": "403bc5a23cbdc14eb601c7aaacde854939dad39ce141184433df74a8ea4b64a0",
+    "build/windows-runtime/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+    "build/windows-runtime/poima-frame-execution-test.exe": "83fbb7a70d345a63d437e030ec5abee184902e52f7eeade600b1c63093ee069f",
+    "build/windows-runtime/poima-render-schedule-test.exe": "17d943e32dc9f80f9bbab517e2940c56747a84ef72bdec9360aad48bab200a94",
+    "build/windows-runtime/poima-scene-motion-test.exe": "1cbe4cb13fe00adc2ec6945d100423996b1a62ae06e28016447c8641150d88c4",
+    "build/windows-runtime/poima-ui-capture-test.exe": "78a86191b15459612e3c7ea0992a25890f3903723133496016280f7e26524cfa",
+    "build/windows-runtime/poima.exe": "e0224eb96ddf85bb2e96567743967a297fb2875b89c1eb7dde037740717dd297",
+    "build/windows-runtime/poima_desktop.dll": "95b4746bd263a42f32564f742f70dccab4b630688de6a7fdee10cd15afc72636",
+    "cmake/render_smoke.cmake": "60afd598b6d9e683198460be79fff8ff141d717ab9f1a14699df4d63aa9c3735",
+    "examples/physics-room.jsonl": "ada2e3cf02013bc43a3de14a9cae80ab914740b449e3ed323ba311af8f3e5ddf",
+    "include/poima/core.hpp": "bb86e82124518fdb163b9ea1b85a31b631f117e1c1de3c26dd5ec0fac61de6bf",
+    "include/poima/render_schedule.hpp": "d10f05b29a499e0556b3f577a74dffea869c1b840eeaf7e71cc442802e9a821c",
+    "include/poima/runtime.hpp": "87384a5576a91b69fb9dc059f3898ba6fc53e3dc794c796fe8c74d439903e496",
+    "include/poima/scene.hpp": "d451d5633d068f3ab1a38f71c7f81b637c217448087d0e3b5ba36a616def040a",
+    "include/poima/world.hpp": "f3ba3e98ab1d3983cacdeeb7cf99f3853255202b44f4f2caf40068acc9b27483",
+    "qualification-runners/integration.py": "89de60d97750fc1190a713d4b0b2f6e346e1d966a9a199a590f8f6e5fec57fd1",
+    "shaders/cluster_lights.hlsl": "77c04aa19b606082477b5d2f2dcdcbd28d64588c5a01b2a3d4f1d6b416b5a994",
+    "shaders/scene.hlsl": "825dc50ffef778c2e9b4388fc1a7ef1cdd0e5c2c762619d1c5a068511cda17aa",
+    "shaders/scene_frame.hlsli": "14834e6b77fe3f7f9eff2adf3e14469c560759516e687142e3ae238ac3101ae7",
+    "shaders/scene_output.hlsl": "e43d91ffb331456915f6803288a99c92ca05f4b78c7fca4add06b083bd1ad607",
+    "shaders/sky.hlsl": "ad4e55c4af0f6b26e7248d47f2b67fbd20c38904c1836f5c5a297e1d1a909b07",
+    "src/desktop_bridge.cpp": "4978798ead70617edc3e3c4520c9ac3c925025e28f4c01cb30bdec5452478cde",
+    "src/render_smoke.cpp": "9509b30f6807029ec2b77f551963ea203981a60c5c6036bd1c0f802e6d50c2ec",
+    "src/runtime.cpp": "76796d54113d9c0d9eb49316822d500cc9f71145d1dd53a687c0c5ad97b41ca1",
+    "src/runtime_disabled.cpp": "96575b468f8cce4b3b52b5205fa1cc016df797e2347b4e738f0c66fc7f8ea66a",
+    "src/scene.cpp": "adc020695b8ce72b959624ded070a1aae1fb47e302681c0941d357196ab8890f",
+    "src/world.cpp": "19c9b60ab14113a6c0b5cf647522a2d8c43f9f308cd6ec78639e629a936dbadd",
+    "tests/clustered_lighting_capture.py": "0e5fe35db4f97057e3dec5831d0199d93a8aed303df46c4fc3ba9abb9a24ba4a",
+    "tests/culling_capture.py": "b4e93b190d93242b3cceac63a0a1173b53c645016e70863cf9b85f061fc7eae7",
+    "tests/desktop_camera_history.py": "d918f1eb819167c272ed3eb3f229086322f7b9545b0fcb54591cb5bb981c8977",
+    "tests/desktop_dual_view.py": "626281b14a82bad849abad1a46cc1cf07b7565fcb86a2c99a45ab6ab8e08ec8b",
+    "tests/frame_execution_capture.py": "405cd772b9761d124819db781f783c246e6295875b169cd22d9268e969572067",
+    "tests/frame_execution_native.cpp": "80333d78566deb9556f871fda1bdd46e38e3a3c999374e7f6084a6a12ab2fc74",
+    "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+    "tests/gpu_skinning_capture.py": "6587cc05af5105df03c4faf754c5ad789582cf30f319aea683e3618b30f15b05",
+    "tests/hdr_composition_capture.py": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740",
+    "tests/player_contract.py": "1e1ecf3ba727cb4ece44e86ff2536d721530055e6549798226630a66d9993326",
+    "tests/profiler_capture.py": "6508f24a064dcf305b85acac23bbaa3e1c902801ae0ef6fada8b125a69cff4df",
+    "tests/render_schedule.cpp": "7ff5712e38b693251ca5e44e558e730f2423c766104553e2c75b6c53dfcc4775",
+    "tests/render_schedule_capture.py": "e5369c12b36e2cfa4452c6c63cd2981b6f82a7388d6290a495de43e717fa2429",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tests/scene_history_source.cpp": "d9e598f7e3aae6ad3c211182a8352d85457e4fcb301f6b343bb8cc9dc1b615ff",
+    "tests/scene_motion.cpp": "11c0f2949819b7ccd7a66d414f3166748494457f53b1e5fd6e3a8dc5ed8a8232",
+    "tests/scene_product_probes.py": "ab4844121609c1efc5be28b92c43c2de26c0a92170a054dfcac142ec8d446644",
+    "tests/scene_products_capture.py": "a2a1a0bcc2a01496092711f3c33b47ffd30d302312e8e9bdc95c8ae8bef4a92c",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+    "tests/ui_capture.py": "ce24ad616eef45fecf6633a3ab41088e2706fbf2f9a8afb5ec1ef133abe342c6",
+    "tests/ui_capture_native.cpp": "16a0905303fe3b275608bbc7344ed86e13ce5dcd3d2b0febfa1a7c7ccc084637",
+    "tests/world_contract.py": "7ea41bf3a12482a43cbb52c5b213382175f2d8f6a976e6ea23111c9e465ed79d",
+    "tests/world_session_native.cpp": "f82c0e1c65b482d9f4dd5d27c734b81a28de29332e0fbe2cf0fd7b3816a739be"
+  },
+  "raw_report_sha256": {
+    "build/motion-history-desktop-final/607b5d687e72419a938004392229bdb4/evidence.json": "544689e4aba3ba67917058e2f65be3f64099ecf4600e3d994b8496d19ca5eb67",
+    "build/motion-history-gpu/86fb0050ff4443fca20a5394d91c7481/evidence.json": "4dc28cf52e66271c262e951c4fb13e08ff57b3ceb4d27c03817a51c63629c911",
+    "build/motion-history-gpu/86fb0050ff4443fca20a5394d91c7481/gpu0/rpc/8824cdac10fd4b40878a2b18349ca3c4/evidence.json": "575c1c94ceb497f9d79c07066443c7d766a8bb9e98a5e5fa5d3fd386d80f0a5a",
+    "build/motion-history-gpu/86fb0050ff4443fca20a5394d91c7481/gpu1/rpc/cc59a7cea9014a658f070113bf0fa17f/evidence.json": "8a00768bbe4c9330558a4f160b7c62341d480937b337f07aa3184890db3c42b2",
+    "build/motion-history-integration-final/run-20261007T073948Z-408458eb6954487a87af5df5807d1953/evidence.json": "e14a668b92b742adcc5f7901181acb1ec9a735a939660ec6aec8f93268770891",
+    "build/motion-history-legacy-layout/gpu0-samples1/d77d50a3021d4e7cbb9897f21e813e9d/evidence.json": "f988a6c30ac2fe4d5325aec6911f5cbd8b8dfd773914f8dde49e1649bc6fdc4d",
+    "build/motion-history-legacy-layout/gpu0-samples4/c0323bc715d947f19a19407e48543a29/evidence.json": "485a9e933cad21020a8a47462ac4f378b5b0cc7d8631b861cc1b5e9e1366d5fc",
+    "build/motion-history-legacy-layout/gpu1-samples1/91128fbd8f4b4bf29690020fe31e26d3/evidence.json": "3945125f3580d785607559ad389b762e7839d427bbb42dc2483e7cf0beb12f23",
+    "build/motion-history-legacy-layout/gpu1-samples4/e4a33e280ddc4529a7bd4fc80c681266/evidence.json": "d409b7f13171e6ed0cb6264e6410e9827d2bede5c25ac5f45fbe97fbc6f2b5e9",
+    "build/motion-history-linux-recheck/evidence.json": "51952bb5f4e8c37c2ae4e9529cdad78fa8cb4b97c10285482b022886fea18df1",
+    "build/motion-history-regressions/evidence.json": "73b27f06e67e0582ad29aa8ae1ed8e27074a0246082b52bb30dca8b4918ebf5d",
+    "build/motion-history-render-regressions/aggregate.json": "b955ec810519891b2578b290197e971a9e6174ac876d2a07d550a18721ba6d5a",
+    "build/motion-history-render-regressions/clustered_lighting_capture-gpu0/77df420e36d3487f850f84af257a0df6/evidence.json": "7109f5fcc71bcdc7daa41d39538a8e7bbffeaf54dd44aa4386355c46556a8c75",
+    "build/motion-history-render-regressions/clustered_lighting_capture-gpu1/16ddb1ee22ec44079218789636e6a6a6/evidence.json": "16f0fd39a593e52dd439220171946dfcfd42b2004dabb32d9eaf3920fa23f636",
+    "build/motion-history-render-regressions/culling_capture-gpu0/gpu-0.json": "b1aee871d616299b98578861aae185184f7af2183dc018212e32764e9521cca3",
+    "build/motion-history-render-regressions/culling_capture-gpu1/gpu-1.json": "d52c652abddb16e149502f3351c7c028cc9b29a9d363c6c0c66f8c21040e1cc2",
+    "build/motion-history-render-regressions/gpu_skinning_capture-gpu0/549173402e9e4511b8fb2d0e979de312/evidence.json": "c968c4708eb94115fb194f06f87713846f056c9ed832bc9f5afd4e8e68815869",
+    "build/motion-history-render-regressions/gpu_skinning_capture-gpu1/5ff5d817658e41d5939a85cbf1d0d647/evidence.json": "10a796e1b31c2c57a7bdecd27058a1901316f0a18c0a251a274441d713ef1668",
+    "build/motion-history-render-regressions/hdr_composition_capture-gpu0/48adb8d82db94cb787b303b4a7a98c72/evidence.json": "1b993f7883c81391723a76f4436d1ae4789e5247e2e5befbcc0e47bb7d6847c7",
+    "build/motion-history-render-regressions/hdr_composition_capture-gpu1/de897756fec14c2ca01f76d123bd3fbd/evidence.json": "2df5b6ca8dc903ff48107eb68726b5e7c1e1c142f36c67c870b971de42586cc4",
+    "build/motion-history-render-regressions/profiler_capture-gpu0/975fc13c1f0441e68accb0df586582ff/evidence.json": "1d51ed5abc18b4b5073b8191421bce872012f829139a3bc229bdb4bcf1570fae",
+    "build/motion-history-render-regressions/profiler_capture-gpu1/627b00cce8304157ab906d8ed6cbb27f/evidence.json": "aecbb2a704a479b20f9b4f1877bde3d4fd9a3128f12f590031d1cd088a37958a",
+    "build/motion-history-schedule-windows/evidence.json": "98b0a5afdd869b81d2d8de66050822114feb47abfc7da5d2ff3d090f246694dc"
+  }
+}

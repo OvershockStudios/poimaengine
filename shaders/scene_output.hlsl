@@ -4,6 +4,8 @@ Texture2D<float4> scene_radiance : register(t0);
 #if POIMA_SCENE_PRODUCTS
 Texture2D<float> scene_depth : register(t1);
 Texture2D<float4> scene_normal : register(t2);
+Texture2D<float2> scene_motion : register(t3);
+Texture2D<float> scene_motion_valid : register(t4);
 #endif
 struct OutputConstants {
     float exposure;
@@ -11,7 +13,9 @@ struct OutputConstants {
     float debug_view;
     float near_plane;
     float far_plane;
-    float3 reserved;
+    float viewport_width;
+    float viewport_height;
+    float reserved;
 };
 [[vk::push_constant]] ConstantBuffer<OutputConstants> output;
 float4 vertex_main(uint vertex : SV_VertexID) : SV_Position {
@@ -36,7 +40,13 @@ float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
                 // Positive view distance divided by far; preserves the existing
                 // [0,1] projection depth and avoids subtracting nearly equal far values.
                 display=saturate(output.near_plane/(output.far_plane*(1-depth)+output.near_plane*depth));
-            } else display=saturate(normal.xyz*.5+.5);
+            } else if(output.debug_view<2.5)display=saturate(normal.xyz*.5+.5);
+            else if(scene_motion_valid.Load(texel)>.5) {
+                if(output.debug_view<3.5) {
+                    const float2 pixels=scene_motion.Load(texel)*float2(output.viewport_width,output.viewport_height);
+                    display=float3(saturate(.5+pixels/64),0);
+                } else display=1;
+            }
         }
         // Diagnostic values already denote desired display RGB, not radiance.
         return float4(output.attachment_srgb>.5 ? srgb_to_linear(display) : display,1);

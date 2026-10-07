@@ -196,6 +196,7 @@ public:
     Runtime(const Runtime&)=delete;
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
+    const std::string& presentation_source_id() const;
     // Atomic paused-boundary prototype. Removal currently accepts spawned root
     // props only. No RPC/C# exposure until coordinated tick/save support lands.
     RuntimeStructureResult change_structure(std::uint64_t expected_revision,

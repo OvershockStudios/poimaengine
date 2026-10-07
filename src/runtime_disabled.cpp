@@ -6,6 +6,7 @@ struct Runtime::Impl {};
 bool Runtime::available() { return false; }
 Runtime::Runtime(const RuntimeDefinition&) { throw std::runtime_error("Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON."); }
 Runtime::~Runtime()=default;
+const std::string& Runtime::presentation_source_id() const { throw std::runtime_error("Simulation is not built."); }
 const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t,const std::vector<RuntimeSpawnRequest>&,const std::vector<std::string>&) { throw std::runtime_error("Simulation is not built."); }
 std::uint64_t Runtime::structure_revision() const { throw std::runtime_error("Simulation is not built."); }

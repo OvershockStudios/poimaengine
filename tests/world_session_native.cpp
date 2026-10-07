@@ -98,6 +98,9 @@ void authored_preview_regression(const fs::path& directory) {
     const double q=std::sqrt(.5);
     const auto preview=session.authored_preview(camera,parent,{3,4,5},{0,q,0,q},{2,3,4});
     check(preview.revision==before.revision&&preview.world_id==before.world_id,"Preview changed authored source identity.");
+    check(!before.presentation_source_id.empty() && preview.presentation_source_id==before.presentation_source_id && preview.presentation_generation==before.presentation_generation,
+        "Gizmo preview changed presentation lineage.");
+    check(object(preview,child).incarnation==object(before,child).incarnation && object(before,child).incarnation!=0,"Gizmo preview replaced render incarnation.");
     const auto& moved=object(preview,child).world;close(moved[12],15);close(moved[13],10);close(moved[14],3);
     check(preview.lighting.lights.size()==1,"Preview lost authored light.");
     const auto& lamp=preview.lighting.lights.front();close(lamp.position[0],3);close(lamp.position[1],7);close(lamp.position[2],5);
@@ -253,7 +256,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==42,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==43,"Read-only discovery schema revision differs.");
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
                 const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",9},{"method",method},{"params",{{"source","missing"},{"path","forbidden.poima-input.json"}}}}.dump(),scope));

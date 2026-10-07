@@ -1,3 +1,4 @@
+#include <limits>
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/world.hpp"
 #include "poima/animation.hpp"
@@ -366,7 +367,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 42}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 43}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -378,7 +379,7 @@ Json describe() {
                 {"width", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 960}}},
                 {"height", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 540}}},
                 {"gpu", {{"type", "integer"}, {"minimum", 0}, {"maximum", 4095}}},
-                {"scene_debug_view",{{"enum",{"color","depth","shading_normal"}},{"default","color"},{"description","Depth and shading_normal require samples=1; sky has no surface product."}}},{"samples", {{"enum", {1, 4}}, {"default", 4}}},{"culling",{{"type","boolean"},{"default",true}}},{"clustered_lighting",{{"type","boolean"},{"default",true}}},{"frames_in_flight",{{"type","integer"},{"minimum",1},{"maximum",2},{"default",2}}},{"profile",{{"type","boolean"},{"default",false}}}}, {"revision", "camera", "path"})},
+                {"scene_product_probes",{{"type","array"},{"maxItems",64},{"items",object_schema({{"x",{{"type","integer"},{"minimum",0},{"maximum",4095}}},{"y",{{"type","integer"},{"minimum",0},{"maximum",4095}}}},{"x","y"})}}},{"scene_debug_view",{{"enum",{"color","depth","shading_normal","motion","motion_validity"}},{"default","color"},{"description","Non-color views require samples=1; sky has no surface product."}}},{"samples", {{"enum", {1, 4}}, {"default", 4}}},{"culling",{{"type","boolean"},{"default",true}}},{"clustered_lighting",{{"type","boolean"},{"default",true}}},{"frames_in_flight",{{"type","integer"},{"minimum",1},{"maximum",2},{"default",2}}},{"profile",{{"type","boolean"},{"default",false}}}}, {"revision", "camera", "path"})},
             {"entity.query", object_schema({{"revision", rev}, {"parent", parent}, {"after", id}, {"component", component_type},
                 {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 256}, {"default", 64}}}})},
             {"world.transact", object_schema({{"request_id", id}, {"base_revision", rev},
@@ -475,7 +476,7 @@ Json describe() {
     auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
     segment["properties"]["motions"]=motions;segment["properties"]["sounds"]=sounds;
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
-    for(const auto* key:{"path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile"}) play["properties"][key]=capture["properties"][key];
+    for(const auto* key:{"path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
     play["properties"]["input_profile"]=input_path;
     play["properties"]["input_revision"]=rev;
@@ -486,7 +487,7 @@ Json describe() {
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play clustered_lighting defaults true. False evaluates the full light table as a reference. Cluster overflow falls back to all lights; directional and range-zero lights are never distance-culled. Assignment diagnostics distinguish requested mode, active mode and measured GPU statistics.");
-    result["invariants"].push_back("Capture/play scene_debug_view is color, depth or shading_normal. Non-color views require samples=1, bypass exposure/output tone mapping, and show sky/background as black. Single-sample scene products contain device depth and final world-space shading normals with surface validity. Motion/history is not yet provided.");
+    result["invariants"].push_back("Capture/play scene_debug_view is color, depth, shading_normal, motion or motion_validity. Non-color views require samples=1 and bypass exposure/output tone mapping. Single-sample scene products contain device depth, final world-space shading normals and previous-minus-current UV motion with explicit validity. Up to 64 scene_product_probes return raw captured values; probes require samples=1 and a capture path. History advances on accepted per-view submission, independently of simulation tick; missing continuity, cuts and replaced objects invalidate correspondence.");
     result["invariants"].push_back("Capture/play frames_in_flight is 1 or 2, default 2. One selects serialized completion; two bounds outstanding graphics submissions. Frame execution diagnostics distinguish submission, completion and explicit waits; neither completion nor presentation-fence retirement proves monitor scanout.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs. Primitive origin-inside hits have no surface normal; mesh hits retain triangle winding normals.");
@@ -898,6 +899,43 @@ class World {
 
     mutable ModelCache model_cache_;
     mutable std::optional<SceneSnapshot> authored_cache_;
+    const std::string presentation_source_id_=new_presentation_source_id();
+    std::uint64_t presentation_generation_=0,presentation_incarnation_cursor_=0;
+    using PresentationShapes=std::map<std::string,std::pair<Json,std::uint64_t>>;
+    PresentationShapes presentation_shapes_;
+    PresentationShapes next_presentation_shapes(const Json& document,std::uint64_t& cursor) const {
+        // Binding identity excludes motion, material parameters and clip state.
+        std::map<std::string,Json> rig_nodes;
+        for(const auto& [id,entity]:document.at("entities").items()) {
+            const auto& c=entity.at("components");
+            if(c.contains("RigNode"))rig_nodes[c.at("RigNode").at("rig").get<std::string>()][id]=c.at("RigNode").at("node");
+        }
+        PresentationShapes result;
+        for(const auto& [id,entity]:document.at("entities").items()) {
+            const auto& c=entity.at("components");Json binding;
+            for(const char* kind:{"MeshRenderer","StaticMesh","SkinnedMesh"})if(c.contains(kind)) {
+                auto shape=c.at(kind);if(std::string_view(kind)=="MeshRenderer")shape.erase("albedo");
+                binding={{"kind",kind},{"shape",std::move(shape)}};
+                if(std::string_view(kind)=="SkinnedMesh") {
+                    const auto rig=c.at(kind).at("rig").get<std::string>();
+                    binding["rig_nodes"]=rig_nodes[rig];
+                    binding["rig_asset"]=document.at("entities").at(rig).at("components").at("AnimationRig").at("asset");
+                }
+            }
+            if(binding.is_null())continue;
+            const auto previous=presentation_shapes_.find(id);
+            std::uint64_t incarnation=0;
+            if(previous!=presentation_shapes_.end() && previous->second.first==binding)incarnation=previous->second.second;
+            else { require(cursor<std::numeric_limits<std::uint64_t>::max(),"Presentation incarnation exhausted.");incarnation=++cursor; }
+            result.emplace(id,std::make_pair(std::move(binding),incarnation));
+        }
+        return result;
+    }
+    void stamp_authored(SceneSnapshot& snapshot) const {
+        snapshot.presentation_source_id=presentation_source_id_;snapshot.presentation_generation=presentation_generation_;
+        for(auto& object:snapshot.objects)object.incarnation=presentation_shapes_.at(object.entity_id).second;
+    }
+
     struct Edit { Json before,after;std::size_t bytes;std::string request_id; };
     using History=std::vector<std::shared_ptr<const Edit>>;
     History undo_,redo_;
@@ -930,6 +968,8 @@ class World {
     }
     void persist(Json&& candidate) {
         require(!read_only_,"This packaged world is read-only.",-32081);
+        auto presentation_cursor=presentation_incarnation_cursor_;
+        auto presentation_shapes=next_presentation_shapes(candidate,presentation_cursor);
         auto bytes = candidate.dump(2) + '\n';
         require(bytes.size() <= max_document_bytes, "World document would exceed 16 MiB.");
         require(fs::exists(path_) == exists_ && (!exists_ || read(path_) == disk_),
@@ -946,6 +986,7 @@ class World {
         // All potentially failing preparation precedes publication. Swapping
         // state after rename cannot accidentally roll back a committed request.
         doc_.swap(candidate);
+        presentation_shapes_.swap(presentation_shapes);presentation_incarnation_cursor_=presentation_cursor;
         disk_.swap(bytes);
         exists_ = true;
     }
@@ -968,6 +1009,7 @@ public:
         if (exists_) { disk_ = read(path_); doc_ = parse(disk_); validate(doc_);validate_animation_document(doc_); }
         else doc_ = {{"format", "poima.authored-world"}, {"version", 1}, {"world_id", new_id()},
                      {"revision", 0}, {"entities", Json::object()}, {"retired_ids", Json::array()}, {"receipts", Json::array()}};
+        presentation_shapes_=next_presentation_shapes(doc_,presentation_incarnation_cursor_);
     }
     FrozenContent freeze_content(const Json& source) const {
         WorldPackageContent result;result.revision=revision(source.at("revision"));
@@ -1024,7 +1066,7 @@ public:
     }
     WorldRuntimeStatus runtime_status() const {
         WorldRuntimeStatus status;status.available=Runtime::available();status.active=bool(runtime_);
-        if(runtime_) { status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision();status.control_sequence=runtime_->control_sequence(); }
+        if(runtime_) { status.presentation_source_id=runtime_->presentation_source_id();status.session_id=runtime_id_;status.tick=runtime_->inspect().tick;status.authored_revision=runtime_definition_.authored_revision;status.structure_revision=runtime_->structure_revision();status.ui_revision=runtime_->ui_model().revision();status.control_sequence=runtime_->control_sequence(); }
         return status;
     }
     WorldTickAdvance advance_tick(const std::string& expected_session,std::uint64_t expected_tick,
@@ -1100,6 +1142,7 @@ public:
             }
             if(!preview)authored_cache_=result;
         }
+        if(!live)stamp_authored(result);
         result.camera_id="editor";result.camera_world=camera.world;result.vertical_fov=camera.vertical_fov;result.near_plane=camera.near_plane;result.far_plane=camera.far_plane;
         return result;
     }
@@ -1270,8 +1313,15 @@ public:
         auto timing=[](const TimingSummary& t) { return Json{{"samples",t.samples},{"mean_ms",t.samples ? Json(t.total_ms/static_cast<double>(t.samples)) : Json(nullptr)},
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
         const auto& c=d.last_draws;const auto& l=d.light_assignment;const auto& f=d.frame_execution;
+        Json probes=Json::array();
+        for(const auto& p:d.scene_products.probes)probes.push_back({{"x",p.x},{"y",p.y},{"depth",p.depth},
+            {"shading_normal",p.shading_normal},{"motion",p.motion},{"surface_valid",p.surface_valid},{"motion_valid",p.motion_valid}});
         return {{"scene_products",{{"available",d.scene_products.available},{"view",scene_debug_view_name(d.scene_products.view)},
-                {"normal_buffer_bytes",d.scene_products.normal_buffer_bytes},{"normal_format","RGBA16_FLOAT"},
+                {"normal_buffer_bytes",d.scene_products.normal_buffer_bytes},{"motion_available",d.scene_products.motion_available},
+                {"motion_buffer_bytes",d.scene_products.motion_buffer_bytes},{"history_valid",d.scene_products.history_valid},
+                {"history_sequence",d.scene_products.history_sequence},{"history_reset_reason",d.scene_products.history_reset_reason},
+                {"probes",probes},{"motion_convention","previous UV minus current UV; top-left scene viewport; no jitter"},
+                {"motion_visualization","valid: R/G = 0.5 + motion in pixels / 64, B = 0; invalid: black"},{"normal_format","RGBA16_FLOAT"},
                 {"normal_space","world"},{"normal_alpha","surface validity"},{"depth_convention","device depth [0,1], near 0, far/clear 1"},
                 {"depth_visualization","positive view distance divided by far; invalid surface black"}}},
             {"culling",d.culling},{"profile_requested",d.profile_requested},{"completed_submissions",d.completed_submissions},
@@ -1689,13 +1739,26 @@ public:
         options.frames_in_flight = integer("frames_in_flight", 2, 1, 2);
         if(params.contains("scene_debug_view")) {
             const auto& view=params.at("scene_debug_view");
-            require(view.is_string(),"scene_debug_view must be color, depth or shading_normal.");
+            require(view.is_string(),"scene_debug_view must be color, depth, shading_normal, motion or motion_validity.");
             if(view=="color")options.scene_debug_view=SceneDebugView::color;
             else if(view=="depth")options.scene_debug_view=SceneDebugView::depth;
             else if(view=="shading_normal")options.scene_debug_view=SceneDebugView::shading_normal;
-            else throw Error(-32602,"scene_debug_view must be color, depth or shading_normal.");
+            else if(view=="motion")options.scene_debug_view=SceneDebugView::motion;
+            else if(view=="motion_validity")options.scene_debug_view=SceneDebugView::motion_validity;
+            else throw Error(-32602,"scene_debug_view must be color, depth, shading_normal, motion or motion_validity.");
         }
         require(options.scene_debug_view==SceneDebugView::color || options.samples==1,"Non-color scene_debug_view requires samples=1.");
+        if(params.contains("scene_product_probes")) {
+            const auto& probes=params.at("scene_product_probes");
+            require(probes.is_array() && probes.size()<=64,"scene_product_probes must be an array of at most 64 pixel coordinates.");
+            for(const auto& probe:probes) {
+                fields(probe,{"x","y"},{"x","y"});
+                const auto x=revision(probe.at("x")),y=revision(probe.at("y"));
+                require(x<options.width && y<options.height,"Scene product probe lies outside the requested capture extent.");
+                options.scene_product_probes.push_back({static_cast<std::uint32_t>(x),static_cast<std::uint32_t>(y)});
+            }
+        }
+        require(options.scene_product_probes.empty() || (options.samples==1 && !options.capture.empty()),"Scene product probes require samples=1 and a capture path.");
         require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
         for(const auto* key:{"culling","clustered_lighting","profile"})if(params.contains(key))require(params.at(key).is_boolean(),"Culling/clustered_lighting/profile options must be boolean.");
         options.culling=params.value("culling",true);options.clustered_lighting=params.value("clustered_lighting",true);options.profile=params.value("profile",false);
@@ -1703,13 +1766,13 @@ public:
     }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         if(live) {
-            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
-            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));
@@ -1790,6 +1853,10 @@ public:
             }
         } catch(const Error&) { throw; }
         catch (const std::runtime_error& error) { throw Error(-32602, error.what()); }
+        if(!live) {
+            if(asset_preview) { snapshot.presentation_source_id=new_presentation_source_id();for(auto& object:snapshot.objects)object.incarnation=1; }
+            else stamp_authored(snapshot);
+        }
         const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
         const auto report = run_render_scene(options, snapshot);
         require(report.available, report.detail, -32003);
@@ -2133,7 +2200,7 @@ public:
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
             {"session_id","request_id","expected_tick","camera","mode"});
         identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";
@@ -2616,7 +2683,8 @@ public:
         auto next_undo=undo_,next_redo=redo_;
         if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
         else { next_undo.push_back(next_redo.back());next_redo.pop_back(); }
-        persist(std::move(staged));undo_.swap(next_undo);redo_.swap(next_redo);return result;
+        require(presentation_generation_<std::numeric_limits<std::uint64_t>::max(),"Presentation generation exhausted.");
+        persist(std::move(staged));++presentation_generation_;undo_.swap(next_undo);redo_.swap(next_redo);return result;
     }
     Json transact(Json params,const std::string& origin="world.transact") {
         fields(params, {"request_id", "base_revision", "ops", "preview"}, {"request_id", "base_revision", "ops"});
