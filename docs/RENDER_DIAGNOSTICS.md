@@ -6,19 +6,20 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 
 ## Request controls
 
-`world.describe` schema revision 40 exposes these optional Boolean parameters on `world.capture`, `runtime.capture` and `runtime.play`:
+`world.describe` schema revision 41 exposes these optional parameters on `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`:
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
 | `culling` | true | Reject object bounds entirely outside each render view. False submits every renderable to every view for comparison. |
 | `clustered_lighting` | true | Conservatively assign finite lights to view-space cells. False evaluates the complete light table as a reference. |
+| `frames_in_flight` | 2 | Integer from 1 to 2. Two bounds queued submissions; one provides a serialized reference. |
 | `profile` | false | Collect CPU intervals and, when supported, graphics-queue GPU timestamps. False records no timing samples or query commands. Draw counters remain available. |
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"world.capture","params":{"revision":1,"camera":"00000000000000000000000000000001","path":"build/profile.bmp","culling":true,"profile":true}}
 ```
 
-These controls are observation/player options, not persistent world components. Existing revision/session/tick guards and capture destination rules still apply. Non-Boolean values fail with `-32602`. Play retry receipts retain the original diagnostics; an identical retry does not rerun the player or resample timings.
+These controls are observation/player options, not persistent world components. Existing revision/session/tick guards and capture destination rules still apply. Wrong types and values outside the declared bounds fail with `-32602`. Play retry receipts retain the original diagnostics; an identical retry does not rerun the player or resample timings.
 
 ## Visibility decisions
 
@@ -33,10 +34,11 @@ This is object-level frustum culling, not occlusion culling. Bounds can produce 
 Successful capture and all returned player reports include `render_diagnostics`:
 
 - `culling`, `profile_requested`: selected options.
-- `completed_submissions`: command submissions completed through the renderer's existing GPU wait. An out-of-date presentation may still have completed GPU work, so this is distinct from presented frames.
+- `completed_submissions`: command submissions whose graphics completion and diagnostic readbacks have retired. An out-of-date presentation may still have completed GPU work, so this is distinct from presented frames.
+- `frame_execution`: configured limit, submitted/outstanding/peak counts, slot/drain/device-idle wait counts and the presentation retirement policy.
 - `last_draws`: counts for the last completed submission, not lifetime totals.
 - `light_assignment`: selected path, grid and buffer bounds, and actual GPU candidate counts when available. Unsampled candidate statistics are null.
-- `cpu`: timing summaries for scene preparation, command recording and the render call.
+- `cpu`: timing summaries for scene preparation, command recording, the render call and blocking completion waits.
 - `gpu`: timestamp availability, valid bits, nanoseconds per tick, dropped samples, interpretation detail, and pass summaries.
 
 `last_draws` fields:
@@ -61,9 +63,11 @@ CPU measurements use the native monotonic clock:
 
 - `prepare`: building draw data, bounds/visibility and any initial or newly required geometry/texture upload waits. Captures prepare once; a player prepares at initialization, during play and for final capture.
 - `record`: command recording and closing, excluding submission/presentation/wait and preceding scene preparation.
-- `render_call`: acquire, recording, submit/present and the existing serialized GPU wait. It excludes simulation, snapshot extraction before `update_scene`, event handling and image file encoding. It is not an end-to-end game frame time.
+- `render_call`: slot reuse, acquire, recording, submit/present and any required completion wait. It excludes simulation, snapshot extraction before `update_scene`, event handling and image file encoding. It is not an end-to-end game frame time.
 
-GPU measurements use six 64-bit Vulkan timestamps on the same graphics queue. Availability is checked using the device period and selected queue's valid bits. Durations use the valid-bit mask; a CPU interval long enough to make wrap ambiguity possible is discarded. Readback occurs after the existing GPU wait without a new busy-wait. Unsupported queues report unavailable timing while rendering and CPU profiling remain usable. `samples_dropped` reports unavailable/ambiguous completed samples rather than reusing prior values.
+- `completion_wait`: actual blocking waits for an occupied slot or an explicit graphics drain. Already completed submissions add no wait sample.
+
+GPU measurements use six 64-bit Vulkan timestamps on the same graphics queue. Availability is checked using the device period and selected queue's valid bits. Durations use the valid-bit mask; a CPU interval long enough to make wrap ambiguity possible is discarded. Each slot owns its query/readback storage. Readback occurs after that submission completes; ordinary retirement polls, while slot reuse and explicit drains may wait. Unsupported queues report unavailable timing while rendering and CPU profiling remain usable. `samples_dropped` reports unavailable/ambiguous completed samples rather than reusing prior values.
 
 GPU intervals:
 
@@ -76,11 +80,27 @@ GPU intervals:
 | `post` | Linear MSAA resolve, scene output mapping, UI/overlays, optional image readback copy, and transition for presentation. Capture frames include a copy that ordinary player frames lack. |
 | `total` | The complete timestamp span, excluding swapchain acquire, presentation completion, CPU simulation and file writing. |
 
-The start stamp uses top-of-pipe and later boundaries use bottom-of-pipe. These are approximate intervals on an overlapping GPU pipeline, not isolated shader costs. Timestamps themselves add synchronization/measurement overhead. Neither totals nor their reciprocals establish playable FPS. A two-frame capture includes cold/warm effects and the final readback; use controlled longer workloads for performance comparisons. Current rendering still serializes frames and has no production frame-pacing qualification.
+The start stamp uses top-of-pipe and later boundaries use bottom-of-pipe. These are approximate intervals on an overlapping GPU pipeline, not isolated shader costs. Timestamps themselves add synchronization/measurement overhead. Neither totals nor their reciprocals establish playable FPS. A two-frame capture includes cold/warm effects and the final readback; use controlled longer workloads for performance comparisons. The CPU can retain two submissions, but a cross-submission dependency still orders shared GPU scratch. This does not establish concurrent GPU frame execution or production frame pacing.
 
 The pinned NVRHI timer implementation reads 32-bit results. Poima uses its supported native-command-buffer access for these 64-bit query operations without changing NVRHI source or graphics binding state.
 
+## Submission and presentation lifetime
+
+Completed counters and readbacks belong to their original submission. A hosted viewport report polls completion; a capture or final standalone/player report drains pending graphics work. Submitted work is not necessarily presented or scanned out.
+
+Acquire semaphores, completion tracking, timestamps and diagnostic readbacks belong to bounded frame slots. Present-finished semaphores belong to swapchain images. Where supported and enabled, maintenance1 present fences guard presentation teardown. Other devices use bounded idle compatibility cleanup during resize/shutdown; the reported policy explicitly does not claim formal presentation-completion proof. No retired swapchain generations accumulate.
+
+Normal warmed frames avoid device-wide idle waits. Existing geometry, texture and font uploads can still wait, as can lifecycle cleanup. `device_idle_waits` includes those calls; two slots alone do not eliminate streaming stalls or guarantee higher frame rates.
+
 ## Evidence and reproduction
+
+The [frame-retirement evidence](evidence/m2-frame-retirement.json) records one/two-slot parity, stable-resource idle counts, changing-frame attribution and strict Vulkan validation on both laptop GPUs. Reproduce the native owned-window fixture after building `poima-frame-execution-test`:
+
+```sh
+python3 tests/frame_execution_capture.py build/windows-runtime/poima-frame-execution-test.exe --windows-interop --output build/frame-execution --gpu 0
+```
+
+This command does not install or enable the Khronos layer automatically. Qualification enabled it explicitly, including synchronization validation. The fixture checks 49 changing submissions per mode through original-frame profiler attribution, alongside resize, hide/show, recreation and readback parity. Its short interleaved-view timing distributions are observations, not a sustained game benchmark.
 
 ```sh
 python3 tests/culling_capture.py build/windows-runtime/poima.exe --windows-interop --output build/culling-capture --gpu 0

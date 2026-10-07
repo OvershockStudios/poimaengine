@@ -104,7 +104,7 @@ def main():
         observed = [e for e in events if e['source'] == expected_source]
         names = {e['name'] for e in observed}
         assert {'renderer.prepare', 'render.frame', 'render.acquire', 'render.record',
-                'render.submit', 'render.present', 'render.wait',
+                'render.submit', 'render.present', 'render.retire',
                 'renderer.capture_readback_write', 'renderer.camera_draws',
                 'renderer.camera_triangles', 'renderer.texture_payload_bytes'} <= names, names
         gpu = [e for e in observed if e['kind'] == 'gpu']

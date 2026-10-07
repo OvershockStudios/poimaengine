@@ -4,7 +4,7 @@ Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure 
 
 ## Components and units
 
-Use `component.set` on an existing entity. `world.describe` schema revision 40 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
+Use `component.set` on an existing entity. `world.describe` schema revision 41 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
 
 ```json
 {"op":"component.set","id":"00000000000000000000000000000002","type":"Light","value":{"kind":"spot","color":[1,0.65,0.3],"intensity":100,"enabled":true,"range":12,"inner_angle":15,"outer_angle":40}}
@@ -99,7 +99,7 @@ A cluster exceeding 64 candidates uses the full light loop instead of truncating
 | `light_count`, `global_lights` | Enabled GPU lights and those with unbounded influence. |
 | `statistics_available` | Whether actual assignment results were read back. |
 | `candidate_references`, `overflow_clusters`, `max_candidates` | Actual assignment counts; `null` when statistics are unavailable. These are not fragment counts or measured shading operations. |
-| `buffer_bytes` | Light and cluster buffer payload: currently 994,304 bytes, excluding driver overhead and the rest of the renderer. |
+| `buffer_bytes` | Configured steady-state light and cluster buffer bound, including one diagnostic readback per frame slot: 994,304 bytes with one slot or 1,008,128 with two. Lazy allocation may use less before warmup; excludes driver overhead and the rest of the renderer. |
 
 An overflow count is diagnostic, not a dropped-light count. A zero assignment count without checking `statistics_available` is not evidence of zero lighting work. GPU profiling exposes a separate light-assignment interval when timestamps are available.
 

@@ -4,8 +4,13 @@
 #include <exception>
 #include <limits>
 #include <stdexcept>
+#include <thread>
 
 namespace poima::profiling {
+struct DeferredRecording {
+    Recorder* owner;
+    std::thread::id thread;
+};
 namespace {
 struct Context {
     Recorder* recorder=nullptr;
@@ -19,12 +24,17 @@ void increment(std::uint64_t& value) noexcept {
     if(value!=std::numeric_limits<std::uint64_t>::max())++value;
 }
 }
+Recorder::~Recorder() noexcept {
+    if(deferred_recording_)deferred_recording_->owner=nullptr;
+}
 void Recorder::start(std::uint32_t capacity) {
     if(recording_ || open_)throw std::logic_error("Stop profiling and close scopes before starting another capture.");
     if(capacity<64 || capacity>65536)throw std::invalid_argument("Profiler capacity must be 64..65536 records.");
     auto storage=std::make_unique<Event[]>(capacity);
+    auto deferred=std::make_shared<DeferredRecording>(DeferredRecording{this,std::this_thread::get_id()});
     const auto epoch=std::chrono::steady_clock::now();
-    events_=std::move(storage);epoch_=epoch;capacity_=capacity;count_=open_=0;
+    if(deferred_recording_)deferred_recording_->owner=nullptr;
+    events_=std::move(storage);deferred_recording_=std::move(deferred);epoch_=epoch;capacity_=capacity;count_=open_=0;
     dropped_=elapsed_=0;clock_saturated_=false;full_=false;recording_=true;
 }
 std::uint64_t Recorder::now() const noexcept {
@@ -98,6 +108,33 @@ void counter(std::string_view name,std::uint64_t value,Kind kind) noexcept {
     if(!recorder || !recorder->recording_)return;
     if(kind!=Kind::counter && kind!=Kind::gpu) { increment(recorder->dropped_);return; }
     if(auto* event=recorder->reserve(name,kind,-1)) { event->value=value;event->complete=true; }
+}
+DeferredContext capture_deferred() noexcept {
+    DeferredContext ticket;
+    auto* recorder=context.recorder;
+    if(!recorder || !recorder->recording_)return ticket;
+    ticket.recording_=recorder->deferred_recording_;
+    ticket.start_ns_=recorder->now();ticket.tick_=context.tick;
+    ticket.source_=context.source;ticket.session_=context.session;
+    return ticket;
+}
+bool deferred_counter(const DeferredContext& ticket,std::string_view name,std::uint64_t value,Kind kind) noexcept {
+    const auto recording=ticket.recording_.lock();
+    // Cross-thread callers must not touch owner memory. A transient lock on
+    // another thread can keep the token alive after restart/destruction, so
+    // the owner thread also detaches the old token before releasing it.
+    if(!recording || recording->thread!=std::this_thread::get_id())return false;
+    auto* recorder=recording->owner;
+    if(!recorder)return false;
+    if(recorder->deferred_recording_.get()!=recording.get() || !recorder->recording_)return false;
+    if(kind!=Kind::counter && kind!=Kind::gpu) { increment(recorder->dropped_);return false; }
+    if(auto* event=recorder->reserve(name,kind,ticket.tick_)) {
+        event->parent=0;event->start_ns=ticket.start_ns_;event->tick=ticket.tick_;
+        event->source=ticket.source_;event->session=ticket.session_;
+        event->value=value;event->complete=true;
+        return true;
+    }
+    return false;
 }
 bool active() noexcept {
     return context.recorder && context.recorder->recording_;

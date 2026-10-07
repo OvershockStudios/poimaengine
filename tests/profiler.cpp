@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/profiler.hpp"
 #include <chrono>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
 #include <new>
@@ -11,6 +12,7 @@
 using namespace poima::profiling;
 namespace {
 std::size_t allocations=0;
+std::size_t fail_at_allocation=static_cast<std::size_t>(-1);
 bool fail_allocation=false;
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
 template<class F> void rejects(F action,const char* message) {
@@ -20,7 +22,7 @@ template<class F> void rejects(F action,const char* message) {
 std::string_view name(const Event& event) { return event.name.data(); }
 }
 void* operator new(std::size_t size) {
-    ++allocations;if(fail_allocation)throw std::bad_alloc();
+    ++allocations;if(fail_allocation || allocations==fail_at_allocation)throw std::bad_alloc();
     if(auto* result=std::malloc(size ? size : 1))return result;
     throw std::bad_alloc();
 }
@@ -130,7 +132,79 @@ int main() {
             Binding binding(&first);Scope disabled("disabled outer",99);first.start(64);{ Scope actual("new capture"); }first.stop();
         }
         check(first.events().size()==1 && first.events()[0].parent==0 && first.events()[0].tick==-1,"Capture start inherited disabled scope identity.");
-        std::cout<<"profiler: bounded recording, ownership, allocation, overflow, exceptions and timing passed\n";
+        // Delayed GPU/counter observations retain submission attribution even
+        // under a different current recorder/session/tick/source, without
+        // claiming to be children of an already-completed CPU scope.
+        Recorder submitted,retiring;submitted.start(64);retiring.start(64);
+        DeferredContext ticket;
+        constexpr std::string_view later_session="ffffffffffffffffffffffffffffffff";
+        const auto deferred_allocations=allocations;
+        {
+            Binding binding(&submitted,Source::request);SessionScope identity(session);
+            Scope submission("submission",42);SourceScope source(Source::player);
+            ticket=capture_deferred();
+        }
+        {
+            Binding binding(&retiring,Source::editor_game);SessionScope identity(later_session);
+            Scope retirement("retirement",99);
+            check(deferred_counter(ticket,"gpu.delayed",9876,Kind::gpu),"Valid delayed GPU observation dropped.");
+            check(deferred_counter(ticket,"cluster.delayed",123),"Valid delayed counter dropped.");
+            counter("current context",7);
+        }
+        check(allocations==deferred_allocations,"Deferred capture/emission allocated.");
+        auto submitted_events=submitted.events();
+        check(submitted_events.size()==3 && retiring.events().size()==2,"Deferred events reached the wrong recorder.");
+        const auto& gpu=submitted_events[1];const auto& submission=submitted_events[0];
+        check(gpu.source==Source::player && gpu.tick==42 && std::string_view(gpu.session.data())==session,
+              "Deferred event inherited retirement metadata.");
+        check(gpu.parent==0 && gpu.start_ns>=submission.start_ns && gpu.start_ns<=submission.start_ns+submission.duration_ns,
+              "Deferred event has a false completed parent or collection-time timestamp.");
+        check(gpu.complete && gpu.kind==Kind::gpu && gpu.value==9876 && gpu.duration_ns==0,
+              "Deferred GPU duration became a CPU interval.");
+        check(submitted_events[2].start_ns==gpu.start_ns && submitted_events[2].kind==Kind::counter && submitted_events[2].value==123,
+              "One submission acquired inconsistent deferred attribution.");
+        check(retiring.events()[1].parent==retiring.events()[0].id && retiring.events()[1].tick==99 &&
+              retiring.events()[1].source==Source::editor_game && std::string_view(retiring.events()[1].session.data())==later_session,
+              "Deferred emission changed the current TLS context.");
+        bool cross_thread_accepted=true;
+        { std::thread worker([&] { cross_thread_accepted=deferred_counter(ticket,"wrong thread",1); });worker.join(); }
+        check(!cross_thread_accepted && submitted.events().size()==3,"Cross-thread deferred event reached owner storage.");
+        check(!deferred_counter(ticket,"invalid deferred kind",1,Kind::cpu) && submitted.status().dropped==1,
+              "Invalid deferred kind was accepted or charged elsewhere.");
+        submitted.stop();retiring.stop();
+        const auto sealed_count=submitted.events().size();
+        check(!deferred_counter(ticket,"after stop",1) && submitted.events().size()==sealed_count,"Stopped trace accepted delayed work.");
+        // Fail the second allocation specifically (generation-token creation),
+        // after replacement event storage was allocated successfully.
+        const auto* sealed_storage=submitted.events().data();fail_at_allocation=allocations+2;
+        bool generation_failed=false;try { submitted.start(128); }catch(const std::bad_alloc&) { generation_failed=true; }
+        fail_at_allocation=static_cast<std::size_t>(-1);
+        check(generation_failed && submitted.events().data()==sealed_storage && submitted.events().size()==sealed_count &&
+              !submitted.status().recording,"Failed generation allocation replaced a sealed trace.");
+        submitted.start(64);
+        check(!deferred_counter(ticket,"old generation",1) && submitted.events().empty(),"Old submission leaked into restarted trace.");
+        DeferredContext current;
+        { Binding binding(&submitted);current=capture_deferred(); }
+        check(deferred_counter(current,"outside binding",5),"Valid owner-thread ticket required a current binding.");
+        check(submitted.events()[0].tick==-1 && submitted.events()[0].session[0]=='\0' && submitted.events()[0].parent==0,
+              "Deferred default context inherited an unrelated session.");
+        for(unsigned i=1;i<64;++i)check(deferred_counter(current,"bounded delayed",i),"Deferred capacity shortened.");
+        check(!deferred_counter(current,"overflow delayed",1) && submitted.status().full && submitted.status().dropped==1 &&
+              submitted.events().size()==64 && !submitted.status().recording,"Deferred overflow did not seal the bounded capture.");
+        // Address reuse must not turn a weak recording identity into a stale
+        // raw-pointer reference to a different recorder at the same address.
+        alignas(Recorder) std::array<std::byte,sizeof(Recorder)> reused_storage{};
+        auto* destroyed=new(reused_storage.data()) Recorder;destroyed->start(64);
+        DeferredContext dead;
+        { Binding binding(destroyed);dead=capture_deferred(); }
+        destroyed->~Recorder();
+        check(!deferred_counter(dead,"destroyed",1),"Destroyed recorder ticket remained usable.");
+        auto* replacement=new(reused_storage.data()) Recorder;replacement->start(64);
+        const bool reused=deferred_counter(dead,"reused address",1);
+        const bool replacement_empty=replacement->events().empty();replacement->~Recorder();
+        check(!reused && replacement_empty,"Old deferred identity aliased a replacement recorder.");
+        check(!deferred_counter(DeferredContext{},"empty ticket",1),"Empty ticket recorded an observation.");
+        std::cout<<"profiler: bounded recording, ownership, allocation, overflow, exceptions, timing and deferred attribution passed\n";
         return 0;
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

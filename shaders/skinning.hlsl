@@ -1,24 +1,39 @@
 // SPDX-License-Identifier: Apache-2.0
-// Matches the existing 48-byte vertex ABI; all raster passes consume this output.
+// Preserve the raster vertex ABI using aligned storage vectors. A structured
+// float3 normal at byte 12 would require optional Vulkan scalarBlockLayout.
+struct PackedVertex { float4 position_normal_x;float4 normal_yz_uv;float4 tangent; };
 struct Vertex { float3 position;float3 normal;float2 uv;float4 tangent; };
+Vertex unpack_vertex(PackedVertex packed) {
+    Vertex vertex;
+    vertex.position=packed.position_normal_x.xyz;
+    vertex.normal=float3(packed.position_normal_x.w,packed.normal_yz_uv.xy);
+    vertex.uv=packed.normal_yz_uv.zw;vertex.tangent=packed.tangent;
+    return vertex;
+}
+PackedVertex pack_vertex(Vertex vertex) {
+    PackedVertex packed;
+    packed.position_normal_x=float4(vertex.position,vertex.normal.x);
+    packed.normal_yz_uv=float4(vertex.normal.yz,vertex.uv);packed.tangent=vertex.tangent;
+    return packed;
+}
 struct Influence { uint4 joints;float4 weights; };
 struct Joint { float4 row0;float4 row1;float4 row2; };
 struct Parameters { uint vertices;uint joints;uint object;uint reserved; };
 [[vk::push_constant]] ConstantBuffer<Parameters> parameters;
-StructuredBuffer<Vertex> source_vertices : register(t0);
+StructuredBuffer<PackedVertex> source_vertices : register(t0);
 StructuredBuffer<Influence> influences : register(t1);
 StructuredBuffer<Joint> palette : register(t2);
-RWStructuredBuffer<Vertex> destination : register(u0);
+RWStructuredBuffer<PackedVertex> destination : register(u0);
 RWByteAddressBuffer errors : register(u1);
 void fail(uint index,Vertex source) {
     uint previous;errors.InterlockedCompareExchange(0,0,1,previous);
     if(previous==0) { errors.Store(4,parameters.object);errors.Store(8,index); }
-    destination[index]=source; // Finite diagnostic frame; host rejects publication.
+    destination[index]=pack_vertex(source); // Finite diagnostic frame; host rejects publication.
 }
 [numthreads(64,1,1)]
 void compute_main(uint3 id : SV_DispatchThreadID) {
     const uint index=id.x;if(index>=parameters.vertices)return;
-    Vertex source=source_vertices[index];Influence influence=influences[index];
+    Vertex source=unpack_vertex(source_vertices[index]);Influence influence=influences[index];
     if(any(influence.joints>=parameters.joints)) { fail(index,source);return; }
     float4 a=0,b=0,c=0;
     [unroll] for(uint k=0;k<4;++k) {
@@ -40,5 +55,5 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
         if(!isfinite(length) || length<=1e-24) { fail(index,source);return; }
         result.tangent=float4(tangent*rsqrt(length),source.tangent.w*(determinant<0 ? -1 : 1));
     }
-    destination[index]=result;
+    destination[index]=pack_vertex(result);
 }

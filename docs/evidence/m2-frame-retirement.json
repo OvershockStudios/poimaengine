@@ -1,0 +1,882 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "engine_version": "0.0.39-development",
+  "passed": true,
+  "scope": "Bounded Windows Vulkan frame retirement, deferred profiler attribution and Linux headless regression qualification",
+  "frame_limits": [
+    1,
+    2
+  ],
+  "default_frame_limit": 2,
+  "gpu_results": [
+    {
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_evidence_sha256": "0def5ceaebbd5234915966abb947726546a082512e9868df4774de43dd7e593e",
+      "captures": 16,
+      "exact_comparisons": [
+        {
+          "left": [
+            1,
+            "churn"
+          ],
+          "right": [
+            2,
+            "churn"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "secondary"
+          ],
+          "right": [
+            2,
+            "secondary"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "overflow"
+          ],
+          "right": [
+            2,
+            "overflow"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "varying"
+          ],
+          "right": [
+            2,
+            "varying"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "resized"
+          ],
+          "right": [
+            2,
+            "resized"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "recreated"
+          ],
+          "right": [
+            2,
+            "recreated"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "final"
+          ],
+          "right": [
+            2,
+            "final"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "fresh"
+          ],
+          "right": [
+            2,
+            "fresh"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "secondary"
+          ],
+          "right": [
+            1,
+            "recreated"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "final"
+          ],
+          "right": [
+            1,
+            "fresh"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            2,
+            "secondary"
+          ],
+          "right": [
+            2,
+            "recreated"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            2,
+            "final"
+          ],
+          "right": [
+            2,
+            "fresh"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        }
+      ],
+      "modes": [
+        {
+          "frames_in_flight": 1,
+          "final_submitted": 169,
+          "final_completed": 169,
+          "peak_outstanding": 1,
+          "presentation_fences": false,
+          "presentation_retirement": "bounded idle compatibility cleanup (not a presentation completion proof)",
+          "all_submission_results": {
+            "coverage": "All49 submission counters and deferred overflow results attributed by original submission ordinal; report polling may skip intermediate observations; queue retention is not physical GPU overlap",
+            "device_idle_waits": 0,
+            "maximum_observed_outstanding": 0,
+            "observations": 49,
+            "observed_dense": 24,
+            "observed_three": 25,
+            "skipped_attempts": 0,
+            "submission_phase_peak_outstanding": 1,
+            "submissions": 49,
+            "trace_dropped": 0,
+            "trace_events": 1619,
+            "verified_deferred_results": 49
+          },
+          "warm_observations": {
+            "measurement": "CPU wall duration around each draw call; two devices interleave, message pumping and report polling excluded; not FPS or GPU execution time",
+            "primary": {
+              "device_idle_waits": 0,
+              "drain_waits": 24,
+              "draw_wall": {
+                "maximum_ms": 2.4535,
+                "mean_ms": 1.9569458333333334,
+                "minimum_ms": 1.5176,
+                "p50_ms": 1.9214,
+                "p95_ms": 2.4172,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            },
+            "secondary": {
+              "device_idle_waits": 0,
+              "drain_waits": 24,
+              "draw_wall": {
+                "maximum_ms": 16.1061,
+                "mean_ms": 14.713708333333335,
+                "minimum_ms": 13.6559,
+                "p50_ms": 14.4686,
+                "p95_ms": 16.086,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            }
+          },
+          "capture_hashes": [
+            {
+              "stage": "churn",
+              "sha256": "6914c23f68e0970c10ef54324babd899ed88447053d060f9bf719d69de33d851"
+            },
+            {
+              "stage": "secondary",
+              "sha256": "9cb6139056d7aa482b4b7719498f6829b3f45d0d2073475aa9db5e4994526a43"
+            },
+            {
+              "stage": "overflow",
+              "sha256": "b3f8fe73e594aa705ab604897f9b75389328847bf3213e96753ec99162376eb8"
+            },
+            {
+              "stage": "varying",
+              "sha256": "8e434e13ed43e55d035c8882fdd349a296e416d188660738ac82bd828c4528c5"
+            },
+            {
+              "stage": "resized",
+              "sha256": "1f0153cc46af0de3ddf8cbec0afadfa61a2b9f8fff0c674ec625e2cd9fccb382"
+            },
+            {
+              "stage": "recreated",
+              "sha256": "9cb6139056d7aa482b4b7719498f6829b3f45d0d2073475aa9db5e4994526a43"
+            },
+            {
+              "stage": "final",
+              "sha256": "a761a745355f8a38302dbb93f65596f69ab8875925e3e9f475ceee4cf764b7c4"
+            },
+            {
+              "stage": "fresh",
+              "sha256": "a761a745355f8a38302dbb93f65596f69ab8875925e3e9f475ceee4cf764b7c4"
+            }
+          ]
+        },
+        {
+          "frames_in_flight": 2,
+          "final_submitted": 169,
+          "final_completed": 169,
+          "peak_outstanding": 2,
+          "presentation_fences": false,
+          "presentation_retirement": "bounded idle compatibility cleanup (not a presentation completion proof)",
+          "all_submission_results": {
+            "coverage": "All49 submission counters and deferred overflow results attributed by original submission ordinal; report polling may skip intermediate observations; queue retention is not physical GPU overlap",
+            "device_idle_waits": 0,
+            "maximum_observed_outstanding": 2,
+            "observations": 46,
+            "observed_dense": 23,
+            "observed_three": 23,
+            "skipped_attempts": 1,
+            "submission_phase_peak_outstanding": 2,
+            "submissions": 49,
+            "trace_dropped": 0,
+            "trace_events": 1543,
+            "verified_deferred_results": 49
+          },
+          "warm_observations": {
+            "measurement": "CPU wall duration around each draw call; two devices interleave, message pumping and report polling excluded; not FPS or GPU execution time",
+            "primary": {
+              "device_idle_waits": 0,
+              "drain_waits": 0,
+              "draw_wall": {
+                "maximum_ms": 17.1084,
+                "mean_ms": 15.465841666666671,
+                "minimum_ms": 14.5355,
+                "p50_ms": 15.3266,
+                "p95_ms": 16.7078,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            },
+            "secondary": {
+              "device_idle_waits": 0,
+              "drain_waits": 0,
+              "draw_wall": {
+                "maximum_ms": 1.5111,
+                "mean_ms": 1.1718666666666668,
+                "minimum_ms": 0.9529,
+                "p50_ms": 1.0645,
+                "p95_ms": 1.4736,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            }
+          },
+          "capture_hashes": [
+            {
+              "stage": "churn",
+              "sha256": "6914c23f68e0970c10ef54324babd899ed88447053d060f9bf719d69de33d851"
+            },
+            {
+              "stage": "secondary",
+              "sha256": "9cb6139056d7aa482b4b7719498f6829b3f45d0d2073475aa9db5e4994526a43"
+            },
+            {
+              "stage": "overflow",
+              "sha256": "b3f8fe73e594aa705ab604897f9b75389328847bf3213e96753ec99162376eb8"
+            },
+            {
+              "stage": "varying",
+              "sha256": "8e434e13ed43e55d035c8882fdd349a296e416d188660738ac82bd828c4528c5"
+            },
+            {
+              "stage": "resized",
+              "sha256": "1f0153cc46af0de3ddf8cbec0afadfa61a2b9f8fff0c674ec625e2cd9fccb382"
+            },
+            {
+              "stage": "recreated",
+              "sha256": "9cb6139056d7aa482b4b7719498f6829b3f45d0d2073475aa9db5e4994526a43"
+            },
+            {
+              "stage": "final",
+              "sha256": "a761a745355f8a38302dbb93f65596f69ab8875925e3e9f475ceee4cf764b7c4"
+            },
+            {
+              "stage": "fresh",
+              "sha256": "a761a745355f8a38302dbb93f65596f69ab8875925e3e9f475ceee4cf764b7c4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_evidence_sha256": "2c6fa05b91de1854610fc0138763627fe57ed4d4e39ba8df0c7770b42be4a433",
+      "captures": 16,
+      "exact_comparisons": [
+        {
+          "left": [
+            1,
+            "churn"
+          ],
+          "right": [
+            2,
+            "churn"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "secondary"
+          ],
+          "right": [
+            2,
+            "secondary"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "overflow"
+          ],
+          "right": [
+            2,
+            "overflow"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "varying"
+          ],
+          "right": [
+            2,
+            "varying"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "resized"
+          ],
+          "right": [
+            2,
+            "resized"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "recreated"
+          ],
+          "right": [
+            2,
+            "recreated"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "final"
+          ],
+          "right": [
+            2,
+            "final"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "fresh"
+          ],
+          "right": [
+            2,
+            "fresh"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "secondary"
+          ],
+          "right": [
+            1,
+            "recreated"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            1,
+            "final"
+          ],
+          "right": [
+            1,
+            "fresh"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            2,
+            "secondary"
+          ],
+          "right": [
+            2,
+            "recreated"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        },
+        {
+          "left": [
+            2,
+            "final"
+          ],
+          "right": [
+            2,
+            "fresh"
+          ],
+          "changed_pixels": 0,
+          "max_channel_difference": 0
+        }
+      ],
+      "modes": [
+        {
+          "frames_in_flight": 1,
+          "final_submitted": 169,
+          "final_completed": 169,
+          "peak_outstanding": 1,
+          "presentation_fences": true,
+          "presentation_retirement": "maintenance1 present fences",
+          "all_submission_results": {
+            "coverage": "All49 submission counters and deferred overflow results attributed by original submission ordinal; report polling may skip intermediate observations; queue retention is not physical GPU overlap",
+            "device_idle_waits": 0,
+            "maximum_observed_outstanding": 0,
+            "observations": 49,
+            "observed_dense": 24,
+            "observed_three": 25,
+            "skipped_attempts": 0,
+            "submission_phase_peak_outstanding": 1,
+            "submissions": 49,
+            "trace_dropped": 0,
+            "trace_events": 1619,
+            "verified_deferred_results": 49
+          },
+          "warm_observations": {
+            "measurement": "CPU wall duration around each draw call; two devices interleave, message pumping and report polling excluded; not FPS or GPU execution time",
+            "primary": {
+              "device_idle_waits": 0,
+              "drain_waits": 24,
+              "draw_wall": {
+                "maximum_ms": 1.7953,
+                "mean_ms": 1.0002625,
+                "minimum_ms": 0.8888,
+                "p50_ms": 0.9482,
+                "p95_ms": 1.1295,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            },
+            "secondary": {
+              "device_idle_waits": 0,
+              "drain_waits": 24,
+              "draw_wall": {
+                "maximum_ms": 1.1747,
+                "mean_ms": 0.9833125000000003,
+                "minimum_ms": 0.8691,
+                "p50_ms": 0.952,
+                "p95_ms": 1.1523,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            }
+          },
+          "capture_hashes": [
+            {
+              "stage": "churn",
+              "sha256": "08a7f0f81b097e7ffc5e06c05c724e3cf4eaa4ff08b33003a72daf949c5aa8bb"
+            },
+            {
+              "stage": "secondary",
+              "sha256": "bb398ae8631a0eac4228d2c8ee5e2d952fe215f4eb6094c6ac27b04a4edd30ab"
+            },
+            {
+              "stage": "overflow",
+              "sha256": "5728f193f5b77898de828f893bee6e4500a82a9011298130810edebd320576ba"
+            },
+            {
+              "stage": "varying",
+              "sha256": "2d5dab7e9dc82b8079d0a31566ea1536eef54245380e041ac44358526df2c13c"
+            },
+            {
+              "stage": "resized",
+              "sha256": "c3a7fa5dc5259d7496703fb22b34df887238f23e0889cc4b365c20eebe061740"
+            },
+            {
+              "stage": "recreated",
+              "sha256": "bb398ae8631a0eac4228d2c8ee5e2d952fe215f4eb6094c6ac27b04a4edd30ab"
+            },
+            {
+              "stage": "final",
+              "sha256": "40c87e02f6d4db115daf6d32a9097cca060b401018638a640e88b389716c73e5"
+            },
+            {
+              "stage": "fresh",
+              "sha256": "40c87e02f6d4db115daf6d32a9097cca060b401018638a640e88b389716c73e5"
+            }
+          ]
+        },
+        {
+          "frames_in_flight": 2,
+          "final_submitted": 169,
+          "final_completed": 169,
+          "peak_outstanding": 2,
+          "presentation_fences": true,
+          "presentation_retirement": "maintenance1 present fences",
+          "all_submission_results": {
+            "coverage": "All49 submission counters and deferred overflow results attributed by original submission ordinal; report polling may skip intermediate observations; queue retention is not physical GPU overlap",
+            "device_idle_waits": 0,
+            "maximum_observed_outstanding": 1,
+            "observations": 44,
+            "observed_dense": 22,
+            "observed_three": 22,
+            "skipped_attempts": 0,
+            "submission_phase_peak_outstanding": 2,
+            "submissions": 49,
+            "trace_dropped": 0,
+            "trace_events": 1523,
+            "verified_deferred_results": 49
+          },
+          "warm_observations": {
+            "measurement": "CPU wall duration around each draw call; two devices interleave, message pumping and report polling excluded; not FPS or GPU execution time",
+            "primary": {
+              "device_idle_waits": 0,
+              "drain_waits": 0,
+              "draw_wall": {
+                "maximum_ms": 1.1101,
+                "mean_ms": 0.7792833333333333,
+                "minimum_ms": 0.6041,
+                "p50_ms": 0.7278,
+                "p95_ms": 1.0757,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            },
+            "secondary": {
+              "device_idle_waits": 0,
+              "drain_waits": 0,
+              "draw_wall": {
+                "maximum_ms": 1.0197,
+                "mean_ms": 0.762975,
+                "minimum_ms": 0.689,
+                "p50_ms": 0.7318,
+                "p95_ms": 0.9586,
+                "samples": 24
+              },
+              "slot_waits": 0,
+              "submitted": 24
+            }
+          },
+          "capture_hashes": [
+            {
+              "stage": "churn",
+              "sha256": "08a7f0f81b097e7ffc5e06c05c724e3cf4eaa4ff08b33003a72daf949c5aa8bb"
+            },
+            {
+              "stage": "secondary",
+              "sha256": "bb398ae8631a0eac4228d2c8ee5e2d952fe215f4eb6094c6ac27b04a4edd30ab"
+            },
+            {
+              "stage": "overflow",
+              "sha256": "5728f193f5b77898de828f893bee6e4500a82a9011298130810edebd320576ba"
+            },
+            {
+              "stage": "varying",
+              "sha256": "2d5dab7e9dc82b8079d0a31566ea1536eef54245380e041ac44358526df2c13c"
+            },
+            {
+              "stage": "resized",
+              "sha256": "c3a7fa5dc5259d7496703fb22b34df887238f23e0889cc4b365c20eebe061740"
+            },
+            {
+              "stage": "recreated",
+              "sha256": "bb398ae8631a0eac4228d2c8ee5e2d952fe215f4eb6094c6ac27b04a4edd30ab"
+            },
+            {
+              "stage": "final",
+              "sha256": "40c87e02f6d4db115daf6d32a9097cca060b401018638a640e88b389716c73e5"
+            },
+            {
+              "stage": "fresh",
+              "sha256": "40c87e02f6d4db115daf6d32a9097cca060b401018638a640e88b389716c73e5"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "layer": "VK_LAYER_KHRONOS_validation",
+    "version": "1.4.363",
+    "synchronization": true,
+    "gpu_aggregate_sha256": "e4f8ca782910cb4fc9e73d68bb4d50250da9ba0a52a36ce61fff0965dfa4d897",
+    "observed_validation_errors": 0
+  },
+  "linux": {
+    "headless_cases": [
+      "profiler_contract",
+      "world_session_native",
+      "world_templates_contract",
+      "world_ui_contract",
+      "world_components_contract",
+      "lighting_contract",
+      "runtime_contract",
+      "world_contract"
+    ],
+    "raw_evidence_sha256": "7c032d638c70d8adea8173899aaa9cfb16e89452ce60f88fa5d819517f056c76",
+    "binary_sha256": "7eacc0058abb337254aab4022798a3f752257a1e9d77d173ea9c880cb24079b7"
+  },
+  "profiler": {
+    "linux_raw_evidence_sha256": "58c719b710bf7087007b819adcc3a7672f2ea7723732aeb6ae2bc6fa2e0c20ba",
+    "windows_pass_log_sha256": "b7b557367c148b4feba3bd010cd32b8a16eb375e0cba26965ec313321a9d70b4",
+    "scope": "Owner-thread deferred attribution, generation/lifetime safety and allocation/overflow contracts"
+  },
+  "regressions": [
+    {
+      "suite": "gpu_skinning_capture",
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "697520cd3b4f27ed16b53687a3d5c530e4a0b1480d4f6745b4db0b70cca23e05"
+      ]
+    },
+    {
+      "suite": "gpu_skinning_capture",
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "bfaed9a4eae238c486488b1a9da43a675ef6ac481e30ee461760e2d33c438f4d"
+      ]
+    },
+    {
+      "suite": "hdr_composition_capture",
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "871f33a87cdfba77a412e97a33a97886147dbd99fd18f2c1d2384dcf319affda"
+      ]
+    },
+    {
+      "suite": "hdr_composition_capture",
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "30874f8f37a9da6aa6d21594ccfe9397d5725175e192d01a9eff552666cbd224"
+      ]
+    },
+    {
+      "suite": "clustered_lighting_capture",
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "57414fe1a479f979a69ad12d7043e118d95428c4458c95c0ff976313e1d7b286"
+      ]
+    },
+    {
+      "suite": "clustered_lighting_capture",
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "21fd66a9e00973064f71fb590ada884b6b5c9751d221ddac89a26d054dbee334"
+      ]
+    },
+    {
+      "suite": "culling_capture",
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "02f78e24f4d572ade083a172d4726d347710c6968b9878bed167d038814b326f"
+      ]
+    },
+    {
+      "suite": "culling_capture",
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "fda1e14ab1d82bd7ce3036ec144451f9ebb3b6bc4454132495e1d99d027bea6e"
+      ]
+    },
+    {
+      "suite": "profiler_capture",
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "cfcd36ffd633be31e10e9c20a98fde714d25c2be96a6295dde5b2524cee7cf3c"
+      ]
+    },
+    {
+      "suite": "profiler_capture",
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "raw_evidence_sha256": [
+        "30acd671d9f326ba3a3615d5d56a6178be65affc1302dcc5a902e47e4954f6f6"
+      ]
+    }
+  ],
+  "integration": [
+    {
+      "name": "ui-gpu1-msaa1",
+      "passed": true,
+      "raw_evidence_sha256": "a81a996d28b95dbbd782a2c3fab294fdcfd206bb6acbcb4f264800acf6270aad"
+    },
+    {
+      "name": "ui-gpu1-msaa4",
+      "passed": true,
+      "raw_evidence_sha256": "cf634bf816c4b898ffee240e4a03245db637ef8cd794813c926957d8d059e461"
+    },
+    {
+      "name": "ui-gpu0-msaa1",
+      "passed": true,
+      "raw_evidence_sha256": "ef472ad035cf85e886be911633634e4c433c55566ea7cc8f43f97eeff839f408"
+    },
+    {
+      "name": "ui-gpu0-msaa4",
+      "passed": true,
+      "raw_evidence_sha256": "b91a2ae8377b6f3032657c3917f22799ce87680fbad2f7d748be690865dd806e"
+    },
+    {
+      "name": "player-gpu1",
+      "passed": true,
+      "raw_evidence_sha256": "e70f9138d85f11f5b036e7cde62370ecc651c801207eea4cb505f0b3e0523157"
+    },
+    {
+      "name": "player-gpu0",
+      "passed": true,
+      "raw_evidence_sha256": "f6017a94a35ad52863dba48a48c39322dcd53effb9a1533fe7dfd80b7b3d2ed6"
+    },
+    {
+      "name": "hosted-gpu1-msaa4",
+      "passed": true,
+      "raw_evidence_sha256": "02f285664d4f2355431f95baef8cbbfae6b4509a5580a87b53cbef0f0ed776ff"
+    },
+    {
+      "name": "hosted-gpu0-msaa4",
+      "passed": true,
+      "raw_evidence_sha256": "d17cee357afeb8185caaf70c328dcb9da9e563250a90c621387813ff438368eb"
+    }
+  ],
+  "current_source_sha256": {
+    "CMakeLists.txt": "01b91ba29f208f2bbdd00bc355e5732ab9145c2c9f2d5881c8ca83bba88d6ad8",
+    "cmake/render_smoke.cmake": "c94cbc9b22a7734ac8c3dacefc2ca360e3d1b62c7ac3fe8b5c58a46e6f349894",
+    "include/poima/core.hpp": "49709b2faf2227703c185d00dd0b62b21101e4444218bf082b6e3bc1b83aa01e",
+    "include/poima/profiler.hpp": "9714d351277349eb52ac0613d5bc94d0994080fca3ae0b5a42015e7dc3dd6b3a",
+    "shaders/cluster_lights.hlsl": "77c04aa19b606082477b5d2f2dcdcbd28d64588c5a01b2a3d4f1d6b416b5a994",
+    "shaders/scene.hlsl": "87a172d3e94d8a727146e64adee10d7f8ae8819e05c4cae4d3149d0c64279a10",
+    "shaders/scene_frame.hlsli": "ec567b713fc63c1e3b908e8516aa9cc629ebbbc4fe88ace11622693f1de5de3b",
+    "shaders/scene_output.hlsl": "ab7db3e008302f425b8fbc4e2237f3605540b18b9738a76aaee1b53e2bfb5653",
+    "shaders/skinning.hlsl": "7805eeb3fe6d3509193e9c38b119e5ecc20c48a094394879a8da6ba29ecf095a",
+    "shaders/sky.hlsl": "ad4e55c4af0f6b26e7248d47f2b67fbd20c38904c1836f5c5a297e1d1a909b07",
+    "src/profiler.cpp": "ae08d4285cb86396e6cfc453a97e1057f7504171fd09ea350290a4d5e586de61",
+    "src/render_smoke.cpp": "88139cf7361029098b3f90160db2b7344b879d6c6f9c588660f1867bea964a42",
+    "src/world.cpp": "2bb280836cd892df23c3f7e959ebc9792dfdf8860e59c39f5c7b6a17d8da0191",
+    "tests/clustered_lighting_capture.py": "0e5fe35db4f97057e3dec5831d0199d93a8aed303df46c4fc3ba9abb9a24ba4a",
+    "tests/culling_capture.py": "b4e93b190d93242b3cceac63a0a1173b53c645016e70863cf9b85f061fc7eae7",
+    "tests/desktop_dual_view.py": "626281b14a82bad849abad1a46cc1cf07b7565fcb86a2c99a45ab6ab8e08ec8b",
+    "tests/frame_execution_capture.py": "0884756707e3d044f647dd628534e99dd63ede5af46e71ee76e1f32ed9bc7c86",
+    "tests/frame_execution_native.cpp": "2b960af7fe31aa7b79f49cb9cf4044fb90ef853dfb4a554a5b6810d1e488642f",
+    "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+    "tests/gpu_skinning_capture.py": "6587cc05af5105df03c4faf754c5ad789582cf30f319aea683e3618b30f15b05",
+    "tests/hdr_composition_capture.py": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740",
+    "tests/player_contract.py": "1e1ecf3ba727cb4ece44e86ff2536d721530055e6549798226630a66d9993326",
+    "tests/profiler.cpp": "1b5e5be3d3cb147100a5cc6bbe724161725c71ceef0835e05ef187604316840d",
+    "tests/profiler_capture.py": "70af738bd53104487c1683fd256b1721d939a05f74ef89155c3eb81575acb4b8",
+    "tests/profiler_contract.py": "493830d0a6ccaea58e795afa76d28f4d01612f38a75e64a32ec93ec69ecd712c",
+    "tests/runtime_contract.py": "81ffd8efb54435d8d72e1ec2cd2f299610a37e9e376a859b530cc0f3c5be3051",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+    "tests/ui_capture.py": "ce24ad616eef45fecf6633a3ab41088e2706fbf2f9a8afb5ec1ef133abe342c6",
+    "tests/ui_capture_native.cpp": "16a0905303fe3b275608bbc7344ed86e13ce5dcd3d2b0febfa1a7c7ccc084637",
+    "tests/world_components_contract.py": "0a27067ee70f851b2c9b02d1ed8f64f7a9fa948c6bb6bb7d17d8210d85067acc",
+    "tests/world_contract.py": "3ff6e2f69a9321f38ca75618d04f3509dc7bd773eb6c2903d8bb005f9cb519ff",
+    "tests/world_session_native.cpp": "2c5c9eb6a2b2cf732d0342d81d79ba2ef55513ab1d2e5a8f98e91a1c62210a11",
+    "tests/world_templates_contract.py": "ce2f0bdfbe934a488b324491979a2d4696bbf1c99240167ee38ab80d994e0a41",
+    "tests/world_ui_contract.py": "cc42f7ff6a9e2653433178b95b2169feb8d01da15b86b216e55e31bf2416f6a7"
+  },
+  "measurement_limits": [
+    "Warm timings are observed CPU draw-call durations on one laptop, with validation active; not speedup, GPU overlap or playable FPS claims.",
+    "GPU-only scratch remains ordered on the graphics queue; two retained submissions do not establish simultaneous GPU execution.",
+    "NVIDIA uses swapchain maintenance presentation fences; AMD uses bounded idle compatibility cleanup, not a formal presentation completion proof.",
+    "Resource uploads can still wait for device idle. Zero device-idle observations apply only to the recorded stable/varying warm intervals.",
+    "Owned HWND and renderer-readback tests do not qualify physical input, the installed Avalonia desktop package or Linux rendering.",
+    "Bounded fixtures and two GPUs do not prove all resource lifetimes or arbitrary game correctness."
+  ],
+  "qualification_history": [
+    "Initial strict validation exposed VUID-VkShaderModuleCreateInfo-pCode-08737 (skinning storage-buffer layout) in the earlier shader cohort; corrected shader cohort was requalified rather than suppressing validation.",
+    "An earlier fixture attempt timed out and was retained as failed evidence; it is not counted as a pass.",
+    "Earlier report polling alone was inconclusive about intermediate retirement depth; final coverage records all49 submission and deferred overflow results per mode."
+  ]
+}

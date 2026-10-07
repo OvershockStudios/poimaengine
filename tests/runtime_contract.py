@@ -70,6 +70,27 @@ class RuntimeContract(unittest.TestCase):
         for response,(_,code) in zip(responses[2:-1],invalid):self.error(response,code)
         self.assertEqual(self.result(responses[-1])['tick'],0)
 
+    def test_frame_slot_validation_preserves_runtime_and_authoring(self):
+        target=Path(self.directory.name)/'invalid-frame-slots.bmp'
+        capture={'session_id':uid(900),'tick':0,'camera':uid(101),'path':self.native(target)}
+        play={'session_id':uid(900),'request_id':uid(5001),'expected_tick':0,
+              'controller':uid(100),'camera':uid(101),'mode':'replay',
+              'sequence':[{'ticks':1}],'path':self.native(target)}
+        observe=[rpc('runtime.inspect',{'session_id':uid(900)}),inspect_entity(),rpc('world.inspect',{})]
+        rows=[FIXTURE,start(),*observe]
+        cases=[]
+        for method,base in (('runtime.capture',capture),('runtime.play',play)):
+            for bad in (0,3,-1,True,False,1.0,2.0,'2',None,[],{}):
+                cases.append((len(rows),method,bad))
+                rows.extend([rpc(method,{**base,'frames_in_flight':bad}),*observe])
+        responses=self.run_requests(rows)
+        baseline=[self.result(r) for r in responses[2:5]]
+        for index,method,bad in cases:
+            with self.subTest(method=method,value=bad):
+                self.error(responses[index],-32602)
+                self.assertEqual([self.result(r) for r in responses[index+1:index+4]],baseline)
+        self.assertFalse(target.exists())
+
     def test_collision_jump_retries_and_live_authoring_separation(self):
         forward=step(120,180,[input_value(move=(0,1))],request_id=uid(10000))
         requests=[FIXTURE,start(),step(0,120),inspect_entity(),inspect_entity(3),forward,forward,inspect_entity(tick=300),

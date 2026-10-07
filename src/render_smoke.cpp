@@ -149,11 +149,19 @@ struct SharedInstance {
     SharedInstance(PFN_vkGetInstanceProcAddr get,const char* const* names,std::uint32_t count):entry(get) {
         for(std::uint32_t i=0;i<count;++i)extensions.emplace_back(names[i]);
         dispatch.init(get);
+        const auto available=vk::enumerateInstanceExtensionProperties(nullptr,dispatch);
+        auto supports=[&](const char* name) {return std::any_of(available.begin(),available.end(),[&](const auto& e) {return std::string_view(e.extensionName.data())==name;});};
+        if(supports(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME)) {
+            extensions.emplace_back(VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME);
+            if(supports(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME))extensions.emplace_back(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+            if(supports(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME))extensions.emplace_back(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME);
+        }
+        std::vector<const char*> enabled;for(const auto& extension:extensions)enabled.push_back(extension.c_str());
         require(dispatch.vkEnumerateInstanceVersion && vk::enumerateInstanceVersion(dispatch)>=VK_API_VERSION_1_3,
             "The renderer experiment needs a Vulkan 1.3 loader.");
         const vk::ApplicationInfo app("Poima",1,"Poima",1,VK_API_VERSION_1_3);
         vk::InstanceCreateInfo info;
-        info.pApplicationInfo=&app;info.enabledExtensionCount=count;info.ppEnabledExtensionNames=names;
+        info.pApplicationInfo=&app;info.enabledExtensionCount=static_cast<std::uint32_t>(enabled.size());info.ppEnabledExtensionNames=enabled.data();
         instance=vk::createInstance(info,nullptr,dispatch);
         dispatch.init(instance);
         // NVRHI_BUILD_SHARED is forced OFF by render_smoke.cmake. Its static
@@ -170,7 +178,7 @@ std::shared_ptr<SharedInstance> acquire_instance(PFN_vkGetInstanceProcAddr get,c
     std::lock_guard lock(mutex);
     if(auto existing=active.lock()) {
         require(existing->owner==std::this_thread::get_id(),"Live graphics contexts require their common UI thread.");
-        require(existing->entry==get && existing->extensions.size()==count,"Live graphics contexts require the same Vulkan loader/platform.");
+        require(existing->entry==get && existing->extensions.size()>=count,"Live graphics contexts require the same Vulkan loader/platform.");
         for(std::uint32_t i=0;i<count;++i)
             require(existing->extensions[i]==names[i],"Live graphics contexts require matching Vulkan instance extensions.");
         return existing;
@@ -253,8 +261,25 @@ struct Context {
     vk::SwapchainKHR swapchain;
     vk::Extent2D extent;
     vk::Format format = vk::Format::eUndefined;
-    vk::Semaphore acquired;
+    struct FrameSlot {
+        vk::Semaphore acquired;
+        vk::QueryPool timestamps;
+        nvrhi::BufferHandle cluster_readback,skin_readback;
+        nvrhi::EventQueryHandle completion;
+        std::uint64_t submission=0;
+        bool occupied=false,timing=false;
+        SteadyClock::time_point started;
+        DrawCounts draws;
+        LightAssignmentDiagnostics lights;
+        std::vector<std::string> skin_ids;
+        profiling::DeferredContext profile;
+    };
+    std::array<FrameSlot,2> slots;
+    std::uint64_t next_slot=0,retire_slot=0;
     std::vector<vk::Semaphore> finished;
+    std::vector<vk::Fence> present_fences;
+    std::vector<bool> present_pending;
+    bool maintenance1=false;
     std::vector<bool> initialized;
     nvrhi::vulkan::DeviceHandle native;
     nvrhi::DeviceHandle checked;
@@ -315,6 +340,7 @@ struct Context {
     nvrhi::BufferHandle skin_errors,skin_readback;
     RenderDiagnostics diagnostics;
     DrawCounts pending_draws;
+    LightAssignmentDiagnostics pending_lights;
     vk::QueryPool timestamp_pool;
     bool timestamp_prepared=false,timestamp_recording=false;
     std::map<std::pair<const MeshAsset*,const MaterialTextures*>,nvrhi::BindingSetHandle> material_cache;
@@ -372,7 +398,10 @@ struct Context {
 
     ~Context() {
         if (device) {
-            try { device.waitIdle(dispatch); } catch (...) { /* Preserve the original diagnostic. */ }
+            try { if(checked)retire_frames(true); } catch (...) { /* Preserve the original diagnostic. */ }
+            try { retire_presentation(); } catch (...) { renderer_fault=true; /* Preserve the original diagnostic. */ }
+            // Partial recording/submission faults can leave work outside a slot.
+            if(renderer_fault)try {++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);} catch(...) {}
         }
         commands = nullptr;
         game_ui_framebuffers.clear();game_ui_pipeline=nullptr;game_ui_bindings.clear();game_ui_textures.clear();
@@ -412,12 +441,16 @@ struct Context {
         images.clear();
         depth = nullptr;
         multisample_color = nullptr;scene_hdr=nullptr;
+        for(auto& slot:slots) {slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;}
         checked = nullptr;
         native = nullptr;
         if (device) {
+            for(auto fence:present_fences)device.destroyFence(fence,nullptr,dispatch);
             for (auto semaphore : finished) device.destroySemaphore(semaphore,nullptr,dispatch);
-            if (acquired) device.destroySemaphore(acquired,nullptr,dispatch);
-            if (timestamp_pool) device.destroyQueryPool(timestamp_pool,nullptr,dispatch);
+            for(auto& slot:slots) {
+                if(slot.acquired)device.destroySemaphore(slot.acquired,nullptr,dispatch);
+                if(slot.timestamps)device.destroyQueryPool(slot.timestamps,nullptr,dispatch);
+            }
             if (swapchain) device.destroySwapchainKHR(swapchain,nullptr,dispatch);
             device.destroy(nullptr,dispatch);
         }
@@ -436,6 +469,9 @@ struct Context {
         if(source && source->ui)validate_ui_frame(*source->ui);
         scene = source;capture_exclusive=options.capture_exclusive;
         hosted=external_window!=nullptr;
+        require(options.frames_in_flight>=1 && options.frames_in_flight<=2,"frames_in_flight must be 1 or 2.");
+        diagnostics.frame_execution.limit=options.frames_in_flight;
+        diagnostics.frame_execution.presentation_retirement="bounded idle compatibility cleanup (not a presentation completion proof)";
         diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
         clustered_requested=options.clustered_lighting;diagnostics.light_assignment.requested=clustered_requested;
         samples = scene ? options.samples : 1;
@@ -516,13 +552,27 @@ struct Context {
         vk::PhysicalDeviceVulkan12Features enabled12;
         enabled12.timelineSemaphore = true;
         enabled12.pNext = &enabled13;
-        const char* device_extensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        std::vector<const char*> device_extensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        const auto available_extensions=physical.enumerateDeviceExtensionProperties(nullptr,dispatch);
+        auto has_device=[&](const char* name) {return std::any_of(available_extensions.begin(),available_extensions.end(),[&](const auto& e) {return std::string_view(e.extensionName.data())==name;});};
+        auto has_instance=[&](const char* name) {return std::find(shared_instance->extensions.begin(),shared_instance->extensions.end(),name)!=shared_instance->extensions.end();};
+        const char* maintenance_extension=nullptr;
+        if(has_instance(VK_KHR_SURFACE_MAINTENANCE_1_EXTENSION_NAME) && has_device(VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME))maintenance_extension=VK_KHR_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+        else if(has_instance(VK_EXT_SURFACE_MAINTENANCE_1_EXTENSION_NAME) && has_device(VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME))maintenance_extension=VK_EXT_SWAPCHAIN_MAINTENANCE_1_EXTENSION_NAME;
+        vk::PhysicalDeviceSwapchainMaintenance1FeaturesKHR maintenance_features;
+        if(maintenance_extension) {
+            vk::PhysicalDeviceFeatures2 supported;supported.pNext=&maintenance_features;physical.getFeatures2(&supported,dispatch);
+            maintenance1=maintenance_features.swapchainMaintenance1;
+            if(maintenance1) {enabled13.pNext=&maintenance_features;device_extensions.push_back(maintenance_extension);}
+        }
+        diagnostics.frame_execution.presentation_fences=maintenance1;
+        if(maintenance1)diagnostics.frame_execution.presentation_retirement="maintenance1 present fences";
         vk::DeviceCreateInfo device_info;
         device_info.pNext = &enabled12;
         device_info.queueCreateInfoCount = 1;
         device_info.pQueueCreateInfos = &queue_info;
-        device_info.enabledExtensionCount = 1;
-        device_info.ppEnabledExtensionNames = device_extensions;
+        device_info.enabledExtensionCount = static_cast<std::uint32_t>(device_extensions.size());
+        device_info.ppEnabledExtensionNames = device_extensions.data();
         device = physical.createDevice(device_info,nullptr,dispatch);
         dispatch.init(device);
         queue = device.getQueue(queue_family,0,dispatch);
@@ -535,10 +585,11 @@ struct Context {
         desc.graphicsQueue = queue;
         desc.graphicsQueueIndex = static_cast<int>(queue_family);
         // NVRHI's API predates the extra const on the pointer list; it only reads it.
-        desc.instanceExtensions = const_cast<const char**>(extension_names);
-        desc.numInstanceExtensions = extension_count;
-        desc.deviceExtensions = device_extensions;
-        desc.numDeviceExtensions = 1;
+        std::vector<const char*> instance_extensions;for(const auto& extension:shared_instance->extensions)instance_extensions.push_back(extension.c_str());
+        desc.instanceExtensions = instance_extensions.data();
+        desc.numInstanceExtensions = instance_extensions.size();
+        desc.deviceExtensions = device_extensions.data();
+        desc.numDeviceExtensions = device_extensions.size();
         native = nvrhi::vulkan::createDevice(desc);
         require(static_cast<bool>(native), "NVRHI device initialization failed.");
         checked = nvrhi::validation::createValidationLayer(native);
@@ -621,9 +672,11 @@ struct Context {
         require(cluster_bindings && cluster_pipeline,"Clustered light compute pipeline creation failed.");
     }
     void configure_light_assignment() {
-        auto& info=diagnostics.light_assignment;info={};info.requested=clustered_requested;
+        auto& info=pending_lights;info={};info.requested=clustered_requested;
         info.grid={cluster_x,cluster_y,cluster_z};info.cluster_count=cluster_cells;info.capacity=cluster_capacity;info.light_count=gpu_lights.size();
-        info.buffer_bytes=max_scene_lights*sizeof(GpuLight)+cluster_cells*(cluster_capacity+2)*sizeof(std::uint32_t);
+        // Steady-state storage bound: GPU indices/counts plus one CPU readback
+        // per configured slot (readbacks are allocated lazily during warmup).
+        info.buffer_bytes=max_scene_lights*sizeof(GpuLight)+cluster_cells*(cluster_capacity+1+diagnostics.frame_execution.limit)*sizeof(std::uint32_t);
         for(const auto& light:gpu_lights)if(light.position_kind[3]<.5f || light.direction_range[3]==0)++info.global_lights;
         const auto viewport=scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
         frame_constants.cluster_viewport[0]=viewport.minX;frame_constants.cluster_viewport[1]=viewport.minY;
@@ -645,23 +698,23 @@ struct Context {
         }
     }
     void dispatch_light_assignment() {
-        if(!diagnostics.light_assignment.active)return;
+        if(!pending_lights.active)return;
         nvrhi::ComputeState state;state.pipeline=cluster_pipeline;state.bindings.push_back(cluster_bindings);commands->setComputeState(state);
         commands->dispatch((cluster_cells+63)/64);
         commands->copyBuffer(cluster_readback,0,cluster_counts,0,cluster_cells*sizeof(std::uint32_t));
     }
-    void collect_light_assignment() {
-        auto& info=diagnostics.light_assignment;if(!scene || !info.active)return;
-        const void* mapped=checked->mapBuffer(cluster_readback,nvrhi::CpuAccessMode::Read);require(mapped!=nullptr,"Cluster light statistics readback failed.");
-        std::array<std::uint32_t,cluster_cells> counts{};std::memcpy(counts.data(),mapped,sizeof(counts));checked->unmapBuffer(cluster_readback);
+    void collect_light_assignment(FrameSlot& slot) {
+        auto& info=slot.lights;if(!info.active)return;
+        const void* mapped=checked->mapBuffer(slot.cluster_readback,nvrhi::CpuAccessMode::Read);require(mapped!=nullptr,"Cluster light statistics readback failed.");
+        std::array<std::uint32_t,cluster_cells> counts{};std::memcpy(counts.data(),mapped,sizeof(counts));checked->unmapBuffer(slot.cluster_readback);
         info.candidate_references=0;info.overflow_clusters=0;info.max_candidates=0;
         for(const auto count:counts) {
-            require(count<=gpu_lights.size(),"GPU cluster count exceeds the uploaded light table.");
+            require(count<=slot.lights.light_count,"GPU cluster count exceeds the uploaded light table.");
             info.candidate_references+=count;info.max_candidates=std::max(info.max_candidates,static_cast<std::uint64_t>(count));
             if(count>cluster_capacity)++info.overflow_clusters;
         }
         info.statistics_available=true;
-        profiling::counter("renderer.cluster_candidates",info.candidate_references);profiling::counter("renderer.cluster_overflow",info.overflow_clusters);
+        profiling::deferred_counter(slot.profile,"renderer.cluster_candidates",info.candidate_references);profiling::deferred_counter(slot.profile,"renderer.cluster_overflow",info.overflow_clusters);
     }
     void prepare_timestamps() {
         if(timestamp_prepared)return;
@@ -672,7 +725,7 @@ struct Context {
         if(!(limits.timestampPeriod>0) || diagnostics.timestamp_valid_bits==0) {
             diagnostics.gpu_timing_detail="Selected graphics queue does not support timestamps.";return;
         }
-        timestamp_pool=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,6),nullptr,dispatch);
+        for(auto& slot:slots)slot.timestamps=device.createQueryPool(vk::QueryPoolCreateInfo({},vk::QueryType::eTimestamp,6),nullptr,dispatch);
         diagnostics.gpu_timestamps=true;
         diagnostics.gpu_timing_detail="64-bit graphics-queue timestamps; approximate pass intervals, not presentation latency or game frame time.";
     }
@@ -684,14 +737,14 @@ struct Context {
     void timestamp(std::uint32_t index) {
         if(timestamp_recording)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index,dispatch);
     }
-    void collect_timestamps(double cpu_interval_ms) {
-        if(!timestamp_recording)return;
+    void collect_timestamps(FrameSlot& slot,double cpu_interval_ms) {
+        if(!slot.timing)return;
         std::array<std::uint64_t,6> values{};
-        const auto status=device.getQueryPoolResults(timestamp_pool,0,6,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
+        const auto status=device.getQueryPoolResults(slot.timestamps,0,6,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
-            ++diagnostics.gpu_samples_dropped;profiling::counter("gpu.samples_dropped",diagnostics.gpu_samples_dropped);return;
+            ++diagnostics.gpu_samples_dropped;profiling::deferred_counter(slot.profile,"gpu.samples_dropped",diagnostics.gpu_samples_dropped);return;
         }
         const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
         auto ms=[&](std::size_t a,std::size_t b) { return static_cast<double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns*1e-6; };
@@ -705,7 +758,7 @@ struct Context {
         auto sample=[&](std::string_view name,std::size_t a,std::size_t b) {
             const long double ns=static_cast<long double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns;
             if(std::isfinite(ns) && ns>=0 && ns<static_cast<long double>(std::numeric_limits<std::uint64_t>::max()))
-                profiling::counter(name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
+                profiling::deferred_counter(slot.profile,name,static_cast<std::uint64_t>(ns),profiling::Kind::gpu);
         };
         sample("gpu.skinning.ns",0,1);sample("gpu.light_assignment.ns",1,2);sample("gpu.shadows.ns",2,3);sample("gpu.opaque.ns",3,4);
         sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
@@ -718,8 +771,8 @@ struct Context {
         const auto resolution=count ? lighting.environment.shadow_resolution : 1u;
         const auto layers=static_cast<std::uint32_t>(std::max(count,std::size_t(1)));
         if(shadow_ready && shadow_texture && shadow_texture->getDesc().width==resolution && shadow_texture->getDesc().arraySize==layers)return;
-        // Frames are serialized. Retire bindings that reference the old array
-        // before replacing it after an authored light or quality edit.
+        // NVRHI submission references retain the old array and bindings until
+        // completion when an authored light or quality edit replaces them.
         shadow_ready=false;material_cache.clear();bindings=nullptr;
         shadow_framebuffers.clear();shadow_pipeline=nullptr;shadow_bindings=nullptr;shadow_texture=nullptr;
         const auto limits=physical.getProperties(dispatch).limits;
@@ -777,7 +830,7 @@ struct Context {
         require(static_cast<bool>(vertices), "Scene vertex buffer creation failed.");
         commands->open(); commands->writeBuffer(vertices, mesh.data(), mesh.size() * sizeof(Vertex)); commands->close();
         checked->executeCommandList(commands);
-        require(checked->waitForIdle(), "Scene geometry upload failed.");
+        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(), "Scene geometry upload failed.");
         update_scene();
     }
 
@@ -792,7 +845,7 @@ struct Context {
         result.indices=checked->createBuffer(index_desc);require(result.vertices && result.indices,"Imported geometry buffer creation failed.");
         commands->open();commands->writeBuffer(result.vertices,mesh->vertices.data(),vertex_desc.byteSize);
         commands->writeBuffer(result.indices,mesh->indices.data(),index_desc.byteSize);commands->close();checked->executeCommandList(commands);
-        require(checked->waitForIdle(),"Imported geometry upload failed.");
+        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Imported geometry upload failed.");
         geometry_cache.emplace(mesh.get(),result);return result;
     }
     void prepare_skin_pipeline() {
@@ -826,7 +879,7 @@ struct Context {
         desc.initialState=nvrhi::ResourceStates::ShaderResource;desc.keepInitialState=true;desc.debugName="Immutable skin influences";
         result.influences=checked->createBuffer(desc);require(bool(result.influences),"Skin influence allocation failed.");
         commands->open();commands->writeBuffer(result.influences,influences.data(),desc.byteSize);commands->close();checked->executeCommandList(commands);
-        require(checked->waitForIdle(),"Skin influence upload failed.");
+        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Skin influence upload failed.");
         return skin_sources.emplace(mesh.get(),std::move(result)).first->second;
     }
     SkinInstance& skin_instance(const SceneObject& object,const Geometry& geometry,SkinSource& source) {
@@ -873,12 +926,12 @@ struct Context {
         }
         commands->copyBuffer(skin_readback,0,skin_errors,0,16);
     }
-    void validate_skin_dispatch() {
-        if(!pending_draws.skinned_instances)return;
-        const void* data=checked->mapBuffer(skin_readback,nvrhi::CpuAccessMode::Read);require(data!=nullptr,"Skinning status readback failed.");
-        std::uint32_t errors[4]{};std::memcpy(errors,data,sizeof(errors));checked->unmapBuffer(skin_readback);
+    void validate_skin_dispatch(FrameSlot& slot) {
+        if(!slot.draws.skinned_instances)return;
+        const void* data=checked->mapBuffer(slot.skin_readback,nvrhi::CpuAccessMode::Read);require(data!=nullptr,"Skinning status readback failed.");
+        std::uint32_t errors[4]{};std::memcpy(errors,data,sizeof(errors));checked->unmapBuffer(slot.skin_readback);
         if(errors[0]) {
-            const auto id=errors[1]<draws.size() ? draws[errors[1]].entity_id : std::string("unknown");
+            const auto id=errors[1]<slot.skin_ids.size() ? slot.skin_ids[errors[1]] : std::string("unknown");
             throw std::runtime_error("GPU skinning rejected instance "+id+" vertex "+std::to_string(errors[2])+": singular, nonfinite or out-of-range result; capture was not published.");
         }
     }
@@ -892,7 +945,7 @@ struct Context {
         auto texture=checked->createTexture(desc);require(bool(texture),"Texture allocation failed.");
         commands->open();
         for(std::uint32_t level=0;level<image->mips.size();++level) { const auto& mip=image->mips[level];commands->writeTexture(texture,0,level,mip.rgba.data(),std::size_t(mip.width)*4); }
-        commands->close();checked->executeCommandList(commands);require(checked->waitForIdle(),"Texture upload failed.");
+        commands->close();checked->executeCommandList(commands);++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Texture upload failed.");
         texture_bytes+=bytes;texture_cache.emplace(image.get(),texture);return texture;
     }
     nvrhi::BindingSetHandle mesh_bindings(const MeshAsset* mesh,const MaterialTextures* override) {
@@ -1133,9 +1186,22 @@ struct Context {
         profiling::counter("renderer.skin_buffer_bytes",skin_bytes);
     }
 
+    void retire_presentation() {
+        for(std::size_t i=0;i<present_fences.size();++i)if(present_pending[i]) {
+            require(device.waitForFences(1,&present_fences[i],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,
+                "Presentation retirement timed out; recreate the renderer session.");
+            present_pending[i]=false;
+        }
+        if(!maintenance1) {
+            // Bounded compatibility policy on extension-absent devices. This
+            // conventional idle cleanup is not formal presentation completion.
+            ++diagnostics.frame_execution.device_idle_waits;device.waitIdle(dispatch);
+        }
+    }
     bool rebuild(const RenderOptions& options) {
         swapchain_dirty=true;
-        device.waitIdle(dispatch);
+        retire_frames(true);
+        retire_presentation();
         commands=nullptr;
         sky_pipeline=nullptr;output_pipeline=nullptr;output_bindings=nullptr;
         overlay_framebuffers.clear();overlay_pipeline=nullptr;
@@ -1150,7 +1216,8 @@ struct Context {
         checked->runGarbageCollection();
         for(auto semaphore:finished) device.destroySemaphore(semaphore,nullptr,dispatch);
         finished.clear(); initialized.clear();
-        device.destroySemaphore(acquired,nullptr,dispatch); acquired=nullptr;
+        for(auto fence:present_fences)device.destroyFence(fence,nullptr,dispatch);
+        present_fences.clear();present_pending.clear();
         device.destroySwapchainKHR(swapchain,nullptr,dispatch); swapchain=nullptr;
         const auto previous_format=format;
         if(!create_swapchain(options)) { swapchain_dirty=true; return false; }
@@ -1313,9 +1380,10 @@ struct Context {
             }
 #endif
             finished.push_back(device.createSemaphore({},nullptr,dispatch));
+            if(maintenance1) {present_fences.push_back(device.createFence({},nullptr,dispatch));present_pending.push_back(false);}
         }
         initialized.resize(images.size(), false);
-        acquired = device.createSemaphore({},nullptr,dispatch);
+        for(auto& slot:slots)if(!slot.acquired)slot.acquired=device.createSemaphore({},nullptr,dispatch);
         if (capture_enabled) {
             texture_desc.isRenderTarget = false;
             staging = checked->createStagingTexture(texture_desc, nvrhi::CpuAccessMode::Read);
@@ -1489,7 +1557,7 @@ struct Context {
         if(game_ui_frame) {textures.push_back(game_ui_textures.back());texture_bindings.push_back(game_ui_bindings.back());}
         else upload_texture(UiTexture{1,1,{255,255,255,255}});
         if(uploads) {
-            commands->close();checked->executeCommandList(commands);require(checked->waitForIdle(),"Game UI texture upload failed.");
+            commands->close();checked->executeCommandList(commands);++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Game UI texture upload failed.");
         }
         game_ui_textures.swap(textures);game_ui_bindings.swap(texture_bindings);
         game_ui_frame=packet;
@@ -1573,7 +1641,7 @@ struct Context {
         td.format=nvrhi::Format::RGBA8_UNORM;td.initialState=nvrhi::ResourceStates::ShaderResource;td.keepInitialState=true;td.debugName="Editor font atlas";
         ui_font=checked->createTexture(td);require(bool(ui_font),"Editor font texture creation failed.");
         commands->open();commands->writeTexture(ui_font,0,0,pixels,static_cast<std::size_t>(width)*4);commands->close();checked->executeCommandList(commands);
-        require(checked->waitForIdle(),"Editor font upload failed.");
+        ++diagnostics.frame_execution.device_idle_waits;require(checked->waitForIdle(),"Editor font upload failed.");
         nvrhi::SamplerDesc sd;sd.addressU=sd.addressV=nvrhi::SamplerAddressMode::Clamp;sd.minFilter=sd.magFilter=true;
         ui_sampler=checked->createSampler(sd);
         ui_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_editor_ui_vs);
@@ -1659,19 +1727,68 @@ struct Context {
         }
     }
 #endif
+    // NVRHI retains submitted command buffers and referenced resources until its
+    // graphics timeline completes. Reopening the command list obtains another
+    // tracked native buffer; writeBuffer upload chunks are submission-versioned.
+    // Shared GPU scratch returns to its initial state at command-list close.
+    void retire_frames(bool drain=false,bool reuse=false) {
+        profiling::Scope retire_scope("render.retire");
+        try {
+            while(diagnostics.frame_execution.outstanding) {
+                auto& slot=slots[retire_slot%diagnostics.frame_execution.limit];
+                if(!checked->pollEventQuery(slot.completion)) {
+                    if(!drain && !reuse)break;
+                    profiling::Scope wait_scope("render.wait");
+                    auto& waits=drain ? diagnostics.frame_execution.drain_waits : diagnostics.frame_execution.slot_waits;
+                    ++waits;const auto started=SteadyClock::now();
+                    const vk::Semaphore semaphore=native->getQueueSemaphore(nvrhi::CommandQueue::Graphics);
+                    const vk::SemaphoreWaitInfo info({},1,&semaphore,&slot.submission);
+                    const auto status=device.waitSemaphores(info,5'000'000'000ULL,dispatch);
+                    if(diagnostics.profile_requested)timing_sample(diagnostics.completion_wait_cpu,elapsed_ms(started));
+                    require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
+                }
+                validate_skin_dispatch(slot);collect_light_assignment(slot);collect_timestamps(slot,elapsed_ms(slot.started));
+                diagnostics.last_draws=slot.draws;diagnostics.light_assignment=slot.lights;
+                ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
+                profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
+                checked->resetEventQuery(slot.completion);slot.occupied=false;++retire_slot;
+                if(reuse && !drain)break;
+            }
+            checked->runGarbageCollection();
+            require(messages.errors==0,"NVRHI reported a validation/backend error; inspect stderr.");
+        } catch(...) {renderer_fault=true;throw;}
+    }
     bool frame(bool capture_frame) {
         profiling::Scope profile_scope("render.frame");
         require(!renderer_fault,"Renderer synchronization failed; recreate the renderer session.");
         const auto frame_started=SteadyClock::now();
         if(!swapchain) { swapchain_dirty=true; return false; }
+        const auto submitted_lights=pending_lights;
+        retire_frames();
+        auto& slot=slots[next_slot%diagnostics.frame_execution.limit];
+        if(slot.occupied)retire_frames(false,true);
+        if(!slot.completion) {
+            slot.completion=checked->createEventQuery();
+            require(bool(slot.completion),"Frame completion query allocation failed.");
+        }
+        if(cluster_readback && !slot.cluster_readback) {
+            slot.cluster_readback=checked->createBuffer(cluster_readback->getDesc());
+            require(bool(slot.cluster_readback),"Frame cluster readback allocation failed.");
+        }
+        if(skin_readback && !slot.skin_readback) {
+            slot.skin_readback=checked->createBuffer(skin_readback->getDesc());
+            require(bool(slot.skin_readback),"Frame skin readback allocation failed.");
+        }
+        cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
         prepare_game_ui();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
         if(profiling::active() && !timestamp_prepared)prepare_timestamps();
+        timestamp_pool=slot.timestamps;
         timestamp_recording=bool(timestamp_pool) && (diagnostics.profile_requested || profiling::active());
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { profiling::Scope acquire_scope("render.acquire");next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,acquired,{},dispatch); }
+        try { profiling::Scope acquire_scope("render.acquire");next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,slot.acquired,{},dispatch); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
         if((editor || hosted) && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
@@ -1684,12 +1801,23 @@ struct Context {
             ~FrameFailure() { if(!complete)failed=true; }
         } failure{renderer_fault};
         const auto index = next.value;
+        if(maintenance1 && present_pending[index]) {
+            require(device.waitForFences(1,&present_fences[index],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,"Previous image presentation did not retire.");
+            require(device.resetFences(1,&present_fences[index],dispatch)==vk::Result::eSuccess,"Presentation fence reset failed.");present_pending[index]=false;
+        }
         auto texture = images.at(index);
-        native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, acquired, 0);
+        native->queueWaitForSemaphore(nvrhi::CommandQueue::Graphics, slot.acquired, 0);
         double record_ms=0;
         {
         profiling::Scope record_scope("render.record");
         const auto record_started=SteadyClock::now();commands->open();
+        // Queue order alone does not order accesses to scratch that stays in
+        // the same state (depth/UAV). Keep an explicit cross-submission memory
+        // dependency while sharing GPU-only attachments and deformation data.
+        const vk::MemoryBarrier scratch_dependency(vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite,
+            vk::AccessFlagBits::eMemoryRead|vk::AccessFlagBits::eMemoryWrite);
+        native_commands().pipelineBarrier(vk::PipelineStageFlagBits::eAllCommands,vk::PipelineStageFlagBits::eAllCommands,
+            {},1,&scratch_dependency,0,nullptr,0,nullptr,dispatch);
         if(timestamp_recording)native_commands().resetQueryPool(timestamp_pool,0,6,dispatch);
         timestamp(0);
         if(scene) {
@@ -1758,32 +1886,37 @@ struct Context {
         {
         profiling::Scope submit_scope("render.submit");
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
-        checked->executeCommandList(commands);
+        slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
+        slot.skin_ids.clear();for(const auto& draw:draws)slot.skin_ids.push_back(draw.entity_id);
+        slot.profile=profiling::capture_deferred();slot.timing=timestamp_recording;
+        slot.submission=checked->executeCommandList(commands);
+        checked->setEventQuery(slot.completion,nvrhi::CommandQueue::Graphics);
+        slot.occupied=true;++next_slot;++diagnostics.frame_execution.submitted;
+        ++diagnostics.frame_execution.outstanding;
+        diagnostics.frame_execution.peak_outstanding=std::max(diagnostics.frame_execution.peak_outstanding,diagnostics.frame_execution.outstanding);
+        profiling::counter("renderer.submitted_submissions",diagnostics.frame_execution.submitted);
+        profiling::counter("renderer.outstanding_submissions",diagnostics.frame_execution.outstanding);
         }
+        vk::SwapchainPresentFenceInfoKHR fence_info;
         vk::PresentInfoKHR present_info;
+        if(maintenance1) {fence_info.swapchainCount=1;fence_info.pFences=&present_fences[index];present_info.pNext=&fence_info;}
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = &finished[index];
         present_info.swapchainCount = 1;
         present_info.pSwapchains = &swapchain;
         present_info.pImageIndices = &index;
         vk::Result presented;
-        try { profiling::Scope present_scope("render.present");presented=queue.presentKHR(present_info,dispatch); }
-        catch(const vk::OutOfDateKHRError&) { presented=vk::Result::eErrorOutOfDateKHR; }
+        { profiling::Scope present_scope("render.present");presented=static_cast<vk::Result>(dispatch.vkQueuePresentKHR(static_cast<VkQueue>(queue),reinterpret_cast<const VkPresentInfoKHR*>(&present_info))); }
+        // OUT_OF_DATE still enqueues the present semaphore wait and fence.
+        if(maintenance1 && (presented==vk::Result::eSuccess || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR || presented==vk::Result::eErrorSurfaceLostKHR || presented==vk::Result::eErrorFullScreenExclusiveModeLostEXT))present_pending[index]=true;
         swapchain_dirty = next.result==vk::Result::eSuboptimalKHR || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR;
         require(presented == vk::Result::eSuccess || presented == vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR,
             "Vulkan presentation failed.");
         initialized[index] = true;
-        // Deliberately serialized for this correctness test, not a frame-time benchmark.
-        { profiling::Scope wait_scope("render.wait");require(checked->waitForIdle(), "NVRHI device wait failed."); }
-        validate_skin_dispatch();collect_light_assignment();
-        checked->runGarbageCollection();
-        require(messages.errors == 0, "NVRHI reported a validation/backend error; inspect stderr.");
-        ++diagnostics.completed_submissions;diagnostics.last_draws=pending_draws;
+        if(capture_frame || diagnostics.frame_execution.limit==1)retire_frames(true);
         if(diagnostics.profile_requested) {
-            const auto frame_ms=elapsed_ms(frame_started);timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,frame_ms);
+            timing_sample(diagnostics.record_cpu,record_ms);timing_sample(diagnostics.render_call_cpu,elapsed_ms(frame_started));
         }
-        if(timestamp_recording)collect_timestamps(elapsed_ms(frame_started));
-        profiling::counter("renderer.completed_submissions",diagnostics.completed_submissions);
         failure.complete=true;
         return presented!=vk::Result::eErrorOutOfDateKHR;
     }
@@ -1812,8 +1945,9 @@ RenderReport render(const RenderOptions& options, const SceneSnapshot* scene) {
                 report.capture_written = true;
             }
         }
+        context.retire_frames(true);
         report.success = true;
-        report.detail = scene ? "Authored scene rendered through the bounded forward preview." : "Vulkan triangle drawn and presented through NVRHI. Serialized smoke test; no game-performance qualification.";
+        report.detail = scene ? "Authored scene rendered through the bounded forward preview." : "Vulkan triangle drawn and presented through NVRHI. Bounded smoke test; no game-performance qualification.";
     } catch (const std::exception& error) {
         report.detail = error.what();
     }
@@ -1923,12 +2057,12 @@ bool HostedViewport::draw_frame(const SceneSnapshot& scene,const std::string* ca
         state.ui_presented=true;
         state.result.hardware=context.hardware;state.result.gpu_name=context.gpu_name;
         if(capture_path) { context.capture(*capture_path);state.result.capture_written=true; }
-        state.result.success=true;state.result.detail="Native Vulkan child viewport; serialized presentation, no frame-time qualification.";
+        state.result.success=true;state.result.detail="Native Vulkan child viewport; bounded presentation, no frame-time qualification.";
         return true;
     } catch(const std::exception& error) { state.result.success=false;state.result.detail=error.what();throw; }
 }
 RenderReport HostedViewport::report() const {
-    impl_->check_thread();auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
+    impl_->check_thread();if(impl_->context.checked && !impl_->context.renderer_fault)impl_->context.retire_frames();auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
 }
 
 #if POIMA_EDITOR
@@ -1943,7 +2077,7 @@ struct EditorViewport::Impl {
         SDL_SetWindowTitle(context.window,"Poima Editor");
         result.hardware=context.hardware;result.gpu_name=context.gpu_name;result.samples=context.samples;
         result.width=context.extent.width;result.height=context.extent.height;
-        result.detail="Native editor viewport; serialized Vulkan presentation, no frame-time qualification.";
+        result.detail="Native editor viewport; bounded Vulkan presentation, no frame-time qualification.";
     }
 };
 EditorViewport::EditorViewport(const RenderOptions& options,const SceneSnapshot& scene):impl_(std::make_unique<Impl>(options,scene)) {}
@@ -1991,11 +2125,12 @@ bool EditorViewport::draw_frame(const SceneSnapshot& scene,EditorRect viewport,c
         ++state.result.frames_presented;state.result.width=context.extent.width;state.result.height=context.extent.height;
         if(capture_path) { context.capture(*capture_path);state.result.capture_written=true; }
         state.result.success=true;
-        state.result.detail="Native editor viewport; serialized Vulkan presentation, no frame-time qualification.";
+        state.result.detail="Native editor viewport; bounded Vulkan presentation, no frame-time qualification.";
         return true;
     } catch(const std::exception& error) { state.result.success=false;state.result.detail=error.what();throw; }
 }
 RenderReport EditorViewport::report() const {
+    if(impl_->context.checked && !impl_->context.renderer_fault)impl_->context.retire_frames();
     auto result=impl_->result;result.validation_errors=impl_->context.messages.errors;result.diagnostics=impl_->context.diagnostics;return result;
 }
 EditorViewportResources EditorViewport::resources() const {
@@ -2228,8 +2363,9 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             require(drawn,"Surface kept changing during final player capture.");
             ++report.frames_presented; context.capture(options.render.capture); report.capture_written=true;
         }
+        context.retire_frames(true);
         report.success=true;
-        report.detail="Continuous native viewport using the fixed-step runtime; serialized Vulkan presentation, no frame-time qualification.";
+        report.detail="Continuous native viewport using the fixed-step runtime; bounded Vulkan presentation, no frame-time qualification.";
     } catch(const std::exception& error) {
         report.detail=error.what(); result.stop_reason="error";
     }

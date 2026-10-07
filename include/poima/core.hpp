@@ -50,6 +50,7 @@ struct RenderOptions {
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
     bool clustered_lighting = true; // False selects the complete all-light reference path.
+    std::uint32_t frames_in_flight = 2; // Bounded submission slots; 1 selects serialized retirement.
     bool profile = false;
     bool capture_exclusive = false; // Native host policy; not a user-controlled RPC parameter.
 };
@@ -69,6 +70,13 @@ struct LightAssignmentDiagnostics {
     std::uint64_t candidate_references=0,overflow_clusters=0,max_candidates=0,buffer_bytes=0;
     std::string fallback_reason;
 };
+struct FrameExecutionDiagnostics {
+    std::uint32_t limit=2;
+    std::uint64_t submitted=0,outstanding=0,peak_outstanding=0;
+    std::uint64_t slot_waits=0,drain_waits=0,device_idle_waits=0;
+    bool presentation_fences=false;
+    std::string presentation_retirement;
+};
 struct RenderDiagnostics {
     bool culling=true,profile_requested=false,gpu_timestamps=false;
     std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;
@@ -76,7 +84,8 @@ struct RenderDiagnostics {
     std::string gpu_timing_detail="Profiling not requested.";
     DrawCounts last_draws;
     LightAssignmentDiagnostics light_assignment;
-    TimingSummary prepare_cpu,record_cpu,render_call_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
+    FrameExecutionDiagnostics frame_execution;
+    TimingSummary prepare_cpu,record_cpu,render_call_cpu,completion_wait_cpu,skinning_gpu,light_assignment_gpu,shadow_gpu,opaque_gpu,post_gpu,total_gpu;
 };
 
 struct RenderReport {

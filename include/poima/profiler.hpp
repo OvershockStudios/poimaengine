@@ -25,12 +25,25 @@ struct Status {
     std::uint64_t dropped=0,elapsed_ns=0,storage_bytes=0;
     bool clock_saturated=false;
 };
+struct DeferredRecording;
+// Submission-time attribution for delayed owner-thread observations. A ticket
+// does not keep its recorder alive and never inherits retirement-time TLS.
+class DeferredContext {
+    friend DeferredContext capture_deferred() noexcept;
+    friend bool deferred_counter(const DeferredContext&,std::string_view,std::uint64_t,Kind) noexcept;
+    std::weak_ptr<DeferredRecording> recording_;
+    std::uint64_t start_ns_=0;
+    std::int64_t tick_=-1;
+    Source source_=Source::native;
+    std::array<char,33> session_{};
+};
 // Single owner thread. No callbacks, locks or allocation on record paths.
 // The owner must outlive all borrowed bindings/scopes. Events are immutable
 // only once recording==false and open==0; export outside measured operations.
 class Recorder {
 public:
     Recorder()=default;
+    ~Recorder() noexcept;
     Recorder(const Recorder&)=delete;
     Recorder& operator=(const Recorder&)=delete;
     void start(std::uint32_t capacity);
@@ -42,9 +55,12 @@ private:
     friend class Scope;
     friend void counter(std::string_view,std::uint64_t,Kind) noexcept;
     friend bool active() noexcept;
+    friend DeferredContext capture_deferred() noexcept;
+    friend bool deferred_counter(const DeferredContext&,std::string_view,std::uint64_t,Kind) noexcept;
     Event* reserve(std::string_view,Kind,std::int64_t) noexcept;
     std::uint64_t now() const noexcept;
     std::unique_ptr<Event[]> events_;
+    std::shared_ptr<DeferredRecording> deferred_recording_;
     std::chrono::steady_clock::time_point epoch_{};
     std::uint32_t capacity_=0,count_=0,open_=0;
     std::uint64_t dropped_=0,elapsed_=0;
@@ -101,5 +117,11 @@ private:
 // GPU values are durations in nanoseconds, not CPU-clock timestamps.
 // Counter values are unsigned caller-defined units, documented per name.
 void counter(std::string_view name,std::uint64_t value,Kind kind=Kind::counter) noexcept;
+// No allocation on capture/emission. Emission returns false after stop,
+// restart, destruction, on a different thread, or when capacity is exhausted.
+// Deferred events have parent=0: their submitting CPU scope may have finished.
+// GPU values remain durations, not intervals beginning at the CPU timestamp.
+DeferredContext capture_deferred() noexcept;
+bool deferred_counter(const DeferredContext&,std::string_view name,std::uint64_t value,Kind kind=Kind::counter) noexcept;
 bool active() noexcept;
 }
