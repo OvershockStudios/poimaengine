@@ -27,7 +27,7 @@ public sealed class CodexSession : IAsyncDisposable
 
     /// <summary>Attach Poima through its existing endpoint; never open a second world writer.</summary>
     public static async Task<CodexSession> ConnectAsync(string codexExecutable, string poimaExecutable,
-        string endpoint, string workingDirectory, CancellationToken cancellation = default)
+        string endpoint, string workingDirectory, CancellationToken cancellation = default, bool allowPoimaEdits = false)
     {
         if (endpoint.Length is < 1 or > 64 || endpoint.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-' && c != '_'))
             throw new ArgumentException("Invalid Poima endpoint.", nameof(endpoint));
@@ -36,9 +36,14 @@ public sealed class CodexSession : IAsyncDisposable
         var directory = Path.GetFullPath(workingDirectory);
         // CLI overrides apply only to this process. No provider account files or
         // global configuration are written. Provider authentication stays in Codex.
-        var rpc = new AgentRpcProcess(codexExecutable,
-            ["app-server", "-c", "mcp_servers.poima.command=" + JsonSerializer.Serialize(poimaExecutable),
-             "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(new[] { "mcp", "--endpoint", endpoint })], directory);
+        var arguments = new List<string>
+        {
+            "app-server", "-c", "mcp_servers.poima.command=" + JsonSerializer.Serialize(poimaExecutable),
+            "-c", "mcp_servers.poima.args=" + JsonSerializer.Serialize(new[] { "mcp", "--endpoint", endpoint })
+        };
+        if (allowPoimaEdits)
+            arguments.AddRange(["-c", "mcp_servers.poima.tools.poima_call.approval_mode=\"approve\""]);
+        var rpc = new AgentRpcProcess(codexExecutable, arguments, directory);
         var session = new CodexSession(rpc, directory);
         try
         {
@@ -53,9 +58,10 @@ public sealed class CodexSession : IAsyncDisposable
     }
 
     /// <summary>Start a persistent thread, or resume its provider-owned history without replaying prompts.</summary>
-    public async Task<string> OpenAsync(string? threadId = null, CancellationToken cancellation = default)
+    public async Task<string> OpenAsync(string? threadId = null, CancellationToken cancellation = default, string? model = null)
     {
         if (threadId is not null) ArgumentException.ThrowIfNullOrWhiteSpace(threadId);
+        if (model is not null) ArgumentException.ThrowIfNullOrWhiteSpace(model);
         await opening.WaitAsync(cancellation);
         try
         {
@@ -64,6 +70,7 @@ public sealed class CodexSession : IAsyncDisposable
             {
                 ["cwd"] = directory, ["approvalPolicy"] = "on-request", ["sandbox"] = "workspace-write"
             };
+            if (model is not null) parameters["model"] = model;
             if (threadId is null) parameters["ephemeral"] = false;
             else { parameters["threadId"] = threadId; parameters["excludeTurns"] = true; }
             var result = await rpc.RequestAsync(threadId is null ? "thread/start" : "thread/resume", parameters, cancellation);
@@ -100,6 +107,9 @@ public sealed class CodexSession : IAsyncDisposable
 
     public Task<JsonNode?> ListMcpServersAsync(CancellationToken cancellation = default) =>
         rpc.RequestAsync("mcpServerStatus/list", new JsonObject { ["threadId"] = RequireThread(), ["serverName"] = "poima" }, cancellation);
+
+    public Task<JsonNode?> ListModelsAsync(CancellationToken cancellation = default) =>
+        rpc.RequestAsync("model/list", new JsonObject { ["limit"] = 100 }, cancellation);
 
     public Task<JsonNode?> ListItemsAsync(string turnId, string? cursor = null, CancellationToken cancellation = default)
     {

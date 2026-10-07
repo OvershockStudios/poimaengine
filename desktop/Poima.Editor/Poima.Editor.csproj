@@ -13,6 +13,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Poima.AgentHost/Poima.AgentHost.csproj" />
     <PackageReference Include="Avalonia" Version="12.1.3" />
     <PackageReference Include="Avalonia.Desktop" Version="12.1.3" />
     <PackageReference Include="Avalonia.Themes.Simple" Version="12.1.3" />

@@ -27,6 +27,7 @@ public sealed partial class MainWindow : Window
     public GameplayEditorModel Gameplay { get; }
     public ComponentEditorModel Components { get; }
     private GameplayWindow? gameplayWindow;
+    private AgentWindow? agentWindow;
     public SaveEditorModel Saves { get; }
     private SaveWindow? saveWindow;
     private GameInputWindow? gameInputWindow;
@@ -51,6 +52,7 @@ public sealed partial class MainWindow : Window
     public MainWindow(NativeHost host, string? layoutFile = null)
     {
         Title = $"{System.IO.Path.GetFileNameWithoutExtension(host.WorldPath)} — Poima";
+        if (Program.Options.Script is not null) Title += " — Automated check (viewport input disabled)";
         Width = 1440; Height = 900; MinWidth = 960; MinHeight = 620;
         FontFamily = new FontFamily("avares://Poima.Editor/Assets#Inter");
         FontSize = 12; UseLayoutRounding = true;
@@ -142,7 +144,7 @@ public sealed partial class MainWindow : Window
                         if (Model.Host.State["closing"]?.GetValue<bool>() != true) Model.Host.Call("desktop.close.begin");
                         closingRequested = true;
                         status.Text = "Closing audio output…";
-                        gameInputWindow?.Close(); profilerWindow?.Close(); audioWindow?.CloseForOwner();
+                        agentWindow?.Close(); gameInputWindow?.Close(); profilerWindow?.Close(); audioWindow?.CloseForOwner();
                         saveWindow?.CloseForOwner(); gameplayWindow?.CloseForOwner();
                         if (Content is Control content) content.IsEnabled = false;
                     }
@@ -173,6 +175,16 @@ public sealed partial class MainWindow : Window
         audioWindow.Show(this);
     }
     public void CloseAudio() => audioWindow?.Close();
+    public void ShowAgent()
+    {
+        if (agentWindow is not null) { agentWindow.Activate(); return; }
+        agentWindow = new AgentWindow(projectRoot, Model.Host.Endpoint);
+        agentWindow.Closed += (_, _) => agentWindow = null;
+        agentWindow.Show(this);
+    }
+    public void CloseAgent() => agentWindow?.Close();
+    public JsonObject InspectAgent() => (agentWindow ?? throw new InvalidOperationException("Open Agent first.")).InspectForQualification();
+    public JsonObject RenderAgent(string path) => (agentWindow ?? throw new InvalidOperationException("Open Agent first.")).RenderForQualification(path);
     public JsonObject RenderAudio(string path) => (audioWindow ?? throw new InvalidOperationException("Open Audio first.")).RenderForQualification(path, projectRoot);
     public void ShowGameInput()
     {
@@ -326,7 +338,7 @@ public sealed partial class MainWindow : Window
             new MenuItem { Header = "_File", ItemsSource = new[] { Item("Import model…", () => _ = PickModel()), Item("Runtime saves…", ShowSaves), Item("Refresh", Model.Refresh), Item("Close", Close) } },
             new MenuItem { Header = "_Edit", ItemsSource = new[] { Item("Undo", () => Model.History(false)), Item("Redo", () => Model.History(true)), Item("Apply Inspector", Model.Apply), Item("Reload Inspector", Model.Reload), Item("Delete selected", Model.Delete), Item("Frame selected", Navigation.FrameSelection) } },
             new MenuItem { Header = "_GameObject", ItemsSource = new[] { Item("Create Empty", () => Model.Create("Entity")), Item("3D Object / Cube", () => Model.Create("Cube")), Item("Camera", () => Model.Create("Camera")), Item("Point Light", () => Model.Create("Light")), Item("Environment and Sky", () => Model.Create("Environment")) } },
-            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Profiler", ShowProfiler), Item("Audio", ShowAudio), Item("Saves", ShowSaves), Item("C# Gameplay", ShowGameplay), Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Modified Tall layout", ResetLayout), Item("Modified Tall with Scene and Game", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
+            new MenuItem { Header = "_Window", ItemsSource = new[] { Item("Agent", ShowAgent), Item("Profiler", ShowProfiler), Item("Audio", ShowAudio), Item("Saves", ShowSaves), Item("C# Gameplay", ShowGameplay), Item("Save layout", SaveLayout), Item("Restore saved layout", LoadLayout), Item("Reset layout", ResetLayout), Item("Scene and Game layout", () => SetTallLayout(true)), Item("Show Scene", () => ShowPanel("Scene")), Item("Show Game", () => ShowPanel("Game")) } },
             new MenuItem { Header = "_Help", ItemsSource = new[] { Item("Prototype capabilities", () => Model.Note("Dock tabs can split or float. Inspector uses guarded Apply. Play advances native fixed ticks; Pause enables Step. Stop discards runtime changes. Click a player's Game view to control it; Escape or Tab releases input. glTF/GLB model import is supported. Asset previews are type icons, not rendered thumbnails.")) } }
         } };
     }

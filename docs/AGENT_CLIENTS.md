@@ -2,7 +2,7 @@
 
 Poima's native MCP server can be used by the official Codex and Claude Code CLIs. The engine remains the authority for schemas, revisions, edits, receipts and runtime state. The clients supply the agent and their own authentication; Poima does not store provider credentials.
 
-Bounded authoring exercises pass with Codex CLI **0.160.1** on Linux and Claude Code **2.1.290** on Windows. Both agents discovered schemas, created an entity, replayed the exact transaction, observed stale-revision rejection, queried state, then undid and redid the edit. A separate trace verifier checked the actual tool calls and persisted world. These exercises do not qualify general game creation, embedded chat or cancellation. A separate simple rendered-observation exercise also passes for both clients; see below. [Evidence](evidence/m2-agent-authoring.json).
+Bounded authoring exercises pass with Codex CLI **0.160.1** on Linux and Claude Code **2.1.290** on Windows. Both agents discovered schemas, created an entity, replayed the exact transaction, observed stale-revision rejection, queried state, then undid and redid the edit. A separate trace verifier checked the actual tool calls and persisted world. These exercises do not qualify general game creation or cancellation; the separate desktop check below covers one embedded chat edit. A separate simple rendered-observation exercise also passes for both clients; see below. [Evidence](evidence/m2-agent-authoring.json).
 
 ## Connect a project
 
@@ -82,7 +82,7 @@ Official references: [Codex MCP configuration](https://learn.chatgpt.com/docs/ex
 
 `CodexSession` adds official app-server initialization, persistent thread creation/resume, text turns, interrupt requests, paginated history and Poima MCP discovery. Its process-local MCP configuration attaches to an existing shared endpoint. Codex retains account ownership and its existing user configuration; Poima does not manage credentials or write global provider configuration. Approval requests remain explicit events for the caller to handle.
 
-This is backend groundwork, not an embedded chat interface. A Linux integration check with Codex CLI 0.160.1 discovered both Poima tools, completed one short text turn, restarted the app-server process, resumed the same thread and retrieved the exact saved assistant response. Streaming notifications were received. Windows session integration, actual approval UI, interrupt completion, Claude's persistent adapter and desktop integration remain unqualified or unfinished. The interrupt response alone does not establish that a turn finished or an engine edit was undone.
+A Linux integration check with Codex CLI 0.160.1 discovered both Poima tools, completed one short text turn, restarted the app-server process, resumed the same thread and retrieved the exact saved assistant response. Streaming notifications were received. The development desktop integration below separately qualifies one Windows chat edit. Approval-card interaction, interrupt completion and Claude's persistent adapter remain unqualified or unfinished. The interrupt response alone does not establish that a turn finished or an engine edit was undone.
 
 The process-level contract fixture launches a synthetic peer and exercises concurrent correlation, Unicode, RPC errors, approval replies, cancellation, late responses, bounded diagnostics, truncated output, malformed responses, oversized frames, event overflow, cancellation during a blocked pipe write and concurrent disposal. It checks that disposal leaves no live peer process:
 
@@ -99,3 +99,19 @@ dotnet run --project tests/fixtures/agent_rpc/Poima.AgentRpc.Contract.csproj -- 
 ```
 
 This uses the installed Codex account, performs one short model turn and creates provider-owned conversation history. It rejects server approval requests during the check. Raw provider history stays outside the repository.
+
+## Desktop Agent window (development)
+
+Open **Window → Agent** in the development editor. Select the Codex executable and matching Poima executable, optionally select an advertised model, then Connect. An empty conversation ID starts a conversation; an existing ID requests resume. The ID remains readable and copyable while connected. Send starts one turn at a time and Stop requests interruption; already-applied world edits remain.
+
+The client attaches its Poima MCP server to the editor's existing endpoint. **Allow Poima world edits in this session** explicitly authorizes that operation tool for the process; shell and file approvals remain separate. Supported command/file approval requests display accept/decline controls. Startup failures allow reconnect; an uncertain send disconnects instead of automatically repeating the prompt. No global provider configuration or credentials are written by Poima.
+
+A candidate Windows package with Codex CLI 0.160.1 and `gpt-6.1-sol` passes 17 semantic actions: recovery from a missing executable, model discovery, a completed chat turn, one guarded entity creation and clean completion controls. Persisted state advances exactly one revision and preserves every existing entity. An attached-window render was visually inspected. This is one small authoring exercise on the NVIDIA development GPU; physical mouse input, approval-card interaction, interruption completion, broad game creation and Claude chat remain unqualified. The installed editor package has not been replaced. [Evidence](evidence/m2-agent-workspace.json).
+
+To reproduce with a logged-in official CLI and Windows Python:
+
+```text
+python tests/desktop_agent_frontend.py --editor EDITOR_EXE --binary POIMA_EXE --codex CODEX_EXE --model ADVERTISED_MODEL --output PRIVATE_OUTPUT_DIRECTORY
+```
+
+This opt-in check performs one model turn in a disposable project. Raw conversation reports and the render stay in the chosen output directory; they are not public evidence files. Automation windows label themselves **Automated check (viewport input disabled)** because physical viewport input is deliberately excluded during scripted qualification.

@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "editor_sha256": "2fedba0b0a7ef80d1a8e2791cc8a4c59c5f5640d505b7c75e5f5087f11bf49ef",
+  "binary_sha256": "05df699312413b72965b632800113562bdf074770f2132a75eb0ab7992fd8bf6",
+  "test_sha256": "f973ba6f4f53ab30fe29ee388becb2f9df3e5f7a0c6af92756f30e42ff2ac2ff",
+  "gpu": 1,
+  "requested_model": "gpt-6.1-sol",
+  "limitations": [
+    "Semantic accessible controls; no physical input qualification.",
+    "One Codex conversation and guarded edit; no Claude or general autonomy claim.",
+    "Attached window rendering; no OS screenshot."
+  ],
+  "actions": 17,
+  "final_revision": 2,
+  "capture_sha256": "12693645901f80b7ee2fd39e02ab2212e16f1cb61bd081dc70e1f9931ec05524",
+  "world_sha256": "050e217137c9ec333f5562fcf1c022f91d3641f2c5e6a68723e107eb63255a63",
+  "checkpoint": "0.0.40 development",
+  "scope": "Windows embedded Codex chat attached to the editor-owned world endpoint",
+  "client": {
+    "name": "Codex CLI",
+    "version": "0.160.1",
+    "model": "gpt-6.1-sol"
+  },
+  "source": "tests/desktop_agent_frontend.py",
+  "checks": [
+    "Missing executable leaves Connect usable.",
+    "Model discovery and explicit advertised model selection.",
+    "One completed conversation creates exactly one guarded root entity.",
+    "Persisted world revision advances from 1 to 2; all existing entities unchanged.",
+    "Completed turn restores Send and disables Stop.",
+    "Attached Agent window PNG visually inspected."
+  ],
+  "installed_package_activated": false
+}

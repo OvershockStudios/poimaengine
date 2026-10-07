@@ -189,6 +189,24 @@ internal sealed class DesktopScript
                     case "game_profile":
                         window.Game.SelectProfile(action["path"]?.GetValue<string>());
                         result["game_input"] = window.Game.Inspect(); break;
+                    case "show_agent": window.ShowAgent(); break;
+                    case "close_agent": window.CloseAgent(); break;
+                    case "inspect_agent": result["agent"] = window.InspectAgent(); break;
+                    case "render_agent": result["visual"] = window.RenderAgent(Text("path")); break;
+                    case "wait_agent":
+                        var agent = window.InspectAgent();
+                        var matched = (action["ready"] is null || agent["ready"]?.GetValue<bool>() == action["ready"]!.GetValue<bool>())
+                            && (action["connecting"] is null || agent["connecting"]?.GetValue<bool>() == action["connecting"]!.GetValue<bool>())
+                            && (action["connect_enabled"] is null || agent["connect_enabled"]?.GetValue<bool>() == action["connect_enabled"]!.GetValue<bool>())
+                            && (action["status_contains"] is null || agent["status"]!.GetValue<string>().Contains(Text("status_contains"), StringComparison.Ordinal));
+                        if (!matched)
+                        {
+                            if (deferredAt is null) { deferredAt = frame; deferredStarted = System.Diagnostics.Stopwatch.GetTimestamp(); }
+                            if (System.Diagnostics.Stopwatch.GetElapsedTime(deferredStarted).TotalSeconds < 120) { --next; return; }
+                            throw new InvalidOperationException("Agent state wait timed out: " + agent["status"]);
+                        }
+                        if (deferredAt is int agentStarted) { frameOffset += frame-agentStarted; deferredAt = null; }
+                        result["agent"] = agent; break;
                     case "show_gameplay": window.ShowGameplay(); break;
                     case "open_profiler": window.ShowProfiler(); break;
                     case "close_profiler": window.CloseProfiler(); break;
