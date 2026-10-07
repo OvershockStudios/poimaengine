@@ -4,8 +4,8 @@
 struct SkyConstants {
     float4 right_tan;      // camera right; tan(horizontal half-FOV)
     float4 up_tan;         // camera up; tan(vertical half-FOV)
-    float4 forward_srgb;   // camera forward; target performs sRGB encoding
-    float4 zenith_exposure;
+    float4 forward_srgb;   // camera forward; .w reserved
+    float4 zenith_exposure; // .xyz radiance; .w reserved
     float4 horizon_falloff;
     float4 ground_radius;  // .w is the sun's angular-radius chord length
     float4 sun_intensity;  // normalized direction toward sun; radiance multiplier
@@ -19,9 +19,6 @@ VertexOutput vertex_main(uint vertex : SV_VertexID) {
     result.position=float4(positions[vertex],0,1);
     result.ndc=positions[vertex];
     return result;
-}
-float3 linear_to_srgb(float3 color) {
-    return select(color<=0.0031308,color*12.92,1.055*pow(color,1.0/2.4)-0.055);
 }
 float4 pixel_main(VertexOutput input) : SV_Target0 {
     const float3 ray=normalize(sky.forward_srgb.xyz+
@@ -42,7 +39,7 @@ float4 pixel_main(VertexOutput input) : SV_Target0 {
         const float above_ground=smoothstep(-max(fwidth(ray.y),1e-6),max(fwidth(ray.y),1e-6),ray.y);
         color+=sky.sun_color.xyz*(sky.sun_intensity.w*(disk+halo)*above_ground);
     }
-    color*=sky.zenith_exposure.w;
-    color=color/(1+color); // Same exposure/Reinhard mapping as scene materials.
-    return float4(sky.forward_srgb.w>.5 ? color : linear_to_srgb(color),1);
+    // Same bounded radiance storage as geometry; shared output owns exposure.
+    color=select(isnan(color),0,clamp(color,0,65504));
+    return float4(color,1);
 }

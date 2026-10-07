@@ -4,6 +4,8 @@ Updated 2026-10-06 for **0.0.39**. **Poima is an engine prototype.** Capability 
 
 ## Current limits
 
+A shared [scene HDR composition path](HDR_COMPOSITION.md) is under development: floating-point scene color, linear MSAA resolve, then one exposure/output transform before UI. Seven shader stages and a Windows C++ syntax check pass; full linking and new GPU qualification are pending. Earlier render evidence does not qualify this change. It does not add HDR monitor output, GI or post-processing effects.
+
 [Explicit scalar save upgrades](SAVE_UPGRADES.md) now connect stable-ID mapping, authored-content validation and snapshot transformation to guarded external `save.load` in development. Linux CoreCLR integration tests cover real old-save/new-game continuation, component changes, rejection isolation, retry and recovery; Windows and Native AOT integration qualification remains pending. Automatic gameplay/editor upgrade selection is unfinished. Ordinary restores remain exact. The earlier cross-platform [primitive evidence](evidence/m2-save-upgrade-primitives.json) covers mapping/plan guards only.
 
 The latest development [C# lifecycle checkpoint](GAMEPLAY_LIFECYCLE.md) passes five compiled integration groups under both CoreCLR and Native AOT on Linux and Windows. Agent-service tests cover guarded births, durable restoration and continued gameplay; the CoreCLR path also verifies compatible reload with spawned entities. This is root-prop support, not general entity/component lifecycle or a new installed editor package. [Qualification evidence](evidence/m2-managed-lifecycle.json).

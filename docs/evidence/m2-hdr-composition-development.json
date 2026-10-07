@@ -1,0 +1,103 @@
+{
+  "date": "2026-10-07",
+  "status": "development-source-validation-only",
+  "base_commit": "76ddc3f",
+  "sources_sha256": {
+    "src/render_smoke.cpp": "93396ac82161dd1493889f49d90e43666115b78f3bbbeb0c67eb59b06e4a4d72",
+    "shaders/scene.hlsl": "e210cc09cca1015d306fc883753bca7fcaefbc6ab9e640d20fe8e3b4b1d2fd32",
+    "shaders/sky.hlsl": "ad4e55c4af0f6b26e7248d47f2b67fbd20c38904c1836f5c5a297e1d1a909b07",
+    "shaders/scene_output.hlsl": "ab7db3e008302f425b8fbc4e2237f3605540b18b9738a76aaee1b53e2bfb5653",
+    "shaders/shadow.hlsl": "f285ba3d3fc4b4107f6dce2e972371c557cf458e3ac0d05e1bf1c9dbb4a39066",
+    "cmake/render_smoke.cmake": "6e3c0503808b2692fa497cf58b470b5cc4cc6988251a546d52b2d17a2fbc099a",
+    "tests/hdr_composition_capture.py": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740"
+  },
+  "shader_compilation": {
+    "passed": true,
+    "compiler": "DXC v1.8.2505.1",
+    "target": "SPIR-V Vulkan 1.3",
+    "stages": [
+      {
+        "shader": "scene",
+        "stage": "vs",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "shader": "scene",
+        "stage": "ps",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "shader": "sky",
+        "stage": "vs",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "shader": "sky",
+        "stage": "ps",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "shader": "scene_output",
+        "stage": "vs",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "shader": "scene_output",
+        "stage": "ps",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "shader": "shadow",
+        "stage": "vs",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "raw_record": "build/hdr-composition-shaders-corrected/evidence.json",
+    "prior_attempt": "Initial output push-constant declaration was rejected by DXC; corrected to ConstantBuffer struct form. Original failed record retained locally."
+  },
+  "native_syntax": {
+    "exit_code": 0,
+    "elapsed_seconds": 30.343354426004225,
+    "scope": "Windows renderer C++ syntax only; no link or GPU execution",
+    "target": "Windows LLVM-MinGW C++20",
+    "linked": false,
+    "warnings": [
+      "Existing Vulkan header deprecated implicit copy assignment warning"
+    ],
+    "raw_record": "build/hdr-composition-native-syntax/evidence.json"
+  },
+  "test_oracle": {
+    "passed": true,
+    "command": "python3 tests/hdr_composition_capture.py --self-test",
+    "output": "PASS: analytic oracle accepts HDR resolve and rejects tone-map-before-resolve; no GPU executed.",
+    "scope": "Analytic reference only; accepts correct resolve order and rejects deliberately wrong order. Python AST also parsed."
+  },
+  "review": {
+    "sample_count_fix": "Both general and HDR format checks now use validated actual 1/2/4/8 sample count.",
+    "fixture_fix": "Authored primitive exposure uses nonzero ambient; true legacy preview removes all authored lighting and material."
+  },
+  "pending": [
+    "Full native build and link",
+    "11 GPU capture cases on both laptop GPUs",
+    "Existing lighting/material/sky/UI regression captures",
+    "Hosted/player/editor resize and output parity",
+    "Frame time and memory measurements"
+  ],
+  "gpu_executed": false,
+  "desktop_package_activated": false,
+  "performance_claim": false
+}

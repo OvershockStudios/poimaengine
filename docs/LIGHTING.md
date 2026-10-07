@@ -28,7 +28,7 @@ One optional `LightingEnvironment` may exist anywhere in a world. Its transform 
 {"op":"component.set","id":"00000000000000000000000000000003","type":"LightingEnvironment","value":{"ambient":[0.015,0.02,0.03],"exposure":1}}
 ```
 
-Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. The procedural sky follows exposure; the legacy flat background remains independent of exposure. There is no auto-exposure or photometrically calibrated camera.
+Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. The procedural sky follows exposure. The development [shared HDR composition path](HDR_COMPOSITION.md) also applies exposure to the flat scene background; earlier qualified builds left that background independent. There is no auto-exposure or photometrically calibrated camera.
 
 ## Procedural sky
 

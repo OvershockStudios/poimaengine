@@ -108,9 +108,6 @@ float light_visibility(SceneLight source,float3 position,float3 geometric_normal
     const float visibility=shadow_compare(first+face,biased,geometric_normal,source.shadow.z);
     return lerp(visibility,1,saturate((distance-.9*far)/(.1*far)));
 }
-float3 linear_to_srgb(float3 color) {
-    return select(color<=0.0031308,color*12.92,1.055*pow(color,1.0/2.4)-0.055);
-}
 float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float roughness) {
     const float nl=saturate(dot(n,l));if(nl<=0)return 0;
     const float3 halfway=v+l;
@@ -173,8 +170,9 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
             }
             color+=direct_brdf(n,v,l,base,metallic,roughness)*source.color_intensity.rgb*(source.color_intensity.w*attenuation*light_visibility(source,input.world_position,geometric_normal,l));
         }
-        color*=ambient_exposure.w;
-        color=color/(1+color); // Reinhard display mapping with linear exposure.
     }
-    return float4(camera.w>0.5 ? color : linear_to_srgb(color),1);
+    // RGBA16_FLOAT has finite radiance range. Bound before storage; exposure
+    // and display mapping occur only after the linear multisample resolve.
+    color=select(isnan(color),0,clamp(color,0,65504));
+    return float4(color,1);
 }

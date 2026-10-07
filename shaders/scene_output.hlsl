@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+// One display transform for resolved scene-linear radiance. UI is drawn later.
+Texture2D<float4> scene_radiance : register(t0);
+struct OutputConstants {
+    float exposure;
+    float attachment_srgb;
+    float2 reserved;
+};
+[[vk::push_constant]] ConstantBuffer<OutputConstants> output;
+float4 vertex_main(uint vertex : SV_VertexID) : SV_Position {
+    const float2 positions[3]={float2(-1,-1),float2(3,-1),float2(-1,3)};
+    return float4(positions[vertex],0,1);
+}
+float3 linear_to_srgb(float3 color) {
+    return select(color<=0.0031308,color*12.92,1.055*pow(color,1.0/2.4)-0.055);
+}
+float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
+    // Integer load prevents filtering/coordinate drift between Scene, player
+    // and capture targets. Bounds follow the full-size output framebuffer.
+    const float3 radiance=scene_radiance.Load(int3(int2(position.xy),0)).rgb;
+    const float3 exposed=radiance*output.exposure;
+    const float3 mapped=exposed/(1+exposed);
+    return float4(output.attachment_srgb>.5 ? mapped : linear_to_srgb(mapped),1);
+}
