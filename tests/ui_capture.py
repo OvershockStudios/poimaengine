@@ -45,15 +45,19 @@ def main():
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     prefix = (args.output / f"ui-gpu{args.gpu}-msaa{args.samples}").resolve()
-    for suffix in ("-baseline.bmp", "-ui.bmp"):
-        Path(str(prefix) + suffix).unlink(missing_ok=True)
+    for suffix in ("-baseline.bmp", "-ui.bmp", "-ui-exposure-zero.bmp", "-ui-exposure-high.bmp", "-baseline-zero.bmp"):
+        if Path(str(prefix) + suffix).exists():
+            raise FileExistsError("Retain previous evidence and choose a fresh --output: " + str(prefix))
     argument = str(prefix)
     if args.windows_interop:
         argument = subprocess.check_output(["wslpath", "-w", argument], text=True).strip()
     result = subprocess.run([str(args.binary.resolve()), argument, str(args.gpu), str(args.samples)],
                             capture_output=True, text=True, encoding="utf-8", timeout=90)
     evidence = {"exit_code": result.returncode, "stderr": result.stderr, "gpu_index": args.gpu,
-                "requested_samples": args.samples, "passed": False}
+                "requested_samples": args.samples, "passed": False,
+                "binary_sha256": hashlib.sha256(args.binary.read_bytes()).hexdigest(),
+                "test_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                "native_source_sha256": hashlib.sha256(Path(__file__).with_name("ui_capture_native.cpp").read_bytes()).hexdigest()}
     try:
         evidence["response"] = json.loads(result.stdout)
         assert result.returncode == 0, result.stdout + result.stderr
@@ -62,7 +66,7 @@ def main():
                 assert report["success"] and report["capture_written"] and report["hardware"]
                 assert report["validation_errors"] == 0 and report["samples"] == args.samples
         pixel, digest = image(Path(str(prefix) + "-ui.bmp"))
-        _, baseline_digest = image(Path(str(prefix) + "-baseline.bmp"))
+        baseline_pixel, baseline_digest = image(Path(str(prefix) + "-baseline.bmp"))
         assert digest != baseline_digest
         alpha = 128 / 255
         grey = encode((((.5 + .055) / 1.055) ** 2.4) * alpha)
@@ -83,6 +87,17 @@ def main():
             actual = pixel(x, y)
             evidence["probes"][name] = {"pixel": [x, y], "expected": expected, "actual": actual}
             assert all(abs(a - b) <= 2 for a, b in zip(actual, expected)), (name, actual, expected)
+        zero_ui, zero_ui_hash = image(Path(str(prefix) + "-ui-exposure-zero.bmp"))
+        high_ui, high_ui_hash = image(Path(str(prefix) + "-ui-exposure-high.bmp"))
+        dark_pixel, dark_hash = image(Path(str(prefix) + "-baseline-zero.bmp"))
+        assert baseline_pixel(160,120) != dark_pixel(160,120), "Exposure did not change non-UI scene background."
+        assert dark_pixel(160,120) == (0,0,0), "Zero exposure failed to blacken scene."
+        for y in range(240):
+            for x in range(320):
+                assert zero_ui(x,y) == pixel(x,y) == high_ui(x,y), ("UI changed with scene exposure",x,y)
+        evidence["exposure_invariance"] = {"exposures":[0,1,64], "compared_pixels":320*240,
+            "zero_ui_sha256":zero_ui_hash, "high_ui_sha256":high_ui_hash, "zero_baseline_sha256":dark_hash,
+            "non_ui_baseline":baseline_pixel(160,120), "zero_exposure_baseline":dark_pixel(160,120)}
         evidence.update(passed=True, image_sha256=digest, baseline_sha256=baseline_digest)
     finally:
         Path(str(prefix) + ".json").write_text(json.dumps(evidence, indent=2) + "\n")

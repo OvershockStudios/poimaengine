@@ -27,7 +27,7 @@ See the [world API](docs/WORLD_SERVICE.md) and [shared sessions](docs/SHARED_SES
 | System | Available today |
 | --- | --- |
 | Authoring and editor | Persistent hierarchy, typed Inspector, Project browser, transform gizmos, independent Scene/Game panels and transactional edits. |
-| Rendering and assets | Vulkan PBR rendering, direct lights and shadows, procedural sky, MSAA, GPU skinning and captures; glTF/GLB, PNG/JPEG and WAV import. |
+| Rendering and assets | Vulkan PBR rendering with shared HDR composition, direct lights and shadows, procedural sky, MSAA, GPU skinning and captures; glTF/GLB, PNG/JPEG and WAV import. |
 | Simulation and animation | Fixed-step Jolt physics, capsule movement, static triangle meshes, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
 | C# gameplay | Native-owned components, generated accessors, compatible development reload and Native AOT game bundles; bounded collections have Linux CoreCLR development qualification. |
 | Saves | Durable slots, guarded restoration and corruption recovery. Explicit scalar save upgrades have Linux CoreCLR development qualification. |

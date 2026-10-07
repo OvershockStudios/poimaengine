@@ -1,0 +1,961 @@
+{
+  "date": "2026-10-07",
+  "status": "bounded-windows-gpu-qualification",
+  "implementation_commit": "aca3c30",
+  "passed": true,
+  "devices": {
+    "0": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "1": "AMD Radeon(TM) Graphics"
+  },
+  "source_sha256": {
+    "src/render_smoke.cpp": "93396ac82161dd1493889f49d90e43666115b78f3bbbeb0c67eb59b06e4a4d72",
+    "shaders/scene.hlsl": "e210cc09cca1015d306fc883753bca7fcaefbc6ab9e640d20fe8e3b4b1d2fd32",
+    "shaders/sky.hlsl": "ad4e55c4af0f6b26e7248d47f2b67fbd20c38904c1836f5c5a297e1d1a909b07",
+    "shaders/scene_output.hlsl": "ab7db3e008302f425b8fbc4e2237f3605540b18b9738a76aaee1b53e2bfb5653",
+    "cmake/render_smoke.cmake": "6e3c0503808b2692fa497cf58b470b5cc4cc6988251a546d52b2d17a2fbc099a",
+    "tests/hdr_composition_capture.py": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740",
+    "tests/ui_capture.py": "ce24ad616eef45fecf6633a3ab41088e2706fbf2f9a8afb5ec1ef133abe342c6",
+    "tests/ui_capture_native.cpp": "16a0905303fe3b275608bbc7344ed86e13ce5dcd3d2b0febfa1a7c7ccc084637",
+    "tests/player_contract.py": "1e1ecf3ba727cb4ece44e86ff2536d721530055e6549798226630a66d9993326",
+    "tests/desktop_dual_view.py": "626281b14a82bad849abad1a46cc1cf07b7565fcb86a2c99a45ab6ab8e08ec8b"
+  },
+  "artifact_sha256": {
+    "poima.exe": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c",
+    "poima_desktop.dll": "c330e51989a6679d3da030af3a105bb4539270e35d2e684955e9061e25f0307f",
+    "poima-ui-capture-test.exe": "8141f9626560ddddf0cb4d01683fb769e324ff871157f34d460ddb029de470d8"
+  },
+  "build": {
+    "native_link_passed": true,
+    "targets": [
+      "poima",
+      "poima-ui-capture-test",
+      "poima_desktop"
+    ],
+    "jobs": 1,
+    "logs": [
+      {
+        "path": "build/hdr-native-build.log",
+        "sha256": "a187d265529d4df65daeece46d85cac5b7cc5e62be5a3fe3bda5f0c5dc17e0f4"
+      },
+      {
+        "path": "build/hdr-integration-build.log",
+        "sha256": "b39d0a590fb9a495c9f94ee22ed59756e14b599cc7eee2f1f9bff66cdbcecfd3"
+      }
+    ],
+    "warning": "Existing Vulkan-header deprecated-copy warning; no build failure."
+  },
+  "scene_regression_capture_count": 174,
+  "scene_suites": [
+    {
+      "suite": "hdr_composition_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "image_count": 11,
+      "checks": {
+        "resolve_order": {
+          "coverage_counts": {
+            "1": 116,
+            "2": 19,
+            "3": 113
+          },
+          "maximum_error": 0,
+          "minimum_distance_from_wrong_resolve": 27
+        },
+        "bright_interior": {
+          "actual": [
+            248,
+            248,
+            248
+          ],
+          "expected": 248
+        },
+        "exposure-1": {
+          "material": {
+            "actual": [
+              156,
+              156,
+              156
+            ],
+            "expected": 156
+          },
+          "sky": {
+            "actual": [
+              124,
+              124,
+              124
+            ],
+            "expected": 124
+          }
+        },
+        "exposure-4": {
+          "material": {
+            "actual": [
+              213,
+              213,
+              213
+            ],
+            "expected": 213
+          },
+          "sky": {
+            "actual": [
+              188,
+              188,
+              188
+            ],
+            "expected": 188
+          }
+        },
+        "default_box_exposure_1": {
+          "actual": [
+            62,
+            85,
+            101
+          ],
+          "expected": [
+            62,
+            85,
+            101
+          ],
+          "background_actual": [
+            43,
+            52,
+            65
+          ],
+          "background_expected": [
+            43,
+            52,
+            65
+          ]
+        },
+        "default_box_exposure_4": {
+          "actual": [
+            114,
+            146,
+            165
+          ],
+          "expected": [
+            113,
+            146,
+            165
+          ],
+          "background_actual": [
+            85,
+            98,
+            118
+          ],
+          "background_expected": [
+            85,
+            98,
+            118
+          ]
+        },
+        "finite_hdr_saturation": {
+          "actual": [
+            169,
+            169,
+            169
+          ],
+          "expected": 169,
+          "unbounded_reference": 245,
+          "ambient": 1000000.0,
+          "exposure": 1e-05,
+          "storage_maximum": 65504
+        },
+        "zero_exposure_sky_true": {
+          "maximum_channel": 0
+        },
+        "zero_exposure_sky_false": {
+          "maximum_channel": 0
+        },
+        "legacy_preview": {
+          "actual": [
+            94,
+            124,
+            143
+          ],
+          "expected": [
+            94,
+            124,
+            143
+          ],
+          "old_unmapped_reference": [
+            100,
+            138,
+            166
+          ],
+          "diffuse_shade": 0.6368105319155475
+        }
+      },
+      "numeric_probe_count": 0,
+      "raw_evidence": "build/hdr-composition-gpu-initial/hdr_composition_capture-gpu1/c090af10ea1546af963f18940d052cab/evidence.json",
+      "raw_sha256": "92429164198cc54981d3a38f39d2740c7a1e7aea7a4bd75616d5b2daecf3b724",
+      "test_sha256": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "hdr_composition_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "image_count": 11,
+      "checks": {
+        "resolve_order": {
+          "coverage_counts": {
+            "1": 116,
+            "2": 19,
+            "3": 113
+          },
+          "maximum_error": 0,
+          "minimum_distance_from_wrong_resolve": 27
+        },
+        "bright_interior": {
+          "actual": [
+            248,
+            248,
+            248
+          ],
+          "expected": 248
+        },
+        "exposure-1": {
+          "material": {
+            "actual": [
+              156,
+              156,
+              156
+            ],
+            "expected": 156
+          },
+          "sky": {
+            "actual": [
+              124,
+              124,
+              124
+            ],
+            "expected": 124
+          }
+        },
+        "exposure-4": {
+          "material": {
+            "actual": [
+              213,
+              213,
+              213
+            ],
+            "expected": 213
+          },
+          "sky": {
+            "actual": [
+              188,
+              188,
+              188
+            ],
+            "expected": 188
+          }
+        },
+        "default_box_exposure_1": {
+          "actual": [
+            62,
+            85,
+            101
+          ],
+          "expected": [
+            62,
+            85,
+            101
+          ],
+          "background_actual": [
+            43,
+            52,
+            65
+          ],
+          "background_expected": [
+            43,
+            52,
+            65
+          ]
+        },
+        "default_box_exposure_4": {
+          "actual": [
+            113,
+            146,
+            165
+          ],
+          "expected": [
+            113,
+            146,
+            165
+          ],
+          "background_actual": [
+            85,
+            98,
+            118
+          ],
+          "background_expected": [
+            85,
+            98,
+            118
+          ]
+        },
+        "finite_hdr_saturation": {
+          "actual": [
+            169,
+            169,
+            169
+          ],
+          "expected": 169,
+          "unbounded_reference": 245,
+          "ambient": 1000000.0,
+          "exposure": 1e-05,
+          "storage_maximum": 65504
+        },
+        "zero_exposure_sky_true": {
+          "maximum_channel": 0
+        },
+        "zero_exposure_sky_false": {
+          "maximum_channel": 0
+        },
+        "legacy_preview": {
+          "actual": [
+            94,
+            124,
+            144
+          ],
+          "expected": [
+            94,
+            124,
+            143
+          ],
+          "old_unmapped_reference": [
+            100,
+            138,
+            166
+          ],
+          "diffuse_shade": 0.6368105319155475
+        }
+      },
+      "numeric_probe_count": 0,
+      "raw_evidence": "build/hdr-composition-gpu-initial/hdr_composition_capture-gpu0/be2184996ab24ddd8f0cd3279500fb7c/evidence.json",
+      "raw_sha256": "76a507471dea1ecf8af7f200d0a5baa86eef78c9081707bc71199198616e4657",
+      "test_sha256": "4e2dcffa16bd3f514a7734aca96082c2415e25798f8a44e4f6d15f8c8ed49740",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "lighting_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "image_count": 18,
+      "checks": {},
+      "numeric_probe_count": 17,
+      "raw_evidence": "build/hdr-composition-regressions/lighting_capture-gpu1/gpu-1.json",
+      "raw_sha256": "8136da18e4f58232f6bd0431472aaf627dcf8808c8ff8ea5a19dcae736087ab3",
+      "test_sha256": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "lighting_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "image_count": 18,
+      "checks": {},
+      "numeric_probe_count": 17,
+      "raw_evidence": "build/hdr-composition-regressions/lighting_capture-gpu0/gpu-0.json",
+      "raw_sha256": "2b315f023d062e7a94a55dbb5a7291ba495655c4ec38659ce1707c8ccaa85849",
+      "test_sha256": "097e584366bf728e19e53d03de7b182e355ac565ca5f966b3bf710c04c7b8f8f",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "sky_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "image_count": 44,
+      "checks": {
+        "1": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 0,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 1,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        },
+        "4": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 0,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 1,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        }
+      },
+      "numeric_probe_count": 0,
+      "raw_evidence": "build/hdr-composition-regressions/sky_capture-gpu1/gpu-1.json",
+      "raw_sha256": "8fbb8df7c36bd9c913581d108cc7cd438f02906d3c23ca480f39698a029f272e",
+      "test_sha256": "075cfd13821e599bbbbfde5486bf6544bb72d243c7f1b435049d2319a358f4b2",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "sky_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "image_count": 44,
+      "checks": {
+        "1": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 1,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 0,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        },
+        "4": {
+          "legacy_disabled_exact": true,
+          "translation_invariant_exact": true,
+          "yaw_max_channel_difference": 1,
+          "hemisphere_gradient": [
+            [
+              108,
+              90,
+              172
+            ],
+            [
+              167,
+              105,
+              53
+            ],
+            [
+              110,
+              162,
+              79
+            ]
+          ],
+          "camera_pitch_fov": true,
+          "tone_exposure": true,
+          "sun_projection": {
+            "sun": {
+              "observed": {
+                "pixels": 1742,
+                "x": 319.5,
+                "y": 95.5223880597015
+              },
+              "expected": [
+                319.50000000000006,
+                95.96170927520417
+              ]
+            },
+            "sun-wide": {
+              "observed": {
+                "pixels": 592,
+                "x": 319.5,
+                "y": 131.03040540540542
+              },
+              "expected": [
+                319.5,
+                131.26914536239792
+              ]
+            },
+            "sun-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            },
+            "runtime-rotated": {
+              "observed": {
+                "pixels": 2093,
+                "x": 205.3846153846154,
+                "y": 90.08026755852843
+              },
+              "expected": [
+                206.02531112547436,
+                90.60040786004163
+              ]
+            }
+          },
+          "sun_area_fov_ratio": 2.9425675675675675,
+          "sun_disabled_unreferenced_exact": true,
+          "foreground_occlusion": [
+            156,
+            0,
+            0
+          ],
+          "runtime_authored_max_channel_difference": 0,
+          "runtime_live_sun_and_frozen_settings": true,
+          "player_capture_exact": true
+        }
+      },
+      "numeric_probe_count": 0,
+      "raw_evidence": "build/hdr-composition-regressions/sky_capture-gpu0/gpu-0.json",
+      "raw_sha256": "d6f1fd4fc18da43f55accaf02642ab1a02da517e4b9fcc92f0a619e7ac4d8e21",
+      "test_sha256": "075cfd13821e599bbbbfde5486bf6544bb72d243c7f1b435049d2319a358f4b2",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "material_capture",
+      "gpu_index": 1,
+      "passed": true,
+      "image_count": 14,
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      },
+      "numeric_probe_count": 11,
+      "raw_evidence": "build/hdr-composition-regressions/material_capture-gpu1/gpu-1.json",
+      "raw_sha256": "db817c3233fa99c62f66d34117a1b505f236a8f87ddfa321b229a2048e4fb1b1",
+      "test_sha256": "14179932cc55f7da69c6b701e82fc14bcf77c3845c05cb9ef3fe4a02a6a26804",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    },
+    {
+      "suite": "material_capture",
+      "gpu_index": 0,
+      "passed": true,
+      "image_count": 14,
+      "checks": {
+        "legacy_v2_render_and_normal_rejection": true,
+        "builtin_box_tangent_frame": true,
+        "generated_authored_mirrored_tangent_normals": true,
+        "normal_scale_zero": true,
+        "nonuniform_transform": true,
+        "standalone_image_overrides": true,
+        "preview_read_only": true,
+        "retry_receipt": true,
+        "effective_material_inspection": true,
+        "null_disable_remove_inherit": true,
+        "frozen_runtime_120_tick_replay": true,
+        "source_independent_reopen": true,
+        "wrong_color_space_rejected_before_capture": true
+      },
+      "numeric_probe_count": 11,
+      "raw_evidence": "build/hdr-composition-regressions/material_capture-gpu0/gpu-0.json",
+      "raw_sha256": "8483488cc275fa19e438c5c872ec6631e0848a1af4cd34e224fa1ceb79ce42b6",
+      "test_sha256": "14179932cc55f7da69c6b701e82fc14bcf77c3845c05cb9ef3fe4a02a6a26804",
+      "binary_sha256": "41b5167fffd4179297e2d1b7c669afed9d8ed1a3bac3108bc07db9684b3f6c0c"
+    }
+  ],
+  "integration_groups": [
+    {
+      "name": "ui-gpu1-msaa1",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/ui-gpu1-msaa1/ui-gpu1-msaa1.json",
+      "raw_sha256": "7a96c5569b33fb1df2c8ebac683f0db0c05604d4fdf558c922eff5037a95cad2",
+      "checks": {},
+      "numeric_probe_count": 10,
+      "exposure_invariance": {
+        "exposures": [
+          0,
+          1,
+          64
+        ],
+        "compared_pixels": 76800,
+        "zero_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "high_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "zero_baseline_sha256": "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "non_ui_baseline": [
+          43,
+          52,
+          65
+        ],
+        "zero_exposure_baseline": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "ui-gpu1-msaa4",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/ui-gpu1-msaa4/ui-gpu1-msaa4.json",
+      "raw_sha256": "017267f37980c538397e83cff9c79d87e91f4228d9ca47214d18831bd6ffdf72",
+      "checks": {},
+      "numeric_probe_count": 10,
+      "exposure_invariance": {
+        "exposures": [
+          0,
+          1,
+          64
+        ],
+        "compared_pixels": 76800,
+        "zero_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "high_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "zero_baseline_sha256": "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "non_ui_baseline": [
+          43,
+          52,
+          65
+        ],
+        "zero_exposure_baseline": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "ui-gpu0-msaa1",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/ui-gpu0-msaa1/ui-gpu0-msaa1.json",
+      "raw_sha256": "1e53bdfb4e12d932afb3f362aab6b740334d0408ee3d93489ad5c5aa8cf34a46",
+      "checks": {},
+      "numeric_probe_count": 10,
+      "exposure_invariance": {
+        "exposures": [
+          0,
+          1,
+          64
+        ],
+        "compared_pixels": 76800,
+        "zero_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "high_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "zero_baseline_sha256": "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "non_ui_baseline": [
+          43,
+          52,
+          65
+        ],
+        "zero_exposure_baseline": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "ui-gpu0-msaa4",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/ui-gpu0-msaa4/ui-gpu0-msaa4.json",
+      "raw_sha256": "cb46107cb2df5cca0d325d96000ce0c2f1ac4d2ac96c2a671acae6c354f532ae",
+      "checks": {},
+      "numeric_probe_count": 10,
+      "exposure_invariance": {
+        "exposures": [
+          0,
+          1,
+          64
+        ],
+        "compared_pixels": 76800,
+        "zero_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "high_ui_sha256": "b14136178571d1206b92035974ba3b1f90fffe8b9486e295463a985f9c8ef32b",
+        "zero_baseline_sha256": "f8528e11d9370a5f13457c7b1cf53421f6a8e3f2d3267747e938d9b2927b9497",
+        "non_ui_baseline": [
+          43,
+          52,
+          65
+        ],
+        "zero_exposure_baseline": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "player-gpu1",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/player-gpu1/gpu-1.json",
+      "raw_sha256": "e655dd43da46af7d723d784a29dc40eec06dd212d0bad0560fdd5566e1de589f",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "numeric_probe_count": 0,
+      "exposure_invariance": null
+    },
+    {
+      "name": "player-gpu0",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/player-gpu0/gpu-0.json",
+      "raw_sha256": "a9e099bf30656567e30e69f9b3d165797f22942968c19584c4555470ef19e760",
+      "checks": {
+        "continuous_replay_matches_headless_state": true,
+        "final_pixels_match_independent_capture": true,
+        "retry_does_not_advance": true,
+        "stale_tick_guard": true,
+        "request_id_cross_method_conflict": true,
+        "device_failure_state_and_recovery": true,
+        "authored_spawn_unchanged": true
+      },
+      "numeric_probe_count": 0,
+      "exposure_invariance": null
+    },
+    {
+      "name": "hosted-gpu1-msaa4",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/hosted-gpu1-msaa4/run-f067f714723c4bd8b150a1725c21e099/result.json",
+      "raw_sha256": "7d02a60bc1d251c2b3ce2607767f24be84f0a5e7b99b5b02f848139e3aa2264f",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "simultaneous_alternating_device_presentation_distinct_camera_pixels",
+        "capture_capacity_and_target_only_completion_camera_selection_guards",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "device_and_shared_instance_teardown_recreation_in_both_orders",
+        "independent_resize_hide_restore",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "numeric_probe_count": 0,
+      "exposure_invariance": null
+    },
+    {
+      "name": "hosted-gpu0-msaa4",
+      "passed": true,
+      "raw_evidence": "build/hdr-integration/run-20261007T041216Z-ccfe492800c74e0c936608ce3b56e195/hosted-gpu0-msaa4/run-76119bb6e2874805a63250d79782dd33/result.json",
+      "raw_sha256": "55a5b3b2b64957fc2d9ba403dab8fb067008b40c424832892dd59bcfa71ec5ce",
+      "checks": [
+        "lazy_slots_distinct_hwnds_legacy_exclusion_and_missing_camera_recovery",
+        "simultaneous_alternating_device_presentation_distinct_camera_pixels",
+        "capture_capacity_and_target_only_completion_camera_selection_guards",
+        "one_poll_clock_draw_never_ticks_scene_lifecycle_preserves_game_input",
+        "device_and_shared_instance_teardown_recreation_in_both_orders",
+        "independent_resize_hide_restore",
+        "deleted_game_camera_local_recoverable_scene_remains_available"
+      ],
+      "numeric_probe_count": 0,
+      "exposure_invariance": null
+    }
+  ],
+  "limits": [
+    "Correctness fixtures on two laptop GPUs, not game-scale performance.",
+    "1x/4x GPU behavior exercised; 2x/8x format capability checks are not separate GPU qualification.",
+    "Hosted tests own native windows; no Avalonia docking, OS screenshot or physical input qualification.",
+    "Internal HDR radiance with SDR output; no HDR monitor, GI, bloom or temporal upscaler claim.",
+    "Half-float radiance above 65504 saturates before exposure.",
+    "Renderer still serializes submissions with waitForIdle.",
+    "Linux rendering and consoles unqualified.",
+    "No installed desktop package activation."
+  ],
+  "prior_source_record": "m2-hdr-composition-development.json"
+}

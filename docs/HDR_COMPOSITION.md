@@ -20,7 +20,11 @@ Output bindings and framebuffers follow swapchain recreation. The current serial
 
 ## Qualification
 
-This change is under development. All seven affected shader stages compile with DXC. An isolated Windows C++ syntax check passes, with an existing Vulkan-header deprecated-copy warning. Full native linking, GPU capture and resize/player/editor qualification are pending; older lighting/sky screenshots do not qualify the new pass order. No new desktop package or performance claim accompanies this document.
+The Windows native engine, UI capture executable and desktop bridge build and link. Both the RTX 4070 Laptop GPU and AMD integrated GPU pass 174 scene captures across the HDR, lighting, sky and material suites. Eight additional integration groups cover UI at 1×/4× MSAA, standalone player parity and independent native Scene/Game viewport lifetimes on both GPUs. [Qualification evidence](evidence/m2-hdr-composition.json).
+
+The HDR edge fixture finds 248 partially covered pixels on each GPU. Captures match the resolve-before-tone-map reference within the permitted tolerance and differ from the old ordering by at least 27 display levels. The saturation fixture returns the expected value of 169 rather than the unbounded reference of 245. Zero-exposure scene captures are entirely black. UI comparisons preserve every pixel at exposures 0, 1 and 64 while proving the scene background changes.
+
+These are small correctness fixtures. They do not qualify game-scale frame times, Linux rendering, HDR displays, physical input or the Avalonia editor shell. Hosted tests exercise native windows, resize, hide/restore and device teardown. No installed desktop package was activated. GPU behavior at 2×/8× MSAA remains separately unqualified.
 
 The independent capture fixture covers shared exposure, finite saturation, zero exposure, and partially covered MSAA pixels that distinguish resolving radiance from resolving already tone-mapped colors. Its analytic self-test validates the reference oracle only; it does not execute the renderer. Existing material, sky, lighting, UI and player checks remain relevant.
 
@@ -29,6 +33,6 @@ python3 tests/hdr_composition_capture.py --self-test
 python3 tests/hdr_composition_capture.py build/windows-runtime/poima.exe --output build/hdr-gpu --gpu 0 --windows-interop
 ```
 
-The second command requires a freshly rebuilt renderer and a graphics session. [Development validation record](evidence/m2-hdr-composition-development.json).
+The second command requires a freshly rebuilt renderer and a graphics session. [Earlier shader and syntax validation record](evidence/m2-hdr-composition-development.json).
 
 The output encoding follows the [Vulkan color-space contract](https://docs.vulkan.org/refpages/latest/refpages/source/VkColorSpaceKHR.html). See [authored lighting](LIGHTING.md) for component units and [implementation status](IMPLEMENTATION_STATUS.md) for qualified engine capabilities.

@@ -28,7 +28,7 @@ One optional `LightingEnvironment` may exist anywhere in a world. Its transform 
 {"op":"component.set","id":"00000000000000000000000000000003","type":"LightingEnvironment","value":{"ambient":[0.015,0.02,0.03],"exposure":1}}
 ```
 
-Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. The procedural sky follows exposure. The development [shared HDR composition path](HDR_COMPOSITION.md) also applies exposure to the flat scene background; earlier qualified builds left that background independent. There is no auto-exposure or photometrically calibrated camera.
+Both fields are required. Ambient channels and exposure are finite numbers in [0,1e6]. `ambient` is a constant diffuse fill, not a sky or physical indirect-light solution. `exposure` is a linear multiplier; 2 doubles scene-linear light, 0 makes shaded geometry black. The procedural sky and flat scene background follow exposure through the [shared HDR composition path](HDR_COMPOSITION.md). UI is composed afterward and is unaffected. There is no auto-exposure or photometrically calibrated camera.
 
 ## Procedural sky
 
@@ -80,7 +80,7 @@ Transactions support preview, persisted retry receipts, atomic rejection and com
 
 Materials use the existing GGX/Smith/Schlick specular and Lambert diffuse terms. Authored lighting also routes built-in boxes without PbrMaterial through that path, using their albedo, metallic 0 and roughness 1. Legacy boxes retain the old preview shading only when fallback lighting is active.
 
-Point/spot intensity follows inverse-square attenuation, with squared distance clamped to 0.0001 m² to bound the singularity within 1 cm. A finite range multiplies it by `clamp(1 - (distance/range)^4, 0, 1)`. Spot falloff is the square of the normalized cosine interval between outer and inner cones. Colors from all lights accumulate in linear space before exposure, Reinhard mapping and sRGB encoding. Ambient fill affects diffuse color and receives material AO; emission receives exposure but no direct-light multiplier. The renderer uses float precision; extremely narrow cones and extreme world scales are not precision-qualified.
+Point/spot intensity follows inverse-square attenuation, with squared distance clamped to 0.0001 m² to bound the singularity within 1 cm. A finite range multiplies it by `clamp(1 - (distance/range)^4, 0, 1)`. Spot falloff is the square of the normalized cosine interval between outer and inner cones. Colors from all lights accumulate in linear space. The renderer stores bounded half-float radiance and resolves MSAA before shared exposure, Reinhard mapping and sRGB encoding. Ambient fill affects diffuse color and receives material AO; emission receives exposure but no direct-light multiplier. The renderer uses float precision; extremely narrow cones and extreme world scales are not precision-qualified.
 
 Lights with enabled [shadow maps](SHADOWS.md) are occluded by visible opaque geometry; unshadowed lights retain their previous behavior. Metallic surfaces receive direct highlights but lack environment reflections. Work is linear in enabled lights per shaded pixel; there is no clustered light assignment, shadow cache or performance claim for 64 overlapping lights. The player still waits for the GPU each frame. NVRHI error checks are not full Vulkan validation.
 

@@ -1,10 +1,10 @@
 # Implementation status
 
-Updated 2026-10-06 for **0.0.39**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-07 for **0.0.39**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan forward renderer, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
 
-A shared [scene HDR composition path](HDR_COMPOSITION.md) is under development: floating-point scene color, linear MSAA resolve, then one exposure/output transform before UI. Seven shader stages and a Windows C++ syntax check pass; full linking and new GPU qualification are pending. Earlier render evidence does not qualify this change. It does not add HDR monitor output, GI or post-processing effects.
+The development [scene HDR composition path](HDR_COMPOSITION.md) now passes a full Windows build, 174 scene captures and eight UI/player/native-viewport integration groups across both laptop GPUs. Floating-point scene color resolves MSAA before one exposure/output transform; UI remains independent of exposure. This is bounded correctness evidence, not performance qualification or a new installed desktop package. HDR monitor output, GI and post-processing effects remain unfinished. [Evidence](evidence/m2-hdr-composition.json).
 
 [Explicit scalar save upgrades](SAVE_UPGRADES.md) now connect stable-ID mapping, authored-content validation and snapshot transformation to guarded external `save.load` in development. Linux CoreCLR integration tests cover real old-save/new-game continuation, component changes, rejection isolation, retry and recovery; Windows and Native AOT integration qualification remains pending. Automatic gameplay/editor upgrade selection is unfinished. Ordinary restores remain exact. The earlier cross-platform [primitive evidence](evidence/m2-save-upgrade-primitives.json) covers mapping/plan guards only.
 

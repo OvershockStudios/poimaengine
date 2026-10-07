@@ -36,7 +36,19 @@ int main(int argc,char** argv) {
         quad(frame,100,150,50,50,{255,255,255,255},textured);
         scene.ui=freeze_ui_frame(std::move(frame));options.capture=std::string(argv[1])+"-ui.bmp";
         const auto rendered=run_render_scene(options,scene);
-        std::cout<<nlohmann::json{{"baseline",report(baseline)},{"ui",report(rendered)},{"packet_revision",scene.ui->revision}}.dump()<<'\n';
-        return rendered.success && rendered.capture_written && rendered.validation_errors==0 ? 0 : 1;
+        // The opaque black UI backing makes every composed pixel UI-owned.
+        // Changing scene exposure must therefore leave the entire packet image
+        // unchanged, including linear alpha/texture blending inside the packet.
+        scene.lighting.environment.exposure=0;
+        options.capture=std::string(argv[1])+"-ui-exposure-zero.bmp";const auto zero=run_render_scene(options,scene);
+        scene.lighting.environment.exposure=64;
+        options.capture=std::string(argv[1])+"-ui-exposure-high.bmp";const auto high=run_render_scene(options,scene);
+        const auto revision=scene.ui->revision;scene.ui.reset();scene.lighting.environment.exposure=0;
+        options.capture=std::string(argv[1])+"-baseline-zero.bmp";const auto dark=run_render_scene(options,scene);
+        std::cout<<nlohmann::json{{"baseline",report(baseline)},{"ui",report(rendered)},{"ui_zero",report(zero)},
+            {"ui_high",report(high)},{"baseline_zero",report(dark)},{"packet_revision",revision}}.dump()<<'\n';
+        for(const auto* result:{&baseline,&rendered,&zero,&high,&dark})
+            if(!result->success || !result->capture_written || result->validation_errors!=0)return 1;
+        return 0;
     }catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}
 }
