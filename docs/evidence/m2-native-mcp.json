@@ -1,0 +1,58 @@
+{
+  "checkpoint": "0.0.40 development",
+  "protocol": "MCP 2025-11-25 stdio",
+  "scope": "Native authoring adapter over WorldSession or LocalSessionClient",
+  "qualification": {
+    "linux_native_protocol": true,
+    "linux_real_stdio_authoring": true,
+    "linux_cli_and_world_regression": true,
+    "windows_compilation": true,
+    "windows_execution": false,
+    "shared_endpoint_execution": false,
+    "codex_client": false,
+    "claude_client": false
+  },
+  "tests": {
+    "groups": [
+      "mcp_native",
+      "mcp_contract",
+      "cli_contract",
+      "world_contract"
+    ],
+    "passed": 4,
+    "failed": 0,
+    "seconds": 12.22
+  },
+  "checks": [
+    "Initialization, tool listing, invalid input, bounded framing and ignored notifications/responses.",
+    "Exact native result/receipt/error forwarding with no automatic operation retry.",
+    "Backend failures and invalid responses return outcome_unknown.",
+    "Actual subprocess create, duplicate receipt replay, stale revision rejection, query, undo/redo and persistent state reopened through the direct world CLI.",
+    "Writer exclusion and MCP-only stdout, including startup failure."
+  ],
+  "limits": [
+    "Synchronous execution; cancellation does not preempt in-flight operations.",
+    "File-based captures; image content is not yet embedded into MCP results.",
+    "No embedded agent, provider authentication or client-specific setup is qualified.",
+    "Existing endpoint adapter is compiled but has not been executed in this restricted environment.",
+    "Windows engine, desktop bridge and MCP fixture cross-compile; Windows execution remains unqualified."
+  ],
+  "source_sha256": {
+    "include/poima/mcp.hpp": "9648d9320e8edd58ad517fbe97da3e786ae59d73bf1f268582a2594e6ca3a826",
+    "src/mcp.cpp": "409580a52d9872759e313151cf4782608ddffc4ce57a72ce9b20b7c8910e33ef",
+    "src/mcp_stdio.cpp": "3b8f7f1b084dc5ecc6a4b5a3f2e41e6d2f158b3156524e60611d47387ac0f8a2",
+    "src/main.cpp": "9dfc0c331b4b789c229ba4742a62239da12df236cfea56d6dfd52d6f894c4e6b",
+    "src/core.cpp": "b63720b9850dca77fdc92241fc6b39ad5127c7a557aa7c57654328ef1dedbbe3",
+    "CMakeLists.txt": "d49c21ae0597bb4427bf86e0e18ce392e9b9c3cc63e24126b914b76d74bbe0dc",
+    "tests/mcp_native.cpp": "1c1a98260b3c685aaf185a693fa76e5d444b18252e8f43da8289a17e112c5834",
+    "tests/mcp_contract.py": "997f1dd254e19b255dfcad926ec653c2c00a0ecedcb47b88f7af716a5cd7260e",
+    "tests/cli_contract.py": "e2f40bedfebaddb0b53163d77d608173badee547b323073162e85939f968a7eb"
+  },
+  "binary_sha256": "78a2ef841cdffd93e11422c72c24f5e1e0c099d560d7b0d00e653f7e2f848f4d",
+  "evidence_sha256": {
+    "v0040-mcp-linux-build.log": "1aeaabd41b30486152cd29a5ddbf929f199e552b5066fa265a1d5ef741287ae5",
+    "v0040-mcp-response-fix-build.log": "9d550a51a7f77988d9f4be1e33ea34652fd4369093d3959a985522c78570b000",
+    "v0040-mcp-final-linux-tests.log": "8847c7120182c789b68397616213c8e794d4179a21d4196794e1f87960af4325",
+    "v0040-mcp-windows-build.log": "1644de84abb390171aa482025fde28517092880e2f4d734b33f2c74a2b613303"
+  }
+}

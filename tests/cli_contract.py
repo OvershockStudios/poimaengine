@@ -40,7 +40,8 @@ class CliContract(unittest.TestCase):
         self.assertEqual(features["render_smoke"], RENDER_ENABLED)
         self.assertEqual(features["scene_capture"], RENDER_ENABLED)
         self.assertEqual(features["editor"], EDITOR_ENABLED)
-        for name in ["renderer", "animation", "vfx", "hot_reload", "mcp"]:
+        self.assertTrue(features["mcp"])
+        for name in ["renderer", "animation", "vfx", "hot_reload"]:
             self.assertFalse(features[name], name)
         for operation in first["result"]["commands"]:
             with self.subTest(command=operation["name"]):

@@ -65,12 +65,14 @@ constexpr std::array operations{
         R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"}})", "[\"world\",\"endpoint\"]"},
     Operation{"connect", "Bridge newline-delimited JSON-RPC to a running local world/editor host.", "<endpoint> [--timeout-ms N]",
         R"({"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000}})", "[\"endpoint\"]"},
+    Operation{"mcp", "Expose native authoring tools over MCP stdio; choose one world or existing endpoint.", "--world <world.json> | --endpoint <name> [--timeout-ms N]",
+        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000}})", "[]"},
     Operation{"project", "Create and inspect projects or export a verified native game bundle.", "create <directory> --name <name> | inspect <project.json> | build <project.json> --output <new-directory> --runtime <installed-runtime>",
         R"({"action":{"enum":["create","inspect","build"]},"path":{"type":"string","minLength":1},"name":{"type":"string","minLength":1},"output":{"type":"string","minLength":1},"runtime":{"type":"string","minLength":1}})", "[\"action\",\"path\"]"},
     Operation{"game", "Verify a portable game bundle or launch its native player without modifying packaged content.", "inspect <game.json> | run <game.json> [--gpu N] [--frames N | --replay segments.json] [--capture external.bmp] [--report external.json] [--save-root external-directory] [--width N] [--height N] [--samples 1|4]",
         R"({"action":{"enum":["inspect","run"]},"manifest":{"type":"string","minLength":1},"gpu":{"type":"integer","minimum":0,"maximum":4095},"frames":{"type":"integer","minimum":1,"maximum":36000},"replay":{"type":"string","minLength":1},"capture":{"type":"string","minLength":1},"report":{"type":"string","minLength":1},"save_root":{"type":"string","minLength":1,"description":"Existing checkpoint storage folder outside the immutable bundle; disabled when omitted."},"width":{"type":"integer","minimum":128,"maximum":4096,"default":960},"height":{"type":"integer","minimum":128,"maximum":4096,"default":540},"samples":{"enum":[1,4],"default":4}})", "[\"action\",\"manifest\"]"},
     Operation{"schema", "Discover an implemented command's request schema.", "<command>",
-        R"({"command":{"type":"string","enum":["help","version","capabilities","doctor","schema","render-smoke","world","editor","serve","connect","project","game"]}})", "[\"command\"]"},
+        R"({"command":{"type":"string","enum":["help","version","capabilities","doctor","schema","render-smoke","world","editor","serve","connect","mcp","project","game"]}})", "[\"command\"]"},
     Operation{"editor", "Open the optional native authoring editor over shared world operations.",
         "<world.json> [--endpoint name] [--layout path.ini | --no-layout] [--gpu N] [--samples 1|4] [--frames N] [--width N] [--height N] [--capture path.bmp] [--script path.json] [--report path.json]",
         R"({"world":{"type":"string","minLength":1},"layout":{"type":"string","minLength":1},"no_layout":{"type":"boolean","default":false},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"gpu":{"type":"integer","minimum":0,"maximum":4095},"samples":{"enum":[1,4],"default":4},"frames":{"type":"integer","minimum":1,"maximum":36000},"width":{"type":"integer","minimum":640,"maximum":4096,"default":1440},"height":{"type":"integer","minimum":640,"maximum":4096,"default":900},"capture":{"type":"string","minLength":1},"script":{"type":"string","minLength":1},"report":{"type":"string","minLength":1}})", "[\"world\"]"},
@@ -84,7 +86,7 @@ std::string operation_list() {
     for (const auto& operation : operations) {
         if (json.size() > 1) json += ',';
         json += "{\"name\":" + quote(operation.name) + ",\"summary\":" + quote(operation.summary) +
-            ",\"arguments\":" + quote(operation.arguments) + ",\"mutates_project\":" + boolean(operation.name == "world" || operation.name == "editor" || operation.name == "serve" || operation.name == "connect" || operation.name == "project") + "}";
+            ",\"arguments\":" + quote(operation.arguments) + ",\"mutates_project\":" + boolean(operation.name == "world" || operation.name == "editor" || operation.name == "serve" || operation.name == "connect" || operation.name == "mcp" || operation.name == "project") + "}";
     }
     return json + ']';
 }
@@ -134,7 +136,7 @@ Reply capabilities() {
         ",\"animation_rig_authoring\":true,\"runtime_clip_playback\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"static_gltf_import\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"animation_asset_sampling\":true,\"vfx\":false,"
-        "\"hot_reload\":false,\"mcp\":false,\"native_world_session\":true,\"local_session_transport\":true,\"shared_world_host\":true,\"world_undo\":true,\"project_manifests\":true,\"native_game_bundles\":true,\"editor\":" + boolean(POIMA_EDITOR != 0) + "},\"qualification\":\"bootstrap_with_authored_world\"}");
+        "\"hot_reload\":false,\"mcp\":true,\"native_world_session\":true,\"local_session_transport\":true,\"shared_world_host\":true,\"world_undo\":true,\"project_manifests\":true,\"native_game_bundles\":true,\"editor\":" + boolean(POIMA_EDITOR != 0) + "},\"qualification\":\"bootstrap_with_authored_world\"}");
 }
 
 Reply doctor(DoctorOptions options) {
@@ -189,7 +191,8 @@ Reply schema(std::string_view command) {
     return envelope("schema", "{\"$schema\":\"https://json-schema.org/draft/2020-12/schema\",\"title\":" +
         quote(found->name) + ",\"description\":" + quote(found->summary) +
         ",\"type\":\"object\",\"additionalProperties\":false,\"properties\":" +
-        std::string(found->properties) + ",\"required\":" + std::string(found->required) + "}");
+        std::string(found->properties) + ",\"required\":" + std::string(found->required) +
+        (command=="mcp" ? R"(,"oneOf":[{"required":["world"],"not":{"anyOf":[{"required":["endpoint"]},{"required":["timeout_ms"]}]}},{"required":["endpoint"],"not":{"required":["world"]}}])" : "") + "}");
 }
 
 Reply version() { return envelope("version", build_info()); }

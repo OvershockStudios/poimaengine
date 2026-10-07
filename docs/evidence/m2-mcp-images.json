@@ -1,0 +1,58 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Opt-in MCP PNG observations from native capture receipts",
+  "qualification": {
+    "linux_codec": true,
+    "linux_mcp_image_protocol": true,
+    "linux_real_stdio_authoring_regression": true,
+    "archived_sdl_bmp_conversion": true,
+    "windows_compilation": true,
+    "windows_execution": false,
+    "new_gpu_capture": false,
+    "codex_client": false,
+    "claude_client": false
+  },
+  "tests": {
+    "groups": [
+      "capture_image_native",
+      "mcp_native",
+      "mcp_contract",
+      "cli_contract",
+      "world_contract"
+    ],
+    "passed": 5,
+    "failed": 0,
+    "seconds": 9.79
+  },
+  "checks": [
+    "PNG output independently decoded using the existing STB texture decoder.",
+    "Synthetic BMP layouts, orientation, mask gaps, color-profile rejection, alpha removal and malformed input.",
+    "Linear-light area reduction verified against equal black/white coverage.",
+    "MCP image options validated before dispatch; native receipts and exact operation parameters preserved.",
+    "Known observation failures retain the native result and are distinct from unknown transport outcomes.",
+    "Archived 640x480 SDL capture converted with every unscaled RGB pixel checked; no new GPU execution."
+  ],
+  "limits": [
+    "Image receipt tests use a controlled backend; no actual Codex/Claude client image consumption is qualified.",
+    "Windows engine, desktop bridge and image/MCP test fixtures cross-compile; Windows runtime and current GPU captures remain unqualified.",
+    "The adapter runs with trusted local process file access and is not a filesystem isolation boundary."
+  ],
+  "source_sha256": {
+    "include/poima/capture_image.hpp": "12ddc48d422c303b558be696b11d8a10ac2d1cdc1ee9d82ef4d9eed2cdded6b5",
+    "src/capture_image.cpp": "b4328ac307d5863c30749eecebfb2065d1c37d9909b0e23e4323176fbcd5aac6",
+    "src/mcp.cpp": "6bcbcc3429e99c3f46943eed76139a650768545fbb5e72c8ff5f4f8ce33b14f4",
+    "tests/capture_image_native.cpp": "6ac367b1da96cd805fe669af29922e1f1c726a51032f1c2c9ed4f84a0fa71b3b",
+    "tests/mcp_native.cpp": "809ce73cafd2ca35d9d50b961a3cd65649c172b792f674a0e7a47a6a303ca5e9",
+    "CMakeLists.txt": "57ec06a14e6385da0cdbb488e787c408dcafee89426127f157e11f9d0618fc27",
+    "third_party/lodepng/lodepng.cpp": "c55a19ba0f80ff68c5a4ac36138194c851cc2b1a9a0fbcd0be9ece02f1097e5d",
+    "third_party/lodepng/lodepng.h": "e7846c83e253008484153dcc4274222398d36b81aa3b0c6d266bbe0eac62bead"
+  },
+  "binary_sha256": "88f61c5de45a9ddb7a2cc8a18561401b656583a6e8eb609e7bef87f00aa3ba14",
+  "evidence_sha256": {
+    "v0040-mcp-images-linux-build.log": "371b168266c551ed19f2b21d63ba532bc92248bab3ba3cc0aa8d5f8836ff4c0a",
+    "v0040-mcp-images-linux-tests.log": "9c589a7c17e31de9e4cef7247192c17a6a3a49a36bd779f78f8c000de82a7461",
+    "v0040-mcp-images-archived-capture.log": "b766d0f0ff36c210b1db35f0367f11534917c7c3ad4cee1235c8e539db4bd750",
+    "v0040-mcp-images-windows-build.log": "22d8c01460ec7e20ac6cf12c62ca5511cfaa6c33f957f7e35bf6b5be80c76225",
+    "v0040-mcp-images-windows-confirm.log": "c2ed93ffd93c840755c0e91392ae593b1b52de9b7aaf6c208123feaceb1dde2e"
+  }
+}

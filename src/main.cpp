@@ -3,6 +3,7 @@
 #include "poima/world.hpp"
 #include "poima/editor.hpp"
 #include "poima/shared_session.hpp"
+#include "poima/mcp.hpp"
 #include "poima/project.hpp"
 #include "poima/game_launch.hpp"
 
@@ -24,6 +25,31 @@ bool endpoint_name(std::string_view text) {
     return !text.empty() && text.size()<=64 && std::all_of(text.begin(),text.end(),[](char c) {
         return (c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_' || c=='-';
     });
+}
+int run_mcp_cli(int argc,char** argv) {
+    // Startup and usage failures must not put the ordinary CLI envelope on
+    // MCP stdout. Only the established protocol session writes that stream.
+    const auto usage=[](const char* message) {std::cerr<<message<<'\n';return 2;};
+    if(argc!=4 && argc!=6)return usage("Use: mcp --world <world.json> | mcp --endpoint <name> [--timeout-ms N].");
+    const std::string_view kind=argv[2],value=argv[3];
+    if(value.empty() || value.starts_with("--"))return usage("Missing MCP world path or endpoint.");
+    unsigned timeout=30000;
+    if(kind=="--world") {
+        if(argc!=4)return usage("MCP standalone world mode does not accept a connection timeout.");
+    } else if(kind=="--endpoint") {
+        if(!endpoint_name(value))return usage("Invalid MCP endpoint name.");
+        if(argc==6) {
+            const std::string_view number=argv[5];
+            const auto parsed=std::from_chars(number.data(),number.data()+number.size(),timeout);
+            if(std::string_view(argv[4])!="--timeout-ms" || parsed.ec!=std::errc{} || parsed.ptr!=number.data()+number.size() || timeout<100 || timeout>600000)
+                return usage("MCP connection timeout must be 100..600000 milliseconds.");
+        }
+    } else return usage("Choose exactly one MCP world path or endpoint.");
+    try {
+        return kind=="--world" ? poima::run_mcp_world(std::string(value)) : poima::run_mcp_connected(std::string(value),timeout);
+    } catch(const std::exception& error) {
+        std::cerr<<"Poima MCP session failed: "<<error.what()<<'\n';return 4;
+    }
 }
 poima::Reply run(int argc, char** argv) {
     if (argc == 1) return poima::help();
@@ -176,6 +202,7 @@ poima::Reply run(int argc, char** argv) {
 } // namespace
 
 int main_utf8(int argc, char** argv) {
+    if(argc>=2 && std::string_view(argv[1])=="mcp")return run_mcp_cli(argc,argv);
     try {
         if (argc == 3 && std::string_view(argv[1]) == "world") return poima::run_world_session(argv[2]);
         const auto reply = run(argc, argv);
