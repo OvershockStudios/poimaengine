@@ -2,7 +2,7 @@
 
 Poima exposes its authoritative world operations through a compiled stdio MCP server. It uses the same world service as the CLI and editor, including schema validation, revision conflicts, undo and durable retry receipts. No Python or Node runtime is required by this server.
 
-Linux native protocol tests and real subprocess authoring/persistence tests pass. The Windows engine, desktop bridge and MCP test executable also compile successfully; Windows execution remains unqualified. [Qualification evidence](evidence/m2-native-mcp.json). It does not embed an agent, manage provider accounts or replace the CLI. Actual Codex/Claude interoperability and shared-endpoint execution require separate verification.
+Linux native protocol tests pass. Real subprocess authoring/persistence tests and shared headless endpoint tests pass on both Linux and Windows, including cross-client receipts, stale-edit rejection and detachment without host shutdown. [Initial protocol evidence](evidence/m2-native-mcp.json), [cross-platform authoring evidence](evidence/m2-mcp-shared.json). It does not embed an agent, manage provider accounts or replace the CLI. Actual Codex/Claude interoperability and attachment to a live desktop endpoint require separate verification.
 
 ## Launch
 

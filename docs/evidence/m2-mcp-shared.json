@@ -1,0 +1,37 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Real MCP stdio and shared headless host authoring on Linux and Windows",
+  "qualification": {
+    "linux_stdio_authoring": true,
+    "windows_stdio_authoring": true,
+    "linux_shared_endpoint": true,
+    "windows_shared_endpoint": true,
+    "shared_desktop_endpoint": false,
+    "agent_provider_client": false,
+    "gpu_image_delivery": false
+  },
+  "tests": {
+    "tests_per_platform": 5,
+    "linux_seconds": 0.816,
+    "windows_seconds": 1.084,
+    "failures": 0
+  },
+  "checks": [
+    "MCP mutation is observed through a separate direct CLI connection to the same host.",
+    "Durable retry receipt is replayed across MCP and direct CLI transports.",
+    "Stale revision errors retain native codes.",
+    "MCP EOF detaches without shutting down the host; authoritative revision remains persisted.",
+    "Existing standalone authoring, undo/redo, framing, notification and writer-exclusion cases run on both platforms."
+  ],
+  "source_sha256": {
+    "tests/mcp_contract.py": "c6b4e8133c2d208625cca1077aa002fe76a410d464fb44869a8ed13426bafb2c"
+  },
+  "binary_sha256": {
+    "build/runtime-headless/poima": "88f61c5de45a9ddb7a2cc8a18561401b656583a6e8eb609e7bef87f00aa3ba14",
+    "build/windows-runtime/poima.exe": "05df699312413b72965b632800113562bdf074770f2132a75eb0ab7992fd8bf6"
+  },
+  "evidence_sha256": {
+    "v0040-mcp-shared-linux.log": "aa0c3f3b1d3fe74f64a9558ce68629fb9ff353b414af00f1f81add293855c342",
+    "v0040-mcp-shared-windows.log": "846b4c83d5b768a48dd359f6a229ea9fd63c888371dce2b8afd8a34bc416ec95"
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real stdio MCP authoring/persistence checks; no socket or GPU qualification."""
+"""Real stdio MCP authoring/persistence and shared-host checks; no GPU qualification."""
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import json
@@ -8,6 +8,7 @@ import queue
 import subprocess
 import tempfile
 import threading
+import time
 import unittest
 import uuid
 
@@ -25,8 +26,9 @@ def native(path):
 
 
 class Client:
-    def __init__(self, path):
-        self.process = subprocess.Popen([BINARY, 'mcp', '--world', native(path)], stdin=subprocess.PIPE,
+    def __init__(self, path=None, endpoint=None):
+        target = ['--endpoint', endpoint] if endpoint else ['--world', native(path)]
+        self.process = subprocess.Popen([BINARY, 'mcp', *target], stdin=subprocess.PIPE,
                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', bufsize=1)
         self.lines = queue.Queue()
         self.errors = []
@@ -146,6 +148,56 @@ class McpContract(unittest.TestCase):
         self.assertEqual(len(replies), 2)
         self.assertEqual(replies[0]['result']['value']['name'], 'MCP durable entity')
         self.assertEqual(replies[1]['result']['revision'], 3)
+
+    def test_shared_endpoint_receipts_conflicts_and_detach(self):
+        endpoint = 'mcp-' + uuid.uuid4().hex
+        host = subprocess.Popen([BINARY, 'serve', native(self.path), '--endpoint', endpoint],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        def direct(method, params=None, timeout=3000):
+            request = {'jsonrpc': '2.0', 'id': 1, 'method': method, 'params': params or {}}
+            return subprocess.run([BINARY, 'connect', endpoint, '--timeout-ms', str(timeout)],
+                                  input=json.dumps(request)+'\n', capture_output=True, text=True, timeout=10)
+        client = None
+        try:
+            deadline = time.monotonic() + 15
+            while True:
+                probe = direct('world.inspect', timeout=100)
+                if probe.returncode == 0:
+                    break
+                self.assertIsNone(host.poll(), probe.stdout + probe.stderr)
+                self.assertLess(time.monotonic(), deadline, 'Host did not become ready')
+                time.sleep(.02)
+            client = Client(endpoint=endpoint)
+            client.initialize()
+            catalog = client.tool('poima_discover')
+            self.assertEqual(catalog['session_scope'], 'shared_headless')
+            self.assertNotIn('session.close', catalog['methods'])
+            transaction = {'request_id': uuid.uuid4().hex, 'base_revision': 0,
+                           'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex, 'name': 'Shared MCP entity'}]}
+            self.assertEqual(client.world('world.transact', transaction)['revision'], 1)
+            receipt = direct('world.transact', transaction)
+            self.assertEqual(receipt.returncode, 0, receipt.stderr)
+            self.assertTrue(json.loads(receipt.stdout)['result']['replayed'])
+            client.world('world.transact', {**transaction, 'request_id': uuid.uuid4().hex}, error=-32009)
+            client.close()
+            client = None
+            self.assertIsNone(host.poll(), 'MCP detach shut down the host')
+            state = direct('world.inspect')
+            self.assertEqual(state.returncode, 0, state.stderr)
+            self.assertEqual(json.loads(state.stdout)['result']['revision'], 1)
+            self.assertEqual(json.loads(self.path.read_text())['revision'], 1)
+        finally:
+            if client is not None:
+                client.close()
+            if host.poll() is None:
+                try:
+                    direct('host.shutdown')
+                    host.wait(timeout=5)
+                finally:
+                    if host.poll() is None:
+                        host.kill()
+                        host.wait(timeout=5)
+            host.communicate()
 
     def test_writer_exclusion_and_startup_stdout_cleanliness(self):
         client = self.client()
