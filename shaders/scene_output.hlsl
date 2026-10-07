@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: Apache-2.0
 // One display transform for resolved scene-linear radiance. UI is drawn later.
 Texture2D<float4> scene_radiance : register(t0);
+#if POIMA_SCENE_PRODUCTS
+Texture2D<float> scene_depth : register(t1);
+Texture2D<float4> scene_normal : register(t2);
+#endif
 struct OutputConstants {
     float exposure;
     float attachment_srgb;
-    float2 reserved;
+    float debug_view;
+    float near_plane;
+    float far_plane;
+    float3 reserved;
 };
 [[vk::push_constant]] ConstantBuffer<OutputConstants> output;
 float4 vertex_main(uint vertex : SV_VertexID) : SV_Position {
@@ -14,7 +21,27 @@ float4 vertex_main(uint vertex : SV_VertexID) : SV_Position {
 float3 linear_to_srgb(float3 color) {
     return select(color<=0.0031308,color*12.92,1.055*pow(color,1.0/2.4)-0.055);
 }
+float3 srgb_to_linear(float3 color) {
+    return select(color<=0.04045,color/12.92,pow((color+0.055)/1.055,2.4));
+}
 float4 pixel_main(float4 position : SV_Position) : SV_Target0 {
+#if POIMA_SCENE_PRODUCTS
+    if(output.debug_view>.5) {
+        const int3 texel=int3(int2(position.xy),0);
+        const float4 normal=scene_normal.Load(texel);
+        float3 display=0;
+        if(normal.a>.5) {
+            if(output.debug_view<1.5) {
+                const float depth=scene_depth.Load(texel);
+                // Positive view distance divided by far; preserves the existing
+                // [0,1] projection depth and avoids subtracting nearly equal far values.
+                display=saturate(output.near_plane/(output.far_plane*(1-depth)+output.near_plane*depth));
+            } else display=saturate(normal.xyz*.5+.5);
+        }
+        // Diagnostic values already denote desired display RGB, not radiance.
+        return float4(output.attachment_srgb>.5 ? srgb_to_linear(display) : display,1);
+    }
+#endif
     // Integer load prevents filtering/coordinate drift between Scene, player
     // and capture targets. Bounds follow the full-size output framebuffer.
     const float3 radiance=scene_radiance.Load(int3(int2(position.xy),0)).rgb;

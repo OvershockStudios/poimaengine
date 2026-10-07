@@ -4,7 +4,7 @@ Poima 0.0.10 adds directional, point and spot lights, ambient fill and exposure 
 
 ## Components and units
 
-Use `component.set` on an existing entity. `world.describe` schema revision 41 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
+Use `component.set` on an existing entity. `world.describe` schema revision 42 describes the complete requests; `entity.get` and `entity.query` expose the authored components.
 
 ```json
 {"op":"component.set","id":"00000000000000000000000000000002","type":"Light","value":{"kind":"spot","color":[1,0.65,0.3],"intensity":100,"enabled":true,"range":12,"inner_angle":15,"outer_angle":40}}

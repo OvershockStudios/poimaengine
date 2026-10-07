@@ -13,6 +13,7 @@ namespace poima::render_schedule {
 using ResourceId=std::uint32_t;
 inline constexpr ResourceId none=std::numeric_limits<ResourceId>::max();
 enum class Kind { buffer,texture };
+enum class Format { unspecified,rgba16_float,depth32 };
 enum class Lifetime { imported,shared,slot,capture,swapchain };
 // Prefix describes the used prefix, not the larger physical allocation.
 // Cluster members are only the entries selected by the accompanying count buffer.
@@ -36,6 +37,7 @@ struct Resource {
     std::uintptr_t identity=0;
     std::string name;
     Kind kind=Kind::buffer;
+    Format format=Format::unspecified;
     Lifetime lifetime=Lifetime::imported;
     Region region=Region::whole;
     Uses supported=0;
@@ -50,7 +52,7 @@ struct SkinInputs {ResourceId source=none,influences=none,palette=none,output=no
 struct DrawInputs {ResourceId vertices=none,indices=none;std::vector<ResourceId> textures;};
 struct FrameResources {
     std::vector<Resource> resources;
-    ResourceId swapchain=none,color=none,depth=none,hdr=none,output=none,frame=none,lights=none;
+    ResourceId swapchain=none,color=none,depth=none,normal=none,hdr=none,output=none,frame=none,lights=none;
     ResourceId shadow=none,counts=none,indices=none,cluster_readback=none,skin_errors=none,skin_readback=none,capture=none;
     ResourceId game_vertices=none,game_indices=none,overlay_vertices=none,editor_vertices=none,editor_indices=none;
     std::vector<ResourceId> game_textures,editor_textures;
@@ -58,7 +60,7 @@ struct FrameResources {
     std::vector<DrawInputs> camera_draws,shadow_draws;
 };
 struct Settings {
-    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false;
+    bool scene=false,clustered=false,sky=false,game_ui=false,overlay=false,editor=false,capture=false,products=false,products_debug=false;
     std::uint32_t slot=0,image=0;
 };
 struct Schedule {
@@ -81,6 +83,14 @@ struct Schedule {
         if(settings.sky && !settings.scene)fail("sky pass without a scene");
         if(settings.overlay)required(frame.overlay_vertices);
         if(settings.scene) {required(frame.frame);required(frame.depth);required(frame.hdr);required(frame.shadow);}
+        if(settings.products_debug && !settings.products)fail("diagnostic output requires scene products");
+        if(settings.products) {
+            required(frame.normal);
+            if(frame.normal==frame.color || frame.normal==frame.hdr || frame.normal==frame.output || frame.normal==frame.depth)fail("normal attachment aliases another scene product");
+            if(!settings.scene || resource(frame.color).samples!=1 || resource(frame.normal).samples!=1)fail("scene products require single-sample scene rendering");
+            if(resource(frame.normal).kind!=Kind::texture || resource(frame.normal).format!=Format::rgba16_float || resource(frame.depth).format!=Format::depth32)fail("invalid scene product format");
+            if(!(resource(frame.normal).supported&use_bit(Use::sampled)) || !(resource(frame.depth).supported&use_bit(Use::sampled)))fail("scene products must be shader readable");
+        } else if(frame.normal!=none)fail("normal attachment without scene products");
         if(settings.clustered) {if(!settings.scene)fail("clustered pass without a scene");required(frame.lights);required(frame.counts);required(frame.indices);required(frame.cluster_readback);}
         if(settings.capture)required(frame.capture);
         if(!frame.skins.empty()) {required(frame.skin_errors);required(frame.skin_readback);}
@@ -103,6 +113,12 @@ struct Schedule {
             if((!first && order<=previous) || exported)fail("pass order is not the fixed rendering order");
             first=false;previous=order;
             auto has=[&](ResourceId id,Use use) {return std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==id && a.use==use;});};
+            if(settings.products) {
+                if(pass.id==PassId::scene_clear && !has(frame.normal,Use::clear_color))fail("missing normal validity clear");
+                if(pass.id==PassId::opaque && !has(frame.normal,Use::color))fail("missing opaque normal output");
+                if(pass.id==PassId::sky && std::any_of(pass.accesses.begin(),pass.accesses.end(),[&](const Access& a){return a.resource==frame.normal;}))fail("sky must preserve invalid normal background");
+                if(pass.id==PassId::output && settings.products_debug && (!has(frame.depth,Use::sampled) || !has(frame.normal,Use::sampled)))fail("missing diagnostic product inputs");
+            }
             if((pass.id==PassId::skinning && !frame.skins.empty()) || (pass.id==PassId::light_assignment && settings.clustered)) {
                 const auto source=pass.id==PassId::skinning ? frame.skin_errors : frame.counts;
                 const auto destination=pass.id==PassId::skinning ? frame.skin_readback : frame.cluster_readback;
@@ -178,12 +194,12 @@ inline Schedule build(FrameResources frame,Settings settings) {
     }
     auto& shadows=pass(PassId::shadows);
     if(settings.scene) {add(shadows,f.shadow,Use::clear_depth,true);add(shadows,f.frame,Use::constant);geometry(shadows,f.shadow_draws,false);add(shadows,f.shadow,Use::depth);}
-    auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);
+    auto& clear=pass(PassId::scene_clear);add(clear,f.color,Use::clear_color,true);add(clear,f.depth,Use::clear_depth,true);if(settings.products)add(clear,f.normal,Use::clear_color,true);
     if(settings.sky) {auto& sky=pass(PassId::sky);add(sky,f.color,Use::color);add(sky,f.depth,Use::depth);}
-    auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);
+    auto& opaque=pass(PassId::opaque);add(opaque,f.color,Use::color);add(opaque,f.depth,Use::depth);if(settings.products)add(opaque,f.normal,Use::color);
     if(settings.scene) {add(opaque,f.frame,Use::constant);add(opaque,f.lights,Use::storage_read);add(opaque,f.shadow,Use::sampled);geometry(opaque,f.camera_draws,true);if(settings.clustered) {add(opaque,f.counts,Use::storage_read);add(opaque,f.indices,Use::storage_read);}}
     if(settings.scene && f.color!=f.hdr) {auto& resolve=pass(PassId::resolve);add(resolve,f.color,Use::resolve_source);add(resolve,f.hdr,Use::resolve_destination,true);}
-    if(settings.scene) {auto& output=pass(PassId::output);add(output,f.hdr,Use::sampled);add(output,f.output,Use::color_overwrite,true);}
+    if(settings.scene) {auto& output=pass(PassId::output);add(output,f.hdr,Use::sampled);if(settings.products_debug) {add(output,f.depth,Use::sampled);add(output,f.normal,Use::sampled);}add(output,f.output,Use::color_overwrite,true);}
     if(settings.game_ui) {auto& ui=pass(PassId::game_ui);add(ui,f.game_vertices,Use::upload,true);add(ui,f.game_indices,Use::upload,true);add(ui,f.game_vertices,Use::vertex);add(ui,f.game_indices,Use::index);for(auto t:f.game_textures)add(ui,t,Use::sampled);add(ui,f.output,Use::color);}
     if(settings.overlay) {auto& overlay=pass(PassId::overlay);add(overlay,f.overlay_vertices,Use::upload,true);add(overlay,f.overlay_vertices,Use::vertex);add(overlay,f.swapchain,Use::color);}
     if(settings.editor) {

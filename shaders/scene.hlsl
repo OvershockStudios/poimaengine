@@ -112,7 +112,12 @@ float3 direct_brdf(float3 n,float3 v,float3 l,float3 base,float metallic,float r
     const float3 F=f0+(1-f0)*pow(1-vh,5);
     return ((1-F)*(1-metallic)*base/3.14159265359+D*visibility*F)*nl;
 }
+#if POIMA_SCENE_PRODUCTS
+struct ScenePixel {float4 color : SV_Target0;float4 shading_normal : SV_Target1;};
+ScenePixel pixel_main(VertexOutput input, bool front : SV_IsFrontFace) {
+#else
 float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 {
+#endif
     float3 n=normalize(input.normal);
     // Smooth vertex normals describe shading, not the rasterized triangle plane.
     // Compute the plane before any divergent light/cascade branches.
@@ -181,5 +186,12 @@ float4 pixel_main(VertexOutput input, bool front : SV_IsFrontFace) : SV_Target0 
     // RGBA16_FLOAT has finite radiance range. Bound before storage; exposure
     // and display mapping occur only after the linear multisample resolve.
     color=select(isnan(color),0,clamp(color,0,65504));
+#if POIMA_SCENE_PRODUCTS
+    ScenePixel result;result.color=float4(color,1);
+    // This is exactly the world-space normal used by the selected lighting
+    // branch, including normal mapping/backface handling in the PBR branch.
+    result.shading_normal=all(isfinite(n)) ? float4(n,1) : float4(0,0,0,0);return result;
+#else
     return float4(color,1);
+#endif
 }

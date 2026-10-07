@@ -19,7 +19,9 @@ struct Fixture {
         f.swapchain=add(Kind::texture,Lifetime::swapchain);f.output=s.editor?add(Kind::texture,Lifetime::shared):f.swapchain;
         if(s.scene){
             f.hdr=add(Kind::texture,Lifetime::shared);f.color=samples==1?f.hdr:add(Kind::texture,Lifetime::shared,false,samples);
-            f.depth=add(Kind::texture,Lifetime::shared,false,samples);f.frame=add(Kind::buffer,Lifetime::shared);
+            f.depth=add(Kind::texture,Lifetime::shared,false,samples);f.resources[f.depth].format=Format::depth32;
+            if(s.products){f.normal=add(Kind::texture,Lifetime::shared);f.resources[f.normal].format=Format::rgba16_float;}
+            f.frame=add(Kind::buffer,Lifetime::shared);
             f.lights=add(Kind::buffer,Lifetime::shared);f.shadow=add(Kind::texture,Lifetime::shared);
             const auto material=add(Kind::texture,Lifetime::imported,true);
             const auto vertices=add(Kind::buffer,Lifetime::imported,true),indices=add(Kind::buffer,Lifetime::imported,true);
@@ -111,5 +113,41 @@ void faults(){
     missing("skin readback destination required",[](auto& f){f.skin_readback=none;});
     missing("cluster readback destination required",[](auto& f){f.cluster_readback=none;});
 }
+void products(){
+    for(bool debug:{false,true})for(bool editor:{false,true})for(bool sky:{false,true})for(bool skin:{false,true}){
+        auto settings=rich();settings.products=true;settings.products_debug=debug;settings.editor=editor;settings.sky=sky;
+        auto p=Fixture(settings,1,skin).plan();p.validate();++accepted;
+        auto contains=[&](PassId id,ResourceId resource,Use use){const auto& list=pass(p,id).accesses;return std::any_of(list.begin(),list.end(),[&](const auto& a){return a.resource==resource && a.use==use;});};
+        check(contains(PassId::scene_clear,p.frame.normal,Use::clear_color),"Missing validity clear");
+        check(contains(PassId::opaque,p.frame.normal,Use::color),"Missing shading normal MRT");
+        check(contains(PassId::output,p.frame.normal,Use::sampled)==debug,"Normal debug read contract differs");
+        check(contains(PassId::output,p.frame.depth,Use::sampled)==debug,"Depth debug read contract differs");
+        if(sky)for(const auto& a:pass(p,PassId::sky).accesses)check(a.resource!=p.frame.normal,"Sky writes surface validity");
+    }
+    auto settings=rich();settings.products=settings.products_debug=true;
+    const auto original=Fixture(settings,1,true).plan();
+    auto bad=[&](const char* label,const auto& edit){auto p=original;edit(p);rejects(label,[&]{p.validate();});};
+    bad("normal role missing",[](auto& p){p.frame.normal=none;});
+    bad("normal clear absent",[](auto& p){erase_access(p,PassId::scene_clear,p.frame.normal,Use::clear_color);});
+    bad("normal MRT write absent",[](auto& p){erase_access(p,PassId::opaque,p.frame.normal,Use::color);});
+    bad("normal output read absent",[](auto& p){erase_access(p,PassId::output,p.frame.normal,Use::sampled);});
+    bad("depth output read absent",[](auto& p){erase_access(p,PassId::output,p.frame.depth,Use::sampled);});
+    bad("normal format wrong",[](auto& p){p.frame.resources[p.frame.normal].format=Format::depth32;});
+    bad("depth format wrong",[](auto& p){p.frame.resources[p.frame.depth].format=Format::rgba16_float;});
+    bad("normal extent wrong",[](auto& p){++p.frame.resources[p.frame.normal].width;});
+    bad("normal multisampled",[](auto& p){p.frame.resources[p.frame.normal].samples=4;});
+    bad("normal role aliases HDR",[](auto& p){p.frame.normal=p.frame.hdr;});
+    bad("normal role aliases depth",[](auto& p){p.frame.normal=p.frame.depth;});
+    bad("sky writes surface validity",[](auto& p){pass(p,PassId::sky).accesses.push_back({p.frame.normal,Use::color,false});});
+    bad("normal identity alias",[](auto& p){p.frame.resources[p.frame.normal].identity=p.frame.resources[p.frame.hdr].identity;});
+    bad("normal not shader readable",[](auto& p){p.frame.resources[p.frame.normal].supported &= ~use_bit(Use::sampled);});
+    bad("depth not shader readable",[](auto& p){p.frame.resources[p.frame.depth].supported &= ~use_bit(Use::sampled);});
+    bad("products without scene",[](auto& p){p.settings.scene=false;});
+    bad("debug without products",[](auto& p){p.settings.products=false;});
+    auto msaa=Fixture(settings,4,true).plan();rejects("products with multisampled scene",[&]{msaa.validate();});
+    auto color_settings=rich();auto absent=Fixture(color_settings).plan();absent.settings.products_debug=true;
+    rejects("debug requested with absent products",[&]{absent.validate();});
 }
-int main(){try{matrix();faults();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+
+}
+int main(){try{matrix();faults();products();std::cout<<"Production render schedule: "<<accepted<<" valid variants, "<<rejected<<" rejected contract mutations.\n";return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

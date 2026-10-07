@@ -40,6 +40,16 @@ struct DoctorOptions {
     bool require_hardware = false;
 };
 
+enum class SceneDebugView : std::uint32_t { color, depth, shading_normal };
+constexpr std::string_view scene_debug_view_name(SceneDebugView view) {
+    switch(view) {
+    case SceneDebugView::color: return "color";
+    case SceneDebugView::depth: return "depth";
+    case SceneDebugView::shading_normal: return "shading_normal";
+    }
+    return "invalid";
+}
+
 struct RenderOptions {
     std::uint32_t frames = 120;
     std::uint32_t width = 960;
@@ -49,6 +59,7 @@ struct RenderOptions {
     std::string capture;
     std::uint32_t samples = 4; // Scene capture only; the triangle remains single-sampled.
     bool culling = true;
+    SceneDebugView scene_debug_view = SceneDebugView::color;
     bool clustered_lighting = true; // False selects the complete all-light reference path.
     std::uint32_t frames_in_flight = 2; // Bounded submission slots; 1 selects serialized retirement.
     bool profile = false;
@@ -77,7 +88,13 @@ struct FrameExecutionDiagnostics {
     bool presentation_fences=false;
     std::string presentation_retirement;
 };
+struct SceneProductsDiagnostics {
+    bool available=false;
+    std::uint64_t normal_buffer_bytes=0;
+    SceneDebugView view=SceneDebugView::color;
+};
 struct RenderDiagnostics {
+    SceneProductsDiagnostics scene_products;
     bool culling=true,profile_requested=false,gpu_timestamps=false;
     std::uint32_t timestamp_valid_bits=0;double timestamp_period_ns=0;
     std::uint64_t completed_submissions=0,gpu_samples_dropped=0;

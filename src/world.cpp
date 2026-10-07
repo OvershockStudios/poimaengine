@@ -366,7 +366,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 41}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 42}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", object_schema(Json::object())}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
@@ -378,7 +378,7 @@ Json describe() {
                 {"width", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 960}}},
                 {"height", {{"type", "integer"}, {"minimum", 128}, {"maximum", 4096}, {"default", 540}}},
                 {"gpu", {{"type", "integer"}, {"minimum", 0}, {"maximum", 4095}}},
-                {"samples", {{"enum", {1, 4}}, {"default", 4}}},{"culling",{{"type","boolean"},{"default",true}}},{"clustered_lighting",{{"type","boolean"},{"default",true}}},{"frames_in_flight",{{"type","integer"},{"minimum",1},{"maximum",2},{"default",2}}},{"profile",{{"type","boolean"},{"default",false}}}}, {"revision", "camera", "path"})},
+                {"scene_debug_view",{{"enum",{"color","depth","shading_normal"}},{"default","color"},{"description","Depth and shading_normal require samples=1; sky has no surface product."}}},{"samples", {{"enum", {1, 4}}, {"default", 4}}},{"culling",{{"type","boolean"},{"default",true}}},{"clustered_lighting",{{"type","boolean"},{"default",true}}},{"frames_in_flight",{{"type","integer"},{"minimum",1},{"maximum",2},{"default",2}}},{"profile",{{"type","boolean"},{"default",false}}}}, {"revision", "camera", "path"})},
             {"entity.query", object_schema({{"revision", rev}, {"parent", parent}, {"after", id}, {"component", component_type},
                 {"limit", {{"type", "integer"}, {"minimum", 1}, {"maximum", 256}, {"default", 64}}}})},
             {"world.transact", object_schema({{"request_id", id}, {"base_revision", rev},
@@ -475,7 +475,7 @@ Json describe() {
     auto segment=input; segment["properties"].erase("entity"); segment["properties"]["ticks"]={{"type","integer"},{"minimum",1},{"maximum",600}}; segment["required"]={"ticks"};
     segment["properties"]["motions"]=motions;segment["properties"]["sounds"]=sounds;
     play["properties"]["sequence"]={{"type","array"},{"minItems",1},{"maxItems",256},{"items",segment}};
-    for(const auto* key:{"path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","profile"}) play["properties"][key]=capture["properties"][key];
+    for(const auto* key:{"path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile"}) play["properties"][key]=capture["properties"][key];
     play["properties"]["audio"]={{"type","boolean"},{"default",false}};
     play["properties"]["input_profile"]=input_path;
     play["properties"]["input_revision"]=rev;
@@ -486,6 +486,7 @@ Json describe() {
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");
     result["invariants"].push_back("Shadow maps are opt-in per light. Directional=4 views, point=6, spot=1; at most 16 views and 128 MiB of D32 depth storage. Shadowed spot outer_angle <= 89.5; local range must exceed shadow near.");
     result["invariants"].push_back("Capture/play clustered_lighting defaults true. False evaluates the full light table as a reference. Cluster overflow falls back to all lights; directional and range-zero lights are never distance-culled. Assignment diagnostics distinguish requested mode, active mode and measured GPU statistics.");
+    result["invariants"].push_back("Capture/play scene_debug_view is color, depth or shading_normal. Non-color views require samples=1, bypass exposure/output tone mapping, and show sky/background as black. Single-sample scene products contain device depth and final world-space shading normals with surface validity. Motion/history is not yet provided.");
     result["invariants"].push_back("Capture/play frames_in_flight is 1 or 2, default 2. One selects serialized completion; two bounds outstanding graphics submissions. Frame execution diagnostics distinguish submission, completion and explicit waits; neither completion nor presentation-fence retirement proves monitor scanout.");
     result["invariants"].push_back("Capture/play culling defaults true; camera and each shadow view cull independently. Profile defaults false. Render diagnostics report submitted draws and optional CPU/GPU intervals, not a qualified game frame time.");
     result["invariants"].push_back("Kinematic targets begin on the first tick of step/replay segments and persist across batches. Targets must be unique roots, normalized, at most 100 m/s and 20 rad/s. Raycasts query physics, including hidden colliders; ties use stable IDs. Primitive origin-inside hits have no surface normal; mesh hits retain triangle winding normals.");
@@ -1269,7 +1270,11 @@ public:
         auto timing=[](const TimingSummary& t) { return Json{{"samples",t.samples},{"mean_ms",t.samples ? Json(t.total_ms/static_cast<double>(t.samples)) : Json(nullptr)},
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
         const auto& c=d.last_draws;const auto& l=d.light_assignment;const auto& f=d.frame_execution;
-        return {{"culling",d.culling},{"profile_requested",d.profile_requested},{"completed_submissions",d.completed_submissions},
+        return {{"scene_products",{{"available",d.scene_products.available},{"view",scene_debug_view_name(d.scene_products.view)},
+                {"normal_buffer_bytes",d.scene_products.normal_buffer_bytes},{"normal_format","RGBA16_FLOAT"},
+                {"normal_space","world"},{"normal_alpha","surface validity"},{"depth_convention","device depth [0,1], near 0, far/clear 1"},
+                {"depth_visualization","positive view distance divided by far; invalid surface black"}}},
+            {"culling",d.culling},{"profile_requested",d.profile_requested},{"completed_submissions",d.completed_submissions},
             {"frame_execution",{{"limit",f.limit},{"submitted",f.submitted},{"outstanding",f.outstanding},{"peak_outstanding",f.peak_outstanding},
                 {"slot_waits",f.slot_waits},{"drain_waits",f.drain_waits},{"device_idle_waits",f.device_idle_waits},
                 {"presentation_fences",f.presentation_fences},{"presentation_retirement",f.presentation_retirement}}},
@@ -1682,6 +1687,15 @@ public:
         if (params.contains("gpu")) options.gpu = static_cast<int>(integer("gpu", 0, 0, 4095));
         options.samples = integer("samples", 4, 1, 4);
         options.frames_in_flight = integer("frames_in_flight", 2, 1, 2);
+        if(params.contains("scene_debug_view")) {
+            const auto& view=params.at("scene_debug_view");
+            require(view.is_string(),"scene_debug_view must be color, depth or shading_normal.");
+            if(view=="color")options.scene_debug_view=SceneDebugView::color;
+            else if(view=="depth")options.scene_debug_view=SceneDebugView::depth;
+            else if(view=="shading_normal")options.scene_debug_view=SceneDebugView::shading_normal;
+            else throw Error(-32602,"scene_debug_view must be color, depth or shading_normal.");
+        }
+        require(options.scene_debug_view==SceneDebugView::color || options.samples==1,"Non-color scene_debug_view requires samples=1.");
         require(options.samples == 1 || options.samples == 4, "Capture samples must be 1 or 4.");
         for(const auto* key:{"culling","clustered_lighting","profile"})if(params.contains(key))require(params.at(key).is_boolean(),"Culling/clustered_lighting/profile options must be boolean.");
         options.culling=params.value("culling",true);options.clustered_lighting=params.value("clustered_lighting",true);options.profile=params.value("profile",false);
@@ -1689,13 +1703,13 @@ public:
     }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
         if(live) {
-            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
         } else {
-            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
-            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "profile"}, {"revision", "camera", "path"});
+            if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
+            else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "profile"}, {"revision", "camera", "path"});
             current_revision(params);
         }
         const auto camera_id = identifier(params.at("camera"));
@@ -2119,7 +2133,7 @@ public:
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
             {"session_id","request_id","expected_tick","camera","mode"});
         identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";

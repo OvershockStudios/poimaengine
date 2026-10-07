@@ -40,7 +40,7 @@ find_program(POIMA_DXC NAMES dxc
     HINTS "${CMAKE_SOURCE_DIR}/.cache/toolchains/dxc-v1.8.2505.1/bin"
     DOC "Host DXC executable with SPIR-V support" REQUIRED NO_CMAKE_FIND_ROOT_PATH)
 file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated/poima")
-foreach(shader smoke scene scene_output sky shadow skinning cluster_lights editor_overlay game_ui)
+foreach(shader smoke scene scene_products scene_output scene_output_products sky shadow skinning cluster_lights editor_overlay game_ui)
 foreach(stage vs ps cs)
     if(((shader STREQUAL "skinning" OR shader STREQUAL "cluster_lights") AND NOT stage STREQUAL "cs") OR (NOT (shader STREQUAL "skinning" OR shader STREQUAL "cluster_lights") AND stage STREQUAL "cs"))
         continue()
@@ -58,22 +58,31 @@ foreach(stage vs ps cs)
     if(shader STREQUAL "shadow")
         set(entry shadow_vertex_main)
     endif()
-    set(shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl")
+    set(shader_source "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl")
+    set(shader_defines)
+    if(shader STREQUAL "scene_products")
+        set(shader_source "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
+        list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
+    elseif(shader STREQUAL "scene_output_products")
+        set(shader_source "${CMAKE_SOURCE_DIR}/shaders/scene_output.hlsl")
+        list(APPEND shader_defines -DPOIMA_SCENE_PRODUCTS=1)
+    endif()
+    set(shader_dependencies "${shader_source}")
     if(shader STREQUAL "shadow")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene.hlsl")
     endif()
-    if(shader STREQUAL "scene" OR shader STREQUAL "shadow" OR shader STREQUAL "cluster_lights")
+    if(shader STREQUAL "scene" OR shader STREQUAL "scene_products" OR shader STREQUAL "shadow" OR shader STREQUAL "cluster_lights")
         list(APPEND shader_dependencies "${CMAKE_SOURCE_DIR}/shaders/scene_frame.hlsli")
     endif()
     set(header "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.hpp")
     add_custom_command(OUTPUT "${header}"
         BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
-        COMMAND "${POIMA_DXC}" -spirv -T "${stage}_6_0" -E "${entry}"
+        COMMAND "${POIMA_DXC}" ${shader_defines} -spirv -T "${stage}_6_0" -E "${entry}"
             -fspv-target-env=vulkan1.3 -fvk-use-dx-layout
             -fvk-b-shift 256 0 -fvk-t-shift 0 0 -fvk-s-shift 128 0 -fvk-u-shift 384 0
             -Fo "${CMAKE_CURRENT_BINARY_DIR}/generated/poima/${shader}_${stage}.spv"
             -Fh "${header}" -Vn "poima_${shader}_${stage}"
-            "${CMAKE_SOURCE_DIR}/shaders/${shader}.hlsl"
+            "${shader_source}"
         DEPENDS ${shader_dependencies}
         VERBATIM)
     target_sources(poima_core PRIVATE "${header}")

@@ -54,7 +54,8 @@ Json wall_distribution(std::vector<double> values){
 }
 Json timing(const TimingSummary& t){return {{"samples",t.samples},{"total_ms",t.total_ms},{"minimum_ms",t.min_ms},{"maximum_ms",t.max_ms},{"last_ms",t.last_ms}};}
 Json report(const RenderReport& r){const auto& d=r.diagnostics;const auto& f=d.frame_execution;
-    return {{"gpu",r.gpu_name},{"success",r.success},{"hardware",r.hardware},{"errors",r.validation_errors},{"width",r.width},{"height",r.height},
+    return {{"gpu",r.gpu_name},{"success",r.success},{"hardware",r.hardware},{"errors",r.validation_errors},{"width",r.width},{"height",r.height},{"samples",r.samples},
+        {"scene_products",{{"available",d.scene_products.available},{"view",scene_debug_view_name(d.scene_products.view)},{"normal_buffer_bytes",d.scene_products.normal_buffer_bytes}}},
         {"submitted",f.submitted},{"completed",d.completed_submissions},{"outstanding",f.outstanding},{"peak_outstanding",f.peak_outstanding},{"limit",f.limit},
         {"slot_waits",f.slot_waits},{"drain_waits",f.drain_waits},{"device_idle_waits",f.device_idle_waits},{"presentation_fences",f.presentation_fences},
         {"presentation_retirement",f.presentation_retirement},{"render_call_samples",d.render_call_cpu.samples},{"render_call_total_ms",d.render_call_cpu.total_ms},
@@ -85,17 +86,27 @@ void accounting(const RenderReport& r,unsigned limit,bool drained=false){const a
 }
 int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::array()}};
     try{
-        check(argc==3 || argc==4,"Usage: frame-execution-test OUTPUT_PREFIX GPU [FRAMES60..600]");SetProcessDPIAware();
-        const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);const unsigned frames=argc==4?unsigned(std::stoul(argv[3])):60;
+        check(argc>=3 && argc<=5,"Usage: frame-execution-test OUTPUT_PREFIX GPU [FRAMES60..600] [color4|color1|depth|shading_normal]");SetProcessDPIAware();
+        const std::string prefix=argv[1];const int gpu=std::stoi(argv[2]);const unsigned frames=argc>=4?unsigned(std::stoul(argv[3])):60;
         check(frames>=60 && frames<=600,"Frames must be60..600");evidence["frames"]=frames;const auto geometry=mesh();
+        const std::string view=argc==5?argv[4]:"color4";
+        check(view=="color4" || view=="color1" || view=="depth" || view=="shading_normal","Unknown scene view");
+        const auto debug=view=="depth"?SceneDebugView::depth:view=="shading_normal"?SceneDebugView::shading_normal:SceneDebugView::color;
+        evidence["scene_view"]=view;
         for(unsigned limit:{1u,2u}){
             evidence["modes"].push_back({{"limit",limit},{"observations",Json::array()},{"captures",Json::array()}});auto& mode=evidence["modes"].back();
-            Window a(40),b(520);RenderOptions options;options.gpu=gpu;options.width=384;options.height=216;options.samples=4;options.frames_in_flight=limit;options.capture_exclusive=true;options.profile=true;
+            Window a(40),b(520);RenderOptions options;options.gpu=gpu;options.width=384;options.height=216;options.samples=view=="color4"?4:1;options.scene_debug_view=debug;options.frames_in_flight=limit;options.capture_exclusive=true;options.profile=true;
             auto primary=std::make_unique<HostedViewport>(options,scene(geometry,0),a.handle);
             auto secondary=std::make_unique<HostedViewport>(options,scene(geometry,1),b.handle);
+            auto overlay=[&](HostedViewport& v){if(options.samples==1)v.set_overlay({{.8f,.05f,{1,0,0,1}},{.95f,.05f,{1,0,0,1}},{.95f,.15f,{1,0,0,1}},
+                {.8f,.05f,{1,0,0,1}},{.95f,.15f,{1,0,0,1}},{.8f,.15f,{1,0,0,1}}});};
+            overlay(*primary);overlay(*secondary);
             auto draw=[&](HostedViewport& v,const SceneSnapshot& s){pump();check(v.draw(s),"Visible HWND draw skipped");accounting(v.report(),limit);};
             auto capture=[&](HostedViewport& v,const SceneSnapshot& s,const std::string& stage){const auto path=prefix+"-slots"+std::to_string(limit)+"-"+stage+".bmp";
-                check(v.draw_capture(s,path),"Capture skipped");accounting(v.report(),limit,true);check(v.report().capture_written,"Capture not written");mode["captures"].push_back({{"stage",stage},{"path",path},{"report",report(v.report())}});};
+                check(v.draw_capture(s,path),"Capture skipped");accounting(v.report(),limit,true);check(v.report().capture_written,"Capture not written");
+                if(options.samples==1){const auto& r=v.report();const auto& products=r.diagnostics.scene_products;
+                    check(products.available && products.view==debug && products.normal_buffer_bytes==std::uint64_t(r.width)*r.height*8,"Scene products stale after resize or rebind");}
+                mode["captures"].push_back({{"stage",stage},{"path",path},{"report",report(v.report())}});};
             // Resource churn: frame constants, palettes, finite candidate lists,
             // UI vertices and owned texture uploads vary while devices interleave.
             for(unsigned tick=0;tick<frames;++tick){draw(*primary,scene(geometry,tick));draw(*secondary,scene(geometry,tick+7));}
@@ -246,7 +257,7 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
             b.handle=CreateWindowExW(0,L"STATIC",L"Poima recreated viewport",WS_CHILD|WS_VISIBLE,0,0,384,216,b.parent,nullptr,GetModuleHandleW(nullptr),nullptr);
             check(b.handle!=nullptr,"Recreate secondary HWND failed");pump();
             for(unsigned i=0;i<8;++i)draw(*primary,scene(geometry,50+i,448,252));
-            secondary=std::make_unique<HostedViewport>(options,scene(geometry,0),b.handle);draw(*secondary,scene(geometry,2));capture(*secondary,scene(geometry,23),"recreated");
+            secondary=std::make_unique<HostedViewport>(options,scene(geometry,0),b.handle);overlay(*secondary);draw(*secondary,scene(geometry,2));capture(*secondary,scene(geometry,23),"recreated");
             a.size(384,216);primary->resize();for(unsigned i=0;i<12;++i)draw(*primary,scene(geometry,60+i));
             capture(*primary,scene(geometry,71),"final");mode["final"]=report(primary->report());
             check(primary->report().diagnostics.last_draws.skinned_vertices==3,"Skinned fixture was not submitted");
@@ -256,7 +267,7 @@ int main(int argc,char** argv){Json evidence={{"passed",false},{"modes",Json::ar
             // an independent no-history reference, avoiding symmetric stale state.
             secondary.reset();
             RenderOptions reference_options=options;reference_options.frames_in_flight=1;
-            auto reference=std::make_unique<HostedViewport>(reference_options,scene(geometry,71),b.handle);
+            auto reference=std::make_unique<HostedViewport>(reference_options,scene(geometry,71),b.handle);overlay(*reference);
             const auto reference_path=prefix+"-slots"+std::to_string(limit)+"-fresh.bmp";
             check(reference->draw_capture(scene(geometry,71),reference_path),"Fresh reference skipped");accounting(reference->report(),1,true);
             mode["captures"].push_back({{"stage","fresh"},{"path",reference_path},{"report",report(reference->report())}});

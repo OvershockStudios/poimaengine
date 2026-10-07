@@ -104,6 +104,8 @@ class WorldContract(unittest.TestCase):
         for method in ('world.capture', 'runtime.capture', 'runtime.play'):
             self.assertEqual(descriptor['methods'][method]['properties']['frames_in_flight'],
                              {'type': 'integer', 'minimum': 1, 'maximum': 2, 'default': 2})
+            self.assertEqual(descriptor['methods'][method]['properties']['scene_debug_view']['enum'],
+                             ['color', 'depth', 'shading_normal'])
         original = {'request_id': uuid.uuid4().hex, 'base_revision': 0,
                     'ops': [create(2, uid(1)), {**create(1), 'name': '大厅 🌊'}]}
         client.rpc('world.transact', original)
@@ -175,6 +177,13 @@ class WorldContract(unittest.TestCase):
             self.assertEqual(self.path.read_bytes(), saved)
             self.assertEqual(client.rpc('world.history'), history)
             self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
+        for bad in (None, True, 1, [], {}, 'normals', ''):
+            client.rpc('world.capture', {**capture, 'samples': 1, 'scene_debug_view': bad}, error=-32602)
+        for mode in ('depth', 'shading_normal'):
+            client.rpc('world.capture', {**capture, 'scene_debug_view': mode}, error=-32602)
+            client.rpc('world.capture', {**capture, 'samples': 4, 'scene_debug_view': mode}, error=-32602)
+        self.assertEqual(client.rpc('world.history'), history)
+        self.assertFalse((Path(self.directory.name) / 'new.bmp').exists())
         capabilities = json.loads(subprocess.check_output([BINARY, 'capabilities'], text=True))['result']['features']
         if not capabilities['scene_capture']: client.rpc('world.capture', capture, error=-32003)
         self.assertEqual(self.path.read_bytes(), saved)

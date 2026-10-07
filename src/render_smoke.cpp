@@ -27,6 +27,8 @@
 #include <map>
 #include "poima/scene_vs.hpp"
 #include "poima/scene_ps.hpp"
+#include "poima/scene_products_ps.hpp"
+#include "poima/scene_output_products_ps.hpp"
 #include "poima/scene_output_vs.hpp"
 #include "poima/scene_output_ps.hpp"
 #include "poima/cluster_lights_cs.hpp"
@@ -286,7 +288,7 @@ struct Context {
     nvrhi::vulkan::DeviceHandle native;
     nvrhi::DeviceHandle checked;
     std::vector<nvrhi::TextureHandle> images;
-    std::vector<nvrhi::FramebufferHandle> framebuffers;
+    std::vector<nvrhi::FramebufferHandle> framebuffers,sky_framebuffers;
     nvrhi::ShaderHandle vertex_shader;
     nvrhi::ShaderHandle pixel_shader;
     nvrhi::GraphicsPipelineHandle pipeline,culled_pipeline;
@@ -296,7 +298,8 @@ struct Context {
     std::uint32_t samples = 1;
     nvrhi::TextureHandle depth;
     nvrhi::TextureHandle multisample_color;
-    nvrhi::TextureHandle scene_hdr;
+    nvrhi::TextureHandle scene_hdr,scene_normal;
+    SceneDebugView scene_debug_view=SceneDebugView::color;
     nvrhi::ShaderHandle output_vs,output_ps;
     nvrhi::BindingLayoutHandle output_layout;
     nvrhi::BindingSetHandle output_bindings;
@@ -436,13 +439,13 @@ struct Context {
         cluster_pipeline=nullptr;cluster_bindings=nullptr;cluster_layout=nullptr;cluster_shader=nullptr;
         light_buffer=nullptr;cluster_counts=nullptr;cluster_indices=nullptr;cluster_readback=nullptr;
         vertices = nullptr; frame_buffer=nullptr; draws.clear(); geometry_cache.clear(); material_cache.clear();texture_cache.clear();sampler_cache.clear();
-        framebuffers.clear();
+        framebuffers.clear();sky_framebuffers.clear();
 #if POIMA_EDITOR
         ui_scene=nullptr;
 #endif
         images.clear();
         depth = nullptr;
-        multisample_color = nullptr;scene_hdr=nullptr;
+        multisample_color = nullptr;scene_hdr=nullptr;scene_normal=nullptr;
         for(auto& slot:slots) {slot.completion=nullptr;slot.cluster_readback=nullptr;slot.skin_readback=nullptr;}
         checked = nullptr;
         native = nullptr;
@@ -476,6 +479,9 @@ struct Context {
         diagnostics.frame_execution.presentation_retirement="bounded idle compatibility cleanup (not a presentation completion proof)";
         diagnostics.culling=options.culling;diagnostics.profile_requested=options.profile;
         clustered_requested=options.clustered_lighting;diagnostics.light_assignment.requested=clustered_requested;
+        scene_debug_view=options.scene_debug_view;diagnostics.scene_products.view=scene_debug_view;
+        require(scene_debug_view==SceneDebugView::color || scene_debug_view==SceneDebugView::depth || scene_debug_view==SceneDebugView::shading_normal,"Invalid scene debug view.");
+        require(scene_debug_view==SceneDebugView::color || (scene && options.samples==1),"Scene diagnostic views require a scene and samples=1.");
         samples = scene ? options.samples : 1;
         require(samples==1 || samples==2 || samples==4 || samples==8,"Scene samples must be 1, 2, 4 or 8.");
         SDL_SetMainReady();
@@ -604,7 +610,7 @@ struct Context {
         const nvrhi::ShaderDesc vs_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main");
         const nvrhi::ShaderDesc ps_desc = nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
         vertex_shader = scene ? create_embedded_shader(checked, vs_desc, poima_scene_vs) : create_embedded_shader(checked, vs_desc, poima_smoke_vs);
-        pixel_shader = scene ? create_embedded_shader(checked, ps_desc, poima_scene_ps) : create_embedded_shader(checked, ps_desc, poima_smoke_ps);
+        pixel_shader = scene ? (samples==1 ? create_embedded_shader(checked,ps_desc,poima_scene_products_ps) : create_embedded_shader(checked,ps_desc,poima_scene_ps)) : create_embedded_shader(checked,ps_desc,poima_smoke_ps);
         require(vertex_shader && pixel_shader, "Compiled SPIR-V shader creation failed.");
         nvrhi::GraphicsPipelineDesc pipeline_desc;
         pipeline_desc.VS = vertex_shader;
@@ -1026,13 +1032,13 @@ struct Context {
             nvrhi::GraphicsPipelineDesc description;description.VS=sky_vs;description.PS=sky_ps;description.bindingLayouts.push_back(sky_layout);
             description.renderState.depthStencilState.depthTestEnable=false;description.renderState.depthStencilState.depthWriteEnable=false;
             description.renderState.rasterState.cullMode=nvrhi::RasterCullMode::None;description.renderState.rasterState.scissorEnable=true;
-            sky_pipeline=checked->createGraphicsPipeline(description,framebuffers.front()->getFramebufferInfo());
+            sky_pipeline=checked->createGraphicsPipeline(description,sky_framebuffers.front()->getFramebufferInfo());
             require(bool(sky_pipeline),"Procedural sky pipeline creation failed.");
         }
     }
     void render_sky(std::uint32_t image_index) {
         if(!scene || !scene_visible || !sky_enabled)return;
-        nvrhi::GraphicsState state;state.pipeline=sky_pipeline;state.framebuffer=framebuffers.at(image_index);state.bindings.push_back(sky_bindings);
+        nvrhi::GraphicsState state;state.pipeline=sky_pipeline;state.framebuffer=sky_framebuffers.at(image_index);state.bindings.push_back(sky_bindings);
         state.viewport.addViewportAndScissorRect(scene_viewport.value_or(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height))));
         commands->setGraphicsState(state);commands->setPushConstants(&sky_constants,sizeof(sky_constants));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
@@ -1041,14 +1047,19 @@ struct Context {
         if(!scene)return;
         if(!output_layout) {
             output_vs=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Vertex).setEntryName("vertex_main"),poima_scene_output_vs);
-            output_ps=create_embedded_shader(checked,nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main"),poima_scene_output_ps);
-            output_layout=checked->createBindingLayout(nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
-                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,16)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0)));
+            const auto ps=nvrhi::ShaderDesc(nvrhi::ShaderType::Pixel).setEntryName("pixel_main");
+            output_ps=scene_normal ? create_embedded_shader(checked,ps,poima_scene_output_products_ps) : create_embedded_shader(checked,ps,poima_scene_output_ps);
+            auto layout=nvrhi::BindingLayoutDesc().setVisibility(nvrhi::ShaderType::All)
+                .addItem(nvrhi::BindingLayoutItem::PushConstants(0,32)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(0));
+            if(scene_normal)layout.addItem(nvrhi::BindingLayoutItem::Texture_SRV(1)).addItem(nvrhi::BindingLayoutItem::Texture_SRV(2));
+            output_layout=checked->createBindingLayout(layout);
             require(output_vs && output_ps && output_layout,"Scene output shader/layout creation failed.");
         }
         if(!output_bindings) {
-            output_bindings=checked->createBindingSet(nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,16))
-                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,scene_hdr)),output_layout);
+            auto bindings_desc=nvrhi::BindingSetDesc().addItem(nvrhi::BindingSetItem::PushConstants(0,32))
+                .addItem(nvrhi::BindingSetItem::Texture_SRV(0,scene_hdr));
+            if(scene_normal)bindings_desc.addItem(nvrhi::BindingSetItem::Texture_SRV(1,depth)).addItem(nvrhi::BindingSetItem::Texture_SRV(2,scene_normal));
+            output_bindings=checked->createBindingSet(bindings_desc,output_layout);
             require(bool(output_bindings),"Scene output HDR bindings creation failed.");
         }
         if(!output_pipeline) {
@@ -1063,12 +1074,18 @@ struct Context {
         if(!scene)return;
         nvrhi::GraphicsState state;state.pipeline=output_pipeline;state.framebuffer=game_ui_framebuffers.at(image_index);state.bindings.push_back(output_bindings);
         state.viewport.addViewportAndScissorRect(nvrhi::Viewport(static_cast<float>(extent.width),static_cast<float>(extent.height)));
-        const float parameters[4]={frame_constants.ambient_exposure[3],
-            (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,0,0};
+        const float parameters[8]={frame_constants.ambient_exposure[3],
+            (format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb) ? 1.0f : 0.0f,
+            static_cast<float>(scene_debug_view),static_cast<float>(scene->near_plane),static_cast<float>(scene->far_plane),0,0,0};
         commands->setGraphicsState(state);commands->setPushConstants(parameters,sizeof(parameters));
         commands->draw(nvrhi::DrawArguments().setVertexCount(3));
     }
     void update_scene() {
+        if(scene_debug_view!=SceneDebugView::color) {
+            const auto near_plane=static_cast<float>(scene->near_plane),far_plane=static_cast<float>(scene->far_plane);
+            require(std::isfinite(near_plane) && std::isfinite(far_plane) && near_plane>0 && far_plane>near_plane,
+                "Scene diagnostic projection requires finite float near/far values with 0 < near < far.");
+        }
         validate_game_ui();prepare_scene_output();
         profiling::Scope profile_scope("renderer.prepare");
         const auto started=SteadyClock::now();draws.clear();pending_draws={};
@@ -1211,7 +1228,8 @@ struct Context {
 #if POIMA_EDITOR
         ui_framebuffers.clear();ui_scene_bindings=nullptr;
 #endif
-        framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; staging=nullptr;
+        framebuffers.clear();sky_framebuffers.clear(); images.clear(); depth=nullptr; multisample_color=nullptr; scene_hdr=nullptr; scene_normal=nullptr; staging=nullptr;
+        diagnostics.scene_products.available=false;diagnostics.scene_products.normal_buffer_bytes=0;
 #if POIMA_EDITOR
         ui_scene=nullptr;
 #endif
@@ -1320,7 +1338,8 @@ struct Context {
             // Scene radiance and MSAA resolve stay linear until the output pass.
             // Limit these new transient attachments independently of staging.
             const auto hdr_bytes=std::uint64_t(extent.width)*extent.height*8u*(samples>1 ? samples+1u : 1u);
-            require(hdr_bytes<=512u*1024u*1024u,"HDR scene attachments exceed the 512 MiB budget.");
+            const auto normal_bytes=samples==1 ? std::uint64_t(extent.width)*extent.height*8u : 0u;
+            require(hdr_bytes+normal_bytes<=512u*1024u*1024u,"HDR scene/product attachments exceed the 512 MiB budget.");
             const auto hdr_format=vk::Format::eR16G16B16A16Sfloat;
             const auto properties=physical.getFormatProperties(hdr_format,dispatch).optimalTilingFeatures;
             const auto needed=vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eSampledImage |
@@ -1339,6 +1358,12 @@ struct Context {
             scene_desc.initialState=nvrhi::ResourceStates::ShaderResource;scene_desc.keepInitialState=true;
             scene_desc.debugName="Resolved linear HDR scene";
             scene_hdr=checked->createTexture(scene_desc);require(bool(scene_hdr),"HDR scene target creation failed.");
+            if(samples==1) {
+                scene_desc.debugName="World shading normal and surface validity";
+                scene_normal=checked->createTexture(scene_desc);require(bool(scene_normal),"Scene shading normal target creation failed.");
+                const auto depth_properties=physical.getFormatProperties(vk::Format::eD32Sfloat,dispatch).optimalTilingFeatures;
+                require(bool(depth_properties&vk::FormatFeatureFlagBits::eSampledImage),"Selected GPU lacks sampled D32 scene depth support.");
+            }
             scene_desc.sampleCount = samples;
             scene_desc.dimension = samples > 1 ? nvrhi::TextureDimension::Texture2DMS : nvrhi::TextureDimension::Texture2D;
             scene_desc.keepInitialState = true;
@@ -1349,10 +1374,11 @@ struct Context {
                 require(static_cast<bool>(multisample_color), "Scene MSAA color creation failed.");
             }
             scene_desc.format = nvrhi::Format::D32;
-            scene_desc.isShaderResource=false;scene_desc.debugName="Scene depth";
+            scene_desc.isShaderResource=samples==1;scene_desc.debugName="Scene depth";
             scene_desc.initialState = nvrhi::ResourceStates::DepthWrite;
             depth = checked->createTexture(scene_desc);
             require(static_cast<bool>(depth), "Scene depth creation failed.");
+            diagnostics.scene_products.available=bool(scene_normal);diagnostics.scene_products.normal_buffer_bytes=normal_bytes;
         }
         for (const auto image : device.getSwapchainImagesKHR(swapchain,dispatch)) {
             auto texture = checked->createHandleForNativeTexture(nvrhi::ObjectTypes::VK_Image,
@@ -1364,10 +1390,17 @@ struct Context {
             if(editor)scene_target=ui_scene.Get();
 #endif
             auto framebuffer_desc = nvrhi::FramebufferDesc().addColorAttachment(scene ? (multisample_color ? multisample_color.Get() : scene_hdr.Get()) : scene_target);
+            if(scene_normal)framebuffer_desc.addColorAttachment(scene_normal);
             if (depth) framebuffer_desc.setDepthAttachment(depth);
             auto framebuffer = checked->createFramebuffer(framebuffer_desc);
             require(static_cast<bool>(framebuffer), "NVRHI framebuffer creation failed.");
             framebuffers.push_back(framebuffer);
+            if(scene) {
+                // Sky writes only HDR color. Excluding the normal attachment
+                // preserves its invalid-background clear without independentBlend.
+                auto sky_desc=nvrhi::FramebufferDesc().addColorAttachment(multisample_color ? multisample_color.Get() : scene_hdr.Get()).setDepthAttachment(depth);
+                auto sky_framebuffer=checked->createFramebuffer(sky_desc);require(bool(sky_framebuffer),"Sky framebuffer creation failed.");sky_framebuffers.push_back(sky_framebuffer);
+            }
             auto game_ui_framebuffer=checked->createFramebuffer(nvrhi::FramebufferDesc().addColorAttachment(scene_target));
             require(bool(game_ui_framebuffer),"Game UI composition framebuffer creation failed.");
             game_ui_framebuffers.push_back(game_ui_framebuffer);
@@ -1764,7 +1797,7 @@ struct Context {
         namespace rs=render_schedule;
         rs::FrameResources f;
         rs::Settings settings;settings.scene=scene!=nullptr;settings.clustered=scene && pending_lights.active;
-        settings.sky=scene && scene_visible && sky_enabled;settings.editor=editor;settings.capture=capture_frame;
+        settings.sky=scene && scene_visible && sky_enabled;settings.products=bool(scene_normal);settings.products_debug=scene_debug_view!=SceneDebugView::color;settings.editor=editor;settings.capture=capture_frame;
         settings.slot=static_cast<std::uint32_t>(next_slot%diagnostics.frame_execution.limit);
         std::unordered_map<std::uintptr_t,rs::ResourceId> ids;
         auto insert=[&](rs::Resource resource) {
@@ -1795,6 +1828,7 @@ struct Context {
         auto texture=[&](nvrhi::ITexture* value,rs::Lifetime lifetime,bool initialized) {
             require(value!=nullptr,"Render schedule texture binding is null.");const auto& desc=value->getDesc();
             rs::Resource r;r.identity=reinterpret_cast<std::uintptr_t>(value);r.name=desc.debugName;r.kind=rs::Kind::texture;
+            r.format=desc.format==nvrhi::Format::RGBA16_FLOAT ? rs::Format::rgba16_float : desc.format==nvrhi::Format::D32 ? rs::Format::depth32 : rs::Format::unspecified;
             r.lifetime=lifetime;r.initialized=initialized;r.width=desc.width;r.height=desc.height;r.samples=desc.sampleCount;
             r.supported=rs::use_bit(rs::Use::copy_source)|rs::use_bit(rs::Use::copy_destination);
             if(desc.isShaderResource)r.supported|=rs::use_bit(rs::Use::sampled);
@@ -1816,7 +1850,7 @@ struct Context {
             f.frame=buffer(frame_buffer,rs::Lifetime::shared,false);
             if(!gpu_lights.empty())f.lights=buffer(light_buffer,rs::Lifetime::shared,false,gpu_lights.size()*sizeof(GpuLight));
             f.hdr=texture(scene_hdr,rs::Lifetime::shared,false);f.color=multisample_color ? texture(multisample_color,rs::Lifetime::shared,false) : f.hdr;
-            f.depth=texture(depth,rs::Lifetime::shared,false);f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
+            f.depth=texture(depth,rs::Lifetime::shared,false);if(scene_normal)f.normal=texture(scene_normal,rs::Lifetime::shared,false);f.shadow=texture(shadow_texture,rs::Lifetime::shared,false);
             if(settings.clustered) {
                 f.counts=buffer(cluster_counts,rs::Lifetime::shared,false);f.indices=buffer(cluster_indices,rs::Lifetime::shared,false);
                 f.resources[f.indices].region=rs::Region::cluster_members;f.resources[f.indices].counts=f.counts;
@@ -1878,18 +1912,19 @@ struct Context {
         auto identity=[&](rs::ResourceId id,const void* actual) {
             require(id!=rs::none && plan.resource(id).identity==reinterpret_cast<std::uintptr_t>(actual),"Recorded resource differs from its validated schedule binding.");
         };
-        auto framebuffer=[&](nvrhi::IFramebuffer* value,rs::ResourceId color,rs::ResourceId depth_id) {
+        auto framebuffer=[&](nvrhi::IFramebuffer* value,rs::ResourceId color,rs::ResourceId depth_id,rs::ResourceId normal_id=rs::none) {
             const auto& desc=value->getDesc();
-            if(color!=rs::none) {require(desc.colorAttachments.size()==1,"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);}
+            if(color!=rs::none) {require(desc.colorAttachments.size()==(normal_id==rs::none ? 1u : 2u),"Scheduled framebuffer color binding count changed.");identity(color,desc.colorAttachments[0].texture);if(normal_id!=rs::none)identity(normal_id,desc.colorAttachments[1].texture);}
             if(depth_id!=rs::none)identity(depth_id,desc.depthAttachment.texture);
         };
-        identity(f.swapchain,images.at(index).Get());framebuffer(framebuffers.at(index),f.color,f.depth);
+        identity(f.swapchain,images.at(index).Get());framebuffer(framebuffers.at(index),f.color,f.depth,f.normal);
         if(scene) {
-            identity(f.frame,frame_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());
+            identity(f.frame,frame_buffer.Get());identity(f.hdr,scene_hdr.Get());identity(f.shadow,shadow_texture.Get());if(f.normal!=rs::none)identity(f.normal,scene_normal.Get());
             if(f.lights!=rs::none)identity(f.lights,light_buffer.Get());
             if(plan.settings.clustered) {identity(f.counts,cluster_counts.Get());identity(f.indices,cluster_indices.Get());identity(f.cluster_readback,cluster_readback.Get());}
             if(!f.skins.empty()) {identity(f.skin_errors,skin_errors.Get());identity(f.skin_readback,skin_readback.Get());}
             for(const auto& shadow:shadow_framebuffers)framebuffer(shadow,rs::none,f.shadow);
+            framebuffer(sky_framebuffers.at(index),f.color,f.depth);
             std::size_t skin_index=0,camera_index=0,shadow_index=0;
             for(const auto& draw:draws) {
                 if(draw.skin && (draw.camera_visible || draw.shadow_mask)) {
@@ -1917,7 +1952,7 @@ struct Context {
                 }
             }
             framebuffer(game_ui_framebuffers.at(index),f.output,rs::none);
-            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(f.hdr,binding.resourceHandle);
+            for(const auto& binding:output_bindings->getDesc()->bindings)if(binding.type==nvrhi::ResourceType::Texture_SRV)identity(binding.slot==0 ? f.hdr : binding.slot==1 ? f.depth : f.normal,binding.resourceHandle);
         }
         if(f.game_vertices!=rs::none)identity(f.game_vertices,game_ui_vertices.Get());
         if(f.game_indices!=rs::none)identity(f.game_indices,game_ui_indices.Get());
@@ -2043,6 +2078,7 @@ struct Context {
                 commands->beginTrackingTextureState(planned_texture(resources.swapchain),nvrhi::AllSubresources,
                     initialized[index] ? nvrhi::ResourceStates::Present : nvrhi::ResourceStates::Common);
                 commands->clearTextureFloat(planned_texture(resources.color),nvrhi::AllSubresources,nvrhi::Color(0.025f,0.035f,0.055f,1.0f));
+                if(resources.normal!=render_schedule::none)commands->clearTextureFloat(planned_texture(resources.normal),nvrhi::AllSubresources,nvrhi::Color(0,0,0,0));
                 if(resources.depth!=render_schedule::none)commands->clearDepthStencilTexture(planned_texture(resources.depth),nvrhi::AllSubresources,true,1.0f,false,0);
                 break;
             case render_schedule::PassId::sky:render_sky(index);break;

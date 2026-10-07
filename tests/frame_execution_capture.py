@@ -17,14 +17,16 @@ def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('binary',type=Path)
     p.add_argument('--output',type=Path,required=True);p.add_argument('--gpu',type=int,default=0)
-    p.add_argument('--frames',type=int,default=60);p.add_argument('--windows-interop',action='store_true');a=p.parse_args()
+    p.add_argument('--scene-view',choices=('color4','color1','depth','shading_normal'),default='color4');p.add_argument('--frames',type=int,default=60);p.add_argument('--windows-interop',action='store_true');a=p.parse_args()
     check(not sys.flags.optimize,'Shared BMP parser requires assertions')
     run=a.output.resolve()/uuid.uuid4().hex;run.mkdir(parents=True);prefix=run/'frame'
     argument=subprocess.check_output(['wslpath','-w',str(prefix)],text=True).strip() if a.windows_interop else str(prefix)
     evidence={'passed':False,'binary_sha256':sha(a.binary),'test_sha256':sha(__file__),
         'native_source_sha256':sha(Path(__file__).with_name('frame_execution_native.cpp')),'comparisons':[]}
     try:
-        command=[str(a.binary.resolve()),argument,str(a.gpu),str(a.frames)];evidence['command']=command
+        command=[str(a.binary.resolve()),argument,str(a.gpu),str(a.frames)]
+        if a.scene_view!='color4':command.append(a.scene_view)
+        evidence['command']=command;evidence['scene_view']=a.scene_view
         result=subprocess.run(command,capture_output=True,text=True,encoding='utf-8',timeout=600)
         evidence.update(exit_code=result.returncode,stdout=result.stdout,stderr=result.stderr)
         native=json.loads(result.stdout);evidence['native']=native
@@ -34,6 +36,10 @@ def main():
         for limit,mode in modes.items():
             for capture in mode['captures']:
                 report=capture['report'];gpu_names.add(report['gpu'])
+                if a.scene_view!='color4':
+                    product=report['scene_products'];view='color' if a.scene_view=='color1' else a.scene_view
+                    check(report['samples']==1 and product['available'] and product['view']==view,'Scene product selection differs')
+                    check(product['normal_buffer_bytes']==report['width']*report['height']*8,'Resized normal allocation differs')
                 check(report['hardware'] and report['success'] and report['errors']==0,'Capture hardware gate failed')
                 check(report['submitted']==report['completed'] and report['outstanding']==0,'Capture retained pending submissions')
                 path=Path(str(prefix)+f'-slots{limit}-'+capture['stage']+'.bmp')
@@ -59,7 +65,13 @@ def main():
             # has an independent color oracle, not just cross-path equality.
             final=images[limit,'final'];expected=(111,149,80)
             check(max(abs(a-b) for a,b in zip(final[16][24],expected))<=1,'Final UI texture is stale or clobbered')
-            check(sum(max(rgb)>65 for row in final[50:] for rgb in row)>300,'Skinned/light fixture lacks visible scene signal')
+            if a.scene_view!='color4':check(final[20][335]==(255,0,0),'Hosted overlay changed under diagnostic composition')
+            if a.scene_view in ('depth','shading_normal'):
+                expected=(10,10,10) if a.scene_view=='depth' else (128,128,255)
+                check(max(abs(x-y) for x,y in zip(final[108][192],expected))<=2,'Opaque diagnostic interior differs')
+                check(final[200][380]==(0,0,0),'Uncovered diagnostic background is valid')
+                check(sum(rgb!=(0,0,0) for row in final[50:] for rgb in row)>300,'Diagnostic geometry lacks visible coverage')
+            else:check(sum(max(rgb)>65 for row in final[50:] for rgb in row)>300,'Skinned/light fixture lacks visible scene signal')
         evidence['passed']=True
     except BaseException:evidence['error']=traceback.format_exc()
     finally:(run/'evidence.json').write_text(json.dumps(evidence,indent=2)+'\n')
