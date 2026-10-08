@@ -1,4 +1,4 @@
-# Road to Alpha 1 — 0.1.0-alpha.1
+# Road to Alpha 1 — 1.0.0-alpha.1
 
 Alpha 1 is the first usable release for building small 3D single-player games
 with agents, with a desktop editor available for inspection and manual work.
@@ -6,9 +6,12 @@ It is a milestone toward the full engine, not completion of its graphics,
 simulation or platform ambitions. Version numbers count development checkpoints;
 they do not measure completion.
 
-Development checkpoints use `0.0.x`. The first alpha release will be tagged
-`0.1.0-alpha.1`, followed by `0.1.0-alpha.2` and later prereleases as needed.
-The suffix identifies alpha status explicitly; a plain `0.1.0` does not.
+Pre-alpha development checkpoints use `0.x.x`. The first alpha release will be
+tagged `1.0.0-alpha.1`, followed by further alpha candidates, then
+`1.0.0-beta.N` and `1.0.0-rc.N` before `1.0.0`. The suffix identifies maturity;
+the alpha number counts candidates rather than completed roadmap phases.
+The [full release roadmap](ROADMAP.md) defines the wider destination and beta
+entry criteria. Alpha 1 is an intermediate usable-game milestone.
 
 ## Release gates
 
