@@ -642,10 +642,16 @@ Json describe() {
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
     mutations.push_back(object_schema({{"op",{{"const","template.remove"}}},{"id",stable_type}},{"op","id"}));
     const Json template_page_limit={{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}};
-    const auto ui_element=object_schema({{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",128}}},
-        {"kind",{{"enum",{"panel","label","button"}}}},{"text",{{"type","string"},{"maxLength",16384}}},
-        {"action",{{"anyOf",Json::array({Json{{"type","string"},{"pattern","^[A-Za-z0-9_.-]{1,128}$"}},Json{{"type","null"}}})}}},{"visible",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}},
-        {"parent","name","kind","text","action","visible","enabled"});
+    const auto ui_kind_schema=[&](const char* kind,const Json& text,const Json& action) {
+        return object_schema({{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
+            {"name",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"kind",{{"const",kind}}},
+            {"text",text},{"action",action},{"visible",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}},
+            {"parent","name","kind","text","action","visible","enabled"});
+    };
+    const Json ui_text={{"type","string"},{"maxLength",16384}},ui_action={{"type","string"},{"pattern","^[A-Za-z0-9_.-]{1,128}$"}};
+    const Json ui_element={{"description","Choose exactly one kind: panels require empty text and null action; labels require null action; buttons require a nonempty action token."},
+        {"oneOf",Json::array({ui_kind_schema("panel",Json{{"type","string"},{"const",""}},Json{{"type","null"}}),
+            ui_kind_schema("label",ui_text,Json{{"type","null"}}),ui_kind_schema("button",ui_text,ui_action)})}};
     mutations.push_back(object_schema({{"op",{{"const","ui.element.set"}}},{"id",stable_type},{"element",ui_element}},{"op","id","element"}));
     mutations.push_back(object_schema({{"op",{{"const","ui.element.remove"}}},{"id",stable_type}},{"op","id"}));
     methods["world.ui.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});

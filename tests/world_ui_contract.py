@@ -78,6 +78,34 @@ class Contract(unittest.TestCase):
         self.tx(1,[remove(A),remove(B),remove(C)])
         self.assertEqual(self.ok('world.ui.list')['elements'],[])
 
+    def test_kind_specific_discovery_matches_authoring(self):
+        declared=self.ok('world.describe',view='section',name='ui')['sections']['ui']['element']
+        operations=self.ok('world.describe',view='method',name='world.transact')['methods']['world.transact']['properties']['ops']['items']['oneOf']
+        mutation=next(item for item in operations if item['properties']['op'].get('const')=='ui.element.set')
+        self.assertEqual(mutation['properties']['element'],declared)
+        variants={item['properties']['kind']['const']:item for item in declared['oneOf']}
+        self.assertEqual(set(variants),{'panel','label','button'})
+        self.assertEqual(len(declared['oneOf']),3)
+        for kind,variant in variants.items():
+            with self.subTest(kind=kind):
+                self.assertEqual(variant['type'],'object')
+                self.assertFalse(variant['additionalProperties'])
+                self.assertEqual(set(variant['required']),set(element(kind=kind)))
+        self.assertEqual(variants['panel']['properties']['text'],dict(type='string',const=''))
+        for kind in ('panel','label'):
+            self.assertEqual(variants[kind]['properties']['action'],dict(type='null'))
+        self.assertEqual(variants['button']['properties']['action'],dict(type='string',pattern='^[A-Za-z0-9_.-]{1,128}$'))
+        for kind in ('label','button'):
+            self.assertEqual(variants[kind]['properties']['text'],dict(type='string',maxLength=16384))
+        self.tx(0,[put(),put(B,kind='label',text='Status'),put(C,kind='button',text='Start',action='game.start')])
+        before=self.world.read_bytes()
+        forbidden=[put(text='Panel title'),put(action='game.start'),put(B,kind='label',action='game.start')]
+        forbidden += [put(C,kind='button',action=action) for action in (None,'','bad token','x'*129,True)]
+        for op in forbidden:
+            with self.subTest(element=op['element']):
+                self.error('world.transact',request_id=uuid.uuid4().hex,base_revision=1,ops=[op])
+                self.assertEqual(self.world.read_bytes(),before)
+
     def test_invalid_definitions_are_atomic(self):
         self.tx(0,[put(),put(B,kind='label',parent=A,text='Kept')]);before=self.world.read_bytes()
         invalid=[put(C,kind='button',action=None),put(C,action='forbidden'),put(C,text='panel text'),put(C,parent=uid(999)),

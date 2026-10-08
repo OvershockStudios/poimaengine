@@ -28,6 +28,12 @@ Use `world.transact` with `ui.element.set` or `ui.element.remove`. A set operati
 
 Parents must be panels. Panel text is empty. Buttons require an action token of 1–128 ASCII letters, digits, underscores, dots or hyphens; other kinds require `action:null`. Tokens identify compiled handlers: naming a button Save alone does not write a checkpoint. The game must implement its `Control` callback and request storage explicitly. Final-state validation permits a child before its parent within the same transaction. Removing a parent requires removing or reparenting its children in that transaction. Retired IDs cannot be reused outside known undo/redo history.
 
+Development discovery now encodes these kind constraints as explicit panel,
+label and button `oneOf` variants in both the `ui` section and `ui.element.set`
+mutation schema. This corrects a discovery gap exposed by a real agent's rejected
+panel-text edit; native validation is unchanged. The focused discovery/authoring
+regression is added, but execution against a rebuilt world host remains pending.
+
 `world.ui.get` and `world.ui.list` inspect authored definitions. Pagination uses `revision`, `after` and `limit`. `runtime.ui.inspect` accepts `session_id`, `tick`, optional `ui_revision`, `after` and `limit`. Continuation pages require `ui_revision`. It returns frozen metadata alongside live text, local and inherited visibility/enabled state, modal membership eligibility and the next cursor. Inspection does not search for pixels or require a window.
 
 `runtime.ui.edit` commits all supplied patches at the current simulation tick:
