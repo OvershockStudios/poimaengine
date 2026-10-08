@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.58 LANGUAGES C CXX)
+project(Poima VERSION 0.0.59 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -629,6 +629,15 @@ if(POIMA_BUILD_TESTS)
     add_test(NAME profiler_service COMMAND poima-profiler-service-test)
     add_test(NAME profiler_contract COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/profiler_contract.py" "$<TARGET_FILE:poima>")
     set_tests_properties(profiler_contract PROPERTIES TIMEOUT 120)
+    set(POIMA_METADATA_TEST_INTEROP)
+    if(WIN32 AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+        list(APPEND POIMA_METADATA_TEST_INTEROP --windows-interop)
+    endif()
+    add_test(NAME build_metadata_contract COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/tests/build_metadata_contract.py"
+        --binary "$<TARGET_FILE:poima>" --expected-version "${PROJECT_VERSION}"
+        ${POIMA_METADATA_TEST_INTEROP})
+    set_tests_properties(build_metadata_contract PROPERTIES TIMEOUT 120)
     add_test(NAME player_input COMMAND poima-player-input-test)
     add_test(NAME editor_gizmo COMMAND poima-editor-gizmo-test)
     add_test(NAME input_profile_native COMMAND poima-input-profile-test)

@@ -31,6 +31,32 @@ This route requires no display, graphics driver, .NET SDK, optional middleware o
 
 The dependency-free headless checks do not qualify simulation-enabled builds, Windows graphics drivers, either editor, or binary distribution. Optional GPU/GUI suites require a suitable machine and are run separately. Hosted CI is not currently configured in this public snapshot.
 
+## Incremental version builds
+
+Compiled version and platform strings live in `src/core.cpp`. Other native
+consumers use the non-generated `BuildMetadata` declaration, so changing only
+the version header rebuilds one translation unit rather than seven. Source
+edits still rebuild their dependents, and consumers still relink. Compiler
+optimization, debug information and warnings retain the normal build settings.
+
+The [0.0.59 evidence](evidence/m2-build-metadata.json) records dependency probes
+and native metadata checks. These probes count scheduled compilations; they do
+not establish a general build-time speedup. The Windows probe uses a temporary, byte-identical
+Ninja manifest to bypass configure-only glob checks during its dry run.
+
+CTest runs `build_metadata_contract`. To retain an independent metadata check:
+
+```sh
+python3 tests/build_metadata_contract.py \
+  --binary build/runtime-headless/poima --expected-version 0.0.59 \
+  --output build/metadata-check
+```
+
+Use a new output directory. Add `--windows-interop` when launching a Windows
+binary from WSL. The test checks CLI, MCP and profiler versions; project exports
+still require the runtime descriptor's exact engine version and gameplay load
+still requires its matching native target.
+
 ## Optional fixed-step runtime
 
 Use `runtime-headless` to build the EnTT/Jolt simulation without graphics, or `windows-runtime` for simulation plus the native Windows Vulkan preview. These presets enable `POIMA_ENABLE_SIMULATION` and fetch pinned Jolt/EnTT sources on first configuration. They keep two build workers and workspace-local caches. The original `headless` and `windows-render` presets retain simulation-disabled defaults. [Runtime commands, components and limits](RUNTIME.md). The Windows runtime also includes the [continuous player and replay operation](PLAYER.md). To enable C# in either runtime preset, explicitly configure `POIMA_ENABLE_MANAGED_GAMEPLAY=ON` and `POIMA_DOTNET_HOST_HEADERS`, build the managed bridge/game projects, and select an existing platform-matching hostfxr at load time. Follow the [complete managed build instructions](MANAGED_GAMEPLAY.md#build); managed gameplay is off by default.

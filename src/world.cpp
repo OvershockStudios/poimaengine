@@ -12,7 +12,7 @@
 #endif
 #include "ui_authoring_schema.hpp"
 #include "poima/player.hpp"
-#include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/save_store.hpp"
 #include "poima/save_upgrade_document.hpp"
@@ -2136,7 +2136,7 @@ public:
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
             {"ui_scale",ui_scale ? params.at("ui_scale") : Json(nullptr)},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
-            {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},{"render_diagnostics",render_diagnostics(report.diagnostics)},
+            {"nvrhi_errors", report.validation_errors}, {"build_version", build_metadata().version},{"render_diagnostics",render_diagnostics(report.diagnostics)},
             {"renderer", "forward static and skinned geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};
     }
     Json audio_dispatch(const std::string& method,const Json& params,bool live) const {
@@ -2178,7 +2178,7 @@ public:
                 paths[i]["gain"]=snapshot.sources[i].emitter.gain;paths[i]["loop"]=snapshot.sources[i].emitter.loop;paths[i]["clip_frames"]=snapshot.sources[i].emitter.clip->samples.size();
             }
             Json result={{"world_id",source_definition.world_id},{"revision",source_definition.authored_revision},{"tick",live ? Json(runtime_->inspect().tick) : Json(nullptr)},{"session_id",live ? Json(runtime_id_) : Json(nullptr)},
-                {"source",live ? "runtime" : "authored"},{"listener",listener},{"listener_world",snapshot.listener},{"backend","Steam Audio 4.8.1; CPU direct paths; default HRTF"},{"build_version",POIMA_VERSION},
+                {"source",live ? "runtime" : "authored"},{"listener",listener},{"listener_world",snapshot.listener},{"backend","Steam Audio 4.8.1; CPU direct paths; default HRTF"},{"build_version",build_metadata().version},
                 {"geometry",geometry},{"triangles",report.triangles},{"sources",paths},{"scene_ms",report.scene_ms},{"simulation_ms",report.simulation_ms},{"dsp_ms",report.dsp_ms},
                 {"reflections",false},{"diffraction",false},{"device_playback",false},{"snapshot_policy","fresh synchronous frozen geometry/poses; capture restarts clips at sample zero"}};
             if(capture_audio) {
@@ -2599,7 +2599,7 @@ public:
             {"dropped_wall_seconds",report.dropped_seconds},{"gpu",report.render.gpu_name},{"hardware",report.render.hardware},
             {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
             {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
-            {"camera",options.camera},{"camera_world",camera ? Json(camera->camera_world) : Json(nullptr)},{"lighting",camera ? lighting_json(camera->lighting) : Json(nullptr)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",POIMA_VERSION}};
+            {"camera",options.camera},{"camera_world",camera ? Json(camera->camera_world) : Json(nullptr)},{"lighting",camera ? lighting_json(camera->lighting) : Json(nullptr)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",build_metadata().version}};
         result["initial_session_id"]=report.initial_session;result["current_session_id"]=report.final_session;result["runtime_replacements"]=report.runtime_replacements;
         result["input_profile"]=input_info;result["gamepad"]=Json::parse(report.gamepad_json);
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
@@ -2712,7 +2712,7 @@ public:
             if(native_load) {
                 const auto artifact=load_native_gameplay_artifact(path("descriptor"));
                 if(params.contains("expected_descriptor_sha256") && params.at("expected_descriptor_sha256").get<std::string>()!=artifact.descriptor_sha256)throw std::runtime_error("Native gameplay descriptor differs from its previously verified hash.");
-                if(artifact.target_os!=POIMA_BUILD_SYSTEM || artifact.target_arch!=POIMA_BUILD_ARCH)throw std::runtime_error("Native gameplay target differs from this runtime.");
+                if(artifact.target_os!=build_metadata().target_os || artifact.target_arch!=build_metadata().target_arch)throw std::runtime_error("Native gameplay target differs from this runtime.");
                 config.native_aot=true;config.native_library=artifact.library;config.native_sha256=artifact.library_sha256;
                 config.native_schema=artifact.schema;config.type=artifact.type;
                 config.native_requirements=artifact.requirements;

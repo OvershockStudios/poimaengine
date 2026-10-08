@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/mcp.hpp"
 #include "poima/local_session.hpp"
-#include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 #include "poima/capture_image.hpp"
 #include <filesystem>
 #include <fstream>
@@ -181,7 +181,7 @@ std::string McpSession::request(std::string_view message) {
             require(params.contains("protocolVersion") && params["protocolVersion"].is_string() && params.contains("capabilities") && params["capabilities"].is_object() && params.contains("clientInfo") && params["clientInfo"].is_object(),-32602,"Invalid initialization parameters.");
             const auto& info=params["clientInfo"];
             require(info.contains("name") && info["name"].is_string() && info.contains("version") && info["version"].is_string(),-32602,"Invalid clientInfo.");
-            result={{"protocolVersion","2025-11-25"},{"capabilities",{{"tools",Json::object()}}},{"serverInfo",{{"name","Poima"},{"version",POIMA_VERSION}}},{"instructions","Use poima_discover for current native schemas. Preserve engine revision guards and durable request IDs. Calls are synchronous; cancellation and automatic retries are not supported."}};
+            result={{"protocolVersion","2025-11-25"},{"capabilities",{{"tools",Json::object()}}},{"serverInfo",{{"name","Poima"},{"version",build_metadata().version}}},{"instructions","Use poima_discover for current native schemas. Preserve engine revision guards and durable request IDs. Calls are synchronous; cancellation and automatic retries are not supported."}};
             impl_->initialized=true;
         } else if(method=="ping")result=Json::object();
         else {

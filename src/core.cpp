@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
 #include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 
 #include <algorithm>
 #include <array>
 
 namespace poima {
+const BuildMetadata& build_metadata() noexcept {
+    static constexpr BuildMetadata metadata{
+        POIMA_VERSION, POIMA_COMPILER_ID, POIMA_COMPILER_VERSION,
+        POIMA_BUILD_SYSTEM, POIMA_BUILD_ARCH};
+    return metadata;
+}
 namespace {
 std::string quote(std::string_view value) {
     constexpr char hex[] = "0123456789abcdef";

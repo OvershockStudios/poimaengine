@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.58 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.59 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.59 isolates generated build metadata in one native translation unit.
+Version-only dependency probes schedule one compile instead of seven; ordinary
+source changes and relinking retain their costs. Compiler optimization, warnings
+and debug settings are unchanged. Native metadata checks verify typed CLI data
+against actual ELF/PE targets and match MCP initialization and exported profiler
+trace versions on Windows, Linux and an authoring-only Linux build.
+
+Selected native/protocol checks pass after a stale profiler schema pin is
+corrected. Preserved Native AOT layer fixtures pass eight groups over 501 RPCs
+with four clean exits on each OS. Stable discovery/identity and response gates
+pass. Protocol 1, discovery revision 53, authoring-core v1, gameplay service
+profiles and save formats remain unchanged. The dependency probes are scheduled
+compile counts, not general elapsed-time or game-performance measurements.
+[Build workflow](BUILD.md#incremental-version-builds),
+[evidence](evidence/m2-build-metadata.json).
 
 The 0.0.58 checkpoint exposes masked animation layers to compiled C# gameplay.
 `IMaskedAnimationGame` opts into the named `animation_layers_v1` extension;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/profiler.hpp"
 #include "poima/runtime.hpp"
-#include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <chrono>
@@ -69,7 +69,7 @@ int main() {
             trials.push_back({{"trial",trial},{"first",trial%2==0 ? "disabled":"enabled"},{"disabled_ns",off.ns},{"enabled_ns",on.ns},{"overhead_percent",percent},
                 {"events",on.profile.count},{"storage_bytes",on.profile.storage_bytes},{"logical_state_equal",true}});
         }
-        Json report={{"engine_version",POIMA_VERSION},{"workload",{{"dynamic_boxes",128},{"static_floors",1},{"characters",1},{"cameras",1},{"ticks",120},{"ticks_per_batch",1},{"paired_trials",10},{"warmup_pairs",1},{"profiler_capacity",65536}}},
+        Json report={{"engine_version",build_metadata().version},{"workload",{{"dynamic_boxes",128},{"static_floors",1},{"characters",1},{"cameras",1},{"ticks",120},{"ticks_per_batch",1},{"paired_trials",10},{"warmup_pairs",1},{"profiler_capacity",65536}}},
             {"timing","steady-clock wall time for fixed-step batches only; initialization, capture allocation and snapshot serialization excluded"},
             {"comparison","Same instrumented binary, recorder disabled versus enabled; CPU-only fixture, not whole-game or GPU performance"},
             {"percentiles","median midpoint; p95 nearest rank; signed paired overhead may be negative under scheduling noise; no performance pass threshold"},

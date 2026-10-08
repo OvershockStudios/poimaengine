@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/project.hpp"
 #include "poima/assets.hpp"
-#include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 #include "poima/world.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/gameplay.hpp"
@@ -305,7 +305,7 @@ void require_content_contract(const std::string& document,const Json& runtime) {
 }
 Json runtime_spec(const std::string& bytes) {
     const auto value=parse(bytes);fields(value,{"format","version","engine_version","gameplay_services_version","gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features","target_os","target_arch","executable","features"},{"format","version","engine_version","target_os","target_arch","executable","features"});
-    require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");require(value.at("engine_version")==POIMA_VERSION,"Runtime engine version must exactly match the exporting engine.");
+    require(value.at("format")=="poima.runtime" && integer(value.at("version"))==1,"Unsupported runtime descriptor.");require(value.at("engine_version")==build_metadata().version,"Runtime engine version must exactly match the exporting engine.");
     if(value.contains("gameplay_services_version"))require(value.at("gameplay_services_version").is_number_integer() && integer(value.at("gameplay_services_version"))>0,"Runtime gameplay_services_version must be a positive integer.");
     unsigned contract_fields=0;
     for(const auto* name:{"gameplay_call_version","gameplay_call_bytes","gameplay_services_bytes","gameplay_features"})contract_fields+=value.contains(name) ? 1u : 0u;

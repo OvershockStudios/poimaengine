@@ -1,0 +1,490 @@
+{
+  "checkpoint": "0.0.59 development",
+  "date": "2026-10-08",
+  "passed": true,
+  "scope": "Central compiled build metadata; CLI/MCP/profiler agreement and reduced generated-version-header direct compile dependencies.",
+  "source_sha256": {
+    "CMakeLists.txt": "8a5e0299fb669b216ec274fbda2f22010fbe604058a27a9c87f2e80915e2b053",
+    "src/core.cpp": "e783d316f3facfa6f0187df2ecde4f09621f09ad90017c286a8c027580d02f08",
+    "src/game_launch.cpp": "fdbf4b3f44d6058216f0ef55475f9590dd65565590cb83b160e5a93976f1d31a",
+    "src/mcp.cpp": "f70fb0c3e16e645fe23e5f11fefa837cd416880919b1d249c383962a1d7f2795",
+    "src/profiler_service.cpp": "9e4ef495cdfdc89421c858fc2d05bbf74704e2d158eaef6aff65bf6eb116e7c1",
+    "src/project.cpp": "96d9685eac168586b288406af2857966a8391f88766375eea6e5fd582fea18c3",
+    "src/world.cpp": "3f8000cbdb1572167fb70e8c3eb9078bc51c6c0815ffc6cd788ef6dd266348f4",
+    "src/world_save.inc": "4bfccabf45718fedff992dbe04291d22f2947e187fc564c3ba12fbd17c725462",
+    "tests/profiler_benchmark.cpp": "d329789924d07a50c5d541dbf3e67baf1ddb342cf83f13ffa20e59d90358d5f7",
+    "tests/profiler_contract.py": "16afde319a23316037e8f26ffb0cc2a915eef195bf45c26d01b65ab095b2d9ca",
+    "include/poima/build_metadata.hpp": "dab99eefdc6be9ebe100055306bbb30e120520597ed03093d55bbdf0bf6a6851",
+    "tests/build_metadata_contract.py": "7967a024bf9084fdc358705f590f5e01e9f08978f2dfba5829f9ebc66b922085"
+  },
+  "source_closure": {
+    "files": 12,
+    "all_match": true,
+    "freeze_sha256": "48816794ae6f2129a6c642ad14c269d83b8bf1b5d326521723f02f93d065e551"
+  },
+  "engine_sha256": {
+    "linux": "d4f12bf5f523119ddb52516d56f7ca30a793c2cef729850a1e8a9cfbef792a6d",
+    "windows": "3d2d8b082ae587f63de663638fef9545989bbbf4f6fcd9af534edb822c4cf40c",
+    "authoring_only_linux": "2bf49a75e4727261aeb480a4ba131bb7f4584e02e880fab79cc05c94cda58aea"
+  },
+  "cohorts": {
+    "linux-metadata": {
+      "status": "passed",
+      "groups": 3,
+      "owned_processes": 3,
+      "owned_exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "world_rpc_calls": 7,
+      "mcp_initialize_calls": 1,
+      "trace_cpu_spans": 3,
+      "metadata": {
+        "version": "0.0.59",
+        "compiler": "GNU",
+        "compiler_version": "16.2.0",
+        "target_os": "Linux",
+        "target_arch": "x86_64"
+      },
+      "checks": {
+        "typed_cli_metadata_matches_expected_version_and_executable_target": true,
+        "actual_mcp_initialize_version_matches_cli": true,
+        "actual_authoring_capture_exports_matching_engine_version": true
+      },
+      "binary_sha256": "d4f12bf5f523119ddb52516d56f7ca30a793c2cef729850a1e8a9cfbef792a6d",
+      "output_sha256": {
+        "version.json": "423f982a3d90fa27af147135ea4ffe73be8c79a56b0efcf5afa4cc19996082bc",
+        "mcp-initialize.json": "33c5d55b09dda9ad2b3f55b143979590a519a4149dab27ede23cc8f92b38c095",
+        "profiler-trace.json": "e23c28fa57623d02e7167a6091a6fb8ff252d5dd5dc432db0f1a1d45fa45f07c",
+        "profiled-world.json": "441093b5f53bc9e916496fb7fc9c31fc4635d9c41853ed1e8189d25b9458ed3c"
+      },
+      "report_sha256": "4e7eaa803f105d17a49957c551ee3cce29323a3748313af45a95bbc9ceb9103e",
+      "binary_source_closure": true
+    },
+    "windows-metadata": {
+      "status": "passed",
+      "groups": 3,
+      "owned_processes": 3,
+      "owned_exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "world_rpc_calls": 7,
+      "mcp_initialize_calls": 1,
+      "trace_cpu_spans": 3,
+      "metadata": {
+        "version": "0.0.59",
+        "compiler": "Clang",
+        "compiler_version": "23.1.2",
+        "target_os": "Windows",
+        "target_arch": "x86_64"
+      },
+      "checks": {
+        "typed_cli_metadata_matches_expected_version_and_executable_target": true,
+        "actual_mcp_initialize_version_matches_cli": true,
+        "actual_authoring_capture_exports_matching_engine_version": true
+      },
+      "binary_sha256": "3d2d8b082ae587f63de663638fef9545989bbbf4f6fcd9af534edb822c4cf40c",
+      "output_sha256": {
+        "version.json": "12dc7ee364aaf197d82994aea3cc987e17144e49387d86c61d57202f27d4a5d3",
+        "mcp-initialize.json": "33c5d55b09dda9ad2b3f55b143979590a519a4149dab27ede23cc8f92b38c095",
+        "profiler-trace.json": "9b7e712cb94cf71da1790e662477992146b9e0449da72c8350ac8880dd762072",
+        "profiled-world.json": "9e9b041848249e373f64c92a01c11d267093c3442281c3e0e163b9b0fcb44cd1"
+      },
+      "report_sha256": "e45c6d785098eeb625b971820d7b0c45ef35d89457f4847a5d2ac5cff1b783f9",
+      "binary_source_closure": true
+    },
+    "authoring-metadata": {
+      "status": "passed",
+      "groups": 3,
+      "owned_processes": 3,
+      "owned_exit_codes": [
+        0,
+        0,
+        0
+      ],
+      "world_rpc_calls": 7,
+      "mcp_initialize_calls": 1,
+      "trace_cpu_spans": 3,
+      "metadata": {
+        "version": "0.0.59",
+        "compiler": "GNU",
+        "compiler_version": "16.2.0",
+        "target_os": "Linux",
+        "target_arch": "x86_64"
+      },
+      "checks": {
+        "typed_cli_metadata_matches_expected_version_and_executable_target": true,
+        "actual_mcp_initialize_version_matches_cli": true,
+        "actual_authoring_capture_exports_matching_engine_version": true
+      },
+      "binary_sha256": "2bf49a75e4727261aeb480a4ba131bb7f4584e02e880fab79cc05c94cda58aea",
+      "output_sha256": {
+        "version.json": "423f982a3d90fa27af147135ea4ffe73be8c79a56b0efcf5afa4cc19996082bc",
+        "mcp-initialize.json": "33c5d55b09dda9ad2b3f55b143979590a519a4149dab27ede23cc8f92b38c095",
+        "profiler-trace.json": "a741409d3d2d44fa5f7d72091a0f0e239be905bae7d62ea14964278f6409dc4e",
+        "profiled-world.json": "e480813e93318800d89bbd919c6828fa83014f15e21d2fb26aff2d6fb28a9b52"
+      },
+      "report_sha256": "3974dfe3b541ee990ccc3c911ea48b78c77e796aaef29cd0f17154c3a7acb884",
+      "binary_source_closure": true
+    },
+    "linux-preserved-aot-final": {
+      "status": "passed",
+      "groups": 8,
+      "rpc_calls": 501,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "checks": {
+        "compiled_committed_queries_override_additive_weight_interruption_and_staging": true,
+        "independent_layer_inertia_base_inertia_and_native_replacement_rejection": true,
+        "distinct_and_same_target_conflicts_invalid_commands_and_shared_64_limit": true,
+        "late_sample_and_managed_failures_restore_full_save_with_motion_audio_and_gameplay": true,
+        "fresh_complete_payload_restore_and_immediate_compiled_reinterruption": true,
+        "descriptor_omission_rejects_before_game_callbacks": true,
+        "old_host_marked_rejects_before_game_callbacks": true,
+        "authored_fixture_and_original_input_artifacts_immutable": true
+      },
+      "hashes": {
+        "binary": "d4f12bf5f523119ddb52516d56f7ca30a793c2cef729850a1e8a9cfbef792a6d",
+        "legacy_binary": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "descriptor": "0cbe669b7f03770c442e34391b8a3ed61587fedf97ef79a04637034ba61dfb66"
+      },
+      "artifact_payload_sha256": {
+        "Poima.NativeGame.so": "b5a46bafedaafda486424d19c7e00457fc5f1227e6e61f13132bdc398b897def",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76"
+      },
+      "report_sha256": "f44ef95db6e8db8fd8eda9c8a477feb34f0d9aa425915bde89163536873fa3cf",
+      "binary_source_closure": true
+    },
+    "windows-preserved-aot": {
+      "status": "passed",
+      "groups": 8,
+      "rpc_calls": 501,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "checks": {
+        "compiled_committed_queries_override_additive_weight_interruption_and_staging": true,
+        "independent_layer_inertia_base_inertia_and_native_replacement_rejection": true,
+        "distinct_and_same_target_conflicts_invalid_commands_and_shared_64_limit": true,
+        "late_sample_and_managed_failures_restore_full_save_with_motion_audio_and_gameplay": true,
+        "fresh_complete_payload_restore_and_immediate_compiled_reinterruption": true,
+        "descriptor_omission_rejects_before_game_callbacks": true,
+        "old_host_marked_rejects_before_game_callbacks": true,
+        "authored_fixture_and_original_input_artifacts_immutable": true
+      },
+      "hashes": {
+        "binary": "3d2d8b082ae587f63de663638fef9545989bbbf4f6fcd9af534edb822c4cf40c",
+        "legacy_binary": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "descriptor": "6171e977af09c95586e933f2a3b6fe212eb6692e221f805c9ba3c8d4ce485916"
+      },
+      "artifact_payload_sha256": {
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+        "Poima.NativeGame.dll": "590fbc532fb9537d63e0bfe7c0657f6a550381bf90b0a65a8bde3fc835db6313"
+      },
+      "report_sha256": "a95be1a8717506ea713600a0656a03c96d08ea1797d503c53641c671916160ab",
+      "binary_source_closure": true
+    },
+    "linux_native": {
+      "status": "passed affected rerun",
+      "initial_groups": 7,
+      "initial_passed": 6,
+      "initial_failed": [
+        "profiler_contract"
+      ],
+      "initial_failure_reason": "Harness still expected schema_revision52; actual discovery was53. Test pin updated, no native behavior repair.",
+      "final_affected": {
+        "tests": 2,
+        "failures": 0,
+        "skipped": 0,
+        "checks": [
+          {
+            "name": "profiler_contract",
+            "passed": true
+          },
+          {
+            "name": "build_metadata_contract",
+            "passed": true
+          }
+        ]
+      },
+      "unique_selected_groups": 8,
+      "selected_groups": [
+        "build_metadata_contract",
+        "cli_contract",
+        "mcp_contract",
+        "mcp_native",
+        "profiler_contract",
+        "profiler_service",
+        "project_contract",
+        "world_session_native"
+      ],
+      "qualification": "Initial six passing groups retained; two affected tests reran successfully. All eight unique groups were not rerun together.",
+      "initial_log_sha256": "9df453191c8530f9a135a7546a7e5ed6f9fb119b8212b23b9cf0b408dbea889d",
+      "final_log_sha256": "e5b002d3637bc9cd208db5453e6228eddc225534caf98b4a7b8c09bf985b06c4",
+      "final_xml_sha256": "9666a0034a69d69fc4f7ab167df7e9832aa20465fdb3aa23b21c8ab8875c7d3b"
+    },
+    "authoring_native": {
+      "status": "passed",
+      "groups": 7,
+      "checks": [
+        "profiler_service",
+        "profiler_contract",
+        "build_metadata_contract",
+        "world_session_native",
+        "mcp_native",
+        "mcp_contract",
+        "cli_contract"
+      ],
+      "binary_sha256": "2bf49a75e4727261aeb480a4ba131bb7f4584e02e880fab79cc05c94cda58aea",
+      "log_sha256": "a69d782d08b16e5e3f1d2976c666ad4e31a3be0cd01e9751c438ca4933cb4090"
+    },
+    "linux-dependency-probe-final": {
+      "status": "passed",
+      "version_only_plan": {
+        "compile_rows": [
+          "[1/7] Building CXX object CMakeFiles/poima_core.dir/src/core.cpp.o"
+        ],
+        "compiled_units": 1,
+        "prior_direct_consumers": 7,
+        "current_direct_consumers": 1,
+        "targets": [
+          "poima",
+          "poima-world-session-test",
+          "poima-profiler-service-test",
+          "poima-mcp-test",
+          "poima-profiler-benchmark"
+        ],
+        "dry_run_only": true
+      },
+      "source_consumers": {
+        "CMakeFiles/poima_core.dir/src/core.cpp.o": true,
+        "CMakeFiles/poima_core.dir/src/world.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/project.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/game_launch.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/profiler_service.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/mcp.cpp.o": false,
+        "CMakeFiles/poima-profiler-benchmark.dir/tests/profiler_benchmark.cpp.o": false
+      },
+      "header_sha256": "6d94798f1a56df247c9347ee814f328cc8781c71a1c0fb6e24aa8a19add0ae35",
+      "header_bytes_restored": true,
+      "restored_mtime_delta_ns": 0,
+      "header_mtime_restored_within_filesystem_precision": true,
+      "manifest_mode": "Original generated Ninja graph; dry-run only.",
+      "report_sha256": "2ba8bb2003e9fcdd0362f5d871b91e5c8a8a5bf307c5aac5a0d71af71d76b5fc"
+    },
+    "windows-dependency-probe-fast": {
+      "status": "passed",
+      "version_only_plan": {
+        "compile_rows": [
+          "[1/7] Building CXX object CMakeFiles/poima_core.dir/src/core.cpp.obj"
+        ],
+        "compiled_units": 1,
+        "prior_direct_consumers": 7,
+        "current_direct_consumers": 1,
+        "targets": [
+          "poima",
+          "poima-world-session-test",
+          "poima-profiler-service-test",
+          "poima-mcp-test",
+          "poima-profiler-benchmark"
+        ],
+        "dry_run_only": true
+      },
+      "source_consumers": {
+        "CMakeFiles/poima_core.dir/src/core.cpp.obj": true,
+        "CMakeFiles/poima_core.dir/src/world.cpp.obj": false,
+        "CMakeFiles/poima_core.dir/src/project.cpp.obj": false,
+        "CMakeFiles/poima_core.dir/src/game_launch.cpp.obj": false,
+        "CMakeFiles/poima_core.dir/src/profiler_service.cpp.obj": false,
+        "CMakeFiles/poima_core.dir/src/mcp.cpp.obj": false,
+        "CMakeFiles/poima-profiler-benchmark.dir/tests/profiler_benchmark.cpp.obj": false
+      },
+      "header_sha256": "17c5b150a1abf2e6391d686c0820968994867e15f1953a54a77783c41b1b5681",
+      "header_bytes_restored": true,
+      "restored_mtime_delta_ns": 0,
+      "header_mtime_restored_within_filesystem_precision": true,
+      "manifest_mode": "Byte-identical temporary manifest copy bypasses configure-only glob regeneration during dry run; original compile graph and deps retained.",
+      "report_sha256": "8b1ae406fe2050719c7614dc05b174a49b95cf0c517a2b101f23fdbdb1ad1045",
+      "manifest_sha256": "58506083d342efe3e878cb9dce5389f2f37b7caf4c8370eb11b11ab9afd94e3a"
+    },
+    "authoring-dependency-probe": {
+      "status": "passed",
+      "version_only_plan": {
+        "compile_rows": [
+          "[1/6] Building CXX object CMakeFiles/poima_core.dir/src/core.cpp.o"
+        ],
+        "compiled_units": 1,
+        "prior_direct_consumers": 7,
+        "current_direct_consumers": 1,
+        "targets": [
+          "poima",
+          "poima-world-session-test",
+          "poima-profiler-service-test",
+          "poima-mcp-test"
+        ],
+        "dry_run_only": true
+      },
+      "source_consumers": {
+        "CMakeFiles/poima_core.dir/src/core.cpp.o": true,
+        "CMakeFiles/poima_core.dir/src/world.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/project.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/game_launch.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/profiler_service.cpp.o": false,
+        "CMakeFiles/poima_core.dir/src/mcp.cpp.o": false
+      },
+      "header_sha256": "6d94798f1a56df247c9347ee814f328cc8781c71a1c0fb6e24aa8a19add0ae35",
+      "header_bytes_restored": true,
+      "restored_mtime_delta_ns": -876520500,
+      "header_mtime_restored_within_filesystem_precision": true,
+      "manifest_mode": "Original generated Ninja graph; dry-run only.",
+      "report_sha256": "0dcc3f3d19a7f1788aa55141cde84bfddc610b74a514231a3595b5d8ecb23d53"
+    },
+    "authoring_gates": {
+      "status": "passed",
+      "platforms": [
+        {
+          "name": "linux-runtime",
+          "passed": true,
+          "schema_revision": 53,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "d4f12bf5f523119ddb52516d56f7ca30a793c2cef729850a1e8a9cfbef792a6d"
+        },
+        {
+          "name": "windows-runtime",
+          "passed": true,
+          "schema_revision": 53,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "3d2d8b082ae587f63de663638fef9545989bbbf4f6fcd9af534edb822c4cf40c"
+        },
+        {
+          "name": "linux-authoring-only",
+          "passed": true,
+          "schema_revision": 53,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "2bf49a75e4727261aeb480a4ba131bb7f4584e02e880fab79cc05c94cda58aea"
+        }
+      ],
+      "historical_response_compatibility": true,
+      "canonical_response_self_compatibility": true,
+      "report_sha256": "925ff30bb643c198913cb932c64e17362a82e349df78d13d6db9bd83f9f93064"
+    },
+    "windows_mcp": {
+      "status": "passed",
+      "tests": 6,
+      "skipped": 0,
+      "executed": 6,
+      "log_sha256": "556b2178512372fde22157e41e9ca1961c944fa8fc9cdfe6c9953fad982f9542",
+      "qualification": "Coordinator observed native terminal exit0; original test harness checks owned process exits."
+    },
+    "windows_project": {
+      "status": "passed",
+      "tests": 13,
+      "skipped": 2,
+      "executed": 11,
+      "log_sha256": "8808d5a9e1efdcc2ff963b88d84050ab1ab8ae04ec59e5bf0f09a63f1ce4af7c",
+      "qualification": "Coordinator observed native terminal exit0; original test harness checks owned process exits."
+    },
+    "windows_profiler": {
+      "status": "passed",
+      "groups": 3,
+      "rpc_calls": 128,
+      "checks": [
+        "Discovery/guards/retries, independent owners, failed-operation spans and safe Unicode/NUL diagnostic names; profiler observation does not record itself.",
+        "Capacity overflow seals a retained prefix with one rejected reservation; paging remains stable, stale/reused capture IDs reject.",
+        "Actual 60-tick physics/controller replay is identical with profiling off/on; fixed-tick phases/session identity/nesting and failed input are recorded."
+      ],
+      "report_sha256": "a8f1485edd120f846377072fef6ecf1bdc1b23e6a9120233bd96a2ca2f2c887f",
+      "log_sha256": "cc284cae360a875695eb8d3f64e614368a31e140f96f32028dbf5e2351007c56",
+      "qualification": "Coordinator observed native terminal exit0; original harness asserts clean owner exits."
+    },
+    "windows_native_scope_checks": {
+      "status": "passed",
+      "groups": 3,
+      "tests": [
+        {
+          "test": "poima-world-session-test",
+          "exit_code": 0,
+          "log_sha256": "4fe212cbfa66a87eb2e291858978fd24ef4c98ebca7cb968e7809674d714667e",
+          "binary_sha256": "5af3e6fea71782a51862fb37458df8a650a02e7a35414590be5c2bc4b7255615"
+        },
+        {
+          "test": "poima-profiler-service-test",
+          "exit_code": 0,
+          "log_sha256": "7f2cafa855679bc45330450a3e2505dcf9620772e6c52194077bfa55828acab8",
+          "binary_sha256": "adf3c93733c1ccb27b8d7360617d05e67e97bd9b1c0ef340d3d733b47d5852a4"
+        },
+        {
+          "test": "poima-mcp-test",
+          "exit_code": 0,
+          "log_sha256": "57b6cc983017a8caf786e3ccbe696e924b6746d071267939ead9cca781651400",
+          "binary_sha256": "76ea539ba3f93b5102ccc10ffe947aefca93789a1f9fc5b3179fdcb1c12b5842"
+        }
+      ],
+      "report_sha256": "5f08da1df0e627c05255690a5c9eed7c908e211d7c553d3d6c89ef96be7b601d",
+      "binary_closure": true
+    }
+  },
+  "limits": [
+    "Version-only dependency evidence is a Ninja dry-run compile plan, not measured compilation time or a complete build-speed claim.",
+    "Windows dependency planning uses a temporary byte-identical manifest copy to bypass configure-only glob regeneration; original compile graph and dependency data are retained.",
+    "No graphics, desktop visual/input, provider, console, browser or clean-machine qualification.",
+    "Actual preserved208 AOT fixture qualification does not republish artifacts or establish arbitrary rebuilt-module save compatibility.",
+    "Metadata agreement does not by itself qualify installed-runtime/project/game bundle version-rejection behavior."
+  ],
+  "retained_harness_incidents": [
+    {
+      "cohort": "initial Linux preserved AOT",
+      "cause": "Coordinator supplied pre-layer0.55 historical host for a fixture requiring authored layers; that unsupported historical host exited4 before a JSON-RPC session.",
+      "qualification": "Not a current0.59 engine failure. Final cohort uses intended preserved0.57 host; all eight checks pass.",
+      "final_report_sha256": "f44ef95db6e8db8fd8eda9c8a477feb34f0d9aa425915bde89163536873fa3cf"
+    },
+    {
+      "cohort": "Initial Linux dependency helper",
+      "cause": "Header restoration precision assertion interrupted the first helper attempt.",
+      "qualification": "Retained as a private helper incident; completed fresh final report demonstrates one planned translation-unit rebuild and restored header bytes."
+    },
+    {
+      "cohort": "Windows dependency helper slow paths",
+      "cause": "Earlier dry-run attempts were interrupted during configure-only glob regeneration; a completed intermediate probe reported passed=false.",
+      "qualification": "Only completed final fast-path report is accepted; it uses a temporary byte-identical manifest copy and keeps the original compile graph and dependencies. No perfect-initial-run claim."
+    }
+  ],
+  "qualification_state": "All selected final cohorts passed; retained initial harness incidents are separately documented."
+}

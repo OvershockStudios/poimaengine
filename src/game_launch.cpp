@@ -3,7 +3,7 @@
 #include "poima/project.hpp"
 #include "poima/world.hpp"
 #include "poima/runtime.hpp"
-#include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 #include "world_storage.hpp"
 #include <nlohmann/json.hpp>
 #include <filesystem>
@@ -67,7 +67,7 @@ Reply run_game(const GameLaunchOptions& options) {
     Json result=nullptr,diagnostics=Json::array();bool success=false;
     try {
         const auto game=load_game(options.manifest);
-        require(game.target_os==POIMA_BUILD_SYSTEM && game.target_arch==POIMA_BUILD_ARCH,"Game bundle targets a different platform or architecture.");
+        require(game.target_os==build_metadata().target_os && game.target_arch==build_metadata().target_arch,"Game bundle targets a different platform or architecture.");
         require(Runtime::available() && POIMA_RENDER_SMOKE,"Game launch requires simulation and the Vulkan player in this executable.");
         require(!game.audio || POIMA_AUDIO,"Game audio is unavailable in this executable.");
         require(options.max_frames<=36000,"Interactive frame limit must be 0..36000.");

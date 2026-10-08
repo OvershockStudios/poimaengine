@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.59
+
+- Isolate compiled version/platform metadata in one small source file. Version-only changes avoid recompiling the world service, project exporter, MCP adapter and profiler; optimization and debug settings are unchanged.
+- Add a native integration check that compares CLI metadata, MCP initialization and exported profiler traces against the actual executable target. Windows, Linux and authoring-only checks pass. [Build details](docs/BUILD.md#incremental-version-builds), [evidence](docs/evidence/m2-build-metadata.json).
+- Retain the selected authoring API, services-7 tables and save formats. Preserved Native AOT layer fixtures pass on Windows and Linux.
+
 ## 0.0.58 — Unreleased
 
 This checkpoint exposes masked animation layers to compiled C# gameplay. The installed desktop package remains unchanged.

@@ -74,7 +74,7 @@
         if(value.contains("descriptor")) {
             fields(value,{"descriptor","expected_descriptor_sha256"},{"descriptor"});const auto artifact=load_native_gameplay_artifact(path("descriptor"));
             if(value.contains("expected_descriptor_sha256"))require(value.at("expected_descriptor_sha256")==artifact.descriptor_sha256,"Native gameplay descriptor hash differs.",-32070);
-            require(artifact.target_os==POIMA_BUILD_SYSTEM && artifact.target_arch==POIMA_BUILD_ARCH,"Native gameplay target differs from this runtime.",-32070);
+            require(artifact.target_os==build_metadata().target_os && artifact.target_arch==build_metadata().target_arch,"Native gameplay target differs from this runtime.",-32070);
             config.native_aot=true;config.native_library=artifact.library;config.native_sha256=artifact.library_sha256;config.native_schema=artifact.schema;config.type=artifact.type;config.native_requirements=artifact.requirements;
         } else {
             fields(value,{"hostfxr","bridge","assembly","type"},{"hostfxr","bridge","assembly","type"});

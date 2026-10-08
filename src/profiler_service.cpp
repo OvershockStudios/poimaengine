@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "profiler_service.hpp"
-#include "poima/build_info.hpp"
+#include "poima/build_metadata.hpp"
 #include <algorithm>
 #include <cmath>
 #include <map>
@@ -96,7 +96,7 @@ Json Service::dispatch(const std::string& method,const Json& params) {
     }
     auto metadata=status();metadata["timing"]="CPU monotonic relative ns; exported timestamps in us. GPU values are duration samples at CPU observation time, not aligned GPU spans.";
     metadata["sources"]="Logical source lanes on one owner thread; no worker-thread tracing or process/VRAM allocation tracking.";
-    metadata["engine_version"]=POIMA_VERSION;
+    metadata["engine_version"]=build_metadata().version;
     return {{"capture_id",capture_},{"trace",{{"traceEvents",std::move(trace)},{"displayTimeUnit","ms"},{"poima",std::move(metadata)}}}};
 }
 Json Service::schemas() {
