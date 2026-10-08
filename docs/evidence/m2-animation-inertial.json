@@ -1,0 +1,1263 @@
+{
+  "checkpoint": "0.0.55 development",
+  "date": "2026-10-08",
+  "passed": true,
+  "source_base": "7265dc9",
+  "scope": "Native opt-in inertial animation transitions, analytic incoming local motion, immutable output history, rollback and versioned persistence. Legacy C# crossfades remain the managed interface.",
+  "protocol_version": 1,
+  "schema_revision": 52,
+  "gameplay_services_epoch": 7,
+  "gameplay_services_bytes": 176,
+  "authoring_core_version": 1,
+  "engines": {
+    "linux": {
+      "version": "0.0.55",
+      "binary_sha256": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105",
+      "runtime_inertial_transitions": true
+    },
+    "windows": {
+      "version": "0.0.55",
+      "binary_sha256": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7",
+      "runtime_inertial_transitions": true
+    },
+    "linux_authoring_only": {
+      "version": "0.0.55",
+      "binary_sha256": "77902eab59b4c5fe56c099c0a21e0055f8252bc002c199400cf293d64bd1a8a7",
+      "runtime_inertial_transitions": false
+    }
+  },
+  "native_contract": {
+    "mode": "inertial",
+    "default_mode": "crossfade",
+    "duration_ticks": [
+      0,
+      3600
+    ],
+    "outgoing_motion": "Last two distinct successfully sampled output ticks; actual interval; zero when missing; no sparse-history extrapolation.",
+    "incoming_motion": "Analytic clip-second derivatives scaled by playing speed; STEP/before-first/last/beyond derivatives zero; right derivative at first/interior key.",
+    "correction": "Finite-time quintic with zero initial correction acceleration; additive translation, logarithmic positive scale and parent-frame SO(3) offset/Jacobian.",
+    "persistence": "Crossfade-only animation-state v1 bytes retained; explicit inertial use (including duration0) enables v2 history/corrections; v1 still loads with missing-pair zero velocity."
+  },
+  "linux": {
+    "initial_cohort": {
+      "tests": 20,
+      "failures": 1,
+      "groups": [
+        {
+          "name": "authoring_core_conformance",
+          "passed": true
+        },
+        {
+          "name": "authoring_contract_identity",
+          "passed": true
+        },
+        {
+          "name": "animation_native",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_save_native",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_save_write",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_save_read",
+          "passed": true
+        },
+        {
+          "name": "gameplay_compatibility_policy",
+          "passed": true
+        },
+        {
+          "name": "profiler_contract",
+          "passed": true
+        },
+        {
+          "name": "world_session_native",
+          "passed": false
+        },
+        {
+          "name": "world_templates_contract",
+          "passed": true
+        },
+        {
+          "name": "world_ui_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_save_native",
+          "passed": true
+        },
+        {
+          "name": "runtime_save_fixture",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_native",
+          "passed": true
+        },
+        {
+          "name": "world_components_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_observe_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_save_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_blend_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_inertial_contract",
+          "passed": true
+        }
+      ]
+    },
+    "final_scope_rerun": {
+      "tests": 1,
+      "failures": 0,
+      "groups": [
+        {
+          "name": "world_session_native",
+          "passed": true
+        }
+      ]
+    },
+    "final_selected_groups_passed": 20,
+    "authoring_only": {
+      "tests": 7,
+      "failures": 0,
+      "groups": [
+        {
+          "name": "authoring_core_conformance",
+          "passed": true
+        },
+        {
+          "name": "authoring_contract_identity",
+          "passed": true
+        },
+        {
+          "name": "animation_native",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_save_native",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_save_write",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_save_read",
+          "passed": true
+        },
+        {
+          "name": "world_session_native",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "windows": {
+    "passed": true,
+    "command_groups": [
+      {
+        "name": "analytic-motion",
+        "exit_code": 0
+      },
+      {
+        "name": "animation-runtime",
+        "exit_code": 0
+      },
+      {
+        "name": "animation-save",
+        "exit_code": 0
+      },
+      {
+        "name": "fresh-save-write",
+        "exit_code": 0
+      },
+      {
+        "name": "fresh-save-read",
+        "exit_code": 0
+      },
+      {
+        "name": "whole-save",
+        "exit_code": 0
+      },
+      {
+        "name": "legacy-v1-fixture",
+        "exit_code": 0
+      },
+      {
+        "name": "abi-policy",
+        "exit_code": 0
+      },
+      {
+        "name": "world-scope",
+        "exit_code": 0
+      },
+      {
+        "name": "inertial-protocol",
+        "exit_code": 0
+      },
+      {
+        "name": "crossfade-protocol",
+        "exit_code": 0
+      },
+      {
+        "name": "playback-protocol",
+        "exit_code": 0
+      },
+      {
+        "name": "durable-save",
+        "exit_code": 0
+      },
+      {
+        "name": "observation",
+        "exit_code": 0
+      },
+      {
+        "name": "core-conformance",
+        "exit_code": 0
+      },
+      {
+        "name": "core-identity",
+        "exit_code": 0
+      }
+    ]
+  },
+  "new_mode_protocol": {
+    "linux": {
+      "passed": true,
+      "tests": 3,
+      "rpc_calls": 35,
+      "owned_processes": 3,
+      "process_exits": [
+        0,
+        0,
+        0
+      ],
+      "binary_sha256": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105"
+    },
+    "windows": {
+      "passed": true,
+      "tests": 3,
+      "rpc_calls": 35,
+      "owned_processes": 3,
+      "process_exits": [
+        0,
+        0,
+        0
+      ],
+      "binary_sha256": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7"
+    }
+  },
+  "ctest_fixture_repeatability": {
+    "runtime": [
+      {
+        "pass": 1,
+        "exit_code": 0,
+        "fixture_removed": true,
+        "groups": [
+          {
+            "name": "runtime_animation_save_reset",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_write",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_read",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_cleanup",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "pass": 2,
+        "exit_code": 0,
+        "fixture_removed": true,
+        "groups": [
+          {
+            "name": "runtime_animation_save_reset",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_write",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_read",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_cleanup",
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "authoring_only": [
+      {
+        "pass": 1,
+        "exit_code": 0,
+        "fixture_removed": true,
+        "groups": [
+          {
+            "name": "runtime_animation_save_reset",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_write",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_read",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_cleanup",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "pass": 2,
+        "exit_code": 0,
+        "fixture_removed": true,
+        "groups": [
+          {
+            "name": "runtime_animation_save_reset",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_write",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_read",
+            "passed": true
+          },
+          {
+            "name": "runtime_animation_save_cleanup",
+            "passed": true
+          }
+        ]
+      }
+    ]
+  },
+  "legacy_save": {
+    "passed": true,
+    "source_checkpoint": "0.0.54",
+    "source_binary_sha256": "13f373379bdae06914763275791393ac77a4246b49dd199db44869c2570cfdfb",
+    "destination_binary_sha256": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7",
+    "exact_continuation_pose_checks": 4
+  },
+  "rendered": [
+    {
+      "mode": "inertial",
+      "gpu": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "captures": 24,
+      "exact_pixel_pairs": 12,
+      "samples": [
+        1,
+        4
+      ],
+      "width": 640,
+      "height": 480,
+      "nvrhi_errors": 0,
+      "owned_processes": 6,
+      "process_exits": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "advancing-quarter",
+          "position": [
+            0.68310546875,
+            1.20703125,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3d803cd7af431bf3c5a4cbc459c90c89a820a2c542d22765f7185b855e34fdc2",
+          "authored_sha256": "3d803cd7af431bf3c5a4cbc459c90c89a820a2c542d22765f7185b855e34fdc2"
+        },
+        {
+          "samples": 1,
+          "case": "advancing-midpoint",
+          "position": [
+            0.59375,
+            2.0,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "bbb09f8456af4bd5632f5a07d6e4297f081b09b4897165b99fee52c02c39376c",
+          "authored_sha256": "bbb09f8456af4bd5632f5a07d6e4297f081b09b4897165b99fee52c02c39376c"
+        },
+        {
+          "samples": 1,
+          "case": "interrupted-midpoint",
+          "position": [
+            0.9741476689091442,
+            1.7927518084490743,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "53505c0a82db9fd6ba2d7106da77c362c8b2bcb36cb3c56926f0e1760abe0fa2",
+          "authored_sha256": "53505c0a82db9fd6ba2d7106da77c362c8b2bcb36cb3c56926f0e1760abe0fa2"
+        },
+        {
+          "samples": 1,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a",
+          "authored_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a"
+        },
+        {
+          "samples": 1,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b",
+          "authored_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b"
+        },
+        {
+          "samples": 1,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64",
+          "authored_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-quarter",
+          "position": [
+            0.68310546875,
+            1.20703125,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "187a840445d2be34280ae03bbd3eaa64197d8b5840d8a1138d6d68e42a8d0508",
+          "authored_sha256": "187a840445d2be34280ae03bbd3eaa64197d8b5840d8a1138d6d68e42a8d0508"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-midpoint",
+          "position": [
+            0.59375,
+            2.0,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "eb1cfb8ca898ce253e82765b9c46a94cc1feb4000f9ccf06c24d7ff2608ecce8",
+          "authored_sha256": "eb1cfb8ca898ce253e82765b9c46a94cc1feb4000f9ccf06c24d7ff2608ecce8"
+        },
+        {
+          "samples": 4,
+          "case": "interrupted-midpoint",
+          "position": [
+            0.9741476689091442,
+            1.7927518084490743,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "5812bf9f06275c4544daeda8008a5f09cb07bb6be2029cfb57561c927e678daa",
+          "authored_sha256": "5812bf9f06275c4544daeda8008a5f09cb07bb6be2029cfb57561c927e678daa"
+        },
+        {
+          "samples": 4,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "6b20ba321432a640ba7b12da234d001aea2f4672fa927ee944e230ea3215849f",
+          "authored_sha256": "6b20ba321432a640ba7b12da234d001aea2f4672fa927ee944e230ea3215849f"
+        },
+        {
+          "samples": 4,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "cb8d70b19e2728b5f3d86b8f5eb972806bcb4077013ef47f8a52286fca97ea69",
+          "authored_sha256": "cb8d70b19e2728b5f3d86b8f5eb972806bcb4077013ef47f8a52286fca97ea69"
+        },
+        {
+          "samples": 4,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "25f3c732bfccc5fa148993c6ae74f674332537359094bf40cdbde2cca0e7ee73",
+          "authored_sha256": "25f3c732bfccc5fa148993c6ae74f674332537359094bf40cdbde2cca0e7ee73"
+        }
+      ]
+    },
+    {
+      "mode": "crossfade",
+      "gpu": [
+        "AMD Radeon(TM) Graphics"
+      ],
+      "passed": true,
+      "captures": 24,
+      "exact_pixel_pairs": 12,
+      "samples": [
+        1,
+        4
+      ],
+      "width": 640,
+      "height": 480,
+      "nvrhi_errors": 0,
+      "owned_processes": 6,
+      "process_exits": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1",
+          "authored_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1"
+        },
+        {
+          "samples": 1,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "e3e54653287e33324a64a6dea163727cbb3e7ce4026bfb036970c6ae843be796",
+          "authored_sha256": "e3e54653287e33324a64a6dea163727cbb3e7ce4026bfb036970c6ae843be796"
+        },
+        {
+          "samples": 1,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "2ff6e9136d9d4871b0a127a28b5189a9187b76e298233aa88cbb6d00db07ba27",
+          "authored_sha256": "2ff6e9136d9d4871b0a127a28b5189a9187b76e298233aa88cbb6d00db07ba27"
+        },
+        {
+          "samples": 1,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a",
+          "authored_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a"
+        },
+        {
+          "samples": 1,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b",
+          "authored_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b"
+        },
+        {
+          "samples": 1,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64",
+          "authored_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "ec950b3aac202fe91347dde252441fd8bc174d4f088ada8631d041b887c5de1a",
+          "authored_sha256": "ec950b3aac202fe91347dde252441fd8bc174d4f088ada8631d041b887c5de1a"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "12688a02eb2280930ee3016bee7f164a6f8e97a5b44fc7473474c7229205d2f6",
+          "authored_sha256": "12688a02eb2280930ee3016bee7f164a6f8e97a5b44fc7473474c7229205d2f6"
+        },
+        {
+          "samples": 4,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3f5add98b8303c2d49b02f6008df0f07d05d4edc0ea865ddd52c236208e72f3b",
+          "authored_sha256": "3f5add98b8303c2d49b02f6008df0f07d05d4edc0ea865ddd52c236208e72f3b"
+        },
+        {
+          "samples": 4,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "6b20ba321432a640ba7b12da234d001aea2f4672fa927ee944e230ea3215849f",
+          "authored_sha256": "6b20ba321432a640ba7b12da234d001aea2f4672fa927ee944e230ea3215849f"
+        },
+        {
+          "samples": 4,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "cb8d70b19e2728b5f3d86b8f5eb972806bcb4077013ef47f8a52286fca97ea69",
+          "authored_sha256": "cb8d70b19e2728b5f3d86b8f5eb972806bcb4077013ef47f8a52286fca97ea69"
+        },
+        {
+          "samples": 4,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "25f3c732bfccc5fa148993c6ae74f674332537359094bf40cdbde2cca0e7ee73",
+          "authored_sha256": "25f3c732bfccc5fa148993c6ae74f674332537359094bf40cdbde2cca0e7ee73"
+        }
+      ]
+    },
+    {
+      "mode": "inertial",
+      "gpu": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "captures": 24,
+      "exact_pixel_pairs": 12,
+      "samples": [
+        1,
+        4
+      ],
+      "width": 640,
+      "height": 480,
+      "nvrhi_errors": 0,
+      "owned_processes": 6,
+      "process_exits": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "advancing-quarter",
+          "position": [
+            0.68310546875,
+            1.20703125,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3d803cd7af431bf3c5a4cbc459c90c89a820a2c542d22765f7185b855e34fdc2",
+          "authored_sha256": "3d803cd7af431bf3c5a4cbc459c90c89a820a2c542d22765f7185b855e34fdc2"
+        },
+        {
+          "samples": 1,
+          "case": "advancing-midpoint",
+          "position": [
+            0.59375,
+            2.0,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "ee2919ad764f384a332f0ec6de1288ea90b6f46a71b40787587beabf25656baa",
+          "authored_sha256": "ee2919ad764f384a332f0ec6de1288ea90b6f46a71b40787587beabf25656baa"
+        },
+        {
+          "samples": 1,
+          "case": "interrupted-midpoint",
+          "position": [
+            0.9741476689091442,
+            1.7927518084490743,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "110335cf4e0a27e225d181020bf8e91a5144c4b623d718f34c67fe6ab568f162",
+          "authored_sha256": "110335cf4e0a27e225d181020bf8e91a5144c4b623d718f34c67fe6ab568f162"
+        },
+        {
+          "samples": 1,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a",
+          "authored_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a"
+        },
+        {
+          "samples": 1,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b",
+          "authored_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b"
+        },
+        {
+          "samples": 1,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64",
+          "authored_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-quarter",
+          "position": [
+            0.68310546875,
+            1.20703125,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "02dc7e82bf4153c5597065ab0c31677a1d85b8baa4694b28aa06d1a9e4d996ca",
+          "authored_sha256": "02dc7e82bf4153c5597065ab0c31677a1d85b8baa4694b28aa06d1a9e4d996ca"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-midpoint",
+          "position": [
+            0.59375,
+            2.0,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "968440f2c20d6129cc0363d7093dda37dd90785c8d6755853c37e286b25a46bb",
+          "authored_sha256": "968440f2c20d6129cc0363d7093dda37dd90785c8d6755853c37e286b25a46bb"
+        },
+        {
+          "samples": 4,
+          "case": "interrupted-midpoint",
+          "position": [
+            0.9741476689091442,
+            1.7927518084490743,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "5c9039bc543d1a551b200945c037c137135052f0d500a9437280006163c4ccd8",
+          "authored_sha256": "5c9039bc543d1a551b200945c037c137135052f0d500a9437280006163c4ccd8"
+        },
+        {
+          "samples": 4,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "26192d7134696390079bc3b8f70797280570baeb42b218290925360e568f2226",
+          "authored_sha256": "26192d7134696390079bc3b8f70797280570baeb42b218290925360e568f2226"
+        },
+        {
+          "samples": 4,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b5dd38c555a956228c79154e785d30221c4f028151a313f00405e79aff3b23c7",
+          "authored_sha256": "b5dd38c555a956228c79154e785d30221c4f028151a313f00405e79aff3b23c7"
+        },
+        {
+          "samples": 4,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "e4844fe246cf2f1bb9b6e0a65f654ae2a5c1d7fafddb158aeedb479d1e04a5c8",
+          "authored_sha256": "e4844fe246cf2f1bb9b6e0a65f654ae2a5c1d7fafddb158aeedb479d1e04a5c8"
+        }
+      ]
+    },
+    {
+      "mode": "crossfade",
+      "gpu": [
+        "NVIDIA GeForce RTX 4070 Laptop GPU"
+      ],
+      "passed": true,
+      "captures": 24,
+      "exact_pixel_pairs": 12,
+      "samples": [
+        1,
+        4
+      ],
+      "width": 640,
+      "height": 480,
+      "nvrhi_errors": 0,
+      "owned_processes": 6,
+      "process_exits": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1",
+          "authored_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1"
+        },
+        {
+          "samples": 1,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "2e3155b15e4414083e5516b8a557c4235d03d16a464a6fda5e35ef350176c3ef",
+          "authored_sha256": "2e3155b15e4414083e5516b8a557c4235d03d16a464a6fda5e35ef350176c3ef"
+        },
+        {
+          "samples": 1,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "2ff6e9136d9d4871b0a127a28b5189a9187b76e298233aa88cbb6d00db07ba27",
+          "authored_sha256": "2ff6e9136d9d4871b0a127a28b5189a9187b76e298233aa88cbb6d00db07ba27"
+        },
+        {
+          "samples": 1,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a",
+          "authored_sha256": "c56534e1d2fd98c4aa15e58ac84fadd5cd2fec70b3330f7f45c0d2d928f0934a"
+        },
+        {
+          "samples": 1,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b",
+          "authored_sha256": "1282997d995c38ba40edcf33d3b9063261bdfff5567cfe7a703c51170325444b"
+        },
+        {
+          "samples": 1,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64",
+          "authored_sha256": "b2fc57c64832937ec579fe59054e17e131920d6a86a05204f736675b3fee5a64"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-quarter",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "8b4a2834ae8c175c05c9fab182e541f1d47baf44ac153fe24938c10236e8c5ff",
+          "authored_sha256": "8b4a2834ae8c175c05c9fab182e541f1d47baf44ac153fe24938c10236e8c5ff"
+        },
+        {
+          "samples": 4,
+          "case": "advancing-midpoint",
+          "position": [
+            0.875,
+            2,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "62c6f83bbfa3fda8beb2ed62fb064ecf7e2c54f806a296f62fb81dad04a9019b",
+          "authored_sha256": "62c6f83bbfa3fda8beb2ed62fb064ecf7e2c54f806a296f62fb81dad04a9019b"
+        },
+        {
+          "samples": 4,
+          "case": "interrupted-midpoint",
+          "position": [
+            1.1875,
+            1.5,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "3a34c99fda5fe567269708cf92e48b982006760b4d8571b6cb0735461bb90b97",
+          "authored_sha256": "3a34c99fda5fe567269708cf92e48b982006760b4d8571b6cb0735461bb90b97"
+        },
+        {
+          "samples": 4,
+          "case": "completed",
+          "position": [
+            1.5,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "26192d7134696390079bc3b8f70797280570baeb42b218290925360e568f2226",
+          "authored_sha256": "26192d7134696390079bc3b8f70797280570baeb42b218290925360e568f2226"
+        },
+        {
+          "samples": 4,
+          "case": "rest-midpoint",
+          "position": [
+            0.75,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "b5dd38c555a956228c79154e785d30221c4f028151a313f00405e79aff3b23c7",
+          "authored_sha256": "b5dd38c555a956228c79154e785d30221c4f028151a313f00405e79aff3b23c7"
+        },
+        {
+          "samples": 4,
+          "case": "rest-completed",
+          "position": [
+            0,
+            1,
+            0
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_sha256": "e4844fe246cf2f1bb9b6e0a65f654ae2a5c1d7fafddb158aeedb479d1e04a5c8",
+          "authored_sha256": "e4844fe246cf2f1bb9b6e0a65f654ae2a5c1d7fafddb158aeedb479d1e04a5c8"
+        }
+      ]
+    }
+  ],
+  "legacy_managed_crossfade_regression": {
+    "windows": {
+      "passed": true,
+      "checks": {
+        "existing_nonrig_null_unknown_rejects_and_recovery": true,
+        "explicit_first_tick_command_visible_to_managed_query": true,
+        "advancing_clocks_interruption_rest_and_query_metadata": true,
+        "reload_preserves_state_and_active_transition_new_code_runs": true,
+        "duplicate_invalid_and_native_caller_conflicts_atomic_no_stale_queue": true,
+        "caller_target_can_receive_managed_command_on_later_batch_tick": true,
+        "exact_64_limit_and_combined_caller_limit": true,
+        "managed_failure_restores_existing_frozen_interrupted_transition": true,
+        "later_throw_and_sample_failure_restore_animation_physics_sound_game_state": true,
+        "partition_equivalence_and_independent_rigs": true,
+        "published_example_compiles_runs_and_use_edge_once_per_batch": true,
+        "authored_world_bytes_unchanged": true
+      },
+      "rpc_calls": 2183,
+      "binary_sha256": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7",
+      "bridge_sha256": "361a35df9e0762c3a4f3f72f3a441de9ef749fc107ac119f018252d96bbcfad7",
+      "sdk_sha256": "5a482f12ef8621bb2d1aaf7d398c1795d25ab14936063e3de4a33a306725e511",
+      "compiled_fixtures": [
+        {
+          "name": "base",
+          "source_sha256": "ce2ca9336bdff755ce003beab90c9e8b341d85a49d29a0e167447a245f84a411",
+          "assembly_sha256": "a6293ca77b232029dc3d8f44a18f0d7dd2a69e1db2b27706e1beb17d5a11d969",
+          "exit_code": 0
+        },
+        {
+          "name": "upgrade",
+          "source_sha256": "45328d7e15c558474f31332e08a052c713d9d81dff56501be0ea1d0fcf12b69a",
+          "assembly_sha256": "1e021e76bd584656000df25ee5c8b473ae0bd1672e2e7d9c335dfac5900d9a65",
+          "exit_code": 0
+        },
+        {
+          "name": "example",
+          "source_sha256": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+          "assembly_sha256": "fa5c23dd356ba7926f9e8a11571b6c2794f26b3f7eeca33a1735ad1b363a2014",
+          "exit_code": 0
+        }
+      ]
+    },
+    "linux": {
+      "passed": true,
+      "checks": {
+        "existing_nonrig_null_unknown_rejects_and_recovery": true,
+        "explicit_first_tick_command_visible_to_managed_query": true,
+        "advancing_clocks_interruption_rest_and_query_metadata": true,
+        "reload_preserves_state_and_active_transition_new_code_runs": true,
+        "duplicate_invalid_and_native_caller_conflicts_atomic_no_stale_queue": true,
+        "caller_target_can_receive_managed_command_on_later_batch_tick": true,
+        "exact_64_limit_and_combined_caller_limit": true,
+        "managed_failure_restores_existing_frozen_interrupted_transition": true,
+        "later_throw_and_sample_failure_restore_animation_physics_sound_game_state": true,
+        "partition_equivalence_and_independent_rigs": true,
+        "published_example_compiles_runs_and_use_edge_once_per_batch": true,
+        "authored_world_bytes_unchanged": true
+      },
+      "rpc_calls": 2183,
+      "binary_sha256": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105",
+      "bridge_sha256": "361a35df9e0762c3a4f3f72f3a441de9ef749fc107ac119f018252d96bbcfad7",
+      "sdk_sha256": "5a482f12ef8621bb2d1aaf7d398c1795d25ab14936063e3de4a33a306725e511",
+      "compiled_fixtures": [
+        {
+          "name": "base",
+          "source_sha256": "ce2ca9336bdff755ce003beab90c9e8b341d85a49d29a0e167447a245f84a411",
+          "assembly_sha256": "5cb0b9b198361b243ad2a4aeacc913b668c32caad38268405aa891f5eeec330d",
+          "exit_code": 0
+        },
+        {
+          "name": "upgrade",
+          "source_sha256": "45328d7e15c558474f31332e08a052c713d9d81dff56501be0ea1d0fcf12b69a",
+          "assembly_sha256": "ec415208b33e51996b8ba853f2581ba60e2145f7fb0b4351e5ceba8b54a62103",
+          "exit_code": 0
+        },
+        {
+          "name": "example",
+          "source_sha256": "68219d824c8df38392b88d38ae954a3bba100bb803cba2a5d769d9fe6b00871d",
+          "assembly_sha256": "b49e96850bdb7822ade83942d4bd3552bdab863c9a7af920857bdc636a75f4d0",
+          "exit_code": 0
+        }
+      ]
+    }
+  },
+  "selected_authoring_compatibility": {
+    "passed": true,
+    "platforms": [
+      {
+        "name": "linux-runtime",
+        "passed": true,
+        "schema_revision": 52,
+        "protocol_version": 1,
+        "observer_discovered": true,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105"
+      },
+      {
+        "name": "windows-runtime",
+        "passed": true,
+        "schema_revision": 52,
+        "protocol_version": 1,
+        "observer_discovered": true,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7"
+      },
+      {
+        "name": "linux-authoring-only",
+        "passed": true,
+        "schema_revision": 52,
+        "protocol_version": 1,
+        "observer_discovered": false,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "77902eab59b4c5fe56c099c0a21e0055f8252bc002c199400cf293d64bd1a8a7"
+      }
+    ],
+    "historical_response_compatibility": true,
+    "canonical_response_self_compatibility": true
+  },
+  "resolved_findings": [
+    "First Linux build failed because the whole-runtime test lacked its JSON include path; corrected target configuration.",
+    "Three new misleading-indentation warnings were removed without changing arithmetic.",
+    "Initial Linux cohort passed19/20: one native read-only discovery assertion retained schema51. Updated assertion52, rebuilt it and passed the focused rerun. Other19 groups were not repeated.",
+    "Final audit caught a persistent CTest save fixture. Added exact build-owned reset and cleanup tests, retaining the manual writer guard. Two successive selected-reader runs (each four fixture groups) pass in both Linux runtime and authoring-only builds, and each removes its fixture."
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "809926ed4267a0414d459776d742f202af95ff8974fe93d0e5ba08d9bbb29556",
+    "include/poima/animation.hpp": "b3f236e61130ba95e8508139e6209234ac2be4c5c86207e7c28e7b57a00db68a",
+    "include/poima/runtime.hpp": "5996ee0fc162a2ac45ae2762d8287b4055013c624b54af266899c446e07a8e7a",
+    "include/poima/runtime_animation.hpp": "16e1bcb6f4b201d21224dcbd4aa9c165755111d0b58d66396d63d60e88b051a2",
+    "src/animation.cpp": "b55cf2048505c6dbcc2c845b8b87b37033cd7d989212bfec46c33ac8944fc481",
+    "src/runtime_animation.cpp": "c169f30ee6832e5ac2fdf10cab1b5a2365a40988450c7465edd3de11da1e89e5",
+    "src/world.cpp": "e85de4ffaee1878226bf2b7045b50fc4283094181d3379dc35b109a205e45fa0",
+    "src/core.cpp": "f4253378e1de28677ce4c76d29c438ae33598a6f43d6a46cb3eb59e2873892d6",
+    "tests/animation_native.cpp": "327edc299214021332e071fa366e371e575c80c5f0c49b5d1b0aab1909c42546",
+    "tests/runtime_animation_native.cpp": "e9772600031c882a916552f3d4bc91827418e15fe924c5347fedc0e0851290e2",
+    "tests/runtime_animation_save_native.cpp": "c17614ccf6bcee319b5ca7d362f09181ba7be2fe1eac8fd0e925783ce2c47def",
+    "tests/runtime_animation_inertial_contract.py": "eb303b183e832ab3455172eca67881e817596c08e3c442639be66c0bae21810b",
+    "tests/runtime_animation_inertial_capture.py": "0ff3fe081ddda5b04ed9fa7facb3ce8cf2ff25fec94783fcdc6ab6cbbe3df281",
+    "tests/runtime_animation_blend_capture.py": "b20d2ca939bf4b5d4fb6ecd52ebb0aef6c5c53cb2dfbab3079f195558a0fd1c6",
+    "tests/world_session_native.cpp": "5a483533751fea54ef9f399e421e2388893195a3a63f63c92383d22ce11cbd7d",
+    "scripts/verify_gameplay_animation.py": "5adba6e9ed77416f20be3e944925567d1a9979c7f5da8cc63643529e6cbc2ec1"
+  },
+  "limits": [
+    "GPU fixtures qualify translation/skinning at640x480 with1x/4x MSAA; scale/SO(3), history and save continuity are native mathematical/ownership checks.",
+    "Velocity continuity matches a measured outgoing secant, not an arbitrary source curve derivative. STEP keys, loop seams, endpoint changes, phase alignment, foot contacts and overshoot remain outside the guarantee.",
+    "C# SetAnimation and desktop controls still select crossfades. No new C# inertial service-tail, NativeAOT inertial fixture or compatible managed reload during inertial mode is claimed.",
+    "No crowd/game-scale performance, physical input, console/browser backend, new installed desktop package or GUI screenshot qualification. Vulkan/NVRHI hardware captures are not OS editor screenshots.",
+    "The broader animation system, save contracts and runtime protocol remain in development outside the selected stable authoring-core v1 scope."
+  ]
+}

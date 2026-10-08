@@ -123,6 +123,113 @@ void compiled_sampling() {
     for(std::size_t i=0;i<deep.nodes.size();++i) { deep.nodes[i].parent=i+1<deep.nodes.size() ? int(i+1) : -1;deep.nodes[i].position={.001,0,0}; }
     const CompiledAnimation hierarchy(deep);near(hierarchy.sample(std::nullopt,0,false).world[0][12],10,1e-9);
 }
+void analytic_local_motion() {
+    auto make=[](AnimationChannel channel) {
+        ModelAsset source;source.nodes.resize(2);source.nodes[1].parent=0;source.roots={0};
+        source.animations.push_back({"Motion",double(channel.times.back()),{std::move(channel)}});
+        return source;
+    };
+    const auto zero=[](const NodeMotion& motion) {
+        for(const auto& vector:{motion.translation_velocity,motion.angular_velocity,motion.log_scale_velocity})
+            for(double value:vector)check(value==0,"Constant/held animation channel has a nonzero derivative.");
+    };
+    auto linear=make({1,AnimationPath::translation,AnimationInterpolation::linear,{1,2,4},
+        {{0,3,4,0},{4,5,8,0},{2,11,0,0}}});
+    const CompiledAnimation positions(linear);
+    for(double time:{0.,.5,1.,1.5,2.,3.,4.,8.}) {
+        const auto motion=positions.sample_motion(0,time);
+        same_pose(motion.pose,positions.sample(0,time,false));zero(motion.velocities[0]);
+        const auto expected=time<1 || time>=4 ? std::array<double,3>{} :
+            time<2 ? std::array<double,3>{4,2,4} : std::array<double,3>{-1,3,-4};
+        check(motion.velocities[1].translation_velocity==expected,"Translation derivative did not use the right segment/held endpoint.");
+    }
+    auto step=linear;step.animations[0].channels[0].interpolation=AnimationInterpolation::step;
+    const CompiledAnimation discrete(step);
+    for(double time:{0.,1.,1.9,2.,3.,4.})zero(discrete.sample_motion(0,time).velocities[1]);
+    const CompiledAnimation scales(make({1,AnimationPath::scale,AnimationInterpolation::linear,{0,2},
+        {{1,2,4,0},{3,6,2,0}}}));
+    const auto scaled=scales.sample_motion(0,1);
+    near(scaled.velocities[1].log_scale_velocity[0],.5,1e-12);
+    near(scaled.velocities[1].log_scale_velocity[1],.5,1e-12);
+    near(scaled.velocities[1].log_scale_velocity[2],-1./3,1e-12);
+    zero(scales.sample_motion(0,2).velocities[1]);
+
+    // x(t)=1+2t+3t² on [0,2]; Hermite endpoint tangents reproduce
+    // the polynomial exactly, so its independent derivative is 2+6t.
+    const CompiledAnimation polynomial(make({1,AnimationPath::translation,AnimationInterpolation::cubic,{0,2},
+        {{0,0,0,0},{1,0,0,0},{2,0,0,0},{14,0,0,0},{17,0,0,0},{0,0,0,0}}}));
+    for(double time:{0.,.125,.5,1.,1.875}) {
+        const auto result=polynomial.sample_motion(0,time);
+        near(result.pose.local[1].position[0],1+2*time+3*time*time,1e-12);
+        near(result.velocities[1].translation_velocity[0],2+6*time,1e-12);
+    }
+    zero(polynomial.sample_motion(0,2).velocities[1]);
+    const CompiledAnimation growing(make({1,AnimationPath::scale,AnimationInterpolation::cubic,{0,2},
+        {{0,0,0,0},{1,1,1,0},{2,0,0,0},{14,0,0,0},{17,1,1,0},{0,0,0,0}}}));
+    near(growing.sample_motion(0,.5).velocities[1].log_scale_velocity[0],5./2.75,1e-12);
+
+    const double pi=std::acos(-1.);
+    const CompiledAnimation turn(make({1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},
+        {{0,0,0,1},{0,0,1,0}}}));
+    for(double time:{0.,.25,1.,1.75}) {
+        const auto result=turn.sample_motion(0,time);same_pose(result.pose,turn.sample(0,time,false));
+        near(result.velocities[1].angular_velocity[0],0,1e-12);near(result.velocities[1].angular_velocity[1],0,1e-12);
+        near(result.velocities[1].angular_velocity[2],pi/2,1e-12);
+    }
+    zero(turn.sample_motion(0,2).velocities[1]);
+    const CompiledAnimation antipodal(make({1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},
+        {{0,0,0,1},{0,0,0,-1}}}));
+    zero(antipodal.sample_motion(0,1).velocities[1]);
+    const float half=std::sqrt(.5f);
+    // q1=Rz(90°)*q0, q0=Rx(90°). Spatial velocity must be Z;
+    // inverse(q)*qdot would incorrectly report the body's Y axis.
+    const CompiledAnimation noncommuting(make({1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},
+        {{half,0,0,half},{.5f,.5f,.5f,.5f}}}));
+    for(double time:{0.,.5,1.5}) {
+        const auto result=noncommuting.sample_motion(0,time);
+        near(result.velocities[1].angular_velocity[0],0,2e-7);
+        near(result.velocities[1].angular_velocity[1],0,2e-7);
+        near(result.velocities[1].angular_velocity[2],pi/4,2e-7);
+    }
+    const float sine=std::sin(.01f),cosine=std::cos(.01f);
+    const CompiledAnimation small_turn(make({1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},
+        {{0,0,0,1},{0,0,sine,cosine}}}));
+    for(double time:{0.,.5,1.,1.5}) {
+        const double u=time/2,z=u*sine,w=1+u*(double(cosine)-1);
+        near(small_turn.sample_motion(0,time).velocities[1].angular_velocity[2],double(sine)/(z*z+w*w),1e-12);
+    }
+    const CompiledAnimation cubic_turn(make({1,AnimationPath::rotation,AnimationInterpolation::cubic,{0,2},
+        {{0,0,0,0},{0,0,0,1},{0,0,0,0},{0,0,0,0},{0,0,1,0},{0,0,0,0}}}));
+    // Smoothstep raw quaternion [0,0,s,1-s], s=3u²-2u³.
+    for(double time:{0.,.25,1.,1.5}) {
+        const double u=time/2,s=3*u*u-2*u*u*u,ds=3*u-3*u*u;
+        near(cubic_turn.sample_motion(0,time).velocities[1].angular_velocity[2],2*ds/(s*s+(1-s)*(1-s)),1e-12);
+    }
+    const CompiledAnimation cubic_spatial(make({1,AnimationPath::rotation,AnimationInterpolation::cubic,{0,2},
+        {{0,0,0,0},{half,0,0,half},{0,half,half,0},{0,0,0,0},{half,0,0,half},{0,0,0,0}}}));
+    const auto spatial=cubic_spatial.sample_motion(0,0).velocities[1].angular_velocity;
+    near(spatial[0],0,1e-12);near(spatial[1],0,1e-12);near(spatial[2],2,1e-12);
+
+    auto baseline=positions.sample({},0,false).local;baseline[0].rotation={0,0,1,0};baseline[1].scale={2,3,4};
+    const auto saved_baseline=baseline;
+    const auto rest=positions.sample_motion({},1,baseline);
+    same_pose(rest.pose,positions.sample({},1,false,baseline));for(const auto& motion:rest.velocities)zero(motion);
+    const auto custom=positions.sample_motion(0,1.5,baseline);same_pose(custom.pose,positions.sample(0,1.5,false,baseline));
+    check(custom.velocities[1].translation_velocity==std::array<double,3>{4,2,4},"Parent rotation altered local derivative coordinates.");
+    check(baseline[0].rotation==saved_baseline[0].rotation && baseline[1].scale==saved_baseline[1].scale,"Motion sampling mutated baseline.");
+    rejects([&]{positions.sample_motion(99,0);});
+    for(double time:{-1.,1000000001.,std::numeric_limits<double>::infinity(),std::nan("")})rejects([&]{positions.sample_motion(0,time);});
+    auto invalid_baseline=baseline;invalid_baseline[0].rotation={0,0,0,0};rejects([&]{positions.sample_motion(0,1,invalid_baseline);});
+    const CompiledAnimation collapsing(make({1,AnimationPath::rotation,AnimationInterpolation::cubic,{0,2},
+        {{0,0,0,0},{0,0,0,1},{0,0,0,0},{0,0,0,0},{0,0,0,-1},{0,0,0,0}}}));
+    rejects([&]{collapsing.sample_motion(0,1);});
+    // A future invalid interior must not invalidate the valid current key.
+    const CompiledAnimation future_invalid(make({1,AnimationPath::scale,AnimationInterpolation::cubic,{0,1},
+        {{0,0,0,0},{1,1,1,0},{-8,0,0,0},{8,0,0,0},{1,1,1,0},{0,0,0,0}}}));
+    near(future_invalid.sample_motion(0,0).velocities[1].log_scale_velocity[0],-8,1e-12);
+    rejects([&]{future_invalid.sample_motion(0,.5);});
+    same_pose(positions.sample_motion(0,1.5).pose,positions.sample(0,1.5,false));
+}
 void skinning() {
     auto m=model();m.animations.push_back({"move",2,{translation()}});auto pose=sample_model(m,0,1,false);
     auto palette=skin_palette(m,pose,0);auto deformed=deform_mesh(*m.primitives[0],palette);
@@ -252,6 +359,6 @@ void tangent_weights() {
 }
 }
 int main() {
-    try { curves();compiled_sampling();skinning();packages();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation immutable compiled sampling, analytic curves, authored baselines, hierarchy, CPU skinning, packages and invalid inputs passed.\n"; }
+    try { curves();compiled_sampling();analytic_local_motion();skinning();packages();invalid();tangent_weights();conservative_skin_bounds();cancellation_skin_bounds();std::cout<<"Animation immutable compiled sampling, analytic curves/local motion, authored baselines, hierarchy, CPU skinning, packages and invalid inputs passed.\n"; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

@@ -16,16 +16,29 @@ class RuntimeAnimations {
         std::vector<std::string> nodes;
     };
 public:
+    struct InertialNode {
+        NodePose source_pose;
+        std::array<double,3> position_offset{},translation_velocity{};
+        std::array<double,3> rotation_offset{},rotation_velocity{};
+        std::array<double,3> log_scale_offset{},log_scale_velocity{};
+    };
+    struct History {
+        std::uint64_t tick=0;
+        std::shared_ptr<const std::vector<NodePose>> poses;
+    };
     struct Transition {
         AnimationCommand source;
         std::uint64_t source_anchor_tick=0,start_tick=0;
         std::uint32_t duration_ticks=0;
         std::shared_ptr<const std::vector<NodePose>> frozen_source;
+        std::shared_ptr<const std::vector<InertialNode>> inertial=nullptr;
     };
     struct Clock {
         AnimationCommand control;
         std::uint64_t anchor_tick=0;
         std::optional<Transition> transition;
+        std::optional<History> current=std::nullopt,previous=std::nullopt;
+        bool inertial_ever_used=false;
     };
 private:
     std::vector<Rig> rigs_;

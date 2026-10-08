@@ -8,6 +8,10 @@ struct SkinBounds { std::vector<std::optional<Bounds>> joints;double weight_sum_
 SkinBounds skin_bounds(const MeshAsset& mesh);
 Bounds posed_bounds(const SkinBounds& source,std::span<const Matrix4> palette);
 struct ModelPose { double time=0;std::vector<NodePose> local;std::vector<Matrix4> world; };
+struct NodeMotion {
+    std::array<double,3> translation_velocity{},angular_velocity{},log_scale_velocity{};
+};
+struct ModelMotion { ModelPose pose;std::vector<NodeMotion> velocities; };
 // Shared import/package validation; sampling never trusts external key arrays.
 void validate_animation_data(const ModelAsset& model);
 // Immutable validated curve/hierarchy snapshot. Construction copies all data
@@ -21,6 +25,12 @@ public:
     // Empty baseline selects model rest locals. Otherwise one valid local pose
     // per node replaces the rest pose; animated channels override its fields.
     ModelPose sample(std::optional<std::uint32_t> clip,double time,bool loop,
+        std::span<const NodePose> baseline={}) const;
+    // Local derivatives per clip second; angular velocity is in the node's
+    // parent frame (2 * vector(qdot * inverse(q))). No playback/loop multiplier.
+    // First/interior keys use the right segment; last/beyond and before-first
+    // keys have zero derivative. The pose matches sample(clip,time,false,...).
+    ModelMotion sample_motion(std::optional<std::uint32_t> clip,double time,
         std::span<const NodePose> baseline={}) const;
 };
 ModelPose sample_model(const ModelAsset& model,std::optional<std::uint32_t> clip,double time,bool loop);

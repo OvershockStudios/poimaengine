@@ -1,8 +1,8 @@
 # Editable rigs and native clip playback
 
-Poima connects imported glTF rigs to ordinary authored entities, fixed-tick native playback and Vulkan compute skinning. Version 0.0.33 adds timed crossfades and transition inspection. Agents can inspect bones, edit their baseline transforms, set complete playback state, advance the simulation and capture the result through the same world protocol. This animation foundation supports two-pose transitions; it does not provide a layered animation graph or a finished character controller.
+Poima connects imported glTF rigs to ordinary authored entities, fixed-tick native playback and Vulkan compute skinning. Timed crossfades and opt-in inertial transitions share the native playback authority. Agents can inspect bones, edit their baseline transforms, set complete playback state, advance the simulation and capture the result through the same world protocol. This animation foundation supports crossfades and finite-time motion corrections; it does not provide a layered animation graph or a finished character controller.
 
-`world.describe` schema revision 19 exposes the components and commands below. `animation_rig_authoring` is available in headless builds. `runtime_clip_playback` requires the simulation build; `gpu_skinning` requires the renderer. The broader `animation` feature flag remains false because the full planned system is unfinished.
+`world.describe` exposes the components and commands below; revision 52 adds the inertial transition mode. `animation_rig_authoring` is available in headless builds. `runtime_clip_playback` requires the simulation build; `gpu_skinning` requires the renderer. The broader `animation` feature flag remains false because the full planned system is unfinished.
 
 ## Authored entities
 
@@ -32,7 +32,7 @@ Use `entity.query` with component filters to discover the wrapper, nodes and pri
 {"entity":"<wrapper ID>","clip":0,"time":0,"speed":1,"loop":true,"playing":true}
 ```
 
-`clip` is a zero-based index in that wrapper's model, or null for the authored rest pose. Time is finite and within 0–1e9 seconds. Speed is finite and within 0–8; negative/reverse playback is not supported. `loop` and `playing` are Booleans. Commands for nonexistent rigs or duplicate targets reject the batch. Optional `blend_ticks` selects a crossfade duration from 0 to 3600 fixed ticks (up to 60 seconds). Omission means zero, retaining immediate replacement; authored `AnimationRig` fields do not include this runtime-only setting.
+`clip` is a zero-based index in that wrapper's model, or null for the authored rest pose. Time is finite and within 0–1e9 seconds. Speed is finite and within 0–8; negative/reverse playback is not supported. `loop` and `playing` are Booleans. Commands for nonexistent rigs or duplicate targets reject the batch. Optional `blend_ticks` selects a transition duration from 0 to 3600 fixed ticks (up to 60 seconds). Omission means zero, retaining immediate replacement; authored `AnimationRig` fields do not include this runtime-only setting. Optional `transition_mode` is `crossfade` (default) or `inertial`. Both modes use the same duration limit; zero duration immediately replaces the pose.
 
 The following protocol sequence assumes the model was imported and the world is at revision zero. Substitute the returned model hash and use an unused request/session ID for each operation:
 
@@ -49,7 +49,7 @@ Commands apply before the first requested tick. After N ticks, playing time is t
 
 Set `playing:false` with a chosen time to seek or hold a pose. Null clip always normalizes to time zero and `playing:false`, selecting the authored baseline as the destination. With no blend it restores that baseline immediately. Each sample starts from that baseline; clip channels replace only their targeted local translation, rotation or scale. Switching clips cannot accidentally preserve a field animated only by the previous clip. Playback clocks use a command anchor tick/time, so partitioning identical fixed ticks into different requests does not accumulate different time increments.
 
-The step's existing expected-tick check and retained in-session retry receipts also cover animation commands. Replaying a retained successful request does not advance the clock again. Omitted and explicit zero `blend_ticks` normalize to the same receipt parameters.
+The step's existing expected-tick check and retained in-session retry receipts also cover animation commands. Replaying a retained successful request does not advance the clock again. Omitted and explicit zero `blend_ticks` normalize to the same receipt parameters. Omitted and explicit `crossfade` modes also normalize together; changing the mode on a retained retry rejects it.
 
 ## Timed crossfades
 
@@ -86,13 +86,37 @@ Clip clocks, transition state, immutable interruption poses and local transforms
 
 Snapshots own their palette data. Mesh-local palettes derive from current entity transforms as `inverse(mesh_world) * joint_world * inverse_bind`; later stepping cannot mutate an earlier snapshot. The renderer uses these palettes through the existing [compute skinning pass](GPU_SKINNING.md). A GPU-only deformation failure remains a rendering error; capturing a bad blend does not retroactively roll back previously committed simulation ticks.
 
+## Inertial transitions
+
+To preserve recent output motion when changing actions, opt into the native inertial mode:
+
+```json
+{"entity":"<wrapper ID>","clip":1,"time":0,"speed":1,"loop":true,"playing":true,"blend_ticks":30,"transition_mode":"inertial"}
+```
+
+The command captures the outgoing evaluated pose and estimates its motion from the last two successfully sampled **distinct ticks**. Multiple samples at one tick replace the current pose without advancing the preceding tick. With no pair, outgoing velocity is zero. Native callers that sample sparsely use the actual tick interval; older samples are not extrapolated to the command tick. Ordinary runtime stepping samples every fixed tick.
+
+Incoming translation, quaternion and scale derivatives are evaluated analytically at the destination clip time, then scaled by playback speed. Paused, rest and clamped endpoints have zero incoming velocity. STEP curves also have zero derivative; the first/interior key uses the segment to its right. No neighbouring time is sampled to estimate incoming motion.
+
+The destination continues playing while one bounded correction decays over the duration. Translation uses an additive offset, positive scale uses logarithmic offsets, and rotation uses a shortest-arc quaternion offset with the target's angular motion expressed in the same parent frame. A finite-time quintic correction matches the initial displacement and estimated velocity difference; displacement and its first two derivatives reach zero at completion. The boundary returns the exact outgoing pose, and completion returns the exact destination. Interruptions replace the correction using the current output and its history, without retaining a recursive transition tree.
+
+This preserves **estimated** output velocity at the boundary. It does not guarantee smooth STEP keys, looping seams, clip endpoint changes, foot contacts, matched locomotion phases or zero overshoot. Invalid finite values, scales or hierarchy matrices reject and roll back the batch. The initial correction acceleration is zero; this is not an overshoot-limited spring.
+
+Active inspection adds `mode:"inertial"` to `animation.transition`. `weight` reports elapsed duration divided by total duration, rather than a two-clip pose contribution. `source_frozen` is true and source-clock fields are null: the captured pose supplies correction initialization, not a playing source clip. Legacy crossfade inspection retains its earlier shape.
+
+Native checkpoints own immutable output history and correction buffers. After a rig has used inertial mode, nested animation saves use version 2 and retain both, including history after the transition completes. Crossfade-only saves retain version-1 bytes. Loading a version-1 save remains supported and starts without velocity history; subsequent distinct output samples establish it. The outer snapshot and durable slot format are unchanged. These broader save contracts remain in development.
+
+At checkpoint 0.0.55 this mode is available through native C++ and the world protocol. The existing C# `SetAnimation` command and desktop crossfade controls still select crossfades. Extending C# requires a separately negotiated service-table tail; their existing ABI structures are unchanged.
+
 ## Native interfaces and bounds
 
-`RuntimeEntityDefinition` adds optional `animation_rig`, `rig_node` and `skinned_mesh` bindings. `AnimationCommand` adds optional-duration `blend_ticks` with a zero default. `Runtime::step` takes a trailing `std::vector<AnimationCommand>`, and `Runtime::animation(id)` returns optional `RuntimeAnimationState`. `RuntimeEntityState` exposes the local transform and optional playback state. C# gameplay exposes `GameContext.GetAnimation` and `SetAnimation` through service ABI version 3; see [managed gameplay](MANAGED_GAMEPLAY.md#control-animation-from-c) for queued-write timing, conflicts and reload behavior.
+`RuntimeEntityDefinition` adds optional `animation_rig`, `rig_node` and `skinned_mesh` bindings. `AnimationCommand` carries optional-duration `blend_ticks` with a zero default and a trailing `AnimationTransitionMode` (`Crossfade` or `Inertial`). Active `RuntimeAnimationTransition.mode` identifies the native mode. `Runtime::step` takes a trailing `std::vector<AnimationCommand>`, and `Runtime::animation(id)` returns optional `RuntimeAnimationState`. `RuntimeEntityState` exposes the local transform and optional playback state. C# gameplay exposes `GameContext.GetAnimation` and crossfade-only `SetAnimation` through the current baseline service ABI 7; see [managed gameplay](MANAGED_GAMEPLAY.md#control-animation-from-c) for queued-write timing, conflicts and reload behavior.
 
 `validate_runtime_animation(definition)` is built without Jolt and shared by authoring/runtime validation. `CompiledAnimation` validates and copies source curves once, retains the parent traversal, and supports a supplied authored TRS baseline. Runtime rigs sharing a model share the compiled sampler. CPU sampling does not require a graphics device or scan every source key for validation on every tick. This has not yet established production animation throughput or crowd budgets.
 
 Current per-world limits are 128 rigs, 10,000 mapped nodes, 65,536 channels counted across rig instances, two million keys across unique compiled models, and 32,768 palette-joint entries across skinned primitive instances. The existing 10,000-entity limit includes wrappers, nodes, primitive children and unrelated entities. Per-model import limits and renderer memory limits also apply. A single runtime step advances 1–600 ticks and accepts at most 64 complete animation commands.
+
+`CompiledAnimation::sample_motion` returns a `ModelMotion` containing the ordinary validated `ModelPose` and node-ordered `NodeMotion` derivatives. Translation is local units per clip second; angular velocity is parent-frame radians per clip second; logarithmic scale velocity is inverse clip seconds. Playback speed is applied by the runtime, and this const sampler never retains output history. `runtime_inertial_transitions` in CLI capabilities is true only for simulation builds.
 
 ## Verification and remaining work
 
@@ -102,4 +126,6 @@ The 0.0.33 crossfade checks add `tests/runtime_animation_blend_contract.py` (sev
 
 The [0.0.34 C# integration evidence](evidence/m2-managed-animation.json) additionally checks typed query/command transfer, queued-write timing, command conflicts and limits, native transition continuity through compatible code reload, and rollback shared with physics, sound and managed fields.
 
-Masked/additive layers, blend spaces/state graphs, inertial transitions, events, IK, retargeting, root-motion extraction, ragdolls, animation compression/streaming, motion vectors and previous-frame skinning remain unfinished. Direct FBX import is not implemented. Mixamo rigs/animations have not been qualified; a supported glTF conversion still needs actual import and visual validation, and separately rigged clips cannot be assumed compatible without retargeting. Native Linux graphics and console graphics remain unqualified.
+The [0.0.55 inertial checkpoint](evidence/m2-animation-inertial.json) adds independent analytic motion/pose references, noncommuting rotation checks, same-tick and sparse history, partitioning, malformed-state rejection, fresh-process saves and whole-runtime restoration with immediate re-interruption. Three new-mode protocol tests pass on each OS. Both laptop GPUs pass 24 exact inertial and 24 legacy reference pairs across 96 captures at 640×480 with 1×/4× MSAA. GPU checks cover translation/skinning; rotation and scale checks are native mathematics. The existing compiled C# crossfade/reload/rollback suite passes twelve checks on each OS, without extending its animation API. These are bounded correctness checks, not crowd throughput or character-quality benchmarks.
+
+Masked/additive layers, blend spaces/state graphs, events, IK, retargeting, root-motion extraction, ragdolls, animation compression/streaming remain unfinished. Single-sample backward UV motion and previous-frame skinning are documented separately in [Scene products](SCENE_PRODUCTS.md). Direct FBX import is not implemented. Mixamo rigs/animations have not been qualified; a supported glTF conversion still needs actual import and visual validation, and separately rigged clips cannot be assumed compatible without retargeting. Native Linux graphics and console graphics remain unqualified.

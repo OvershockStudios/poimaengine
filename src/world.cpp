@@ -439,7 +439,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 51}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 52}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -554,10 +554,12 @@ Json describe() {
         {"inputs",{{"type","array"},{"maxItems",32},{"items",input}}},{"motions",motions},{"sounds",sounds}}, {"session_id","request_id","expected_tick","ticks"});
     auto animation_command=animation_fields;animation_command["entity"]=id;
     animation_command["blend_ticks"]={{"type","integer"},{"minimum",0},{"maximum",3600},{"default",0}};
+    animation_command["transition_mode"]={{"enum",{"crossfade","inertial"}},{"default","crossfade"}};
     methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},
         {"items",object_schema(animation_command,{"entity","clip","time","speed","loop","playing"})}};
     result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
     result["invariants"].push_back("Animation commands optionally accept blend_ticks (0..3600, default 0). Zero switches immediately; positive values blend the outgoing and destination local poses over fixed ticks, independently of playback speed. Both clip clocks advance during an ordinary fade. Interrupting a fade freezes its evaluated local pose as the new source; no nested blend tree is retained. runtime.entity animation.transition reports active weights/clocks and is null on completion. Transition state and frozen source poses join batch rollback.");
+    result["invariants"].push_back("Optional animation transition_mode defaults to crossfade. Inertial mode applies finite-duration translation, shortest-arc rotation and positive log-scale corrections to the destination, initialized from the last two distinct output ticks and analytic incoming clip derivatives. Missing output history uses zero outgoing velocity; STEP keys, loop seams and endpoints may still be discontinuous. Same-tick samples do not advance velocity history. Native checkpoints and version-2 animation saves retain history and corrections. Active inertial transitions report mode=inertial; weight reports elapsed progress, not a two-clip pose weight. C# animation writes currently select crossfade only.");
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;capture["properties"]["ui_revision"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
@@ -2305,6 +2307,7 @@ public:
                 {"source_speed",t.source_frozen ? Json(nullptr) : Json(t.source_speed)},
                 {"source_loop",t.source_frozen ? Json(nullptr) : Json(t.source_loop)},
                 {"source_playing",t.source_frozen ? Json(nullptr) : Json(t.source_playing)}};
+            if(t.mode==AnimationTransitionMode::Inertial)transition["mode"]="inertial";
         }
         return {{"clip",state.clip ? Json(*state.clip) : Json(nullptr)},{"time",state.time},{"speed",state.speed},
             {"loop",state.loop},{"playing",state.playing},{"duration",state.duration},{"transition",transition}};
@@ -2313,11 +2316,16 @@ public:
         require(raw.is_array() && raw.size()<=64,"Animations must be an array of at most 64 complete playback commands.");
         std::vector<AnimationCommand> result;std::set<std::string> seen;
         for(const auto& value:raw) {
-            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks"},{"entity","clip","time","speed","loop","playing"});
+            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks","transition_mode"},{"entity","clip","time","speed","loop","playing"});
             auto command=animation_value(value);command.entity=identifier(value.at("entity"));
             if(value.contains("blend_ticks")) {
                 const auto ticks=revision(value.at("blend_ticks"));require(ticks<=3600,"Animation blend_ticks must be within 0..3600.");
                 command.blend_ticks=static_cast<std::uint32_t>(ticks);
+            }
+            if(value.contains("transition_mode")) {
+                const auto& mode=value.at("transition_mode");
+                require(mode.is_string() && (mode=="crossfade" || mode=="inertial"),"Animation transition_mode must be crossfade or inertial.");
+                if(mode=="inertial")command.transition_mode=AnimationTransitionMode::Inertial;
             }
             require(seen.insert(command.entity).second,"Duplicate animation command entity.");result.push_back(std::move(command));
         }
@@ -2813,6 +2821,8 @@ public:
                 // JSON numeric equality treats 0 and 0.0 alike. Validate this
                 // integer field before receipt matching, including retries.
                 require(revision(command.at("blend_ticks"))<=3600,"Animation blend_ticks must be within 0..3600.");
+                if(!command.contains("transition_mode"))command["transition_mode"]="crossfade";
+                require(command.at("transition_mode").is_string() && (command.at("transition_mode")=="crossfade" || command.at("transition_mode")=="inertial"),"Animation transition_mode must be crossfade or inertial.");
             }
             const auto expected=revision(params.at("expected_tick"));
             const auto ticks=revision(params.at("ticks")); require(ticks>=1 && ticks<=600 && expected+ticks<=max_revision,"Runtime step must contain 1..600 ticks within the tick range.");

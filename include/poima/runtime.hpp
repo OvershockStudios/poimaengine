@@ -46,12 +46,14 @@ struct RuntimeAnimationRig {
 };
 struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
 struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
+enum class AnimationTransitionMode : std::uint32_t { Crossfade=0, Inertial=1 };
 struct AnimationCommand {
     std::string entity;
     std::optional<std::uint32_t> clip;
     double time=0,speed=1;
     bool loop=true,playing=false;
     std::uint32_t blend_ticks=0;
+    AnimationTransitionMode transition_mode=AnimationTransitionMode::Crossfade;
 };
 struct RuntimeAnimationTransition {
     std::uint64_t start_tick=0;
@@ -61,6 +63,7 @@ struct RuntimeAnimationTransition {
     std::optional<std::uint32_t> source_clip;
     double source_time=0,source_speed=1;
     bool source_loop=true,source_playing=false;
+    AnimationTransitionMode mode=AnimationTransitionMode::Crossfade;
 };
 struct RuntimeAnimationState {
     std::string entity;

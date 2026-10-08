@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime_animation.hpp"
+#include <nlohmann/json.hpp>
+#include <algorithm>
 #include <cmath>
 #include <iostream>
 #include <stdexcept>
@@ -179,8 +181,194 @@ void blend_partition_and_rollback() {
     check(direct.state("rig",0)->clip==control->clip && direct.state("rig",0)->transition->start_tick==control->transition->start_tick,"Invalid command-time sample mutated direct native clocks.");
 }
 
+// Solve the six Hermite boundary conditions independently rather than copying
+// the production decay coefficients. u is elapsed/duration, v is units/second.
+double correction(double displacement,double velocity,double duration,double elapsed) {
+    double rows[6][7]{};
+    rows[0][0]=1;rows[0][6]=displacement;
+    rows[1][1]=1;rows[1][6]=velocity*duration;
+    rows[2][2]=2;
+    for(std::size_t k=0;k<6;++k) {
+        rows[3][k]=1;
+        rows[4][k]=static_cast<double>(k);
+        rows[5][k]=k>=2 ? static_cast<double>(k*(k-1)) : 0;
+    }
+    for(std::size_t column=0;column<6;++column) {
+        auto pivot=column;
+        for(std::size_t row=column+1;row<6;++row)if(std::abs(rows[row][column])>std::abs(rows[pivot][column]))pivot=row;
+        check(std::abs(rows[pivot][column])>1e-12,"Independent polynomial system is singular.");
+        for(std::size_t k=0;k<7;++k)std::swap(rows[pivot][k],rows[column][k]);
+        const double divisor=rows[column][column];for(std::size_t k=column;k<7;++k)rows[column][k]/=divisor;
+        for(std::size_t row=0;row<6;++row)if(row!=column) {
+            const double factor=rows[row][column];
+            for(std::size_t k=column;k<7;++k)rows[row][k]-=factor*rows[column][k];
+        }
+    }
+    const double u=elapsed/duration;double value=rows[5][6];
+    for(std::size_t k=5;k>0;--k)value=value*u+rows[k-1][6];
+    return value;
+}
+AnimationCommand inertial(std::optional<std::uint32_t> clip,std::uint32_t ticks,double time=0,bool playing=true,double speed=1) {
+    auto c=fade(clip,ticks,time,playing,speed);c.transition_mode=AnimationTransitionMode::Inertial;return c;
+}
+void warm(RuntimeAnimations& animations,std::uint64_t first,std::uint64_t last) {
+    for(auto tick=first;tick<=last;++tick)(void)tip_pose(animations,tick);
+}
+void inertial_analytic_and_history() {
+    const auto d=blend_definition();RuntimeAnimations animations(d),repeated(d);
+    for(auto* value:{&animations,&repeated}) {value->apply({fade(0,0)},0);warm(*value,0,30);}
+    const auto source=tip_pose(animations,30);
+    // Repeated command-boundary reads must not replace tick29 with tick30.
+    for(int i=0;i<5;++i)(void)tip_pose(repeated,30);
+    for(auto* value:{&animations,&repeated})value->apply({inertial(2,60,0,true,2)},30);
+    check(tip_pose(animations,30).position==source.position,"Inertial command boundary changed position.");
+    check(tip_pose(animations,30).scale==source.scale,"Inertial command boundary changed scale.");
+    check(animations.state("rig",30)->transition->mode==AnimationTransitionMode::Inertial,"Inertial mode is not inspectable.");
+    for(std::uint64_t k=1;k<=60;++k) {
+        const double t=static_cast<double>(k)/60;const auto actual=tip_pose(animations,30+k),other=tip_pose(repeated,30+k);
+        near(actual.position[0],10+4*t+correction(-9,-2,1,t),1e-10);
+        near(actual.position[1],4+correction(-2,0,1,t),1e-10);
+        for(auto s:actual.scale)near(s,3*std::exp(correction(-std::log(3.0),0,1,t)),1e-10);
+        check(actual.position==other.position && actual.rotation==other.rotation && actual.scale==other.scale,"Same-tick reads erased outgoing velocity.");
+    }
+    check(!animations.state("rig",90)->transition,"Inertial correction missed its endpoint.");
+    check(tip_pose(animations,90).position==std::array<double,3>{14,4,0} && tip_pose(animations,90).scale==std::array<double,3>{3,3,3},"Completion is not the exact destination.");
+
+    RuntimeAnimations startup(d);(void)tip_pose(startup,0);startup.apply({inertial(2,60,0,true,2)},0);
+    const auto first=tip_pose(startup,1);near(first.position[0],10+4.0/60+correction(-10,-4,1,1.0/60),1e-10);
+    // Equal positions do not imply equal velocity. Held targets have zero
+    // incoming derivative even with a nonzero configured playback speed.
+    RuntimeAnimations equal(d);equal.apply({fade(0,0)},0);warm(equal,0,30);
+    equal.apply({inertial(0,60,.5,false,8)},30);
+    near(tip_pose(equal,31).position[0],1+correction(0,2,1,1.0/60),1e-10);
+    check(tip_pose(equal,31).position[0]>1,"Zero displacement discarded nonzero velocity.");
+    near(tip_pose(equal,90).position[0],1);check(!equal.state("rig",90)->transition,"Held destination did not complete.");
+    RuntimeAnimations sparse(d);sparse.apply({fade(0,0)},0);
+    (void)tip_pose(sparse,5);const auto sparse_source=tip_pose(sparse,17);
+    sparse.apply({inertial(3,60,0,false)},17);
+    check(tip_pose(sparse,17).position==sparse_source.position,"Sparse-history command changed its source pose.");
+    near(tip_pose(sparse,18).position[0],20+correction(17.0/30-20,2,1,1.0/60),1e-10);
+    RuntimeAnimations overwritten(d);overwritten.apply({fade(0,0)},0);warm(overwritten,0,30);
+    overwritten.apply({fade(0,0,.75,false)},30);near(tip_pose(overwritten,30).position[0],1.5);
+    overwritten.apply({inertial(0,60,.75,false)},30);
+    near(tip_pose(overwritten,31).position[0],1.5+correction(0,(1.5-29.0/30)*60,1,1.0/60),1e-10);
+    auto scaled=d;auto scale_model=std::make_shared<ModelAsset>(*d.entities[0].animation_rig->model);
+    scale_model->animations.push_back({"Independent scale axes",2,{{1,AnimationPath::scale,AnimationInterpolation::linear,{0,2},{{1,2,4,0},{3,6,8,0}}}}});
+    scaled.entities[0].animation_rig->model=scale_model;RuntimeAnimations scaling(scaled);
+    scaling.apply({fade(0,0)},0);warm(scaling,0,30);scaling.apply({inertial(7,60,0,true,1.5)},30);
+    const double initial_scale[]{1,2,4},incoming_rate[]{1.5,3,3};
+    for(std::uint64_t k=1;k<=60;++k) {
+        const auto actual=tip_pose(scaling,30+k);const double t=static_cast<double>(k)/60;
+        for(std::size_t axis=0;axis<3;++axis)near(actual.scale[axis],(initial_scale[axis]+incoming_rate[axis]*t)*
+            std::exp(correction(-std::log(initial_scale[axis]),-incoming_rate[axis]/initial_scale[axis],1,t)),1e-9);
+    }
+
+    // Interrupt a composed inertial output: its last two output samples, not
+    // either clip's derivative, determine the next correction's velocity.
+    RuntimeAnimations interrupted(d);interrupted.apply({fade(0,0)},0);warm(interrupted,0,30);
+    interrupted.apply({inertial(2,60,0,true,2)},30);warm(interrupted,30,45);
+    const double x0=10+1+correction(-9,-2,1,.25);
+    const double xprevious=10+4*(14.0/60)+correction(-9,-2,1,14.0/60);
+    const double sx=3*std::exp(correction(-std::log(3.0),0,1,.25));
+    const double sxprevious=3*std::exp(correction(-std::log(3.0),0,1,14.0/60));
+    const auto boundary=tip_pose(interrupted,45);interrupted.apply({inertial(3,60,0,false)},45);
+    check(tip_pose(interrupted,45).position==boundary.position && tip_pose(interrupted,45).scale==boundary.scale,"Second interruption lost its composed pose.");
+    for(std::uint64_t k=1;k<=60;++k) {
+        const auto actual=tip_pose(interrupted,45+k);const double t=static_cast<double>(k)/60;
+        near(actual.position[0],20+correction(x0-20,(x0-xprevious)*60,1,t),1e-9);
+        near(actual.scale[0],std::exp(correction(std::log(sx),(std::log(sx)-std::log(sxprevious))*60,1,t)),1e-9);
+    }
+    // An outgoing cubic clip may become invalid immediately after switching;
+    // inertialization samples only the destination after capturing the source.
+    RuntimeAnimations expired(d);expired.apply({fade(1,0)},0);warm(expired,0,1);expired.apply({inertial(3,60,0,false)},1);
+    warm(expired,1,61);near(tip_pose(expired,61).position[0],20);
+    auto invalid=inertial(0,60);invalid.transition_mode=static_cast<AnimationTransitionMode>(2);
+    const auto before=expired.save_state(61);rejects([&]{expired.apply({invalid},61);});check(expired.save_state(61)==before,"Invalid mode mutated animation state.");
+}
+std::array<double,4> quaternion_product(const std::array<double,4>& a,const std::array<double,4>& b) {
+    return {a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],
+        a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]};
+}
+void inertial_rotations() {
+    auto d=blend_definition();auto m=std::make_shared<ModelAsset>(*d.entities[0].animation_rig->model);
+    const float half=static_cast<float>(std::sqrt(.5));
+    m->animations.push_back({"Held X90",2,{{1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},{{half,0,0,half},{half,0,0,half}}}}});
+    m->animations.push_back({"Moving Y",2,{{1,AnimationPath::rotation,AnimationInterpolation::linear,{0,2},{{0,0,0,1},{0,.5f,0,static_cast<float>(std::sqrt(.75))}}}}});
+    d.entities[0].animation_rig->model=m;RuntimeAnimations rotation(d);
+    rotation.apply({fade(7,0,0,false)},0);warm(rotation,0,30);const auto source=tip_pose(rotation,30);
+    rotation.apply({inertial(8,3600)},30);const auto initial=tip_pose(rotation,30);
+    check(initial.rotation==source.rotation,"Noncommuting rotation changed at command boundary.");
+    // Four-point forward derivative of the independently observed quaternions.
+    // The outgoing clip is constant, so spatial angular velocity must start at
+    // zero even though the incoming clip rotates about a different axis.
+    std::array<std::array<double,4>,4> q{initial.rotation};
+    for(std::size_t i=1;i<q.size();++i) {
+        q[i]=tip_pose(rotation,30+i).rotation;double dot=0;
+        for(std::size_t j=0;j<4;++j)dot+=q[0][j]*q[i][j];
+        if(dot<0)for(auto& value:q[i])value=-value;
+    }
+    std::array<double,4> derivative{};
+    for(std::size_t j=0;j<4;++j)derivative[j]=10*(-11*q[0][j]+18*q[1][j]-9*q[2][j]+2*q[3][j]);
+    const auto angular=quaternion_product(derivative,{-q[0][0],-q[0][1],-q[0][2],q[0][3]});
+    for(std::size_t j=0;j<3;++j)near(2*angular[j],0,2e-4);
+    // Antipodal representations and crossing +/-180 degrees must retain the
+    // shortest orientation path, independently of the stored quaternion sign.
+    RuntimeAnimations shortest(d);shortest.apply({fade(4,0,0,false)},0);warm(shortest,0,30);
+    shortest.apply({inertial(5,60,0,false)},30);const auto middle=tip_pose(shortest,60);
+    near(std::abs(middle.rotation[1]),1);near(middle.rotation[3],0);
+    shortest.apply({fade(6,0,0,false)},60);warm(shortest,60,61);const auto equivalent=tip_pose(shortest,61);
+    shortest.apply({inertial(4,60,0,false)},61);const auto same=tip_pose(shortest,91);
+    double dot=0,norm=0;for(std::size_t j=0;j<4;++j){dot+=same.rotation[j]*equivalent.rotation[j];norm+=same.rotation[j]*same.rotation[j];}
+    near(std::abs(dot),1);near(norm,1);
+}
+void inertial_partition_and_rollback() {
+    const auto d=blend_definition();Runtime whole(d),split(d);
+    whole.step(30,{}, {}, {},{fade(0,0)});split.step(1,{}, {}, {},{fade(0,0)});split.step(11,{});split.step(18,{});
+    whole.step(15,{}, {}, {},{inertial(2,120,0,true,2)});split.step(1,{}, {}, {},{inertial(2,120,0,true,2)});split.step(3,{});split.step(11,{});
+    whole.step(17,{}, {}, {},{inertial(3,90,0,false)});split.step(5,{}, {}, {},{inertial(3,90,0,false)});split.step(12,{});
+    const std::string content(64,'a');check(whole.save_snapshot(content)==split.save_snapshot(content),"Inertial state/history depends on request partitioning.");
+    const auto tick=whole.inspect().tick;const auto body=whole.entity("body"),tip=whole.entity("tip");
+    const auto before=whole.save_snapshot(content);const auto snapshot=whole.snapshot("camera");
+    const auto palette=snapshot.objects[0].skin->palette;
+    rejects([&]{whole.step(60,{}, {}, {},{inertial(1,60)});});
+    check(whole.inspect().tick==tick && whole.save_snapshot(content)==before,"Failed inertial batch did not restore correction/history.");
+    check(whole.entity("body").world==body.world && whole.entity("body").velocity==body.velocity && whole.entity("tip").world==tip.world,"Failed inertial batch changed physics/pose.");
+    check(whole.snapshot("camera").objects[0].skin->palette==palette,"Failed inertial batch changed palette.");
+    // Immediately use the rolled-back history, before a successful tick could
+    // overwrite it and hide a damaged checkpoint.
+    whole.step(19,{}, {}, {},{inertial(0,120,.5,false)});split.step(1,{}, {}, {},{inertial(0,120,.5,false)});split.step(18,{});
+    check(whole.save_snapshot(content)==split.save_snapshot(content),"Re-interruption after rollback used damaged velocity history.");
+    whole.step(120,{});split.step(23,{});split.step(97,{});
+    check(whole.save_snapshot(content)==split.save_snapshot(content) && !whole.animation("rig")->transition,"Partitioned inertial completion differs.");
+    check(snapshot.objects[0].skin->palette==palette,"Later inertial samples mutated an owned palette.");
+}
+void inertial_whole_runtime_restore() {
+    auto d=blend_definition();d.world_id="inertial-whole-save";d.authored_revision=55;
+    const std::string content(64,'a');Runtime original(d);
+    original.step(30,{}, {}, {},{fade(0,0)});
+    original.step(15,{}, {}, {},{inertial(2,120,0,true,2)});
+    original.step(17,{}, {}, {},{inertial(3,90,0,false)});
+    const auto saved=original.save_snapshot(content);
+    check(nlohmann::json::parse(saved).at("payload").at("animation").at("version")==2,"Whole snapshot did not embed version-2 animation state.");
+    auto restored=Runtime::from_snapshot(d,content,saved);
+    check(restored->save_snapshot(content)==saved,"Whole-runtime load changed inertial history, locals or physics bytes.");
+    check(restored->entity("tip").world==original.entity("tip").world && restored->entity("body").world==original.entity("body").world &&
+        restored->entity("body").velocity==original.entity("body").velocity,"Whole-runtime inertial restoration changed animation or physics.");
+    const auto snapshot=original.snapshot("camera");const auto palette=snapshot.objects[0].skin->palette;
+    // Re-interrupt immediately after restore, before advancing a successful tick
+    // could reconstruct missing history and conceal a broken nested save/load.
+    original.step(1,{}, {}, {},{inertial(0,120,.5,false)});
+    restored->step(1,{}, {}, {},{inertial(0,120,.5,false)});
+    check(restored->save_snapshot(content)==original.save_snapshot(content),"Whole-runtime restore lost velocity needed by immediate re-interruption.");
+    original.step(19,{});restored->step(3,{});restored->step(16,{});
+    check(restored->save_snapshot(content)==original.save_snapshot(content),"Restored inertial motion/physics differs after partitioned continuation.");
+    original.step(101,{});restored->step(23,{});restored->step(78,{});
+    check(restored->save_snapshot(content)==original.save_snapshot(content) && !restored->animation("rig")->transition,"Whole-runtime restored correction missed exact completion.");
+    check(snapshot.objects[0].skin->palette==palette,"Whole-runtime restoration/continuation mutated an earlier palette.");
+}
+
 }
 int main() {
-    try { playback();partition_and_instances();authored_baseline_and_rollback();invalid_bindings();edited_hierarchy_overflow();blend_clocks_and_interruption();blend_rest_and_rotations();blend_partition_and_rollback();std::cout<<"Runtime animation analytic poses, immutable palettes, clocks, instances, ownership, fixed-tick crossfades, interruptions and physics rollback passed.\n"; }
+    try { playback();partition_and_instances();authored_baseline_and_rollback();invalid_bindings();edited_hierarchy_overflow();blend_clocks_and_interruption();blend_rest_and_rotations();blend_partition_and_rollback();inertial_analytic_and_history();inertial_rotations();inertial_partition_and_rollback();inertial_whole_runtime_restore();std::cout<<"Runtime animation analytic poses, immutable palettes, clocks, instances, ownership, fixed-tick crossfades, independent inertial pose/velocity/log-scale references, noncommuting rotations, partitioning, physics rollback and whole-runtime save restoration passed.\n"; }
     catch(const std::exception& e) { std::cerr<<e.what()<<'\n';return 1; }
 }

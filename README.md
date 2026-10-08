@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **Early development · 0.0.54.** Poima is a prototype. Important systems are incomplete. The selected authoring-core v1 API is stable; broader APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **Early development · 0.0.55.** Poima is a prototype. Important systems are incomplete. The selected authoring-core v1 API is stable; broader APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -44,7 +44,7 @@ Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WOR
 | Area | Implemented foundations |
 | --- | --- |
 | Graphics | Vulkan PBR, HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
-| Gameplay | Fixed-step Jolt physics, capsule movement, static triangle-mesh collision, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
+| Gameplay | Fixed-step Jolt physics, capsule movement, static triangle-mesh collision, raycasts, root-prop spawning and [crossfades and native inertial animation transitions](docs/RUNTIME_ANIMATION.md). |
 | C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. Bounded collections have Windows/Linux CoreCLR development qualification and a relocated Windows Native AOT fixture; explicit scalar save upgrades retain separate Linux qualification. |
 | Player systems | Keyboard, mouse and gamepad profiles; typed [HUD/menu layout and styling](docs/GAME_UI.md#authored-layout-and-styling), native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
 | Content and tools | glTF/GLB, PNG/JPEG and WAV import; project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |

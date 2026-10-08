@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.55 — Unreleased
+
+This checkpoint adds native inertial animation transitions with persistent motion history. The installed desktop package remains unchanged.
+
+- Opt-in `transition_mode:"inertial"` preserves the exact starting pose and estimated recent output motion, then settles onto the destination over fixed ticks. Translation, quaternion and logarithmic positive-scale corrections use analytic incoming derivatives; interruptions retain one correction rather than a recursive blend tree. [Contract](docs/RUNTIME_ANIMATION.md#inertial-transitions).
+- Immutable distinct-tick history and corrections participate in batch rollback and nested animation-state v2 saves. Fresh-process and whole-runtime restoration checks include immediate re-interruption. Crossfade-only version-1 save bytes are retained; an actual 0.0.54 saved interrupted fade restores and continues unchanged.
+- Windows/Linux native and protocol checks pass, as do authoring-only checks and the existing compiled C# crossfade/reload/rollback suite. Both laptop GPUs pass 48 exact reference pairs across 96 inertial/legacy captures at 640×480 with 1×/4× MSAA and zero reported NVRHI errors. [Evidence](docs/evidence/m2-animation-inertial.json).
+- Discovery advances to revision 52. Gameplay services ABI 7 and authoring-core v1 are unchanged. C# and desktop controls still select crossfades; the new mode currently uses C++ or the world protocol. Layers, IK, foot locking, phase matching and game-scale animation performance remain unfinished.
+
 ## 0.0.54 — Unreleased
 
 This checkpoint adds coherent, bounded runtime observations for agent playtesting. The installed desktop package remains unchanged.

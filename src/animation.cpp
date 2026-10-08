@@ -34,6 +34,45 @@ std::array<double,4> evaluate(const AnimationChannel& c,double time) {
     if(c.path==AnimationPath::rotation)normalize(out);
     return out;
 }
+std::array<double,4> derivative(const AnimationChannel& c,double time) {
+    std::array<double,4> out{};
+    const auto upper=std::upper_bound(c.times.begin(),c.times.end(),time);
+    if(upper==c.times.begin() || upper==c.times.end() || c.interpolation==AnimationInterpolation::step)return out;
+    const auto right=static_cast<std::size_t>(upper-c.times.begin()),left=right-1;
+    const bool cubic=c.interpolation==AnimationInterpolation::cubic;
+    const std::size_t stride=cubic ? 3 : 1,offset=cubic ? 1 : 0;
+    std::array<double,4> a{},b{},value{};
+    std::copy(c.values[left*stride+offset].begin(),c.values[left*stride+offset].end(),a.begin());
+    std::copy(c.values[right*stride+offset].begin(),c.values[right*stride+offset].end(),b.begin());
+    const double dt=double(c.times[right])-c.times[left],t=(time-c.times[left])/dt;
+    if(cubic) {
+        const double t2=t*t,t3=t2*t;
+        for(std::size_t k=0;k<4;++k) {
+            const double from=c.values[left*3+2][k],to=c.values[right*3][k];
+            value[k]=(2*t3-3*t2+1)*a[k]+(t3-2*t2+t)*dt*from+(-2*t3+3*t2)*b[k]+(t3-t2)*dt*to;
+            out[k]=(6*t2-6*t)*a[k]/dt+(3*t2-4*t+1)*from+(-6*t2+6*t)*b[k]/dt+(3*t2-2*t)*to;
+        }
+    }else if(c.path==AnimationPath::rotation) {
+        double dot=0;for(std::size_t k=0;k<4;++k)dot+=a[k]*b[k];
+        if(dot<0) {for(auto& x:b)x=-x;dot=-dot;}
+        double wa=1-t,wb=t,dwa=-1/dt,dwb=1/dt;
+        if(dot<.9995) {
+            const double angle=std::acos(std::clamp(dot,0.0,1.0)),den=std::sin(angle);
+            wa=std::sin((1-t)*angle)/den;wb=std::sin(t*angle)/den;
+            dwa=-angle*std::cos((1-t)*angle)/(den*dt);dwb=angle*std::cos(t*angle)/(den*dt);
+        }
+        for(std::size_t k=0;k<4;++k) {value[k]=wa*a[k]+wb*b[k];out[k]=dwa*a[k]+dwb*b[k];}
+    }else for(std::size_t k=0;k<4;++k)out[k]=(b[k]-a[k])/dt;
+    if(c.path==AnimationPath::rotation) {
+        double norm2=0;for(double x:value)norm2+=x*x;
+        check(std::isfinite(norm2) && norm2>1e-24,"Animation quaternion evaluates to zero or nonfinite.");
+        const double norm=std::sqrt(norm2);double projection=0;
+        for(std::size_t k=0;k<4;++k) {value[k]/=norm;projection+=value[k]*out[k];}
+        for(std::size_t k=0;k<4;++k)out[k]=(out[k]-value[k]*projection)/norm;
+    }
+    for(double x:out)check(std::isfinite(x),"Animation channel derivative is nonfinite.");
+    return out;
+}
 void normalize3(std::array<float,3>& v) {
     double length=0;for(float x:v)length+=double(x)*x;check(std::isfinite(length) && length>1e-24,"Skinned direction collapses to zero.");for(auto& x:v)x=static_cast<float>(x/std::sqrt(length));
 }
@@ -174,6 +213,31 @@ ModelPose CompiledAnimation::sample(std::optional<std::uint32_t> clip,double tim
         auto matrix=local_matrix(node.position,node.rotation,node.scale);const auto parent=data.parents[index];if(parent>=0)matrix=multiply(result.world[std::size_t(parent)],matrix);
         for(double x:matrix)check(std::isfinite(x) && std::abs(x)<=1e12,"Evaluated hierarchy matrix exceeds the supported range.");
         result.world[index]=matrix;
+    }
+    return result;
+}
+ModelMotion CompiledAnimation::sample_motion(std::optional<std::uint32_t> clip,double time,std::span<const NodePose> baseline) const {
+    // Reuse the ordinary pose path exactly, including its complete baseline,
+    // pose and hierarchy validation; no neighbouring time is sampled.
+    ModelMotion result;result.pose=sample(clip,time,false,baseline);result.velocities.resize(result.pose.local.size());
+    if(!clip)return result;
+    for(const auto& channel:data_->clips[*clip].channels) {
+        const auto d=derivative(channel,result.pose.time);auto& motion=result.velocities[channel.node];
+        if(channel.path==AnimationPath::translation)std::copy_n(d.begin(),3,motion.translation_velocity.begin());
+        else if(channel.path==AnimationPath::scale) {
+            const auto& scale=result.pose.local[channel.node].scale;
+            for(std::size_t k=0;k<3;++k)motion.log_scale_velocity[k]=d[k]/scale[k];
+        }else {
+            const auto& q=result.pose.local[channel.node].rotation;
+            // Quaternion layout is xyzw; qdot * conjugate(q) is spatial
+            // angular velocity, expressed before this node's local rotation.
+            for(std::size_t k=0;k<3;++k) {
+                const auto next=(k+1)%3,last=(k+2)%3;
+                motion.angular_velocity[k]=2*(q[3]*d[k]-d[3]*q[k]-d[next]*q[last]+d[last]*q[next]);
+            }
+        }
+        for(const auto& velocity:{motion.translation_velocity,motion.angular_velocity,motion.log_scale_velocity})
+            for(double x:velocity)check(std::isfinite(x),"Animation local motion is nonfinite.");
     }
     return result;
 }

@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.54 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.55 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.55 checkpoint adds opt-in native inertial animation transitions. Recent
+output motion and analytic incoming clip derivatives initialize bounded,
+finite-time translation, quaternion and positive-scale corrections. Same-tick
+samples retain distinct-tick history; checkpoints and nested animation-state v2
+preserve it through rollback, restoration and immediate re-interruption.
+Crossfade-only saves retain version-1 bytes, and an actual 0.0.54 interrupted
+crossfade save continues unchanged on the new Windows host.
+
+Native/math, save and protocol checks pass on Windows and Linux. The Linux
+regression cohort passed nineteen groups initially; a stale discovery-revision
+assertion was updated and passed its focused rerun. Seven authoring-only groups
+also pass. Across both laptop GPUs, 96 captures produce 24 exact inertial reference
+pairs and 24 legacy crossfade pairs at 640×480 with 1×/4× MSAA and zero reported
+NVRHI errors. Existing compiled C# crossfade/reload/rollback checks pass in twelve
+checks per platform. Discovery advances to revision 52; authoring-core v1 and the
+176-byte gameplay services ABI 7 remain unchanged. C# and desktop controls still
+select crossfades; inertial access currently uses C++ or the world protocol.
+Measured secant continuity does not guarantee smooth clip discontinuities, foot
+contacts, phase matching or zero overshoot. No game-scale performance, new
+installed desktop or physical-input qualification is claimed.
+[Animation contract](RUNTIME_ANIMATION.md#inertial-transitions),
+[evidence](evidence/m2-animation-inertial.json).
 
 The 0.0.54 checkpoint adds `runtime.observe`: a bounded, exact-tick read joining
 selected live entity state and native custom-component fields in one serialized
@@ -142,7 +165,7 @@ Planned editor workflow improvements include configurable hierarchy/folder styli
 
 Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 
-Animation supports bounded two-pose crossfades with fixed-tick weights. Interrupting a fade freezes its current local pose; this preserves pose continuity, not velocity continuity. Blend layers, state machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
+Animation supports bounded two-pose crossfades and opt-in native inertial transitions. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. Blend layers, state machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
 
 ## Implemented
 
@@ -184,7 +207,7 @@ Animation supports bounded two-pose crossfades with fixed-tick weights. Interrup
 
 - **0.0.35 native compiled C# gameplay:** a build-time generator binds the existing `Game<TState>` source into a Native AOT shared library. The engine verifies its inventory, target and generated schema, then uses the existing state/service/rollback contracts. Project/game manifest v2 packages the native artifact; v1 remains unchanged. Ten real-module groups and 12 exact CoreCLR/native comparison checkpoints pass on each OS. A separate Linux build with CoreCLR disabled passes the native suite. A relocated Windows bundle reproduces a 480-tick replay's gameplay state and exact pixels with all 38 files unchanged. CoreCLR regression passes 100 reloads per OS. All 33 Linux runtime and 28 authoring-only CTest suites pass. The final packaged editor passes 232 actions with an inspected screenshot. One earlier GUI run lost input capture while other Windows tests were active; an unchanged isolated rerun passed, and the cause remains an inference. Native library replacement requires a process restart. Clean-machine deployment, Linux graphics and consoles remain unqualified. [Contract](NATIVE_GAMEPLAY.md) and [evidence](evidence/m2-native-gameplay.json).
 
-- **0.0.34 unlocked visual follow-up:** the AnimationRig editor fixture passed 101 semantic actions on NVIDIA, with an inspected full-window screenshot at 125% scale. Controls were readable in Modified Tall layout. This closes the previously unavailable capture for that fixture; physical input and general DPI/accessibility coverage remain unqualified. [Visual evidence](evidence/m2-managed-animation-visual.json) and [screenshot](evidence/m2-managed-animation-visual.png).
+- **0.0.34 unlocked visual follow-up:** the AnimationRig editor fixture passed 101 semantic actions on NVIDIA, with an inspected full-window screenshot at 125% scale. Controls were readable in the captured layout. This closes the previously unavailable capture for that fixture; physical input and general DPI/accessibility coverage remain unqualified. [Visual evidence](evidence/m2-managed-animation-visual.json) and [screenshot](evidence/m2-managed-animation-visual.png).
 
 - **0.0.34 C# animation API:** typed `GetAnimation` and `SetAnimation` expose the native playback/transition authority to handwritten gameplay. Commands stage until the callback returns; caller/gameplay conflicts and duplicate targets reject the whole batch. Native animation state survives compatible code reload, while failed ticks restore it together with gameplay fields, sounds and physics. That checkpoint introduced ABI v3; current builds require services ABI 7 with the save/component/lifecycle extensions and a matching rebuilt managed bridge. Twelve integration groups and 13 independent ABI checks passed on each of Linux and Windows, including the checked-in sample, interrupted-fade reload and rollback of animation/physics/sound/gameplay state. The existing gameplay suite passed 100 reloads per OS; both Windows GPUs passed a 480-tick C# door replay with exact reference-image agreement. All 32 Linux runtime CTest suites and three selected authoring-only compatibility checks passed. The final packaged editor passed 101 scripted actions on NVIDIA; its full-window screenshot remained unavailable under the locked Windows session. [C# contract](MANAGED_GAMEPLAY.md#control-animation-from-c) and [recorded evidence](evidence/m2-managed-animation.json).
 
