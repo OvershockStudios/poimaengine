@@ -1,0 +1,430 @@
+{
+  "components": {
+    "Transform": {
+      "additionalProperties": false,
+      "properties": {
+        "position": {
+          "items": {
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        },
+        "rotation": {
+          "items": {
+            "maximum": 1000000000.0,
+            "minimum": -1000000000.0,
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "type": "array"
+        },
+        "scale": {
+          "items": {
+            "exclusiveMinimum": 0,
+            "maximum": 1000000000.0,
+            "type": "number"
+          },
+          "maxItems": 3,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "position",
+        "rotation",
+        "scale"
+      ],
+      "type": "object"
+    }
+  },
+  "contract_version": 1,
+  "format": "poima.authoring-api-baseline.v1",
+  "methods": {
+    "entity.get": {
+      "additionalProperties": false,
+      "properties": {
+        "component": {
+          "enum": [
+            "Transform"
+          ]
+        },
+        "id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "entity.query": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "component": {
+          "enum": [
+            "Transform"
+          ]
+        },
+        "limit": {
+          "default": 64,
+          "maximum": 256,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{32}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [],
+      "type": "object"
+    },
+    "entity.world_transform": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        },
+        "revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "world.describe": {
+      "description": "Full discovery by default; catalog lists names, while method/component/section retrieves one entry. Read the invariants section before mutations.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "view": {
+              "default": "full",
+              "enum": [
+                "full",
+                "catalog"
+              ]
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "view": {
+              "enum": [
+                "method",
+                "component",
+                "section"
+              ]
+            }
+          },
+          "required": [
+            "view",
+            "name"
+          ],
+          "type": "object"
+        }
+      ],
+      "type": "object"
+    },
+    "world.history": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "world.inspect": {
+      "additionalProperties": false,
+      "properties": {},
+      "required": [],
+      "type": "object"
+    },
+    "world.redo": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "base_revision"
+      ],
+      "type": "object"
+    },
+    "world.transact": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ops": {
+          "items": {
+            "oneOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "Also limited to 256 UTF-8 bytes.",
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "op": {
+                    "const": "entity.create"
+                  },
+                  "parent": {
+                    "anyOf": [
+                      {
+                        "pattern": "^[0-9a-f]{32}$",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "op",
+                  "id"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "name": {
+                    "description": "Also limited to 256 UTF-8 bytes.",
+                    "maxLength": 256,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "op": {
+                    "const": "entity.rename"
+                  }
+                },
+                "required": [
+                  "name",
+                  "op",
+                  "id"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "mode": {
+                    "const": "keep_local"
+                  },
+                  "op": {
+                    "const": "entity.reparent"
+                  },
+                  "parent": {
+                    "anyOf": [
+                      {
+                        "pattern": "^[0-9a-f]{32}$",
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "parent",
+                  "mode",
+                  "op",
+                  "id"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "op": {
+                    "const": "entity.delete"
+                  },
+                  "recursive": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "recursive",
+                  "op",
+                  "id"
+                ],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "pattern": "^[0-9a-f]{32}$",
+                    "type": "string"
+                  },
+                  "op": {
+                    "const": "component.set"
+                  },
+                  "type": {
+                    "const": "Transform"
+                  },
+                  "value": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "position": {
+                        "items": {
+                          "maximum": 1000000000.0,
+                          "minimum": -1000000000.0,
+                          "type": "number"
+                        },
+                        "maxItems": 3,
+                        "minItems": 3,
+                        "type": "array"
+                      },
+                      "rotation": {
+                        "items": {
+                          "maximum": 1000000000.0,
+                          "minimum": -1000000000.0,
+                          "type": "number"
+                        },
+                        "maxItems": 4,
+                        "minItems": 4,
+                        "type": "array"
+                      },
+                      "scale": {
+                        "items": {
+                          "exclusiveMinimum": 0,
+                          "maximum": 1000000000.0,
+                          "type": "number"
+                        },
+                        "maxItems": 3,
+                        "minItems": 3,
+                        "type": "array"
+                      }
+                    },
+                    "required": [
+                      "position",
+                      "rotation",
+                      "scale"
+                    ],
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "type",
+                  "value",
+                  "op",
+                  "id"
+                ],
+                "type": "object"
+              }
+            ]
+          },
+          "maxItems": 256,
+          "minItems": 1,
+          "type": "array"
+        },
+        "preview": {
+          "default": false,
+          "type": "boolean"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "base_revision",
+        "ops"
+      ],
+      "type": "object"
+    },
+    "world.undo": {
+      "additionalProperties": false,
+      "properties": {
+        "base_revision": {
+          "maximum": 9007199254740991,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "request_id": {
+          "pattern": "^[0-9a-f]{32}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "request_id",
+        "base_revision"
+      ],
+      "type": "object"
+    }
+  },
+  "source_schema_revision": 46,
+  "status": "candidate"
+}

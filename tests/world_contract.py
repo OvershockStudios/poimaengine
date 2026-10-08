@@ -192,6 +192,78 @@ class WorldContract(unittest.TestCase):
                     {**transform, 'scale': [1, 0, 1]}, {**transform, 'position': [1e10, 0, 0]}]:
             client.txn(2, [{'op': 'component.set', 'id': uid(2), 'type': 'Transform', 'value': bad}], error=-32602)
 
+    def test_created_entity_has_exact_identity_transform(self):
+        client = self.open()
+        client.txn(0, [{'op': 'entity.create', 'id': uid(1), 'name': 'Origin'}])
+        expected = {'position': [0, 0, 0], 'rotation': [0, 0, 0, 1], 'scale': [1, 1, 1]}
+        whole = client.rpc('entity.get', {'id': uid(1), 'revision': 1})
+        self.assertEqual((whole['id'], whole['revision']), (uid(1), 1))
+        self.assertIsNone(whole['value']['parent'])
+        self.assertEqual(whole['value']['components']['Transform'], expected)
+        selected = client.rpc('entity.get', {'id': uid(1), 'component': 'Transform', 'revision': 1})
+        self.assertEqual(selected['value'], expected)
+        evaluated = client.rpc('entity.world_transform', {'id': uid(1), 'revision': 1})
+        self.assertEqual(evaluated['layout'], 'column_major')
+        self.assertEqual(evaluated['matrix'], [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1])
+
+    def test_transaction_preview_reports_candidate_revision_without_publishing(self):
+        client = self.open()
+        client.txn(0, [create(1)])
+        before = self.path.read_bytes()
+        state, history = client.rpc('world.inspect'), client.rpc('world.history')
+        entity = client.rpc('entity.get', {'id': uid(1)})
+        request = {'request_id': uuid.uuid4().hex, 'base_revision': state['revision'], 'preview': True,
+                   'ops': [{'op': 'entity.rename', 'id': uid(1), 'name': 'Preview name'}, create(2)]}
+        preview = client.rpc('world.transact', request)
+        self.assertEqual(preview['revision'], state['revision'] + 1)
+        self.assertFalse(preview['committed'])
+        self.assertFalse(preview['replayed'])
+        self.assertEqual(preview['changed_ids'], [uid(1), uid(2)])
+        self.assertEqual(client.rpc('world.transact', request), preview)
+        self.assertEqual(client.rpc('world.inspect'), state)
+        self.assertEqual(client.rpc('world.history'), history)
+        self.assertEqual(client.rpc('entity.get', {'id': uid(1)}), entity)
+        client.rpc('entity.get', {'id': uid(2)}, error=-32004)
+        self.assertEqual(self.path.read_bytes(), before)
+        # Preview must not reserve the request ID or consume a durable receipt.
+        committed = client.rpc('world.transact', {**request, 'preview': False})
+        self.assertTrue(committed['committed'])
+        self.assertFalse(committed['replayed'])
+        self.assertEqual(committed['revision'], preview['revision'])
+        self.assertEqual(client.rpc('world.inspect')['revision'], state['revision'] + 1)
+        self.assertEqual(client.rpc('world.history')['undo_count'], history['undo_count'] + 1)
+        self.assertEqual(client.rpc('entity.get', {'id': uid(1)})['value']['name'], 'Preview name')
+        self.assertEqual(client.rpc('entity.get', {'id': uid(2)})['id'], uid(2))
+
+    def test_revision_guards_reject_wrong_types_and_accept_safe_integer_boundary(self):
+        client = self.open()
+        client.txn(0, [create(1)])
+        state, history = client.rpc('world.inspect'), client.rpc('world.history')
+        before = self.path.read_bytes()
+        maximum = 9007199254740991
+        invalid = [True, False, -1, 0.0, 1.0, maximum + 1, None, '1', [], {}]
+        operations = (
+            ('entity.get', 'revision', {'id': uid(1)}),
+            ('entity.query', 'revision', {}),
+            ('entity.world_transform', 'revision', {'id': uid(1)}),
+            ('world.transact', 'base_revision', {'ops': [{'op': 'entity.rename', 'id': uid(1), 'name': 'Rejected'}]}),
+            ('world.undo', 'base_revision', {}),
+            ('world.redo', 'base_revision', {}),
+        )
+        for method, guard, params in operations:
+            for value in invalid + [maximum]:
+                with self.subTest(method=method, revision=value):
+                    request = {**params, guard: value}
+                    if guard == 'base_revision':
+                        request['request_id'] = uuid.uuid4().hex
+                    # Maximum is a valid revision value, so it reaches the stale
+                    # guard rather than failing type/range validation.
+                    error = -32009 if type(value) is int and value == maximum else -32602
+                    client.rpc(method, request, error=error)
+        self.assertEqual(client.rpc('world.inspect'), state)
+        self.assertEqual(client.rpc('world.history'), history)
+        self.assertEqual(self.path.read_bytes(), before)
+
     def test_components_hierarchy_matrices_and_capture_validation(self):
         import math
         client = self.open()

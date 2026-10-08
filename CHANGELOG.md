@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.42 — Unreleased
+
+This checkpoint adds repeatable visual evidence for an agent-authored game and a candidate authoring API compatibility gate. The installed desktop package remains unchanged.
+
+- A fresh native Windows replay captures the recorded escape-room game's locked exit, completed escape and restored checkpoint through Vulkan. The retained agent source is unchanged. The three-checkpoint slideshow is rendered replay evidence, not a live agent session or a real-time gameplay recording. [Fixture](docs/evidence/fixtures/agent-escape/README.md).
+- A conservative request-schema gate checks nine authored-world methods and `Transform`, with explicit scope projection and regression tests for overlapping exclusive branches. This prepares authoring-core v1; it does not yet promise stable responses, gameplay APIs or save formats. [Candidate contract](docs/AUTHORING_API_COMPATIBILITY.md).
+- The rebuilt Windows world host qualifies development compile jobs and structured diagnostics with a real SDK success and intentional failure; authored-world, history and kind-specific UI checks pass. This extends the earlier standalone qualification without activating a new editor package.
+
 ## 0.0.41 — Unreleased
 
 This source checkpoint adds compact compiler feedback for agent iteration. The installed desktop package remains unchanged; full world-host integration qualification remains pending.

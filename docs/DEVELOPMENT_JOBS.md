@@ -128,6 +128,10 @@ Use the job's terminal state and exit status, and inspect raw logs when needed.
 
 The standalone parser and adapter contracts pass on Linux and native Windows.
 A real Linux SDK failure reports its code and exact source coordinates; repairing
-that fixture produces an assembly while retaining its warning. These checks are
-separate from rebuilt world-host execution. This API does not load the resulting
-module or change gameplay automatically. [Qualification evidence](evidence/m2-development-diagnostics.json).
+that fixture produces an assembly while retaining its warning. Rebuilt native
+world hosts also pass real SDK success/failure checks on both platforms, with
+unchanged authored revisions, retry guards and compact source-located errors.
+Native read-only/shared-scope tests hide and reject all development methods.
+This API does not load the resulting module or change gameplay automatically.
+[World-host evidence](evidence/m2-development-host.json),
+[earlier standalone evidence](evidence/m2-development-diagnostics.json).

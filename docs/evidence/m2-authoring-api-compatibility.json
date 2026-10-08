@@ -1,0 +1,47 @@
+{
+  "checkpoint": "0.0.42 development",
+  "passed": true,
+  "status": "candidate; not a released stability guarantee",
+  "scope": "Nine authored-world request schemas and Transform; behavioral checks recorded separately",
+  "baseline": "../contracts/authoring-core-v1.candidate.json",
+  "baseline_source_schema_revision": 46,
+  "candidate_schema_revision": 47,
+  "baseline_engine_sha256": "05df699312413b72965b632800113562bdf074770f2132a75eb0ab7992fd8bf6",
+  "windows_engine_sha256": "84a559e1e3adc30f3ca51ae00f30ffd0747bb78e9ab295f7cb85a263625932bb",
+  "linux_engine_sha256": "7c327a674e661f3f0cf2fea95edb489bf9469fd7a884e6383f66c0f806de43ae",
+  "schema_gate": {
+    "passed": true,
+    "findings": [],
+    "scope": "Selected input schemas only; conservative recognized rules, no general JSON Schema subsumption or runtime behavior/ABI guarantee."
+  },
+  "python_contracts": {
+    "compatibility_tests": 11,
+    "projection_tests": 9,
+    "passed": true
+  },
+  "native_contracts": {
+    "linux_ctest_groups_passed": 12,
+    "linux_ctest_groups_failed": 0,
+    "windows_world_tests_passed": 12,
+    "windows_world_tests_skipped": 1,
+    "windows_history_tests_passed": 10,
+    "windows_ui_tests_passed": 7,
+    "windows_read_only_and_shared_scope_native_test_passed": true
+  },
+  "source_sha256": {
+    "scripts/check_authoring_api.py": "45a55afa3829ebd60d447783d0c99ca12bb2361076fb675480d2232f6bc2680f",
+    "scripts/project_authoring_api.py": "c61cbcaf679d06c7fe3d7e351f1a92333d0a61010c9e6c47e93bb914ff84b59c",
+    "tests/authoring_api_compatibility.py": "d8e3b9897ad0dcba8c8a8f5771118f072e40236507c984bcaad5a2621d37f467",
+    "tests/authoring_api_projection.py": "0b0c96f0e784a4d0701f677798ee5f01cd74bd09a925756170e1158b45149374",
+    "tests/world_contract.py": "64bda5721c53ac2942920650e0e22f1af7007650e6fe39f52a8b6765f4399c96",
+    "tests/world_session_native.cpp": "17f4c75bb5ae0b059001cebb193d372ee1e4dc3d083a7b5b6ece3d55fc8c4879"
+  },
+  "limits": [
+    "Request acceptance gate is conservative, not general JSON Schema subsumption.",
+    "The source schema46 baseline is compared with authoring-mode schema47 on two builds; read-only availability is deliberately different.",
+    "Behavioral fixtures are bounded; this does not freeze gameplay/rendering APIs, save formats or binary ABI.",
+    "Windows history/UI suites used the preceding schema47 0.0.41 host; updated world/read-only tests use 0.0.42.",
+    "Windows abrupt-termination test is skipped by the WSL harness; Linux runs it.",
+    "Installed editor activation and broad performance qualification are outside this checkpoint."
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "checkpoint": "0.0.42 development",
+  "scope": "Real native world-host compilation and structured failure feedback on Windows and Linux",
+  "passed": true,
+  "windows": {
+    "passed": true,
+    "owner_exit_code": 0,
+    "rpc_calls": 237,
+    "successful_compile_state": "succeeded",
+    "authored_revision_unchanged": 0,
+    "failed_compile": {
+      "state": "failed",
+      "exit_code": 1,
+      "parser": "msbuild-csharp-subset-v1",
+      "recognized_lines": 4,
+      "incomplete": false
+    },
+    "diagnostics": [
+      {
+        "code": "CS1030",
+        "severity": "warning",
+        "location": {
+          "column": 10,
+          "end_column": null,
+          "end_line": null,
+          "line": 1
+        }
+      },
+      {
+        "code": "CS1525",
+        "severity": "error",
+        "location": {
+          "column": 56,
+          "end_column": null,
+          "end_line": null,
+          "line": 2
+        }
+      }
+    ]
+  },
+  "linux": {
+    "passed": true,
+    "owner_exit_code": 0,
+    "rpc_calls": 767,
+    "successful_compile_state": "succeeded",
+    "authored_revision_unchanged": 0,
+    "failed_compile": {
+      "state": "failed",
+      "exit_code": 1,
+      "parser": "msbuild-csharp-subset-v1",
+      "recognized_lines": 4,
+      "incomplete": false
+    },
+    "diagnostics": [
+      {
+        "code": "CS1030",
+        "severity": "warning",
+        "location": {
+          "column": 10,
+          "end_column": null,
+          "end_line": null,
+          "line": 1
+        }
+      },
+      {
+        "code": "CS1525",
+        "severity": "error",
+        "location": {
+          "column": 56,
+          "end_column": null,
+          "end_line": null,
+          "line": 2
+        }
+      }
+    ]
+  },
+  "engine_sha256": {
+    "windows": "84a559e1e3adc30f3ca51ae00f30ffd0747bb78e9ab295f7cb85a263625932bb",
+    "linux": "7c327a674e661f3f0cf2fea95edb489bf9469fd7a884e6383f66c0f806de43ae"
+  },
+  "schema_revision": 47,
+  "read_only_scope_checks": {
+    "platforms": [
+      "Windows",
+      "Linux"
+    ],
+    "all_six_development_methods_hidden": true,
+    "all_six_rejected_before_parameter_validation": true,
+    "scopes": [
+      "standalone",
+      "shared_editor",
+      "shared_headless"
+    ],
+    "bundle_files_unchanged": true
+  },
+  "source_sha256": {
+    "tests/development_protocol.py": "15762927e487c8aba1588c02a93ec023594b859b7900c221d08856f94b49820e",
+    "src/development_jobs.cpp": "76b641d6f0f4d9403a514c308c7c3483d9f7a79b95794359c828d487938917e7",
+    "src/development_service.cpp": "c826356b451e074ee0070a0c5d5f858461c2176a586ab20389324ee3abd5e7f0",
+    "src/development_diagnostics.cpp": "90554fb764f53eaf8e3f425ec0ec2e96670a088894133c3bd488ea435c9539ee"
+  },
+  "limits": [
+    "Trusted explicit SDK/MSBuild execution, not a sandbox or automatic reload.",
+    "Read-only checks use native WorldSession modes; no newly activated installed editor or exported player package.",
+    "Compile state and exit status remain authoritative; the parser only recognizes a bounded subset.",
+    "These checks compile disposable modules; they do not execute their gameplay or measure iteration performance.",
+    "Raw RPC logs, compiler paths and build output remain private."
+  ]
+}
