@@ -97,6 +97,41 @@ int main() {
         for(const auto& binding:Json::array({nullptr,Json{{"asset",true}},Json{{"asset",std::string(64,'A')}},Json{{"asset",std::string(64,'a')},{"extra",0}}})) {
             auto a=source,b=target;a["navigation"]=b["navigation"]=binding;reject(a,b,approved);
         }
+        const Json origins={{std::string(64,'a'),Json::array({std::string(64,'1'),std::string(64,'2')})}};
+        // A valid frozen binding is preserved for every existing world format,
+        // including component upgrades and the registry-free legacy control.
+        for(int version=1;version<=4;++version) {
+            auto a=version==1 ? legacy : source,b=version==1 ? legacy_next : target;
+            auto migration=approved;
+            // The registry-free legacy control has no component migration.
+            if(version==1)migration.components.clear();
+            for(auto* document:{&a,&b}) {
+                (*document)["version"]=version;(*document)["asset_provenance"]=origins;
+                if(version<4) {document->erase("ui");document->erase("retired_ui_ids");}
+                if(version<3) {document->erase("templates");document->erase("retired_template_ids");}
+            }
+            const auto a_bytes=a.dump(),b_bytes=b.dump();
+            const auto result=Json::parse(map_authored_document(a_bytes,b_bytes,migration).mapped_document);
+            check(result.at("asset_provenance")==origins,"Upgrade lost unchanged provenance origins.");
+            check(a.dump()==a_bytes && b.dump()==b_bytes,"Provenance mapping changed caller documents.");
+        }
+        auto origins_source=bound_source,origins_target=bound_target;
+        origins_source["asset_provenance"]=origins_target["asset_provenance"]=origins;
+        const auto combined=Json::parse(map_authored_document(origins_source.dump(),origins_target.dump(),approved).mapped_document);
+        check(combined.at("asset_provenance")==origins && combined.at("navigation")==bound_source.at("navigation"),"Upgrade did not preserve both optional content bindings.");
+        auto changed_origins=origins_target;changed_origins.erase("asset_provenance");reject(origins_source,changed_origins,approved);
+        reject(bound_source,origins_target,approved); // adding an origin is not a schema migration
+        changed_origins=origins_target;changed_origins["asset_provenance"][std::string(64,'a')]=Json::array({std::string(64,'3')});reject(origins_source,changed_origins,approved);
+        changed_origins=origins_target;changed_origins["asset_provenance"][std::string(64,'b')]=Json::array({std::string(64,'4')});reject(origins_source,changed_origins,approved);
+        const Json invalid_origins=Json::array({nullptr,Json::array(),Json{{std::string(64,'A'),Json::array({std::string(64,'1')})}},
+            Json{{std::string(64,'a'),Json::array()}},Json{{std::string(64,'a'),true}},Json{{std::string(64,'a'),Json::array({true})}},
+            Json{{std::string(64,'a'),Json::array({std::string(64,'A')})}},Json{{std::string(64,'a'),Json::array({std::string(64,'2'),std::string(64,'1')})}},
+            Json{{std::string(64,'a'),Json::array({std::string(64,'1'),std::string(64,'1')})}},
+            Json{{std::string(64,'a'),Json::array({std::string(64,'1'),std::string(64,'2'),std::string(64,'3'),std::string(64,'4'),std::string(64,'5'),std::string(64,'6'),std::string(64,'7'),std::string(64,'8'),std::string(64,'9')})}}});
+        for(const auto& bindings:invalid_origins) {
+            auto a=source,b=target;a["asset_provenance"]=b["asset_provenance"]=bindings;reject(a,b,approved);
+        }
+        check(map_authored_document(source.dump(),target.dump(),approved).mapped_document==mapped.mapped_document,"Provenance rejection changed legacy mapping bytes.");
         std::cout<<"Frozen authored document mapping passed; "<<rejected<<" rejection cases. No IO/runtime activation claim.\n";return 0;
     }catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}
 }

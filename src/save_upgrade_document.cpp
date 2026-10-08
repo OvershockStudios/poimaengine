@@ -2,6 +2,7 @@
 #include "poima/save_upgrade_document.hpp"
 #include "poima/save_upgrade.hpp"
 #include "poima/runtime.hpp"
+#include "asset_provenance.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <map>
@@ -22,8 +23,8 @@ Json parse(const std::string& text) {
         return true;
     });
 }
-void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_navigation=false) {
-    const auto extra=optional_navigation && value.contains("navigation") ? 1u : 0u;
+void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_world_content=false) {
+    const auto extra=optional_world_content ? static_cast<unsigned>(value.contains("navigation"))+static_cast<unsigned>(value.contains("asset_provenance")) : 0u;
     check(value.is_object() && value.size()==expected.size()+extra,"Unexpected save upgrade authored document members.");
     for(const auto* key:expected)check(value.contains(key),"Missing save upgrade authored document member.");
 }
@@ -43,6 +44,10 @@ Registry normalize(Json& doc) {
         const auto asset=binding.at("asset").get<std::string>();
         check(asset.size()==64 && asset.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid navigation binding asset identity.");
     }
+    // Provenance is frozen authored content, never a component migration.
+    // The final exact document comparison also prevents adding, replacing or
+    // removing origins through an otherwise valid component upgrade.
+    if(doc.contains("asset_provenance"))provenance::validate_bindings(doc.at("asset_provenance"));
     if(version==1)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"},true);
     else if(version==2)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},true);
     else if(version==3)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},true);

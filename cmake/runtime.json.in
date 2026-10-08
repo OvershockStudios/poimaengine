@@ -11,6 +11,7 @@
   "target_arch": "@POIMA_TARGET_ARCH@",
   "executable": "bin/poima@CMAKE_EXECUTABLE_SUFFIX@",
   "features": {
+    "asset_provenance": true,
     "simulation": @POIMA_RUNTIME_SIMULATION@,
     "renderer": @POIMA_RUNTIME_RENDER_SMOKE@,
     "audio": @POIMA_RUNTIME_AUDIO@,

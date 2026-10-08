@@ -12,10 +12,12 @@ Search results should report format, size and compatibility alongside rights
 and provenance information. Unknown information should stay explicit. When
 search has no suitable result, the tools should report the gap.
 
-Acquisition records should preserve the creator, source URL, selected license,
-required attribution and downloaded file identity. Export should retain
-relevant notices and credits. User-owned files use the same import path without
-publishing private purchase receipts or local source paths.
+[Asset records](ASSET_PROVENANCE.md) can preserve the creator, source URL,
+selected license, supplied notices and declared input identities. Export retains
+selected records and credits. Automatic acquisition should capture the actual
+downloaded identities. User-owned files use the same import path. Import does not automatically
+capture purchase receipts or local source paths. Selected record text is
+included in exported credits.
 
 Original downloads and cooked assets have separate identities. Conversion
 records should preserve their relationship, including dependencies and
@@ -24,7 +26,7 @@ permission. A free download alone is not a license.
 
 Local asset import is available for the formats listed in the
 [implementation status](IMPLEMENTATION_STATUS.md). Online discovery/acquisition
-and automatic license records are planned features.
+and automatic source capture remain planned features.
 
 ## Procedural tools
 

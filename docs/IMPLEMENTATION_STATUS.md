@@ -1,8 +1,32 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.65**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.66**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The matched Windows desktop passes 232 scripted editor actions and four restart
+checks, plus 97 independent dual-view actions and three restart checks. Both
+Scene and Game render on the RTX 4070 Laptop GPU with zero reported NVRHI
+errors. The README now shows an inspected OS capture of this editor. These are
+semantic-input checks; physical-device testing and wine branding remain pending.
+[Desktop evidence](evidence/m2-desktop-current.json).
+
+Version 0.0.66 adds immutable [asset source/license records](ASSET_PROVENANCE.md)
+and guarded world selections. Frozen runtime/save sources retain their selected
+records; component upgrades preserve those selections. Exports carry checked
+records and deterministic credits, reject notice tampering and require a
+runtime advertising provenance support. Explicit unused mappings retain their
+records without adding unused cooked assets. Unmapped legacy bundles retain
+their earlier shape.
+
+Actual Windows and Linux checks each pass seven authoring/save groups over
+238 RPCs with 12 clean owners, six export groups over 53 RPCs with six clean
+owners, and five native programs. Linux additionally passes ten selected
+regressions; Windows passes the stable authoring-core and identity suites.
+Records are caller declarations, not verified permission or importer-captured
+source traces. The export fixtures deliberately use non-executable runtimes;
+this does not qualify player deployment, online acquisition or graphics
+performance. [Recorded evidence](evidence/m2-asset-provenance.json).
 
 Version 0.0.65 records qualification of the original compiled navigation fixture
 in an exported, relocated Windows Native AOT game using the 0.0.64 runtime.
@@ -25,9 +49,8 @@ A default-off [Linux development option](BUILD.md#local-linux-thin-archives)
 changes only the core static archive's representation. It retains compiler
 optimization/debug settings and dependency archives. The speed measurements
 cover archive creation/indexing on one filesystem, not compilation, general
-iteration latency or game performance. Automatic online asset acquisition and
-license/provenance export remain planned; [owned-file imports](ASSETS.md) are
-available for the documented formats.
+iteration latency or game performance. Automatic online acquisition and importer-captured source traces remain
+planned; [owned-file imports](ASSETS.md) are available for the documented formats.
 
 Version 0.0.64 binds static navigation into compiled NPC gameplay. A guarded
 `navigation.set` transaction associates the world with a checked `.pnav` asset.

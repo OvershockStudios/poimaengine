@@ -119,7 +119,7 @@ std::string graphics_json(const GraphicsProbe& probe) {
 
 Reply capabilities() {
     return envelope("capabilities", "{\"build\":" + build_info() + ",\"commands\":" + operation_list() +
-        ",\"features\":{\"native_cli\":true,\"host_inspection\":true,\"vulkan_device_inspection\":" +
+        ",\"features\":{\"asset_provenance\":true,\"native_cli\":true,\"host_inspection\":true,\"vulkan_device_inspection\":" +
         boolean(POIMA_VULKAN_PROBE != 0) +
         ",\"render_smoke\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"fsr3_upscaler\":" + boolean(POIMA_FSR3_UPSCALER != 0 && POIMA_RENDER_SMOKE != 0) +

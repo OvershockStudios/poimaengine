@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.66
+
+- Refresh the desktop screenshot from the matched Windows editor. Full editor and independent dual-view regressions pass, including fresh-process layout restoration and scripted Game input. [Desktop evidence](docs/evidence/m2-desktop-current.json).
+- Add immutable source, license and credit records for cooked assets, with guarded selections, preview, retries and undo/redo. Assets without records remain usable. [Workflow](docs/ASSET_PROVENANCE.md).
+- Freeze selected records with runtime and saved content; retain original credits after authoring changes and preserve selections through component save upgrades.
+- Export checked records and deterministic credits with exact inventory verification. Retain deliberate unused mappings without bundling unused cooked data, and reject runtimes lacking provenance support.
+- Qualify native Windows/Linux authoring, bounds, read-only admission, corruption rejection, save continuation, export relocation and legacy bundle controls. [Evidence](docs/evidence/m2-asset-provenance.json).
+
 ## 0.0.65
 
 - Record a relocated Windows Native AOT navigation game using the 0.0.64 runtime and artifact: the original compiled NPC plans around cover and arrives during a 1,400-tick Vulkan replay. Separate fresh worlds exercise the bundled runtime's route, rollback and save continuation. [Evidence](docs/evidence/m2-navigation-shipping.json).

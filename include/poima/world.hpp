@@ -13,6 +13,9 @@ struct WorldPackageAsset { std::string filename,sha256;std::uint64_t bytes=0; };
 struct WorldPackageContent {
     std::string document;
     std::vector<WorldPackageAsset> assets;
+    // Immutable declared source/license records are separate from cooked data.
+    std::vector<WorldPackageAsset> provenance_records;
+    std::string asset_credits;
     std::uint64_t revision=0;
     bool needs_audio=false;
     bool needs_navigation=false;

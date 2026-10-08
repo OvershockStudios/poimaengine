@@ -1,0 +1,91 @@
+{
+  "format": "poima.desktop-checkpoint",
+  "version": 1,
+  "engine_version": "0.0.66",
+  "frontend_source_version": "0.0.48",
+  "passed": true,
+  "scope": "Fresh matched Windows desktop; full editor, dual-view, semantic interaction and restart checks; actual owned-window OS screenshot.",
+  "image": {
+    "filename": "m2-desktop-current.png",
+    "sha256": "b3b5422c7b1d5c9bf9f57509ddf7c2aa66cffb2c0060f2c833a7b27be3c5e7c1",
+    "width": 1422,
+    "height": 873,
+    "source": "OS capture of owned editor client area; unmodified pixels"
+  },
+  "dual_view": {
+    "main_actions": 97,
+    "restart_actions": 3,
+    "main_exit_code": 0,
+    "restart_exit_code": 0,
+    "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+    "font": "Inter",
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "samples": 4,
+    "nvrhi_errors": 0
+  },
+  "package": {
+    "files": 380,
+    "manifest_sha256": "47796abd8a51774429ab57a6b591d731d4d31d8552fe7b3d2b72309529446328",
+    "engine_sha256": "75fdaee9975aa2b34ac36f03cad23da584eeb2f91c4bcc9a8e884eceb24c8fd0",
+    "native_bridge_sha256": "f81cae024219efa5c28cccca0953f96955f0dd3d3ec69184e96d730304c805a0",
+    "frontend_sha256": "3709c0c1df2477640b9545575a511dc27d59b91320bd48ee364e5ef25e23471a"
+  },
+  "source_sha256": {
+    "tests/desktop_dual_frontend.py": "4004f5515192d5e8eb380e397402700d9cbf0e0c45c47f5aa1a4bb8eccebd325",
+    "scripts/build_desktop.py": "a1a6ef5053ee56eb65dd0442f42e3e05751b2f810bc5d94f48e822816cf5f105",
+    "src/desktop_bridge.cpp": "a440b798b50226783129326526431aadb48e8405957e917b5c722cde27a1943c",
+    "desktop/Poima.Editor/Poima.Editor.csproj": "b0259c8a2801d749aeca97be9051be79a589e382e91b8e69b354fd83850f7225",
+    "desktop/Poima.Editor/Themes/EditorControls.axaml": "ca0c2f5a1f331282766b7ef2a9d088871338ea7ae0b285b44a43e6a8895c04ef",
+    "tests/desktop_frontend.py": "232d4872fd949afde0f57946b6c44e06df707f193fd08f84a70b1ba987fdfb84"
+  },
+  "evidence_sha256": {
+    "dual_view": "6ab40e163a7535ab76706d5c3ecccf861cd001505de96600c1078db779602707",
+    "full_editor": "9ccadf00d6b49b79587f4b77942d6daa1e8de44e99ce9d9c46ab67d5952dda7d"
+  },
+  "limits": [
+    "Semantic input only; physical mouse, gamepad, IME and accessibility not qualified by this capture.",
+    "No frame-time or game-scale performance claim.",
+    "Editor still uses gray surfaces and blue accents; wine branding and cursive wordmark are not implemented."
+  ],
+  "full_editor": {
+    "main_actions": 232,
+    "restart_actions": 4,
+    "check_groups": 18,
+    "main_exit_code": 0,
+    "restart_exit_code": 0,
+    "ui_backend": "Avalonia.Vulkan.VulkanPlatformGraphics",
+    "font": "Inter",
+    "nvrhi_errors": 0,
+    "coverage": [
+      "actual Avalonia Vulkan backend with native child Scene",
+      "shared CLI connection",
+      "dirty draft preserved; stale Apply rejects; Reload explicit",
+      "undo/redo and fixed-tick runtime",
+      "invalid raw field survives floating/reset; dirty close cancelled",
+      "missing-asset Scene error recovers after authoring repair without reattachment",
+      "actual Inspector and Scene floating windows; reset and continued presentation",
+      "native HWND look/fly/frame/click messages; input released cleanly",
+      "saved floating layout restores its panel structure and bounds, including a fresh process",
+      "HWND gizmo drag previews without authoring writes; one commit/undo; redo restores actual transform",
+      "dirty Inspector blocks gizmo begin; capture-loss/Escape/external revision cancel previews",
+      "Q/W/E/R tool keys preserve RMB flight; local/world switches; final selected move gizmo visible",
+      "native real-time Play/Pause/Step/Stop; command-driven state sync without per-tick Inspector rebuild",
+      "independent Game HWND gestures preserve Scene camera; both panes render in one shared session",
+      "paused Game capture and Stop preserve authored transforms/revision/history",
+      "revision-guarded native viewport capture",
+      "bounded process exit",
+      "owned desktop client-area screenshot"
+    ],
+    "game_input": {
+      "owned_hwnd_routing": true,
+      "relative_motion": "Explicit script injection; not raw hardware packets.",
+      "physical_input_qualified": false,
+      "actual_character_movement_and_jump": true,
+      "physical_scan_mapping": true,
+      "repeat_suppressed": true,
+      "profile_rebound": true,
+      "focus_escape_pause_scene_focus_game_detach_stop_clear": true,
+      "acquisition_click_swallowed": true
+    }
+  }
+}

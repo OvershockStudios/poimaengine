@@ -1,0 +1,196 @@
+{
+  "format": "poima.asset-provenance-evidence",
+  "version": 1,
+  "engine_version": "0.0.66",
+  "passed": true,
+  "scope": "Native immutable provenance records, authored mappings, frozen saved-source restoration and metadata-only bundle verification on Linux and Windows.",
+  "platforms": {
+    "Linux": {
+      "engine_sha256": "58c5711b06c4d99a26419355982ebd09fccd32ca1093b3a40b1024ae2d11a238",
+      "authoring_and_restore": {
+        "groups": 7,
+        "rpcs": 238,
+        "owners": 12,
+        "owner_exit_codes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "skipped": 0,
+        "symlink_check_executed": true
+      },
+      "package_verification": {
+        "groups": 6,
+        "cli_calls": 40,
+        "successful_cli_exits": 29,
+        "intentional_rejection_exit_4": 11,
+        "rpcs": 53,
+        "owners": 6,
+        "owner_exit_codes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "metadata_only_runtime": true
+      },
+      "native_regressions": {
+        "executables": 5,
+        "all_exit_zero": true,
+        "binary_sha256": {
+          "poima-asset-provenance-test": "fe2661454f4c12bedde68ffb6b9c9e5c9baf2d9d4b37d79686f14fa42635d915",
+          "poima-save-upgrade-document-test": "3f73310dd84703edb4c0b0746fb33bcf0798c4d7b9f0acae2cb8f164f39e31bf",
+          "poima-world-session-test": "261f6b6a314f63723a6c474cd598921bcba6502b2c7d2a007103dcd02c844ed5",
+          "poima-navigation-binding-test": "c0ca3931ef88b7d481ac064180705e2079f94c1c2e811d5ca69e9ec9ed464e41",
+          "poima-runtime-navigation-test": "bcc7a6ca628d9d2c91c5707de2781829866c291d5976912c917cfc9dbcfe69b2"
+        }
+      },
+      "existing_regressions": {
+        "ctest_groups": 10,
+        "names": [
+          "asset_references_contract",
+          "authoring_api_compatibility",
+          "authoring_api_projection",
+          "authoring_contract_artifacts",
+          "authoring_contract_identity",
+          "authoring_core_conformance",
+          "authoring_response_compatibility",
+          "navigation_binding_contract",
+          "profiler_contract",
+          "project_contract"
+        ],
+        "all_passed": true
+      }
+    },
+    "Windows": {
+      "engine_sha256": "75fdaee9975aa2b34ac36f03cad23da584eeb2f91c4bcc9a8e884eceb24c8fd0",
+      "authoring_and_restore": {
+        "groups": 7,
+        "rpcs": 238,
+        "owners": 12,
+        "owner_exit_codes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "skipped": 0,
+        "symlink_check_executed": true
+      },
+      "package_verification": {
+        "groups": 6,
+        "cli_calls": 40,
+        "successful_cli_exits": 29,
+        "intentional_rejection_exit_4": 11,
+        "rpcs": 53,
+        "owners": 6,
+        "owner_exit_codes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "metadata_only_runtime": true
+      },
+      "native_regressions": {
+        "executables": 5,
+        "all_exit_zero": true,
+        "binary_sha256": {
+          "poima-asset-provenance-test": "913843975033198ee4ec616dcebd2d46a3e79d01802cc745c03e4839f140f10e",
+          "poima-save-upgrade-document-test": "356240d704aa9ac160ac4f886a241fd319b8ef07e3f4c6b2e2af76f41b48e9a8",
+          "poima-world-session-test": "e573b71fa7325400457283d6691065031b1a482cabc95bbc42a545112c91d840",
+          "poima-navigation-binding-test": "9bd742df549d8bd2c98be14c17401c992b42f405404ca5bf0ca87c3030b8c10f",
+          "poima-runtime-navigation-test": "a0ff215c92b7207b274fea11cb3ca95252e3fd08019b48bcfd89dddebfc81af0"
+        }
+      },
+      "existing_regressions": {
+        "authoring_core_groups": 5,
+        "identity_groups": 2,
+        "all_passed": true,
+        "test_sha256": {
+          "tests/authoring_core_conformance.py": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+          "tests/authoring_contract_identity.py": "32e6ed2e2d9427115f883b77dd0a4e1182b5b6650737c7aa7269202ed96ad44c"
+        }
+      }
+    }
+  },
+  "qualified_behaviors": [
+    "Canonical immutable .pprov records distinguish origins and notices without changing cooked asset identity.",
+    "Preview, stale guards, exact retry, undo/redo and failed mixed transactions preserve authored atomicity.",
+    "Metadata pagination does not read record files; dependency freeze freshly checks all selected records, including unused asset mappings.",
+    "Unused cooked assets are excluded from closure; all selected provenance records and deterministic credits are retained.",
+    "Saved frozen mapping A is validated on active and fresh-owner restoration after current authoring changes to B.",
+    "Correctly hashed forged cooked-kind records, corrupt/missing records, symlinks and malformed UTF-8/duplicate keys reject.",
+    "Relocated metadata-only bundles preserve records and credits; refreshed inventories cannot legitimize contradictory credits or invalid record content.",
+    "Legacy worlds and bundles with no mappings retain their original shape and do not gain provenance payloads."
+  ],
+  "native_boundary_checks": {
+    "canonical_record_bytes": 65536,
+    "record_plus_one_rejected": true,
+    "mapped_assets": 10000,
+    "mapped_assets_plus_one_rejected": true
+  },
+  "qualification_history": {
+    "initial_linux_cohort_passed": false,
+    "initial_failure": "Embedded NUL in metadata creator was accepted. Validation was corrected; the unchanged contract rejects it in both final cohorts."
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "780f66bf74bfd8700ce3d734aa76d5c0975794668f8bfa1adb1b3d98141acbc8",
+    "cmake/runtime.json.in": "09b4c01fb4d7d4bdf9b775732cfc36b1c1d46d5673a1fde1666b8265e4a476b4",
+    "include/poima/world.hpp": "7fef5da968c1b918eea1b8b88ffc41336b942ebd70b9b9d33cdbeadfaf33b2bf",
+    "src/core.cpp": "2aea9dcb2f0a4862348790658f560a9e05078dec5ecd210e52f3fc00706a84f1",
+    "src/world.cpp": "f294d60342a09d07e96a485e53dd11e3afdec62b649904c18abe9cece494dd05",
+    "src/asset_provenance.hpp": "546e8ab8a5dc0fc2f734252fe9bccf2dd88776787d95f9218bd96ed9619040cc",
+    "src/world_provenance.inc": "1f4f0d3664cc8cb07820ba2632ba98931831cc9b9ba8da2705b4119a06fb7c08",
+    "src/project.cpp": "b3c0f619f0ddc12c2316f418595b10a7cf81a7050847ec2893f9949d709c18fb",
+    "src/save_upgrade_document.cpp": "fc415ddbaf9b8002403fa817b39e51e9f213d794f6dfe743f28c383b30666e7e",
+    "tests/asset_provenance_native.cpp": "c73cc0c82fa675fe2411aa39bc5d39a9083f65925eb8e63096e127ca13316868",
+    "tests/save_upgrade_document_native.cpp": "e96716d2eefe85f98367414b8bcbd9cc8ca505733203cd411ce246d25d9a0e89",
+    "tests/world_session_native.cpp": "f1f6b28b7e0cc3095cbe0a727e11c013ee4161ec4a8c5ac528ac4063b17b4d58",
+    "tests/asset_provenance_contract.py": "db639c7d0c8341ce8f7d81c6eac0241b96449420791759c4d5099bdd93acd7aa",
+    "tests/asset_provenance_project_contract.py": "06ebe2343e1a4eebedbc76ad3e277d24e32ee2120ef142596e012b995162d913",
+    "tests/asset_references_contract.py": "8174905aab763495138c5709fd6858babf9db5f3fd2efd96ef2c01f73bdd0df8",
+    "tests/profiler_contract.py": "f157a6d5b79dce87295a624ed803c3b2830d841ce501e2e2bbea7d0713bcd240"
+  },
+  "raw_reports_sha256": {
+    "linux_authoring_restore": "589e301f0ce021719a4bcf3ad5f9e322808b11b93397171e8b904eb5d74170f4",
+    "linux_package_verification": "50e5cccb6db1040a69e1e7955323d2fab6cf287d2a135a185caaa1e79d94fedd",
+    "linux_native_regressions": "85a97a87242cb106e3573a96bf0210f60c5c59c243c6dd1c4520a3b1dd977650",
+    "linux_existing_ctest": "450ea47d91e37e3122e6ffea1ae73eb41ae15b49667dc4a7eb0cfd4f901a57cb",
+    "windows_authoring_restore": "f33028076ac821cba1a76b6110160081355e3d345b1765743e0da80f8db1c423",
+    "windows_package_verification": "ad0aa55116974b9ad1d4f980758c73e9070e57aaea4e345de8498bf0e9bbf08e",
+    "windows_native_regressions": "7c4a47e2d1f3c2c0f9dc6c1838cd61a8969465ceded9d6d5405596eca804d8ff",
+    "windows_authoring_core": "f569a7c0daa5810fdd71c23979f2fd7744356f0063e8b707463159fed50cf2e0",
+    "initial_linux_failed_authoring": "21180a7072c406a59dd1fc0893580ceb50bc18ecf8058406b3195c6ce8b47f71",
+    "source_freeze": "ab16f0e1f837129157ad8b5d29ecb1d79c73de1042b65c14bf0de974a18ebf5d"
+  },
+  "publisher_sha256": "2d6affadf5d6ccf8c8667e0bff5ac488cfbaeee69a0fcdf22e877c0c5d9f17e3",
+  "limitations": [
+    "Records are caller assertions, not verification of authorship, legal permission or license compatibility.",
+    "Input hashes and byte counts are declared metadata, not proof that original downloads were acquired or validated.",
+    "No online connector, catalog search, downloading or automatic attribution discovery was qualified.",
+    "Bundle fixtures use non-executable metadata-only runtimes; no player deployment, clean-machine or runtime asset-use claim.",
+    "No GPU, GUI, physical input, generic stereo audio import, performance or game-content quality qualification."
+  ]
+}

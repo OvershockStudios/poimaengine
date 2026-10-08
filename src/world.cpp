@@ -21,6 +21,7 @@
 #include "profiler_service.hpp"
 #include "development_service.hpp"
 #include "asset_store.hpp"
+#include "asset_provenance.hpp"
 #include "input_profile_store.hpp"
 #include "mutation_discovery.hpp"
 #include "asset_references.hpp"
@@ -485,6 +486,7 @@ Json describe() {
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
     ops.push_back(object_schema({{"op",{{"const","navigation.set"}}},{"asset",{{"anyOf",Json::array({asset_id,Json{{"type","null"}}})}}}},{"op","asset"}));
+    ops.push_back(object_schema({{"op",{{"const","asset.provenance.set"}}},{"asset",asset_id},{"records",{{"type","array"},{"maxItems",8},{"uniqueItems",true},{"items",asset_id}}}},{"op","asset","records"}));
     const auto reference_owner=object_schema({{"kind",{{"enum",{"entity","template","world"}}}},{"id",id}},{"kind","id"});
     auto reference_cursor_variant=[&](const char* kind,Json types,Json paths) {
         auto owner=reference_owner;owner["properties"]["kind"]={{"const",kind}};
@@ -507,7 +509,7 @@ Json describe() {
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 58}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 59}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -548,6 +550,7 @@ Json describe() {
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
     methods.update(navigation::schemas());
+    methods.update(provenance::schemas());
     result["navigation"]=navigation::capability();
     methods["world.history"]=object_schema(Json::object());
     for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
@@ -897,10 +900,12 @@ bool authored_reference_exists(void* context,PoimaEntityId entity) { return stat
 Json history_state(const Json& doc) {
     Json result={{"entities",doc.at("entities")},{"component_schemas",doc.value("component_schemas",Json::object())},{"templates",doc.value("templates",Json::object())},{"ui",doc.value("ui",Json::object())}};
     if(doc.contains("navigation"))result["navigation"]=doc.at("navigation");
+    if(doc.contains("asset_provenance"))result["asset_provenance"]=doc.at("asset_provenance");
     return result;
 }
 bool same_authored_state(const Json& a,const Json& b) {
     if(a.at("entities")!=b.at("entities"))return false;
+    if(a.contains("asset_provenance")!=b.contains("asset_provenance") || (a.contains("asset_provenance") && a.at("asset_provenance")!=b.at("asset_provenance")))return false;
     if(a.contains("navigation")!=b.contains("navigation") || (a.contains("navigation") && a.at("navigation")!=b.at("navigation")))return false;
     for(const auto* key:{"component_schemas","templates","ui"}) {
         const auto left=a.find(key),right=b.find(key);
@@ -926,18 +931,19 @@ bool template_component(const std::string& type) {
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
     const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
-    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation"},
+    if(user_interface)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids","navigation","asset_provenance"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
-    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation"},
+    else if(catalog)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","navigation","asset_provenance"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
-    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation"},
+    else if(custom)fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","navigation","asset_provenance"},
         {"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
-    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
+    else fields(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","navigation","asset_provenance"},{"format","version","world_id","revision","entities","retired_ids","receipts"});
     require(doc.at("format")=="poima.authored-world" && (doc.at("version")==1 || custom),"Unsupported world format/version.");
     if(doc.contains("navigation")) {
         const auto& binding=doc.at("navigation");fields(binding,{"asset"},{"asset"});
         require(binding.at("asset").is_string() && valid_asset_id(binding.at("asset")),"Navigation binding asset must be64 lowercase hexadecimal digits.");
     }
+    if(doc.contains("asset_provenance"))component_checked([&]{provenance::validate_bindings(doc.at("asset_provenance"));return true;});
     const auto schemas=authored_component_schemas(doc);
     if(user_interface) {
         component_checked([&]{return ui::parse_definition(doc.at("ui").dump());});
@@ -1041,7 +1047,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
 class World {
     profiling::Service profiler_;
     fs::path path_;
@@ -1267,9 +1273,12 @@ public:
         }
         auto document=source;document["receipts"]=Json::array();document["retired_ids"]=Json::array();if(document.contains("retired_component_schemas"))document["retired_component_schemas"]=Json::array();if(document.contains("retired_template_ids"))document["retired_template_ids"]=Json::array();if(document.contains("retired_ui_ids"))document["retired_ui_ids"]=Json::array();result.document=document.dump(2)+'\n';
         for(auto& [filename,file]:files) { (void)filename;result.assets.push_back(std::move(file)); }
+        freeze_provenance(source,result);
         auto identity=document;identity.erase("receipts");identity.erase("retired_ids");identity.erase("retired_component_schemas");identity.erase("retired_template_ids");identity.erase("retired_ui_ids");
         Json inventory=Json::array();for(const auto& f:result.assets)inventory.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});
-        const auto hash=content_hash(Json{{"format","poima.runtime-content"},{"version",1},{"document",identity},{"assets",inventory}}.dump());
+        Json content_identity={{"format","poima.runtime-content"},{"version",1},{"document",identity},{"assets",inventory}};
+        if(!result.provenance_records.empty()) {Json records=Json::array();for(const auto& f:result.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});content_identity["provenance_records"]=std::move(records);content_identity["asset_credits_sha256"]=content_hash(result.asset_credits);}
+        const auto hash=content_hash(content_identity.dump());
         return {std::move(definition),std::move(result),std::move(document),hash};
     }
     WorldPackageContent package_content() const { return freeze_content(doc_).package; }
@@ -1459,6 +1468,7 @@ public:
         // This authored metadata read deliberately bypasses cache pruning and
         // every package/snapshot resolver. Other dispatch behavior is unchanged.
         if(method=="world.asset.references")return asset_reference_dispatch(params);
+        if(method=="world.asset.provenance" || method.starts_with("asset.provenance."))return provenance_dispatch(method,params);
         if(method.starts_with("world.navigation."))return navigation_dispatch(method,params);
         prune_model_cache();
         if(method.starts_with("profiler.")) {
@@ -1537,7 +1547,7 @@ public:
             Json ops=Json::array();for(const auto& schema:schemas)ops.push_back({{"op","component.schema.set"},{"schema",Json::parse(components::schema_json(schema))}});
             return transact({{"request_id",params.at("request_id")},{"base_revision",params.at("base_revision")},{"ops",ops}},"component.schema.import");
         }
-        if(method=="world.dependencies") { fields(params,{});const auto content=package_content();Json assets=Json::array();for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};if(content.needs_navigation)result["needs_navigation"]=true;return result; }
+        if(method=="world.dependencies") { fields(params,{});const auto content=package_content();Json assets=Json::array();for(const auto& asset:content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});Json result={{"revision",content.revision},{"needs_audio",content.needs_audio},{"assets",assets}};if(content.needs_navigation)result["needs_navigation"]=true;if(!content.provenance_records.empty()) {Json records=Json::array();for(const auto& f:content.provenance_records)records.push_back({{"filename",f.filename},{"sha256",f.sha256},{"bytes",f.bytes}});result["provenance_records"]=std::move(records);result["asset_credits_sha256"]=content_hash(content.asset_credits);}return result; }
         if (method == "world.inspect") {
             fields(params, {});
             Json result={{"world_id", doc_.at("world_id")}, {"revision", doc_.at("revision")},
@@ -1600,6 +1610,7 @@ public:
     }
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
 #include "world_navigation.inc"
+#include "world_provenance.inc"
     static Json render_diagnostics(const RenderDiagnostics& d) {
         auto timing=[](const TimingSummary& t) { return Json{{"samples",t.samples},{"mean_ms",t.samples ? Json(t.total_ms/static_cast<double>(t.samples)) : Json(nullptr)},
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };
@@ -3040,6 +3051,9 @@ public:
         const bool navigation_changed=doc_.contains("navigation")!=target_state.contains("navigation") ||
             (doc_.contains("navigation") && target_state.contains("navigation") && doc_.at("navigation")!=target_state.at("navigation"));
         if(target_state.contains("navigation"))staged["navigation"]=target_state.at("navigation");else staged.erase("navigation");
+        const bool provenance_changed=doc_.contains("asset_provenance")!=target_state.contains("asset_provenance") ||
+            (doc_.contains("asset_provenance") && target_state.contains("asset_provenance") && doc_.at("asset_provenance")!=target_state.at("asset_provenance"));
+        if(target_state.contains("asset_provenance"))staged["asset_provenance"]=target_state.at("asset_provenance");else staged.erase("asset_provenance");
         if(staged.at("version")>=2) {
             std::set<std::string> retired;for(const auto& id:staged.at("retired_component_schemas"))retired.insert(id.get<std::string>());
             const auto& schemas=target_state.at("component_schemas");
@@ -3081,6 +3095,7 @@ public:
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
+        if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         auto& receipts=staged["receipts"];if(receipts.size()==128)receipts.erase(receipts.begin());receipts.push_back({{"params",params},{"result",result}});
         auto next_undo=undo_,next_redo=redo_;
         if(undo) { next_redo.push_back(next_undo.back());next_undo.pop_back(); }
@@ -3107,10 +3122,21 @@ public:
         require(ops.is_array() && !ops.empty() && ops.size() <= 256, "Transaction needs 1..256 operations.");
         Json staged = doc_;
         auto& entities = staged["entities"];
-        std::set<std::string> changed,changed_templates,changed_ui;bool navigation_touched=false;
+        std::set<std::string> changed,changed_templates,changed_ui;bool navigation_touched=false;std::set<std::string> provenance_touched;
         for (const auto& op : ops) {
             require(op.is_object() && op.contains("op") && op.at("op").is_string(),"Operation needs op.");
             const auto name=op.at("op").get<std::string>();
+            if(name=="asset.provenance.set") {
+                fields(op,{"op","asset","records"},{"op","asset","records"});
+                require(op.at("asset").is_string() && valid_asset_id(op.at("asset")),"Provenance asset must be64 lowercase hexadecimal digits.");
+                auto records=op.at("records");require(records.is_array() && records.size()<=8,"Provenance records must contain0..8 unique hashes.");
+                for(const auto& record:records)require(record.is_string() && valid_asset_id(record),"Provenance record must be64 lowercase hexadecimal digits.");
+                std::sort(records.begin(),records.end());require(std::adjacent_find(records.begin(),records.end())==records.end(),"Duplicate provenance record.");
+                const auto asset=op.at("asset").get<std::string>();
+                if(records.empty()) {if(staged.contains("asset_provenance")) {staged["asset_provenance"].erase(asset);if(staged["asset_provenance"].empty())staged.erase("asset_provenance");}}
+                else {if(!staged.contains("asset_provenance"))staged["asset_provenance"]=Json::object();staged["asset_provenance"][asset]=std::move(records);}
+                provenance_touched.insert(asset);continue;
+            }
             if(name=="navigation.set") {
                 fields(op,{"op","asset"},{"op","asset"});
                 require(op.at("asset").is_null() || (op.at("asset").is_string() && valid_asset_id(op.at("asset"))),"Navigation asset must be null or64 lowercase hexadecimal digits.");
@@ -3209,6 +3235,10 @@ public:
         validate(staged);
         validate_animation_document(staged);
         if(navigation_touched && staged.contains("navigation"))(void)navigation_binding(staged);
+        for(const auto& asset:provenance_touched)if(staged.contains("asset_provenance") && staged.at("asset_provenance").contains(asset))
+            check_provenance_binding(asset,staged.at("asset_provenance").at(asset),true);
+        const bool provenance_changed=doc_.contains("asset_provenance")!=staged.contains("asset_provenance") ||
+            (doc_.contains("asset_provenance") && staged.contains("asset_provenance") && doc_.at("asset_provenance")!=staged.at("asset_provenance"));
         const bool navigation_changed=doc_.contains("navigation")!=staged.contains("navigation") ||
             (doc_.contains("navigation") && staged.contains("navigation") && doc_.at("navigation")!=staged.at("navigation"));
         Json result = {{"revision", staged["revision"]}, {"committed", !params["preview"].get<bool>()},
@@ -3216,6 +3246,7 @@ public:
         if(!changed_templates.empty())result["changed_template_ids"]=changed_templates;
         if(!changed_ui.empty())result["changed_ui_ids"]=changed_ui;
         if(navigation_changed)result["changed_world_fields"]=Json::array({"navigation"});
+        if(provenance_changed) {if(!result.contains("changed_world_fields"))result["changed_world_fields"]=Json::array();result["changed_world_fields"].push_back("asset_provenance");}
         if (!params["preview"].get<bool>()) {
             auto next_undo=undo_;History next_redo;
             auto edit=std::make_shared<Edit>(Edit{history_state(doc_),history_state(staged),0,params.at("request_id").get<std::string>()});
