@@ -46,8 +46,12 @@ evidence. Any narrower release scope needs an explicit decision and a visible
 later milestone for the deferred requirements. A missing SDK or an unfinished
 system cannot be silently counted as complete.
 
-Required systems may be packaged separately. Their discovery, authoring,
-runtime integration and qualification remain required. Optional hosted
+Situational systems may be installed as project packages rather than included
+in every engine/player. Their discovery, authoring, runtime/save integration
+and qualification remain required when enabled. The
+[FPS capability matrix](FPS_1_0.md) assigns engine and package responsibilities.
+Core jobs, state ownership and resource/lifecycle services remain shared
+foundations. Optional hosted
 services and community adoption are not release gates.
 
 ## Segmented implementation
@@ -70,7 +74,23 @@ Current foundations include three recorded agent game exercises, compiled
 gameplay, saves, navigation, animation transitions, a renderer and desktop
 editor. Their combined alpha workflow still needs qualification.
 
-### 2. Production character and content pipeline
+### 2. Parallel runtime foundation
+
+Make dependency-aware multithreaded jobs a core service with bounded workers,
+owned inputs/results, cancellation, resource retirement and profiler visibility.
+Integrate actual CPU work before claiming a parallel runtime; compare one and
+multiple workers for correctness, throughput and frame pacing. Authoritative
+edits and result commitment retain explicit ordering even when preparation is
+parallel. Compiled gameplay uses the supported lifetime/data boundaries.
+
+**Dependencies:** state/resource ownership, fixed-tick contracts and observation.
+**Exit:** representative engine workloads use the shared scheduler, preserve
+declared state/results across worker counts, retire safely on reload/shutdown
+and show measured scaling without oversubscription. This begins during the
+first usable workflow after the current character-import slice, ahead of new
+large graphics, AI and simulation systems.
+
+### 3. Production character and content pipeline
 
 Extend standard-format intake with bone mapping, retargeting diagnostics and
 reusable animation assets. Complete code-first and hierarchical state-machine
@@ -98,7 +118,7 @@ closure. **Exit:** an imported animated character game and a second project
 reuse the pipeline; unsupported rigs/materials fail with useful reports, and
 retained games, packages and supported saves continue to work.
 
-### 3. Scalable rendering and atmosphere
+### 4. Scalable rendering and atmosphere
 
 Develop one renderer with quality tiers: PBR/material layers, transparent
 materials, scalable lights and shadows, GPU culling/instancing, LOD and content
@@ -122,7 +142,7 @@ scene runs within declared CPU/GPU/VRAM budgets across supported tiers, with
 measured quality comparisons. Frame-generation-off rendering and latency remain
 separate acceptance measurements.
 
-### 4. Reactive detail, persistent effects and acoustics
+### 5. Reactive detail, persistent effects and acoustics
 
 Implement breakable props, doors and glass, plus persistent scorch, blood,
 wetness, snow tracks, residue and bullet marks. Saved surface state must stream
@@ -147,7 +167,7 @@ navigation coherently; persistent marks survive saves; audio and VFX behavior
 have semantic, visual/listening and performance evidence. Full building and
 terrain destruction are outside the current destruction baseline.
 
-### 5. Connected water, weather and seasons
+### 6. Connected water, weather and seasons
 
 Combine reactive oceans, lakes and rivers with shore/beach response, buoyancy,
 wakes and underwater behavior. Support blocked/redirected flow, connected
@@ -164,7 +184,7 @@ and audio. **Exit:** a coastal/river scene plus independent conservation tests
 verify overflow, redirected flow, containers, save/load and time acceleration.
 Visible and queried water surfaces agree within declared tolerances.
 
-### 6. Deterministic living worlds
+### 7. Deterministic living worlds
 
 Provide authored utility/HTN/behavior-tree/state-machine decisions, authored
 dialogue, persistent identity, memory, relationships and rivalry. Extend daily
@@ -181,7 +201,7 @@ schemas and character/navigation systems. **Exit:** a living settlement passes
 long-run replay, inventory/resource conservation, time acceleration, saves and
 active/offscreen promotion checks under a declared population budget.
 
-### 7. Complete authoring, player UX and creative packages
+### 8. Complete authoring, player UX and creative packages
 
 Finish agent access to hierarchy, components, animation, VFX, UI and world
 systems, with focused queries, diagnostics, observations and low-volume results.
@@ -203,7 +223,7 @@ required workflows; physical keyboard/mouse/controller, translated UI and
 accessibility checks pass. These improvements start earlier and are qualified
 together here.
 
-### 8. Complete Windows single-player FPS workflow
+### 9. Complete Windows single-player FPS workflow
 
 Build and export a complete FPS with imported animated characters and weapons,
 recoil/ADS, motion-matched movement, separate-FOV viewmodels, hit reactions and
@@ -254,8 +274,8 @@ matrix. Each included system must work in the declared end-to-end games, be
 authorable through the shared engine, have meaningful diagnostics/observation,
 and support its declared persistence and platform behavior.
 
-Large missing systems remain alpha work. Required behavior cannot become an
-optional package merely to pass the beta gate. The supported contracts,
+Large missing systems remain alpha work. A required capability cannot be
+counted complete merely because its package is optional to install. The supported contracts,
 save/content evolution and migration policy must be reviewed before freezing
 the beta boundary.
 
