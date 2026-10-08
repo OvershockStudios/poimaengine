@@ -79,6 +79,8 @@ public sealed class CounterGame : Game<CounterState>
 | `SetAnimation(entity, clip, time, speed, loop, playing, blendTicks)` | Queue complete native playback state and an optional fixed-tick crossfade for this tick. |
 | `SetAnimation(entity, clip, transitionMode, time, speed, loop, playing, blendTicks)` | Opt-in versioned command selecting `Crossfade` or `Inertial`; requires `IInertialAnimationGame`. |
 | `GetAnimationExtended(entity)` | Opt-in copied playback state with nullable active mode/progress; requires `IInertialAnimationGame`. |
+| `GetAnimationLayer(entity, slot)` | Copy one configured slot, including playback, immutable mode/mask count and weight ramp; requires `IMaskedAnimationGame`. |
+| `SetAnimationLayer(entity, slot, clip, weight, ...)` | Queue complete playback and target weight for a configured slot; requires `IMaskedAnimationGame`. |
 
 Controller look is applied before C# runs, so a use action in the same tick sees the new camera direction. Gameplay then runs before physics advances. Queued motions are validated together before application, with at most 128 per tick. Duplicate targets, invalid bodies and exceeding native speed/duration limits fail the batch. Explicit caller motion and gameplay may not target the same body on the first tick of a batch. Movement is held for a step/replay segment; look, jump and use apply only on its first tick. Read-only entity queries during gameplay see the current state, not the eventual result of queued motion.
 
@@ -125,13 +127,54 @@ Replace the example IDs with a controller and rig wrapper in your world, and sel
 
 `GetAnimationExtended(entity)` returns nullable `AnimationStateExtended`. Its `State` is the same legacy playback/transition projection returned by `GetAnimation`; `Mode` and `Progress` are null when no transition is active. For an active transition, `Progress` is elapsed ticks divided by duration, rather than a clip's contribution to the pose. An existing non-rig entity returns null; an unknown entity is an error. These reads retain the committed-state timing described below.
 
-Calls made during `Tick` queue commands. Repeated queries in that callback observe the current native state, not queued writes. Commands apply after the callback and before the physics update, then animation advances with the simulation tick. Explicit caller commands from `runtime.step` have already applied before gameplay runs. If caller and gameplay target the same rig on that first tick, the entire batch fails instead of choosing a winner. Duplicate gameplay targets also fail. Caller and gameplay together may submit at most 64 animation commands on the first tick; subsequent ticks allow at most 64 gameplay commands each.
+Calls made during `Tick` queue commands. Repeated queries in that callback observe the current native state, not queued writes. Commands apply after the callback and before the physics update, then animation advances with the simulation tick. Explicit caller commands from `runtime.step` have already applied before gameplay runs. If caller and gameplay target the same base clock or the same configured layer on that first tick, the entire batch fails instead of choosing a winner. Duplicate gameplay targets also fail. Base and distinct layer slots on the same rig can coexist. Caller and gameplay together may submit at most 64 animation commands on the first tick; subsequent ticks allow at most 64 gameplay commands each.
 
 Invalid commands, failed curve samples and managed exceptions restore animation clocks, interrupted-pose buffers, inertial corrections/output history, local poses, physics, sounds and native-owned gameplay fields to the start of the batch. This covers a failure several ticks into one step request. It cannot undo external side effects made by managed code. Compatible CoreCLR code reload leaves the native animation clocks, history and in-progress transitions intact.
 
-The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
+The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-Load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; this guarantee does not cover arbitrary assembly/module initialization or native-library loader side effects. Callback entry also revalidates the required prefix before reading the extension. Requirements are negotiated separately from the game-state schema and save fingerprint. The supported required profiles are the 176-byte baseline or the explicitly named 192-byte animation extension; an arbitrary larger required prefix is not supported. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and [0.0.56 qualification record](evidence/m2-managed-inertial.json) for executed cohorts and remaining limits. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are exactly 176 baseline, 192 named inertial, or 208 named masked layers plus inertial. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Graph APIs, IK, retargeting and root motion remain unfinished.
+
+## Control masked layers from C#
+
+Version 0.0.58 adds `IMaskedAnimationGame`, which inherits `IInertialAnimationGame`. The marker requests `animation_layers_v1` together with `animation_inertial_v1` and a 208-byte services prefix before construction. Inertial-only games retain 192 bytes; unmarked games retain 176. The original getters and both `SetAnimation` overloads continue to select the base clock.
+
+```csharp
+using Poima;
+
+public struct CharacterState { public EntityId Player, Rig; }
+
+[GameModule("my-game.masked-animation")]
+public sealed class CharacterGame : Game<CharacterState>, IMaskedAnimationGame
+{
+    public override void Initialize(ref CharacterState state)
+    {
+        state.Player = new EntityId(0, 100);
+        state.Rig = new EntityId(0, 1000);
+    }
+
+    public override void Tick(ref CharacterState state, GameContext context)
+    {
+        AnimationLayerState? layer = context.GetAnimationLayer(state.Rig, 1);
+        if (layer.HasValue && context.Pressed(state.Player, GameAction.Use))
+            context.SetAnimationLayer(state.Rig, 1, clip: 2, weight: 0.8,
+                transitionMode: AnimationTransitionMode.Inertial,
+                blendTicks: 12, weightBlendTicks: 18);
+    }
+}
+```
+
+Replace the IDs with your controller and rig wrapper, author `AnimationRig.layers` slot 1, and select a valid clip index. Slots are 1–4. A valid slot missing from an existing entity, including an existing non-rig entity, returns null. Dead/unknown entities and invalid slots fail; setters also reject an unconfigured slot.
+
+`AnimationLayerState` exposes `Slot`, immutable `Mode` and `MaskNodes`, `Playback.State`, nullable active clip `Playback.Mode`/`Progress`, effective `Weight` and `TargetWeight`, and optional `WeightTransition` with `StartTick`, `DurationTicks`, `ElapsedTicks`, `Source` and `Target`. The getter validates the known native reply before exposing these values. It does not return full masks, references or pose history.
+
+`SetAnimationLayer(entity, slot, clip, weight, transitionMode, time, speed, loop, playing, blendTicks, weightBlendTicks)` stages a complete playback and target-weight replacement during Tick. Defaults are crossfade mode, time 0, speed 1, loop/playing true and both durations zero. Null clip selects rest. Weight is finite 0–1; both durations are 0–3,600 ticks. Frozen masks, layer mode and additive references remain authored data. Writes share the committed-read timing, 64-command budget, target conflicts and whole-batch rollback described above. A weight ramp preserves its effective value on interruption, without guaranteeing continuous weight velocity.
+
+Compatible CoreCLR reload retains native layer clocks, unweighted history and weight ramps; a failed reload retains the previous usable module. Requirements do not alter the state fingerprint, and durable restores still bind the actual saved gameplay artifact and authored content. Native AOT libraries remain process-pinned. Arbitrary mixed old bridge/new SDK cohorts are unsupported: an old bridge recognizing only the inherited inertial marker does not establish a layer pre-construction guard.
+
+The [0.0.58 compiled-layer record](evidence/m2-managed-animation-layers.json) separates actual CoreCLR and Native AOT runtime checks from independent mock ABI transfer/guard checks. Each runtime route passes eight groups on Windows and Linux, including fresh complete-payload restore and immediate compiled re-interruption. These fixtures add no GUI, GPU, physical-input, production-deployment or animation-throughput qualification.
+
+`tests/runtime_gameplay_layers.py` reproduces the compiled-layer fixture with `--binary`, `--dotnet`, `--hostfxr`, `--bridge` and a new `--output`. It also requires a separately preserved pre-layer `--legacy-binary` and matched `--legacy-bridge` closure for rejection checks. Use `--windows-interop` when launching the Windows engine from WSL. The runner builds its fixture modules; retain historical artifacts before rebuilding the SDK/bridge.
 
 ## Load, inspect and edit
 
@@ -193,7 +236,7 @@ For the animation extension, run `scripts/verify_gameplay_animation.py` with the
 | --- | --- |
 | ![Closed door](evidence/m2-csharp-door-closed.png) | ![Open door](evidence/m2-csharp-door-open.png) |
 
-These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. Generated scalar component bindings and template-based root-prop spawning/removal are implemented. Arbitrary component membership changes, general events/jobs, removal of originally authored entities, animation graphs/layers, complete audio/environmental controls, VFX, UI, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
+These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. Generated scalar component bindings and template-based root-prop spawning/removal are implemented. Arbitrary component membership changes, general events/jobs, removal of originally authored entities, animation graphs, complete audio/environmental controls, VFX, UI, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
 
 Sound callbacks are retained in the service-table prefix. Animation, save, component, lifecycle and UI control callbacks extend the table to ABI version 7 (176 bytes); the outer call remains version 1 (80 bytes). Changing the service compatibility epoch requires coordinated artifacts; compatible tail additions do not change existing callback layouts or meanings. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
 

@@ -43,6 +43,21 @@ typedef struct PoimaGameAnimationStateV1 {
     uint32_t version,bytes;PoimaGameAnimationState state;
     uint32_t transition_mode,reserved;
 } PoimaGameAnimationStateV1; // Mode is meaningful only when state.transition_present is 1.
+// Opt-in animation_layers_v1 requires animation_inertial_v1. Slots are frozen
+// authored 1..4. Layer mode is override=0/additive=1; reserved must be zero.
+typedef struct PoimaGameAnimationLayerCommandV1 {
+    uint32_t version,bytes;PoimaGameAnimationCommand command;
+    uint32_t transition_mode,slot;double weight;
+    uint32_t weight_blend_ticks,reserved;
+} PoimaGameAnimationLayerCommandV1;
+typedef struct PoimaGameAnimationLayerStateV1 {
+    uint32_t version,bytes;PoimaGameAnimationState state;
+    uint32_t transition_mode,slot,layer_mode,mask_nodes;
+    double weight,target_weight;uint64_t weight_start_tick;
+    uint32_t weight_duration_ticks,weight_elapsed_ticks;
+    double weight_source,weight_target;
+    uint32_t weight_transition_present,reserved;
+} PoimaGameAnimationLayerStateV1;
 // Save control plane. Numeric kind/state/rejection values match gameplay_save.hpp.
 // Slots are borrowed bounded ASCII bytes (no required trailing NUL). Ticket
 // epoch words are opaque bit patterns; sequence is positive and JSON-safe.
@@ -116,6 +131,14 @@ typedef struct PoimaGameAnimationServicesV1 {
     int32_t (POIMA_CALL *animation_get_extended)(void*,const PoimaEntityId*,PoimaGameAnimationStateV1*,PoimaGameError*);
     int32_t (POIMA_CALL *animation_set_extended)(void*,const PoimaGameAnimationCommandV1*,PoimaGameError*);
 } PoimaGameAnimationServicesV1;
+// A real 208-byte allocation. Older negotiated views remain exactly 176/192.
+typedef struct PoimaGameAnimationLayerServicesV1 {
+    PoimaGameAnimationServicesV1 animation;
+    // Caller initializes version/bytes/reserved; success writes exactly the
+    // known 200-byte prefix. Valid missing slots return state.present=0.
+    int32_t (POIMA_CALL *animation_layer_get)(void*,const PoimaEntityId*,uint32_t,PoimaGameAnimationLayerStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *animation_layer_set)(void*,const PoimaGameAnimationLayerCommandV1*,PoimaGameError*);
+} PoimaGameAnimationLayerServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -140,6 +163,13 @@ static_assert(sizeof(PoimaGameAnimationState)==120 && offsetof(PoimaGameAnimatio
 static_assert(sizeof(PoimaGameAnimationCommandV1)==64 && offsetof(PoimaGameAnimationCommandV1,command)==8 && offsetof(PoimaGameAnimationCommandV1,transition_mode)==56 && offsetof(PoimaGameAnimationCommandV1,reserved)==60);
 static_assert(sizeof(PoimaGameAnimationStateV1)==136 && offsetof(PoimaGameAnimationStateV1,state)==8 && offsetof(PoimaGameAnimationStateV1,transition_mode)==128 && offsetof(PoimaGameAnimationStateV1,reserved)==132);
 static_assert(sizeof(PoimaGameAnimationServicesV1)==192 && offsetof(PoimaGameAnimationServicesV1,baseline)==0 && offsetof(PoimaGameAnimationServicesV1,animation_get_extended)==176 && offsetof(PoimaGameAnimationServicesV1,animation_set_extended)==184);
+static_assert(sizeof(PoimaGameAnimationLayerCommandV1)==80 && offsetof(PoimaGameAnimationLayerCommandV1,command)==8 && offsetof(PoimaGameAnimationLayerCommandV1,transition_mode)==56 && offsetof(PoimaGameAnimationLayerCommandV1,slot)==60);
+static_assert(offsetof(PoimaGameAnimationLayerCommandV1,weight)==64 && offsetof(PoimaGameAnimationLayerCommandV1,weight_blend_ticks)==72 && offsetof(PoimaGameAnimationLayerCommandV1,reserved)==76);
+static_assert(sizeof(PoimaGameAnimationLayerStateV1)==200 && offsetof(PoimaGameAnimationLayerStateV1,state)==8 && offsetof(PoimaGameAnimationLayerStateV1,transition_mode)==128 && offsetof(PoimaGameAnimationLayerStateV1,slot)==132);
+static_assert(offsetof(PoimaGameAnimationLayerStateV1,layer_mode)==136 && offsetof(PoimaGameAnimationLayerStateV1,mask_nodes)==140 && offsetof(PoimaGameAnimationLayerStateV1,weight)==144 && offsetof(PoimaGameAnimationLayerStateV1,target_weight)==152);
+static_assert(offsetof(PoimaGameAnimationLayerStateV1,weight_start_tick)==160 && offsetof(PoimaGameAnimationLayerStateV1,weight_duration_ticks)==168 && offsetof(PoimaGameAnimationLayerStateV1,weight_elapsed_ticks)==172);
+static_assert(offsetof(PoimaGameAnimationLayerStateV1,weight_source)==176 && offsetof(PoimaGameAnimationLayerStateV1,weight_target)==184 && offsetof(PoimaGameAnimationLayerStateV1,weight_transition_present)==192 && offsetof(PoimaGameAnimationLayerStateV1,reserved)==196);
+static_assert(sizeof(PoimaGameAnimationLayerServicesV1)==208 && offsetof(PoimaGameAnimationLayerServicesV1,animation)==0 && offsetof(PoimaGameAnimationLayerServicesV1,animation_layer_get)==192 && offsetof(PoimaGameAnimationLayerServicesV1,animation_layer_set)==200);
 static_assert(offsetof(PoimaGameServices,save_info)==64 && offsetof(PoimaGameServices,save_request)==72 && offsetof(PoimaGameServices,save_result)==80);
 static_assert(sizeof(PoimaGameComponentType)==56 && offsetof(PoimaGameComponentType,fingerprint)==16 && offsetof(PoimaGameComponentType,bytes)==48);
 static_assert(offsetof(PoimaGameServices,component_query)==88 && offsetof(PoimaGameServices,component_get)==96 && offsetof(PoimaGameServices,component_set)==104 && offsetof(PoimaGameServices,entity_alive)==112);

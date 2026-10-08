@@ -201,6 +201,25 @@ class GameplayProjects(unittest.TestCase):
                 self.descriptor.write_text(json.dumps(candidate)); self.inspect(False)
         self.descriptor.write_text(json.dumps(good)); self.inspect()
 
+    def test_named_layer_extension_requires_inertia_and_matching_prefix(self):
+        good = self.artifact_fixture()
+        features = ['baseline_v7', 'animation_inertial_v1', 'animation_layers_v1']
+        good.update(version=2, call_bytes=80, minimum_services_bytes=208,
+                    required_features=features)
+        self.descriptor.write_text(json.dumps(good))
+        observed = self.inspect()['gameplay']['requirements']
+        self.assertEqual(observed['minimum_services_bytes'], 208)
+        self.assertEqual(observed['required_features'], features)
+        invalid = [(extent, features) for extent in [176,192,200,207,209,240]]
+        invalid += [(208, ['baseline_v7']), (208, ['baseline_v7', 'animation_layers_v1']),
+                    (208, ['baseline_v7', 'animation_inertial_v1']), (208, features + ['animation_layers_v1'])]
+        for extent, declaration in invalid:
+            with self.subTest(extent=extent, features=declaration):
+                candidate = copy.deepcopy(good)
+                candidate.update(minimum_services_bytes=extent, required_features=declaration)
+                self.descriptor.write_text(json.dumps(candidate)); self.inspect(False)
+        self.descriptor.write_text(json.dumps(good)); self.inspect()
+
     def persistent_fixture(self):
         descriptor = self.artifact_fixture()
         descriptor.update(version=2, call_bytes=80, minimum_services_bytes=176,

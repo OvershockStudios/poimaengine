@@ -45,6 +45,41 @@ internal static unsafe class AnimationServiceAbi
 }
 public readonly unsafe ref partial struct GameContext
 {
+    // Strict playback validation for the new layer reply. Existing legacy getters
+    // retain their established decoding behavior and signatures.
+    private static void ValidateAnimationPlayback(EntityId entity,in NativeAnimationState state,uint mode)
+    {
+        var t=state.Transition;
+        bool emptyTransition=t.StartTick==0 && t.DurationTicks==0 && t.ElapsedTicks==0 && t.Weight==0 &&
+            t.SourceClip==-1 && t.SourceTime==0 && t.SourceSpeed==0 && t.SourceFrozen==0 && t.SourceLoop==0 && t.SourcePlaying==0;
+        if(state.Entity!=entity || state.Reserved!=0 || state.Present>1 || state.Loop>1 || state.Playing>1 || state.TransitionPresent>1 || mode>1 ||
+            state.Clip< -1 || !double.IsFinite(state.Time) || state.Time<0 || !double.IsFinite(state.Speed) || state.Speed<0 || state.Speed>8 ||
+            !double.IsFinite(state.Duration) || state.Duration<0)
+            throw new InvalidOperationException("Invalid versioned native animation layer playback.");
+        if(state.Present==0)
+        {
+            if(state.Clip!=-1 || state.Time!=0 || state.Speed!=0 || state.Duration!=0 || state.Loop!=0 || state.Playing!=0 || state.TransitionPresent!=0 || mode!=0 || !emptyTransition)
+                throw new InvalidOperationException("Missing animation layer has noncanonical playback.");
+            return;
+        }
+        if((state.Clip==-1 && (state.Time!=0 || state.Duration!=0 || state.Playing!=0)) ||
+            state.Time>state.Duration || (state.Duration==0 && state.Playing!=0) ||
+            (state.Loop!=0 && state.Duration>0 && state.Time>=state.Duration) ||
+            (state.Loop==0 && state.Time==state.Duration && state.Playing!=0))
+            throw new InvalidOperationException("Invalid versioned native animation layer clock.");
+        if(state.TransitionPresent==0)
+        {
+            if(mode!=0 || !emptyTransition)throw new InvalidOperationException("Inactive animation layer transition has noncanonical playback.");
+            return;
+        }
+        if(t.DurationTicks is <1 or >3600 || t.ElapsedTicks>=t.DurationTicks || t.StartTick>ulong.MaxValue-t.ElapsedTicks ||
+            !double.IsFinite(t.Weight) || t.Weight!=(double)t.ElapsedTicks/t.DurationTicks || t.SourceFrozen>1 || t.SourceLoop>1 || t.SourcePlaying>1 ||
+            t.SourceClip< -1 || !double.IsFinite(t.SourceTime) || t.SourceTime<0 || !double.IsFinite(t.SourceSpeed) || t.SourceSpeed<0 || t.SourceSpeed>8 ||
+            (mode==1 && t.SourceFrozen!=1) ||
+            (t.SourceFrozen!=0 && (t.SourceClip!=-1 || t.SourceTime!=0 || t.SourceSpeed!=0 || t.SourceLoop!=0 || t.SourcePlaying!=0)) ||
+            (t.SourceFrozen==0 && t.SourceClip==-1 && (t.SourceTime!=0 || t.SourcePlaying!=0)))
+            throw new InvalidOperationException("Invalid versioned native animation layer clip transition.");
+    }
     /// <summary>Reads committed animation state; writes staged by this callback are not visible yet.</summary>
     public AnimationStateExtended? GetAnimationExtended(EntityId entity)
     {

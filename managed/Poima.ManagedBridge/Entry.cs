@@ -47,7 +47,7 @@ public static unsafe class Entry
         try
         {
             if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=176 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
-                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !AnimationServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !AnimationServiceAbi.LayoutValid() || !AnimationLayerServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -108,7 +108,8 @@ public static unsafe class Entry
             Type type=assembly.GetType(typeName,true)!;
             if(type.IsAbstract || !typeof(IGame).IsAssignableFrom(type))throw new ArgumentException("Type must derive from Game<TState>.");
             bool inertial=typeof(IInertialAnimationGame).IsAssignableFrom(type);
-            var required=GameplayRequirements.Features(inertial);
+            bool masked=typeof(IMaskedAnimationGame).IsAssignableFrom(type);
+            var required=GameplayRequirements.Features(inertial,masked);
             GameplayRequirements.ValidateHost(request.RootElement,required);
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)
@@ -127,7 +128,7 @@ public static unsafe class Entry
             }
             var persistent=PersistenceMetadata.Read(state);
             JsonElement? requirements=null;
-            if(inertial) { using var declaration=JsonDocument.Parse(GameplayRequirements.Inertial);requirements=declaration.RootElement.Clone(); }
+            if(required!=GameplayRequiredFeatures.None) { using var declaration=JsonDocument.Parse(GameplayRequirements.Json(required));requirements=declaration.RootElement.Clone(); }
             ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent,requirements);
             string encoded=JsonSerializer.Serialize(manifest); // Stable bridge DTOs only; don't cache game Types in serialization.
             Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes,required));published=true;

@@ -1,0 +1,1313 @@
+{
+  "checkpoint": "0.0.58 development",
+  "date": "2026-10-08",
+  "passed": true,
+  "qualification_state": "All selected cohorts completed successfully.",
+  "source_sha256": {
+    "CMakeLists.txt": "7ee05ff806fc74e968469abb190aa5a956a8194caf1905883665def4a1bda1de",
+    "include/poima/gameplay_abi.h": "3c90ecd011c8700a877a8b9fa5bf604d42c9f49bb6280edc555e8d93c5803c7b",
+    "include/poima/gameplay_compatibility.hpp": "ce1426269daf65d096430954de1ca4a2227cb84af3160ecdcddbfd231847b76f",
+    "include/poima/runtime.hpp": "cca40d38c5985df11486d4ff3ee45dca05275a2f382acde0459a05b17044b135",
+    "include/poima/runtime_animation.hpp": "5b67ad1083f91887552c733de00171bfbeeaa401c9c41f035551e8986813cc9e",
+    "managed/Poima.Gameplay/Animation.cs": "665a8eec9429a120034b0456971e61bfbabb65819a699980f6dc4c0a35ff2455",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "cc096410ad4255e8e84f3e5b148022acaf3171794308d90b26234b04b7e04134",
+    "managed/Poima.ManagedBridge/Entry.cs": "a15fd34fcb2794228eae03d446bec2ff21afcc02416ab51c0ca2d03a1063a347",
+    "managed/Poima.NativeGame.Generator/Program.cs": "3f41855bda56635bd825f1bbde7d8dd41fa3f1befb5c7070992b36a173ff8958",
+    "managed/Poima.NativeGame/Entry.cs": "ba8a9039e702697dd60771eaaded5793fd8a86d120c7627d4a7644ead75fb646",
+    "scripts/publish_native_gameplay.py": "113241185d47ea30594e082290d2956998323c55df2a38281b6532a6a702620b",
+    "src/gameplay.cpp": "56010179f90acefdfe0df673022fd7d3754c13e3de058b3285c6c0144bb34b90",
+    "src/runtime.cpp": "dd67d6309659adfd9a937c847b63753460a8748ea3c4445ab666c5d04396ceec",
+    "src/runtime_animation.cpp": "3b75e26f56e44e81b2fec22c131efd5820811cc5f8d6e01709dc4e4856f55066",
+    "src/runtime_disabled.cpp": "d8bd65a01c7c0882bdff229731fd832001ae8625ef2ae0e69140f73230d3cf40",
+    "src/runtime_ui.inc": "4a2e491db5e0f03edec1dfdfcd6458420fa559975020d0611cb5edf00c7c6fd6",
+    "src/world.cpp": "a19163f6b4584c071fbcca22a59a177ad387d63981d0f2eacf8ce8b47ab47d0e",
+    "tests/gameplay_compatibility_native.cpp": "1132d45abfcae874636ee3e9ad6513e30b323c4a54cec407cad33d949565bef8",
+    "tests/gameplay_service_contract_native.cpp": "488650450d63705ab3184bbd7a44c5aca4c0cae248f518ccf565bf664221e7d3",
+    "tests/managed_service_abi/Program.cs": "7d0cbaa805976d32f8e75f81b64a5c85db2d0ad9a7e8817d21df0f6b7df122da",
+    "tests/native_gameplay_publish_requirements.py": "37bf7d43557b379e1e47790932232aeec1f742001624fecb15d884a1e45bc9c5",
+    "tests/project_gameplay_contract.py": "97d89c9eafb428f2b7e9c48e0156e499d06026c415d9375d45c2b041d7ccd229",
+    "managed/Poima.Gameplay/AnimationLayers.cs": "bdd524ed82276004a5c199ba973413ec76a5f49e75589f54fcef4c8cc3422e95",
+    "tests/managed_service_abi/AnimationLayerExtension.cs": "f052a31d1723134cfaec9f5630cefeb61b5c69a61e8b1248d7e198c2ae4190ad",
+    "tests/fixtures/gameplay_layers/LayerGame.cs": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+    "tests/fixtures/gameplay_layers/Poima.LayerGameplay.csproj": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+    "tests/runtime_gameplay_layers.py": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+    "tests/runtime_gameplay_layers_native.py": "0964ea2e966a2e844fe60a3de6f44a1af6bed67940e0422ace00296ebbd47e4e"
+  },
+  "source_closure": {
+    "files": 28,
+    "all_match": true
+  },
+  "engine_sha256": {
+    "linux": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+    "windows": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+    "authoring_only_linux": "6c2c9b70cfda440be35ea369ea15e0b8b6526edec942096caff28392a2111df9"
+  },
+  "cohorts": {
+    "managed_abi_linux": {
+      "status": "passed",
+      "groups": 59,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 3/64 rejected before Tick",
+        "services 3/88 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 4/87 rejected before Tick",
+        "services 4/88 rejected before Tick",
+        "services 4/120 rejected before Tick",
+        "services 5/88 rejected before Tick",
+        "services 5/119 rejected before Tick",
+        "services 5/120 rejected before Tick",
+        "services 5/121 rejected before Tick",
+        "services 6/120 rejected before Tick",
+        "services 6/136 rejected before Tick",
+        "services 6/143 rejected before Tick",
+        "services 6/144 rejected before Tick",
+        "services 6/145 rejected before Tick",
+        "services 7/144 rejected before Tick",
+        "services 7/175 rejected before Tick",
+        "services 8/176 rejected before Tick",
+        "services 6/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "null entity callback rejected",
+        "null ray callback rejected",
+        "null motion callback rejected",
+        "null save info rejected",
+        "null save request rejected",
+        "null save result rejected",
+        "null component query rejected",
+        "null component get rejected",
+        "null component set rejected",
+        "null entity alive rejected",
+        "null spawn rejected",
+        "null despawn rejected",
+        "null template component get rejected",
+        "null UI read rejected",
+        "null UI edit rejected",
+        "null control info rejected",
+        "null control request rejected",
+        "matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation",
+        "lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors",
+        "100 additional generated-code module lifetimes invoke and retire without retained Type caches",
+        "CoreCLR bridge: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too",
+        "TemplateId remains distinct from persisted EntityId state fields",
+        "generated component and animation fixture collectible context released",
+        "linked production NativeGame entry: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "marked CoreCLR loads reject missing/short/wrong/duplicate host contracts before constructor; valid192 negotiation reaches constructor sentinel; failed contexts collected",
+        "marked Tick/Control reject actual176/184 guarded allocations before extension reads and reject either null tail callback before game execution",
+        "real bridge marked192 Tick/Control transfers independent64/136 PODs, both transition modes, nullable active mode/progress, rest clip, old getter and seven-argument setter; invalid enum never reaches callback",
+        "SDK rejects14 malformed mock extended-state responses, transfers mock native error, and later executes valid Tick; extension contexts retired",
+        "unmarked game remains legacy-compatible at load and safely rejects extended helper on176 baseline; no load-time IL capability claim",
+        "masked CoreCLR marker rejects missing/short/unnamed/dependency-incomplete hosts before constructor;208 positive sentinel executes",
+        "masked Tick/Control reject176/192/200 real guarded allocations and either missing layer callback before game execution",
+        "independent80/200 mock PODs transfer additive metadata, active clip inertia and weight fade, canonical missing slots and complete layer command; invalid public arguments do not invoke callbacks",
+        "SDK rejects34 independently malformed mock layer replies and transfers native error; valid subsequent Tick and collectible cleanup pass",
+        "unmarked SDK layer helper rejects its actual176 guarded baseline without reading the208 tail"
+      ],
+      "bridge_sha256": "25e68ef4e1da00c8bfd3256131c595e102aa595c58d17a3487210b251603e8e6",
+      "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+      "report_sha256": "bf882ebdeeb491463ebe4983d7230f1cfc7a74d2d6e72d4308c70238b95ab5ab",
+      "managed_binary_closure": true
+    },
+    "managed_abi_windows": {
+      "status": "passed",
+      "groups": 59,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 3/64 rejected before Tick",
+        "services 3/88 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 4/87 rejected before Tick",
+        "services 4/88 rejected before Tick",
+        "services 4/120 rejected before Tick",
+        "services 5/88 rejected before Tick",
+        "services 5/119 rejected before Tick",
+        "services 5/120 rejected before Tick",
+        "services 5/121 rejected before Tick",
+        "services 6/120 rejected before Tick",
+        "services 6/136 rejected before Tick",
+        "services 6/143 rejected before Tick",
+        "services 6/144 rejected before Tick",
+        "services 6/145 rejected before Tick",
+        "services 7/144 rejected before Tick",
+        "services 7/175 rejected before Tick",
+        "services 8/176 rejected before Tick",
+        "services 6/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "null entity callback rejected",
+        "null ray callback rejected",
+        "null motion callback rejected",
+        "null save info rejected",
+        "null save request rejected",
+        "null save result rejected",
+        "null component query rejected",
+        "null component get rejected",
+        "null component set rejected",
+        "null entity alive rejected",
+        "null spawn rejected",
+        "null despawn rejected",
+        "null template component get rejected",
+        "null UI read rejected",
+        "null UI edit rejected",
+        "null control info rejected",
+        "null control request rejected",
+        "matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation",
+        "lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors",
+        "100 additional generated-code module lifetimes invoke and retire without retained Type caches",
+        "CoreCLR bridge: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too",
+        "TemplateId remains distinct from persisted EntityId state fields",
+        "generated component and animation fixture collectible context released",
+        "linked production NativeGame entry: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "marked CoreCLR loads reject missing/short/wrong/duplicate host contracts before constructor; valid192 negotiation reaches constructor sentinel; failed contexts collected",
+        "marked Tick/Control reject actual176/184 guarded allocations before extension reads and reject either null tail callback before game execution",
+        "real bridge marked192 Tick/Control transfers independent64/136 PODs, both transition modes, nullable active mode/progress, rest clip, old getter and seven-argument setter; invalid enum never reaches callback",
+        "SDK rejects14 malformed mock extended-state responses, transfers mock native error, and later executes valid Tick; extension contexts retired",
+        "unmarked game remains legacy-compatible at load and safely rejects extended helper on176 baseline; no load-time IL capability claim",
+        "masked CoreCLR marker rejects missing/short/unnamed/dependency-incomplete hosts before constructor;208 positive sentinel executes",
+        "masked Tick/Control reject176/192/200 real guarded allocations and either missing layer callback before game execution",
+        "independent80/200 mock PODs transfer additive metadata, active clip inertia and weight fade, canonical missing slots and complete layer command; invalid public arguments do not invoke callbacks",
+        "SDK rejects34 independently malformed mock layer replies and transfers native error; valid subsequent Tick and collectible cleanup pass",
+        "unmarked SDK layer helper rejects its actual176 guarded baseline without reading the208 tail"
+      ],
+      "bridge_sha256": "25e68ef4e1da00c8bfd3256131c595e102aa595c58d17a3487210b251603e8e6",
+      "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+      "report_sha256": "a36f72bf0b2777a7ffb97088d0bb8f6d272acbff6a0e127eeff81f43505c73a3",
+      "managed_binary_closure": true
+    },
+    "linux-clr": {
+      "status": "passed",
+      "rpc_calls": 513,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "report_sha256": "3b37dd28c376b1f6142ae849c8399d2b5b9087c6f6e586b8b5b81e7a793515ba",
+      "binary_sha256": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+      "groups": 8,
+      "checks": {
+        "compiled_committed_queries_override_additive_weight_interruption_and_staging": true,
+        "independent_layer_inertia_base_inertia_and_reload": true,
+        "distinct_and_same_target_conflicts_invalid_commands_and_shared_64_limit": true,
+        "late_sample_and_managed_failures_restore_full_save_with_motion_audio_and_gameplay": true,
+        "fresh_complete_payload_restore_and_immediate_compiled_reinterruption": true,
+        "matched_old_bridge_host_marked_rejects_before_game_callbacks": true,
+        "new_bridge_old_host_marked_rejects_before_game_callbacks": true,
+        "authored_fixture_and_original_input_artifacts_immutable": true
+      },
+      "hashes": {
+        "binary": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+        "legacy_binary": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "bridge": "25e68ef4e1da00c8bfd3256131c595e102aa595c58d17a3487210b251603e8e6",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "sdk": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+        "legacy_bridge": "2e81935aa8da9106f0f3266a4312940fd3a55f41252c43b6594327ae8c69735b",
+        "legacy_sdk": "2b167111bc9981bd1641255e8c2ad0768e04400e115786f67b2bda06d851110c"
+      },
+      "builds": [
+        {
+          "name": "base",
+          "exit_code": 0,
+          "source_sha256": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+          "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+          "assembly_sha256": "62d392e8cc712bf1a82a803a9b9487d8db44d3ef086f62cdcbfb5a005e98733a"
+        },
+        {
+          "name": "upgrade",
+          "exit_code": 0,
+          "source_sha256": "9a2d005cd282ecf34b2333d22cc76b18fe889882974bf23e820f1406f21e9bf1",
+          "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+          "assembly_sha256": "a5bd915a0db6b053e2690b121e255918e22fe55e6d707b1dd536fa134a81f9b2"
+        },
+        {
+          "name": "failed-reload",
+          "exit_code": 0,
+          "source_sha256": "9d331b626e3e7661f59889ffbbb206454763b2626227e5e8d797852a3affc89a",
+          "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+          "assembly_sha256": "9af9e53fde8af0c68fa987334f0789990309b30cd5f56424bcda81810108cf5b"
+        }
+      ],
+      "artifact_payload_sha256": {},
+      "binary_source_closure": true
+    },
+    "windows-clr": {
+      "status": "passed",
+      "rpc_calls": 513,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "report_sha256": "d107269c89f22adcca321ccbecd68632443bb164cffc3a53a3ee4a66b2b5ef00",
+      "binary_sha256": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+      "groups": 8,
+      "checks": {
+        "compiled_committed_queries_override_additive_weight_interruption_and_staging": true,
+        "independent_layer_inertia_base_inertia_and_reload": true,
+        "distinct_and_same_target_conflicts_invalid_commands_and_shared_64_limit": true,
+        "late_sample_and_managed_failures_restore_full_save_with_motion_audio_and_gameplay": true,
+        "fresh_complete_payload_restore_and_immediate_compiled_reinterruption": true,
+        "matched_old_bridge_host_marked_rejects_before_game_callbacks": true,
+        "new_bridge_old_host_marked_rejects_before_game_callbacks": true,
+        "authored_fixture_and_original_input_artifacts_immutable": true
+      },
+      "hashes": {
+        "binary": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+        "legacy_binary": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "bridge": "25e68ef4e1da00c8bfd3256131c595e102aa595c58d17a3487210b251603e8e6",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "sdk": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+        "legacy_bridge": "144c03ce08e87bc022b18e461a3b2b67177fd4b74380f61d766ae6f97b29614b",
+        "legacy_sdk": "a6022d0631b7de82757d9e43ec10dec029ab119d320d74a8fdcd5b4d0abf59a2"
+      },
+      "builds": [
+        {
+          "name": "base",
+          "exit_code": 0,
+          "source_sha256": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+          "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+          "assembly_sha256": "4cd21cba4734809033d650a11a5ce99126bc2e6ad90de183c1db291ab03e871d"
+        },
+        {
+          "name": "upgrade",
+          "exit_code": 0,
+          "source_sha256": "9a2d005cd282ecf34b2333d22cc76b18fe889882974bf23e820f1406f21e9bf1",
+          "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+          "assembly_sha256": "2791a4fdd1462e48a0f8000539ac2cec2f2ac000b2b82c8d31e0bcd437365431"
+        },
+        {
+          "name": "failed-reload",
+          "exit_code": 0,
+          "source_sha256": "9d331b626e3e7661f59889ffbbb206454763b2626227e5e8d797852a3affc89a",
+          "sdk_sha256": "0b4ab61c759f9b5d224000e3edfc484a93e4789aeb59a36b1b7c9ad58737e2dd",
+          "assembly_sha256": "153a606e068f9747c9006311890766e6c5b879ce63dbbdf6de142f135e56e93d"
+        }
+      ],
+      "artifact_payload_sha256": {},
+      "binary_source_closure": true
+    },
+    "linux-preserved-inertial-aot": {
+      "status": "passed",
+      "rpc_calls": 435,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "report_sha256": "f82ae71a8779a5fd0f4bc9fa54b520c6143651be918fd75fd6bc434244675f8d",
+      "binary_sha256": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+      "groups": 7,
+      "checks": {
+        "native_analytic_motion_extended_queries_staging_and_replacement_rejection": true,
+        "duplicate_invalid_mode_target_conflict_and_exact_64_limit": true,
+        "active_history_and_full_payload_rollback_with_physics_audio_and_compiled_state": true,
+        "fresh_process_complete_payload_and_immediate_compiled_reinterruption": true,
+        "descriptor_omission_rejects_before_game_callbacks": true,
+        "legacy_native_host_rejects_before_game_callbacks": true,
+        "authored_world_fixture_original_descriptor_and_payloads_unchanged": true
+      },
+      "hashes": {
+        "binary": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+        "descriptor": "bf6f5eb132dbd90a23282009c61a64d4a728561511732f72c87c51dc294446d9",
+        "legacy_binary": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105",
+        "fixture": "6a68dc0fb593e71e8d8c44278c95c624c4ae89feef12abb81792b35285556601",
+        "runner": "d8075ac4effd2964ef537d6e68289be5f58d8f5b483436f2ff0f3cc2ce98bd65"
+      },
+      "builds": [],
+      "artifact_payload_sha256": {
+        "Poima.NativeGame.so": "b6ca68569eda4d777ec4186eae5b8cb7790fa75ad9d74a1e620f3b4416cb5513",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76"
+      },
+      "binary_source_closure": true
+    },
+    "windows-preserved-inertial-aot": {
+      "status": "passed",
+      "groups": 7,
+      "rpc_calls": 435,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "checks": {
+        "native_analytic_motion_extended_queries_staging_and_replacement_rejection": true,
+        "duplicate_invalid_mode_target_conflict_and_exact_64_limit": true,
+        "active_history_and_full_payload_rollback_with_physics_audio_and_compiled_state": true,
+        "fresh_process_complete_payload_and_immediate_compiled_reinterruption": true,
+        "descriptor_omission_rejects_before_game_callbacks": true,
+        "legacy_native_host_rejects_before_game_callbacks": true,
+        "authored_world_fixture_original_descriptor_and_payloads_unchanged": true
+      },
+      "hashes": {
+        "binary": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+        "descriptor": "f5b6ce687c9b2783269c8215ccbaf9d103296193172ad788e5612270d718a3db",
+        "legacy_binary": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7",
+        "fixture": "6a68dc0fb593e71e8d8c44278c95c624c4ae89feef12abb81792b35285556601",
+        "runner": "d8075ac4effd2964ef537d6e68289be5f58d8f5b483436f2ff0f3cc2ce98bd65"
+      },
+      "artifact_payload_sha256": {
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+        "Poima.NativeGame.dll": "229bce5fe3b97278d5e970235d12e391e1e892a047387371b2504ab9ef0197fe"
+      },
+      "report_sha256": "b054030aaaf06e75220a8bd3f08aceec957ad8ec949687141cb61412aa4e7c67",
+      "binary_source_closure": true
+    },
+    "linux-aot": {
+      "status": "passed",
+      "groups": 8,
+      "rpc_calls": 501,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "checks": {
+        "compiled_committed_queries_override_additive_weight_interruption_and_staging": true,
+        "independent_layer_inertia_base_inertia_and_native_replacement_rejection": true,
+        "distinct_and_same_target_conflicts_invalid_commands_and_shared_64_limit": true,
+        "late_sample_and_managed_failures_restore_full_save_with_motion_audio_and_gameplay": true,
+        "fresh_complete_payload_restore_and_immediate_compiled_reinterruption": true,
+        "descriptor_omission_rejects_before_game_callbacks": true,
+        "old_host_marked_rejects_before_game_callbacks": true,
+        "authored_fixture_and_original_input_artifacts_immutable": true
+      },
+      "hashes": {
+        "binary": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+        "legacy_binary": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "descriptor": "0cbe669b7f03770c442e34391b8a3ed61587fedf97ef79a04637034ba61dfb66"
+      },
+      "artifact_payload_sha256": {
+        "Poima.NativeGame.so": "b5a46bafedaafda486424d19c7e00457fc5f1227e6e61f13132bdc398b897def",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76"
+      },
+      "report_sha256": "7b0b9fa4973ad171d363355b3349642b2e3dd68f6213104d0ce8c6e6874a73b1",
+      "binary_source_closure": true
+    },
+    "windows-aot": {
+      "status": "passed",
+      "groups": 8,
+      "rpc_calls": 501,
+      "owned_processes": 4,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "checks": {
+        "compiled_committed_queries_override_additive_weight_interruption_and_staging": true,
+        "independent_layer_inertia_base_inertia_and_native_replacement_rejection": true,
+        "distinct_and_same_target_conflicts_invalid_commands_and_shared_64_limit": true,
+        "late_sample_and_managed_failures_restore_full_save_with_motion_audio_and_gameplay": true,
+        "fresh_complete_payload_restore_and_immediate_compiled_reinterruption": true,
+        "descriptor_omission_rejects_before_game_callbacks": true,
+        "old_host_marked_rejects_before_game_callbacks": true,
+        "authored_fixture_and_original_input_artifacts_immutable": true
+      },
+      "hashes": {
+        "binary": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+        "legacy_binary": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "descriptor": "6171e977af09c95586e933f2a3b6fe212eb6692e221f805c9ba3c8d4ce485916"
+      },
+      "artifact_payload_sha256": {
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+        "Poima.NativeGame.dll": "590fbc532fb9537d63e0bfe7c0657f6a550381bf90b0a65a8bde3fc835db6313"
+      },
+      "report_sha256": "319df715254a44d625cd63948f5d62b2ae64e4f3b54d2647b978ac2100ace4d6",
+      "binary_source_closure": true
+    },
+    "linux-legacy": {
+      "status": "passed",
+      "rpc_calls": 1036,
+      "owned_processes": 6,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "report_sha256": "a4555dd8c1b576042f14f70f755a381de4f90d8188f7a159c7a7db2fd9701d8e",
+      "binary_sha256": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5",
+      "source_sha256": {
+        "tests/runtime_animation_legacy_compatibility.py": "a4a4f4b6989d1755a9a96777ef12ddcccd7fffd6e55cc8b6264610044856df4b",
+        "tests/runtime_animation_blend_contract.py": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+        "tests/animation_fixture.py": "0df2099292f669ddd75762c7093eb667b6af8811d590617b61c9ae5490a1a9fe",
+        "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf"
+      },
+      "legacy_binary_sha256": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+      "scenarios": {
+        "crossfade": {
+          "pose_comparisons": 12,
+          "checks": {
+            "old_payload_fresh_exact_continuation": true,
+            "old_payload_fresh_immediate_reinterruption": true
+          },
+          "save_comparisons": [
+            {
+              "label": "checkpoint",
+              "hosts": [
+                "old",
+                "new"
+              ],
+              "tick": 60,
+              "sha256": "8b8531e60d7564cbc21fa739f518100b7381e729598755c18d7add7c82c8ecbf",
+              "bytes": 7754,
+              "animation_version": 1
+            },
+            {
+              "label": "continued-0",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-continuation"
+              ],
+              "tick": 61,
+              "sha256": "6c81b2fcea8b28a090a247880bd31547486e67277a3f8c35947a545fcecbdfc4",
+              "bytes": 7781,
+              "animation_version": 1
+            },
+            {
+              "label": "continued-1",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-continuation"
+              ],
+              "tick": 68,
+              "sha256": "4c24cb21ac200c9c43f023ff5d0a4ae2c7b873b48be9e397cdfe3a7b6811dc98",
+              "bytes": 8061,
+              "animation_version": 1
+            },
+            {
+              "label": "continued-2",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-continuation"
+              ],
+              "tick": 81,
+              "sha256": "80cfd8a78a6a4d387d0be28e3ecfca145ad4bc024c20ecb6b054647c925de2b3",
+              "bytes": 8037,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-0",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 61,
+              "sha256": "93afde685992db01f41e91ca78660a3f5cffb2e58d3c853d607324b46a9916ad",
+              "bytes": 7911,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-1",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 68,
+              "sha256": "24c5a0659728dbe412c80b1d0eab3825a2f4985236972c06455f988386eea7bc",
+              "bytes": 8191,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-2",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 81,
+              "sha256": "dbd3836032913774ce50860b2661826fb912da4b5d4f2fd2f001d9316ecf482e",
+              "bytes": 8167,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-3",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 110,
+              "sha256": "14295c30e6b3efeaeeba326c6b27787daa0d6a6174705a11713376040667c17c",
+              "bytes": 8082,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-4",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 120,
+              "sha256": "ba3150835feeedc4fc11b3613056d7d38bbfe234ebd4378e1b644d189d8384b2",
+              "bytes": 7751,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-5",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 127,
+              "sha256": "76764b2f6bc4627ad54ae436a607fe489ab52065f7139764f01dd07623ece4d4",
+              "bytes": 7751,
+              "animation_version": 1
+            }
+          ]
+        },
+        "inertial": {
+          "pose_comparisons": 12,
+          "checks": {
+            "old_payload_fresh_exact_continuation": true,
+            "old_payload_fresh_immediate_reinterruption": true
+          },
+          "save_comparisons": [
+            {
+              "label": "checkpoint",
+              "hosts": [
+                "old",
+                "new"
+              ],
+              "tick": 60,
+              "sha256": "b5aa2372c63fc804d2c8fa9e28d9033dd1e81b5919c3ee7e11928fffc758611a",
+              "bytes": 9865,
+              "animation_version": 2
+            },
+            {
+              "label": "continued-0",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-continuation"
+              ],
+              "tick": 61,
+              "sha256": "3284e3dc701db958a8d448081480583254236e4b9b9735abc6e45d188238beb8",
+              "bytes": 9872,
+              "animation_version": 2
+            },
+            {
+              "label": "continued-1",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-continuation"
+              ],
+              "tick": 68,
+              "sha256": "fd4a08bfac246399f396657b5a1915de384d0ec5537de67c93445c119eea9afa",
+              "bytes": 10162,
+              "animation_version": 2
+            },
+            {
+              "label": "continued-2",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-continuation"
+              ],
+              "tick": 81,
+              "sha256": "182e42c7985f54d277f0639e07988922a724ab7bb68ce2f704b44901c17d34f4",
+              "bytes": 10155,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-0",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 61,
+              "sha256": "bd6ed9686bc408478598c268cd4a165a54f460e2e600452b8ff13823d28f0429",
+              "bytes": 9928,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-1",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 68,
+              "sha256": "a29678b5346f96e2a3357a7c00145608bbf95af3daa3e70b3ca915e3c2a3e4fd",
+              "bytes": 10218,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-2",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 81,
+              "sha256": "168ff951f99a667e2afc70ad3474b87ea6b48279fac4cd31c701e7de131d66da",
+              "bytes": 10217,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-3",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 110,
+              "sha256": "060bb21ddb9bb9ecdf135ac5c42db412e0fda65dfe2813e4f1c8b3843d54968b",
+              "bytes": 10112,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-4",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 120,
+              "sha256": "06d84396f145e761cd3d79d51c48b3efc6481593061320d8713f70911de287d9",
+              "bytes": 8988,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-5",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 127,
+              "sha256": "8dfc90a53632ba017c7bbf442a66f1688a1b6230d3b068da5a4e83386d94bfe3",
+              "bytes": 8959,
+              "animation_version": 2
+            }
+          ]
+        }
+      },
+      "binary_source_closure": true
+    },
+    "windows-legacy": {
+      "status": "passed",
+      "rpc_calls": 1036,
+      "owned_processes": 6,
+      "owned_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "binary_sha256": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+      "legacy_binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+      "source_sha256": {
+        "tests/runtime_animation_legacy_compatibility.py": "a4a4f4b6989d1755a9a96777ef12ddcccd7fffd6e55cc8b6264610044856df4b",
+        "tests/runtime_animation_blend_contract.py": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+        "tests/animation_fixture.py": "0df2099292f669ddd75762c7093eb667b6af8811d590617b61c9ae5490a1a9fe",
+        "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf"
+      },
+      "scenarios": {
+        "crossfade": {
+          "pose_comparisons": 12,
+          "checks": {
+            "old_payload_fresh_exact_continuation": true,
+            "old_payload_fresh_immediate_reinterruption": true
+          },
+          "save_comparisons": [
+            {
+              "label": "checkpoint",
+              "hosts": [
+                "old",
+                "new"
+              ],
+              "tick": 60,
+              "sha256": "6ea1b9995f475b7e15c9dc805dee04583af51e27053f5ac8b0c1b418200702b5",
+              "bytes": 7754,
+              "animation_version": 1
+            },
+            {
+              "label": "continued-0",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-continuation"
+              ],
+              "tick": 61,
+              "sha256": "23b38c839614a2da728a1e9eaa060c52243e2994a2106a2f82acc51219f0b194",
+              "bytes": 7781,
+              "animation_version": 1
+            },
+            {
+              "label": "continued-1",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-continuation"
+              ],
+              "tick": 68,
+              "sha256": "81ecccf8a70aad7c31f4dc5fb354bd338b37cc6416fc5630ac90ed0be6d74158",
+              "bytes": 8061,
+              "animation_version": 1
+            },
+            {
+              "label": "continued-2",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-continuation"
+              ],
+              "tick": 81,
+              "sha256": "70450501ea6cb8d30bd9f1a1a51ea557cc4d9da86dd8588fe4b34bf62afe0c8f",
+              "bytes": 8037,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-0",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 61,
+              "sha256": "1974e60082616a84e895e33f48d697f4d2cee17c58c224ff33a5c4c48557fe42",
+              "bytes": 7911,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-1",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 68,
+              "sha256": "c1ff0ce57916c8912bc936cc24c3d404285a603d62301c074a1454c54477f5b9",
+              "bytes": 8191,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-2",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 81,
+              "sha256": "42b4f7c6697adf05b546d22371aaca4f83c289db8601c8f9c44e877506e9e52a",
+              "bytes": 8167,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-3",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 110,
+              "sha256": "ad4a9a3e412a40474ee7b8959311443ead8f73b09074b8b69643d86efc456967",
+              "bytes": 8082,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-4",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 120,
+              "sha256": "57f2648c135e88937a99cff74b3f78d077cd53ba77e9003218c02655e5ff70c8",
+              "bytes": 7751,
+              "animation_version": 1
+            },
+            {
+              "label": "interrupted-5",
+              "hosts": [
+                "old",
+                "new",
+                "crossfade-fresh-immediate-interruption"
+              ],
+              "tick": 127,
+              "sha256": "137baa3cbea76f5bd4785d70cc3fab5853aacf30792b443a181cc16f0d9b2fe4",
+              "bytes": 7751,
+              "animation_version": 1
+            }
+          ]
+        },
+        "inertial": {
+          "pose_comparisons": 12,
+          "checks": {
+            "old_payload_fresh_exact_continuation": true,
+            "old_payload_fresh_immediate_reinterruption": true
+          },
+          "save_comparisons": [
+            {
+              "label": "checkpoint",
+              "hosts": [
+                "old",
+                "new"
+              ],
+              "tick": 60,
+              "sha256": "fb558746f6629ceb357f12f74f0d7fba7cf9da43f628b01d1321cd05f6533742",
+              "bytes": 9865,
+              "animation_version": 2
+            },
+            {
+              "label": "continued-0",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-continuation"
+              ],
+              "tick": 61,
+              "sha256": "c334be56bf76efab8e4885fd16b11439b6faefd9aa452618c8849f8938cd0cfa",
+              "bytes": 9872,
+              "animation_version": 2
+            },
+            {
+              "label": "continued-1",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-continuation"
+              ],
+              "tick": 68,
+              "sha256": "5d161dd626ae104fa51862a85433188a24b7a46b036cfa3b82b2523a9d8c8800",
+              "bytes": 10162,
+              "animation_version": 2
+            },
+            {
+              "label": "continued-2",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-continuation"
+              ],
+              "tick": 81,
+              "sha256": "3977450dd03b8a046470b4c022f3e83a1a6dd27bfe10505df769997c605e690d",
+              "bytes": 10155,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-0",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 61,
+              "sha256": "ef4fd27a276766134cffbc56291c0205d3920e08a6fddf904c4a2406e71780a2",
+              "bytes": 9928,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-1",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 68,
+              "sha256": "eb605c5e6dc2864d71dbab7804fe5076ef6d6c31164158a7b1426d7f38968ff4",
+              "bytes": 10218,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-2",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 81,
+              "sha256": "20e3a5fd5af7dfaca359b50bec0286fb90cdc0e78689d2dfb76b7c19995e1ac7",
+              "bytes": 10217,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-3",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 110,
+              "sha256": "de1fdec490177c27ade0c54f76f56c5335e5415921c906977f687fbdfd84c44e",
+              "bytes": 10112,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-4",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 120,
+              "sha256": "7743fbf6a6ad3ed04f1b138dd84b0de8f0a0c02766c9ca8187ebd601745f698a",
+              "bytes": 8988,
+              "animation_version": 2
+            },
+            {
+              "label": "interrupted-5",
+              "hosts": [
+                "old",
+                "new",
+                "inertial-fresh-immediate-interruption"
+              ],
+              "tick": 127,
+              "sha256": "30d613b36c4470dfa560304468e0af2769ca749afca718d12f6ffe2f13e89da2",
+              "bytes": 8959,
+              "animation_version": 2
+            }
+          ]
+        }
+      },
+      "report_sha256": "4c0eb5b4e0efb1aa3f45720c72cca1b77e694db6a45cf91b97bfe84611fcfd87",
+      "binary_source_closure": true
+    },
+    "linux_native": {
+      "status": "passed",
+      "groups": 22,
+      "checks": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "animation_layers_math",
+        "runtime_animation_save_native",
+        "runtime_animation_save_reset",
+        "runtime_animation_save_write",
+        "runtime_animation_save_read",
+        "runtime_animation_save_cleanup",
+        "gameplay_compatibility_policy",
+        "gameplay_service_contract",
+        "native_gameplay_publish_requirements",
+        "world_session_native",
+        "runtime_save_native",
+        "runtime_save_fixture",
+        "runtime_animation_native",
+        "runtime_animation_layers_native",
+        "runtime_observe_contract",
+        "runtime_save_contract",
+        "project_gameplay_contract",
+        "runtime_animation_blend_contract",
+        "runtime_animation_layers_contract",
+        "runtime_animation_inertial_contract"
+      ],
+      "log_sha256": "facd1ccc22e145956545ee4f43ac543e95daeefe973423d74bccf7fce80306c4",
+      "binary_sha256": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5"
+    },
+    "windows_native": {
+      "status": "passed",
+      "groups": 16,
+      "checks": [
+        {
+          "name": "gameplay-compatibility",
+          "exit_code": 0,
+          "log_sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        },
+        {
+          "name": "runtime-animation-layers",
+          "exit_code": 0,
+          "log_sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        },
+        {
+          "name": "runtime-save",
+          "exit_code": 0,
+          "log_sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        {
+          "name": "world-session",
+          "exit_code": 0,
+          "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        {
+          "name": "runtime-animation-save",
+          "exit_code": 0,
+          "log_sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+        },
+        {
+          "name": "animation-save-write",
+          "exit_code": 0,
+          "log_sha256": "aca0db7e274f4aceae317f46aac12d7c5bf4aab52f9bfb2ef65ac34a99dff657"
+        },
+        {
+          "name": "animation-save-read",
+          "exit_code": 0,
+          "log_sha256": "44409b015ab21725d5162c12dd1a3028ad728f923ba0793cc3b2b6bce162680b"
+        },
+        {
+          "name": "runtime_animation_layers_contract",
+          "exit_code": 0,
+          "log_sha256": "de55cf58e63f375f1df238cd47d68d5ca48ea20d74a8f06a52a9397834238687"
+        },
+        {
+          "name": "runtime_animation_blend_contract",
+          "exit_code": 0,
+          "log_sha256": "b18bcba31ac214e00f2455bab63741c63dbb08b4c33810c356ef9daab4e09d90"
+        },
+        {
+          "name": "runtime_animation_inertial_contract",
+          "exit_code": 0,
+          "log_sha256": "9fb763dfd5663079fdd24194631b40a630835a8c69eae0d681e56ff4f084bf9d"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "log_sha256": "448eafa480d05d048f770708ab0e846d5452f5bdbd6d241491340afd268ec8e9"
+        },
+        {
+          "name": "runtime_observe_contract",
+          "exit_code": 0,
+          "log_sha256": "5b26f663ae5538fb9ade74cb91db7d3c6014baa85bb9290695f19b0ef4f92c72"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "log_sha256": "e7280a3b60322bf9d292382d9e984516a6b2d3dae244fc2319fff6496736e9c1"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "log_sha256": "3c0f856d0b082f08906426e171198d2aa35e39fc5ae65fa5377821a29783d84f"
+        },
+        {
+          "name": "project_gameplay_contract",
+          "exit_code": 0,
+          "log_sha256": "98c77e945f0593a39413acd1974d587d1870063a5e6df1fe41e72c8b072366a6"
+        },
+        {
+          "name": "legacy-compatibility",
+          "exit_code": 0,
+          "log_sha256": "2e1b28a050a3921905982520b6666a920570ead8dfd5662a1808a35be3973da7"
+        }
+      ],
+      "binary_sha256": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+      "report_sha256": "a4978b849aaeeb7d4de6785341eafbd5f4e3ef103399424e25cbde326afc873b"
+    },
+    "authoring_only_native": {
+      "status": "passed",
+      "groups": 8,
+      "checks": [
+        "gameplay_compatibility_policy",
+        "gameplay_service_contract",
+        "native_gameplay_publish_requirements",
+        "world_session_native",
+        "project_gameplay_contract",
+        "runtime_animation_blend_contract",
+        "runtime_animation_layers_contract",
+        "runtime_animation_inertial_contract"
+      ],
+      "binary_sha256": "6c2c9b70cfda440be35ea369ea15e0b8b6526edec942096caff28392a2111df9",
+      "xml_sha256": "80f1809cdfb0743b10460794feb34ca18267e2518e56dfe037bd9f4cd4b93814",
+      "log_sha256": "c574760dc823ebf79f0083320e1346d3c80f1f961acf29ce380e45d2a373a0a0",
+      "explicit_layer_checks": {
+        "status": "passed",
+        "tests": 2,
+        "rpc_calls": 17,
+        "owned_processes": 2,
+        "owned_exit_codes": [
+          0,
+          0
+        ],
+        "binary_sha256": "6c2c9b70cfda440be35ea369ea15e0b8b6526edec942096caff28392a2111df9",
+        "test_sha256": "de62ffbe4a64d1c9d3d40acbb77f47846967cdf28d44c85df342cdc892206526",
+        "report_sha256": "c4d47ee6760750cf02f4545f88a416723defa421293efd933cd7cc3abf384bce"
+      }
+    },
+    "stable_authoring_gates": {
+      "status": "passed",
+      "builds": 3,
+      "platforms": [
+        {
+          "name": "linux-runtime",
+          "passed": true,
+          "schema_revision": 53,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "031c4be8f85fd54b1e4aa3e70b7aa6ec8f032792c524a7f2b32976c079dcc1f5"
+        },
+        {
+          "name": "windows-runtime",
+          "passed": true,
+          "schema_revision": 53,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8"
+        },
+        {
+          "name": "linux-authoring-only",
+          "passed": true,
+          "schema_revision": 53,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "6c2c9b70cfda440be35ea369ea15e0b8b6526edec942096caff28392a2111df9"
+        }
+      ],
+      "report_sha256": "0cc489beb79c68ce4a9dc712777204686c3da47a72023097f47a77dee826e388"
+    },
+    "historical_response_gate": {
+      "status": "passed",
+      "historical_response_compatibility": true,
+      "canonical_response_self_compatibility": true,
+      "report_sha256": "0cc489beb79c68ce4a9dc712777204686c3da47a72023097f47a77dee826e388"
+    },
+    "preserved_baseline_176": {
+      "status": "passed",
+      "platform": "windows",
+      "groups": 3,
+      "rpc_calls": 151,
+      "owned_processes": 3,
+      "cleanup_failures": 0,
+      "ownership_evidence": "Three actual owner instances; close() asserts native exit0; runner terminal0 verified by coordinator.",
+      "checks": [
+        "Generated Get/Set fills capacity4, rejects overflow without mutation, preserves published reads",
+        "Dangling first/last references, index failure, queued-write exception and later-tick batch failure preserve complete world-save bytes",
+        "Actual template spawn, Init-bypassed fresh exact restore, first/last reference repair+despawn, generation2 and fresh continuation passed"
+      ],
+      "binary_sha256": "62dbae38acbc802b4dd111788179b62dd0c7c93cedf3417897412127b66a63d8",
+      "runner_sha256": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+      "sources": {
+        ".gitignore": "6c5082c7e6de3e350189c67a1aacf757485ecc26e0a3cf96683528565f3e5f12",
+        "CollectionGameplay.cs": "2ae9d7f3423d98944247d0c88a8dfb101162547271051b7a720b30e27a587300",
+        "Poima.CollectionGameplay.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+        "README.md": "9ffb518e9ffb787a9dee6d46a8d88c99aafb38e7b4d8b596b5102e98bc84c1f3"
+      },
+      "artifact_payload_sha256": {
+        "native-gameplay.json": "b9f5137bba3892fdc41020ad9c5096e589f594bb8c736d25bbced76debc9eba9",
+        "game.poima-components.json": "f2a80ec821ffe6d088559b1217c8c8195826112935a5600bf1ebb004a7c8d598",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+        "Poima.NativeGame.dll": "df34ce4a7b234ae53518ac5411929e84808c3b4b04b576ab0cd3902607f3be11"
+      },
+      "report_sha256": "3c6e4c4445cec7eb7056a2e4d92999964efd0556a385139c33a7d52b653e6535",
+      "original_save_payload_sha256": "8a6d1d37564f6be5aa1fe7b7bbb331a52e4b41520f85ffc367fda6df574ae229",
+      "binary_source_closure": true,
+      "minimum_services_bytes": 176,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1"
+      ]
+    }
+  },
+  "limits": [
+    "Bounded original fixtures; no game-scale throughput or maximum-capacity qualification.",
+    "No GPU, new GUI, physical-input, clean-machine deployment, console or browser qualification.",
+    "Layer setters are Tick-only; frozen mask/mode/reference editing, IK, graphs and root motion are outside this slice.",
+    "Constructor/Initialize/Tick sentinels exclude arbitrary module/assembly/DLL initializer side effects.",
+    "Native AOT replacement remains unsupported; libraries are pinned until process exit.",
+    "ABI callback mocks and protected-prefix tests are separate from actual compiled Runtime gameplay."
+  ],
+  "aot_publication": {
+    "linux": {
+      "status": "published; runtime qualification separate",
+      "descriptor_sha256": "0cbe669b7f03770c442e34391b8a3ed61587fedf97ef79a04637034ba61dfb66",
+      "minimum_services_bytes": 208,
+      "required_features": [
+        "baseline_v7",
+        "animation_inertial_v1",
+        "animation_layers_v1"
+      ],
+      "payload_sha256": {
+        "Poima.NativeGame.so": "b5a46bafedaafda486424d19c7e00457fc5f1227e6e61f13132bdc398b897def",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76"
+      },
+      "verified_payload_closure": true
+    },
+    "windows": {
+      "status": "published; runtime qualification separate",
+      "descriptor_sha256": "6171e977af09c95586e933f2a3b6fe212eb6692e221f805c9ba3c8d4ce485916",
+      "minimum_services_bytes": 208,
+      "required_features": [
+        "baseline_v7",
+        "animation_inertial_v1",
+        "animation_layers_v1"
+      ],
+      "payload_sha256": {
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+        "Poima.NativeGame.dll": "590fbc532fb9537d63e0bfe7c0657f6a550381bf90b0a65a8bde3fc835db6313"
+      },
+      "verified_payload_closure": true
+    }
+  }
+}

@@ -67,7 +67,7 @@ struct AnimationCommand {
     std::uint32_t blend_ticks=0;
     AnimationTransitionMode transition_mode=AnimationTransitionMode::Crossfade;
     // Null selects the base clock; 1..4 selects a frozen authored layer slot.
-    std::optional<std::uint32_t> layer;
+    std::optional<std::uint32_t> layer={};
     double weight=1;
     std::uint32_t weight_blend_ticks=0;
 };
@@ -266,6 +266,7 @@ public:
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={},
         const std::vector<AnimationCommand>& animations={},const std::vector<RuntimeStructureTick>& structure={});
     std::optional<RuntimeAnimationState> animation(const std::string& id) const;
+    std::optional<RuntimeAnimationLayerState> animation_layer(const std::string& id,std::uint32_t slot) const;
     const std::vector<RuntimeSpawnTemplate>& spawn_templates() const;
     const std::vector<components::Schema>& component_schemas() const;
     std::uint64_t component_revision() const;

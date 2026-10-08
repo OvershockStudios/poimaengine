@@ -69,9 +69,11 @@ private:
     ModelPose composed(std::size_t index,const Clock& base,const std::vector<LayerPlayback>& layers,std::uint64_t tick) const;
     Clock replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const;
     RuntimeAnimationState clock_summary(std::size_t index,const Clock& clock,std::uint64_t tick) const;
+    RuntimeAnimationLayerState layer_summary(std::size_t index,std::size_t layer,std::uint64_t tick) const;
 public:
     explicit RuntimeAnimations(const RuntimeDefinition& definition);
     std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick,bool include_layers=false) const;
+    std::optional<RuntimeAnimationLayerState> layer_state(const std::string& entity,std::uint32_t slot,std::uint64_t tick) const;
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick);
     // Bounded diagnostic state only; caller binds the exact definition/assets.

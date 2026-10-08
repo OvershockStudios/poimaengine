@@ -17,6 +17,8 @@ __pycache__/
 /tests/fixtures/**/obj/
 /tests/managed_service_abi/bin/
 /tests/managed_service_abi/obj/
+/tests/managed_service_abi/NativeEntry/bin/
+/tests/managed_service_abi/NativeEntry/obj/
 
 # Local editable project created by launch-editor.cmd, not engine source.
 /projects/sandbox/

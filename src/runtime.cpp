@@ -614,13 +614,15 @@ struct Runtime::Impl {
             project_animation(*id,state,*output);
         });
     }
-    void stage_animation(const PoimaGameAnimationCommand& source,AnimationTransitionMode mode) {
+    void stage_animation(const PoimaGameAnimationCommand& source,AnimationTransitionMode mode,
+        std::optional<std::uint32_t> layer={},double weight=1,std::uint32_t weight_blend_ticks=0) {
         require_tick();require(game_animation_commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
         require(source.clip>=-1 && source.loop<=1 && source.playing<=1,"Invalid gameplay animation command encoding.");
         AnimationCommand command;command.entity=gameplay_id(source.entity);
         if(source.clip>=0)command.clip=static_cast<std::uint32_t>(source.clip);
         command.time=source.time;command.speed=source.speed;command.loop=source.loop!=0;command.playing=source.playing!=0;command.blend_ticks=source.blend_ticks;command.transition_mode=mode;
-        // Both callback versions share staging and its Tick-end validation
+        command.layer=layer;command.weight=weight;command.weight_blend_ticks=weight_blend_ticks;
+        // All callback versions share staging and its Tick-end validation
         // for duplicates, caller conflicts, references, ranges and poses.
         game_animation_commands.push_back(std::move(command));
     }
@@ -648,6 +650,38 @@ struct Runtime::Impl {
             require(source->version==1 && source->bytes>=sizeof(PoimaGameAnimationCommandV1),"Extended animation command requires version 1 and at least 64 bytes.");
             require(source->reserved==0 && source->transition_mode<=1,"Invalid extended animation mode/reserved encoding.");
             static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode));
+        });
+    }
+    static int32_t POIMA_CALL get_animation_layer(void* context,const PoimaEntityId* id,std::uint32_t slot,PoimaGameAnimationLayerStateV1* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && id && output,"Animation layer query is absent.");
+            require(output->version==1 && output->bytes>=sizeof(PoimaGameAnimationLayerStateV1),"Animation layer state requires version 1 and at least 200 bytes.");
+            require(output->reserved==0 && slot>=1 && slot<=4,"Invalid animation layer query slot/reserved encoding.");
+            const auto layer=static_cast<Impl*>(context)->owner->animation_layer(gameplay_id(*id),slot);
+            PoimaGameAnimationLayerStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);candidate.slot=slot;
+            std::optional<RuntimeAnimationState> playback;
+            if(layer) {
+                playback.emplace();playback->clip=layer->clip;playback->time=layer->time;playback->speed=layer->speed;
+                playback->loop=layer->loop;playback->playing=layer->playing;playback->duration=layer->duration;playback->transition=layer->transition;
+                candidate.layer_mode=static_cast<std::uint32_t>(layer->mode);candidate.mask_nodes=static_cast<std::uint32_t>(layer->mask_nodes);
+                candidate.weight=layer->weight;candidate.target_weight=layer->target_weight;
+                if(layer->transition)candidate.transition_mode=static_cast<std::uint32_t>(layer->transition->mode);
+                if(layer->weight_transition) {
+                    const auto& fade=*layer->weight_transition;candidate.weight_transition_present=1;
+                    candidate.weight_start_tick=fade.start_tick;candidate.weight_duration_ticks=fade.duration_ticks;candidate.weight_elapsed_ticks=fade.elapsed_ticks;
+                    candidate.weight_source=fade.source;candidate.weight_target=fade.target;
+                }
+            }
+            project_animation(*id,playback,candidate.state);*output=candidate;
+        });
+    }
+    static int32_t POIMA_CALL set_animation_layer(void* context,const PoimaGameAnimationLayerCommandV1* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && source,"Animation layer command is absent.");
+            require(source->version==1 && source->bytes>=sizeof(PoimaGameAnimationLayerCommandV1),"Animation layer command requires version 1 and at least 80 bytes.");
+            require(source->reserved==0 && source->transition_mode<=1 && source->slot>=1 && source->slot<=4,"Invalid animation layer command mode/slot/reserved encoding.");
+            require(std::isfinite(source->weight) && source->weight>=0 && source->weight<=1 && source->weight_blend_ticks<=3600,"Animation layer command weight/duration is invalid.");
+            static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode),source->slot,source->weight,source->weight_blend_ticks);
         });
     }
     std::uint64_t play_sound(const std::string& emitter,float gain) {
@@ -887,7 +921,7 @@ struct Runtime::Impl {
                     clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1017,6 +1051,7 @@ RuntimeStructureResult Runtime::change_structure(std::uint64_t expected,const st
 std::uint64_t Runtime::structure_revision() const { return impl_->structure_revision; }
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure) { return impl_->step(ticks,inputs,motions,sounds,animations,structure); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
+std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
     double length=0;

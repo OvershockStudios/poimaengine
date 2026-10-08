@@ -14,3 +14,14 @@ The checks require services epoch 7 with a known 176-byte baseline prefix. Longe
 The opt-in animation extension tests independently declare its 64-byte command, 136-byte state and 192-byte service table. They exercise the real CoreCLR bridge and public SDK with mock native callbacks: marked load requirements, pre-constructor host rejection, actual 176/184-byte tables against protected pages, either missing tail callback, both transition modes, nullable mode/progress, the unchanged seven-argument setter and 14 malformed returned states. A constructor that deliberately throws provides a positive sentinel for the load guard; failed contexts must retire. These tests do not send malformed PODs into the engine's actual runtime callbacks or qualify animation rollback.
 
 `NativeEntry/` links the production native entry point with a small test-only typed binding, exercising the baseline guards through its unmanaged entry under CoreCLR on Windows and Linux. This is not NativeAOT publication or old-artifact compatibility qualification. The SDK's baseline service struct remains 176 bytes; the animation extension is a separate negotiated table.
+
+The masked-layer extension independently declares its 80-byte command, 200-byte
+state and 208-byte table. Mock callbacks verify configured/absent slots, typed
+override/additive state, clip and weight transitions, 34 malformed reply cases,
+public argument guards and recovery after native errors. Protected 176/192/200
+byte prefixes, missing layer callbacks and matched marked-game constructor
+sentinels exercise negotiation before tail access. The complete executable
+passes 59 guard groups on Windows and Linux at checkpoint 0.0.58. These remain
+SDK/bridge and test-native-entry checks; actual Runtime execution and published
+Native AOT checks are recorded separately in the
+[compiled-layer evidence](../../docs/evidence/m2-managed-animation-layers.json).

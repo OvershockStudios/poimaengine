@@ -14,6 +14,11 @@ int main(){try{
     auto extended=baseline;extended["services_bytes"]=192;extended["features"].push_back("animation_inertial_v1");
     parsed=poima::parse_gameplay_service_contract(extended.dump());check(parsed.services_bytes==192 && parsed.features.size()==2,"Named animation requirement rejected.");
     auto extras=extended;extras["features"].push_back("gameplay_persistence_v1");extras["features"].push_back("component_collections_v1");(void)poima::parse_gameplay_service_contract(extras.dump());
+    auto layers=extended;layers["services_bytes"]=208;layers["features"].push_back("animation_layers_v1");
+    parsed=poima::parse_gameplay_service_contract(layers.dump());check(parsed.services_bytes==208 && parsed.features.size()==3,"Named layer requirement rejected.");
+    for(unsigned bytes:{176u,192u,200u,207u,209u,240u}){auto bad=layers;bad["services_bytes"]=bytes;rejected(bad.dump());}
+    auto no_inertia=layers;no_inertia["features"]=Json::array({"baseline_v7","animation_layers_v1"});rejected(no_inertia.dump());
+    auto duplicate_layer=layers;duplicate_layer["features"].push_back("animation_layers_v1");rejected(duplicate_layer.dump());
     for(const char* field:{"call_version","call_bytes","services_version","services_bytes"}){
         for(const Json& value:{Json(true),Json(-1),Json(1.5),Json(4294967296ULL),Json("192"),Json(nullptr)}){auto bad=baseline;bad[field]=value;rejected(bad.dump());}
         auto bad=baseline;bad.erase(field);rejected(bad.dump());

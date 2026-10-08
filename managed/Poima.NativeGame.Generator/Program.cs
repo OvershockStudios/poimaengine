@@ -31,7 +31,8 @@ for(Type? type=game;type!=null;type=type.BaseType)
 if(state==null || !state.IsPublic || state.IsGenericType || !state.IsLayoutSequential)throw new ArgumentException("Expected Game<TState> with public non-generic sequential state.");
 string identity=PersistenceMetadata.GameIdentity(game);
 bool inertial=typeof(IInertialAnimationGame).IsAssignableFrom(game);
-string requirements=GameplayRequirements.Json(inertial);
+bool masked=typeof(IMaskedAnimationGame).IsAssignableFrom(game);
+string requirements=GameplayRequirements.Json(GameplayRequirements.Features(inertial,masked));
 int bytes=Marshal.SizeOf(state);if(bytes is <1 or >65536)throw new ArgumentException("State exceeds 1..65536 bytes.");
 var fields=state.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).OrderBy(f=>f.Name,StringComparer.Ordinal).ToArray();
 if(fields.Length is <1 or >128 || fields.Any(f=>!f.IsPublic || f.IsInitOnly || f.Name.Length>64))throw new ArgumentException("Expected 1..128 public mutable state fields.");
@@ -52,6 +53,7 @@ internal static unsafe class Binding
     internal const string Schema={{JsonSerializer.Serialize(schema)}};
     internal const string Requirements={{JsonSerializer.Serialize(requirements)}};
     internal static bool RequiresInertial=>{{(inertial ? "true" : "false")}};
+    internal static bool RequiresLayers=>{{(masked ? "true" : "false")}};
     internal const string TypeName={{JsonSerializer.Serialize(game.FullName)}};
     internal const int StateBytes={{bytes}};
     internal static {{Name(game)}} Create()=>new();

@@ -1,8 +1,41 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.57 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.58 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.58 checkpoint exposes masked animation layers to compiled C# gameplay.
+`IMaskedAnimationGame` opts into the named `animation_layers_v1` extension;
+`GetAnimationLayer` reads committed state and `SetAnimationLayer` stages complete
+clip/weight commands. Override/additive definitions, masks and reference poses
+remain frozen at runtime start. Commands share the existing 64-command tick
+budget with base animation and participate in whole-batch rollback.
+
+Windows and Linux each pass eight real CoreCLR checks over 513 RPCs and eight
+published Native AOT checks over 501 RPCs, with four clean owned exits per
+cohort. Checks cover analytic layered motion, conflict/budget rejection, active
+transition save/restore, immediate compiled re-interruption and complete-payload
+rollback. CoreCLR additionally covers compatible/failed reload. Native AOT
+libraries remain process-pinned. Both platforms pass 59 SDK/bridge ABI guard
+groups; these use mock native callbacks and do not qualify malformed raw Runtime
+callback storage.
+
+The original 176-byte and inertial 192-byte services-7 tables remain intact;
+layer access uses a separate 208-byte named extension and dedicated versioned
+command/state records. Existing 192-byte Native AOT animation artifacts pass
+435 RPCs per OS; an unchanged 176-byte Windows inventory artifact passes 151
+RPCs. Actual 0.0.57-versus-0.0.58 unlayered comparisons pass 1,036 RPCs per OS.
+Twenty-two selected Linux groups and sixteen Windows groups pass. Authoring-only
+checks and all three stable discovery/identity gates pass. Protocol 1, discovery
+revision 53, authoring-core v1 and animation save formats remain unchanged.
+
+Requirement validation precedes game construction in supported matched
+bridge/SDK cohorts. Arbitrarily mixing an older bridge with a newer SDK is not
+supported and is outside that guarantee. Desktop layer widgets, IK, root motion,
+retargeting and game-scale performance remain unfinished. This checkpoint adds
+no installed desktop, GPU, physical-input, console or browser qualification.
+[Managed layer API](MANAGED_GAMEPLAY.md#control-masked-layers-from-c),
+[evidence](evidence/m2-managed-animation-layers.json).
 
 The 0.0.57 checkpoint adds up to four frozen masked animation layers per rig,
 with ordered override/additive composition, independent playback and motion
@@ -29,9 +62,10 @@ Discovery advances to revision 53. Protocol 1, selected authoring-core v1 and th
 176/192-byte gameplay services-7 tables remain unchanged. Bounds of four slots,
 128 rigs and 20,000 aggregate full-model layer nodes are admission limits, not
 measured throughput. Maximum configurations and the 64 MiB outer-save ceiling
-are not jointly qualified. Compiled C# layer controls, desktop layer widgets,
-IK, root motion and retargeting remain unfinished. There is no new installed
-editor, physical-input or game-scale performance qualification.
+are not jointly qualified. At that checkpoint, compiled C# layer controls,
+desktop layer widgets, IK, root motion and retargeting remained unfinished.
+That checkpoint added no installed editor, physical-input or game-scale
+performance qualification.
 [Layer contract](RUNTIME_ANIMATION.md#masked-animation-layers),
 [evidence](evidence/m2-animation-layers.json).
 

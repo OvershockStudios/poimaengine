@@ -281,19 +281,26 @@ RuntimeAnimationState RuntimeAnimations::clock_summary(std::size_t index,const C
 std::optional<RuntimeAnimationState> RuntimeAnimations::state(const std::string& entity,std::uint64_t tick,bool include_layers) const {
     const auto found=indices_.find(entity);if(found==indices_.end())return {};
     const auto index=found->second;auto result=clock_summary(index,clocks_[index],tick);
-    if(include_layers)for(std::size_t i=0;i<layers_[index].size();++i) {
-        const auto& layer=layers_[index][i];const auto& frozen=rigs_[index].layers[i];
-        const auto playback=clock_summary(index,layer.clock,tick);RuntimeAnimationLayerState summary;
-        summary.slot=frozen.slot;summary.mode=frozen.mode;summary.mask_nodes=frozen.mask.size();
-        summary.weight=layer_weight(layer,tick);summary.target_weight=layer.target_weight;
-        if(layer.weight_transition && tick-layer.weight_transition->start_tick<layer.weight_transition->duration_ticks) {
-            summary.weight_transition=layer.weight_transition;summary.weight_transition->elapsed_ticks=static_cast<std::uint32_t>(tick-layer.weight_transition->start_tick);
-        }
-        summary.clip=playback.clip;summary.time=playback.time;summary.speed=playback.speed;summary.loop=playback.loop;
-        summary.playing=playback.playing;summary.duration=playback.duration;summary.transition=playback.transition;
-        result.layers.push_back(std::move(summary));
-    }
+    if(include_layers)for(std::size_t i=0;i<layers_[index].size();++i)result.layers.push_back(layer_summary(index,i,tick));
     return result;
+}
+RuntimeAnimationLayerState RuntimeAnimations::layer_summary(std::size_t index,std::size_t offset,std::uint64_t tick) const {
+    const auto& layer=layers_[index][offset];const auto& frozen=rigs_[index].layers[offset];
+    const auto playback=clock_summary(index,layer.clock,tick);RuntimeAnimationLayerState summary;
+    summary.slot=frozen.slot;summary.mode=frozen.mode;summary.mask_nodes=frozen.mask.size();
+    summary.weight=layer_weight(layer,tick);summary.target_weight=layer.target_weight;
+    if(layer.weight_transition && tick-layer.weight_transition->start_tick<layer.weight_transition->duration_ticks) {
+        summary.weight_transition=layer.weight_transition;summary.weight_transition->elapsed_ticks=static_cast<std::uint32_t>(tick-layer.weight_transition->start_tick);
+    }
+    summary.clip=playback.clip;summary.time=playback.time;summary.speed=playback.speed;summary.loop=playback.loop;
+    summary.playing=playback.playing;summary.duration=playback.duration;summary.transition=playback.transition;return summary;
+}
+std::optional<RuntimeAnimationLayerState> RuntimeAnimations::layer_state(const std::string& entity,std::uint32_t slot,std::uint64_t tick) const {
+    check(slot>=1 && slot<=4,"Animation layer slot must be 1..4.");
+    const auto found=indices_.find(entity);if(found==indices_.end())return {};
+    const auto index=found->second;const auto& frozen=rigs_[index].layers;
+    for(std::size_t offset=0;offset<frozen.size();++offset)if(frozen[offset].slot==slot)return layer_summary(index,offset,tick);
+    return {};
 }
 ModelPose RuntimeAnimations::evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const {
     const auto& rig=rigs_[index];const auto target=clock_state(clock.control,clock.anchor_tick,tick,*rig.model);

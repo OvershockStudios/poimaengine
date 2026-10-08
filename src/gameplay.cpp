@@ -60,6 +60,15 @@ void require_compatible(const gameplay_abi::Contract& required,const gameplay_ab
     if(!error.empty())throw std::runtime_error(error);
 }
 template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_layers_feature)!=required.features.end()) {
+        check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameAnimationLayerServicesV1),
+            "Gameplay requires services epoch 7 and the 208-byte animation layer extension.");
+        PoimaGameAnimationLayerServicesV1 extended{};
+        std::memcpy(&extended,&provided,sizeof(extended));extended.animation.baseline.bytes=sizeof(extended);
+        check(extended.animation.animation_get_extended && extended.animation.animation_set_extended &&
+            extended.animation_layer_get && extended.animation_layer_set,"Gameplay animation layer extension callback is absent.");
+        callback(&extended.animation.baseline);return;
+    }
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_feature)==required.features.end()) {
         const auto baseline=gameplay_abi::baseline_view(provided);callback(&baseline);return;
     }

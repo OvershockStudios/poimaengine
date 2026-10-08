@@ -54,8 +54,9 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==192 &&
-        std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end(),"Runtime did not declare the actual animation extension extent.");
+    check(capable.services_version==7 && capable.services_bytes==208 &&
+        std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
+        std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end(),"Runtime did not declare the actual layered animation extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
     check(compatibility_error(animation,capable).empty(),"Negotiated animation extension rejected.");
     check(!compatibility_error(animation,baseline).empty(),"Animation extension accepted by baseline host.");
@@ -67,6 +68,19 @@ void policy() {
     check(!compatibility_error(baseline,short_host).empty(),"Runtime declared animation capability without allocating its tail.");
     auto duplicate_animation=animation;duplicate_animation.features.push_back(animation_feature);
     check(!compatibility_error(duplicate_animation,capable).empty(),"Duplicate animation requirement accepted.");
+    auto layers=animation;layers.services_bytes=208;layers.features.push_back("animation_layers_v1");
+    check(compatibility_error(layers,capable).empty(),"Named layered requirement rejected.");
+    check(!compatibility_error(layers,animation).empty(),"Layered game accepted by inertial-only host.");
+    for(unsigned bytes:{176u,192u,200u,207u,209u,240u}) {
+        auto bad=layers;bad.services_bytes=bytes;
+        check(!compatibility_error(bad,capable).empty(),"Layered requirement accepted wrong prefix extent.");
+    }
+    auto without_inertia=layers;without_inertia.features.erase(std::remove(without_inertia.features.begin(),without_inertia.features.end(),animation_feature),without_inertia.features.end());
+    check(!compatibility_error(without_inertia,capable).empty(),"Layers granted without their inertial dependency.");
+    auto without_layers=capable;without_layers.features.erase(std::remove(without_layers.features.begin(),without_layers.features.end(),"animation_layers_v1"),without_layers.features.end());
+    check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
+    auto appended=capable;appended.services_bytes=256;appended.features.push_back("future_available_v1");
+    check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");

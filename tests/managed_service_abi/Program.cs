@@ -502,6 +502,7 @@ static unsafe partial class Program
             checks.Add("generated component and animation fixture collectible context released");
             NativePrefixContract(output,state,good,checks);
             AnimationExtensionContract(output,state,good,checks);
+            AnimationLayerContract(output,state,good,checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
                 sdk_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Game<>).Assembly.Location)))},new JsonSerializerOptions{WriteIndented=true});

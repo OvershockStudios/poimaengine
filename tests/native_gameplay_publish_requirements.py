@@ -21,6 +21,17 @@ class Requirements(unittest.TestCase):
         self.assertEqual(self.read(self.baseline),self.baseline)
         extended=dict(self.baseline,services_bytes=192,features=['animation_inertial_v1','baseline_v7'])
         self.assertEqual(self.read(extended),extended)
+        layers=dict(self.baseline,services_bytes=208,features=['animation_inertial_v1','animation_layers_v1','baseline_v7'])
+        self.assertEqual(self.read(layers),layers)
+    def test_layer_dependency_and_named_prefix(self):
+        features=['baseline_v7','animation_inertial_v1','animation_layers_v1']
+        for extent in [176,192,200,207,209,240]:
+            with self.subTest(extent=extent),self.assertRaises(ValueError):
+                self.read(dict(self.baseline,services_bytes=extent,features=features))
+        for incomplete in [['baseline_v7'],['baseline_v7','animation_layers_v1'],
+                           ['baseline_v7','animation_inertial_v1'],features+['animation_layers_v1']]:
+            with self.subTest(features=incomplete),self.assertRaises(ValueError):
+                self.read(dict(self.baseline,services_bytes=208,features=incomplete))
     def test_prefix_cannot_grant_undeclared_feature(self):
         for extent in [175,180,192,193,240]:
             with self.subTest(extent=extent),self.assertRaises(ValueError):self.read(dict(self.baseline,services_bytes=extent))

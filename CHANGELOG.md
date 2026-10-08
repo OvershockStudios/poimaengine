@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.58 — Unreleased
+
+This checkpoint exposes masked animation layers to compiled C# gameplay. The installed desktop package remains unchanged.
+
+- Opt into `IMaskedAnimationGame`, read committed layer state and stage clip transitions with independent weight ramps through `GetAnimationLayer` / `SetAnimationLayer`. Frozen masks, override/additive modes and references retain the native layer contract. [C# API](docs/MANAGED_GAMEPLAY.md#control-masked-layers-from-c).
+- A named 208-byte services-7 extension preserves the original 176-byte and inertial 192-byte tables. Dedicated versioned records, strict decoder guards and shared command budgets retain whole-batch rollback and exact saves. [Artifact contract](docs/NATIVE_GAMEPLAY.md#artifact-contents).
+- Each OS passes 59 ABI guard groups, 513-RPC CoreCLR and published 501-RPC Native AOT layer cohorts. Preserved older gameplay artifacts and actual old/new unlayered save comparisons pass. [Evidence](docs/evidence/m2-managed-animation-layers.json).
+- Selected native/authoring checks and stable API gates pass. Protocol 1, discovery revision 53 and authoring-core v1 remain unchanged. Desktop layer widgets, IK, root motion and game-scale animation qualification remain unfinished; native libraries still require process restart for replacement.
+
 ## 0.0.57 — Unreleased
 
 This checkpoint adds persistent native masked animation layers. The installed desktop package remains unchanged.
