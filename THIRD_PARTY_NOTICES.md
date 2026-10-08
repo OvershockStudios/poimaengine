@@ -104,6 +104,13 @@ The optional main-engine integration (`POIMA_ENABLE_MANAGED_GAMEPLAY`) now uses 
 - License: MIT; retained in `third_party/cgltf/LICENSE` and installed in `share/poima/licenses/cgltf/LICENSE`.
 - The unmodified header is bundled for native static glTF import. Exact file hashes are recorded in `third_party/cgltf/PROVENANCE.json`.
 
+## ufbx 0.23.1
+
+- Source: [ufbx](https://github.com/ufbx/ufbx/tree/26a482ae66871d7de36eb722aa060bce95bce274), commit `26a482ae66871d7de36eb722aa060bce95bce274`.
+- Poima selects the MIT license, copyright (c) 2020 Samuli Raivio. The complete unmodified upstream license, including its alternative, is retained in `third_party/ufbx/LICENSE` and installed in `share/poima/licenses/ufbx`.
+- Unmodified C source/header hashes are recorded in `third_party/ufbx/PROVENANCE.json`. The separately compiled parser is used by the native FBX cooker; imported games consume Poima packages rather than interpreting FBX at runtime.
+- OBJ, subdivision, tessellation, geometry-cache support and the upstream stdio backend are disabled. Poima reads bounded local inputs itself. This parser license does not grant rights to imported models, textures or animation files.
+
 ## stb_image 2.30
 
 - Source: https://github.com/nothings/stb/tree/2c980bb59875b0d32144a71867fbdebb2f77cd20
