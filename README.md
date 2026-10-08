@@ -10,13 +10,13 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **Early development · 0.0.47.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **Early development · 0.0.48.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
 Poima makes engine operations directly available to tools. External agents such as Codex and Claude can use the CLI or newline-delimited JSON-RPC without opening an editor or relying on screen coordinates.
 
-- **Discover and inspect.** Query available operations, component schemas and the current world before making changes.
+- **Discover and inspect.** Fetch available operations or a focused mutation schema, and inspect the current world before making changes.
 - **Edit together.** Humans and agents use shared sessions. Atomic transactions apply related edits together; revision guards reject stale changes, and retry receipts prevent duplicate application.
 - **Run and observe.** Exercise gameplay with scripted input, request rendered captures and inspect simulation state and profiling data.
 - **Recover and repeat.** Bounded authoring undo/redo, runtime rollback and input replay support reproducible checks within their documented contracts.
@@ -70,7 +70,7 @@ This authoring build needs no GPU, display, .NET runtime or dependency downloads
 Send one JSON-RPC request per line:
 
 ```json
-{"jsonrpc":"2.0","id":1,"method":"world.describe"}
+{"jsonrpc":"2.0","id":1,"method":"world.describe","params":{"view":"catalog"}}
 {"jsonrpc":"2.0","id":2,"method":"world.inspect"}
 {"jsonrpc":"2.0","id":3,"method":"session.close"}
 ```

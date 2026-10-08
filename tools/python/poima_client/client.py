@@ -156,9 +156,41 @@ class WorldClient:
 
     def discover(self, view="catalog", name=None, *, timeout=30.0):
         """Fetch compact discovery by default; ``view='full'`` fetches everything."""
+        if view not in ("full", "catalog", "method", "component", "section"):
+            raise ValueError("Use discover_mutation for mutation discovery; unknown discovery view")
+        named = view in ("method", "component", "section")
+        if named and (not isinstance(name, str) or not name):
+            raise ValueError("Named discovery requires a nonempty string name")
+        if not named and name is not None:
+            raise ValueError("Only method, component and section discovery accept name")
         params = {"view": view}
         if name is not None:
             params["name"] = name
+        return self.call("world.describe", params, timeout=timeout)
+
+    def discover_mutation(self, operation, type=None, *, timeout=30.0):
+        """Discover an operation's transaction envelope, optionally by component.
+
+        Availability remains authoritative in the native host. Enum, custom-type
+        and conservative overlapping branches can remain in the returned union;
+        this view does not restrict execution or guarantee one exact branch.
+        """
+        for label, value in (("operation", operation), ("type", type)):
+            if label == "type" and value is None:
+                continue
+            if not isinstance(value, str) or not value:
+                raise ValueError(label + " must be a nonempty UTF-8 string")
+            try:
+                size = len(value.encode("utf-8"))
+            except UnicodeError as error:
+                raise ValueError(label + " must be a valid UTF-8 string") from error
+            if size > 128:
+                raise ValueError(label + " must be at most 128 UTF-8 bytes")
+        if type is not None and operation not in ("component.set", "component.remove"):
+            raise ValueError("type is only supported for component.set and component.remove")
+        params = {"view": "mutation", "operation": operation}
+        if type is not None:
+            params["type"] = type
         return self.call("world.describe", params, timeout=timeout)
 
     def inspect(self, *, timeout=30.0):

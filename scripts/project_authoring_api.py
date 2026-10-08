@@ -20,6 +20,27 @@ def contains_reference(value):
     return isinstance(value, list) and any(contains_reference(child) for child in value)
 
 
+def contains_schema_dependency(value):
+    """References and resource/dialect scopes make structural pruning unsafe.
+
+    A pointer can observe a sibling index or an ancestor outside the branch
+    being filtered. Scan the complete discovery conservatively rather than
+    resolve references or assume a particular JSON Schema dialect.
+    """
+    markers = {'$ref', '$dynamicRef', '$recursiveRef', '$schema', '$id',
+               '$anchor', '$dynamicAnchor', '$recursiveAnchor', '$vocabulary'}
+    pending = [value]
+    while pending:
+        node = pending.pop()
+        if isinstance(node, dict):
+            if markers & node.keys():
+                return True
+            pending.extend(node.values())
+        elif isinstance(node, list):
+            pending.extend(node)
+    return False
+
+
 def outside_core(branch):
     """Discard only branches whose constraints exclude every core request.
 
@@ -56,12 +77,19 @@ def accepts_transform_selector(schema):
 def project(discovery, baseline=False):
     """Leave missing entries missing so the compatibility gate can reject them."""
     discovery = discovery.get('result', discovery)
+    dependent = contains_schema_dependency(discovery)
+    if baseline and dependent:
+        raise ValueError('Cannot create a baseline from unresolved schema references or resource/dialect scopes.')
     methods = {name: copy.deepcopy(discovery['methods'][name])
                for name in METHODS if name in discovery.get('methods', {})}
     transact = methods.get('world.transact')
     if transact:
         union = transact['properties']['ops']['items']
-        union['oneOf'] = [branch for branch in union['oneOf'] if not outside_core(branch)]
+        if not dependent:
+            union['oneOf'] = [branch for branch in union['oneOf'] if not outside_core(branch)]
+        # Keep the entire array, including outside branches, when references or
+        # scopes are present: retaining just a reference-bearing branch can
+        # silently retarget its sibling JSON Pointer after earlier removals.
     # Baseline promises only Transform selections, not every currently listed component.
     # Candidate selectors stay intact: narrowing or removing Transform must be detected.
     if baseline:

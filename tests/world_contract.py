@@ -138,6 +138,95 @@ class WorldContract(unittest.TestCase):
         self.assertEqual(client.rpc('world.describe'), full)
         self.assertEqual(self.path.read_bytes(), before)
 
+    def test_mutation_discovery_preserves_envelope_and_registered_types(self):
+        client = self.open()
+        custom_type, field = uid(700), uid(701)
+        schema = {'id': custom_type, 'name': 'Counter', 'version': 1,
+                  'fields': [{'id': field, 'name': 'Value', 'kind': 'int32', 'default': 0}]}
+        client.txn(0, [create(1), {'op': 'component.schema.set', 'schema': schema}])
+        full = client.rpc('world.describe')
+        source = full['methods']['world.transact']
+        branches = source['properties']['ops']['items']['oneOf']
+        before = self.path.read_bytes()
+        state, history = client.rpc('world.inspect'), client.rpc('world.history')
+        metadata_keys = {'protocol_version', 'schema_revision', 'mode', 'read_only', 'runtime_available',
+                         'session_scope', 'editor_discovery', 'unavailable_methods', 'unavailable_mutations'}
+        metadata = {key: value for key, value in full.items() if key in metadata_keys}
+
+        def check_projection(operation, component_type=None):
+            params = {'view': 'mutation', 'operation': operation}
+            selection = {'operation': operation}
+            if component_type is not None:
+                params['type'] = selection['type'] = component_type
+            expected = []
+            for branch in branches:
+                properties = branch['properties']
+                if properties['op']['const'] != operation:
+                    continue
+                if component_type is not None:
+                    discriminator = properties['type']
+                    if 'const' in discriminator and discriminator['const'] != component_type:
+                        continue
+                    if 'enum' in discriminator and component_type not in discriminator['enum']:
+                        continue
+                    if 'pattern' in discriminator and not component_type.startswith('game:'):
+                        continue
+                expected.append(branch)
+            self.assertTrue(expected)
+            envelope = json.loads(json.dumps(source))
+            envelope['properties']['ops']['items']['oneOf'] = expected
+            result = client.rpc('world.describe', params)
+            self.assertEqual(result, {**metadata, 'partial': True, 'view': 'mutation',
+                                     'selection': selection, 'methods': {'world.transact': envelope}})
+            self.assertEqual(client.rpc('world.inspect'), state)
+            self.assertEqual(client.rpc('world.history'), history)
+            self.assertEqual(self.path.read_bytes(), before)
+            return result
+
+        for operation in sorted({branch['properties']['op']['const'] for branch in branches}):
+            check_projection(operation)
+        for component_type in sorted(full['components']):
+            check_projection('component.set', component_type)
+            if component_type != 'Transform':
+                check_projection('component.remove', component_type)
+        for operation in ('component.set', 'component.remove'):
+            result = check_projection(operation, 'game:' + custom_type)
+            self.assertEqual(result['methods']['world.transact']['properties']['ops']['items']['oneOf'][0]
+                             ['properties']['type']['pattern'], '^game:[0-9a-f]{32}$')
+        remove = check_projection('component.remove', 'Camera')
+        self.assertGreater(len(remove['methods']['world.transact']['properties']['ops']['items']['oneOf'][0]
+                               ['properties']['type']['enum']), 1)
+        invalid = [{'view': 'mutation'}, {'view': 'mutation', 'operation': 'unknown'},
+                   {'view': 'mutation', 'operation': 'entity.rename', 'type': 'Camera'},
+                   {'view': 'mutation', 'operation': 'component.remove', 'type': 'Transform'},
+                   {'view': 'mutation', 'operation': 'component.set', 'type': 'Missing'},
+                   {'view': 'mutation', 'operation': 'component.set', 'type': 'game:' + uid(799)},
+                   {'view': 'mutation', 'operation': 'component.set', 'type': 'game:bad'},
+                   {'view': 'mutation', 'operation': 'component.set', 'name': 'Transform'},
+                   {'view': 'method', 'name': 'world.transact', 'operation': 'component.set'},
+                   {'view': 'full', 'type': 'Camera'}, {'operation': 'component.set'}]
+        for value in (None, True, 1, [], {}, '', 'x' * 129, 'é' * 65):
+            invalid.append({'view': 'mutation', 'operation': value})
+            invalid.append({'view': 'mutation', 'operation': 'component.set', 'type': value})
+        for params in invalid:
+            with self.subTest(params=params):
+                client.rpc('world.describe', params, error=-32602)
+                self.assertEqual(client.rpc('world.inspect'), state)
+                self.assertEqual(client.rpc('world.history'), history)
+                self.assertEqual(self.path.read_bytes(), before)
+
+        # Discovery is a view, not a restriction of valid mixed transactions.
+        transform = {'position': [0, 0, 0], 'rotation': [0, 0, 0, 1], 'scale': [1, 1, 1]}
+        operations = [{'op': 'entity.rename', 'id': uid(1), 'name': 'Renamed'},
+                      {'op': 'component.set', 'id': uid(1), 'type': 'Transform', 'value': transform},
+                      {'op': 'component.set', 'id': uid(1), 'type': 'game:' + custom_type, 'value': {field: 3}}]
+        preview = client.txn(1, operations, preview=True)
+        self.assertFalse(preview['committed'])
+        self.assertEqual(self.path.read_bytes(), before)
+        receipt = client.txn(1, operations)
+        self.assertEqual(receipt['revision'], 2)
+        self.assertEqual(client.rpc('entity.get', {'id': uid(1)})['value']['name'], 'Renamed')
+
     def test_authoring_preview_atomicity_restart_and_receipts(self):
         client = self.open()
         self.assertFalse(client.rpc('world.inspect')['persisted'])

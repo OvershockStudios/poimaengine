@@ -30,7 +30,8 @@ world.parent.mkdir(parents=True, exist_ok=True)
 
 with WorldClient.open(binary, world) as engine:
     catalog = engine.discover()  # compact names; full descriptor is explicit
-    print(engine.discover("method", "world.transact"))
+    print(engine.discover_mutation("component.set", "Transform"))
+    print(engine.discover("method", "world.transact"))  # complete operation union
     print(engine.discover("section", "invariants"))
     revision = engine.inspect()["revision"]
     entity_id, receipt_id = new_id(), new_id()
@@ -72,6 +73,16 @@ second world model. Any discovered operation remains available through:
 descriptor = engine.discover("method", "runtime.status")
 runtime = engine.call("runtime.status", {})
 ```
+
+`discover_mutation(operation, type=None)` is available in the 0.0.48 client
+and requires a native host advertising mutation discovery (schema 48).
+It returns the partial transaction schema with revision and receipt requirements.
+Component-type selections apply only to `component.set`/`component.remove`;
+custom types must be registered in that world. Selectors contain 1–128 UTF-8
+bytes. Response checks verify the echoed selection, writable-session metadata
+and transaction envelope shape; native equivalence checks establish preservation
+of the full schema's guards and bounds. Existing `discover(view, name)` views
+remain available, and the generic `call` can send any discovered native request.
 
 Read its descriptor and applicable subsystem invariants before calling it.
 Discovery is not cached. Methods outside the nine-method core do not receive

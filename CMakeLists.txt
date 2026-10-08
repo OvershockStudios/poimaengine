@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.47 LANGUAGES C CXX)
+project(Poima VERSION 0.0.48 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -722,4 +722,18 @@ endif()
 
 if(POIMA_ENABLE_AUDIO AND WIN32)
     add_custom_command(TARGET poima POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_if_different "${POIMA_STEAM_AUDIO_ROOT}/lib/windows-x64/phonon.dll" "$<TARGET_FILE_DIR:poima>/phonon.dll")
+endif()
+
+# Pure discovery projection contract: no engine process or graphics lifetime.
+if(POIMA_BUILD_TESTS)
+    add_executable(poima-mutation-discovery-test tests/mutation_discovery_native.cpp)
+else()
+    add_executable(poima-mutation-discovery-test EXCLUDE_FROM_ALL tests/mutation_discovery_native.cpp)
+endif()
+target_compile_features(poima-mutation-discovery-test PRIVATE cxx_std_20)
+target_include_directories(poima-mutation-discovery-test PRIVATE src)
+target_include_directories(poima-mutation-discovery-test SYSTEM PRIVATE third_party)
+set_target_properties(poima-mutation-discovery-test PROPERTIES CXX_EXTENSIONS OFF)
+if(POIMA_BUILD_TESTS)
+    add_test(NAME mutation-discovery-native COMMAND poima-mutation-discovery-test)
 endif()

@@ -1,0 +1,9 @@
+{"jsonrpc":"2.0","id":0,"method":"world.inspect"}
+{"jsonrpc":"2.0","id":1,"method":"world.describe","params":{}}
+{"jsonrpc":"2.0","id":2,"method":"world.describe","params":{"view":"method","name":"world.transact"}}
+{"jsonrpc":"2.0","id":3,"method":"world.describe","params":{"view":"mutation","operation":"entity.create"}}
+{"jsonrpc":"2.0","id":4,"method":"world.describe","params":{"view":"mutation","operation":"entity.rename"}}
+{"jsonrpc":"2.0","id":5,"method":"world.describe","params":{"view":"mutation","operation":"component.set","type":"Transform"}}
+{"jsonrpc":"2.0","id":6,"method":"world.describe","params":{"view":"mutation","operation":"component.set","type":"BoxCollider"}}
+{"jsonrpc":"2.0","id":7,"method":"world.describe","params":{"view":"mutation","operation":"component.remove","type":"Camera"}}
+{"jsonrpc":"2.0","id":8,"method":"world.inspect"}

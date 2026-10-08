@@ -17,6 +17,7 @@
 #include "development_service.hpp"
 #include "asset_store.hpp"
 #include "input_profile_store.hpp"
+#include "mutation_discovery.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -51,15 +52,23 @@ void fields(const Json& value, std::initializer_list<const char*> allowed,
     for (auto key : required) require(value.contains(key), std::string("Missing field: ") + key);
 }
 std::string discovery_view(const Json& params) {
-    fields(params,{"view","name"});
+    fields(params,{"view","name","operation","type"});
     const auto view=params.value("view",std::string("full"));
-    require(view=="full" || view=="catalog" || view=="method" || view=="component" || view=="section","Unknown discovery view.");
+    require(view=="full" || view=="catalog" || view=="method" || view=="component" || view=="section" || view=="mutation","Unknown discovery view.");
     const bool named=view=="method" || view=="component" || view=="section";
     require(params.contains("name")==named,"Discovery name is required only for method, component or section views.");
     if(named)require(params.at("name").is_string() && !params.at("name").get_ref<const std::string&>().empty(),"Discovery name must be a nonempty string.");
+    require(params.contains("operation")== (view=="mutation"),"Discovery operation is required only for the mutation view.");
+    require(view=="mutation" || !params.contains("type"),"Discovery type applies only to the mutation view.");
+    if(view=="mutation") {
+        for(const auto* key:{"operation","type"})if(params.contains(key))
+            require(params.at(key).is_string() && !params.at(key).get_ref<const std::string&>().empty() &&
+                    params.at(key).get_ref<const std::string&>().size()<=128,"Mutation selectors must contain 1..128 UTF-8 bytes.");
+        if(params.contains("type"))require(params.at("operation")=="component.set" || params.at("operation")=="component.remove","Discovery type applies only to component.set/remove.");
+    }
     return view;
 }
-Json project_discovery(Json description,const Json& params) {
+Json project_discovery(Json description,const Json& params,const std::function<void(const std::string&)>& registered_type) {
     const auto view=discovery_view(params);
     if(view=="full")return description;
     Json result={{"partial",true},{"view",view}};
@@ -72,6 +81,20 @@ Json project_discovery(Json description,const Json& params) {
         for(const auto& [name,value]:methods.items())result["methods"].push_back(name);
         for(const auto& [name,value]:components.items())result["components"].push_back(name);
         for(const auto& [name,value]:description.items())result["sections"].push_back(name);
+    } else if(view=="mutation") {
+        require(methods.contains("world.transact"),"Mutation discovery is unavailable in this session.");
+        const auto operation=params.at("operation").get<std::string>();
+        std::optional<std::string> type;
+        if(params.contains("type")) {
+            type=params.at("type").get<std::string>();
+            if(type->starts_with("game:"))registered_type(*type);
+        }
+        try {
+            result["methods"]={{"world.transact",discovery_detail::mutation_schema(methods.at("world.transact"),operation,
+                type ? std::optional<std::string_view>(*type) : std::nullopt)}};
+        } catch(const std::invalid_argument& error) { throw Error(-32602,error.what()); }
+        result["selection"]={{"operation",operation}};
+        if(type)result["selection"]["type"]=*type;
     } else {
         const auto name=params.at("name").get<std::string>();
         const auto& values=view=="method" ? methods : view=="component" ? components : description;
@@ -399,11 +422,12 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 47}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 48}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
-            {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry. Read the invariants section before mutations."},{"oneOf",Json::array({
+            {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
-                object_schema({{"view",{{"enum",{"method","component","section"}}}},{"name",{{"type","string"},{"minLength",1}}}},{"view","name"})
+                object_schema({{"view",{{"enum",{"method","component","section"}}}},{"name",{{"type","string"},{"minLength",1}}}},{"view","name"}),
+                object_schema({{"view",{{"const","mutation"}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}}},{"view","operation"})
             })}}}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
             {"session.close", object_schema(Json::object())},
@@ -1036,6 +1060,9 @@ class World {
         exists_ = true;
     }
 public:
+    void require_registered_custom_type(const std::string& type) const {
+        const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(type));
+    }
     profiling::Recorder& profiler() noexcept { return profiler_.recorder(); }
     WorldProfilerContext profiler_context() const {
         WorldProfilerContext result;
@@ -3040,7 +3067,8 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
         }
         // Project only after scope restrictions, so focused discovery cannot
         // advertise an operation hidden from the full session descriptor.
-        if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()));
+        if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()),
+            [&](const std::string& type){impl_->world.require_registered_custom_type(type);});
         response={{"jsonrpc","2.0"},{"id",id},{"result",result}};
         if(method=="session.close" || method=="host.shutdown")impl_->closed=true;
     }catch(const Error& error) {

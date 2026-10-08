@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.48 — Unreleased
+
+This checkpoint adds focused mutation discovery for external agents and automation. The installed desktop package remains unchanged.
+
+- `world.describe` can select a transaction operation and optional component type while preserving revision/receipt guards, previews and operation bounds. Read-only/shared restrictions apply first; registered custom types and removal enums keep their original schemas. Full and existing focused views remain available. [Discovery contract](docs/WORLD_SERVICE.md#focused-discovery-development).
+- MCP advertises the new selectors, and the 0.0.48 Python client adds `discover_mutation()` with contextual response checks. Native Windows/Linux tests cover advertised selections, observational errors, scope restrictions and unchanged mixed transactions. Installed-wheel checks qualify the updated package.
+- Conservative projection retains complete unions when references or unfamiliar schema context prevent pruning. An indexed-reference regression rejects the old contract exporter. The unchanged candidate baseline passes a narrow closed-object union-extension proof; this does not release full-engine API stability.
+- A Windows Transform selection produces 1,318 native response bytes versus 27,779 for the complete transaction method; its MCP response is 2,910 bytes versus 60,276. Counts include JSON-RPC envelopes and exclude line delimiters. Response bytes are not provider tokens or measured development speed. [Evidence and reproducible requests](docs/evidence/m2-scoped-mutation-discovery.json).
+
 ## 0.0.47 — Unreleased
 
 This checkpoint replaces headless owner retry sleeps with transport readiness waits. The installed desktop package remains unchanged.

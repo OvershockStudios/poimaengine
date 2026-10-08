@@ -149,6 +149,49 @@ class McpContract(unittest.TestCase):
         self.assertEqual(replies[0]['result']['value']['name'], 'MCP durable entity')
         self.assertEqual(replies[1]['result']['revision'], 3)
 
+    def test_mutation_discovery_advertises_selectors_and_keeps_guards(self):
+        client = self.client()
+        discover = next(tool for tool in client.rpc('tools/list')['tools']
+                        if tool['name'] == 'poima_discover')
+        properties = discover['inputSchema']['properties']
+        self.assertIn('mutation', properties['view']['enum'])
+        self.assertIn('operation', properties)
+        self.assertIn('type', properties)
+        before = client.world('world.inspect')
+        full = client.tool('poima_discover', {'view': 'method', 'name': 'world.transact'})
+        selected = client.tool('poima_discover', {'view': 'mutation',
+                                                'operation': 'component.set', 'type': 'Transform'})
+        self.assertEqual(selected['selection'], {'operation': 'component.set', 'type': 'Transform'})
+        schema = selected['methods']['world.transact']
+        original = full['methods']['world.transact']
+        self.assertEqual(schema['required'], original['required'])
+        for field in ('request_id', 'base_revision', 'preview'):
+            self.assertEqual(schema['properties'][field], original['properties'][field])
+        self.assertEqual(schema['properties']['ops']['maxItems'], original['properties']['ops']['maxItems'])
+        branches = schema['properties']['ops']['items']['oneOf']
+        expected = [branch for branch in original['properties']['ops']['items']['oneOf']
+                    if branch['properties'].get('op', {}).get('const') == 'component.set'
+                    and branch['properties'].get('type', {}).get('const') == 'Transform']
+        self.assertEqual(branches, expected)
+        self.assertEqual(client.world('world.inspect'), before)
+        for params in ({'view': 'mutation'},
+                       {'view': 'mutation', 'operation': 'entity.create', 'type': 'Transform'},
+                       {'view': 'mutation', 'operation': 'component.remove', 'type': 'Transform'},
+                       {'view': 'mutation', 'operation': 'missing.operation'}):
+            with self.subTest(params=params):
+                client.tool('poima_discover', params, error=-32602)
+                self.assertEqual(client.world('world.inspect'), before)
+        # Focused discovery does not restrict later mixed atomic edits.
+        entity = uuid.uuid4().hex
+        result = client.world('world.transact', {'request_id': uuid.uuid4().hex,
+                       'base_revision': before['revision'], 'ops': [
+                           {'op': 'entity.create', 'id': entity, 'name': 'Scoped MCP'},
+                           {'op': 'component.set', 'id': entity, 'type': 'Transform',
+                            'value': {'position': [1, 2, 3], 'rotation': [0, 0, 0, 1],
+                                      'scale': [1, 1, 1]}}]})
+        self.assertTrue(result['committed'])
+        self.assertEqual(client.world('entity.get', {'id': entity, 'component': 'Transform'})['value']['position'], [1, 2, 3])
+
     def test_shared_endpoint_receipts_conflicts_and_detach(self):
         endpoint = 'mcp-' + uuid.uuid4().hex
         host = subprocess.Popen([BINARY, 'serve', native(self.path), '--endpoint', endpoint],

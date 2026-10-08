@@ -39,6 +39,13 @@ Unproven changes require review; this is deliberately not a general JSON Schema
 subsumption solver. A passing request check does not establish compatible
 responses, error codes, persistence, timing or simulation determinism.
 
+The focused mutation view widens discovery requests without replacing the
+candidate baseline. The gate can prove a narrow `oneOf` extension when all old
+closed-object branches remain unchanged and every added branch requires a field
+forbidden by each old branch. Unknown shapes and reference-bearing branches
+require review. This preserves old-request acceptance; it does not prove that
+new requests are themselves unambiguous or semantically valid.
+
 The projection excludes mutation branches outside the contract. It retains the
 selected branches and their constraints, so removing a selected operation or
 tightening its schema still fails the gate. Candidate component selectors retain
@@ -48,7 +55,7 @@ their full constraints; the baseline requires only `Transform` to remain valid.
 
 The [Python client](PYTHON_CLIENT.md) packages a separate
 [candidate response manifest](../tools/python/poima_client/core_responses.v1.candidate.json)
-for these nine methods, with full/focused discovery, full/Transform entity reads
+for these nine methods, with full/focused/mutation discovery, full/Transform entity reads
 and preview/commit variants. Its validator checks required shapes and contextual
 guards, allowing additional result fields. Read-only/shared metadata and build
 availability remain variable. Legacy replay receipts may lack history metadata;

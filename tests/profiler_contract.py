@@ -45,7 +45,7 @@ def main():
     try:
         first=Client(args,run/'first.json',evidence);clients.append(first)
         second=Client(args,run/'second.json',evidence);clients.append(second)
-        descriptor=first.call('world.describe');assert descriptor['schema_revision']==47
+        descriptor=first.call('world.describe');assert descriptor['schema_revision']==48
         for name in ['start','stop','status','events','summary','export']:assert 'profiler.'+name in descriptor['methods']
         assert first.call('profiler.status')['state']=='empty'
         cap=uid(10);params=dict(capture_id=cap,expected_capture_id=None,capacity=256)

@@ -241,6 +241,66 @@ class TransportContract(unittest.TestCase):
 
 
 class WrapperContract(unittest.TestCase):
+    def test_mutation_discovery_helper_sends_exact_selectors(self):
+        def result(operation, component=None):
+            selection = {'operation': operation}
+            properties = {'op': {'const': operation}}
+            if component is not None:
+                selection['type'] = component
+                properties['type'] = {'const': component}
+            envelope = {'type': 'object', 'required': ['request_id', 'base_revision', 'ops'],
+                        'properties': {'request_id': {'type': 'string'}, 'base_revision': {'type': 'integer'},
+                                       'ops': {'type': 'array', 'items': {'oneOf': [
+                                           {'properties': properties}]}}}}
+            return {'protocol_version': 1, 'schema_revision': 48, 'mode': 'authoring',
+                    'read_only': False, 'runtime_available': True, 'partial': True,
+                    'view': 'mutation', 'selection': selection, 'methods': {'world.transact': envelope}}
+        values = [result('entity.create'), result('component.set', 'Transform')]
+        class TimedTransport(ScriptedTransport):
+            def request(self, method, params=None, timeout=30.0):
+                self.timeout = timeout
+                return super().request(method, params, timeout)
+        transport = TimedTransport(values)
+        client = WorldClient(transport)
+        self.assertIs(client.discover_mutation('entity.create', timeout=2.5), values[0])
+        self.assertEqual(transport.timeout, 2.5)
+        self.assertIs(client.discover_mutation('component.set', 'Transform'), values[1])
+        self.assertEqual(transport.calls, [
+            ('world.describe', {'view': 'mutation', 'operation': 'entity.create'}),
+            ('world.describe', {'view': 'mutation', 'operation': 'component.set', 'type': 'Transform'})])
+
+    def test_discovery_helpers_reject_cross_view_selectors_without_sending(self):
+        transport = ScriptedTransport()
+        client = WorldClient(transport)
+        invalid = [lambda: client.discover('mutation'), lambda: client.discover('future'),
+                   lambda: client.discover('full', 'world.transact'),
+                   lambda: client.discover('catalog', 'Transform'),
+                   lambda: client.discover('component'), lambda: client.discover('method', False),
+                   lambda: client.discover_mutation('entity.create', 'Camera')]
+        for operation in (None, True, '', 'a'*129, 'é'*65, '\ud800'):
+            invalid.append(lambda value=operation: client.discover_mutation(value))
+        for component in (True, '', 'a'*129, 'é'*65, '\ud800'):
+            invalid.append(lambda value=component: client.discover_mutation('component.set', value))
+        for action in invalid:
+            with self.assertRaises(ValueError):
+                action()
+        self.assertEqual(transport.calls, [])
+
+    def test_mutation_discovery_bad_response_keeps_original_context(self):
+        class MutatingTransport(ScriptedTransport):
+            def request(self, method, params=None, timeout=30.0):
+                params['operation'] = 'entity.create'
+                return {'protocol_version': 1, 'schema_revision': 48, 'mode': 'authoring',
+                        'read_only': False, 'runtime_available': True, 'partial': True,
+                        'view': 'mutation', 'selection': {'operation': 'entity.create'},
+                        'methods': {'world.transact': {}}}
+        client = WorldClient(MutatingTransport())
+        with self.assertRaises(ResponseContractError) as caught:
+            client.discover_mutation('component.set', 'Transform')
+        self.assertEqual(caught.exception.params,
+                         {'view': 'mutation', 'operation': 'component.set', 'type': 'Transform'})
+        self.assertFalse(client.closed)
+
     def test_invalid_wrapper_parameters_never_reach_transport(self):
         transport = ScriptedTransport()
         client = WorldClient(transport)
@@ -381,6 +441,13 @@ class NativeContract(unittest.TestCase):
                 for view, name in (('full', None), ('catalog', None), ('method', 'world.transact'),
                                    ('component', 'Transform'), ('section', 'invariants')):
                     self.assertIn('schema_revision', client.discover(view, name))
+                for operation, component in (('entity.create', None), ('component.set', 'Transform'),
+                                              ('component.remove', 'Camera')):
+                    focused = client.discover_mutation(operation, component)
+                    self.assertEqual(list(focused['methods']), ['world.transact'])
+                    self.assertEqual(focused['selection']['operation'], operation)
+                    if component is not None:
+                        self.assertEqual(focused['selection']['type'], component)
                 preview = client.transact(ops, 0, request_id=request_id, preview=True)
                 self.assertFalse(preview['committed'])
                 self.assertEqual(client.inspect()['revision'], 0)

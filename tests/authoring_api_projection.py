@@ -111,6 +111,73 @@ class Projection(unittest.TestCase):
                     self.assertTrue(compare_discovery(BASELINE, projected),
                                     'Unresolved reference overlap was certified compatible.')
 
+    def test_sibling_reference_indices_survive_union_projection(self):
+        for reference in ('$ref', '$dynamicRef', '$recursiveRef'):
+            with self.subTest(reference=reference):
+                candidate = source()
+                outside = copy.deepcopy(mutation(candidate, 'entity.create'))
+                outside['properties']['op'] = {'const': 'template.set'}
+                mutations(candidate).insert(0, outside)
+                # Index1 now points to the first original core branch. Removing
+                # the earlier outside branch would retarget it to a different
+                # core operation, even if the reference branch itself survives.
+                pointer = '#/properties/ops/items/oneOf/1'
+                mutations(candidate).append({reference: pointer})
+                expected_target = copy.deepcopy(mutations(candidate)[1])
+                original = copy.deepcopy(candidate)
+                projected = project(candidate)
+                envelope = projected['methods']['world.transact']
+                target = envelope
+                for key in pointer[2:].split('/'):
+                    target = target[int(key)] if isinstance(target, list) else target[key]
+                self.assertEqual(target, expected_target, 'Pruning retargeted a surviving sibling reference.')
+                self.assertEqual(mutations(projected), mutations(candidate), 'Reference context lost outside siblings.')
+                self.assertEqual(candidate, original, 'Projection mutated authoritative input.')
+                self.assertTrue(compare_discovery(BASELINE, projected))
+                with self.assertRaises(ValueError): project(candidate, baseline=True)
+
+    def test_ancestor_and_cross_section_references_disable_union_pruning(self):
+        for reference in ('$ref', '$dynamicRef', '$recursiveRef'):
+            for placement in ('envelope', 'ops', 'items', 'other_method', 'discovery'):
+                with self.subTest(reference=reference, placement=placement):
+                    candidate = source()
+                    outside = copy.deepcopy(mutation(candidate, 'entity.create'))
+                    outside['properties']['op'] = {'const': 'template.set'}
+                    mutations(candidate).insert(0, outside)
+                    envelope = candidate['methods']['world.transact']
+                    if placement == 'envelope': target = envelope
+                    elif placement == 'ops': target = envelope['properties']['ops']
+                    elif placement == 'items': target = envelope['properties']['ops']['items']
+                    elif placement == 'other_method':
+                        target = candidate['methods']['renderer.external'] = {}
+                    else: target = candidate
+                    target[reference] = '#/methods/world.transact/properties/ops/items/oneOf/1'
+                    projected = project(candidate)
+                    self.assertEqual(mutations(projected), mutations(candidate),
+                                     'Ancestor or external reference could observe pruned sibling indices.')
+                    with self.assertRaises(ValueError): project(candidate, baseline=True)
+
+    def test_resource_and_dialect_markers_require_unpruned_context(self):
+        markers = {'$schema': 'https://json-schema.org/draft/2020-12/schema',
+                   '$id': 'urn:poima:test:schema', '$anchor': 'operation',
+                   '$dynamicAnchor': 'operation', '$recursiveAnchor': True,
+                   '$vocabulary': {'urn:poima:test:vocabulary': True}}
+        for marker, value in markers.items():
+            for placement in ('discovery', 'envelope', 'branch'):
+                with self.subTest(marker=marker, placement=placement):
+                    candidate = source()
+                    outside = copy.deepcopy(mutation(candidate, 'entity.create'))
+                    outside['properties']['op'] = {'const': 'template.set'}
+                    mutations(candidate).insert(0, outside)
+                    target = (candidate if placement == 'discovery' else
+                              candidate['methods']['world.transact'] if placement == 'envelope' else
+                              mutations(candidate)[-1])
+                    target[marker] = value
+                    projected = project(candidate)
+                    self.assertEqual(mutations(projected), mutations(candidate),
+                                     'Unknown resource/dialect context was structurally pruned.')
+                    with self.assertRaises(ValueError): project(candidate, baseline=True)
+
     def test_removed_scope_entries_remain_missing_and_fail_gate(self):
         for category, name in (('methods', 'world.transact'), ('methods', 'entity.get'),
                                ('components', 'Transform')):

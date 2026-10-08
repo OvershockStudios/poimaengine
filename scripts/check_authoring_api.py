@@ -147,6 +147,60 @@ def _disjoint(left: dict, right: dict) -> bool:
     return any(name in right and not _equal(value, right[name]) for name, value in left.items())
 
 
+def _object_branch(branch: Any, closed: bool) -> tuple[dict, set[str]] | None:
+    """Only direct, reference-free object constraints can witness exclusion.
+
+    In particular patternProperties can admit names absent from properties, and
+    references/resource scopes are intentionally not resolved by this checker.
+    """
+    if not isinstance(branch, dict) or branch.get("type") != "object":
+        return None
+    if _contains_reference(branch) or set(branch) - SUPPORTED - COSMETIC:
+        return None
+    if closed and branch.get("additionalProperties") is not False:
+        return None
+    properties, required = branch.get("properties", {}), branch.get("required", [])
+    if not isinstance(properties, dict) or any(not isinstance(k, str) for k in properties):
+        return None
+    if not isinstance(required, list) or any(not isinstance(k, str) for k in required):
+        return None
+    if len(required) != len(set(required)) or not set(required).issubset(properties):
+        return None
+    return properties, set(required)
+
+
+def _closed_object_extension(before: list, after: list) -> bool:
+    """Preserve old oneOf acceptances using a forbidden-property witness.
+
+    Retain every old closed branch unchanged (including multiplicity). Each
+    added object must directly require a property forbidden by *each* old
+    branch. It therefore cannot add a second match for any old accepted value.
+    New branches may overlap one another: this proves only old acceptance, not
+    acceptance of new caller shapes. Arbitrary union/branch rewrites are refused.
+    """
+    old_shapes = [_object_branch(branch, closed=True) for branch in before]
+    if any(shape is None for shape in old_shapes):
+        return False
+    remaining = list(after)
+    for branch in before:
+        match = next((i for i, candidate in enumerate(remaining)
+                      if _equal(_clean(branch), _clean(candidate))), None)
+        if match is None:
+            return False
+        del remaining[match]
+    if not remaining:
+        return True
+    for branch in remaining:
+        shape = _object_branch(branch, closed=False)
+        if shape is None:
+            return False
+        _, required = shape
+        if not required or any(not required.difference(old_properties)
+                               for old_properties, _ in old_shapes):
+            return False
+    return True
+
+
 def _merge_schema(outer: dict, branch: Any) -> dict | bool | None:
     """Only combine syntactically nonconflicting constraints; no allOf solver."""
     if branch is False:
@@ -309,6 +363,8 @@ def _compare(old: Any, new: Any, path: str, found: _Findings, depth: int = 0) ->
             found.add(union_path, "Exclusive union was added, removed, or malformed.")
             return
         if _equal([_clean(b) for b in before], [_clean(b) for b in after]):
+            return
+        if _closed_object_extension(before, after):
             return
         old_tags, new_tags = [_discriminators(b) for b in before], [_discriminators(b) for b in after]
         if any(t is None for t in old_tags + new_tags):

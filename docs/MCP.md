@@ -28,8 +28,15 @@ Only two tools are advertised, keeping the initial tool catalog small:
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
-| `poima_discover` | Optional `view` and `name`, as in [focused discovery](WORLD_SERVICE.md#focused-discovery-development). Defaults to `catalog`. | Available operation names, a selected schema or contract section. |
+| `poima_discover` | Optional `view` and `name`, or mutation `operation` and `type`, as in [focused discovery](WORLD_SERVICE.md#focused-discovery-development). Defaults to `catalog`. | Available operation names, a selected schema or contract section. |
 | `poima_call` | Required `method`, optional object `params` and capture-only `image`. | The native operation result or error. |
+
+For a small mutation schema, call `poima_discover` with
+`{"view":"mutation","operation":"component.set","type":"Transform"}`.
+This keeps the transaction's revision/receipt requirements visible while omitting
+provably unrelated operation branches. Fetch other selections or the complete
+`world.transact` method when composing mixed edits. Existing views remain
+available; malformed or unavailable selections retain native errors.
 
 Start with discovery. Read the `invariants` section and relevant operation schemas, then inspect the world before editing. For example, call `poima_call` with `{"method":"world.inspect"}`. Submit guarded transactions using the returned revision and a caller-generated durable `request_id`. The adapter does not invent revisions, fill missing mutation identifiers or automatically retry failures.
 

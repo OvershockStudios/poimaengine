@@ -21,9 +21,33 @@ response checks. Generic calls retain access to the discovered native API.
 
 The catalog returns sorted `methods`, `components` and `sections` name arrays. A selected entry returns a one-entry object under the corresponding key; sections use `sections`. Partial responses include `partial: true`, their `view`, schema/build availability and applicable session metadata. `view: "full"` is equivalent to omitting parameters. `name` is required for `method`, `component` and `section`, and forbidden for `full` or `catalog`. Unknown or unavailable names and malformed selectors return `-32602`.
 
+The mutation view selects a transaction operation, optionally a component type:
+
+```json
+{"jsonrpc":"2.0","id":5,"method":"world.describe","params":{"view":"mutation","operation":"entity.create"}}
+{"jsonrpc":"2.0","id":6,"method":"world.describe","params":{"view":"mutation","operation":"component.set","type":"Transform"}}
+```
+
+Its response includes `selection` and `methods.world.transact`. The selected
+schema keeps the transaction envelope, including `request_id`, `base_revision`,
+`preview` and operation-count bounds. It narrows the operation union only where
+other branches are provably disjoint. Enums, generic custom-component schemas,
+unknown constraints or reference-bearing schemas can retain the entire union;
+this view is an
+authoring aid rather than a guarantee that every retained branch has one exact
+operation/type constant. Mixed-operation atomic transactions remain supported.
+
+Selectors contain 1–128 UTF-8 bytes. `operation` is required for `mutation`;
+`type` is optional only for
+`component.set` and `component.remove`. These selectors are forbidden in other
+views, and `name` is forbidden in mutation discovery. Exact custom selections
+require a registered `game:<type_id>`; use `component.schemas` for its fields.
+Unknown operations, unavailable types and impossible selections reject without
+editing the world. `Transform` can be set but cannot be removed.
+
 Focused schemas are selected after read-only and shared-session restrictions. They cannot expose a schema hidden from that session's full descriptor. Built-in component discovery is separate from project-defined schemas, which use `component.schemas`. Read the `invariants` and relevant subsystem sections before editing: individual parameter schemas do not express every semantic constraint. Discovery does not advance simulation or mutate authored state. This reduces response size; it does not promise faster descriptor construction or implement an agent provider/MCP adapter.
 
-Linux protocol and in-process native tests cover malformed selectors, exact schema projection, state preservation and all three session scopes in authoring/read-only modes. The measured catalog is 2,092 bytes and the `entity.query` response 860 bytes, versus 110,867 bytes for full discovery. Counts include the JSON-RPC envelope and newline. Windows engine, desktop bridge and native test fixture compile successfully; Windows execution remains unqualified. [Evidence](evidence/m2-focused-discovery.json).
+The initial focused-discovery checkpoint qualified Linux protocol and in-process native tests for malformed selectors, exact projection, state preservation and all three session scopes. Its catalog measured 2,092 bytes and `entity.query` 860 bytes versus 110,867 bytes for full discovery, including the JSON-RPC envelope and newline. At that checkpoint, Windows compilation passed but execution was unqualified. [Historical evidence](evidence/m2-focused-discovery.json). The 0.0.48 mutation checkpoint now qualifies native Windows/Linux execution and records current wire counts separately. [Current evidence and request fixtures](evidence/m2-scoped-mutation-discovery.json).
 
 Schema revision 21 added `runtime.status` and scope-aware shared-session discovery. Schema revision 20 added `world.history`, `world.undo` and `world.redo`. Undo/redo use `request_id` and `base_revision`, advance the revision, preserve known entity identities and store durable retry receipts. History is session-local, capped at 32 edits and 16 MiB of compact serialized entity snapshots. A new committed edit clears redo. Failed edits/previews preserve history. See the [history contract and native API](EDITOR.md#shared-service-and-history) for limits and restart behavior.
 
@@ -102,7 +126,7 @@ Per-request failures leave the session available. Startup failures use the CLI's
 
 ## Verification and remaining work
 
-`tests/world_contract.py` drives the compiled process using Python's standard library. Its twelve cases cover identity defaults, isolated previews, guarded revisions, Unicode filenames/content, persistence, rollback, hierarchy pagination/deletion, retry eviction, malformed requests, write failures, writer exclusion and explicit backup restore. Abrupt termination and lock release are tested on Linux; the WSL harness skips that case for Windows. [Current core qualification](evidence/m2-authoring-api-compatibility.json), [initial service evidence](evidence/m1-world-service.json) and [expanded scene evidence](evidence/m2-scene-capture.json).
+`tests/world_contract.py` drives the compiled process using Python's standard library. Its cases cover identity defaults, isolated previews, guarded revisions, Unicode filenames/content, persistence, rollback, hierarchy pagination/deletion, retry eviction, malformed requests, write failures, writer exclusion and explicit backup restore. Abrupt termination and lock release are tested on Linux; the WSL harness skips that case for Windows. [Current core qualification](evidence/m2-authoring-api-compatibility.json), [initial service evidence](evidence/m1-world-service.json) and [expanded scene evidence](evidence/m2-scene-capture.json).
 
 The optional EnTT/Jolt runtime provides simulation ECS storage, fixed ticks and live snapshots through additional runtime commands. Shared native sessions, undo/redo, custom component schemas, C# component bindings and root-prop templates are implemented foundations. Nested prefab variants and mature editor workflows remain unfinished. See the [implementation status](IMPLEMENTATION_STATUS.md) for current qualification; this service alone does not complete the engine roadmap.
 

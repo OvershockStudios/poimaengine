@@ -110,7 +110,7 @@ class Compatibility(unittest.TestCase):
         new = copy.deepcopy(old); new["oneOf"].append(branch("rename", id=dict(type="string"), name=dict(type="string")))
         self.assertEqual(schema_compare(old, new), [])
         new["oneOf"].reverse(); self.assertEqual(schema_compare(old, new), [])
-        unsafe = copy.deepcopy(old); unsafe["oneOf"].append(branch("create", another=dict(type="string")))
+        unsafe = copy.deepcopy(old); unsafe["oneOf"].append(branch("create", name=dict(type="string")))
         self.fails(old, unsafe, "disjoint")
         unsafe = copy.deepcopy(old); unsafe["oneOf"].append(True)
         self.fails(old, unsafe, "discriminators")
@@ -123,6 +123,92 @@ class Compatibility(unittest.TestCase):
         plain = dict(oneOf=[dict(type="integer"), dict(type="string")])
         self.fails(plain, dict(oneOf=[dict(type="number"), dict(type="string")]), "discriminators")
         self.fails(plain, dict(oneOf=[dict(type="integer"), dict(type="string"), dict(type="number")]), "discriminators")
+
+    def test_closed_object_union_extension_preserves_legacy_discovery(self):
+        # The actual legacy discovery input shapes have enum selectors rather
+        # than required const op/kind/type discriminators.
+        old = dict(type="object", oneOf=[
+            closed(dict(view=dict(enum=["full", "catalog"], default="full"))),
+            closed(dict(view=dict(enum=["method", "component", "section"]),
+                        name=dict(type="string", minLength=1)), ["view", "name"])])
+        focused = closed(dict(view=dict(const="focused"),
+                              select=closed(dict(methods=dict(type="array", items=dict(type="string"))))),
+                         ["view", "select"])
+        new = copy.deepcopy(old); new["oneOf"].append(focused)
+        self.assertEqual(schema_compare(old, new), [])
+        new["oneOf"].reverse(); self.assertEqual(schema_compare(old, new), [])
+        new["oneOf"][1]["description"] = "Cosmetic legacy branch documentation"
+        self.assertEqual(schema_compare(old, new), [])
+        # Equal op discriminators can still be safe when a genuinely new
+        # required property makes the object disjoint from all old shapes.
+        tagged = dict(oneOf=[branch("create", name=dict(type="string")), branch("delete", id=dict(type="string"))])
+        extended = copy.deepcopy(tagged); extended["oneOf"].append(branch("create", another=dict(type="string")))
+        self.assertEqual(schema_compare(tagged, extended), [])
+
+    def test_closed_object_union_extension_requires_each_forbidden_name(self):
+        old = dict(oneOf=[closed(dict(a=dict(type="string"))), closed(dict(b=dict(type="string")))])
+        added = closed(dict(a=dict(type="string"), b=dict(type="string")), ["a", "b"])
+        self.assertEqual(schema_compare(old, dict(oneOf=old["oneOf"]+[added])), [])
+        # Required a excludes the b branch but overlaps the old a branch.
+        unsafe = copy.deepcopy(added); unsafe["required"] = ["a"]
+        self.fails(old, dict(oneOf=old["oneOf"]+[unsafe]))
+        unsafe = copy.deepcopy(added); unsafe["required"] = []
+        self.fails(old, dict(oneOf=old["oneOf"]+[unsafe]))
+        unsafe = copy.deepcopy(added); del unsafe["required"]
+        self.fails(old, dict(oneOf=old["oneOf"]+[unsafe]))
+        for kind in (["object", "string"], "string", None):
+            unsafe = copy.deepcopy(added)
+            if kind is None: del unsafe["type"]
+            else: unsafe["type"] = kind
+            self.fails(old, dict(oneOf=old["oneOf"]+[unsafe]))
+        open_old = copy.deepcopy(old); open_old["oneOf"][0]["additionalProperties"] = True
+        self.fails(open_old, dict(oneOf=open_old["oneOf"]+[added]))
+        for patterns in ({}, {"^b$": dict(type="string")}):
+            patterned = copy.deepcopy(old); patterned["oneOf"][0]["patternProperties"] = patterns
+            self.fails(patterned, dict(oneOf=patterned["oneOf"]+[added]))
+            unsafe = copy.deepcopy(added); unsafe["patternProperties"] = patterns
+            self.fails(old, dict(oneOf=old["oneOf"]+[unsafe]))
+        unsafe = copy.deepcopy(added); unsafe["unevaluatedProperties"] = False
+        self.fails(old, dict(oneOf=old["oneOf"]+[unsafe]))
+
+    def test_closed_object_union_extension_retains_every_old_branch(self):
+        old = dict(oneOf=[closed(dict(view=dict(enum=["full", "catalog"]))),
+                          closed(dict(name=dict(type="string")), ["name"])])
+        added = closed(dict(select=dict(type="array")), ["select"])
+        removed = dict(oneOf=[old["oneOf"][0], added])
+        self.fails(old, removed)
+        changed = copy.deepcopy(old); changed["oneOf"][0]["properties"]["optional"] = dict(type="string")
+        changed["oneOf"].append(added); self.fails(old, changed)
+        duplicated = copy.deepcopy(old); duplicated["oneOf"].append(copy.deepcopy(old["oneOf"][0]))
+        self.fails(old, duplicated)
+        # Duplicate baseline branches must remain duplicated, not be silently
+        # folded into one branch by an existential equality check.
+        repeated = dict(oneOf=[copy.deepcopy(old["oneOf"][0]), copy.deepcopy(old["oneOf"][0])])
+        self.fails(repeated, dict(oneOf=[repeated["oneOf"][0], added]))
+
+    def test_closed_object_union_extension_references_fail_closed(self):
+        old = dict(oneOf=[closed(dict(view=dict(enum=["full", "catalog"])))])
+        added = closed(dict(select=dict(type="array")), ["select"])
+        for reference in ("$ref", "$dynamicRef", "$recursiveRef"):
+            for in_old in (False, True):
+                baseline = copy.deepcopy(old); candidate = copy.deepcopy(old)
+                if in_old:
+                    baseline["oneOf"][0]["properties"]["view"][reference] = "#/other"
+                    candidate = copy.deepcopy(baseline)
+                    candidate["oneOf"].append(copy.deepcopy(added))
+                else:
+                    candidate["oneOf"].append(dict(added, **{reference: "#/other"}))
+                with self.subTest(reference=reference, in_old=in_old): self.fails(baseline, candidate, "references")
+
+    def test_closed_object_union_new_overlap_cannot_reject_old_callers(self):
+        old = dict(oneOf=[closed(dict(view=dict(enum=["full", "catalog"]))),
+                          closed(dict(view=dict(enum=["method"]), name=dict(type="string")), ["view", "name"])])
+        added = closed(dict(select=dict(type="array")), ["select"])
+        # Both added branches can match {select: []}, so new caller acceptance
+        # is not promised. Neither can match any old object: select is required
+        # and every old closed branch forbids it.
+        candidate = dict(oneOf=copy.deepcopy(old["oneOf"])+[added, copy.deepcopy(added)])
+        self.assertEqual(schema_compare(old, candidate), [])
 
     def test_composite_const_discriminators_and_unprovable_custom_types(self):
         old = dict(oneOf=[branch("create"), branch("component.set", type=dict(const="Transform"))])

@@ -64,6 +64,33 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
             check(result({{"view","method"},{"name","host.shutdown"}}).at("methods").at("host.shutdown")==full.at("methods").at("host.shutdown"),"Headless shutdown projection differs.");
         } else check(request({{"view","method"},{"name","host.shutdown"}})["error"]["code"]==-32602,"Editor projection exposes headless shutdown.");
     }
+    const auto state=call(session,"world.inspect"),history=call(session,"world.history");
+    const Json selection={{"operation","component.set"},{"type","Transform"}};
+    if(full.at("methods").contains("world.transact")) {
+        auto projected=full.at("methods").at("world.transact");
+        auto branches=Json::array();
+        for(const auto& branch:projected.at("properties").at("ops").at("items").at("oneOf")) {
+            const auto& properties=branch.at("properties");
+            if(properties.at("op").value("const",std::string())=="component.set" &&
+               properties.contains("type") && properties.at("type").value("const",std::string())=="Transform")
+                branches.push_back(branch);
+        }
+        check(branches.size()==1,"Missing Transform discovery fixture branch.");
+        projected["properties"]["ops"]["items"]["oneOf"]=branches;
+        expected=metadata;expected["partial"]=true;expected["view"]="mutation";
+        expected["selection"]=selection;expected["methods"]={{"world.transact",projected}};
+        check(result({{"view","mutation"},{"operation","component.set"},{"type","Transform"}})==expected,
+              "Scoped mutation discovery lost metadata, envelope or exact selected branch.");
+    } else {
+        for(const Json selector:{Json{{"view","mutation"},{"operation","entity.create"}},
+                                 Json{{"view","mutation"},{"operation","component.set"},{"type","Transform"}}})
+            check(request(selector)["error"]["code"]==-32602,
+                  "Read-only discovery leaked a mutation schema.");
+    }
+    check(request({{"view","mutation"},{"operation","entity.create"},{"type","Transform"}})["error"]["code"]==-32602,
+          "Scoped mutation discovery accepted an impossible type selector.");
+    check(call(session,"world.inspect")==state && call(session,"world.history")==history,
+          "Scoped mutation discovery changed authored state or history.");
     check(result(Json::object())==full&&!session.closed(),"Discovery changed state or closed shared session.");
 }
 void custom_read_only_regression(const fs::path& directory) {
@@ -81,6 +108,12 @@ void custom_read_only_regression(const fs::path& directory) {
         poima::WorldSession session(path.string(),poima::WorldOpenMode::read_only_runtime);
         check(call(session,"component.schemas").at("schemas").size()==1,"Readonly v2 schema registry missing.");
         const auto discovery=call(session,"world.describe");check(!discovery.at("methods").contains("component.schema.import"),"Readonly discovery advertises schema import.");
+        for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless}) {
+            discovery_projection(session,scope);
+            const auto denied=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",42},{"method","world.describe"},
+                {"params",{{"view","mutation"},{"operation","component.set"},{"type","game:"+type}}}}.dump(),scope));
+            check(denied.at("error").at("code")==-32602,"Read-only custom mutation schema was exposed.");
+        }
         const auto rejected=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","component.schema.import"},{"params",Json::object()}}.dump()));
         check(rejected.at("error").at("code")==-32081,"Readonly schema import reached validation or mutation.");
         const auto content=session.package_content();const auto document=Json::parse(content.document);
@@ -300,7 +333,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==47,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==48,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})

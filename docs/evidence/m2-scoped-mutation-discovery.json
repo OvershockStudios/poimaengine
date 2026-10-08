@@ -1,0 +1,353 @@
+{
+  "checkpoint": "0.0.48 development",
+  "passed": true,
+  "scope": "Scoped mutation discovery, conservative schema projection and native/client/MCP compatibility; provider-free",
+  "protocol_version": 1,
+  "schema_revision": 48,
+  "implementation": {
+    "request": {
+      "view": "mutation",
+      "operation": "Required supported transaction operation",
+      "type": "Optional only for component.set/remove; exact custom type must be registered"
+    },
+    "selectors_utf8_byte_range": [
+      1,
+      128
+    ],
+    "result": "partial:true, view:mutation, exact selection, methods.world.transact and applicable scope metadata",
+    "transaction_envelope_and_bounds_copied": true,
+    "execution_and_mixed_transactions_unchanged": true,
+    "projection_after_read_only_and_shared_filtering": true,
+    "full_and_previous_focused_views_preserved": true,
+    "reference_dialect_or_unknown_source_context_keeps_full_union": true,
+    "positive_known_operation_type_witness_required": true,
+    "builtin_remove_enums_not_synthesized_or_narrowed": true,
+    "custom_value_schema_not_fabricated_from_fields": true,
+    "source_sha256": {
+      "src/world.cpp": "8f022ecc30f345313a6de7cba231faf3be37698ba7fcf8767c6385e714f018cb",
+      "src/mcp.cpp": "494e9716ac79c29b49466dde75d350903909284f5bcec8811ea844532e08f769",
+      "src/mutation_discovery.hpp": "b270359e15d5c9882b26fbcf50b7612d28967eabd6381fba9f5b2da60cd0b455",
+      "scripts/check_authoring_api.py": "8564bd290d5f3cece4ebf97fe3223b186e0c27771c512e5132d89c649a4dafef",
+      "scripts/project_authoring_api.py": "498f16d48e22542912e1cbe03c8e8599465ad420ed2a0aa6b8504ee55736ce1c",
+      "tests/mutation_discovery_native.cpp": "865fd7ca6e3b20ed8d448c3a4a286ae0f2150053530736a7e13a2c448027be93",
+      "tests/world_session_native.cpp": "489b52434d703f679fb6d8eecf82ced9df4ae3e8f9f6ec9641461a40815d15a7",
+      "tests/world_contract.py": "3c62cb50407f8554c6ba94439bfe314336af02d0f4af67158ae0782cf4afa792",
+      "tests/mcp_contract.py": "7fa3bc752321f93003516032306c9538457d1d039129ddaf4d493f74551b27fb",
+      "tests/authoring_api_compatibility.py": "5285f33f255c295ef78f19b263f0d835b1bb1c092370f45e81dc8506c61411bb",
+      "tests/authoring_api_projection.py": "93a649ba68f14d8d7fae4084fb847f5e5cbf653a9e99c19b7f6ac89d36af98ad",
+      "tests/python_client_contract.py": "189e14d27591d4ee7f08b814519c820954ed98694f3b5cc1047b29006eb74a01",
+      "tests/python_response_contract.py": "5bf0af669ad41a734f3c83132b06c9cac38317f115369044872dda8a4474b0dc",
+      "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+      "tools/python/poima_client/responses.py": "baeb5a13d167953b8ecf6ba69e627565db41c4ea835c275409f9a45b5fad7179",
+      "tools/python/poima_client/core_responses.v1.candidate.json": "6139d3801e29a3835cad2513141ff922125fd17f845f5d3b12990d3424279e90",
+      "tools/python/pyproject.toml": "195354d2e7cb7568ac715717f7d3ca602adcec148d188842ac9c312fc64fa721"
+    }
+  },
+  "engines": {
+    "windows": {
+      "version": "0.0.48",
+      "sha256": "a7b07ba5e54bcc065ba2f4c5bfc698f9d811131b509bdc793ce00ebd784b727d"
+    },
+    "linux": {
+      "version": "0.0.48",
+      "sha256": "6868db59a37cb8ba0e868ef7f06640cdfe8a01390d36b99c648f8593760d2577"
+    }
+  },
+  "response_byte_measurement": {
+    "methodology": "Native UTF-8 stdout lines captured directly; JSON-RPC response envelopes included, CR/LF delimiters excluded. Full/method/mutation views use the same process/world copy. Separate owned MCP process retains text+structured output.",
+    "world_input_sha256": "f77b16bbc70e3e5ffce295cff7274452673a365883402801207223b7dc8c49df",
+    "probe_sha256": "488a4172b1a92364b17b0846da9ae599d734cffbde9f572826dcb36c86cca9c1",
+    "request_fixtures_sha256": {
+      "docs/evidence/fixtures/mutation-discovery/mcp.requests.jsonl": "45a71ee2f166def2ef2a5d855fccdf22e828c2ee09592b538e2aeff532701b89",
+      "docs/evidence/fixtures/mutation-discovery/world.requests.jsonl": "83bcc40cbd450a3802d3d418ddb36b4d9443e23b0cd69bb765a00ac2e1c2291c"
+    },
+    "groups": {
+      "windows": {
+        "public_summary_sha256": "666c08f2d9a500a0860ee74230d48df6f302a336a1bf292c6daf3a20e4af7c9b",
+        "native_responses": [
+          {
+            "view": "full",
+            "jsonrpc_wire_bytes_without_newline": 115313
+          },
+          {
+            "view": "method",
+            "name": "world.transact",
+            "jsonrpc_wire_bytes_without_newline": 27779
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "entity.create"
+            },
+            "jsonrpc_wire_bytes_without_newline": 960,
+            "transaction_schema_reencoded_compact_bytes": 716
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "entity.rename"
+            },
+            "jsonrpc_wire_bytes_without_newline": 878,
+            "transaction_schema_reencoded_compact_bytes": 634
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "component.set",
+              "type": "Transform"
+            },
+            "jsonrpc_wire_bytes_without_newline": 1318,
+            "transaction_schema_reencoded_compact_bytes": 1055
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "component.set",
+              "type": "BoxCollider"
+            },
+            "jsonrpc_wire_bytes_without_newline": 1315,
+            "transaction_schema_reencoded_compact_bytes": 1050
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "component.remove",
+              "type": "Camera"
+            },
+            "jsonrpc_wire_bytes_without_newline": 1033,
+            "transaction_schema_reencoded_compact_bytes": 770
+          }
+        ],
+        "mcp_responses": [
+          {
+            "params": {
+              "view": "method",
+              "name": "world.transact"
+            },
+            "jsonrpc_wire_bytes_without_newline": 60276
+          },
+          {
+            "params": {
+              "view": "mutation",
+              "operation": "component.set",
+              "type": "Transform"
+            },
+            "jsonrpc_wire_bytes_without_newline": 2910
+          }
+        ],
+        "native_transform_response_reduction_percent": 95.25540876201447,
+        "mcp_transform_response_reduction_percent": 95.17220784391797,
+        "owned_process_exit_codes": [
+          0,
+          0
+        ],
+        "world_bytes_unchanged": true
+      },
+      "linux": {
+        "public_summary_sha256": "feedfe00b08b642f42fc3caa24ec4dd623f6a3bf2e66d0407b21dfd091f9658d",
+        "native_responses": [
+          {
+            "view": "full",
+            "jsonrpc_wire_bytes_without_newline": 115314
+          },
+          {
+            "view": "method",
+            "name": "world.transact",
+            "jsonrpc_wire_bytes_without_newline": 27780
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "entity.create"
+            },
+            "jsonrpc_wire_bytes_without_newline": 961,
+            "transaction_schema_reencoded_compact_bytes": 716
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "entity.rename"
+            },
+            "jsonrpc_wire_bytes_without_newline": 879,
+            "transaction_schema_reencoded_compact_bytes": 634
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "component.set",
+              "type": "Transform"
+            },
+            "jsonrpc_wire_bytes_without_newline": 1319,
+            "transaction_schema_reencoded_compact_bytes": 1055
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "component.set",
+              "type": "BoxCollider"
+            },
+            "jsonrpc_wire_bytes_without_newline": 1316,
+            "transaction_schema_reencoded_compact_bytes": 1050
+          },
+          {
+            "view": "mutation",
+            "selection": {
+              "operation": "component.remove",
+              "type": "Camera"
+            },
+            "jsonrpc_wire_bytes_without_newline": 1034,
+            "transaction_schema_reencoded_compact_bytes": 770
+          }
+        ],
+        "mcp_responses": [
+          {
+            "params": {
+              "view": "method",
+              "name": "world.transact"
+            },
+            "jsonrpc_wire_bytes_without_newline": 60278
+          },
+          {
+            "params": {
+              "view": "mutation",
+              "operation": "component.set",
+              "type": "Transform"
+            },
+            "jsonrpc_wire_bytes_without_newline": 2912
+          }
+        ],
+        "native_transform_response_reduction_percent": 95.25197984161267,
+        "mcp_transform_response_reduction_percent": 95.16905006801818,
+        "owned_process_exit_codes": [
+          0,
+          0
+        ],
+        "world_bytes_unchanged": true
+      }
+    }
+  },
+  "native_qualification": {
+    "windows": {
+      "pure_projection_exit_code": 0,
+      "world_session_scope_exit_code": 0,
+      "world_contract_cases": 14,
+      "python_client_cases": 21,
+      "python_response_cases": 18,
+      "mcp_cases": 6,
+      "shared_host_cases_passed": 7,
+      "shared_host_cases_skipped": 1,
+      "skip": "Linux-only pathname socket publication test",
+      "native_desktop_abi_checks": 10,
+      "gpu_attachment": false
+    },
+    "linux": {
+      "ctest_groups": [
+        "authoring_api_compatibility",
+        "authoring_api_projection",
+        "python_response_contract",
+        "python_client_contract",
+        "profiler_contract",
+        "world_session_native",
+        "mcp_contract",
+        "world_templates_contract",
+        "world_ui_contract",
+        "world_components_contract",
+        "shared_session_contract",
+        "world_contract",
+        "mutation-discovery-native"
+      ],
+      "all_passed": true,
+      "total_seconds": 18.15
+    },
+    "cases": [
+      "Every currently advertised operation and built-in set/remove selection matches its original full schema and complete transaction envelope.",
+      "Registered custom set/remove keeps generic value schemas; unregistered or impossible selections reject.",
+      "Malformed/cross-view/oversized selectors reject without authored state, history or file edits.",
+      "Selected discovery follows authoring/read-only and standalone/shared-editor/shared-headless restrictions.",
+      "Existing focused/full views, metadata and mixed preview/commit semantics remain.",
+      "Broad/overlap/enum/custom branches remain conservative; references/dialect/unknown context retain complete union.",
+      "Pointer regression verifies all three reference kinds at sibling, ancestor and envelope positions.",
+      "MCP advertises and forwards mutation selectors and preserves guards and mixed atomic transactions."
+    ],
+    "native_test_binaries_sha256": {
+      "windows/poima-world-session-test.exe": "5ec66c17382a97051d6f8a8540c9d62842c413694ab3739562e645a0ff642507",
+      "windows/poima-mutation-discovery-test.exe": "467f5ccc085567636ddd42fc88419d4508dce6ec2ff99a50cc07836e397d5084",
+      "linux/poima-world-session-test": "a0ca20932e2dbdb910510607f7fa7551145d8dd42759c6dd53772533920fbe1e",
+      "linux/poima-mutation-discovery-test": "4d6fbd864cea1ff18e40909d0741b9395466536ca12e02820e0a23e69a0d24c8"
+    }
+  },
+  "candidate_contract": {
+    "baseline_unchanged": true,
+    "baseline_sha256": "60ece6e21b9e6f6365427c267a8a34c447c2154cd1cc8190c06384b0e8337e1e",
+    "request_gate": {
+      "windows": {
+        "passed": true,
+        "findings": [],
+        "scope": "Selected input schemas only; conservative recognized rules, no general JSON Schema subsumption or runtime behavior/ABI guarantee."
+      },
+      "linux": {
+        "passed": true,
+        "findings": [],
+        "scope": "Selected input schemas only; conservative recognized rules, no general JSON Schema subsumption or runtime behavior/ABI guarantee."
+      }
+    },
+    "pure_checker_cases": 16,
+    "pure_exporter_cases": 12,
+    "extension_proof": "Every old closed-object exclusive branch remains unchanged with multiplicity; each added object requires a property forbidden by every old branch. This proves only old-request acceptance, not new-new exclusivity.",
+    "exporter_indexed_reference_negative_control": {
+      "old_exporter_sha256": "c61cbcaf679d06c7fe3d7e351f1a92333d0a61010c9e6c47e93bb914ff84b59c",
+      "new_test_sha256": "93a649ba68f14d8d7fae4084fb847f5e5cbf653a9e99c19b7f6ac89d36af98ad",
+      "test": "test_sibling_reference_indices_survive_union_projection",
+      "expected_failures": 3,
+      "errors": 0,
+      "reference_kinds": [
+        "$ref",
+        "$dynamicRef",
+        "$recursiveRef"
+      ]
+    }
+  },
+  "python_distribution": {
+    "version": "0.0.48",
+    "wheel_sha256": "2d0bf2ef5aaa8359e9e8c36d80fd3b6c29e02b02b366b6d508dd01a2e7ca0ee2",
+    "source_manifest_license_bytes_verified": true,
+    "installed_module_origin_verified": true,
+    "installed_client_cases": {
+      "windows": 21,
+      "linux": 21
+    },
+    "installed_trees_equal_checkout": true,
+    "executed_python_versions": {
+      "windows": [
+        3,
+        14,
+        8
+      ],
+      "linux": [
+        3,
+        14,
+        7
+      ]
+    },
+    "minimum_python_3_9_grammar_parsed": true,
+    "python_3_9_runtime_not_executed": true,
+    "stdlib_runtime_dependencies_only": true
+  },
+  "desktop_native_abi": {
+    "bridge_sha256": "c7616e453a2747160982c8360819a0dbfc4a0ee4818cab5afb3e36a01d49595d",
+    "checks": 10,
+    "passed": true,
+    "installed_desktop_package_activated": false,
+    "gui_gpu_or_physical_input_qualified": false
+  },
+  "limits": [
+    "These are native response bytes and separate compact schema reencoding counts, not provider-reported input/output tokens or measured autonomous game creation speed.",
+    "The byte measurement uses one small fixture on one machine; build/runtime availability metadata can change counts.",
+    "This is a native-generated schema selector, not a general JSON Schema solver, reference resolver or validation replacement.",
+    "Reference/dialect/unknown context may keep the complete union; payload reduction is not guaranteed for all descriptors.",
+    "Response validation verifies shape/context and literal selection witnesses; native equivalence tests establish guards and bounds for current descriptors.",
+    "Candidate request proof does not qualify broad gameplay/runtime/save API stability, new-request exclusivity or error/ABI evolution.",
+    "No fresh provider turn, defense-game replay, graphical render, installed editor activation, physical-device or production-scale benchmark in this checkpoint.",
+    "Raw reports, local paths, process identifiers and account transcripts remain excluded."
+  ]
+}

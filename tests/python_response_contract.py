@@ -39,6 +39,21 @@ def commit():
                 changed_ids=[uid(1)], history_recorded=True)
 
 
+def mutation_discovery(operation='entity.rename', component=None, branches=None):
+    selection = dict(operation=operation)
+    properties = dict(op={'const': operation})
+    if component is not None:
+        selection['type'] = component
+        properties['type'] = {'const': component}
+    if branches is None:
+        branches = [dict(type='object', properties=properties)]
+    envelope = dict(type='object', required=['request_id', 'base_revision', 'ops'],
+                    properties=dict(request_id={'type': 'string'}, base_revision={'type': 'integer'},
+                                    ops={'type': 'array', 'items': {'oneOf': branches}}))
+    return dict(META, schema_revision=48, partial=True, view='mutation', selection=selection,
+                methods={'world.transact': envelope})
+
+
 def fixtures():
     """Literal public wire records, deliberately independent of schema generation."""
     whole = dict(name='Origin', parent=None, components=dict(Transform=copy.deepcopy(IDENTITY)))
@@ -167,6 +182,71 @@ class ResponseContract(unittest.TestCase):
             self.rejects(method, dict(result, id=uid(2)), params)
             self.rejects(method, dict(result, revision=4), params)
             self.rejects(method, dict(result, id='ABC'), params)
+
+    def test_mutation_discovery_preserves_enum_and_conservative_union_branches(self):
+        params = dict(view='mutation', operation='component.remove', type='Camera')
+        branches = [dict(type='object', properties=dict(op={'const': 'component.remove'},
+                                                       type={'enum': ['Camera', 'Light']})),
+                    {}, {'$ref': '#/future', 'properties': {'op': {'const': 'future.operation'}}}]
+        result = mutation_discovery('component.remove', 'Camera', branches)
+        self.accepts('world.describe', result, params)
+        self.assertEqual(result['methods']['world.transact']['properties']['ops']['items']['oneOf'], branches)
+        custom = 'game:' + uid(70)
+        branch = dict(type='object', properties=dict(op={'enum': ['component.set', 'component.remove']},
+                                                    type={'pattern': '^game:[0-9a-f]{32}$'}))
+        self.accepts('world.describe', mutation_discovery('component.set', custom, [branch]),
+                     dict(view='mutation', operation='component.set', type=custom))
+        self.accepts('world.describe', mutation_discovery('component.set', branches=[branch]),
+                     dict(view='mutation', operation='component.set'))
+
+    def test_mutation_discovery_rejects_wrong_selection_and_incomplete_envelopes(self):
+        params = dict(view='mutation', operation='entity.rename')
+        result = mutation_discovery()
+        malformed = [dict(result, partial=False), dict(result, view='method'),
+                     dict(result, selection={'operation': 'entity.create'}),
+                     dict(result, selection={'operation': 'entity.rename', 'type': 'Camera'}),
+                     dict(result, methods={}), dict(result, methods={'other': {'type': 'object'}}),
+                     dict(result, methods=dict(result['methods'], extra={'type': 'object'})),
+                     dict(result, methods={'world.transact': {}})]
+        for changed in malformed:
+            self.rejects('world.describe', changed, params)
+        for path, replacement in ((('required',), ['ops', 'other', 'third']),
+                                  (('properties', 'ops', 'items', 'oneOf'), []),
+                                  (('properties', 'ops', 'items', 'oneOf'), [False]),
+                                  (('properties', 'ops', 'items'), {}),
+                                  (('properties', 'request_id'), {})):
+            changed = copy.deepcopy(result)
+            target = changed['methods']['world.transact']
+            for key in path[:-1]:
+                target = target[key]
+            target[path[-1]] = replacement
+            self.rejects('world.describe', changed, params)
+        unsupported = mutation_discovery(branches=[dict(properties=dict(op={'const': 'entity.create'}))])
+        self.rejects('world.describe', unsupported, params)
+        typed = mutation_discovery('component.set', 'Transform')
+        self.rejects('world.describe', typed, dict(view='mutation', operation='component.set', type='Camera'))
+        typed['methods']['world.transact']['properties']['ops']['items']['oneOf'][0]['properties']['type'] = {'const': 'Camera'}
+        self.rejects('world.describe', typed, dict(view='mutation', operation='component.set', type='Transform'))
+
+    def test_mutation_discovery_scope_and_selector_context_are_consistent(self):
+        result = mutation_discovery()
+        params = dict(view='mutation', operation='entity.rename')
+        for scope in ('shared_editor', 'shared_headless'):
+            self.accepts('world.describe', dict(result, session_scope=scope, runtime_available=False), params)
+        self.rejects('world.describe', dict(result, mode='read_only_runtime', read_only=True), params)
+        self.rejects('world.describe', dict(result, read_only=True), params)
+        for unavailable in ('unavailable_methods', 'unavailable_mutations'):
+            self.rejects('world.describe', dict(result, **{unavailable: ['world.transact']}), params)
+        for invalid in ({'view': 'mutation'}, dict(params, name='world.transact'),
+                        dict(params, operation=True), dict(params, operation=''),
+                        dict(params, operation='é'*65), dict(params, type='Camera'),
+                        dict(params, type=None)):
+            self.rejects('world.describe', result, invalid)
+        for view in ('full', 'catalog', 'method', 'component', 'section'):
+            invalid = dict(view=view, operation='entity.rename')
+            if view in ('method', 'component', 'section'):
+                invalid['name'] = 'world.transact'
+            self.rejects('world.describe', result, invalid)
 
     def test_matrix_and_transform_numbers_are_finite_and_correctly_sized(self):
         _, params, matrix = fixtures()[5]

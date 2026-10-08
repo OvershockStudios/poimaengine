@@ -98,7 +98,7 @@ def main():
         report['capabilities_process'] = {'exit_code': c.returncode, 'stdout': c.stdout, 'stderr': c.stderr}
         check(c.returncode == 0 and json.loads(c.stdout)['result']['features']['fsr3_upscaler'], 'Requires enabled FSR build')
         desc = good(batch([('world.describe', {})])[0])
-        check(desc['schema_revision'] == 47, desc['schema_revision'])
+        check(desc['schema_revision'] == 48, desc['schema_revision'])
         for method in ('world.capture', 'runtime.capture', 'asset.animation.capture', 'runtime.play'):
             check(desc['methods'][method]['properties']['reconstruction']['enum'] == ['none', *modes], method)
         plane, rig = run/'plane.glb', run/'rig.glb'

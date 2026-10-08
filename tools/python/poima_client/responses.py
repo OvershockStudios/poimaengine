@@ -100,6 +100,82 @@ def _check(value, schema, path='$', depth=0):
     return None
 
 
+def _discovery_parameters_reason(params, view):
+    named = view in ('method', 'component', 'section')
+    allowed = {'view', 'name'} if named else {'view'}
+    if view == 'mutation':
+        allowed = {'view', 'operation', 'type'}
+    if set(params) - allowed:
+        return 'successful discovery used selectors from another view'
+    if named and (not isinstance(params.get('name'), str) or not params['name']):
+        return 'successful focused discovery used an invalid name'
+    if view == 'mutation':
+        for name in ('operation', 'type'):
+            if name == 'type' and name not in params:
+                continue
+            value = params.get(name)
+            if not isinstance(value, str) or not value:
+                return 'successful mutation discovery used an invalid ' + name
+            try:
+                if len(value.encode('utf-8')) > 128:
+                    return 'successful mutation discovery used an oversized ' + name
+            except UnicodeError:
+                return 'successful mutation discovery used non-UTF-8 ' + name
+        if 'type' in params and params['operation'] not in ('component.set', 'component.remove'):
+            return 'successful mutation discovery used type for a non-component operation'
+    return None
+
+
+def _discriminator_supports(schema, value):
+    """Recognize literal selectors, not general JSON Schema acceptance."""
+    if not isinstance(schema, dict):
+        return False
+    known = False
+    if 'const' in schema:
+        known = True
+        if not _literal_equal(schema['const'], value):
+            return False
+    if 'enum' in schema:
+        known = True
+        if not isinstance(schema['enum'], list) or not any(
+                _literal_equal(item, value) for item in schema['enum']):
+            return False
+    # Never evaluate an arbitrary schema-provided regular expression. The
+    # native registered-component branch uses this one fixed safe pattern.
+    if schema.get('pattern') == '^game:[0-9a-f]{32}$':
+        known = True
+        if re.fullmatch(r'game:[0-9a-f]{32}', value) is None:
+            return False
+    return known
+
+
+def _mutation_discovery_reason(result, params):
+    expected = {'operation': params['operation']}
+    if 'type' in params:
+        expected['type'] = params['type']
+    if result['selection'] != expected:
+        return 'mutation discovery selection differs from requested operation/type'
+    if result['mode'] != 'authoring' or result['read_only']:
+        return 'mutation discovery advertises mutations in a read-only mode'
+    if list(result['methods']) != ['world.transact']:
+        return 'mutation discovery does not contain only world.transact'
+    for name in ('unavailable_methods', 'unavailable_mutations'):
+        if 'world.transact' in result.get(name, []):
+            return 'mutation discovery advertises an unavailable transaction method'
+    envelope = result['methods']['world.transact']
+    if not {'request_id', 'base_revision', 'ops'}.issubset(envelope['required']):
+        return 'mutation discovery lacks the transaction envelope guards'
+    branches = envelope['properties']['ops']['items']['oneOf']
+    for branch in branches:
+        properties = branch.get('properties', {})
+        if not isinstance(properties, dict) or not _discriminator_supports(
+                properties.get('op'), params['operation']):
+            continue
+        if 'type' not in params or _discriminator_supports(properties.get('type'), params['type']):
+            return None
+    return 'mutation discovery lacks a discriminator supporting the selected operation/type'
+
+
 def validate_core_result(method, result, params=None):
     """Validate supported shapes plus guards, without equating retry/current revisions."""
     params = {} if params is None else params
@@ -112,6 +188,9 @@ def validate_core_result(method, result, params=None):
         view = params.get('view', 'full')
         if not isinstance(view, str) or 'world.describe.'+view not in _CONTRACT['variants']:
             raise ResponseContractError(method, 'successful discovery used an unknown view', result, params)
+        reason = _discovery_parameters_reason(params, view)
+        if reason:
+            raise ResponseContractError(method, reason, result, params)
         schema = _CONTRACT['variants']['world.describe.'+view]
     elif method == 'entity.get':
         suffix = 'full' if 'component' not in params else params['component']
@@ -144,6 +223,8 @@ def validate_core_result(method, result, params=None):
                 names = result[category]
                 if names != sorted(set(names)):
                     reason = 'discovery catalog names are not strictly sorted and unique'
+        if method == 'world.describe' and params.get('view') == 'mutation':
+            reason = _mutation_discovery_reason(result, params) or reason
         if method == 'entity.query':
             identifiers = [item['id'] for item in result['entities']]
             limit = params.get('limit', 64)
