@@ -33,9 +33,10 @@ does not remove requirements from that destination. Single-player PC work comes
 first; multiplayer and console integration follow it. Console implementation
 needs licensed SDKs and approved development hardware.
 
-The 1.0 target is Windows 3D single-player deployment, Linux headless authoring,
-and the engine systems below, including browser deployment. Advanced 2D is
-targeted for 1.1.0, before Linux graphics, multiplayer and consoles. Their
+The 1.0 acceptance target is a complete Windows single-player FPS workflow,
+with Linux headless authoring and the engine systems below. Browser deployment
+is targeted for 1.1.0 and advanced 2D for 1.2.0, before Linux graphics,
+multiplayer and consoles. Their
 portability boundaries and feasibility work begin earlier; their implementation
 and platform qualification do not block 1.0.
 
@@ -74,8 +75,15 @@ editor. Their combined alpha workflow still needs qualification.
 Extend standard-format intake with bone mapping, retargeting diagnostics and
 reusable animation assets. Complete code-first and hierarchical state-machine
 playback, layers, IK, foot placement and explicit root-motion ownership.
+Add motion-matched locomotion with inspectable pose/trajectory features,
+transitions and animation-database cost. Integrate ragdolls, damage-directed
+hit reactions and recovery with explicit animation/physics ownership.
 Harden movement for slopes, steps, crouching, moving platforms and swimming;
 extend navigation with dynamic obstacles, traversal links and avoidance.
+Provide code/data-driven recoil, ADS camera transitions and weapon feedback.
+First-person viewmodels need separate FOV, collision-aware presentation and
+wall-clipping protection, with animation and rendering policies independent
+of the world camera.
 
 Add hierarchical spawning, prefab composition, variants and inspectable
 override origins. Projects need pinned packages, dependency queries, incremental
@@ -94,7 +102,11 @@ retained games, packages and supported saves continue to work.
 
 Develop one renderer with quality tiers: PBR/material layers, transparent
 materials, scalable lights and shadows, GPU culling/instancing, LOD and content
-streaming. Integrate dynamic indirect lighting and reflections, including a
+streaming.
+Dense-scene research compares virtualized geometry with GPU-driven instancing
+and LOD under actual content/frame/VRAM budgets. Select and qualify the measured
+approach; a particular engine's geometry technique is not itself the requirement.
+Integrate dynamic indirect lighting and reflections, including a
 reduced tier for hardware without ray tracing. Add inspectable post effects,
 robust temporal reconstruction and separately qualified DLSS, FSR and NVIDIA
 frame generation; XeSS remains a bonus.
@@ -191,31 +203,37 @@ required workflows; physical keyboard/mouse/controller, translated UI and
 accessibility checks pass. These improvements start earlier and are qualified
 together here.
 
-### 8. Browser deployment
+### 8. Complete Windows single-player FPS workflow
 
-These are distinct tracks with separate builds and evidence:
+Build and export a complete FPS with imported animated characters and weapons,
+recoil/ADS, motion-matched movement, separate-FOV viewmodels, hit reactions and
+ragdolls. Exercise combat encounters and navigation, progression, menus,
+settings, save/checkpoints, death/retry and game completion. Demonstrate dense
+geometry, atmosphere, sound and persistent world effects within the declared
+hardware tier, rather than qualifying isolated systems alone.
 
-| Track | Deliverable | Acceptance |
-| --- | --- | --- |
-| Browser | Compiled WebAssembly core/gameplay, WebGPU renderer and an evaluated WebGL2 reduced tier; browser input/audio, asynchronous content/storage and deployment. | Actual browser/version matrix, downloaded-size/memory/frame budgets and save lifecycle. Desktop C# compilation is not browser qualification. |
-
-PC graphics remain Vulkan; browser graphics use supported browser interfaces.
-Each destination needs its own gameplay compilation,
-content, device-lifecycle and delivery qualification.
+**Dependencies:** the integrated 3D runtime, character/content, rendering,
+audio/VFX/UI and agent workflows above. **Exit:** agents can author, playtest,
+repair and export the game; humans can inspect and edit it; the relocated
+Windows build runs without the development checkout. Repeated combat,
+viewmodel near-wall movement, animation/physics transitions, save/load and
+long-play checks pass with published frame-time and memory budgets.
 
 ## Planned after 1.0
 
 These requirements remain in the full engine roadmap. Their absence does not
 prevent the Windows single-player 1.0 release.
 
-Advanced 2D is the target for **1.1.0** and precedes the other three tracks.
-That minor release ships when its acceptance criteria pass; the number does
-not assign a date. Shared rendering, content, input and UI boundaries are
-designed for it before 1.0, without adding the full 2D implementation to 1.0.
+Browser deployment is the target for **1.1.0**, followed by advanced 2D for
+**1.2.0**, before the other three tracks. Each minor release ships when its
+acceptance criteria pass; the numbers do not assign dates. Shared rendering,
+content, input and UI boundaries are designed for them before 1.0, without
+adding their full implementation to 1.0.
 
 | Track | Deliverable | Acceptance |
 | --- | --- | --- |
-| 1.1.0: advanced 2D | Sprites, tilemaps, sorting/layers, animation, appropriate physics, normal/height/PBR-aware lighting and soft shadows, mixed 2D/3D scenes. | A complete 2D game exercises authoring, lighting, input, save and export; an orthographic camera alone is insufficient. |
+| 1.1.0: browser | Compiled WebAssembly core/gameplay, WebGPU renderer and an evaluated WebGL2 reduced tier; browser input/audio, asynchronous content/storage and deployment. | Actual browser/version matrix, downloaded-size/memory/frame budgets and save lifecycle. Desktop C# compilation is not browser qualification. |
+| 1.2.0: advanced 2D | Sprites, tilemaps, sorting/layers, animation, appropriate physics, normal/height/PBR-aware lighting and soft shadows, mixed 2D/3D scenes. | A complete 2D game exercises authoring, lighting, input, save and export; an orthographic camera alone is insufficient. |
 | Linux graphics | Qualify the Windows player through Proton and evaluate native Vulkan editor/player deployment. | Actual driver, input, audio, save and performance checks; Linux headless success does not qualify either graphical route. |
 | Multiplayer | Self-hosted authority, replication/interest management, prediction/reconciliation, co-op followed by extraction-scale play, reconnect/late join and acoustic proximity voice. | 4–8-player co-op and a representative 24–32-player extraction workload with AI pass latency/loss, authority and match-persistence checks. |
 | Consoles | Xbox Series X/S and PS5 native graphics, shader, audio, input, users, storage/save, lifecycle and packaging adapters. | Actual approved SDK/hardware execution and platform requirements; this track is gated by developer access. |
@@ -227,6 +245,7 @@ identify incompatible dependencies and APIs early. These boundaries reduce
 later rework; they do not claim that a platform port or multiplayer is complete.
 Console graphics use the platform's native API. Each later destination gets its
 own gameplay compilation, content, lifecycle and delivery qualification.
+Browser graphics use supported browser interfaces; PC graphics remain Vulkan.
 
 ## Beta entry: feature completeness
 
