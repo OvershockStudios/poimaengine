@@ -30,6 +30,8 @@ for(Type? type=game;type!=null;type=type.BaseType)
 }
 if(state==null || !state.IsPublic || state.IsGenericType || !state.IsLayoutSequential)throw new ArgumentException("Expected Game<TState> with public non-generic sequential state.");
 string identity=PersistenceMetadata.GameIdentity(game);
+bool inertial=typeof(IInertialAnimationGame).IsAssignableFrom(game);
+string requirements=GameplayRequirements.Json(inertial);
 int bytes=Marshal.SizeOf(state);if(bytes is <1 or >65536)throw new ArgumentException("State exceeds 1..65536 bytes.");
 var fields=state.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).OrderBy(f=>f.Name,StringComparer.Ordinal).ToArray();
 if(fields.Length is <1 or >128 || fields.Any(f=>!f.IsPublic || f.IsInitOnly || f.Name.Length>64))throw new ArgumentException("Expected 1..128 public mutable state fields.");
@@ -48,6 +50,8 @@ namespace Poima.NativeGame;
 internal static unsafe class Binding
 {
     internal const string Schema={{JsonSerializer.Serialize(schema)}};
+    internal const string Requirements={{JsonSerializer.Serialize(requirements)}};
+    internal static bool RequiresInertial=>{{(inertial ? "true" : "false")}};
     internal const string TypeName={{JsonSerializer.Serialize(game.FullName)}};
     internal const int StateBytes={{bytes}};
     internal static {{Name(game)}} Create()=>new();
@@ -58,5 +62,6 @@ internal static unsafe class Binding
 }
 """;
 Directory.CreateDirectory(output);File.WriteAllText(Path.Combine(output,"Binding.cs"),source);File.WriteAllText(Path.Combine(output,"schema.json"),schema);
+File.WriteAllText(Path.Combine(output,"requirements.json"),requirements);
 File.WriteAllText(Path.Combine(output,"game-type.txt"),game.FullName);
 File.WriteAllText(Path.Combine(output,"game.poima-components.json"),ComponentMetadata.Manifest(componentSchemas));

@@ -2648,6 +2648,7 @@ public:
                 if(artifact.target_os!=POIMA_BUILD_SYSTEM || artifact.target_arch!=POIMA_BUILD_ARCH)throw std::runtime_error("Native gameplay target differs from this runtime.");
                 config.native_aot=true;config.native_library=artifact.library;config.native_sha256=artifact.library_sha256;
                 config.native_schema=artifact.schema;config.type=artifact.type;
+                config.native_requirements=artifact.requirements;
                 validate_gameplay_values(config.native_schema,normalized.at("values").dump());
             }
             if(load) { runtime_->gameplay_load(config,normalized.at("values").dump());runtime_gameplay_config_=std::move(config); }else runtime_->gameplay_edit(normalized.at("values").dump());

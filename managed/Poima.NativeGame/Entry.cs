@@ -29,22 +29,27 @@ public static unsafe class Entry
             if(!redirected) { Console.SetOut(Console.Error);redirected=true; }
             if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=176 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 ||
                sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 || sizeof(NativeSound)!=32 ||
-               sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !Binding.LayoutValid() || !AbiLayout() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
+               sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !Binding.LayoutValid() || !AbiLayout() || !AnimationServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
                 throw new InvalidOperationException("Generated gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
                 case 1:
                     using(var request=JsonDocument.Parse(Marshal.PtrToStringUTF8((nint)call->Text)??""))
+                    {
                         if(request.RootElement.GetProperty("type").GetString()!=Binding.TypeName)throw new ArgumentException("Compiled game type differs from requested type.");
+                        GameplayRequirements.ValidateHost(request.RootElement,GameplayRequirements.Features(Binding.RequiresInertial));
+                    }
                     if(modules.Count>=32 || next==ulong.MaxValue)throw new InvalidOperationException("Native module instance budget reached.");
                     ulong handle=next++;object game=Binding.Create();
-                    Write(call,Binding.Schema[..^1]+",\"handle\":"+handle.ToString(System.Globalization.CultureInfo.InvariantCulture)+",\"diagnostics\":"+Diagnostics()+"}");
+                    Write(call,Binding.Schema[..^1]+",\"handle\":"+handle.ToString(System.Globalization.CultureInfo.InvariantCulture)+",\"diagnostics\":"+Diagnostics()+
+                        (Binding.RequiresInertial ? ",\"requirements\":"+Binding.Requirements : "")+"}");
                     modules.Add(handle,game);break;
                 case 2: case 3: case 6:
                     if(!modules.TryGetValue(call->Handle,out var instance))throw new ArgumentException("Unknown native game instance.");
                     if(call->State==null || call->StateBytes!=Binding.StateBytes)throw new ArgumentException("Gameplay state size mismatch.");
                     if(call->Operation==2) { Binding.InitializeObject(instance,call->State);break; }
                     ServiceAbi.Validate(call->Services,call->Inputs,call->InputCount);
+                    GameplayRequirements.ValidateServices(call->Services,GameplayRequirements.Features(Binding.RequiresInertial));
                     if(call->Operation==6) {
                         if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
                         Binding.ControlObject(instance,call->State,new ControlContext(call->Services,call->Tick));

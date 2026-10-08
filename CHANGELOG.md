@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.56 — Unreleased
+
+This checkpoint exposes native inertial animation to compiled C# games through explicit service negotiation. The installed desktop package remains unchanged.
+
+- Declare `IInertialAnimationGame`, select `AnimationTransitionMode.Inertial` with the new overload and inspect nullable active mode/progress with `GetAnimationExtended`. Existing numeric-time calls and the original seven-parameter setter retain crossfade behavior. [C# example](docs/MANAGED_GAMEPLAY.md#control-animation-from-c).
+- A named 192-byte services-7 extension preserves the 176-byte baseline callbacks. Host and artifact requirements are validated separately from saved state; unsupported declarations and descriptor omissions reject before game construction. [Artifact contract](docs/NATIVE_GAMEPLAY.md#artifact-contents).
+- Both Windows and Linux pass 54 ABI guard groups, 486-RPC CoreCLR cohorts and actual published 435-RPC Native AOT cohorts, including rollback and fresh saves. An unchanged older Windows Native AOT inventory game passes 151 RPCs on the new runtime. [Evidence](docs/evidence/m2-managed-inertial.json).
+- Eighteen selected Linux native groups, four authoring-only groups and stable authoring contract gates pass. Protocol 1, discovery revision 52 and authoring-core v1 remain unchanged. Desktop mode controls, layers, IK, retargeting and game-scale animation qualification remain unfinished; native libraries still require process restart for replacement.
+
 ## 0.0.55 — Unreleased
 
 This checkpoint adds native inertial animation transitions with persistent motion history. The installed desktop package remains unchanged.

@@ -589,40 +589,65 @@ struct Runtime::Impl {
             KinematicTarget target;target.entity=gameplay_id(source->entity);target.duration_ticks=source->duration_ticks;std::copy_n(source->position,3,target.position.begin());std::copy_n(source->rotation,4,target.rotation.begin());commands.push_back(std::move(target));
         });
     }
+    static void project_animation(const PoimaEntityId& id,const std::optional<RuntimeAnimationState>& state,PoimaGameAnimationState& output) {
+        output={};output.entity=id;output.clip=-1;output.transition.source_clip=-1;
+        if(!state)return;
+        output.present=1;output.clip=state->clip ? static_cast<std::int32_t>(*state->clip) : -1;
+        output.time=state->time;output.speed=state->speed;output.duration=state->duration;
+        output.loop=state->loop ? 1u : 0u;output.playing=state->playing ? 1u : 0u;
+        if(state->transition) {
+            const auto& source=*state->transition;auto& target=output.transition;output.transition_present=1;
+            target.start_tick=source.start_tick;target.duration_ticks=source.duration_ticks;target.elapsed_ticks=source.elapsed_ticks;
+            target.weight=source.weight;target.source_frozen=source.source_frozen ? 1u : 0u;
+            if(!source.source_frozen) {
+                target.source_clip=source.source_clip ? static_cast<std::int32_t>(*source.source_clip) : -1;
+                target.source_time=source.source_time;target.source_speed=source.source_speed;
+                target.source_loop=source.source_loop ? 1u : 0u;target.source_playing=source.source_playing ? 1u : 0u;
+            }
+        }
+    }
     static int32_t POIMA_CALL get_animation(void* context,const PoimaEntityId* id,PoimaGameAnimationState* output,PoimaGameError* error) {
         return callback(error,[&] {
             // Runtime::animation checks entity existence before returning null
             // for an existing entity that is not an AnimationRig.
             const auto state=static_cast<Impl*>(context)->owner->animation(gameplay_id(*id));
-            *output={};output->entity=*id;output->clip=-1;output->transition.source_clip=-1;
-            if(!state)return;
-            output->present=1;output->clip=state->clip ? static_cast<std::int32_t>(*state->clip) : -1;
-            output->time=state->time;output->speed=state->speed;output->duration=state->duration;
-            output->loop=state->loop ? 1u : 0u;output->playing=state->playing ? 1u : 0u;
-            if(state->transition) {
-                const auto& source=*state->transition;auto& target=output->transition;output->transition_present=1;
-                target.start_tick=source.start_tick;target.duration_ticks=source.duration_ticks;target.elapsed_ticks=source.elapsed_ticks;
-                target.weight=source.weight;target.source_frozen=source.source_frozen ? 1u : 0u;
-                if(!source.source_frozen) {
-                    target.source_clip=source.source_clip ? static_cast<std::int32_t>(*source.source_clip) : -1;
-                    target.source_time=source.source_time;target.source_speed=source.source_speed;
-                    target.source_loop=source.source_loop ? 1u : 0u;target.source_playing=source.source_playing ? 1u : 0u;
-                }
-            }
+            project_animation(*id,state,*output);
         });
+    }
+    void stage_animation(const PoimaGameAnimationCommand& source,AnimationTransitionMode mode) {
+        require_tick();require(game_animation_commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
+        require(source.clip>=-1 && source.loop<=1 && source.playing<=1,"Invalid gameplay animation command encoding.");
+        AnimationCommand command;command.entity=gameplay_id(source.entity);
+        if(source.clip>=0)command.clip=static_cast<std::uint32_t>(source.clip);
+        command.time=source.time;command.speed=source.speed;command.loop=source.loop!=0;command.playing=source.playing!=0;command.blend_ticks=source.blend_ticks;command.transition_mode=mode;
+        // Both callback versions share staging and its Tick-end validation
+        // for duplicates, caller conflicts, references, ranges and poses.
+        game_animation_commands.push_back(std::move(command));
     }
     static int32_t POIMA_CALL set_animation(void* context,const PoimaGameAnimationCommand* source,PoimaGameError* error) {
         return callback(error,[&] {
-            static_cast<Impl*>(context)->require_tick();
-            auto& commands=static_cast<Impl*>(context)->game_animation_commands;
-            require(commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
-            require(source->clip>=-1 && source->loop<=1 && source->playing<=1,"Invalid gameplay animation command encoding.");
-            AnimationCommand command;command.entity=gameplay_id(source->entity);
-            if(source->clip>=0)command.clip=static_cast<std::uint32_t>(source->clip);
-            command.time=source->time;command.speed=source->speed;command.loop=source->loop!=0;command.playing=source->playing!=0;command.blend_ticks=source->blend_ticks;
-            // Stage writes until Tick returns. Shared animation validation then
-            // rejects duplicates, invalid references/ranges and invalid poses.
-            commands.push_back(std::move(command));
+            static_cast<Impl*>(context)->stage_animation(*source,AnimationTransitionMode::Crossfade);
+        });
+    }
+    static int32_t POIMA_CALL get_animation_extended(void* context,const PoimaEntityId* id,PoimaGameAnimationStateV1* output,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && id && output,"Extended animation query is absent.");
+            // Establish the readable prefix before touching its final field.
+            require(output->version==1 && output->bytes>=sizeof(PoimaGameAnimationStateV1),"Extended animation state requires version 1 and at least 136 bytes.");
+            require(output->reserved==0,"Extended animation state reserved field must be zero.");
+            const auto state=static_cast<Impl*>(context)->owner->animation(gameplay_id(*id));
+            PoimaGameAnimationStateV1 candidate{};candidate.version=1;candidate.bytes=sizeof(candidate);
+            project_animation(*id,state,candidate.state);
+            if(state && state->transition)candidate.transition_mode=static_cast<std::uint32_t>(state->transition->mode);
+            *output=candidate; // Only the known prefix is written.
+        });
+    }
+    static int32_t POIMA_CALL set_animation_extended(void* context,const PoimaGameAnimationCommandV1* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && source,"Extended animation command is absent.");
+            require(source->version==1 && source->bytes>=sizeof(PoimaGameAnimationCommandV1),"Extended animation command requires version 1 and at least 64 bytes.");
+            require(source->reserved==0 && source->transition_mode<=1,"Invalid extended animation mode/reserved encoding.");
+            static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode));
         });
     }
     std::uint64_t play_sound(const std::string& emitter,float gain) {
@@ -862,7 +887,7 @@ struct Runtime::Impl {
                     clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);

@@ -77,6 +77,8 @@ public sealed class CounterGame : Game<CounterState>
 | `MoveKinematic(entity, position, rotation, ticks)` | Queue a validated native kinematic target for this tick. |
 | `GetAnimation(entity)` | Copy native playback and active transition state; null for an existing non-rig entity. |
 | `SetAnimation(entity, clip, time, speed, loop, playing, blendTicks)` | Queue complete native playback state and an optional fixed-tick crossfade for this tick. |
+| `SetAnimation(entity, clip, transitionMode, time, speed, loop, playing, blendTicks)` | Opt-in versioned command selecting `Crossfade` or `Inertial`; requires `IInertialAnimationGame`. |
+| `GetAnimationExtended(entity)` | Opt-in copied playback state with nullable active mode/progress; requires `IInertialAnimationGame`. |
 
 Controller look is applied before C# runs, so a use action in the same tick sees the new camera direction. Gameplay then runs before physics advances. Queued motions are validated together before application, with at most 128 per tick. Duplicate targets, invalid bodies and exceeding native speed/duration limits fail the batch. Explicit caller motion and gameplay may not target the same body on the first tick of a batch. Movement is held for a step/replay segment; look, jump and use apply only on its first tick. Read-only entity queries during gameplay see the current state, not the eventual result of queued motion.
 
@@ -92,13 +94,44 @@ if (context.Pressed(state.Player, GameAction.Use))
     context.SetAnimation(state.Rig, clip: 1, blendTicks: 12);
 ```
 
-The [animation sample](../examples/managed/AnimationGame/AnimationGame.cs) shows this inside a complete module. Durations use the engine's 60 Hz simulation clock: 12 ticks is 0.2 seconds. Clip speed changes playback time, not blend duration. Interruption freezes the current blended local pose as the new source. This preserves pose continuity without guaranteeing continuous velocity or foot contact; see [native animation](RUNTIME_ANIMATION.md) for the complete limits.
+The [animation sample](../examples/managed/AnimationGame/AnimationGame.cs) shows this inside a complete module. Durations use the engine's 60 Hz simulation clock: 12 ticks is 0.2 seconds. Clip speed changes playback time, not blend duration. Crossfade interruption freezes the current blended local pose as the new source. This preserves pose continuity without guaranteeing continuous velocity or foot contact; see [native animation](RUNTIME_ANIMATION.md) for the complete limits.
+
+Version 0.0.56 adds an opt-in overload for native inertial transitions. Declare `IInertialAnimationGame` on the game class, then pass `AnimationTransitionMode` as the third argument. The original seven-parameter overload remains unchanged: numeric-time calls, including third-argument `0` and `default`, continue to select the legacy crossfade command. The enum overload requires the marker even when selecting `Crossfade`.
+
+```csharp
+using Poima;
+
+public struct MyState { public EntityId Player, Rig; }
+
+[GameModule("my-game.inertial-animation")]
+public sealed class MyGame : Game<MyState>, IInertialAnimationGame
+{
+    public override void Initialize(ref MyState state)
+    {
+        state.Player = new EntityId(0, 100);
+        state.Rig = new EntityId(0, 1000);
+    }
+
+    public override void Tick(ref MyState state, GameContext context)
+    {
+        if (context.Pressed(state.Player, GameAction.Use))
+            context.SetAnimation(state.Rig, 1,
+                AnimationTransitionMode.Inertial, blendTicks: 18);
+    }
+}
+```
+
+Replace the example IDs with a controller and rig wrapper in your world, and select a valid clip index before running. Inertial transitions estimate outgoing motion from distinct committed samples and decay one finite-time correction toward the destination; they do not guarantee foot locking, matched phases or zero overshoot.
+
+`GetAnimationExtended(entity)` returns nullable `AnimationStateExtended`. Its `State` is the same legacy playback/transition projection returned by `GetAnimation`; `Mode` and `Progress` are null when no transition is active. For an active transition, `Progress` is elapsed ticks divided by duration, rather than a clip's contribution to the pose. An existing non-rig entity returns null; an unknown entity is an error. These reads retain the committed-state timing described below.
 
 Calls made during `Tick` queue commands. Repeated queries in that callback observe the current native state, not queued writes. Commands apply after the callback and before the physics update, then animation advances with the simulation tick. Explicit caller commands from `runtime.step` have already applied before gameplay runs. If caller and gameplay target the same rig on that first tick, the entire batch fails instead of choosing a winner. Duplicate gameplay targets also fail. Caller and gameplay together may submit at most 64 animation commands on the first tick; subsequent ticks allow at most 64 gameplay commands each.
 
-Invalid commands, failed curve samples and managed exceptions restore animation clocks, interrupted-pose buffers, local poses, physics, sounds and native-owned gameplay fields to the start of the batch. This covers a failure several ticks into one step request. It cannot undo external side effects made by managed code. Compatible code reload leaves the native animation clocks and in-progress transitions intact.
+Invalid commands, failed curve samples and managed exceptions restore animation clocks, interrupted-pose buffers, inertial corrections/output history, local poses, physics, sounds and native-owned gameplay fields to the start of the batch. This covers a failure several ticks into one step request. It cannot undo external side effects made by managed code. Compatible CoreCLR code reload leaves the native animation clocks, history and in-progress transitions intact.
 
-The native service compatibility baseline is epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md) [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. The bridge and SDK remain a matched pair. Current entry points accept a larger epoch-7 table while reading only its known prefix; the engine supplies a canonical 176-byte view for older compiled consumers. Incompatible epochs, short tables and missing baseline callbacks reject before gameplay. See the [bounded compatibility contract](NATIVE_GAMEPLAY.md#artifact-contents). This ABI change does not require a new world format. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
+The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
+
+Load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; this guarantee does not cover arbitrary assembly/module initialization or native-library loader side effects. Callback entry also revalidates the required prefix before reading the extension. Requirements are negotiated separately from the game-state schema and save fingerprint. The supported required profiles are the 176-byte baseline or the explicitly named 192-byte animation extension; an arbitrary larger required prefix is not supported. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and [0.0.56 qualification record](evidence/m2-managed-inertial.json) for executed cohorts and remaining limits. General graph/layer APIs, IK, retargeting and root motion remain unfinished.
 
 ## Load, inspect and edit
 

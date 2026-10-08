@@ -30,8 +30,9 @@ internal sealed class GameLoadContext(string path) : AssemblyLoadContext(isColle
 internal sealed record FieldDescription(string name,string kind,int offset,int bytes);
 internal sealed record Manifest(ulong handle,string identity,string assembly_sha256,int bytes,FieldDescription[] fields,
     [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? components=null,
-    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? persistent=null);
-internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes);
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? persistent=null,
+    [property: JsonIgnore(Condition=JsonIgnoreCondition.WhenWritingNull)] JsonElement? requirements=null);
+internal sealed record Module(GameLoadContext Context,IGame Game,int Bytes,GameplayRequiredFeatures RequiredFeatures);
 public static unsafe class Entry
 {
     private static readonly Dictionary<ulong,Module> modules=[];
@@ -46,7 +47,7 @@ public static unsafe class Entry
         try
         {
             if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=176 || sizeof(NativeSound)!=32 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 || sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 ||
-                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
+                sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !AnimationLayout.Valid || !AnimationServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
                 throw new InvalidOperationException("Gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -106,6 +107,9 @@ public static unsafe class Entry
             byte[] image=File.ReadAllBytes(path);var components=ComponentMetadata.ReadSchemas(image);using var stream=new MemoryStream(image);var assembly=context.LoadFromStream(stream);
             Type type=assembly.GetType(typeName,true)!;
             if(type.IsAbstract || !typeof(IGame).IsAssignableFrom(type))throw new ArgumentException("Type must derive from Game<TState>.");
+            bool inertial=typeof(IInertialAnimationGame).IsAssignableFrom(type);
+            var required=GameplayRequirements.Features(inertial);
+            GameplayRequirements.ValidateHost(request.RootElement,required);
             for(Type? current=type;current!=null;current=current.BaseType)
                 if(current.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.DeclaredOnly).Length!=0)
                     throw new ArgumentException("Game classes must be stateless; declare mutable data in TState.");
@@ -122,9 +126,11 @@ public static unsafe class Entry
                 descriptions.Add(new(field.Name,kind,Marshal.OffsetOf(state,field.Name).ToInt32(),size));
             }
             var persistent=PersistenceMetadata.Read(state);
-            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent);
+            JsonElement? requirements=null;
+            if(inertial) { using var declaration=JsonDocument.Parse(GameplayRequirements.Inertial);requirements=declaration.RootElement.Clone(); }
+            ulong handle=next++;var manifest=new Manifest(handle,identity,Convert.ToHexStringLower(SHA256.HashData(image)),game.StateBytes,descriptions.OrderBy(f=>f.name,StringComparer.Ordinal).ToArray(),components,persistent,requirements);
             string encoded=JsonSerializer.Serialize(manifest); // Stable bridge DTOs only; don't cache game Types in serialization.
-            Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes));published=true;
+            Write(call,encoded);modules.Add(handle,new(context,game,game.StateBytes,required));published=true;
         }
         finally { if(!published) { retired.Add(new(context));context.Unload(); } }
     }
@@ -136,6 +142,7 @@ public static unsafe class Entry
         Span<byte> state=new(call->State,module.Bytes);
         if(!tick) { module.Game.Initialize(state);return; }
         ServiceAbi.Validate(call->Services,call->Inputs,call->InputCount);
+        GameplayRequirements.ValidateServices(call->Services,module.RequiredFeatures);
         if(control) {
             if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
             module.Game.Control(state,new ControlContext(call->Services,call->Tick));

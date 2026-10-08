@@ -14,6 +14,8 @@ inline constexpr std::uint32_t services_version=7,services_bytes=176;
 inline constexpr const char* baseline_feature="baseline_v7";
 inline constexpr const char* persistence_feature="gameplay_persistence_v1";
 inline constexpr const char* collections_feature="component_collections_v1";
+inline constexpr const char* animation_feature="animation_inertial_v1";
+inline constexpr std::uint32_t animation_services_bytes=192;
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -27,13 +29,14 @@ struct Contract {
 };
 
 inline Contract available_contract() {
-    Contract result;result.features.push_back(persistence_feature);result.features.push_back(collections_feature);return result;
+    Contract result;result.services_bytes=animation_services_bytes;
+    result.features.push_back(persistence_feature);result.features.push_back(collections_feature);result.features.push_back(animation_feature);return result;
 }
 
-// Existing compiled bridges/modules require exactly 176 bytes. Current engine
-// features use only this baseline, so expose a bounded view even when a host
+// Existing compiled bridges/modules require exactly 176 bytes. Baseline
+// consumers receive a bounded view even when a host
 // appends opaque services. Never copy an unadvertised prefix or reinterpret a
-// different semantic epoch. A future module that requires a tail needs an
+// different semantic epoch. A module that requires a tail needs an
 // explicitly negotiated view rather than silently changing this legacy view.
 inline PoimaGameServices baseline_view(const PoimaGameServices& provided) {
     static_assert(sizeof(PoimaGameServices)>=services_bytes);
@@ -59,9 +62,18 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     if(required.services_bytes>available.services_bytes)
         return "Runtime does not provide the required gameplay service prefix.";
     if(std::find(required.features.begin(),required.features.end(),baseline_feature)==required.features.end())return "Gameplay requirements must declare baseline_v7.";
+    // A required prefix grants known operations only with their named feature.
+    // Availability may grow, but an opaque extent is not an opt-in capability.
+    const bool animation_required=std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end();
+    if(required.services_bytes!=(animation_required?animation_services_bytes:services_bytes))
+        return "Gameplay must declare the 176-byte baseline or the named 192-byte animation extension.";
+    if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
+        return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
+    if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
+        return "Gameplay animation_inertial_v1 requires a 192-byte service prefix.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

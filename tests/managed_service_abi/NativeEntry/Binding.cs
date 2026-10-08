@@ -6,6 +6,8 @@ namespace Poima.NativeGame;
 internal static unsafe class Binding
 {
     internal const string TypeName="PrefixProbe",Schema="{\"state_bytes\":4}";
+    internal const string Requirements="{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":176,\"features\":[\"baseline_v7\"]}";
+    internal static bool RequiresInertial=>false;
     internal const int StateBytes=4;
     internal static bool LayoutValid()=>sizeof(int)==4;
     internal static object Create()=>new object();

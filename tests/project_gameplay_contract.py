@@ -183,6 +183,24 @@ class GameplayProjects(unittest.TestCase):
                 self.descriptor.write_text(json.dumps(candidate)); self.inspect(False)
         self.descriptor.write_text(json.dumps(good)); self.inspect()
 
+    def test_named_animation_extension_requires_matching_prefix(self):
+        good = self.artifact_fixture()
+        good.update(version=2, call_bytes=80, minimum_services_bytes=192,
+                    required_features=['baseline_v7', 'animation_inertial_v1'])
+        self.descriptor.write_text(json.dumps(good))
+        observed = self.inspect()['gameplay']['requirements']
+        self.assertEqual(observed['minimum_services_bytes'], 192)
+        self.assertEqual(observed['required_features'], good['required_features'])
+        for extent, features in [(176, good['required_features']), (184, good['required_features']),
+                                 (193, good['required_features']), (177, ['baseline_v7']),
+                                 (192, ['baseline_v7']), (192, ['animation_inertial_v1']),
+                                 (192, good['required_features'] + ['unknown_v1'])]:
+            with self.subTest(extent=extent, features=features):
+                candidate = copy.deepcopy(good)
+                candidate.update(minimum_services_bytes=extent, required_features=features)
+                self.descriptor.write_text(json.dumps(candidate)); self.inspect(False)
+        self.descriptor.write_text(json.dumps(good)); self.inspect()
+
     def persistent_fixture(self):
         descriptor = self.artifact_fixture()
         descriptor.update(version=2, call_bytes=80, minimum_services_bytes=176,

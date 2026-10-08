@@ -40,6 +40,36 @@ using Entry=int32_t (POIMA_CALL *)(void*,int32_t);
 namespace fs=std::filesystem;
 [[maybe_unused]] fs::path utf8_path(const std::string& text) { return fs::path(std::u8string(text.begin(),text.end())); }
 void check(bool ok,const char* message) { if(!ok)throw std::runtime_error(message); }
+Json parse_control_manifest(const std::string& text) {
+    check(text.size()<=1024*1024,"Gameplay control manifest exceeds 1 MiB.");
+    std::vector<std::set<std::string>> keys;std::size_t tokens=0;
+    return Json::parse(text,[&](int depth,Json::parse_event_t event,Json& value) {
+        check(depth<=64 && ++tokens<=100000,"Gameplay control manifest nesting/token budget exceeded.");
+        if(event==Json::parse_event_t::object_start)keys.emplace_back();
+        if(event==Json::parse_event_t::key)check(!keys.empty() && keys.back().insert(value.get<std::string>()).second,"Duplicate gameplay control manifest key.");
+        if(event==Json::parse_event_t::object_end)keys.pop_back();
+        return true;
+    });
+}
+Json service_contract_json(const gameplay_abi::Contract& contract) {
+    return Json{{"call_version",contract.call_version},{"call_bytes",contract.call_bytes},
+        {"services_version",contract.services_version},{"services_bytes",contract.services_bytes},{"features",contract.features}};
+}
+void require_compatible(const gameplay_abi::Contract& required,const gameplay_abi::Contract& available) {
+    const auto error=gameplay_abi::compatibility_error(required,available);
+    if(!error.empty())throw std::runtime_error(error);
+}
+template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_feature)==required.features.end()) {
+        const auto baseline=gameplay_abi::baseline_view(provided);callback(&baseline);return;
+    }
+    check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameAnimationServicesV1),
+        "Gameplay requires services epoch 7 and the 192-byte animation extension.");
+    PoimaGameAnimationServicesV1 extended{};
+    std::memcpy(&extended,&provided,sizeof(extended));extended.baseline.bytes=sizeof(extended);
+    check(extended.animation_get_extended && extended.animation_set_extended,"Gameplay animation extension callback is absent.");
+    callback(&extended.baseline);
+}
 #if POIMA_MANAGED_GAMEPLAY
 struct Host {
     component_entry_point_fn entry=nullptr;
@@ -132,6 +162,27 @@ std::string invoke(Entry entry,PoimaGameCall& call,bool large=false) {
 template<class T>T read(const std::vector<std::uint64_t>& data,std::size_t offset) { T value;std::memcpy(&value,reinterpret_cast<const std::byte*>(data.data())+offset,sizeof(T));return value; }
 template<class T>void write(std::vector<std::uint64_t>& data,std::size_t offset,T value) { std::memcpy(reinterpret_cast<std::byte*>(data.data())+offset,&value,sizeof(T)); }
 }
+gameplay_abi::Contract parse_gameplay_service_contract(const std::string& text) {
+    const auto data=parse_control_manifest(text);
+    check(data.is_object() && data.size()==5 && data.contains("call_version") && data.contains("call_bytes") &&
+        data.contains("services_version") && data.contains("services_bytes") && data.contains("features"),"Invalid gameplay service contract object.");
+    auto integer=[&](const char* name) {
+        const auto& value=data.at(name);
+        check(value.is_number_integer() && value>=0 && value<=UINT32_MAX,"Gameplay service contract integers must be uint32.");
+        return value.get<std::uint32_t>();
+    };
+    gameplay_abi::Contract result;
+    result.call_version=integer("call_version");result.call_bytes=integer("call_bytes");
+    result.services_version=integer("services_version");result.services_bytes=integer("services_bytes");
+    const auto& features=data.at("features");check(features.is_array() && !features.empty() && features.size()<=64,"Gameplay service features must be a bounded nonempty array.");
+    result.features.clear();
+    for(const auto& feature:features) {
+        check(feature.is_string(),"Gameplay service feature must be text.");const auto name=feature.get<std::string>();
+        check(!name.empty() && name.size()<=64 && name.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_")==std::string::npos,"Malformed gameplay service feature.");
+        result.features.push_back(name);
+    }
+    require_compatible(result,gameplay_abi::available_contract());return result;
+}
 PoimaEntityId gameplay_id(const std::string& text) {
     check(text.size()==32,"Expected a 32-character entity identity.");PoimaEntityId value{};
     auto parse=[](const char* first,const char* last,std::uint64_t& result) { const auto [p,e]=std::from_chars(first,last,result,16);check(e==std::errc{} && p==last,"Invalid entity identity."); };
@@ -200,6 +251,7 @@ struct Gameplay::Impl {
     std::vector<components::Schema> component_schemas;
     std::uint64_t handle=0;std::uint32_t bytes=0;std::string assembly_hash;Json manifest,migration;GameplayConfig config;std::vector<std::uint64_t> storage;std::vector<std::pair<std::size_t,bool>> floating_fields;
     std::vector<std::pair<std::size_t,std::string>> entity_fields;
+    gameplay_abi::Contract requirements;
     ~Impl() { if(handle)try { PoimaGameCall call{};call.operation=4;call.handle=handle;(void)invoke(entry,call); }catch(...) {} }
     void validate() const {
         for(const auto& [offset,is_float]:floating_fields)
@@ -214,6 +266,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
         throw std::runtime_error("Native gameplay replacement is unsupported; restart the runtime with the same artifact, or restart the process for a different artifact.");
     if(config.native_aot) {
         validate_gameplay_schema(config.native_schema);
+        require_compatible(config.native_requirements.value_or(gameplay_abi::Contract{}),gameplay_abi::available_contract());
 #if POIMA_NATIVE_GAMEPLAY
         native_host().initialize(config);impl_->entry=native_host().entry;
 #else
@@ -226,9 +279,16 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
         throw std::runtime_error("Managed gameplay is not built. Configure POIMA_ENABLE_MANAGED_GAMEPLAY=ON.");
 #endif
     }
-    impl_->config=config;PoimaGameCall call{};call.operation=1;const auto text=Json{{"assembly",config.assembly},{"type",config.type}}.dump();call.text=text.c_str();
-    impl_->manifest=Json::parse(invoke(impl_->entry,call,true));impl_->handle=impl_->manifest.at("handle");impl_->manifest.erase("handle");
+    impl_->config=config;PoimaGameCall call{};call.operation=1;
+    const auto offered=config.native_aot ? config.native_requirements.value_or(gameplay_abi::Contract{}) : gameplay_abi::available_contract();
+    const auto text=Json{{"assembly",config.assembly},{"type",config.type},{"host_contract",service_contract_json(offered)}}.dump();call.text=text.c_str();
+    impl_->manifest=parse_control_manifest(invoke(impl_->entry,call,true));impl_->handle=impl_->manifest.at("handle");impl_->manifest.erase("handle");
+    if(impl_->manifest.contains("requirements")) {
+        impl_->requirements=parse_gameplay_service_contract(impl_->manifest.at("requirements").dump());impl_->manifest.erase("requirements");
+    }
+    require_compatible(impl_->requirements,gameplay_abi::available_contract());
     if(config.native_aot) {
+        require_compatible(impl_->requirements,offered);
         impl_->diagnostics=impl_->manifest.at("diagnostics");impl_->manifest.erase("diagnostics");
         check(impl_->manifest==Json::parse(config.native_schema),"Native gameplay generated schema differs from its descriptor.");
         check(impl_->diagnostics.at("dynamic_code_supported")==false && impl_->diagnostics.at("dynamic_code_compiled")==false,"Native gameplay export did not report NativeAOT execution.");
@@ -307,12 +367,14 @@ std::string validate_gameplay_values(const std::string& schema,const std::string
     return apply_values(metadata,storage,values).dump();
 }
 void Gameplay::control(const PoimaGameServices& services,std::uint64_t tick) {
-    const auto view=gameplay_abi::baseline_view(services);
-    PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&view;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+    with_service_view(impl_->requirements,services,[&](const PoimaGameServices* view) {
+        PoimaGameCall call{};call.operation=6;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+    });
 }
 void Gameplay::tick(const PoimaGameServices& services,std::span<const PoimaGameInput> inputs,std::uint64_t tick) {
-    const auto view=gameplay_abi::baseline_view(services);
-    PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=&view;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+    with_service_view(impl_->requirements,services,[&](const PoimaGameServices* view) {
+        PoimaGameCall call{};call.operation=3;call.handle=impl_->handle;call.state=impl_->storage.data();call.state_bytes=impl_->bytes;call.services=view;call.inputs=inputs.data();call.input_count=static_cast<std::uint32_t>(inputs.size());call.tick=tick;(void)invoke(impl_->entry,call);impl_->validate();
+    });
 }
 std::string Gameplay::collect() {
     Json result={{"active_modules",0},{"retired_alive",0}};PoimaGameCall call{};call.operation=5;

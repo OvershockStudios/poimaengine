@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
-#include "poima/gameplay_abi.h"
+#include "poima/gameplay_compatibility.hpp"
 #include "poima/components.hpp"
 #include <memory>
+#include <optional>
 #include <cstdint>
 #include <span>
 #include <string>
@@ -12,7 +13,10 @@ struct GameplayConfig {
     std::string hostfxr,bridge,assembly,type;
     bool native_aot=false;
     std::string native_library,native_sha256,native_schema;
+    // Verified artifact requirements are control metadata, not saved state.
+    std::optional<gameplay_abi::Contract> native_requirements;
 };
+gameplay_abi::Contract parse_gameplay_service_contract(const std::string&);
 void validate_gameplay_schema(const std::string& schema);
 std::string validate_gameplay_values(const std::string& schema,const std::string& values);
 PoimaEntityId gameplay_id(const std::string& value);

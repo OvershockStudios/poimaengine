@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("Poima.ManagedBridge")]
 [assembly: InternalsVisibleTo("Poima.NativeGame")]
+[assembly: InternalsVisibleTo("Poima.NativeGame.Generator")]
 namespace Poima;
 
 [StructLayout(LayoutKind.Sequential)]
@@ -230,6 +231,10 @@ public readonly unsafe ref partial struct GameContext
     {
         NativeAnimationState result=default;NativeError error=default;
         Check(services->AnimationGet(services->Context,&entity,&result,&error),&error);
+        return DecodeAnimation(entity,result);
+    }
+    private static AnimationState? DecodeAnimation(EntityId entity,in NativeAnimationState result)
+    {
         if(result.Present==0)return null;
         AnimationTransition? transition=null;
         if(result.TransitionPresent!=0)

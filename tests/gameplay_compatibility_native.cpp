@@ -53,11 +53,34 @@ void policy() {
     check(compatibility_error(collections,available_contract()).empty(),"Collection game rejected by capable runtime.");
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
+    const auto capable=available_contract();
+    check(capable.services_version==7 && capable.services_bytes==192 &&
+        std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end(),"Runtime did not declare the actual animation extension extent.");
+    auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
+    check(compatibility_error(animation,capable).empty(),"Negotiated animation extension rejected.");
+    check(!compatibility_error(animation,baseline).empty(),"Animation extension accepted by baseline host.");
+    auto missing_feature=capable;missing_feature.features.erase(std::remove(missing_feature.features.begin(),missing_feature.features.end(),animation_feature),missing_feature.features.end());
+    check(!compatibility_error(animation,missing_feature).empty(),"A large service extent granted an undeclared animation feature.");
+    auto short_animation=animation;short_animation.services_bytes=176;
+    check(!compatibility_error(short_animation,capable).empty(),"Animation requirement omitted its required tail extent.");
+    auto short_host=capable;short_host.services_bytes=176;
+    check(!compatibility_error(baseline,short_host).empty(),"Runtime declared animation capability without allocating its tail.");
+    auto duplicate_animation=animation;duplicate_animation.features.push_back(animation_feature);
+    check(!compatibility_error(duplicate_animation,capable).empty(),"Duplicate animation requirement accepted.");
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");
     source.opaque.fill(0x5a);auto second=baseline_view(source.services);check(std::memcmp(&view,&second,176)==0,"Opaque tail influenced baseline view.");
     check(copy.services.bytes==240 && source.services.bytes==240,"Adapter mutated host extent.");
+    PoimaGameAnimationServicesV1 typed{};typed.baseline=source.services;typed.baseline.bytes=sizeof(typed);
+    typed.animation_get_extended=[](void*,const PoimaEntityId*,PoimaGameAnimationStateV1*,PoimaGameError*)->int32_t{return -1;};
+    typed.animation_set_extended=[](void*,const PoimaGameAnimationCommandV1*,PoimaGameError*)->int32_t{return -1;};
+    const auto typed_before=typed;const auto legacy_from_typed=baseline_view(typed.baseline);
+    check(std::memcmp(&legacy_from_typed,&view,176)==0,"Actual typed extension changed the legacy callback prefix.");
+    check(std::memcmp(&typed,&typed_before,sizeof(typed))==0,"Legacy view mutated the typed extension.");
+    typed.animation_get_extended=nullptr;typed.animation_set_extended=nullptr;
+    const auto legacy_without_tail=baseline_view(typed.baseline);
+    check(std::memcmp(&legacy_without_tail,&legacy_from_typed,176)==0,"Baseline view interpreted extension callback slots.");
     source.services.bytes=175;rejects([&]{baseline_view(source.services);});source.services.bytes=240;source.services.version=8;rejects([&]{baseline_view(source.services);});
 }
 void compiled(const GameplayConfig& config) {

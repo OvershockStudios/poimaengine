@@ -21,6 +21,37 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def generated_requirements(path):
+    def unique_object(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('Duplicate generated requirement key: ' + key)
+            result[key] = value
+        return result
+    if path.stat().st_size > 16384:
+        raise ValueError('Generated gameplay requirements exceed 16 KiB.')
+    data = json.loads(path.read_text(), object_pairs_hook=unique_object)
+    keys = {'call_version', 'call_bytes', 'services_version', 'services_bytes', 'features'}
+    if not isinstance(data, dict) or set(data) != keys:
+        raise ValueError('Generated gameplay requirements have an invalid shape.')
+    for key in keys - {'features'}:
+        if type(data[key]) is not int or not 0 <= data[key] <= 0xffffffff:
+            raise ValueError('Generated gameplay requirement must be uint32: ' + key)
+    features = data['features']
+    if not isinstance(features, list) or not 1 <= len(features) <= 64 or any(type(v) is not str for v in features):
+        raise ValueError('Generated gameplay features must be bounded text.')
+    if len(set(features)) != len(features) or 'baseline_v7' not in features or any(
+            v not in ('baseline_v7', 'animation_inertial_v1') for v in features):
+        raise ValueError('Unsupported or duplicate generated gameplay feature.')
+    if (data['call_version'], data['call_bytes'], data['services_version']) != (1, 80, 7):
+        raise ValueError('Generated gameplay requires an unsupported ABI.')
+    expected_bytes = 192 if 'animation_inertial_v1' in features else 176
+    if data['services_bytes'] != expected_bytes:
+        raise ValueError('Generated gameplay prefix does not match its feature requirements.')
+    return data
+
+
 def run(command, cwd, *, capture=False):
     result = subprocess.run([str(p) for p in command], cwd=cwd, text=True,
                             stdout=subprocess.PIPE if capture else None, check=True,
@@ -71,6 +102,7 @@ def main():
     generated = work / 'generated'
     run([dotnet, work / 'generator/Poima.NativeGame.Generator.dll', assembly, args.game_type, generated], ROOT)
     schema = json.loads((generated / 'schema.json').read_text())
+    requirements = generated_requirements(generated / 'requirements.json')
     # Referencing the original project preserves source and dependency semantics;
     # the linker sees direct calls to the exact game and state types.
     project_xml = f'''<Project Sdk="Microsoft.NET.Sdk">
@@ -140,9 +172,11 @@ def main():
             files.append(dict(path=path.relative_to(stage).as_posix(), size=len(payload), sha256=hashlib.sha256(payload).hexdigest(), role='library' if path.name == library_name else 'metadata' if path.name == 'game.poima-components.json' else 'notice'))
         descriptor = dict(format='poima.native-gameplay', version=2, engine_version=version,
                           target_os='Windows' if rid == 'win-x64' else 'Linux', target_arch='x86_64',
-                          call_version=1, call_bytes=80, services_version=7, minimum_services_bytes=176,
+                          call_version=requirements['call_version'], call_bytes=requirements['call_bytes'],
+                          services_version=requirements['services_version'], minimum_services_bytes=requirements['services_bytes'],
                           required_features=['baseline_v7'] + (['gameplay_persistence_v1'] if 'persistent' in schema else [])
-                          + (['component_collections_v1'] if any(c.get('version') == 2 for c in schema.get('components', [])) else []), entry='poima_gameplay_entry',
+                          + (['component_collections_v1'] if any(c.get('version') == 2 for c in schema.get('components', [])) else [])
+                          + [v for v in requirements['features'] if v != 'baseline_v7'], entry='poima_gameplay_entry',
                           library=library_name, identity=schema['identity'], type=args.game_type,
                           schema=schema, files=files)
         (stage / 'native-gameplay.json').write_text(json.dumps(descriptor, indent=2) + '\n', encoding='utf-8')

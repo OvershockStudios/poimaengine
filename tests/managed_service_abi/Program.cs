@@ -163,7 +163,7 @@ public sealed class ProbeGame : Game<ProbeState>
         if(!despawnError)throw new Exception("Despawn error was not transferred.");
     }
 }
-static unsafe class Program
+static unsafe partial class Program
 {
     static int gets, sets,infos,requests,results,queries,componentGets,componentSets,aliveCalls,spawns,despawns,templateGets;
     static bool badPayload;
@@ -501,6 +501,7 @@ static unsafe class Program
             Check(collected.RootElement.GetProperty("active_modules").GetInt32()==0 && collected.RootElement.GetProperty("retired_alive").GetInt32()==0,"Fixture context retained after release.");
             checks.Add("generated component and animation fixture collectible context released");
             NativePrefixContract(output,state,good,checks);
+            AnimationExtensionContract(output,state,good,checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
                 sdk_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Game<>).Assembly.Location)))},new JsonSerializerOptions{WriteIndented=true});

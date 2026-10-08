@@ -1,8 +1,39 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.55 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.56 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.56 checkpoint adds opt-in C# inertial animation through
+`IInertialAnimationGame`, typed mode selection and extended committed-state
+queries. A named 192-byte services-7 extension preserves the original 176-byte
+baseline and seven-parameter animation setter. Numeric-time calls, including
+`0` and `default`, still compile against the old overload. Negotiated requirements
+remain outside the state schema and its save fingerprint. Unsupported declared
+requirements reject before game construction, `Initialize` and `Tick`; arbitrary
+assembly/module initialization and native loader side effects are outside that
+guarantee.
+
+Windows and Linux each pass 54 SDK/bridge ABI guard groups, ten real CoreCLR
+checks over 486 RPCs with six clean owned exits, and seven actual Native AOT
+checks over 435 RPCs with four clean owned exits. These cover analytic motion,
+staged writes, limits/conflicts, whole-batch rollback and fresh durable restore
+with immediate compiled re-interruption. CoreCLR additionally checks compatible
+and failed reload, preserved older compiled gameplay and old-host rejection.
+Native AOT checks descriptor omission and retains process-pinned libraries;
+compatible native reload is not supplied. An unchanged 0.0.52 Windows inventory
+artifact also passes its 151-RPC contract on the new runtime.
+
+Eighteen selected Linux native groups and four authoring-only groups pass. Stable
+authoring discovery/identity gates pass for Windows/Linux runtime and Linux
+authoring-only builds; selected response baselines remain compatible. Protocol 1, discovery revision 52 and authoring-core
+v1 remain unchanged. Mock ABI fixtures do not qualify malformed raw Runtime
+callbacks. There is no new GPU, installed desktop, physical-input, clean-machine
+or production performance qualification. Desktop animation controls still select
+crossfades; layers, IK, root motion and retargeting remain unfinished.
+[Managed example](MANAGED_GAMEPLAY.md#control-animation-from-c),
+[native artifact contract](NATIVE_GAMEPLAY.md#artifact-contents),
+[evidence](evidence/m2-managed-inertial.json).
 
 The 0.0.55 checkpoint adds opt-in native inertial animation transitions. Recent
 output motion and analytic incoming clip derivatives initialize bounded,
@@ -19,8 +50,8 @@ also pass. Across both laptop GPUs, 96 captures produce 24 exact inertial refere
 pairs and 24 legacy crossfade pairs at 640×480 with 1×/4× MSAA and zero reported
 NVRHI errors. Existing compiled C# crossfade/reload/rollback checks pass in twelve
 checks per platform. Discovery advances to revision 52; authoring-core v1 and the
-176-byte gameplay services ABI 7 remain unchanged. C# and desktop controls still
-select crossfades; inertial access currently uses C++ or the world protocol.
+176-byte gameplay services ABI 7 remained unchanged. At that checkpoint C# and
+desktop controls selected crossfades; inertial access used C++ or the world protocol.
 Measured secant continuity does not guarantee smooth clip discontinuities, foot
 contacts, phase matching or zero overshoot. No game-scale performance, new
 installed desktop or physical-input qualification is claimed.

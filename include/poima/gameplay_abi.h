@@ -32,6 +32,17 @@ typedef struct PoimaGameAnimationState {
     uint32_t present,loop,playing,transition_present,reserved;
     PoimaGameAnimationTransition transition;
 } PoimaGameAnimationState;
+// Opt-in animation_inertial_v1 extension. Version 1 prefixes are borrowed;
+// bytes must cover the known POD and reserved must be zero. Mode 0 is
+// crossfade, mode 1 is inertial. The baseline PODs above remain unchanged.
+typedef struct PoimaGameAnimationCommandV1 {
+    uint32_t version,bytes;PoimaGameAnimationCommand command;
+    uint32_t transition_mode,reserved;
+} PoimaGameAnimationCommandV1;
+typedef struct PoimaGameAnimationStateV1 {
+    uint32_t version,bytes;PoimaGameAnimationState state;
+    uint32_t transition_mode,reserved;
+} PoimaGameAnimationStateV1; // Mode is meaningful only when state.transition_present is 1.
 // Save control plane. Numeric kind/state/rejection values match gameplay_save.hpp.
 // Slots are borrowed bounded ASCII bytes (no required trailing NUL). Ticket
 // epoch words are opaque bit patterns; sequence is positive and JSON-safe.
@@ -96,6 +107,15 @@ typedef struct PoimaGameServices {
     int32_t (POIMA_CALL *control_info)(void*,PoimaGameUiControlEvent*,PoimaGameError*);
     int32_t (POIMA_CALL *control_request)(void*,uint32_t,PoimaGameError*); // Resume=1, Pause=2
 } PoimaGameServices;
+// A real 192-byte allocation, provided only through explicit negotiation.
+// Legacy modules receive a separate bounded 176-byte baseline view.
+typedef struct PoimaGameAnimationServicesV1 {
+    PoimaGameServices baseline;
+    // Initialize the output version/bytes/reserved before this read. Success
+    // writes exactly the known 136-byte prefix, including version 1/bytes 136.
+    int32_t (POIMA_CALL *animation_get_extended)(void*,const PoimaEntityId*,PoimaGameAnimationStateV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *animation_set_extended)(void*,const PoimaGameAnimationCommandV1*,PoimaGameError*);
+} PoimaGameAnimationServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -117,6 +137,9 @@ static_assert(offsetof(PoimaGameServices,animation_get)==48 && offsetof(PoimaGam
 static_assert(sizeof(PoimaGameAnimationCommand)==48 && offsetof(PoimaGameAnimationCommand,clip)==32 && offsetof(PoimaGameAnimationCommand,blend_ticks)==44);
 static_assert(sizeof(PoimaGameAnimationTransition)==56 && offsetof(PoimaGameAnimationTransition,duration_ticks)==32 && offsetof(PoimaGameAnimationTransition,source_clip)==40);
 static_assert(sizeof(PoimaGameAnimationState)==120 && offsetof(PoimaGameAnimationState,present)==44 && offsetof(PoimaGameAnimationState,transition)==64);
+static_assert(sizeof(PoimaGameAnimationCommandV1)==64 && offsetof(PoimaGameAnimationCommandV1,command)==8 && offsetof(PoimaGameAnimationCommandV1,transition_mode)==56 && offsetof(PoimaGameAnimationCommandV1,reserved)==60);
+static_assert(sizeof(PoimaGameAnimationStateV1)==136 && offsetof(PoimaGameAnimationStateV1,state)==8 && offsetof(PoimaGameAnimationStateV1,transition_mode)==128 && offsetof(PoimaGameAnimationStateV1,reserved)==132);
+static_assert(sizeof(PoimaGameAnimationServicesV1)==192 && offsetof(PoimaGameAnimationServicesV1,baseline)==0 && offsetof(PoimaGameAnimationServicesV1,animation_get_extended)==176 && offsetof(PoimaGameAnimationServicesV1,animation_set_extended)==184);
 static_assert(offsetof(PoimaGameServices,save_info)==64 && offsetof(PoimaGameServices,save_request)==72 && offsetof(PoimaGameServices,save_result)==80);
 static_assert(sizeof(PoimaGameComponentType)==56 && offsetof(PoimaGameComponentType,fingerprint)==16 && offsetof(PoimaGameComponentType,bytes)==48);
 static_assert(offsetof(PoimaGameServices,component_query)==88 && offsetof(PoimaGameServices,component_get)==96 && offsetof(PoimaGameServices,component_set)==104 && offsetof(PoimaGameServices,entity_alive)==112);
