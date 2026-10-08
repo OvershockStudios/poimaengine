@@ -1,0 +1,134 @@
+{
+  "checkpoint": "0.0.43 development",
+  "passed": true,
+  "scope": "External Python client and candidate core authoring responses; not a full API stability guarantee",
+  "engine_version": "0.0.43",
+  "schema_revision": 47,
+  "engine_sha256": {
+    "linux": "2354c9f801e9614644be79bdd057b7f8fd94b84fd778e546b2edc360d4120d5f",
+    "windows": "42b08d36d97bbd5702a7fe3579b3190ec5eb52be3034c4781c3915c1b311fef1"
+  },
+  "client": {
+    "package": "poima-client",
+    "version": "0.0.43",
+    "runtime_dependencies": [],
+    "core_methods": [
+      "entity.get",
+      "entity.query",
+      "entity.world_transform",
+      "world.describe",
+      "world.history",
+      "world.inspect",
+      "world.redo",
+      "world.transact",
+      "world.undo"
+    ],
+    "automatic_retry": false,
+    "automatic_reconnect": false,
+    "response_contract": "../../tools/python/poima_client/core_responses.v1.candidate.json"
+  },
+  "source_tests": {
+    "linux": {
+      "tests_passed": 18,
+      "tests_failed": 0,
+      "skipped": 0,
+      "qualification": "Final checkout CTest python_client_contract; 18 unittest cases"
+    },
+    "windows": {
+      "tests_passed": 18,
+      "tests_failed": 0,
+      "skipped": 0,
+      "qualification": "Final checkout native Windows Python suite"
+    }
+  },
+  "response_tests": {
+    "linux": {
+      "tests_passed": 15,
+      "tests_failed": 0,
+      "skipped": 0
+    },
+    "windows": {
+      "tests_passed": 15,
+      "tests_failed": 0,
+      "skipped": 0
+    }
+  },
+  "linux_ctest": {
+    "selected_groups_passed": 8,
+    "failed": 0,
+    "final_sdk_groups_rerun": 2
+  },
+  "request_compatibility": {
+    "linux_passed": true,
+    "windows_passed": true,
+    "baseline_source_schema_revision": 46,
+    "candidate_schema_revision": 47
+  },
+  "wheel": {
+    "filename": "poima_client-0.0.43-py3-none-any.whl",
+    "sha256": "6652e998c04797b8a6d7c65d99e859d6bb7acfd3f335bdb9bb126980ea7f8580",
+    "bytes": 24865,
+    "package_files_match_source": true,
+    "response_manifest_included": true,
+    "apache_license_included": true,
+    "runtime_dependency_count": 0,
+    "published_to_package_registry": false,
+    "installed_linux": {
+      "tests_passed": 18,
+      "tests_failed": 0,
+      "skipped": 0
+    },
+    "installed_windows": {
+      "tests_passed": 18,
+      "tests_failed": 0,
+      "skipped": 0
+    },
+    "installed_import_origin_checked": true
+  },
+  "python_versions": {
+    "linux": "3.14.7",
+    "windows": "3.14.8"
+  },
+  "native_behavior": [
+    "All nine core methods with full/catalog/focused discovery",
+    "Standalone Unicode world paths, preview isolation, commit, exact retry, inspection and history",
+    "Parent filters, Transform reads, world matrices and revision-pinned pages",
+    "Shared host cross-client retries, stale mutation rejection and safe detachment",
+    "Historical receipt revision preserved after undo/redo and reopening",
+    "Accepted pre-history receipt replay preserves absent history metadata",
+    "Concurrent edit prevents mixed-revision pagination"
+  ],
+  "synthetic_behavior": [
+    "Reordered concurrent replies and exact request correlation",
+    "Structured native errors preserve a usable transport",
+    "Malformed/duplicate/nonfinite/oversized/invalid UTF-8 replies fail closed",
+    "Blocked pipe writes respect call deadline and direct child cleanup",
+    "Capacity, request size, JSON encoding and bounded stderr",
+    "Interrupt/write race preserves control flow and original recovery parameters",
+    "Wrapper snapshots cannot drift when caller or embedded transport mutates inputs",
+    "Unexpected core result retains the original receipt and does not retry",
+    "Independent malformed-response fixtures, additive metadata and bounded traversal"
+  ],
+  "source_sha256": {
+    "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+    "tools/python/poima_client/client.py": "ba9f76c404f7e4e5078469bc3ceeab8886718987ecd37f2b97e90e8575497780",
+    "tools/python/poima_client/core_responses.v1.candidate.json": "ac15a40f3e4b67a54b5c8559e83c7f8d28b0fa9de57f7dc3dc888eb16c21e75f",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/responses.py": "f3639e2554bf82b65d1ab614a059ae48d83ca01beb5e938bd74201fe73cc8be1",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92",
+    "tools/python/pyproject.toml": "0344a91c6080e2cbb182d680c48de4a3e0e74ebd257d5711cc4f1e1fe15436c8",
+    "tools/python/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "tests/python_client_contract.py": "0dd219df1037239c0723016c6710755768ac79414245f4f09fddcb2aa7037912",
+    "tests/python_response_contract.py": "dbc44f745bf98bb500f3f584ab75465f81e5e1349cdd6f2d774a146d57342dee"
+  },
+  "limits": [
+    "The authoring contract remains candidate; no full engine/gameplay/renderer/save/ABI stability guarantee.",
+    "Synthetic transport failure tests and native retained-receipt checks are separate; no real crash-during-commit guarantee.",
+    "Direct child process cleanup is qualified; generic descendant-tree cleanup is not promised.",
+    "Python wrapper snapshot preparation occurs before the per-call transport deadline.",
+    "Only the recorded Python versions are executed; Python 3.9 is the package minimum, not a separately qualified runtime here.",
+    "Same-platform native clients are qualified; paths are not automatically translated between Windows and WSL.",
+    "Installed wheel is locally qualified, not published to PyPI; installed desktop package is unchanged.",
+    "GUI, GPU, provider-agent turns, scale/performance and public comparison benchmarks are outside this checkpoint."
+  ]
+}

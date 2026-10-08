@@ -3,6 +3,8 @@
 /CMakeUserPresets.json
 __pycache__/
 *.pyc
+/tools/python/build/
+/tools/python/*.egg-info/
 /experiments/managed_gameplay/**/bin/
 /experiments/managed_gameplay/**/obj/
 

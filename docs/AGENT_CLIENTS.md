@@ -4,6 +4,10 @@ Poima's native MCP server can be used by the official Codex and Claude Code CLIs
 
 Bounded authoring exercises pass with Codex CLI **0.160.1** on Linux and Claude Code **2.1.290** on Windows. Both agents discovered schemas, created an entity, replayed the exact transaction, observed stale-revision rejection, queried state, then undid and redid the edit. A separate trace verifier checked the actual tool calls and persisted world. These exercises do not qualify general game creation or cancellation; the separate desktop check below covers one embedded chat edit. A separate simple rendered-observation exercise also passes for both clients; see below. [Evidence](evidence/m2-agent-authoring.json).
 
+For custom automation and evaluation scripts, the [Python client](PYTHON_CLIENT.md)
+uses the same native API through an owned world process or shared endpoint.
+It does not authenticate providers or replace their MCP clients.
+
 ## Connect a project
 
 Use an absolute engine executable path and a world path whose parent directory exists. For a standalone world, the MCP process owns its writer lock. To work alongside an editor or headless host, use its endpoint instead; see [MCP](MCP.md) and [shared sessions](SHARED_SESSIONS.md). A Windows host requires a Windows Poima executable.

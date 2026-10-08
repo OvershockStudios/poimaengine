@@ -44,6 +44,24 @@ selected branches and their constraints, so removing a selected operation or
 tightening its schema still fails the gate. Candidate component selectors retain
 their full constraints; the baseline requires only `Transform` to remain valid.
 
+## Candidate responses and client checks
+
+The [Python client](PYTHON_CLIENT.md) packages a separate
+[candidate response manifest](../tools/python/poima_client/core_responses.v1.candidate.json)
+for these nine methods, with full/focused discovery, full/Transform entity reads
+and preview/commit variants. Its validator checks required shapes and contextual
+guards, allowing additional result fields. Read-only/shared metadata and build
+availability remain variable. Legacy replay receipts may lack history metadata;
+fresh commits must report their history outcome. A replay revision is the original
+base revision plus one, not necessarily the current world revision.
+
+The input compatibility gate is not a response compatibility solver. Removing
+a required response field or changing its meaning needs separate review; it
+cannot be approved by running the request gate in reverse. Independent malformed
+response fixtures and real Windows/Linux native client tests qualify this
+checkpoint. [Client evidence](evidence/m2-python-client.json). The candidate is
+still not a released full-engine contract.
+
 ## Behavioral requirements before release
 
 - Preserve the caller's JSON-RPC ID and version, documented result fields and

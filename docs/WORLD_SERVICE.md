@@ -4,6 +4,10 @@
 
 People using Poima’s desktop editor or CLI and external agents use the same authoritative operations. The editor is a first-class part of Poima; this shared implementation keeps human and automated edits consistent. `WorldSession` in `poima/world.hpp` exposes an in-process client with owned authored/runtime snapshots and an external inspection camera; the CLI adapts this service to stdin/stdout. Clients serialize access within a session. `serve` and editor `--endpoint` now expose [shared local sessions](SHARED_SESSIONS.md) through `connect`. A development [native MCP interface](MCP.md) exposes these same operations through stdio. Discovery is available through `poima schema world`, then `world.describe` inside a session.
 
+The [Python automation client](PYTHON_CLIENT.md) provides bounded stdio/endpoint
+transport, revision-guarded helpers, pinned query pagination and candidate core
+response checks. Generic calls retain access to the discovered native API.
+
 ## Focused discovery (development)
 
 `world.describe` without parameters retains the full descriptor. Clients can request a smaller response when they only need an operation, built-in component or contract section:
@@ -79,7 +83,7 @@ A malformed primary is rejected without silently replacing it with a backup. To 
 
 The initial service allows 10,000 live entities, 256 operations per transaction, a 16 MiB world document including receipts/retired IDs, 1 MiB request lines, and JSON nesting up to 64. Revisions are safe JSON integers through 2^53−1. Transactions copy and validate the document; large-world performance, long-lived deletion histories and streaming are not qualified. These limits bound an initial implementation, not final engine capacity.
 
-Requests use JSON-RPC string/integer/null IDs. Notifications execute without responses, including errors; use requests for acknowledged mutations. JSON-RPC batch arrays are unsupported. Duplicate object keys are rejected. Method parameter schemas are provided; result schemas are not yet published.
+Requests use JSON-RPC string/integer/null IDs. Notifications execute without responses, including errors; use requests for acknowledged mutations. JSON-RPC batch arrays are unsupported. Duplicate object keys are rejected. Method parameter schemas are provided. A separate [candidate response manifest](../tools/python/poima_client/core_responses.v1.candidate.json) covers nine authored-world methods; broader result contracts remain unfinished.
 
 | Code | Meaning |
 | --- | --- |
@@ -98,9 +102,9 @@ Per-request failures leave the session available. Startup failures use the CLI's
 
 ## Verification and remaining work
 
-`tests/world_contract.py` drives the compiled process using Python's standard library. The suite contains nine cases; Windows interoperability skips abrupt process termination, while the other cases cover Unicode filenames and content, persistence, previews, rollback, hierarchy pagination/deletion, retry eviction, malformed requests, write failures, writer exclusion and explicit backup restore. Abrupt termination and lock release are tested on Linux; the WSL harness skips that case for Windows. [Initial service evidence](evidence/m1-world-service.json) and [expanded scene evidence](evidence/m2-scene-capture.json).
+`tests/world_contract.py` drives the compiled process using Python's standard library. Its twelve cases cover identity defaults, isolated previews, guarded revisions, Unicode filenames/content, persistence, rollback, hierarchy pagination/deletion, retry eviction, malformed requests, write failures, writer exclusion and explicit backup restore. Abrupt termination and lock release are tested on Linux; the WSL harness skips that case for Windows. [Current core qualification](evidence/m2-authoring-api-compatibility.json), [initial service evidence](evidence/m1-world-service.json) and [expanded scene evidence](evidence/m2-scene-capture.json).
 
-This is the initial M1 authoring foundation. The optional EnTT/Jolt runtime now provides simulation ECS storage, fixed ticks and live snapshots through additional runtime commands. Shared native sessions, undo/redo and an initial native editor now exist. Custom component schemas, C# component bindings, prefabs, mature editor workflows remain unimplemented. Shared local multi-client transport now exists. M0 foundation experiments also remain open; this delivery does not complete either milestone.
+The optional EnTT/Jolt runtime provides simulation ECS storage, fixed ticks and live snapshots through additional runtime commands. Shared native sessions, undo/redo, custom component schemas, C# component bindings and root-prop templates are implemented foundations. Nested prefab variants and mature editor workflows remain unfinished. See the [implementation status](IMPLEMENTATION_STATUS.md) for current qualification; this service alone does not complete the engine roadmap.
 
 The [continuous player](PLAYER.md) is exposed as `runtime.play` in schema revision 4. It currently blocks this connection while the window runs, retains live state on return, and shares runtime retry receipts with `runtime.step`. Shared desktop clients use `desktop.capture` with a Scene/Game target and `desktop.play.*`; the legacy ImGui frontend exposes `editor.capture` and its own editor controls. Standalone continuous-player attachment remains future work.
 

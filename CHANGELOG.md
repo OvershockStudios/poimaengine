@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.43 — Unreleased
+
+This checkpoint adds an installable Python automation client and candidate core response checks. The installed desktop package remains unchanged.
+
+- A standard-library client opens a native world or connects to a shared endpoint, with guarded mutation helpers, explicit retry receipts and revision-pinned query pagination. Generic calls retain access to discovered engine operations. [Client guide](docs/PYTHON_CLIENT.md).
+- Bounded transport checks correlation, UTF-8/JSON envelopes and error responses. Timeouts distinguish unsent work from unknown outcomes; immutable recovery parameters survive interruption. There are no automatic retries or reconnects.
+- A packaged candidate response manifest covers nine core authoring methods and discovery/read/transaction variants. Validation permits additive result fields and legacy retained receipts without inventing history metadata. The request gate remains separate; broader API stability is unfinished. [Candidate contract](docs/AUTHORING_API_COMPATIBILITY.md).
+- Rebuilt Windows/Linux hosts pass native client authoring, shared-session conflict/detachment, durable retries and legacy receipt checks. Synthetic transport and independent malformed-response fixtures pass on both operating systems; installed-wheel checks qualify local distribution. [Evidence](docs/evidence/m2-python-client.json).
+
 ## 0.0.42 — Unreleased
 
 This checkpoint adds repeatable visual evidence for an agent-authored game and a candidate authoring API compatibility gate. The installed desktop package remains unchanged.
