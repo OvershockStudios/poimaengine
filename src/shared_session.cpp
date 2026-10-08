@@ -2,10 +2,10 @@
 #include "poima/shared_session.hpp"
 #include "poima/local_session.hpp"
 #include "poima/world.hpp"
+#include <algorithm>
 #include <chrono>
 #include <csignal>
 #include <iostream>
-#include <thread>
 
 namespace poima {
 namespace {
@@ -26,7 +26,7 @@ int run_shared_world(const std::string& world,const std::string& endpoint) {
     while(!stopping && !session.closed()) {
         for(const auto& request:host.poll())
             host.reply(request.token,session.request(request.payload,WorldRequestScope::shared_headless));
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        if(!stopping && !session.closed())host.wait(100);
     }
     if(!session.closed())session.request(R"({"jsonrpc":"2.0","method":"session.close"})");
     // Deliver the shutdown receipt and already queued replies. This bounded
@@ -34,7 +34,8 @@ int run_shared_world(const std::string& world,const std::string& endpoint) {
     const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(2);
     while(host.clients() && std::chrono::steady_clock::now()<deadline) {
         for(const auto& request:host.poll())host.reply(request.token,session.request(request.payload,WorldRequestScope::shared_headless));
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        const auto remaining=std::chrono::ceil<std::chrono::milliseconds>(deadline-std::chrono::steady_clock::now()).count();
+        if(host.clients() && remaining>0)host.wait(static_cast<std::uint32_t>(std::min<std::int64_t>(remaining,100)));
     }
     return 0;
 }

@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.47 — Unreleased
+
+This checkpoint replaces headless owner retry sleeps with transport readiness waits. The installed desktop package remains unchanged.
+
+- Windows servers retain overlapped connect/read/write operations with private completion events; Linux servers wait on eligible socket readiness. Owner polling still bounds each client's I/O, dispatches requests serially and preserves deferred reply ordering. Pending Windows operations are canceled and reaped before buffer/slot reuse. [Transport contract](docs/SHARED_SESSIONS.md#transport-and-limits).
+- Native regressions cover fragmented frames, synchronous completions, budget continuation, deferred pipelines, full client capacity, slow readers and endpoint reuse. Windows/Linux client and shared-host checks, candidate request gates and ten Windows desktop ABI checks pass. The unchanged compiled defense game reproduces all recorded outcomes across 3,208 calls with clean exits.
+- Four matched Windows trial pairs reduce shared read-query median from 16.03 ms to 0.159 ms. Five-second idle CPU probes on Windows and Linux record smaller CPU-time deltas, with finite accounting granularity. These are authoring and idle-host measurements, not game FPS, GUI latency or power measurements. [Evidence and limits](docs/evidence/m2-host-readiness.json), [idle probe](tools/benchmark_shared_idle.py).
+
 ## 0.0.46 — Unreleased
 
 This checkpoint replaces Windows client exchange retry sleeps with completion waits. The installed desktop package remains unchanged.

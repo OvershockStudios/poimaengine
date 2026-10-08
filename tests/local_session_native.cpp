@@ -263,6 +263,148 @@ std::string receive_without_poll(RawClient& client) {
     }
     return reply;
 }
+
+// Owner-side dispatch sleeps on transport readiness, never on a poll cadence.
+// Client futures retain their own exchange deadlines if this fixture fails.
+template<class Ready,class Receive> void wait_pump(LocalSessionServer& server,Ready done,Receive receive) {
+    const auto end=Clock::now()+std::chrono::seconds(8);
+    while(!done()) {
+        for(auto& request:server.poll())receive(request);
+        if(done())return;
+        check(Clock::now()<end,"Readiness-driven owner timed out.");server.wait(100);
+    }
+}
+void quiescent(LocalSessionServer& server) {
+    for(unsigned i=0;i<16;++i) {
+        check(server.poll().empty(),"Quiescent transport fabricated or repeated a request.");
+        if(!server.wait(0)) {
+            check(!server.wait(40),"Quiescent/deferred transport woke without actionable progress.");
+            check(!server.wait(0),"Quiescent/deferred transport retained a permanently ready event.");return;
+        }
+    }
+    throw std::runtime_error("Readiness kept waking after all actionable progress was drained.");
+}
+void readiness_contract() {
+    {
+        LocalSessionServer server(endpoint("wait_idle"));
+        check(!server.wait(0),"Idle zero wait reported work.");
+        check(!server.wait(30),"Idle positive wait reported work.");
+        rejects([&]{server.wait(600001);},"Readiness wait accepted an excessive timeout.");
+        rejects([&]{server.wait(std::numeric_limits<std::uint32_t>::max());},"Readiness wait accepted an overflowing timeout.");
+        quiescent(server);
+    }
+    {
+        const auto name=endpoint("wait_arrival");LocalSessionServer server(name);
+        std::promise<void> begin;auto gate=begin.get_future();
+        auto client=std::async(std::launch::async,[&] {
+            gate.wait();LocalSessionClient connection(name,3000);return connection.exchange("awaken",3000);
+        });
+        check(server.poll().empty(),"Empty server emitted a request before connection.");begin.set_value();
+        check(server.wait(3000),"Incoming connection/request did not wake the owner.");
+        std::size_t count=0;
+        wait_pump(server,[&]{return ready(client);},[&](const auto& request) {
+            check(request.payload=="awaken" && ++count==1,"Readiness lost or repeated an arriving request.");
+            check(server.reply(request.token,"awake"),"Readiness-driven reply failed.");
+        });check(client.get()=="awake" && count==1,"Readiness-driven roundtrip differed.");
+        wait_pump(server,[&]{return server.clients()==0;},[&](const auto&){throw std::runtime_error("Disconnected client request replayed.");});
+        quiescent(server);
+    }
+    {
+        const auto name=endpoint("wait_budget");LocalSessionServer server(name);
+        const std::string maximum(local_session_request_limit,'b');
+        auto client=std::async(std::launch::async,[&] {
+            LocalSessionClient connection(name,4000);return connection.exchange(maximum,4000);
+        });
+        std::size_t count=0;
+        wait_pump(server,[&]{return ready(client);},[&](const auto& request) {
+            check(request.payload==maximum && ++count==1,"Readiness budget continuation lost or repeated request bytes.");
+            check(server.reply(request.token,"budget-complete"),"Readiness budget continuation reply failed.");
+        });check(client.get()=="budget-complete" && count==1,"Readiness failed after exhausting a request poll budget.");
+    }
+    {
+        LocalSessionServer server(endpoint("wait_partial"));RawClient raw(server.address());
+        const auto prefix=header(4);raw.send(std::string_view(prefix).substr(0,1));
+        wait_pump(server,[&]{return server.clients()==1;},[&](const auto&){throw std::runtime_error("Partial header fabricated a request.");});
+        quiescent(server);
+        // Deliberately arrive between the last poll and the next wait.
+        check(server.poll().empty(),"Incomplete header emitted a request.");raw.send(std::string_view(prefix).substr(1));
+        check(server.wait(3000),"Bytes arriving between poll and wait were lost.");quiescent(server);
+        raw.send("pi");check(server.wait(3000),"Partial payload did not wake transport progress.");quiescent(server);
+        raw.send("ng");check(server.wait(3000),"Completed fragmented payload did not wake owner.");
+        std::uint64_t token=0;wait_pump(server,[&]{return token!=0;},[&](const auto& request) {
+            check(token==0 && request.payload=="ping","Fragmented readiness request differed or repeated.");token=request.token;
+        });
+        raw.send(header(4)+"next");quiescent(server);
+        // Readable pipelined bytes belong to an outstanding token and must not
+        // become a hot readiness loop or dispatch before its reply completes.
+        check(!server.wait(60),"Deferred token made pipelined bytes continuously ready.");
+        check(server.reply(token,"first"),"Deferred readiness reply failed.");
+        check(receive_without_poll(raw)=="first","Deferred readiness response changed.");
+        std::uint64_t next=0;wait_pump(server,[&]{return next!=0;},[&](const auto& request) {
+            check(next==0 && request.payload=="next","Deferred pipelined request was lost or repeated.");next=request.token;
+        });
+        check(next!=token && !server.reply(token,"stale"),"Readiness revived a stale token.");
+        check(server.reply(next,"second"),"Pipelined readiness reply failed.");
+        check(receive_without_poll(raw)=="second","Pipelined readiness frame order changed.");quiescent(server);
+    }
+    {
+        const auto name=endpoint("wait_capacity");LocalSessionServer server(name);
+        std::vector<std::future<std::string>> clients;
+        for(std::size_t i=0;i<local_session_client_limit;++i)clients.push_back(std::async(std::launch::async,[&,i] {
+            LocalSessionClient connection(name,4000);return connection.exchange("held"+std::to_string(i),4000);
+        }));
+        std::vector<LocalSessionRequest> held;
+        wait_pump(server,[&]{return held.size()==local_session_client_limit;},[&](auto request){held.push_back(std::move(request));});
+        check(server.clients()==local_session_client_limit,"Readiness did not fill all eight slots.");quiescent(server);
+#ifndef _WIN32
+        // Unix permits the ninth connection into the listener backlog even
+        // though no peer slot is available. Its readable listener is ineligible.
+        auto ninth=std::make_unique<RawClient>(server.address());ninth->send(header(5)+"ninth");
+#else
+        const auto path=server.address();const std::wstring wide(path.begin(),path.end());
+        HANDLE unavailable=CreateFileW(wide.c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,0,nullptr);
+        const auto capacity_error=GetLastError();if(unavailable!=INVALID_HANDLE_VALUE)CloseHandle(unavailable);
+        check(unavailable==INVALID_HANDLE_VALUE && capacity_error==ERROR_PIPE_BUSY,"Ninth Windows connection unexpectedly bypassed occupied slots.");
+        std::promise<void> attempting;auto attempted=attempting.get_future();
+        auto ninth=std::async(std::launch::async,[&] {
+            attempting.set_value();LocalSessionClient connection(name,4000);return connection.exchange("ninth",4000);
+        });attempted.wait();
+#endif
+        quiescent(server);check(!server.wait(100),"Full slots plus queued ninth connection spun readiness.");
+        for(const auto& request:held)check(server.reply(request.token,request.payload),"Held capacity reply failed.");
+        std::uint64_t ninth_token=0;
+        wait_pump(server,[&]{return ninth_token!=0 && std::all_of(clients.begin(),clients.end(),[](auto& c){return ready(c);});},[&](const auto& request) {
+            check(request.payload=="ninth" && ninth_token==0,"Capacity queue lost or repeated the ninth request.");ninth_token=request.token;
+        });
+        for(std::size_t i=0;i<clients.size();++i)check(clients[i].get()=="held"+std::to_string(i),"Held capacity responses crossed clients.");
+        check(server.reply(ninth_token,"last"),"Queued ninth reply failed.");
+#ifdef _WIN32
+        wait_pump(server,[&]{return ready(ninth);},[&](const auto&){throw std::runtime_error("Ninth client replayed a request.");});
+        check(ninth.get()=="last","Queued ninth response differed.");
+#else
+        check(receive_without_poll(*ninth)=="last","Queued ninth response differed.");ninth.reset();
+#endif
+        wait_pump(server,[&]{return server.clients()==0;},[&](const auto&){throw std::runtime_error("Capacity cleanup replayed a request.");});quiescent(server);
+    }
+    const auto reusable=endpoint("wait_cleanup");
+    for(unsigned i=0;i<3;++i) {
+        { LocalSessionServer server(reusable);server.wait(0); }
+        // Destroy with a read armed against an incomplete request.
+        {
+            auto server=std::make_unique<LocalSessionServer>(reusable);auto raw=std::make_unique<RawClient>(server->address());
+            raw->send(header(8)+"a");wait_pump(*server,[&]{return server->clients()==1;},[&](const auto&){throw std::runtime_error("Cleanup partial read fabricated request.");});
+            quiescent(*server);server->wait(0);server.reset();raw.reset();
+        }
+        // Destroy with a large response and a reader deliberately not draining.
+        {
+            auto server=std::make_unique<LocalSessionServer>(reusable);auto raw=std::make_unique<RawClient>(server->address());
+            raw->send(header(4)+"hold");std::uint64_t token=0;
+            wait_pump(*server,[&]{return token!=0;},[&](const auto& request){check(request.payload=="hold","Cleanup request changed.");token=request.token;});
+            check(server->reply(token,std::string(2*1024*1024,'q')),"Cleanup large reply failed.");server->wait(0);server.reset();raw.reset();
+        }
+        { LocalSessionServer reopened(reusable);check(!reopened.wait(0),"Reopened listener inherited stale readiness."); }
+    }
+}
 }
 
 int main() {
@@ -336,7 +478,7 @@ int main() {
             LocalSessionServer server(endpoint("slow_reader"));RawClient slow(server.address());
             slow.send(header(4)+"slow");std::uint64_t slow_token=0,next_token=0,fast_token=0;
             std::size_t slow_count=0,next_count=0,fast_count=0;
-            pump(server,[&]{return slow_token!=0;},[&](const auto& request){
+            wait_pump(server,[&]{return slow_token!=0;},[&](const auto& request){
                 check(request.payload=="slow" && ++slow_count==1,"Slow request was corrupted or re-emitted.");slow_token=request.token;
             });
             const std::string large="begin:"+std::string(2*1024*1024,'z')+":end";
@@ -357,13 +499,13 @@ int main() {
                     check(++next_count==1,"Pipelined slow-reader request was re-emitted.");next_token=request.token;
                 }else throw std::runtime_error("Completed slow request was re-emitted or a request was corrupted.");
             };
-            pump(server,[&]{return fast_token!=0;},dispatch);
+            wait_pump(server,[&]{return fast_token!=0;},dispatch);
             check(server.reply(fast_token,"fast-now"),"Other client reply was rejected behind slow output.");
             check(receive_without_poll(fast)=="fast-now","Slow reader blocked another client's immediate reply.");
             check(!server.reply(fast_token,"duplicate"),"Other completed client token was reused.");
-            pump(server,[&]{return slow.receive_frame(received);},dispatch);
+            wait_pump(server,[&]{return slow.receive_frame(received);},dispatch);
             check(received==large,"Partial large response lost, duplicated or reordered bytes.");
-            pump(server,[&]{return next_token!=0;},dispatch);
+            wait_pump(server,[&]{return next_token!=0;},dispatch);
             check(next_token!=slow_token && !server.reply(slow_token,"stale"),"Stale slow token could answer its follow-up request.");
             check(server.reply(next_token,"after-large"),"Pipelined request was discarded after slow output.");
             check(receive_without_poll(slow)=="after-large","Follow-up frame crossed or corrupted the large response.");
@@ -442,6 +584,7 @@ int main() {
 #ifdef _WIN32
         windows_client_completion_contract();
 #endif
+        readiness_contract();
         std::cout<<"Local session transport tests passed.\n";return 0;
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

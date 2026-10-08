@@ -104,8 +104,9 @@ transport thread, busy wait or change to global timer resolution.
 In 0.0.46 development, the Windows client opens its pipe for overlapped I/O
 and waits on a completion event instead of sleeping and retrying during an
 exchange. Reads and writes share one absolute deadline, including partial
-frames. The server retains its nonblocking polling contract; endpoint startup
-retries, headless owner sleeps and editor dispatch cadence are unchanged.
+frames. At that checkpoint the server retains its nonblocking polling contract;
+endpoint startup retries, headless owner sleeps and editor dispatch cadence
+are unchanged.
 Linux clients continue to wait on socket readiness.
 
 A failed Windows wait cancels and reaps that operation before releasing its
@@ -114,6 +115,25 @@ kernel cancellation can exceed the requested deadline; the timeout does not
 promise a hard bound on driver cleanup. See Microsoft's [overlapped I/O
 guidance](https://learn.microsoft.com/en-us/windows/win32/ipc/synchronous-and-overlapped-input-and-output)
 and [cancellation rules](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex).
+
+In 0.0.47 development, the headless owner calls `wait(timeout_ms)` after
+polling and dispatching requests. Windows servers retain overlapped connection,
+read and write operations with private completion events; Linux servers wait on
+eligible socket readiness. This replaces the headless owner's repeated 2 ms
+sleep. A wait can arm transport I/O but never returns, discards or dispatches
+requests; the next `poll()` consumes progress. Synchronous completions and
+budget continuations remain eligible without another client write.
+
+`wait()` accepts 0..600000 ms, including an immediate check at zero. It returns
+true when eligible progress, a connection or an error may need polling, and
+false on timeout or interruption. Pending application replies exclude
+pipelined reads. Windows checks those clients' liveness in completion-wait
+slices of at most 100 ms; the headless owner also uses a 100 ms idle maintenance
+ceiling. Disconnect/error cleanup cancels and reaps pending Windows operations
+before reusing buffers or peer slots and can exceed that deadline. All calls
+remain serialized by the owner. GUI callers keep the normally nonblocking
+`poll()`; this checkpoint does not change editor dispatch cadence or install a
+new editor package. Endpoint startup retries are unchanged.
 
 `connect --timeout-ms N` accepts 100..600000 milliseconds, default 30000, for connection establishment and each exchange. A timeout/disconnect closes the client connection and does not replay the operation. The operation may already have committed: inspect state, then explicitly retry with the same durable `request_id` where supported. Editor controls/captures do not have durable request receipts. Transport startup/exchange errors exit the CLI with code 4; stderr explains the failure, and stdout uses the CLI error envelope rather than a JSON-RPC result.
 
@@ -148,6 +168,30 @@ machine-local paths, individual samples and bounded diagnostics. Publish the
 summary rather than the local report. The [0.0.45 evidence](evidence/m2-immediate-replies.json)
 records Windows before/after trials. These are authoring-query measurements on
 one machine, not game frame rates, agent success rates or GUI input latency.
+
+### Measure idle host CPU time
+
+A second provider-free probe measures one idle headless host with one connected
+idle client. Use native Python on the engine's operating system and a new output
+directory:
+
+```powershell
+python tools/benchmark_shared_idle.py `
+  --engine build/windows-runtime/poima.exe `
+  --world docs/evidence/fixtures/agent-defense/world.json `
+  --output build/shared-idle-probe --seconds 5
+```
+
+Startup, inspection queries and shutdown are outside the accounting interval.
+The probe checks world identity before and after, unchanged input hashes, and
+clean exits for both owned processes. Windows sums kernel and user time with
+[GetProcessTimes](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes);
+Linux sums `utime` and `stime` from
+[/proc/pid/stat](https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html).
+The recorded percentage is relative to one CPU core. Accounting has finite
+granularity: a zero delta does not prove zero work or energy use. This measures
+neither battery life nor GUI, rendering or gameplay performance. Publish
+`public-summary.json`; local diagnostics stay in `local-report.json`.
 
 ## Qualification and current limits
 

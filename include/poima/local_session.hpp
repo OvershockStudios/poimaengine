@@ -25,13 +25,24 @@ public:
     ~LocalSessionServer();
     LocalSessionServer(const LocalSessionServer&)=delete;
     LocalSessionServer& operator=(const LocalSessionServer&)=delete;
-    // Bounded, nonblocking I/O pump. Also flushes previously queued replies.
+    // Bounded, normally nonblocking I/O pump; also flushes queued replies.
+    // Windows disconnect/error cleanup cancels and reaps pending I/O before
+    // buffer reuse, and that cleanup can block beyond an exchange/wait deadline.
     std::vector<LocalSessionRequest> poll();
+    // Owner-thread transport readiness only: true means eligible progress,
+    // connection or error may need poll(); false means timeout/interruption.
+    // Accepts 0..600000ms (0 checks immediately). May arm transport I/O, but
+    // never returns/discards requests or dispatches world commands. Deferred
+    // tokens exclude pipelined reads; Windows uses 100ms completion-wait slices
+    // to check their liveness. GUI message-pump owners should retain normally
+    // nonblocking poll() instead.
+    bool wait(std::uint32_t timeout_ms);
     // Queues a reply and attempts bounded, nonblocking delivery immediately;
     // poll() flushes any remaining bytes. True means accepted without an observed
     // disconnect, not confirmed receipt. False for stale/already-replied tokens
     // or an observed disconnect (possibly after partial delivery). Never replay
     // automatically. Invalid/oversized UTF-8 throws without mutation.
+    // Observed Windows disconnect/error cleanup can block while I/O is reaped.
     bool reply(std::uint64_t token,std::string_view payload);
     std::size_t clients() const;
     std::string address() const;

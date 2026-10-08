@@ -158,6 +158,44 @@ Io client_io(Channel& channel,bool writing,char* data,std::size_t count,Clock::t
     check(used>0,"Local session I/O completed without transferring frame bytes; connection closed.");
     return {used,false};
 }
+struct ServerOperation {
+    enum class Kind { none,connect,header,body,write };
+    HANDLE pipe=INVALID_HANDLE_VALUE;
+    OVERLAPPED state{};
+    Kind kind=Kind::none;
+    bool pending=false,ready=false;
+    DWORD bytes=0,error=ERROR_SUCCESS;
+    std::size_t requested=0;
+    ServerOperation() {
+        state.hEvent=CreateEventW(nullptr,TRUE,FALSE,nullptr);
+        check(state.hEvent!=nullptr,"Cannot create local session server completion event.");
+    }
+    ServerOperation(const ServerOperation&)=delete;
+    ServerOperation& operator=(const ServerOperation&)=delete;
+    ~ServerOperation() { cancel();CloseHandle(state.hEvent); }
+    void cancel() noexcept {
+        if(pending) {
+            CancelIoEx(pipe,&state);DWORD ignored=0;
+            // Even ERROR_NOT_FOUND can mean raced completion, not permission
+            // to release the operation/buffer. Reaping can outlast a deadline.
+            GetOverlappedResult(pipe,&state,&ignored,TRUE);pending=false;
+        }
+    }
+    void clear() {
+        check(!pending,"Cannot reuse pending local server I/O.");
+        const auto event=state.hEvent;state={};state.hEvent=event;
+        check(ResetEvent(event)!=0,"Cannot reset local server completion event.");
+        pipe=INVALID_HANDLE_VALUE;kind=Kind::none;ready=false;bytes=error=0;requested=0;
+    }
+    bool collect() {
+        if(ready)return true;
+        if(!pending)return false;
+        DWORD used=0;const auto complete=GetOverlappedResult(pipe,&state,&used,FALSE);
+        const auto result=complete ? ERROR_SUCCESS : GetLastError();
+        if(result==ERROR_IO_INCOMPLETE)return false;
+        pending=false;ready=true;bytes=used;error=result;return true;
+    }
+};
 bool owner_is_current(HANDLE pipe) {
     PSID owner=nullptr;PSECURITY_DESCRIPTOR descriptor=nullptr;
     if(GetSecurityInfo(pipe,SE_KERNEL_OBJECT,OWNER_SECURITY_INFORMATION,&owner,nullptr,nullptr,nullptr,&descriptor)!=ERROR_SUCCESS)return false;
@@ -210,6 +248,12 @@ struct Peer {
     std::size_t header_used=0,input_used=0,output_used=0;
     std::string input,output;
     std::uint64_t token=0;
+#ifdef _WIN32
+    bool continuation=false;
+    // Declared last: its destructor cancels/reaps before buffers or channel
+    // destruction, including partial construction and exceptional unwinding.
+    ServerOperation operation;
+#endif
     void reset_request() { header_used=input_used=output_used=0;input.clear();output.clear();token=0; }
 };
 }
@@ -228,13 +272,13 @@ struct LocalSessionServer::Impl {
 #ifdef _WIN32
         security=std::make_unique<Security>(current_sid());
         const std::wstring name(path.begin(),path.end());
-        // Polling, not background asynchronous I/O: NOWAIT returns partial byte
-        // writes/empty reads immediately, with no outstanding OVERLAPPED state.
+        // Persistent per-peer operations are armed/harvested only by the owner;
+        // PIPE_WAIT plus overlapped events provides genuine completion readiness.
         // https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-type-read-and-wait-modes
         for(std::size_t i=0;i<peers.size();++i) {
             auto peer=std::make_unique<Peer>();
-            peer->channel.handle=CreateNamedPipeW(name.c_str(),PIPE_ACCESS_DUPLEX|(i==0 ? FILE_FLAG_FIRST_PIPE_INSTANCE : 0),
-                PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT|PIPE_REJECT_REMOTE_CLIENTS,static_cast<DWORD>(peers.size()),65536,65536,0,&security->attributes);
+            peer->channel.handle=CreateNamedPipeW(name.c_str(),PIPE_ACCESS_DUPLEX|FILE_FLAG_OVERLAPPED|(i==0 ? FILE_FLAG_FIRST_PIPE_INSTANCE : 0),
+                PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_WAIT|PIPE_REJECT_REMOTE_CLIENTS,static_cast<DWORD>(peers.size()),65536,65536,0,&security->attributes);
             check(peer->channel.valid(),"Local endpoint already exists or cannot be created.");peers[i]=std::move(peer);
         }
 #else
@@ -259,28 +303,19 @@ struct LocalSessionServer::Impl {
 #ifndef _WIN32
         listener.close();cleanup_socket();
 #endif
-        // No outstanding asynchronous kernel operation owns any buffer.
+        // Windows Peer destroys/reaps its operation before its buffers/channel.
         for(auto& peer:peers)peer.reset();
     }
     void drop(std::size_t index) {
 #ifdef _WIN32
-        auto& peer=*peers[index];DisconnectNamedPipe(peer.channel.handle);peer.connected=false;peer.reset_request();
+        auto& peer=*peers[index];peer.operation.cancel();peer.operation.clear();
+        DisconnectNamedPipe(peer.channel.handle);peer.connected=false;peer.continuation=false;peer.reset_request();
 #else
         peers[index].reset();
 #endif
     }
+#ifndef _WIN32
     void accept_clients() {
-#ifdef _WIN32
-        for(std::size_t i=0;i<peers.size();++i)if(!peers[i]->connected) {
-            const auto success=ConnectNamedPipe(peers[i]->channel.handle,nullptr);const auto error=success ? ERROR_SUCCESS : GetLastError();
-            // NOWAIT success means listening, not connected. Only the explicit
-            // PIPE_CONNECTED status establishes a usable connection.
-            // https://learn.microsoft.com/en-us/windows/win32/api/namedpipeapi/nf-namedpipeapi-connectnamedpipe
-            if(error==ERROR_PIPE_CONNECTED)peers[i]->connected=true;
-            else if(error==ERROR_NO_DATA)drop(i);
-            else check(error==ERROR_SUCCESS || error==ERROR_PIPE_LISTENING,"Local pipe listener failed.");
-        }
-#else
         // Bound accept work even if clients keep connecting concurrently.
         for(std::size_t attempt=0;attempt<local_session_client_limit;++attempt) {
             const auto slot=std::find_if(peers.begin(),peers.end(),[](const auto& peer){return !peer;});if(slot==peers.end())return;
@@ -289,25 +324,124 @@ struct LocalSessionServer::Impl {
             if(fd<0) { if(errno==EAGAIN || errno==EWOULDBLOCK || errno==EINTR)return;throw std::runtime_error("Local socket accept failed."); }
             peer->channel.fd=fd;if(!same_user(fd))continue;peer->connected=true;*slot=std::move(peer);
         }
-#endif
     }
+    bool terminal(const Peer& peer) {
+        pollfd item{peer.channel.fd,0,0};const auto result=::poll(&item,1,0);
+        check(result>=0 || errno==EINTR,"Cannot inspect local socket disconnect.");
+        return result>0 && (item.revents&(POLLHUP|POLLERR|POLLNVAL));
+    }
+#else
+    void arm(Peer& peer,std::size_t budget) {
+        auto& op=peer.operation;if(op.kind!=ServerOperation::Kind::none || !budget || peer.token)return;
+        op.clear();op.pipe=peer.channel.handle;
+        BOOL complete=FALSE;
+        if(!peer.connected) {
+            op.kind=ServerOperation::Kind::connect;
+            complete=ConnectNamedPipe(op.pipe,&op.state);
+        }else {
+            char* data=nullptr;
+            if(!peer.output.empty()) {
+                op.kind=ServerOperation::Kind::write;data=peer.output.data()+peer.output_used;
+                op.requested=std::min(budget,peer.output.size()-peer.output_used);
+            }else if(peer.header_used<peer.header.size()) {
+                op.kind=ServerOperation::Kind::header;data=reinterpret_cast<char*>(peer.header.data())+peer.header_used;
+                op.requested=std::min(budget,peer.header.size()-peer.header_used);
+            }else {
+                op.kind=ServerOperation::Kind::body;data=peer.input.data()+peer.input_used;
+                op.requested=std::min(budget,peer.input.size()-peer.input_used);
+            }
+            op.requested=std::min(op.requested,std::size_t(65536));
+            check(op.requested>0,"Local server has no eligible frame bytes.");
+            const auto count=static_cast<DWORD>(op.requested);
+            complete=op.kind==ServerOperation::Kind::write ? WriteFile(op.pipe,data,count,nullptr,&op.state)
+                                                         : ReadFile(op.pipe,data,count,nullptr,&op.state);
+        }
+        const auto error=complete ? ERROR_SUCCESS : GetLastError();
+        if(op.kind==ServerOperation::Kind::connect && (complete || error==ERROR_PIPE_CONNECTED)) {
+            // PIPE_CONNECTED never issued pending I/O; do not ask the kernel
+            // to reap that synthetic completion or depend on an event signal.
+            op.ready=true;return;
+        }
+        if(complete || error==ERROR_IO_PENDING) {
+            op.pending=true;
+            if(complete)op.collect();
+        }else { op.ready=true;op.error=error; }
+    }
+#endif
     bool flush_output(std::size_t index,std::size_t& budget) {
         auto& peer=*peers[index];
         if(peer.output.empty())return true;
         while(peer.output_used<peer.output.size() && budget) {
+#ifdef _WIN32
+            arm(peer,budget);auto& op=peer.operation;
+            check(op.kind==ServerOperation::Kind::write,"Local server reply has conflicting pending I/O.");
+            if(!op.collect())break;
+            if(op.error!=ERROR_SUCCESS || !op.bytes || op.bytes>op.requested || op.bytes>budget) { drop(index);return false; }
+            peer.output_used+=op.bytes;budget-=op.bytes;op.clear();
+#else
             const auto io=peer.channel.write(peer.output.data()+peer.output_used,std::min(budget,peer.output.size()-peer.output_used));
             if(io.closed) { drop(index);return false; }
             if(!io.bytes)break;
             peer.output_used+=io.bytes;budget-=io.bytes;
+#endif
         }
         if(peer.output_used==peer.output.size())peer.reset_request();
+#ifdef _WIN32
+        else if(!budget)peer.continuation=true;
+#endif
         return true;
     }
     std::vector<LocalSessionRequest> poll() {
+#ifndef _WIN32
         accept_clients();std::vector<LocalSessionRequest> requests;requests.reserve(peers.size());
+#else
+        std::vector<LocalSessionRequest> requests;requests.reserve(peers.size());
+#endif
         for(std::size_t i=0;i<peers.size();++i) {
+#ifdef _WIN32
+            auto& peer=*peers[i];peer.continuation=false;std::size_t budget=pump_budget;
+            if(!peer.connected) {
+                arm(peer,budget);auto& op=peer.operation;
+                if(!op.collect())continue;
+                if(op.error!=ERROR_SUCCESS) {
+                    const auto error=op.error;drop(i);
+                    check(error==ERROR_NO_DATA || error==ERROR_BROKEN_PIPE || error==ERROR_OPERATION_ABORTED,"Local pipe listener failed.");
+                    continue;
+                }
+                op.clear();peer.connected=true;
+            }
+            if(!peer.channel.alive()) { drop(i);continue; }
+            if(peer.token)continue;
+            if(!peer.output.empty()) {
+                if(!flush_output(i,budget))continue;
+                if(!peer.output.empty())continue;
+            }
+            while(budget && !peer.token) {
+                arm(peer,budget);auto& op=peer.operation;
+                if(!op.collect())break;
+                if(op.error!=ERROR_SUCCESS || !op.bytes || op.bytes>op.requested || op.bytes>budget) { drop(i);break; }
+                const auto kind=op.kind;
+                if(kind==ServerOperation::Kind::header)peer.header_used+=op.bytes;
+                else { check(kind==ServerOperation::Kind::body,"Local server has an unexpected read phase.");peer.input_used+=op.bytes; }
+                budget-=op.bytes;op.clear();
+                if(kind==ServerOperation::Kind::header && peer.header_used==peer.header.size()) {
+                    const auto size=decode_size(peer.header);if(size==0 || size>local_session_request_limit) { drop(i);break; }
+                    peer.input.resize(size);
+                }
+                if(kind==ServerOperation::Kind::body && peer.input_used==peer.input.size()) {
+                    if(!utf8(peer.input)) { drop(i);break; }
+                    check(next_token!=0,"Local session request token space exhausted.");peer.token=next_token++;
+                    requests.push_back({peer.token,std::move(peer.input)});
+                }
+            }
+            if(peer.connected && !budget && !peer.token)peer.continuation=true;
+#else
             if(!peers[i] || !peers[i]->connected)continue;
             auto& peer=*peers[i];std::size_t budget=pump_budget;
+            // While a response is owner-held or pending, full hangup/error is
+            // a disconnect even if unread pipelined bytes remain buffered.
+            // A write-half shutdown alone must not discard a readable reply.
+            if((peer.token || !peer.output.empty()) && terminal(peer)) { drop(i);continue; }
             if(!peer.channel.alive()) { drop(i);continue; }
             if(peer.token)continue;
             if(!peer.output.empty()) {
@@ -330,13 +464,56 @@ struct LocalSessionServer::Impl {
                     requests.push_back({peer.token,std::move(peer.input)});
                 }
             }
+#endif
         }
         return requests;
+    }
+    bool wait(std::uint32_t timeout) {
+#ifdef _WIN32
+        const auto deadline=Clock::now()+std::chrono::milliseconds(timeout);
+        for(;;) {
+            std::array<HANDLE,local_session_client_limit> events{};DWORD count=0;
+            bool ready=false,deferred=false;
+            for(auto& pointer:peers) {
+                auto& peer=*pointer;
+                if(peer.token) { deferred=true;if(!peer.channel.alive())ready=true;continue; }
+                arm(peer,pump_budget);auto& op=peer.operation;
+                if(peer.continuation || op.ready)ready=true;
+                if(op.pending)events[count++]=op.state.hEvent;
+            }
+            if(ready)return true;
+            auto remaining=std::chrono::ceil<std::chrono::milliseconds>(deadline-Clock::now()).count();
+            if(remaining<0)remaining=0;
+            const auto interval=static_cast<DWORD>(std::min<std::int64_t>(remaining,deferred ? 100 : 600000));
+            // When every peer awaits its application reply, no I/O is armed.
+            // Its reset private event is an unsignaled idle wait target. Check
+            // dormant disconnects every 100ms, without reading pipeline bytes.
+            const auto result=count ? WaitForMultipleObjects(count,events.data(),FALSE,interval)
+                                    : WaitForSingleObject(peers[0]->operation.state.hEvent,interval);
+            if(count && result<WAIT_OBJECT_0+count)return true;
+            check(result==WAIT_TIMEOUT,"Local server completion wait failed.");
+            if(timeout==0 || Clock::now()>=deadline)return false;
+        }
+#else
+        std::array<pollfd,local_session_client_limit+1> items{};nfds_t count=0;
+        if(std::any_of(peers.begin(),peers.end(),[](const auto& peer){return !peer;}))items[count++]={listener.fd,POLLIN,0};
+        for(const auto& peer:peers)if(peer && peer->connected) {
+            const auto events=static_cast<short>(peer->token ? 0 : peer->output.empty() ? POLLIN : POLLOUT);
+            items[count++]={peer->channel.fd,events,0};
+        }
+        const auto result=::poll(items.data(),count,static_cast<int>(timeout));
+        if(result<0 && errno==EINTR)return false;
+        check(result>=0,"Local server socket readiness wait failed.");return result>0;
+#endif
     }
     bool reply(std::uint64_t token,std::string_view payload) {
         validate_payload(payload,local_session_response_limit,true);
         for(std::size_t i=0;i<peers.size();++i)if(peers[i] && peers[i]->connected && token!=0 && peers[i]->token==token) {
-            auto& peer=*peers[i];if(!peer.channel.alive()) { drop(i);return false; }
+            auto& peer=*peers[i];
+#ifndef _WIN32
+            if(terminal(peer)) { drop(i);return false; }
+#endif
+            if(!peer.channel.alive()) { drop(i);return false; }
             auto bytes=frame(payload);peer.output=std::move(bytes);peer.output_used=0;peer.token=0;
             std::size_t budget=pump_budget;return flush_output(i,budget);
         }
@@ -425,6 +602,10 @@ struct LocalSessionClient::Impl {
 LocalSessionServer::LocalSessionServer(std::string_view endpoint) { validate_endpoint(endpoint);impl_=std::make_unique<Impl>(endpoint); }
 LocalSessionServer::~LocalSessionServer()=default;
 std::vector<LocalSessionRequest> LocalSessionServer::poll() { return impl_->poll(); }
+bool LocalSessionServer::wait(std::uint32_t timeout) {
+    if(timeout>600000)throw std::invalid_argument("Local server wait must be 0..600000 milliseconds.");
+    return impl_->wait(timeout);
+}
 bool LocalSessionServer::reply(std::uint64_t token,std::string_view payload) { return impl_->reply(token,payload); }
 std::size_t LocalSessionServer::clients() const { return static_cast<std::size_t>(std::count_if(impl_->peers.begin(),impl_->peers.end(),[](const auto& peer){return peer && peer->connected;})); }
 std::string LocalSessionServer::address() const { return impl_->path; }
