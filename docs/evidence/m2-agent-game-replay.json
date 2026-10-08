@@ -1,0 +1,57 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Portable public agent-authored escape fixture, Windows CoreCLR headless replay and fresh-process checkpoint continuation",
+  "passed": true,
+  "fixture": "fixtures/agent-escape/README.md",
+  "original_agent_exercise": "m2-agent-game.json",
+  "qualification": {
+    "platform": "Windows",
+    "gameplay_backend": "CoreCLR",
+    "runtime": "10.0.12",
+    "assembly_built_from_public_project": true,
+    "engine": "Cached compatible native engine; no full host rebuild for this check",
+    "renderer_used": false,
+    "runtime_field_patches_used": false
+  },
+  "hashes": {
+    "engine": "05df699312413b72965b632800113562bdf074770f2132a75eb0ab7992fd8bf6",
+    "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+    "bridge": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+    "assembly": "bba028f9f2fb37a09ea816baa3a01f865c4e1585e4fc144559275084eacff2b8",
+    "Escape.cs": "d51486e6c8b5e92d2f0d3cf096a4f2cef3164bc1d15b8384146c2873c747a9ef",
+    "world.json": "7a8e5f55877f6ae08830e94cbb1c6e2c3125a639ef07426af7cc9389377055fd",
+    "plan.json": "1ae606fcc798af56c53cf6dfbb3e7c53a9669cc24d755973d4ddadafe93f8155",
+    "manifest.json": "d8f9712791f67dfac1ce771547555c21d4e323d30efdbf061fc48d330e8c6c5e",
+    "replay.py": "b607b27bb252aee3c10a7f395d90bc019290c095167a02169a9642d69ba3f0cb"
+  },
+  "processes": [
+    {
+      "label": 1,
+      "exit_code": 0,
+      "rpc_calls": 89
+    },
+    {
+      "label": 2,
+      "exit_code": 0,
+      "rpc_calls": 39
+    }
+  ],
+  "checks": [
+    "Recorded controller route rejects the locked exit, collects all three keys and completes the game.",
+    "Compiled Pause/Resume/Save/Load restores tick, key handles and exact player matrix, then completes again.",
+    "A separate native process loads the durable checkpoint and completes the game again."
+  ],
+  "restored_tick": 52,
+  "second_completion_tick": 340,
+  "fresh_process_continuation": true,
+  "exact_player_matrix_restored": true,
+  "remaining_key_handles_resolve": true,
+  "cleanup_errors": [],
+  "limits": [
+    "One fixed input route and primitive world; not broad autonomous development or a performance benchmark.",
+    "Logical HUD and headless simulation only; rendered presentation and physical input remain unqualified.",
+    "Linux and Native AOT execution of this fixture remain unqualified.",
+    "New compile-service and UI-discovery source changes are not present in the cached engine used here.",
+    "Raw RPC reports and machine-local paths remain in ignored build output."
+  ]
+}

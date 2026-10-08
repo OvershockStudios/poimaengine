@@ -20,7 +20,7 @@
   "world_revision": 2,
   "active_session_id": "291db9b2a1d307f613b6433105ee266c",
   "active_tick": 340,
-  "scene_file": "scene.json",
+  "scene_file": "world.json",
   "state_layout": {
     "kind": "sequential",
     "bytes": 152

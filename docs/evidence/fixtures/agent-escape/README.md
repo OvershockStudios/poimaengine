@@ -17,3 +17,44 @@ headless gameplay and logical UI, with no graphical or physical-input claim.
 The source is the measured generated game, including basic save-status handling
 and per-interaction allocations; the Collection Room remains the documented
 SDK sample.
+
+## Reproduce the headless check
+
+Build the retained C# source with .NET 10 from the repository root:
+
+```text
+dotnet build docs/evidence/fixtures/agent-escape/Escape.csproj -c Release --disable-build-servers --artifacts-path build/agent-escape/artifacts -o build/agent-escape/managed
+```
+
+Use a compatible Poima executable with simulation and managed gameplay enabled,
+and its matching managed bridge. Run Python on the same operating system as the
+engine so paths resolve natively. Windows PowerShell example; replace the
+hostfxr path/version with your installed runtime:
+
+```powershell
+python docs/evidence/fixtures/agent-escape/replay.py `
+  --engine build/windows-runtime/poima.exe `
+  --hostfxr "C:/Program Files/dotnet/host/fxr/10.0.12/hostfxr.dll" `
+  --bridge managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll `
+  --assembly build/agent-escape/managed/Escape.dll `
+  --output build/agent-escape/replay-1
+```
+
+The output directory must be new. The runner copies `world.json`, owns its native
+processes and uses controller input and compiled callbacks throughout. It checks
+the locked exit, three pickups, HUD, pause/resume, durable checkpoint verification,
+exact player-matrix restoration and completion after loading. It then closes the
+host, opens a separate native process and verifies checkpoint continuation again.
+It writes `replay-evidence.json` containing input hashes and actual RPC results;
+success requires clean exits from both native processes. This script is authoring
+tooling; gameplay remains compiled C# in the native engine.
+
+The manifest and plan retain observations from the original exercise, including
+assembly hashes, session IDs and save-ticket epochs. Rebuilt assemblies can differ;
+the runner checks the supplied DLL against the native load result and uses fresh
+session IDs and observed guards. Recorded setup notes mentioning `scene.json`
+refer to the original authoring exercise; the public runner loads `world.json`.
+
+[Public-fixture replay evidence](../../m2-agent-game-replay.json) covers Windows
+CoreCLR headless continuation. Linux execution, Native AOT, rendered presentation,
+physical input and performance are separate qualification gates.
