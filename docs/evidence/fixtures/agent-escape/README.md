@@ -58,3 +58,42 @@ refer to the original authoring exercise; the public runner loads `world.json`.
 [Public-fixture replay evidence](../../m2-agent-game-replay.json) covers Windows
 CoreCLR headless continuation. Linux execution, Native AOT, rendered presentation,
 physical input and performance are separate qualification gates.
+
+## Rendered checkpoints
+
+The [Vulkan replay evidence](../../m2-agent-game-rendered.json) extends the earlier
+headless check with three hardware-rendered checkpoints: an attempted locked
+exit, the completed three-key escape, and the restored one-key checkpoint.
+The original agent source and authored fixture remain unchanged.
+
+![Locked exit, completed escape and restored checkpoint](../../agent-escape-checkpoints.gif)
+
+This is a three-checkpoint slideshow, not a live authoring session or continuous
+gameplay video. It demonstrates controller input, compiled callbacks and save
+restoration with prototype geometry. It is not a graphics-quality or performance
+benchmark. Physical input, Linux rendering and Native AOT execution of this
+fixture remain unqualified.
+
+After building the source as above, use a native engine with simulation, managed
+gameplay and Vulkan capture enabled. Run Python on that engine's operating system:
+
+```powershell
+python scripts/capture_agent_replay.py `
+  --engine build/windows-runtime/poima.exe `
+  --hostfxr "C:/Program Files/dotnet/host/fxr/10.0.12/hostfxr.dll" `
+  --bridge managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll `
+  --assembly build/agent-escape/managed/Escape.dll `
+  --output build/agent-escape/capture-1 --gpu 0 --allow-rebuilt-assembly
+```
+
+Choose your actual GPU index from `poima doctor --graphics`. Locally rebuilt DLLs
+may differ from the recorded hashes; `--allow-rebuilt-assembly` explicitly accepts
+that difference and records the supplied rebuild's unverified provenance. The
+recorded qualification uses the known portable-fixture build. The runner checks
+the actual loaded artifact hash and the retained fixture source in either case.
+
+The new output directory contains BMP readbacks, `preview.html`, a compact
+`public-summary.json` and private full RPC evidence. Optional `--contact-sheet`
+and `--gif` require preinstalled Pillow; they are offline checkpoint derivatives.
+Missing media dependencies are rejected before native/GPU work. Do not publish
+raw RPC logs or absolute paths.

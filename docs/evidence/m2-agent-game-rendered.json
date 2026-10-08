@@ -1,0 +1,136 @@
+{
+  "passed": true,
+  "label": "Recorded agent authoring + fresh Vulkan replay",
+  "recorded_utc": "2026-10-08T02:25:39.212808+00:00",
+  "live_agent_session": false,
+  "real_time_video": false,
+  "physical_input_qualified": false,
+  "raster_hud_visual_review_pending": false,
+  "checks": [
+    "Guarded controller input rejects the early exit and collects all three keys.",
+    "Compiled Pause/Resume and durable Save/Load callbacks restore the exact player matrix and key handles.",
+    "Three distinct hardware Vulkan readbacks identify the live camera, tick and logical UI revision.",
+    "Captures preserve gameplay state; the restored controller route completes again at tick 340."
+  ],
+  "media": [
+    {
+      "file": "agent-escape-checkpoints.gif",
+      "sha256": "535688887c015555f2d0f5c92684cf45796f705676e80b926b7548bc2970fc29",
+      "kind": "Three-checkpoint GIF slideshow, 2.5 seconds per image; not real-time video.",
+      "conversion": "ImageMagick; GIF palette quantization is an offline display derivative."
+    }
+  ],
+  "hashes": {
+    "engine": "84a559e1e3adc30f3ca51ae00f30ffd0747bb78e9ab295f7cb85a263625932bb",
+    "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+    "bridge": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+    "assembly": "bba028f9f2fb37a09ea816baa3a01f865c4e1585e4fc144559275084eacff2b8",
+    "Escape.cs": "d51486e6c8b5e92d2f0d3cf096a4f2cef3164bc1d15b8384146c2873c747a9ef",
+    "world.json": "7a8e5f55877f6ae08830e94cbb1c6e2c3125a639ef07426af7cc9389377055fd",
+    "manifest.json": "d8f9712791f67dfac1ce771547555c21d4e323d30efdbf061fc48d330e8c6c5e",
+    "plan.json": "1ae606fcc798af56c53cf6dfbb3e7c53a9669cc24d755973d4ddadafe93f8155",
+    "replay.py": "b607b27bb252aee3c10a7f395d90bc019290c095167a02169a9642d69ba3f0cb",
+    "capture_agent_replay.py": "37b7d3945e5ef70e4b55936f8f705d2d1c3b33286c221de5a2ebce8a105a0f94"
+  },
+  "authoring_provenance": {
+    "provider": "codex-cli",
+    "version": "0.160.1",
+    "model": "gpt-6.1-sol",
+    "recorded_evidence": "docs/evidence/m2-agent-game.json",
+    "source_retained_verbatim": true,
+    "assembly_matches_recorded_or_qualified_rebuild": true,
+    "supplied_rebuild_provenance_independently_verified": true,
+    "assembly_provenance": "Recorded agent artifact or qualified portable rebuild."
+  },
+  "frames": [
+    {
+      "file": "01-locked.bmp",
+      "caption": "Exit locked \u00b7 find three keys",
+      "sha256": "0f2edabe63bd64f3bab920918e12c3f2965ffdd191497f9fc7646716f7bb917e",
+      "tick": 31,
+      "keys": 0,
+      "escaped": 0,
+      "hud": "PRISM VAULT | Keys 0/3 | Exit LOCKED: find red, green and blue keys | Locked attempts 1",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "engine_version": "0.0.42",
+      "nvrhi_errors": 0,
+      "image": {
+        "width": 960,
+        "height": 540,
+        "bits_per_pixel": 32,
+        "sampled_distinct_colors": 22
+      },
+      "published_png": {
+        "file": "agent-escape-01-locked.png",
+        "sha256": "516ce7eb299f9d5a81e95062e0751a92cf6b7915b5cf38e2ad01f88d1c0cefdb",
+        "conversion": "Lossless BMP-to-PNG; no resizing or retouching."
+      }
+    },
+    {
+      "file": "02-escaped.bmp",
+      "caption": "Three keys collected \u00b7 escaped",
+      "sha256": "ca833f613acc38305a6ab4dffae27856426f44e6c3c68890bd5bf230466c4d2c",
+      "tick": 511,
+      "keys": 3,
+      "escaped": 1,
+      "hud": "PRISM VAULT | Keys 3/3 | ESCAPED! | Locked attempts 1",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "engine_version": "0.0.42",
+      "nvrhi_errors": 0,
+      "image": {
+        "width": 960,
+        "height": 540,
+        "bits_per_pixel": 32,
+        "sampled_distinct_colors": 17
+      },
+      "published_png": {
+        "file": "agent-escape-02-escaped.png",
+        "sha256": "e64f94c09f780b1f97eb94712e507006bfc4dbf9be0e5c2340b5cb4157d9afe9",
+        "conversion": "Lossless BMP-to-PNG; no resizing or retouching."
+      }
+    },
+    {
+      "file": "03-restored.bmp",
+      "caption": "Checkpoint restored \u00b7 one key retained",
+      "sha256": "22ba305cc231f73997bc3a9bf5c96315f45e97c194966bd491ac3315a4a53c19",
+      "tick": 52,
+      "keys": 1,
+      "escaped": 0,
+      "hud": "PRISM VAULT | Keys 1/3 | Exit LOCKED: find red, green and blue keys | Locked attempts 1",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "engine_version": "0.0.42",
+      "nvrhi_errors": 0,
+      "image": {
+        "width": 960,
+        "height": 540,
+        "bits_per_pixel": 32,
+        "sampled_distinct_colors": 22
+      },
+      "published_png": {
+        "file": "agent-escape-03-restored.png",
+        "sha256": "652aaa64e61ba1bcaf5a771c7ca485149bce4c8981d7f3aa750634ea34c29f61",
+        "conversion": "Lossless BMP-to-PNG; no resizing or retouching."
+      }
+    }
+  ],
+  "cleanup": {
+    "exit_code": 0,
+    "clean": true
+  },
+  "limits": [
+    "Previously recorded agent authoring; no new provider turn or fresh game creation.",
+    "Three captured checkpoints, not continuous gameplay recording or physical-device qualification.",
+    "HUD states are visible in inspected readbacks; typography and composition remain prototype quality.",
+    "One primitive fixture and selected GPU; not a renderer quality or performance benchmark.",
+    "Raw RPC records, absolute paths and failure diagnostics remain in private capture-evidence.json."
+  ],
+  "checkpoint": "0.0.42 development",
+  "visual_review": {
+    "inspected": true,
+    "method": "All three readbacks have identical hashes to the individually inspected captures; published PNGs also reviewed.",
+    "findings": "Locked, escaped and restored HUD states are visible. Primitive geometry; the retained HUD wraps mid-word at 960x540."
+  }
+}

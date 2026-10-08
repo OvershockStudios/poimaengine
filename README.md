@@ -23,7 +23,13 @@ Poima makes engine operations directly available to tools. External agents such 
 
 The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows.
 
-A [recorded agent exercise](docs/evidence/m2-agent-game.json) creates and compiles a small escape-room game, repairs authoring mistakes and passes independent headless gameplay/save checks. This is one bounded demonstration, not a production-readiness claim.
+A [recorded agent exercise](docs/evidence/m2-agent-game.json) creates and compiles a small escape-room game, repairs authoring mistakes and passes independent gameplay/save checks. Its [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints) shows the locked exit, completed escape and restored checkpoint. This is one bounded demonstration, not a production-readiness claim.
+
+![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
+
+*Three captured gameplay checkpoints, shown as a slideshow; not a live authoring session or real-time video.*
+
+A [candidate authoring API contract](docs/AUTHORING_API_COMPATIBILITY.md) provides a conservative compatibility gate for core world editing. Broader API stability remains unfinished.
 
 Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WORLD_SERVICE.md), [shared-session guide](docs/SHARED_SESSIONS.md) and [C# gameplay guide](docs/MANAGED_GAMEPLAY.md).
 
