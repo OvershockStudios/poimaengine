@@ -1,0 +1,47 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "Bounded native subprocess worker and authoring compile adapter",
+  "worker": {
+    "linux_passed": true,
+    "windows_passed": true,
+    "windows_binary_sha256": "b385657411a29649532eb16f22a32d33be812f3254f16fd86119d5da9a1f61a2",
+    "source_sha256": "76b641d6f0f4d9403a514c308c7c3483d9f7a79b95794359c828d487938917e7",
+    "test_sha256": "a19b7b77a6985d3fefcc870a18ee261267d86cd189cd68738033e4fb0e55d42b"
+  },
+  "service": {
+    "linux_passed": true,
+    "checks": [
+      "literal_argv_and_cwd",
+      "incremental_build_arguments",
+      "invalid_parameters",
+      "exact_retry",
+      "changed_retry_rejected",
+      "compact_catalog",
+      "forget_does_not_recompile",
+      "launch_failure",
+      "invalid_utf8_diagnostics",
+      "cancel_and_terminal_forget",
+      "capacity_failure_retry_rollback",
+      "expired_receipt_tombstone",
+      "discovery"
+    ],
+    "source_sha256": "12589b94a30da51123d7c132d6444f5d6730abf5db9a277a08c329b8be8983d0",
+    "test_sha256": "821b36c5bc100ad927461772f52b6496f32e1ca807e388283b2505a5f02fa87e"
+  },
+  "sdk_compile": {
+    "passed": true,
+    "sdk": "10.0.401",
+    "project": "docs/evidence/fixtures/agent-escape/Escape.csproj",
+    "warnings": 0,
+    "errors": 0,
+    "assembly_sha256": "bba028f9f2fb37a09ea816baa3a01f865c4e1585e4fc144559275084eacff2b8",
+    "elapsed_ms": 28350,
+    "timing_scope": "One correctness build while on battery; not a performance benchmark."
+  },
+  "limits": [
+    "Worker Windows qualification is a standalone tiny-child contract, not world-host integration.",
+    "World-service/packaged-host integration and Windows service adapter execution remain pending.",
+    "Compiled fixture assembly not executed in this SDK-adapter check; separate recorded game replay uses its original artifact.",
+    "No new GUI package activation, automatic source watcher or gameplay reload."
+  ]
+}

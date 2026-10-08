@@ -14,6 +14,7 @@
 #include "poima/save_upgrade_snapshot.hpp"
 #include "world_storage.hpp"
 #include "profiler_service.hpp"
+#include "development_service.hpp"
 #include "asset_store.hpp"
 #include "input_profile_store.hpp"
 #include <nlohmann/json.hpp>
@@ -874,7 +875,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.cancel","development.forget"};
 class World {
     profiling::Service profiler_;
     fs::path path_;
@@ -899,6 +900,7 @@ class World {
     Json runtime_start_params_, runtime_start_result_;
     Json runtime_receipts_=Json::array();
     Json playback_receipts_=Json::array();
+    development::Service development_;
     // Owner requests survive replacement; callbacks mutate only runtime queues.
     struct PendingGameplayWrite {
         fs::path path;std::string operation,hash;std::uint64_t expected_generation=0;std::int32_t error_code=-32070;std::array<char,256> diagnostic{};
@@ -1243,10 +1245,14 @@ public:
             try { return profiler_.dispatch(method,params); }
             catch(const profiling::ServiceError& error) { throw Error(error.code,error.what()); }
         }
+        if(method.starts_with("development.")) {
+            try { return development_.dispatch(method,params); }
+            catch(const development::ServiceError& error) { throw Error(error.code,error.what()); }
+        }
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") {
-            (void)discovery_view(params);auto result=describe();result["methods"].update(profiling::Service::schemas());result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            (void)discovery_view(params);auto result=describe();result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only C# compilation via explicit executable; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"receipts","128 session-local compile receipts; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
         }
