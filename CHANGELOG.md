@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.52 — Unreleased
+
+This checkpoint qualifies the existing generated component collections in Windows Native AOT games. The installed desktop package remains unchanged.
+
+- The actual inventory fixture publishes with its generated component manifest and dependency notices. Compiled capacity-four entity/int32 buffers pass the unchanged 151-RPC mutation, rejection, rollback and fresh-process save contract.
+- Exported native games run seven ticks after relocation outside the checkout on AMD and NVIDIA. Both retain all 56 bundle files, report disabled dynamic code and zero NVRHI errors, and contain no managed PE/bridge/CoreCLR payload. Separate save worlds also pass through each bundled runtime. [Evidence](docs/evidence/m2-component-collections-native-windows.json).
+- A reusable bounded Windows bundle qualification runner records owned command exits and cleanup. This is fixture qualification, with no new gameplay implementation, ABI or catalog change; clean-machine deployment, other collection kinds, capacity migration and production performance remain unqualified.
+
 ## 0.0.51 — Unreleased
 
 This checkpoint qualifies the existing bounded component collections on Windows CoreCLR with the actual compiled inventory fixture. The installed desktop package remains unchanged.

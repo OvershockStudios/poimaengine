@@ -1,0 +1,338 @@
+{
+  "checkpoint": "0.0.52 development",
+  "passed": true,
+  "scope": "Actual Windows Native AOT publication and execution of generated capacity-four entity/int32 component buffers; relocated Vulkan player and separate headless save worlds.",
+  "engine": {
+    "version": "0.0.52",
+    "compiler": "Clang",
+    "compiler_version": "23.1.2",
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "sha256": "fb61561971f6a2dff18682bc3092d8eacdf7668309e2778cb9ca36b9c11a6e92",
+    "protocol_version": 1,
+    "schema_revision": 50,
+    "authoring_core_version": 1
+  },
+  "publication": {
+    "sdk": "10.0.401",
+    "runtime": "10.0.12",
+    "native_linker": "MSVC 14.44.35207",
+    "windows_sdk": "10.0.26100.0",
+    "rid": "win-x64",
+    "sources_staged_into_isolated_build_root": true,
+    "components_match_qualified_coreclr_manifest": true,
+    "descriptor_sha256": "b9f5137bba3892fdc41020ad9c5096e589f594bb8c736d25bbced76debc9eba9",
+    "manifest_sha256": "f2a80ec821ffe6d088559b1217c8c8195826112935a5600bf1ebb004a7c8d598",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 176,
+    "required_features": [
+      "baseline_v7",
+      "component_collections_v1"
+    ],
+    "native_export": "poima_gameplay_entry",
+    "payload_inventory": [
+      {
+        "path": "game.poima-components.json",
+        "size": 582,
+        "sha256": "f2a80ec821ffe6d088559b1217c8c8195826112935a5600bf1ebb004a7c8d598",
+        "role": "metadata"
+      },
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+        "size": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+        "size": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-LICENSE.txt",
+        "size": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+        "size": 16725,
+        "sha256": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+        "role": "notice"
+      },
+      {
+        "path": "Poima.NativeGame.dll",
+        "size": 1311232,
+        "sha256": "df34ce4a7b234ae53518ac5411929e84808c3b4b04b576ab0cd3902607f3be11",
+        "role": "library"
+      }
+    ]
+  },
+  "manifest": {
+    "format": "poima.components",
+    "version": 1,
+    "schemas": [
+      {
+        "id": "66666666666666666666666666666666",
+        "name": "Inventory",
+        "version": 2,
+        "fields": [
+          {
+            "id": "00000000000000000000000000000001",
+            "name": "Items",
+            "kind": "array",
+            "element_kind": "entity",
+            "capacity": 4,
+            "default": [],
+            "unit": ""
+          },
+          {
+            "id": "00000000000000000000000000000002",
+            "name": "Quantities",
+            "kind": "array",
+            "element_kind": "int32",
+            "capacity": 4,
+            "default": [],
+            "unit": ""
+          },
+          {
+            "id": "00000000000000000000000000000003",
+            "name": "Changes",
+            "kind": "int32",
+            "default": 0,
+            "unit": ""
+          }
+        ],
+        "fingerprint": "5a8880e6be00eeceb6c91bcf5c5eb3e1de46405e548d17c7c8a5cd622b889caa"
+      }
+    ]
+  },
+  "fixture": {
+    "backend": "native_aot",
+    "native_diagnostics": {
+      "dynamic_code_compiled": false,
+      "dynamic_code_supported": false
+    },
+    "rpc_calls": 151,
+    "owned_processes": 3,
+    "clean_exit_requirement_enforced_by_harness": true,
+    "cleanup_errors": [],
+    "checks": [
+      "Generated Get/Set fills capacity4, rejects overflow without mutation, preserves published reads",
+      "Dangling first/last references, index failure, queued-write exception and later-tick batch failure preserve complete world-save bytes",
+      "Actual template spawn, Init-bypassed fresh exact restore, first/last reference repair+despawn, generation2 and fresh continuation passed"
+    ],
+    "initial_saved_tick": 8,
+    "second_saved_tick": 10,
+    "final_values": {
+      "FirstItem": "00000000000000000000000000000000",
+      "FullRejected": 1,
+      "Inventories": 2,
+      "LastItem": "00000000000000000000000000000000",
+      "Mode": 0,
+      "ObservedCount": 2,
+      "PublishedRead": 1,
+      "SecondItem": "00000000000000000000000000000003",
+      "Spawned": "00000000000000000000000000000006",
+      "Started": 1,
+      "ThirdItem": "00000000000000000000000000000004",
+      "Ticks": 11
+    },
+    "generation_1_payload_sha256_preserved": "8a6d1d37564f6be5aa1fe7b7bbb331a52e4b41520f85ffc367fda6df574ae229"
+  },
+  "relocated_bundles": [
+    {
+      "gpu": "AMD Radeon(TM) Graphics",
+      "hardware": true,
+      "width": 512,
+      "height": 288,
+      "samples": 1,
+      "ticks": 7,
+      "stop_reason": "replay_complete",
+      "nvrhi_errors": 0,
+      "runtime_replacements": 0,
+      "backend": "native_aot",
+      "native_diagnostics": {
+        "dynamic_code_compiled": false,
+        "dynamic_code_supported": false
+      },
+      "final_values": {
+        "FirstItem": "00000000000000000000000000000002",
+        "FullRejected": 2,
+        "Inventories": 1,
+        "LastItem": "00000000000000000000000000000005",
+        "Mode": 1,
+        "ObservedCount": 4,
+        "PublishedRead": 1,
+        "SecondItem": "00000000000000000000000000000003",
+        "Spawned": "00000000000000000000000000000000",
+        "Started": 1,
+        "ThirdItem": "00000000000000000000000000000004",
+        "Ticks": 7
+      },
+      "file_count": 56,
+      "bundle_inventory_sha256": "e41e740cc65b178cc1509d0f84e10fab39a5629d05753256bd1cf6aabe0f98e3",
+      "all_bundled_pe_images_native": true,
+      "no_managed_bridge_or_hostfxr_coreclr_payload": true,
+      "owned_source_deleted_before_execution": true,
+      "unrelated_working_directory": true,
+      "environment_path_sanitized": true,
+      "input_publication_and_runtime_preserved": true,
+      "complete_bundle_inventory_unchanged": true,
+      "direct_owned_command_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "forced_cleanup": false,
+      "capture_sha256": "d49b2ff1ab9f62dd5d1d63def070c672dab97661f2d6bbc99c4adaf1add5f307",
+      "separate_headless_contract": {
+        "evidence_sha256": "2a2dda8ff2adc8858476440f73352e643e25c14a755e35d3a39601f827687d03",
+        "runner_sha256": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+        "calls": 151,
+        "checks": [
+          "Generated Get/Set fills capacity4, rejects overflow without mutation, preserves published reads",
+          "Dangling first/last references, index failure, queued-write exception and later-tick batch failure preserve complete world-save bytes",
+          "Actual template spawn, Init-bypassed fresh exact restore, first/last reference repair+despawn, generation2 and fresh continuation passed"
+        ],
+        "final_values": {
+          "FirstItem": "00000000000000000000000000000000",
+          "FullRejected": 1,
+          "Inventories": 2,
+          "LastItem": "00000000000000000000000000000000",
+          "Mode": 0,
+          "ObservedCount": 2,
+          "PublishedRead": 1,
+          "SecondItem": "00000000000000000000000000000003",
+          "Spawned": "00000000000000000000000000000006",
+          "Started": 1,
+          "ThirdItem": "00000000000000000000000000000004",
+          "Ticks": 11
+        },
+        "cleanup_errors": []
+      }
+    },
+    {
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "width": 512,
+      "height": 288,
+      "samples": 1,
+      "ticks": 7,
+      "stop_reason": "replay_complete",
+      "nvrhi_errors": 0,
+      "runtime_replacements": 0,
+      "backend": "native_aot",
+      "native_diagnostics": {
+        "dynamic_code_compiled": false,
+        "dynamic_code_supported": false
+      },
+      "final_values": {
+        "FirstItem": "00000000000000000000000000000002",
+        "FullRejected": 2,
+        "Inventories": 1,
+        "LastItem": "00000000000000000000000000000005",
+        "Mode": 1,
+        "ObservedCount": 4,
+        "PublishedRead": 1,
+        "SecondItem": "00000000000000000000000000000003",
+        "Spawned": "00000000000000000000000000000000",
+        "Started": 1,
+        "ThirdItem": "00000000000000000000000000000004",
+        "Ticks": 7
+      },
+      "file_count": 56,
+      "bundle_inventory_sha256": "df8d029aa2a892bc64ba7e41cb727b3926800bc681705ffa1754222aff352d59",
+      "all_bundled_pe_images_native": true,
+      "no_managed_bridge_or_hostfxr_coreclr_payload": true,
+      "owned_source_deleted_before_execution": true,
+      "unrelated_working_directory": true,
+      "environment_path_sanitized": true,
+      "input_publication_and_runtime_preserved": true,
+      "complete_bundle_inventory_unchanged": true,
+      "direct_owned_command_exit_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "forced_cleanup": false,
+      "capture_sha256": "d49b2ff1ab9f62dd5d1d63def070c672dab97661f2d6bbc99c4adaf1add5f307",
+      "separate_headless_contract": {
+        "evidence_sha256": "a7944a8a624c9c223d55b1947b9c3ef5ac8b17a6782df9e27f1881114b73be51",
+        "runner_sha256": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+        "calls": 151,
+        "checks": [
+          "Generated Get/Set fills capacity4, rejects overflow without mutation, preserves published reads",
+          "Dangling first/last references, index failure, queued-write exception and later-tick batch failure preserve complete world-save bytes",
+          "Actual template spawn, Init-bypassed fresh exact restore, first/last reference repair+despawn, generation2 and fresh continuation passed"
+        ],
+        "final_values": {
+          "FirstItem": "00000000000000000000000000000000",
+          "FullRejected": 1,
+          "Inventories": 2,
+          "LastItem": "00000000000000000000000000000000",
+          "Mode": 0,
+          "ObservedCount": 2,
+          "PublishedRead": 1,
+          "SecondItem": "00000000000000000000000000000003",
+          "Spawned": "00000000000000000000000000000006",
+          "Started": 1,
+          "ThirdItem": "00000000000000000000000000000004",
+          "Ticks": 11
+        },
+        "cleanup_errors": []
+      }
+    }
+  ],
+  "stable_core_regressions": {
+    "passed": true,
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "windows_interop": true,
+    "binary_sha256": "fb61561971f6a2dff18682bc3092d8eacdf7668309e2778cb9ca36b9c11a6e92",
+    "test_sha256": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "scope": "Native authored-world wire IDs/errors, durable core receipts, affine hierarchy, pinned query pages and failed history publication; no graphics.",
+    "released_identity_tests": 2,
+    "released_identity_passed": true,
+    "identity_log_sha256": "4c730bb1de1e5a5cde1b60d4e4e35c5f2908e73391fe2494f6d982e8045a2d50"
+  },
+  "source_sha256": {
+    "scripts/publish_native_gameplay.py": "3a917bae79778008daf41fa1e15fe68338f505e1a1e0bde4817917626fd6babd",
+    "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+    "tests/collection_gameplay_contract.py": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+    "tests/collection_gameplay/CollectionGameplay.cs": "2ae9d7f3423d98944247d0c88a8dfb101162547271051b7a720b30e27a587300",
+    "tests/collection_gameplay/Poima.CollectionGameplay.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc"
+  },
+  "reproduction": "tests/collection_gameplay/README.md",
+  "limits": [
+    "Capacity-four entity/int32 fields in the existing inventory fixture; other buffer kinds, arbitrary managed arrays, global-state collections, nested buffers and capacity migration are not qualified.",
+    "Each bundled player executes seven scripted ticks; save/rollback checks run separately with their own fixture world through the bundled runtime, not in-player inventory/save UX.",
+    "Publication and execution occurred on a Windows machine with .NET installed; sanitized launch environment and native PE inventory do not establish clean-machine deployment.",
+    "Primitive geometry and synthetic replay, not physical controls, game-scale performance, autonomous game creation or broad visual quality. NVIDIA capture inspected; AMD readback and both renderer reports verified.",
+    "Native AOT libraries retain runtime services including GC and remain process-lived. General platform/C# API/save compatibility is outside the selected stable authoring-core boundary.",
+    "No new Linux collection-AOT, console, browser or installed-desktop qualification. Historical evidence remains unchanged."
+  ]
+}

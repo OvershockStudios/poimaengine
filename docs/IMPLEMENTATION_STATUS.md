@@ -1,19 +1,27 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.51 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.52 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
 
-The 0.0.51 checkpoint qualifies the existing bounded component collections on
-Windows CoreCLR using the actual generated inventory fixture. Compiled Get/Set,
-capacity rejection, template spawning and failed-batch rollback retain complete
-saved state; two fresh-process loads continue nonempty inventories and repaired
-references. Matching SDK/generator/bridge builds have zero warnings or errors.
-This adds platform qualification, with no gameplay ABI or catalog change. Native
-AOT collections, global-state collections and capacity migration remain unqualified;
-the installed editor package and graphics evidence are unchanged.
-[Collection contract](COMPONENT_COLLECTIONS.md),
-[Windows evidence](evidence/m2-component-collections-windows.json).
+The 0.0.52 checkpoint qualifies the existing generated capacity-four entity/int32
+component buffers on Windows Native AOT. Publication uses the real fixture and
+extracts the same component manifest as the CoreCLR build. Its unchanged 151-RPC
+contract passes compiled mutation, capacity rejection, byte-exact rollback and two
+fresh-process save continuations. Exported games run seven ticks after relocation
+outside the checkout on AMD and NVIDIA, with zero reported NVRHI errors and an
+unchanged 56-file bundle. Separate save checks also pass through each bundled
+runtime; these use their own fixture world and do not demonstrate in-player save
+UX. Native PE payload checks and disabled dynamic-code flags are recorded; the
+host has .NET installed, so clean-machine deployment remains unqualified. No
+runtime implementation, gameplay ABI, catalog or installed-editor change is
+introduced. [Native collection evidence](evidence/m2-component-collections-native-windows.json).
+
+The 0.0.51 checkpoint separately qualifies these buffers on Windows CoreCLR with
+matching SDK/generator/bridge builds, compiled writes and two fresh-process save
+continuations. Global-state collections, arbitrary managed arrays and capacity
+migration remain unqualified. [Collection contract](COMPONENT_COLLECTIONS.md),
+[CoreCLR evidence](evidence/m2-component-collections-windows.json).
 
 The 0.0.50 checkpoint adds bounded typed runtime UI layout/style authoring and
 `world.ui.layout` for virtual-viewport geometry inspection without a window or GPU.
@@ -82,7 +90,7 @@ The development [scene HDR composition path](HDR_COMPOSITION.md) now passes a fu
 
 The latest development [C# lifecycle checkpoint](GAMEPLAY_LIFECYCLE.md) passes five compiled integration groups under both CoreCLR and Native AOT on Linux and Windows. Agent-service tests cover guarded births, durable restoration and continued gameplay; the CoreCLR path also verifies compatible reload with spawned entities. This is root-prop support, not general entity/component lifecycle or a new installed editor package. [Qualification evidence](evidence/m2-managed-lifecycle.json).
 
-[Custom components](CUSTOM_COMPONENTS.md) provide native-owned per-entity data with stable IDs and generated C# accessors. Spawned root props can carry template-defined components during Play; development [bounded collections](COMPONENT_COLLECTIONS.md) now pass Linux native and real CoreCLR gameplay/save tests. Windows/Native AOT collections, arbitrary component addition/removal on existing entities and general schema/save migrations remain unfinished. Services ABI 7 now has a bounded compatibility contract; upgrading from earlier epochs still requires matching rebuilt artifacts.
+[Custom components](CUSTOM_COMPONENTS.md) provide native-owned per-entity data with stable IDs and generated C# accessors. Spawned root props can carry template-defined components during Play; development [bounded collections](COMPONENT_COLLECTIONS.md) now pass Linux native and real CoreCLR gameplay/save tests. Windows CoreCLR and Native AOT capacity-four entity/int32 buffers are now qualified separately. Arbitrary component addition/removal on existing entities and general schema/save migrations remain unfinished. Services ABI 7 now has a bounded compatibility contract; upgrading from earlier epochs still requires matching rebuilt artifacts.
 
 The development [standalone template catalog](RUNTIME.md#standalone-template-catalog-development) adds transactional root-prop recipes without requiring live prototype objects. Runtime catalog inspection uses a frozen authored revision, and template-only models/textures participate in content dependencies. A guarded world-service transaction can create and remove spawned root props at paused boundaries, with session-scoped retry receipts. Version 3 snapshots preserve those spawned objects and generated-ID history. Native hosts can schedule guarded structural edits within an atomic multi-tick batch. The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) reserves IDs, initializes registered components, starts kinematic movement and removes spawned props within Tick. It uses the services ABI 7 baseline (176 bytes); earlier service epochs require coordinated rebuilding. RPC tick scheduling, arbitrary authored-entity removal, desktop template authoring and a dedicated generated-prop hierarchy/Inspector remain unfinished. [Service and desktop lifecycle evidence](evidence/m2-runtime-lifecycle-service.json). Tick-guarded RPC mutations also require the observed structure revision after membership changes; editor component, gameplay and animation drafts retain it. Linux and Windows pass the focused guards and save regressions, and Windows passes five native desktop checks. This checkpoint does not qualify the full GUI or activate a new desktop package. [Structure-guard evidence](evidence/m2-runtime-structure-guards.json).
 

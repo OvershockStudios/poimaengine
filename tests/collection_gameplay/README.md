@@ -35,4 +35,27 @@ The output directory must be new. The runner retains RPCs, source/artifact hashe
 
 Linux CoreCLR is qualified in [the historical development evidence](../../docs/evidence/m2-component-collections.json). The separate [Windows CoreCLR 0.0.51 evidence](../../docs/evidence/m2-component-collections-windows.json) records 151 RPCs and three clean owner-process exits against the final rebuilt binary. The fixture verifies compiled ordered mutation, capacity and reference rejection, complete batch rollback, template spawning, and two fresh-process save continuations. It is not an autonomous game-creation or rendering test.
 
-Native AOT can select a separately published artifact through `{"descriptor":"path/to/native-gameplay.json"}`; that option does not qualify the backend. Native AOT collection gameplay remains unqualified, as do global-state collections, nested buffers, general managed arrays and collection-capacity migration.
+Windows Native AOT is qualified in the [0.0.52 artifact and bundle evidence](../../docs/evidence/m2-component-collections-native-windows.json). The unchanged contract passes 151 RPCs against the actual published module with three clean native owners. A separate relocated player executes seven scripted ticks, and the same bundled runtime/artifact passes the headless save contract using separate fixture worlds. The player replay is not an inventory UI or in-player save demonstration. Capacity-four entity/int32 buffers are covered; other scalar kinds, global-state collections, nested buffers, arbitrary managed arrays, capacity migration and clean-machine deployment are outside this qualification.
+
+Publish on matching native Windows with the pinned .NET SDK and supported C++ linker environment described in [Native gameplay](../../docs/NATIVE_GAMEPLAY.md#publish):
+
+```sh
+python scripts/publish_native_gameplay.py \
+  --project tests/collection_gameplay/Poima.CollectionGameplay.csproj \
+  --type Poima.Tests.CollectionGameplay \
+  --rid win-x64 --dotnet /path/to/dotnet.exe \
+  --output build/collection-native --work build/collection-native-work
+```
+
+Run this shell example from the repository root; both output directories must be new. The publisher executes the trusted project/reference builds and includes the native library, component manifest and exact runtime notices. It does not cross-compile operating systems. Create a configuration containing `{"descriptor":"path/to/native-gameplay.json"}` and pass the published `game.poima-components.json` as `--manifest` to the same headless runner above.
+
+The separate bundle qualification needs a matching exported runtime distribution and native Windows Python:
+
+```sh
+python tests/collection_gameplay_bundle.py \
+  --binary /path/to/poima.exe --runtime /path/to/runtime-distribution \
+  --artifact build/collection-native/native-gameplay.json \
+  --gpu 1 --output build/collection-native-bundle-check
+```
+
+The output directory must be new; select an actual local GPU index. The runner copies only inventoried artifact payloads, exports and relocates the bundle outside the checkout, removes its owned source project and executes from an unrelated working directory with a sanitized environment. It verifies native backend diagnostics, the seven-tick compiled behavior, capture creation and unchanged bundle inventory. It then invokes the unchanged headless contract separately through the packaged runtime and descriptor, including fresh-process save continuation. Original publication inputs remain available and unchanged; the host has .NET installed, so this is not a clean-machine test.

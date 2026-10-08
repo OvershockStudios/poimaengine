@@ -2,7 +2,11 @@
 
 Collection fields store ordered lists of scalar values or entity handles in native-owned components. Linux native and compiled CoreCLR development tests cover ordered mutation, failed-tick rollback, spawned references and fresh-process save continuation. The [Linux evidence](evidence/m2-component-collections.json) remains a separate historical record.
 
-Windows CoreCLR is qualified against the final 0.0.51 binary: the existing compiled inventory fixture passes 151 RPCs and three clean owner-process exits. Its [separate evidence record](evidence/m2-component-collections-windows.json) identifies the sources, artifacts and checks. Native AOT collection gameplay remains unqualified, and no updated desktop package has been activated. This fixture establishes bounded component behavior, not a complete inventory game or game-scale performance.
+Windows CoreCLR is qualified against the final 0.0.51 binary: the existing compiled inventory fixture passes 151 RPCs and three clean owner-process exits. Its [separate evidence record](evidence/m2-component-collections-windows.json) identifies the sources, artifacts and checks.
+
+Windows Native AOT is qualified in 0.0.52 for the same capacity-four entity/int32 component buffers. The unchanged 151-RPC contract passes with byte-exact failed-batch rollback and two fresh-process save continuations. A separate exported and relocated native player runs seven scripted ticks; the headless save contract also passes through that bundled runtime and artifact using its own fixture world. Those save checks do not demonstrate in-player inventory or save UX. [Native artifact and bundle evidence](evidence/m2-component-collections-native-windows.json).
+
+These results establish bounded component behavior, not all supported scalar kinds, a complete inventory game, clean-machine deployment or game-scale performance. Global-state collections, nested buffers, arbitrary managed arrays and capacity migration remain unqualified or unsupported as described below. No updated desktop package has been activated.
 
 ## Declare and use a buffer
 
