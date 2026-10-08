@@ -1,0 +1,413 @@
+{
+  "version": 1,
+  "tick_rate": 60,
+  "controller": "00000000000000000000000000000001",
+  "camera": "00000000000000000000000000000002",
+  "setup": [
+    "Author scene.json ops through guarded world.transact on an empty world (use its current base_revision and a fresh request_id).",
+    "Configure save root from manifest with observed save generation.",
+    "runtime.start at committed authored revision with fresh session_id; runtime.gameplay.load using manifest assembly/type and supplied Windows hostfxr/bridge, expected_tick 0 and gameplay revision 0. No initial value patches.",
+    "Each segment becomes runtime.step with controller input only. Use current tick/structure guards and unique request IDs; inspect after every batch. move=[right,forward], look=[yaw-left degrees,pitch-up degrees] apply look and Use only on first tick; movement held for ticks."
+  ],
+  "phases": [
+    {
+      "name": "initial_locked_exit",
+      "segments": [
+        {
+          "ticks": 30
+        },
+        {
+          "ticks": 1,
+          "use": true
+        }
+      ],
+      "expected": {
+        "tick": 31,
+        "state": {
+          "BlueKey": "00000000000000000000000000000006",
+          "Camera": "00000000000000000000000000000002",
+          "CollectedCount": 0,
+          "Escaped": 0,
+          "Exit": "00000000000000000000000000000003",
+          "GreenKey": "00000000000000000000000000000005",
+          "Initialized": 1,
+          "LastSaveOutcome": 0,
+          "LockedAttempts": 1,
+          "Paused": 0,
+          "Player": "00000000000000000000000000000001",
+          "RedKey": "00000000000000000000000000000004",
+          "Restores": 0,
+          "TicketHigh": "0",
+          "TicketLow": "0",
+          "TicketSequence": "0"
+        }
+      }
+    },
+    {
+      "name": "first_key",
+      "segments": [
+        {
+          "ticks": 20,
+          "look": [
+            90,
+            0
+          ],
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 1,
+          "use": true
+        }
+      ],
+      "expected": {
+        "tick": 52,
+        "state": {
+          "BlueKey": "00000000000000000000000000000006",
+          "Camera": "00000000000000000000000000000002",
+          "CollectedCount": 1,
+          "Escaped": 0,
+          "Exit": "00000000000000000000000000000003",
+          "GreenKey": "00000000000000000000000000000005",
+          "Initialized": 1,
+          "LastSaveOutcome": 0,
+          "LockedAttempts": 1,
+          "Paused": 0,
+          "Player": "00000000000000000000000000000001",
+          "RedKey": "00000000000000000000000000000000",
+          "Restores": 0,
+          "TicketHigh": "0",
+          "TicketLow": "0",
+          "TicketSequence": "0"
+        }
+      }
+    },
+    {
+      "name": "remaining_keys_and_exit",
+      "segments": [
+        {
+          "ticks": 1
+        },
+        {
+          "ticks": 40,
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 20,
+          "look": [
+            90,
+            0
+          ],
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 1,
+          "use": true
+        },
+        {
+          "ticks": 14,
+          "move": [
+            1,
+            0
+          ]
+        },
+        {
+          "ticks": 1,
+          "use": true
+        },
+        {
+          "ticks": 120,
+          "look": [
+            -90,
+            0
+          ],
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 1,
+          "look": [
+            -108.44,
+            0
+          ],
+          "use": true
+        },
+        {
+          "ticks": 170,
+          "look": [
+            -71.56,
+            0
+          ],
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 1,
+          "look": [
+            -90,
+            0
+          ],
+          "use": true
+        },
+        {
+          "ticks": 59,
+          "look": [
+            -90,
+            0
+          ],
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 30,
+          "look": [
+            -90,
+            0
+          ],
+          "move": [
+            0,
+            1
+          ]
+        },
+        {
+          "ticks": 1,
+          "use": true
+        }
+      ],
+      "expected": {
+        "tick": 511,
+        "state": {
+          "BlueKey": "00000000000000000000000000000000",
+          "Camera": "00000000000000000000000000000002",
+          "CollectedCount": 3,
+          "Escaped": 1,
+          "Exit": "00000000000000000000000000000003",
+          "GreenKey": "00000000000000000000000000000000",
+          "Initialized": 1,
+          "LastSaveOutcome": 3,
+          "LockedAttempts": 1,
+          "Paused": 0,
+          "Player": "00000000000000000000000000000001",
+          "RedKey": "00000000000000000000000000000000",
+          "Restores": 0,
+          "TicketHigh": "3374190757074203482",
+          "TicketLow": "4013142529617690325",
+          "TicketSequence": "0"
+        }
+      }
+    }
+  ],
+  "checkpoint_controls": {
+    "after_phase": "first_key",
+    "sequence": [
+      {
+        "ui_id": "000000000000000000000000000000cb",
+        "expected_intent": 2,
+        "expected_control_sequence": 1
+      },
+      {
+        "ui_id": "000000000000000000000000000000cc",
+        "expected_intent": 1,
+        "expected_control_sequence": 2
+      },
+      {
+        "ui_id": "000000000000000000000000000000cd",
+        "expected_control_sequence": 3,
+        "expected_save": {
+          "slot": "escape-checkpoint",
+          "state": 3,
+          "kind": 1,
+          "generation": 1,
+          "requested_tick": 52,
+          "committed_tick": 52
+        }
+      }
+    ],
+    "activation_contract": "Read runtime.gameplay.inspect and runtime.ui.inspect at current tick; supply current expected_tick, expected_structure_revision, expected_gameplay_revision, expected_ui_revision and expected_control_sequence. Never assume these from time alone.",
+    "expected_saved_player": {
+      "position": [
+        -0.9991666674613953,
+        -0.020000270370977402,
+        1.1910994857089463e-7
+      ],
+      "yaw": 90,
+      "pitch": 0
+    },
+    "expected_saved_state": {
+      "BlueKey": "00000000000000000000000000000006",
+      "Camera": "00000000000000000000000000000002",
+      "CollectedCount": 1,
+      "Escaped": 0,
+      "Exit": "00000000000000000000000000000003",
+      "GreenKey": "00000000000000000000000000000005",
+      "Initialized": 1,
+      "LastSaveOutcome": 0,
+      "LockedAttempts": 1,
+      "Paused": 0,
+      "Player": "00000000000000000000000000000001",
+      "RedKey": "00000000000000000000000000000000",
+      "Restores": 0,
+      "TicketHigh": "0",
+      "TicketLow": "0",
+      "TicketSequence": "0"
+    },
+    "saved_ticket_note": "Snapshot includes accepted Save ticket sequence 1 and its epoch words; runtime epoch words vary per fresh run. Reconcile terminal ticket on next callback; do not reenqueque it."
+  },
+  "restore_and_finish": {
+    "after_phase": "remaining_keys_and_exit",
+    "load_ui_id": "000000000000000000000000000000ce",
+    "expected_source_control_sequence": 4,
+    "expected_load": {
+      "state": 3,
+      "kind": 2,
+      "generation": 1,
+      "requested_tick": 511,
+      "committed_tick": 511,
+      "restored_tick": 52,
+      "runtime_replaced": true
+    },
+    "expected_restored": {
+      "tick": 52,
+      "CollectedCount": 1,
+      "Escaped": 0,
+      "LockedAttempts": 1,
+      "RedKey": "00000000000000000000000000000000",
+      "GreenKey": "00000000000000000000000000000005",
+      "BlueKey": "00000000000000000000000000000006",
+      "structure_revision": 2,
+      "ui_revision": 5,
+      "control_sequence": 3
+    },
+    "sequence": [
+      "Adopt current_session_id from Load result and refresh all guards.",
+      "Assert restored position/yaw equals checkpoint and HUD reports Keys 1/3, Exit LOCKED.",
+      "Activate Resume (expected intent 1, control_sequence 4), then run segments below."
+    ],
+    "segments": [
+      {
+        "ticks": 1
+      },
+      {
+        "ticks": 40,
+        "move": [
+          0,
+          1
+        ]
+      },
+      {
+        "ticks": 20,
+        "look": [
+          90,
+          0
+        ],
+        "move": [
+          0,
+          1
+        ]
+      },
+      {
+        "ticks": 14,
+        "move": [
+          1,
+          0
+        ]
+      },
+      {
+        "ticks": 1,
+        "use": true
+      },
+      {
+        "ticks": 120,
+        "look": [
+          90,
+          0
+        ],
+        "move": [
+          0,
+          1
+        ]
+      },
+      {
+        "ticks": 1,
+        "look": [
+          -90,
+          0
+        ],
+        "use": true
+      },
+      {
+        "ticks": 60,
+        "look": [
+          -90,
+          0
+        ],
+        "move": [
+          0,
+          1
+        ]
+      },
+      {
+        "ticks": 30,
+        "look": [
+          -90,
+          0
+        ],
+        "move": [
+          0,
+          1
+        ]
+      },
+      {
+        "ticks": 1,
+        "use": true
+      }
+    ],
+    "expected": {
+      "tick": 340,
+      "state": {
+        "BlueKey": "00000000000000000000000000000000",
+        "Camera": "00000000000000000000000000000002",
+        "CollectedCount": 3,
+        "Escaped": 1,
+        "Exit": "00000000000000000000000000000003",
+        "GreenKey": "00000000000000000000000000000000",
+        "Initialized": 1,
+        "LastSaveOutcome": 3,
+        "LockedAttempts": 1,
+        "Paused": 0,
+        "Player": "00000000000000000000000000000001",
+        "RedKey": "00000000000000000000000000000000",
+        "Restores": 1,
+        "TicketHigh": "3374190757074203482",
+        "TicketLow": "4013142529617690325",
+        "TicketSequence": "0"
+      },
+      "player_position": [
+        0.0030834751224579904,
+        -0.019999871019849236,
+        -0.4995818175409267
+      ],
+      "yaw": 0,
+      "hud": "PRISM VAULT | Keys 3/3 | ESCAPED! | Locked attempts 1"
+    }
+  },
+  "notes": [
+    "First-run route is the exact tested trace, including two unsuccessful aiming attempts and a bounded navigation correction. These leave state unchanged and are retained for reproducibility.",
+    "Expected ticket epoch words and replacement session IDs are observations, not replay constants. Gameplay scalar/key/count/escape values, phase ticks and UI control sequences are deterministic for this sequence.",
+    "No runtime.gameplay.edit, runtime transform editing, teleportation, network or graphics captures."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "assembly": "compiled/Escape.dll",
+  "type": "PrismEscape.EscapeGame",
+  "player_id": "00000000000000000000000000000001",
+  "camera_id": "00000000000000000000000000000002",
+  "collected_count_field": "CollectedCount",
+  "escaped_field": "Escaped",
+  "key_handle_fields": [
+    "RedKey",
+    "GreenKey",
+    "BlueKey"
+  ],
+  "save_ui_id": "000000000000000000000000000000cd",
+  "load_ui_id": "000000000000000000000000000000ce",
+  "pause_ui_id": "000000000000000000000000000000cb",
+  "resume_ui_id": "000000000000000000000000000000cc",
+  "checkpoint_slot": "escape-checkpoint",
+  "save_root": "saves",
+  "assembly_sha256": "04428b8002a69f77729854e503fe0ea7b9146531e29cbab765cbffc504a09624",
+  "world_revision": 2,
+  "active_session_id": "291db9b2a1d307f613b6433105ee266c",
+  "active_tick": 340,
+  "scene_file": "scene.json",
+  "state_layout": {
+    "kind": "sequential",
+    "bytes": 152
+  },
+  "controls": {
+    "move": "WASD",
+    "look": "mouse",
+    "use": "E"
+  }
+}

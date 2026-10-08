@@ -115,3 +115,11 @@ python tests/desktop_agent_frontend.py --editor EDITOR_EXE --binary POIMA_EXE --
 ```
 
 This opt-in check performs one model turn in a disposable project. Raw conversation reports and the render stay in the chosen output directory; they are not public evidence files. Automation windows label themselves **Automated check (viewport input disabled)** because physical viewport input is deliberately excluded during scripted qualification.
+
+## Agent-built game exercise (development)
+
+One external Codex CLI 0.160.1 session using `gpt-6.1-sol` authored a fresh three-key escape room through guarded transactions, compiled its own C# gameplay, corrected UI input and camera placement, and completed native movement/interaction and checkpoint checks. It used 121 MCP calls, including 102 operation calls, and corrected two rejected contract inputs. This count is neither a token-efficiency target nor a performance measurement.
+
+An independent replay started a fresh runtime, rejected an early exit, collected all three keys through controller input and raycasts, invoked compiled pause/resume/save/load controls, restored the exact player matrix and remaining keys at tick 52, and completed again at tick 340. No runtime gameplay-field patching or teleportation was used. Provider and host exited cleanly. This covers one headless game with logical UI; rendering, physical input, fresh-process checkpoint continuation and broad autonomous development remain separate qualifications. [Evidence and source fixture](evidence/m2-agent-game.json).
+
+The exercise also exposed workflow gaps: code compilation and SDK lookup still required external tools. The development [native build-worker foundation](DEVELOPMENT_JOBS.md) addresses background process ownership; world-service integration and packaged qualification are recorded separately.

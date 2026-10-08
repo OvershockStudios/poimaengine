@@ -1,0 +1,698 @@
+{
+  "component_schemas": {},
+  "entities": {
+    "00000000000000000000000000000001": {
+      "components": {
+        "CharacterController": {
+          "camera": "00000000000000000000000000000002",
+          "height": 1.8,
+          "jump_speed": 0,
+          "radius": 0.3,
+          "speed": 3
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.9,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Explorer",
+      "parent": null
+    },
+    "00000000000000000000000000000002": {
+      "components": {
+        "Camera": {
+          "far": 80,
+          "near": 0.05,
+          "vertical_fov": 70
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.57,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Eyes",
+      "parent": "00000000000000000000000000000001"
+    },
+    "00000000000000000000000000000003": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.9,
+            0.65,
+            0.08
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.55,
+            -2.5
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.3,
+            2.8,
+            0.25
+          ]
+        }
+      },
+      "name": "Gold exit \u2014 three seals",
+      "parent": null
+    },
+    "0000000000000000000000000000000a": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.12,
+            0.16,
+            0.2
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            -0.2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            0.4,
+            12
+          ]
+        }
+      },
+      "name": "Slate floor",
+      "parent": null
+    },
+    "0000000000000000000000000000000b": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.2,
+            0.26,
+            0.32
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            2,
+            -6
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            4,
+            0.3
+          ]
+        }
+      },
+      "name": "North wall",
+      "parent": null
+    },
+    "0000000000000000000000000000000c": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.2,
+            0.26,
+            0.32
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            2,
+            6
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            4,
+            0.3
+          ]
+        }
+      },
+      "name": "South wall",
+      "parent": null
+    },
+    "0000000000000000000000000000000d": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.2,
+            0.26,
+            0.32
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -6,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.3,
+            4,
+            12
+          ]
+        }
+      },
+      "name": "West wall",
+      "parent": null
+    },
+    "0000000000000000000000000000000e": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.2,
+            0.26,
+            0.32
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            6,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.3,
+            4,
+            12
+          ]
+        }
+      },
+      "name": "East wall",
+      "parent": null
+    },
+    "0000000000000000000000000000000f": {
+      "components": {
+        "LightingEnvironment": {
+          "ambient": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "exposure": 1
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Vault ambient",
+      "parent": null
+    },
+    "00000000000000000000000000000079": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.15,
+            0.18,
+            0.22
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3,
+            0.55,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.85,
+            1.1,
+            0.85
+          ]
+        }
+      },
+      "name": "Ruby key plinth",
+      "parent": null
+    },
+    "0000000000000000000000000000007a": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.15,
+            0.18,
+            0.22
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3,
+            0.55,
+            3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.85,
+            1.1,
+            0.85
+          ]
+        }
+      },
+      "name": "Emerald key plinth",
+      "parent": null
+    },
+    "0000000000000000000000000000007b": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.15,
+            0.18,
+            0.22
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            3,
+            0.55,
+            3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.85,
+            1.1,
+            0.85
+          ]
+        }
+      },
+      "name": "Sapphire key plinth",
+      "parent": null
+    }
+  },
+  "format": "poima.authored-world",
+  "receipts": [],
+  "retired_component_schemas": [],
+  "retired_ids": [],
+  "retired_template_ids": [],
+  "retired_ui_ids": [],
+  "revision": 2,
+  "templates": {
+    "00000000000000000000000000000065": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            1,
+            0.03,
+            0.03
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3,
+            1.55,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.55,
+            0.55,
+            0.55
+          ]
+        }
+      },
+      "name": "Ruby key"
+    },
+    "00000000000000000000000000000066": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.02,
+            1,
+            0.08
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3,
+            1.55,
+            3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.55,
+            0.55,
+            0.55
+          ]
+        }
+      },
+      "name": "Emerald key"
+    },
+    "00000000000000000000000000000067": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.03,
+            0.15,
+            1
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            3,
+            1.55,
+            3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.55,
+            0.55,
+            0.55
+          ]
+        }
+      },
+      "name": "Sapphire key"
+    }
+  },
+  "ui": {
+    "000000000000000000000000000000c8": {
+      "action": null,
+      "enabled": true,
+      "kind": "panel",
+      "name": "Vault HUD",
+      "parent": null,
+      "text": "",
+      "visible": true
+    },
+    "000000000000000000000000000000c9": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "Inventory",
+      "parent": "000000000000000000000000000000c8",
+      "text": "Keys 0/3 | Exit LOCKED",
+      "visible": true
+    },
+    "000000000000000000000000000000ca": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "Instructions",
+      "parent": "000000000000000000000000000000c8",
+      "text": "WASD move | Mouse look | E use within 3m",
+      "visible": true
+    },
+    "000000000000000000000000000000cb": {
+      "action": "pause",
+      "enabled": true,
+      "kind": "button",
+      "name": "Pause",
+      "parent": "000000000000000000000000000000c8",
+      "text": "Pause",
+      "visible": true
+    },
+    "000000000000000000000000000000cc": {
+      "action": "resume",
+      "enabled": true,
+      "kind": "button",
+      "name": "Resume",
+      "parent": "000000000000000000000000000000c8",
+      "text": "Resume",
+      "visible": true
+    },
+    "000000000000000000000000000000cd": {
+      "action": "save",
+      "enabled": true,
+      "kind": "button",
+      "name": "Save checkpoint",
+      "parent": "000000000000000000000000000000c8",
+      "text": "Save checkpoint",
+      "visible": true
+    },
+    "000000000000000000000000000000ce": {
+      "action": "load",
+      "enabled": true,
+      "kind": "button",
+      "name": "Load checkpoint",
+      "parent": "000000000000000000000000000000c8",
+      "text": "Load checkpoint",
+      "visible": true
+    }
+  },
+  "version": 4,
+  "world_id": "839722179da9cdbdadb48be4f449d2b1"
+}

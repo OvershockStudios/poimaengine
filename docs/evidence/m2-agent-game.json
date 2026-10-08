@@ -1,0 +1,67 @@
+{
+  "checkpoint": "0.0.40 development",
+  "scope": "One external agent creates, compiles, repairs and headlessly playtests a fresh three-key escape game",
+  "passed": true,
+  "client": {
+    "provider": "codex-cli",
+    "version": "0.160.1",
+    "model": "gpt-6.1-sol",
+    "sandbox": "workspace-write",
+    "process_exit_code": 0,
+    "completed_mcp_calls": 121,
+    "operation_calls": 102,
+    "runtime_field_edits": 0,
+    "corrected_contract_errors": [
+      {
+        "method": "world.transact",
+        "error": {
+          "code": -32602,
+          "message": "UI panels cannot contain text."
+        }
+      },
+      {
+        "method": "runtime.ui.inspect",
+        "error": {
+          "code": -32602,
+          "message": "Missing field: tick"
+        }
+      }
+    ],
+    "source_authored_by_external_agent": true,
+    "graphical_or_physical_input_qualified": false
+  },
+  "engine_sha256": "05df699312413b72965b632800113562bdf074770f2132a75eb0ab7992fd8bf6",
+  "game_assembly_sha256": "04428b8002a69f77729854e503fe0ea7b9146531e29cbab765cbffc504a09624",
+  "source": {
+    "file": "fixtures/agent-escape/Escape.cs",
+    "sha256": "d51486e6c8b5e92d2f0d3cf096a4f2cef3164bc1d15b8384146c2873c747a9ef",
+    "world_file": "fixtures/agent-escape/world.json",
+    "world_sha256": "7a8e5f55877f6ae08830e94cbb1c6e2c3125a639ef07426af7cc9389377055fd",
+    "recorded_world_sha256": "35e0addb4514d9e42c4a657b6996fce367be5dda404559a6d38cd8fc529bde9e",
+    "world_fixture_changes": "Receipt history removed; authored entities, templates, UI, IDs and revision retained."
+  },
+  "independent_verification": {
+    "rpc_calls": 84,
+    "verifier_sha256": "d8cacd9e7e2b3a66d7f5c559b2104d1a9a5b7f6890e593cc3f4718ef74ae3942",
+    "locked_exit_rejected": true,
+    "keys_collected": 3,
+    "escaped": true,
+    "restored_key_count": 1,
+    "restored_tick": 52,
+    "second_escape_tick": 340,
+    "exact_player_matrix_restored": true,
+    "compiled_pause_resume_save_load": true,
+    "runtime_field_patches_used": false
+  },
+  "cleanup": {
+    "host_exit_code": 0,
+    "provider_exit_code": 0
+  },
+  "limits": [
+    "One exercise, not a reliability or token-efficiency benchmark.",
+    "Independent replay uses a fresh runtime in the same host; fresh-process save continuation is not qualified here.",
+    "Logical HUD and headless controller simulation only; graphical presentation, physical input and performance remain unqualified.",
+    "First attempt failed on transient provider DNS before authoring; it made no edits and shut down cleanly.",
+    "Raw account transcripts and local paths remain private."
+  ]
+}
