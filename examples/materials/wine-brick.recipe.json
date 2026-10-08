@@ -1,0 +1,20 @@
+{
+  "format": "poima.material.recipe.v1",
+  "kind": "brick",
+  "seed": 7401,
+  "width": 256,
+  "height": 256,
+  "tile_width_m": 2,
+  "tile_height_m": 1,
+  "rows": 8,
+  "columns": 8,
+  "joint_width_m": 0.008,
+  "joint_depth_m": 0.004,
+  "bevel_m": 0.006,
+  "color": "#703e45",
+  "joint_color": "#b0a697",
+  "roughness": 0.78,
+  "roughness_variation": 0.08,
+  "color_variation": 0.18,
+  "grain_m": 0.00018
+}

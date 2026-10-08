@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.62
+
+- Generate tileable brick and plaster PBR materials from versioned native recipes: correlated color, tangent normals and roughness, cooked mips and reusable image assets. No downloaded art or generation service is required. [Workflow](docs/PROCEDURAL_MATERIALS.md).
+- Inspect, cancel and forget bounded bake jobs without editing the world. Apply results through guarded transactions; shipping bundles contain their image dependencies while recipes remain authoring data.
+- Validate stored descriptors and package hashes, reject corrupt outputs and preserve UTF-8 failure diagnostics. Same-profile regeneration checks generated output identity.
+- Native Windows/Linux and authoring-only checks pass. Both laptop GPUs pass normal-map controls and repeated material captures with zero reported NVRHI errors. [Evidence](docs/evidence/m2-procedural-materials.json).
+
 ## 0.0.61
 
 - Drive camera-free characters from compiled C# with `ICharacterInputGame` and `SetCharacterInput`. NPC movement uses native capsule physics, while interactive players retain their camera bindings. [Character controls](docs/CHARACTER_INPUT.md).

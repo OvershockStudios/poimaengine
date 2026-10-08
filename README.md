@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **0.0.61.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.62.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -47,7 +47,7 @@ Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WOR
 | Gameplay | Fixed-step Jolt physics, player and [compiled NPC character controls](docs/CHARACTER_INPUT.md), static triangle-mesh collision, raycasts, root-prop spawning and [crossfades, inertial transitions and masked animation layers](docs/RUNTIME_ANIMATION.md). |
 | C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. [Opt-in C# inertial transitions and masked layers](docs/MANAGED_GAMEPLAY.md#control-masked-layers-from-c) pass Windows/Linux CoreCLR and Native AOT fixtures while preserving older animation calls. Bounded collections have Windows/Linux CoreCLR development qualification and a relocated Windows Native AOT fixture; explicit scalar save upgrades retain separate Linux qualification. |
 | Player systems | Keyboard, mouse and gamepad profiles; typed [HUD/menu layout and styling](docs/GAME_UI.md#authored-layout-and-styling), native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
-| Content and tools | glTF/GLB, PNG/JPEG and WAV import; project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |
+| Content and tools | glTF/GLB, PNG/JPEG and WAV import; native [procedural brick/plaster materials](docs/PROCEDURAL_MATERIALS.md); project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |
 
 These are bounded implementations, not production or game-scale performance claims. Windows graphics/editor workflows and Linux headless workflows have recorded qualification. Browser and console backends, advanced 2D, multiplayer, comprehensive water/weather, GI and production VFX tooling remain future work. Desktop layer controls, IK, retargeting and direct FBX import are unfinished.
 
@@ -97,7 +97,7 @@ Recorded qualification covers Windows graphics/editor workflows and Linux headle
 
 - **Build and run:** [builds](docs/BUILD.md), [projects and exports](docs/PROJECTS.md), [desktop editor](docs/DESKTOP_EDITOR.md), [native player](docs/PLAYER.md).
 - **Program and automate:** [world service](docs/WORLD_SERVICE.md), [Python client](docs/PYTHON_CLIENT.md), [runtime](docs/RUNTIME.md), [C# gameplay](docs/MANAGED_GAMEPLAY.md), [native gameplay](docs/NATIVE_GAMEPLAY.md), [custom components](docs/CUSTOM_COMPONENTS.md).
-- **Create content:** [assets](docs/ASSETS.md), [materials](docs/MATERIAL_AUTHORING.md), [animation](docs/RUNTIME_ANIMATION.md), [game UI](docs/GAME_UI.md), [audio](docs/AUDIO_EVENTS.md), [input](docs/INPUT_PROFILES.md).
+- **Create content:** [assets](docs/ASSETS.md), [materials](docs/MATERIAL_AUTHORING.md), [procedural materials](docs/PROCEDURAL_MATERIALS.md), [animation](docs/RUNTIME_ANIMATION.md), [game UI](docs/GAME_UI.md), [audio](docs/AUDIO_EVENTS.md), [input](docs/INPUT_PROFILES.md).
 - **Inspect behavior:** [profiler](docs/PROFILER.md), [save upgrades](docs/SAVE_UPGRADES.md), [implementation status and evidence](docs/IMPLEMENTATION_STATUS.md).
 
 The [wiki](https://github.com/OvershockStudios/poimaengine/wiki) provides another entry point. Detailed contracts and evidence are versioned with the source.

@@ -1,8 +1,35 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.61**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.62**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.62 adds a compiled CPU recipe baker for tileable brick and plaster.
+Versioned recipes produce correlated base-color, tangent-normal and packed
+metallic/roughness images with existing mip cooking. Bounded jobs support
+inspection, cancellation and forgetting; generation leaves authored revisions
+and history unchanged. Applying the suggested material uses the ordinary guarded
+transaction API. Runtime bundles retain image dependencies, while recipe
+manifests remain authoring data.
+
+Windows and Linux runtime builds pass six detailed protocol groups each, covering
+channel encoding, job retention, reopening, guarded application, undo, references,
+export closure and shared/read-only sessions. Native checks cover independent
+flat-channel and slope oracles, periodic surfaces, odd mips, failed publication,
+UTF-8 diagnostics and worker cleanup. AMD and NVIDIA each pass seven rendered
+captures and eight fixture assertions, including a flat normal control, generated
+normal products, repeated pixels, two viewing distances and a curved tangent
+fixture, with zero reported NVRHI errors.
+
+This is a small built-in material generator, not a general graph or an
+artist-replacement benchmark. UVs and tangent frames must be authored; normal
+mips are not variance-aware. Recipe inspection validates descriptor/package
+coherence rather than authenticating derivation. Same-profile regeneration
+checks actual generated output; universal cross-compiler byte identity and
+power-loss durability are not claimed. Discovery advances to revision 56;
+protocol 1, authoring-core v1, gameplay service profiles and save formats are
+unchanged. [Material workflow](PROCEDURAL_MATERIALS.md),
+[evidence](evidence/m2-procedural-materials.json).
 
 Version 0.0.61 adds camera-free CharacterControllers and compiled per-tick
 movement, look and jump through `ICharacterInputGame` and `SetCharacterInput`.

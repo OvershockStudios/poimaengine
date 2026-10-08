@@ -1,0 +1,512 @@
+{
+  "checkpoint": "0.0.62",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 56,
+  "authoring_core_version": 1,
+  "gameplay_services_epoch": 7,
+  "recipe_format": "poima.material.recipe.v1",
+  "evaluator": "poima.cpu.pbr.v1",
+  "source_sha256": {
+    "CMakeLists.txt": "1bd616ccf99e9896b6da79684dd99e3aa2e9f86d87dd8a04524fad8d8c430d11",
+    "src/world.cpp": "f3430d7aeb8a118c0fd0bd6da5f2891d76a6ca8cb203ea251286479d7a8f60ff",
+    "src/asset_store.hpp": "84065c0af4f9c9d5089c75d884b01a360b74e6205841cd8ef109cc74803e028e",
+    "tests/asset_references_contract.py": "63d4c6914f2416d73b584c456a14f9b6bbe38b4fe7ecd3832e71e7ddf696a5d6",
+    "tests/profiler_contract.py": "d4c3927dcd05f89396c2e1db18058c2772b942a95b46587a2f62f472b9ca15c1",
+    "include/poima/material_recipe.hpp": "86283610224dcd3f19e970dded0151f5a318c44afc265ce3aa91420f8fc42a24",
+    "src/material_recipe.cpp": "94740453e1a276248adb97b8decf8bec832e4503e177202317b8dbe87a428389",
+    "src/material_service.cpp": "e6351c7e9f56c90b7e62e828c563b6bb68fd4ef63467ae6428f704fe8d2e3e41",
+    "src/material_service.hpp": "68fbbcda7309aec636c0f657b3300fb4f69fb44cde818a939b1d9902ca4f4760",
+    "tests/material_recipe_native.cpp": "3a821f11321963af92cd5c485809dbb8b2a9b655313b92bcad8c483591d5507c",
+    "tests/procedural_material_contract.py": "d300597a486d13a95ec525af43383f35f02ac9b5971d5ac1ca2e9f80819ac030",
+    "tests/procedural_material_capture.py": "619770e5f1d43809061d9d7d675b300f36682873dc2da66e6c9a71d5fafc0e0a",
+    "examples/materials/wine-brick.recipe.json": "2b5abbc32e0053c7a02054fed7f45d862b835490eb6c8d9c7514ca3df109db13",
+    "examples/materials/warm-plaster.recipe.json": "d03bcb72bcfbdaa611a01996b61da459d52d36349f027bab5d3681d46da7900d",
+    "tests/world_session_native.cpp": "d9acf4288c2caff449e7d27ce60d8903ef07cef935514b08d7afdccb87f351a4"
+  },
+  "source_freeze_verified": true,
+  "qualification": {
+    "linux_runtime_protocol": {
+      "passed": true,
+      "groups": 6,
+      "rpc_calls": 217,
+      "tests": [
+        "test_cancel_retention_forget_and_no_lifetime_cap",
+        "test_guarded_material_apply_history_references_and_export_closure",
+        "test_invalid_closed_inputs_and_owner_state_preserved",
+        "test_recipe_discovery_dedup_channels_and_reopen",
+        "test_shared_clients_bake_and_explicit_owner_poll",
+        "test_stored_descriptor_corruption_and_profile_reuse_policy"
+      ],
+      "owned_processes": 11,
+      "all_owned_exit_zero": true,
+      "forced_cleanup": false,
+      "report_sha256": "91bb3924cf1ae4410d87acf47ef1f94597f439fd3df9e426d8ea0bf0482dc81e"
+    },
+    "windows_runtime_protocol": {
+      "passed": true,
+      "groups": 6,
+      "rpc_calls": 208,
+      "tests": [
+        "test_cancel_retention_forget_and_no_lifetime_cap",
+        "test_guarded_material_apply_history_references_and_export_closure",
+        "test_invalid_closed_inputs_and_owner_state_preserved",
+        "test_recipe_discovery_dedup_channels_and_reopen",
+        "test_shared_clients_bake_and_explicit_owner_poll",
+        "test_stored_descriptor_corruption_and_profile_reuse_policy"
+      ],
+      "owned_processes": 11,
+      "all_owned_exit_zero": true,
+      "forced_cleanup": false,
+      "report_sha256": "9a437fcd5ed64b83cedf9c7c75da9e562c7ce2e4c0a4339934d6a7bb447a51d4"
+    },
+    "linux_authoring_only_protocol": {
+      "passed": true,
+      "groups": 6,
+      "rpc_calls": 582,
+      "tests": [
+        "test_cancel_retention_forget_and_no_lifetime_cap",
+        "test_guarded_material_apply_history_references_and_export_closure",
+        "test_invalid_closed_inputs_and_owner_state_preserved",
+        "test_recipe_discovery_dedup_channels_and_reopen",
+        "test_shared_clients_bake_and_explicit_owner_poll",
+        "test_stored_descriptor_corruption_and_profile_reuse_policy"
+      ],
+      "owned_processes": 11,
+      "all_owned_exit_zero": true,
+      "forced_cleanup": false,
+      "report_sha256": "4da8fb4995ee3b4a0bdd0ea09665482df7478f885d1217ebad77cbe04600a772"
+    },
+    "linux_selected_regressions": {
+      "passed": true,
+      "distinct_groups": 11,
+      "initial_groups": [
+        {
+          "name": "authoring_core_conformance",
+          "passed": true
+        },
+        {
+          "name": "authoring_contract_identity",
+          "passed": true
+        },
+        {
+          "name": "profiler_contract",
+          "passed": true
+        },
+        {
+          "name": "world_session_native",
+          "passed": false
+        },
+        {
+          "name": "mcp_contract",
+          "passed": true
+        },
+        {
+          "name": "asset_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_contract",
+          "passed": true
+        },
+        {
+          "name": "asset-references-native",
+          "passed": true
+        },
+        {
+          "name": "asset_references_contract",
+          "passed": true
+        },
+        {
+          "name": "material-recipe-native",
+          "passed": true
+        },
+        {
+          "name": "procedural_material_contract",
+          "passed": true
+        }
+      ],
+      "corrected_targeted_rerun": [
+        {
+          "name": "world_session_native",
+          "passed": true
+        }
+      ],
+      "correction": "Native world-session discovery expectation changed from 55 to 56; rebuilt test passes.",
+      "report_sha256": [
+        "898573b974364b2f75b772cade440c6e06ed1b52a18f68116881176c12ff257c",
+        "6ce02c3f9bb6dbce9447f6cc9dff19ccf7fb36a5c985fd05660bd1c76565dd3e"
+      ],
+      "scope": "Initial ten passing groups plus one corrected targeted rerun; not a fresh simultaneous eleven-group cohort."
+    },
+    "linux_authoring_only_regressions": {
+      "passed": true,
+      "groups": 10,
+      "tests": [
+        {
+          "name": "authoring_core_conformance",
+          "passed": true
+        },
+        {
+          "name": "authoring_contract_identity",
+          "passed": true
+        },
+        {
+          "name": "profiler_contract",
+          "passed": true
+        },
+        {
+          "name": "world_session_native",
+          "passed": true
+        },
+        {
+          "name": "mcp_contract",
+          "passed": true
+        },
+        {
+          "name": "asset_contract",
+          "passed": true
+        },
+        {
+          "name": "asset-references-native",
+          "passed": true
+        },
+        {
+          "name": "asset_references_contract",
+          "passed": true
+        },
+        {
+          "name": "material-recipe-native",
+          "passed": true
+        },
+        {
+          "name": "procedural_material_contract",
+          "passed": true
+        }
+      ],
+      "report_sha256": "a42d8c25f9a549bb278403b14999e511278edd21612a37229a25f1c88c8e2e08"
+    },
+    "windows_selected_regressions": {
+      "passed": true,
+      "groups": 10,
+      "executions": [
+        {
+          "name": "material-native",
+          "exit_code": 0
+        },
+        {
+          "name": "world-session-native",
+          "exit_code": 0
+        },
+        {
+          "name": "asset-references-native",
+          "exit_code": 0
+        },
+        {
+          "name": "asset",
+          "exit_code": 0
+        },
+        {
+          "name": "mcp",
+          "exit_code": 0
+        },
+        {
+          "name": "profiler",
+          "exit_code": 0
+        },
+        {
+          "name": "runtime",
+          "exit_code": 0
+        },
+        {
+          "name": "world",
+          "exit_code": 0
+        },
+        {
+          "name": "core-conformance",
+          "exit_code": 0
+        },
+        {
+          "name": "identity",
+          "exit_code": 0
+        }
+      ],
+      "material_native_checks": [
+        "exact uniform color, neutral normal and packed channels across complete mips",
+        "independent physical slope normalization and tangent U/V sign",
+        "same-seed equality, changed seed sensitivity and continuous wrapped surface evaluation",
+        "independent brick cell/mortar shared color-height correlation",
+        "existing image codec/mip cooking, odd sizes and quantized unit base normals",
+        "closed versioned admission, canonical roundtrip and cancellation",
+        "completed native worker and cancelled successor perform no package I/O before owner publication",
+        "bounded native worker dedup, owner publication, persisted reload, immutable reuse and cancelled-no-success",
+        "occupied staging fails without successful descriptor or truncation; destruction cancels and joins unpublished work",
+        "native-platform oversized Unicode and POSIX malformed-byte filesystem failures remain bounded valid UTF-8 job and inspection diagnostics",
+        "native read-only/all shared scopes hide and reject generation jobs, allow verified recipe reads; runtime closure contains images only",
+        "manifest inspection verifies actual immutable image package hashes"
+      ],
+      "native_protocol_process_count": 109,
+      "native_protocol_exit_counts": {
+        "0": 106,
+        "4": 3
+      },
+      "forced_cleanup": false,
+      "rejection_scope": "Three expected exit-4 lock/corrupt-primary rejection contenders; successful protocol owners exit zero.",
+      "skips": [
+        "Existing Windows crash-test skip in world contract"
+      ],
+      "report_sha256": "ebdd7bbc7c960611363f4f24fb149678683a7c85f6cdd65bd56a15447dffab95"
+    },
+    "stable_authoring_gates": {
+      "passed": true,
+      "platforms": [
+        {
+          "name": "linux-runtime",
+          "passed": true,
+          "schema_revision": 56,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "d12f2c4af834a316a814e34e1b90d517c7c7bf71bbd3651af798b63f76c37e5f"
+        },
+        {
+          "name": "windows-runtime",
+          "passed": true,
+          "schema_revision": 56,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "992d142ef1199c1679d6bb45ffe73b5fcec414f79ef4cfa16ecb02212aacb950"
+        },
+        {
+          "name": "linux-authoring-only",
+          "passed": true,
+          "schema_revision": 56,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "da2a271f39ad87a8b68a6d6b1573713fd6fd1a793b9b61cf2ad5a84f6db2f4d2"
+        }
+      ],
+      "historical_response_compatibility": true,
+      "canonical_response_self_compatibility": true,
+      "report_sha256": "b3b3231c824cafb150cdf29e5416fb65bda48c2e9a967e4b733bcdf8ed31109a"
+    },
+    "preserved_compiled_patrol_linux": {
+      "passed": true,
+      "groups": 4,
+      "rpc_calls": 1483,
+      "owners": [
+        {
+          "exit_code": 0,
+          "calls": 61
+        },
+        {
+          "exit_code": 0,
+          "calls": 1422
+        }
+      ],
+      "artifact_hashes": {
+        "binary": "d12f2c4af834a316a814e34e1b90d517c7c7bf71bbd3651af798b63f76c37e5f",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "71d9748cc6b362e3a6285bd0a3216fdb8b337974860d33505d31129d85535932"
+      },
+      "runner_sha256": "c39db8b384d5c3057bdc1d8d0eeb438d82bf316a8ea6f12e116295bdb9371977",
+      "report_sha256": "efaf13b4c872f57aa2727d60db393f85c62df11f9b071955731b9e201ba650d2",
+      "scope": "Existing 0.0.61 CoreCLR bridge/game artifacts executed unchanged on current native host; no new AOT qualification."
+    }
+  },
+  "rendered_fixtures": [
+    {
+      "passed": true,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "binary_sha256": "992d142ef1199c1679d6bb45ffe73b5fcec414f79ef4cfa16ecb02212aacb950",
+      "rpc_calls": 53,
+      "checks": {
+        "actual_native_generated_maps_rendered": true,
+        "independent_flat_geometry_normal": true,
+        "generated_normals_change_products": true,
+        "unchanged_color_capture_equal": true,
+        "two_by_two_uv_repeat_fixture": true,
+        "two_camera_distances": true,
+        "plaster_color_changes": true,
+        "imported_curved_tangent_fixture": true
+      },
+      "captures": [
+        {
+          "name": "brick-normal-disabled",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "a625e3e6cc15259a0aa1851752081de8ec7304761422ac328ce588848da3618d"
+        },
+        {
+          "name": "brick-normal-enabled",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "c7d3e5179da3dc4d0560edc357d1ba4b27dfe75d153ab70d43bb6a0c105512ad"
+        },
+        {
+          "name": "wine-brick",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "720fdccc53d5b9d79a9be6b56a5840ad9f6ad2fbd7f23613abe0d3a819344a27"
+        },
+        {
+          "name": "wine-brick-repeat",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "720fdccc53d5b9d79a9be6b56a5840ad9f6ad2fbd7f23613abe0d3a819344a27"
+        },
+        {
+          "name": "wine-brick-distance",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "d3907bfe74adc36b27e67fbeddc243289e51b73aae4b6005bd15312e79d71840"
+        },
+        {
+          "name": "warm-plaster",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "6d0c32c49c2120854c24d975379d121a7a2862dcb7a12400c9b8c3563afc1597"
+        },
+        {
+          "name": "warm-plaster-curved",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "99dbedb3fdea6edfaf4548ff5210303354d6cec3669f2ca6fc8dc982a13e58a7"
+        }
+      ],
+      "owned_processes": 1,
+      "owned_exit_zero": true,
+      "report_sha256": "f9688309959e5a93afe46b23acb1bfe13e4135b9ceb1cd3123f5131a294aa1e0",
+      "visual_review": "Color, curved, normal-control and distance readbacks inspected; identical repeat checked by pixel equality."
+    },
+    {
+      "passed": true,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "binary_sha256": "992d142ef1199c1679d6bb45ffe73b5fcec414f79ef4cfa16ecb02212aacb950",
+      "rpc_calls": 52,
+      "checks": {
+        "actual_native_generated_maps_rendered": true,
+        "independent_flat_geometry_normal": true,
+        "generated_normals_change_products": true,
+        "unchanged_color_capture_equal": true,
+        "two_by_two_uv_repeat_fixture": true,
+        "two_camera_distances": true,
+        "plaster_color_changes": true,
+        "imported_curved_tangent_fixture": true
+      },
+      "captures": [
+        {
+          "name": "brick-normal-disabled",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "a625e3e6cc15259a0aa1851752081de8ec7304761422ac328ce588848da3618d"
+        },
+        {
+          "name": "brick-normal-enabled",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "f25c136da71c607d04ae9472548c204e92e77ea1fb65dbcdc973fb77f4025ec1"
+        },
+        {
+          "name": "wine-brick",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "a7ac5c4bd15dbfe4500454b2ce661eeed562efc9cdd6c569a55f1168c2f5c922"
+        },
+        {
+          "name": "wine-brick-repeat",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "a7ac5c4bd15dbfe4500454b2ce661eeed562efc9cdd6c569a55f1168c2f5c922"
+        },
+        {
+          "name": "wine-brick-distance",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "18fd10e153ad8474d7bfde328ee1d01ebf276a4027b2a8b8b06a740b45ebb678"
+        },
+        {
+          "name": "warm-plaster",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "57ffb47ba0ff6b10fc193b3e25ed37e267273537dd4fcd6a3f5d043ab7485cca"
+        },
+        {
+          "name": "warm-plaster-curved",
+          "width": 960,
+          "height": 540,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "fd9db2e2b29356ad940b545f545333c9f893c2a62aa7f7c49ebd38d277f64120"
+        }
+      ],
+      "owned_processes": 1,
+      "owned_exit_zero": true,
+      "report_sha256": "fb649b98f3d8af7a92b64258e5d3d18ea8f05b5ecdeeb39f55fa3553373d3f47",
+      "visual_review": "Color, curved, normal-control and distance readbacks inspected; identical repeat checked by pixel equality."
+    }
+  ],
+  "public_image": {
+    "file": "procedural-wine-brick.png",
+    "sha256": "e125bc2455c08ab591fef6ee0ef3c02ca05a6bdf4f31d40d49c748cc611f3141",
+    "source": "NVIDIA Vulkan brick readback converted losslessly from BMP to PNG."
+  },
+  "verified_behaviors": [
+    "Compiled CPU recipes create periodic correlated color, physical tangent normals and nonmetal roughness maps using existing image/mip cooking.",
+    "Native independent flat-channel and slope oracles, odd mips, seeded surfaces and strict admission pass.",
+    "Generate changes no authored revision/history; preview, guarded atomic application, retry and undo use the existing transaction contract.",
+    "Bounded worker performs no world/filesystem edits; owner publication verifies images before persisting the descriptor; cancellation and destruction cleanup pass.",
+    "Stored image hashes, canonical recipe/facts and material bindings are validated; malformed storage uses bounded UTF-8 diagnostics.",
+    "Same numerical-profile regeneration compares newly generated outputs and rejects descriptor swaps; another profile retains its recorded producer metadata.",
+    "All native request scopes reject recipe mutations in read-only worlds; verified descriptor reads remain available when explicitly retained.",
+    "Runtime export closure includes the three referenced images and excludes authoring recipe manifests."
+  ],
+  "limits": [
+    "Small brick/plaster fixtures, not general material graphs, displacement, wetness, computed AO, artist replacement or game-scale performance.",
+    "Authoring meshes supply UVs/tangent frames and physical tile scale; no automatic UV transformation.",
+    "Normal mips average encoded components with shader normalization, without variance-aware specular filtering.",
+    "Determinism is scoped to the qualified numerical profile, without universal cross-platform image byte equality.",
+    "Inspection verifies descriptor/package coherence, not authenticated derivation; numerical-profile metadata is not a signature.",
+    "Image/descriptor publication is not a multifile power-loss transaction; failed jobs can leave unreferenced immutable images.",
+    "No new installed-desktop, physical-device, console, browser or clean-machine distribution qualification."
+  ],
+  "corrected_initial_findings": [
+    "Initial isolated authoring compilation needed mutable World dispatch and a shared recipe-error declaration; fixed before main qualification.",
+    "Malformed or truncated UTF-8 storage failures, stored-data error classification and canonical-facts validation were corrected before main qualification.",
+    "The first main Linux regression retained discovery 55 in its native test; corrected to current 56 and the affected rebuilt test passes.",
+    "The initial GPU harness looked for scene products at the wrong result depth; corrected before both accepted GPU cohorts.",
+    "An initial preserved-Patrol invocation used a nonexistent bridge path; the corrected existing artifact passes all four groups."
+  ]
+}

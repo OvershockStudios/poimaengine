@@ -1,0 +1,14 @@
+{
+  "format": "poima.material.recipe.v1",
+  "kind": "plaster",
+  "seed": 340,
+  "width": 256,
+  "height": 256,
+  "tile_width_m": 2,
+  "tile_height_m": 2,
+  "color": "#d4c5ad",
+  "roughness": 0.88,
+  "roughness_variation": 0.06,
+  "color_variation": 0.08,
+  "grain_m": 0.00008
+}

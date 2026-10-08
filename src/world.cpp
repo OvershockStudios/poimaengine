@@ -24,6 +24,7 @@
 #include "input_profile_store.hpp"
 #include "mutation_discovery.hpp"
 #include "asset_references.hpp"
+#include "material_service.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -502,7 +503,7 @@ Json describe() {
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 55}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 56}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -685,6 +686,8 @@ Json describe() {
         {"session_id","request_id","expected_tick","listener","path","sequence"});
     result["invariants"].push_back("Sound play/stop commands join runtime.step batch rollback and apply on the first tick; C# sound calls share that transaction. Voices use session-local monotonic handles, at most 64 emitting and 256 retained records. runtime.audio.replay advances and records committed ticks (max 3600 total), retaining partial progress and retry receipts on failure. DSP uses persistent filters and does not alter logical voice state.");
     result["invariants"].push_back("Audio observation is synchronous and frozen: fresh geometry and poses on every query, no simulation advance, source cursor or device playback. AcousticMaterial requires box/mesh geometry. At most 64 enabled emitters, 131072 acoustic triangles, 64 MiB clip packages; mono 48 kHz PCM16/float32 WAV import, up to 60 seconds per clip. Captures are 1..480000 stereo float frames with direct paths and HRTF only.");
+    methods.update(materials::Service::schemas());
+    result["invariants"].push_back("Procedural brick/plaster recipes bake compiled CPU work without world changes or worker file I/O. One CPU worker and eight retained jobs per owner; explicit polling publishes immutable image packages and a recipe descriptor. Jobs are authoring-only; runtime closure contains referenced baked images. These evolving methods are outside authoring-core v1.");
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
@@ -1023,7 +1026,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget"};
 class World {
     profiling::Service profiler_;
     fs::path path_;
@@ -1049,6 +1052,7 @@ class World {
     Json runtime_receipts_=Json::array();
     Json playback_receipts_=Json::array();
     development::Service development_;
+    materials::Service materials_;
     // Owner requests survive replacement; callbacks mutate only runtime queues.
     struct PendingGameplayWrite {
         fs::path path;std::string operation,hash;std::uint64_t expected_generation=0;std::int32_t error_code=-32070;std::array<char,256> diagnostic{};
@@ -1444,6 +1448,10 @@ public:
         if(method.starts_with("development.")) {
             try { return development_.dispatch(method,params); }
             catch(const development::ServiceError& error) { throw Error(error.code,error.what()); }
+        }
+        if(method.starts_with("asset.material.")) {
+            try { return materials_.dispatch(method,params,asset_directory()); }
+            catch(const materials::Error& error) { throw Error(error.code,error.what()); }
         }
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);

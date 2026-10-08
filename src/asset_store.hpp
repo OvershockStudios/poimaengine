@@ -81,14 +81,52 @@ inline LoadedImage read_image_asset(const std::filesystem::path& directory,const
     if(!input.read(bytes.data(),static_cast<std::streamsize>(length)) || content_hash(bytes)!=id)throw std::runtime_error("Image content hash mismatch or read failure.");
     return {id,bytes.size(),decode_image(bytes)};
 }
+// Never truncate a pre-existing/link staging entry during asset publication.
+inline void write_asset_pending_exclusive(const std::filesystem::path& path,const std::string& bytes) {
+#ifdef _WIN32
+    HANDLE file=CreateFileW(path.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
+    if(file==INVALID_HANDLE_VALUE)throw std::runtime_error("Cannot exclusively create asset staging file.");
+    DWORD written=0;
+    const bool ok=WriteFile(file,bytes.data(),static_cast<DWORD>(bytes.size()),&written,nullptr) && written==bytes.size() && FlushFileBuffers(file);
+    const bool closed=CloseHandle(file)!=0;
+#else
+    const int file=::open(path.c_str(),O_WRONLY|O_CREAT|O_EXCL|O_CLOEXEC|O_NOFOLLOW,0600);
+    if(file<0)throw std::runtime_error("Cannot exclusively create asset staging file.");
+    std::size_t offset=0;bool wrote=true;
+    while(offset<bytes.size()) {
+        const auto count=::write(file,bytes.data()+offset,bytes.size()-offset);
+        if(count<0 && errno==EINTR)continue;
+        if(count<=0){wrote=false;break;}offset+=static_cast<std::size_t>(count);
+    }
+    const bool ok=wrote && ::fsync(file)==0;const bool closed=::close(file)==0;
+#endif
+    if(!ok || !closed){std::error_code unused;std::filesystem::remove(path,unused);throw std::runtime_error("Cannot flush asset staging file.");}
+}
+// Shared publication path for decoded imports and compiled procedural outputs.
+inline LoadedImage store_cooked_image(const std::filesystem::path& directory,const std::string& bytes) {
+    const auto image=decode_image(bytes);const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
+    // Use the established package-path check on an existing entry, and reject
+    // directory links before touching staging/publication paths.
+    std::error_code error;const auto status=std::filesystem::symlink_status(directory,error);
+    if(error || !std::filesystem::is_directory(status) || std::filesystem::is_symlink(status))throw std::runtime_error("Asset store must be a regular directory.");
+#ifdef _WIN32
+    const auto attributes=GetFileAttributesW(directory.c_str());
+    if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset store cannot be a reparse point.");
+#endif
+    const auto path=directory/(id+".pimage");if(std::filesystem::exists(std::filesystem::symlink_status(path)))return read_image_asset(directory,id);
+    const auto pending=directory/(id+".pending");
+    if(std::filesystem::exists(std::filesystem::symlink_status(pending)))throw std::runtime_error("Image staging path already exists; remove only an abandoned regular staging file before retrying.");
+    write_asset_pending_exclusive(pending,bytes);
+    try {world_detail::replace_file(pending,path);}
+    catch(...) {std::error_code unused;std::filesystem::remove(pending,unused);throw;}
+    return {id,bytes.size(),image};
+}
 inline LoadedImage store_image_asset(const std::filesystem::path& directory,const std::filesystem::path& source,bool srgb) {
     const auto length=std::filesystem::file_size(source);if(length>32*1024*1024)throw std::runtime_error("Encoded image exceeds 32 MiB.");
     std::string encoded(static_cast<std::size_t>(length),'\0');std::ifstream input(source,std::ios::binary);
     if(!input.read(encoded.data(),static_cast<std::streamsize>(length)))throw std::runtime_error("Image source read failed.");
-    const auto imported=decode_texture(std::as_bytes(std::span(encoded.data(),encoded.size())),srgb);const auto bytes=encode_image(*imported);
-    const auto image=decode_image(bytes);const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
-    const auto path=directory/(id+".pimage");if(std::filesystem::exists(path))return read_image_asset(directory,id);
-    const auto pending=directory/(id+".pending");world_detail::write_flushed(pending,bytes);world_detail::replace_file(pending,path);return {id,bytes.size(),image};
+    const auto imported=decode_texture(std::as_bytes(std::span(encoded.data(),encoded.size())),srgb);
+    return store_cooked_image(directory,encode_image(*imported));
 }
 // One observation/runtime creation loads each immutable package once. Bound
 // aggregate source bytes before decoding rather than loading 10,000 packages.
