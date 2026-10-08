@@ -47,3 +47,38 @@ not qualify crowds, moving obstacles, arbitrary stairs, graphics, editor input,
 physical devices, performance, or clean-machine deployment. Local evidence
 records the actual backend, input/source hashes, RPCs and process cleanup; a
 source fixture by itself is not a passing qualification.
+
+## Exported Windows player
+
+After publishing this actual fixture as Native AOT and installing a matching
+Windows runtime with simulation, rendering, game UI and navigation enabled,
+run native Windows Python from the checkout:
+
+```powershell
+python tests/navigation_gameplay_bundle.py `
+  --binary build/windows-runtime/poima.exe `
+  --runtime build/windows-navigation-install `
+  --artifact build/navigation-native-artifact/native-gameplay.json `
+  --output build/navigation-player-check --gpu 1
+```
+
+Use your actual artifact/install paths and GPU index. Output must be new. The
+runner performs no compilation and requires the real NavigationGame descriptor,
+generated component manifest, native image and complete runtime inventory.
+It authors the original fixture through guarded operations and adds a separate
+spectator/camera, verifying unchanged static navigation and original entities.
+
+It exports and relocates the bundle outside the checkout into a path with
+spaces, removes only its owned source, and runs from an unrelated directory
+with development-host search variables removed. The player loads at tick zero;
+neutral spectator input leaves NPC control separate. The original compiled NPC
+must plan and arrive without route-field patches or teleports. Default replay
+is 1,400 ticks. No visible meshes are present in this acceptance fixture.
+
+The exact bundled engine and artifact then run the independent headless contract
+in fresh worlds. This checks native detours, quota/rollback and save continuation
+separately from player execution. `--skip-headless` deliberately narrows that
+scope; `--capture` retains an optional Vulkan readback, not an editor screenshot.
+The evidence retains hashes, RPCs, inventories, outcomes and process cleanup.
+This is a development-host check, not clean-machine, physical-input, crowd or
+performance qualification. See the [recorded result](../../docs/evidence/m2-navigation-shipping.json).

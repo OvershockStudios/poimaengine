@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.64 LANGUAGES C CXX)
+project(Poima VERSION 0.0.65 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -14,6 +14,7 @@ option(POIMA_ENABLE_AUDIO "Build native Steam Audio observation and capture" OFF
 option(POIMA_ENABLE_GAME_UI "Build native retained game UI" OFF)
 option(POIMA_ENABLE_MANAGED_GAMEPLAY "Host CoreCLR gameplay in the native runtime" OFF)
 option(POIMA_ENABLE_NATIVE_GAMEPLAY "Load process-lived Native AOT gameplay libraries" ${POIMA_ENABLE_SIMULATION})
+option(POIMA_USE_THIN_ARCHIVES "Use a nonportable thin core archive for local Linux development" OFF)
 set(POIMA_DOTNET_HOST_HEADERS "" CACHE PATH "Directory containing hostfxr.h and coreclr_delegates.h")
 if(POIMA_BUILD_RENDER_SMOKE AND NOT POIMA_ENABLE_VULKAN_PROBE)
     message(FATAL_ERROR "Rendering requires POIMA_ENABLE_VULKAN_PROBE=ON.")
@@ -32,6 +33,30 @@ if(POIMA_TARGET_ARCH MATCHES "^(amd64|x86_64|x64)$")
 endif()
 configure_file(cmake/build_info.hpp.in generated/poima/build_info.hpp @ONLY)
 add_library(poima_core STATIC src/core.cpp src/host.cpp src/world.cpp src/scene.cpp src/player.cpp src/input_profile.cpp src/input_profile_store.cpp src/hash.cpp src/gltf.cpp src/model_codec.cpp src/texture.cpp src/tangents.cpp src/lighting.cpp src/shadows.cpp src/visibility.cpp src/gameplay.cpp src/audio_clip.cpp src/audio.cpp src/audio_events.cpp src/audio_stream.cpp src/animation.cpp)
+if(POIMA_USE_THIN_ARCHIVES)
+    if(NOT CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_CROSSCOMPILING)
+        message(FATAL_ERROR "POIMA_USE_THIN_ARCHIVES requires a native Linux development build.")
+    endif()
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang)$")
+        message(FATAL_ERROR "POIMA_USE_THIN_ARCHIVES requires a GNU or Clang archiver toolchain.")
+    endif()
+    execute_process(COMMAND "${CMAKE_AR}" --help
+        RESULT_VARIABLE _poima_ar_help_result
+        OUTPUT_VARIABLE _poima_ar_help_output
+        ERROR_VARIABLE _poima_ar_help_error
+        TIMEOUT 5)
+    if(NOT _poima_ar_help_result STREQUAL "0" OR
+       NOT "${_poima_ar_help_output}\n${_poima_ar_help_error}" MATCHES "--thin([ \t\r\n]|$)")
+        message(FATAL_ERROR "POIMA_USE_THIN_ARCHIVES requires an archiver advertising --thin support.")
+    endif()
+    # Only the local core archive changes; dependencies and compiler flags do not.
+    # Thin members reference build-tree objects and must not be distributed alone.
+    set_property(TARGET poima_core APPEND PROPERTY STATIC_LIBRARY_OPTIONS --thin)
+    message(STATUS "Poima core uses a local thin archive; retain its build-tree object files.")
+    unset(_poima_ar_help_result)
+    unset(_poima_ar_help_output)
+    unset(_poima_ar_help_error)
+endif()
 target_sources(poima_core PRIVATE src/save_upgrade.cpp src/save_upgrade_plan.cpp src/save_upgrade_document.cpp src/save_upgrade_snapshot.cpp src/runtime_animation.cpp src/runtime_geometry.cpp src/runtime_templates.cpp src/editor_gizmo.cpp src/components.cpp src/editor_audio.cpp src/ui_model.cpp)
 add_library(poima_development STATIC src/development_jobs.cpp src/development_service.cpp src/development_diagnostics.cpp)
 target_compile_features(poima_development PUBLIC cxx_std_20)

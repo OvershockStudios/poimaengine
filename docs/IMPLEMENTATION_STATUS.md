@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.64**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.65**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.65 records qualification of the original compiled navigation fixture
+in an exported, relocated Windows Native AOT game using the 0.0.64 runtime.
+The player loads gameplay at tick zero and
+completes 1,400 Vulkan replay ticks: one complete six-corner plan, NPC arrival,
+zero NVRHI errors and no runtime replacement. The owned source is removed and
+the bundle's exact runtime, artifact and navigation inventories remain unchanged.
+The original fixture has no visible meshes; this qualifies the hardware player
+lifecycle and compiled planning/arrival, rather than a visible-NPC demonstration.
+
+Separate fresh worlds use the same bundled runtime and artifact for eight checks
+over 987 RPCs, including native pose detours, query quotas, rollback, saves,
+fresh-owner continuation and replan. All native commands and owners exit cleanly.
+The recorded runtime and Native AOT artifact are both from 0.0.64. This does not
+qualify clean-machine deployment, physical input, crowds,
+performance, GUI authoring or in-player save UX. [Shipping evidence](evidence/m2-navigation-shipping.json),
+[reproduction](../tests/managed_navigation_gameplay/README.md#exported-windows-player).
+
+A default-off [Linux development option](BUILD.md#local-linux-thin-archives)
+changes only the core static archive's representation. It retains compiler
+optimization/debug settings and dependency archives. The speed measurements
+cover archive creation/indexing on one filesystem, not compilation, general
+iteration latency or game performance. Automatic online asset acquisition and
+license/provenance export remain planned; [owned-file imports](ASSETS.md) are
+available for the documented formats.
 
 Version 0.0.64 binds static navigation into compiled NPC gameplay. A guarded
 `navigation.set` transaction associates the world with a checked `.pnav` asset.

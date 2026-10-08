@@ -89,3 +89,19 @@ Reproduce with a navigation-enabled build using `poima-navigation-test` and `tes
 The dependency is [Recast Navigation v1.6.0](https://github.com/recastnavigation/recastnavigation/tree/6dc1667f580357e8a2154c28b7867bea7e8ad3a7), pinned by commit and archive SHA-256. Only Recast and Detour are linked; upstream demos, crowd and tile-cache modules are excluded. Its [zlib license](https://github.com/recastnavigation/recastnavigation/blob/6dc1667f580357e8a2154c28b7867bea7e8ad3a7/License.txt) is installed with the engine's dependency notices. The module does not claim console qualification.
 
 The [0.0.64 runtime-navigation record](evidence/m2-runtime-navigation.json) reports separate CoreCLR and actual published Native AOT follower runs. Each Linux run passes ten checks over 1,009 RPCs with five clean owner exits, including a navigation-disabled simulation host. Each Windows run passes nine checks over 998 RPCs with four clean owner exits. They cover native detour/arrival, eight-attempt quota and failed-attempt accounting, span preservation, pause, late-batch rollback, save/load, fresh-owner continuation, immediate replan and rejection on unbound/older hosts. CoreCLR additionally checks compatible reload; Native AOT checks replacement rejection. These bounded results do not qualify crowds, dynamic obstacles, arbitrary stairs, forged non-Tick callbacks, general malformed raw Runtime PODs, graphics/editor input, performance or deployment.
+
+## Exported player check
+
+The [shipping record](evidence/m2-navigation-shipping.json) uses the 0.0.64 runtime and original
+compiled follower and static geometry, adding only a separate spectator and
+camera for the player entry. An exported Windows Native AOT bundle is relocated
+outside the checkout; its owned source is removed before execution. Loaded at
+tick zero, gameplay completes one six-corner route and arrives during 1,400
+hardware Vulkan replay ticks with zero NVRHI errors or runtime replacements.
+The fixture has no visible mesh components, so this is player lifecycle and
+compiled-navigation proof rather than a visible character demonstration.
+
+A separate fresh headless world runs the route contract through the exact bundled
+engine and artifact: eight checks, 987 RPCs and three clean owner exits. Its
+precise native poses, rollback, save continuation and replan checks do not imply
+in-player save UX. Both recorded runtime and artifact are from 0.0.64. [Reproduce](../tests/managed_navigation_gameplay/README.md#exported-windows-player).

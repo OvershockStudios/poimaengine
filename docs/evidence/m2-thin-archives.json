@@ -1,0 +1,118 @@
+{
+  "format": "poima.build-archive-evidence",
+  "schema_version": 1,
+  "engine_version": "0.0.65",
+  "scope": "Opt-in native Linux core thin archives and content-stable font generation",
+  "passed": true,
+  "default_enabled": false,
+  "measurements_0_0_64": [
+    {
+      "order": "normal-first",
+      "unchanged_inputs_at_measurement": 134,
+      "ordered_objects": 57,
+      "three_hosts_byte_identical_to_qualified_baseline": true,
+      "observations": {
+        "normal": {
+          "archive_bytes": 314267154,
+          "archive_seconds": 62.58315059800225,
+          "link_seconds": {
+            "poima": 23.49280472799728,
+            "poima-runtime-navigation-test": 14.364705184998456,
+            "poima-gameplay-service-contract-test": 3.067230237997137
+          }
+        },
+        "thin": {
+          "archive_bytes": 784992,
+          "archive_seconds": 5.484849091983051,
+          "link_seconds": {
+            "poima": 24.537942640992696,
+            "poima-runtime-navigation-test": 13.95751881400065,
+            "poima-gameplay-service-contract-test": 3.067661346998648
+          }
+        }
+      }
+    },
+    {
+      "order": "thin-first",
+      "unchanged_inputs_at_measurement": 134,
+      "ordered_objects": 57,
+      "three_hosts_byte_identical_to_qualified_baseline": true,
+      "observations": {
+        "thin": {
+          "archive_bytes": 784992,
+          "archive_seconds": 5.638734956999542,
+          "link_seconds": {
+            "poima": 21.881742161989678,
+            "poima-runtime-navigation-test": 13.80137390800519,
+            "poima-gameplay-service-contract-test": 3.3164662339986535
+          }
+        },
+        "normal": {
+          "archive_bytes": 314267154,
+          "archive_seconds": 66.0338465340028,
+          "link_seconds": {
+            "poima": 23.14008819501032,
+            "poima-runtime-navigation-test": 14.104676559989457,
+            "poima-gameplay-service-contract-test": 3.1689418320020195
+          }
+        }
+      }
+    }
+  ],
+  "qualification_0_0_65": {
+    "compiler": {
+      "compiler": "GNU",
+      "compiler_version": "16.2.0",
+      "target_os": "Linux",
+      "target_arch": "x86_64"
+    },
+    "source_inputs": 144,
+    "generated_commands": 223,
+    "linux_commands_unchanged_except_core_archive_flag": true,
+    "native_checks": 2,
+    "binding_protocol_groups": 3,
+    "authoring_core_groups": 5,
+    "discovery_revision": 58,
+    "windows_cross_build": "ordinary archive; version0.0.65; initial core/font object rebuild and host link",
+    "windows_runtime_execution": "Both execution attempts blocked before host startup by sandbox WSL socket restriction",
+    "font_generation": "Two Windows configurations preserved generated font bytes/mtime and linked artifacts; subsequent actual build did no work",
+    "unsupported_configurations_rejected": [
+      "windows",
+      "linux-cross"
+    ]
+  },
+  "limits": [
+    "Two local counterbalanced observations are not a general build-speed guarantee.",
+    "No game runtime FPS or rendering-performance claim.",
+    "Thin archive members depend on retained build-tree objects; archive is not a standalone distributable SDK.",
+    "Compiler optimization/debug/warnings and dependency archives are unchanged.",
+    "No new Windows runtime, GUI, GPU, installation or clean-machine qualification."
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "8e70e0fefa3b8e06af2a22687ba6444687a99ecb48f1cf332abb0f2f63a759ef",
+    "cmake/editor.cmake": "8404d25df52655bf3e6c66145c7362733c79a6b1fd5594a010ccbce330ab9d1b"
+  },
+  "artifacts": {
+    "build/runtime-headless/poima": "49186eb796ccf3a26dd8cd4f5da7a21b0399e6c775b2b7cac99c5cd9254d932a",
+    "build/runtime-headless/poima-runtime-navigation-test": "ddc298fd1f46edbb53d24efe10d33e68b32937af828f29c8ee7bcd0ade60c874",
+    "build/runtime-headless/poima-gameplay-service-contract-test": "1290a312e9d8ac087c376522db1d3ba1952aec031745f24b3bf25b5c3b4c2520",
+    "build/windows-runtime/poima.exe": "b1a52d804ead40440b2f02c122b85b3d2d558ec8b42522e1f44698620aadd54a",
+    "build/runtime-headless/libpoima_core.a": "ee5b66fecc2981e981be802bc29337e09f4036aa4536d5dc0be60ea417c79d09",
+    "build/runtime-headless/runtime.json": "0e186ce92518d9115e478fa50dcc3b8048e1df32d2bdd4e08fb4f28ab37812ad",
+    "build/windows-runtime/runtime.json": "3fd3e468d6f717480a4d2d7debb7117dc1f236834282cb5d7266b983efb7d44c",
+    "build/windows-runtime/generated/poima/editor_fonts.hpp": "b9f3926e3f38f21b9ce5bcae032cbc9eb7d27775c947096c0a26ccf0ce9e1a48"
+  },
+  "evidence_sha256": {
+    "measurements-normal-first": "bd20988c478d998ffa9de5912e5c102045ef0fff2501e6d08e487e1b60f404ad",
+    "measurements-thin-first": "bd0e4fb5f05917d1df80250f0af11f09970ae0ed3881f5e720672f7efe26f718",
+    "source-build-qualification": "7483645451af0b6ac8bd88f14ca2b26044666d2a5b70b41c6f6e3bd03454ab46",
+    "generated-command-comparison": "c50001b31a5cd775c679ceb170d92000b82f9da49fcc14f348b468d48b72f532",
+    "font-and-build-noop-checks": "699fadcb0058bd6dd9cbf51b29286cf8856692130f01bd5542a517c46ed0d618",
+    "authoring-core-checks": "fd0e8c28be123f7d43d49583bb9a1ac6251d7d251a4e9440fcf0449dfc55364d",
+    "navigation-binding-checks": "e76e81e09666bf3fc2443295f14e23c1d13ad8d77b0a95943bca2d8f1eed06e0",
+    "linux-native-and-protocol-checks": "bc9d4d337ab376c15717c421cc21a6d20bf925f91d545c5485c5173cee849585",
+    "unsupported-platform-checks": "7022a423557fe69907ab12980a7de2a30d64fcfedfa2356012b548f99617167f",
+    "preserved-binary-checks": "1bccc50c8d1c0a2a90f7939a2dff927047b4b59fdcb13a7db074e9a4a8d56715",
+    "windows-cross-build-checks": "aafc57c1c11d72c3a70b3cd2ed7791c901ccc143cfd387fcc49537f3968a5208"
+  }
+}

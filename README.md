@@ -4,7 +4,7 @@
 
 Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graphics and **C#** gameplay. Its CLI and desktop editor share an authoritative engine service: an agent can inspect, edit, run and observe a world through structured commands, while you work in the editor.
 
-**Our commitment: no generative-AI art or music in Poima's own content. AI-assisted code is welcome.** Procedural tools use authored algorithms; our direction is wear, erosion and controlled deformation. [Content principles](docs/CONTENT_PRINCIPLES.md).
+Import your own assets and build on existing licensed content. [Asset workflow](docs/CONTENT_PRINCIPLES.md).
 
 [Get started](#get-started) · [Try a sample](examples/collection-game) · [Documentation](#documentation) · [Implementation status](docs/IMPLEMENTATION_STATUS.md) · [Changelog](CHANGELOG.md)
 
@@ -12,7 +12,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **0.0.64.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.65.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 

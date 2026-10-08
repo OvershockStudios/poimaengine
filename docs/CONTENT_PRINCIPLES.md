@@ -1,13 +1,38 @@
-# Art, music and procedural tools
+# Assets and content workflow
 
-**Poima will not distribute generative-AI art or music as its own content. AI-assisted code is welcome.**
+Developers can import their own assets. Planned discovery tools will also help
+agents find and import existing content from online sources. Content retains
+its own license; the engine's Apache-2.0 license does not change asset rights.
 
-Engine examples, sample assets and promotional art follow this commitment. External assets need an identifiable source, suitable licensing and provenance consistent with it. This is Poima's content policy; the engine's Apache-2.0 license remains unchanged.
+## Discovery, import and attribution
 
-Agents should be able to discover and import existing free art and music from online sources, while developers can import their own assets. The planned acquisition workflow preserves the creator, source URL, exact license, required attribution and downloaded file identity. It checks the intended project's permitted use; a free download alone is not a license. Export should retain the relevant notices and credits.
+The intended workflow is to search a catalog, compare suitable licensed assets,
+download a selected version, import it, and inspect the result in the game.
+Search results should report format, size and compatibility alongside rights
+and provenance information. Unknown information should stay explicit. When
+search has no suitable result, the tools should report the gap.
 
-Local asset import is available for the formats listed in the [implementation status](IMPLEMENTATION_STATUS.md). Online discovery/acquisition and automatic license records are planned features.
+Acquisition records should preserve the creator, source URL, selected license,
+required attribution and downloaded file identity. Export should retain
+relevant notices and credits. User-owned files use the same import path without
+publishing private purchase receipts or local source paths.
 
-Procedural tools use explicit parameters and repeatable authored algorithms, without generative models producing images, meshes or music. The intended direction is helping developers work with existing assets: surface wear, dirt, erosion, chipped edges and controlled edge deformation, alongside reusable material layers and masks.
+Original downloads and cooked assets have separate identities. Conversion
+records should preserve their relationship, including dependencies and
+modifications. A file hash establishes byte identity, not authorship or
+permission. A free download alone is not a license.
 
-The current [brick and plaster recipes](PROCEDURAL_MATERIALS.md) provide a small algorithmic foundation. General wear tools and geometry deformation are not implemented yet. Surface appearance, rendered geometry and collision changes need distinct controls so visual aging does not silently change gameplay.
+Local asset import is available for the formats listed in the
+[implementation status](IMPLEMENTATION_STATUS.md). Online discovery/acquisition
+and automatic license records are planned features.
+
+## Procedural tools
+
+The intended direction is helping developers work with existing assets:
+surface wear, dirt, erosion, chipped edges and controlled edge deformation,
+alongside reusable material layers and masks.
+
+The current [brick and plaster recipes](PROCEDURAL_MATERIALS.md) provide a small
+algorithmic foundation. General wear tools and geometry deformation are not
+implemented yet. Surface appearance, rendered geometry and collision changes
+need distinct controls so visual aging does not silently change gameplay.

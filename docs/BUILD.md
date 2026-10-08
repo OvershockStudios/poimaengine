@@ -38,6 +38,8 @@ consumers use the non-generated `BuildMetadata` declaration, so changing only
 the version header rebuilds one translation unit rather than seven. Source
 edits still rebuild their dependents, and consumers still relink. Compiler
 optimization, debug information and warnings retain the normal build settings.
+Generated editor font headers also retain their timestamp when their contents
+are unchanged, avoiding an unrelated editor-style compilation during configure.
 
 The [0.0.59 evidence](evidence/m2-build-metadata.json) records dependency probes
 and native metadata checks. These probes count scheduled compilations; they do
@@ -56,6 +58,42 @@ Use a new output directory. Add `--windows-interop` when launching a Windows
 binary from WSL. The test checks CLI, MCP and profiler versions; project exports
 still require the runtime descriptor's exact engine version and gameplay load
 still requires its matching native target.
+
+## Local Linux thin archives
+
+Native Linux development builds can opt into a thin `poima_core` archive:
+
+```sh
+cmake --preset headless -DPOIMA_USE_THIN_ARCHIVES=ON
+cmake --build --preset headless
+```
+
+The option defaults to `OFF`. It requires a native Linux GNU/Clang toolchain
+whose archiver advertises `--thin`; Windows and cross builds reject it. It adds
+one flag to the core static archive only. Dependencies, optimization, debug
+information and warnings retain their existing settings.
+
+Thin archives reference their build-tree object files instead of copying those
+bytes into the archive. Retain those objects; a thin archive cannot be moved or
+distributed on its own. The core archive is a build artifact, not an installed
+game payload. To return to a normal archive, configure the same build with
+`-DPOIMA_USE_THIN_ARCHIVES=OFF` and rebuild.
+
+Two counterbalanced comparisons on the development laptop used the same 57
+compiled 0.0.64 core objects on a Windows-mounted drive under WSL. Archive
+creation plus indexing measured:
+
+| Run order | Normal archive | Thin archive |
+| --- | ---: | ---: |
+| Normal, then thin | 62.6 s | 5.5 s |
+| Thin, then normal | 66.0 s | 5.6 s |
+
+Host linking remained similar at 21.9–24.5 seconds. Each arm's host and two
+native test executables matched the qualified originals byte-for-byte,
+including debug information; native and protocol checks passed. These are
+archive-stage observations on one machine/filesystem, not cold-cache, general
+compilation, iteration-time or game-performance guarantees. Actual 0.0.65
+CMake option/platform checks are recorded with the [build evidence](evidence/m2-thin-archives.json).
 
 ## Optional fixed-step runtime
 

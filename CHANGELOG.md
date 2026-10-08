@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.65
+
+- Record a relocated Windows Native AOT navigation game using the 0.0.64 runtime and artifact: the original compiled NPC plans around cover and arrives during a 1,400-tick Vulkan replay. Separate fresh worlds exercise the bundled runtime's route, rollback and save continuation. [Evidence](docs/evidence/m2-navigation-shipping.json).
+- Add opt-in thin core archives for local Linux development and preserve unchanged generated font headers during configure. Compiler settings and dependency archives remain unchanged; normal archives remain the default. [Build option](docs/BUILD.md#local-linux-thin-archives).
+- Document licensed asset discovery, user imports and attribution records. Automatic acquisition and provenance export remain planned. [Content workflow](docs/CONTENT_PRINCIPLES.md).
+
 ## 0.0.64
 
 - Bind checked static navigation through guarded world transactions, with preview, retry, undo/redo and typed asset references. Runtime, export and saved-source closure retain the bound package. [Navigation workflow](docs/NAVIGATION.md).

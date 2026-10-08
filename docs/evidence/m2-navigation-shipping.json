@@ -1,0 +1,98 @@
+{
+  "format": "poima.navigation-shipping-evidence",
+  "version": 1,
+  "qualified_engine_version": "0.0.64",
+  "target_os": "Windows",
+  "target_arch": "x86_64",
+  "passed": true,
+  "provenance": {
+    "local_report_sha256": "c6f2ea838f5dc1e64e96d19c4f282e50c608a488510d322da2c9a37a31b4741c",
+    "headless_report_sha256": "5897e68554e5debecd2f67c3160165e687fe0461775c24a8d301b64f72f4301f",
+    "publisher_sha256": "1d1279e8e4be68ef01692b1bcb1b59a6b3a2454b24edb1b59d9e0e007d57fb5c",
+    "source_sha256": {
+      "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+      "tests/managed_navigation_gameplay/NavigationGame.cs": "3d98ce7cab0080d5cbdef13ff8b5cb978d30db38b7edfa648ad15602c52dab26",
+      "tests/navigation_gameplay_bundle.py": "10262a7c7a801a0bb34a1454fabd438b2920a4fe366459b0b6fcf5246c31c0cb",
+      "tests/navigation_runtime_contract.py": "0bd44c3f2df340ecd0bdc747bd85c95d09ed2fe443d8d20c54e12657d0422d22"
+    },
+    "engine_sha256": "078c8babd5433ffb61f36cce58dbf0edb5ccc721004e07592625a8deaa352d3d",
+    "artifact_descriptor_sha256": "3fa7b4203ccc9b017cde612f497e9d513c04da214d7ab35047ed3a20a02cac29",
+    "native_library_sha256": "dabf7bebeb833680c8808f0fa18fd0020225ffdefc23d53d68c29bebfa2a392c",
+    "artifact_publication_engine_version": "0.0.64",
+    "runtime_descriptor_sha256": "8bb68fb1ae6567bf02b98adcf064105e1f6cd2172a4a366edc35d932eaafe9e9"
+  },
+  "packaging": {
+    "owned_source_removed": true,
+    "relocated_outside_checkout": true,
+    "unrelated_working_directory": true,
+    "isolated_environment": true,
+    "static_fingerprint_unchanged": true,
+    "navigation_asset": "d860635119dc72ca7001c1dc0739c3e8896151efdd4af6714d3f30e73b9d01a4",
+    "navigation_package_bytes": 4979,
+    "source_fingerprint": "4c8d7b5d9189a0fc31e8af589ed84726d40f8f42379fc138f044587d4d73268a",
+    "runtime_files": 44,
+    "bundle_files": 57,
+    "inventories_unchanged": true,
+    "managed_pe_or_development_runtime_shipped": false,
+    "recast_license_inventoried": true
+  },
+  "player": {
+    "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "hardware": true,
+    "width": 512,
+    "height": 288,
+    "samples": 1,
+    "ticks": 1400,
+    "frames_presented": 1400,
+    "loaded_at_tick": 0,
+    "npc": "0000000000000000000000000000012c",
+    "plans": 1,
+    "corners": 6,
+    "status": "complete",
+    "arrived": true,
+    "nvrhi_errors": 0,
+    "runtime_replacements": 0,
+    "capture": false,
+    "scene_mesh_draws": 0
+  },
+  "independent_headless": {
+    "separate_fresh_worlds": true,
+    "checks": 8,
+    "rpcs": 987,
+    "owners": 3,
+    "owner_exit_codes": [
+      0,
+      0,
+      0
+    ],
+    "same_bundled_engine_and_artifact": true,
+    "native_pose_detour_and_arrival": true,
+    "quota_rollback_save_fresh_continuation_and_replan": true,
+    "in_player_save_ux": false
+  },
+  "cleanup": {
+    "native_commands": 5,
+    "headless_runner_commands": 1,
+    "command_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "authoring_owners": 1,
+    "authoring_exit_codes": [
+      0
+    ],
+    "forced_cleanup": false,
+    "cleanup_errors": 0
+  },
+  "limits": [
+    "Recorded development machine has .NET installed; not clean-machine deployment or a performance benchmark.",
+    "Original fixture has no visible meshes; hardware player lifecycle/planning/arrival proof, not a visible-NPC graphics demonstration.",
+    "Scripted input only; no physical input, editor/GUI, crowds, dynamic obstacles, arbitrary stairs, console or general malformed raw ABI qualification.",
+    "Exact native NPC pose, save/fresh continuation and replan are the separate headless fixture, not in-player save UX.",
+    "Initial wrapper failure is retained privately; this is the successful corrected rerun."
+  ]
+}
