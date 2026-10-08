@@ -92,7 +92,7 @@ The service passes Linux and native Windows self-child checks for generated argu
 retry guards, capacity-failure rollback, expired receipts and malformed diagnostic
 bytes. A real .NET 10 SDK build through this adapter produces the escape-room
 fixture assembly. Full world-host and packaged integration qualification is
-recorded separately; no new installed desktop package is implied.
+recorded separately.
 
 ## Structured compiler feedback (development)
 

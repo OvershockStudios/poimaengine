@@ -23,6 +23,7 @@
 #include "asset_store.hpp"
 #include "input_profile_store.hpp"
 #include "mutation_discovery.hpp"
+#include "asset_references.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -480,7 +481,28 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 53}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    const auto reference_owner=object_schema({{"kind",{{"enum",{"entity","template"}}}},{"id",id}},{"kind","id"});
+    auto reference_cursor_variant=[&](const char* kind,Json types,Json paths) {
+        auto owner=reference_owner;owner["properties"]["kind"]={{"const",kind}};
+        return object_schema({{"owner",owner},{"component",std::move(types)},{"path",std::move(paths)}},{"owner","component","path"});
+    };
+    const Json texture_paths={{"enum",{"/base_color/asset","/emissive/asset","/metallic_roughness/asset","/normal/asset","/occlusion/asset"}}};
+    const Json texture_type={{"const","PbrTextures"}},direct_path={{"const","/asset"}};
+    const Json reference_cursor={{"oneOf",Json::array({
+        reference_cursor_variant("entity",{{"enum",{"AnimationRig","AudioEmitter","MeshCollider","SkinnedMesh","StaticMesh"}}},direct_path),
+        reference_cursor_variant("entity",texture_type,texture_paths),
+        reference_cursor_variant("template",{{"const","StaticMesh"}},direct_path),
+        reference_cursor_variant("template",texture_type,texture_paths)})}};
+    auto references_schema=object_schema({{"revision",rev},{"asset",asset_id},{"owner",reference_owner},{"after",reference_cursor},
+        {"limit",{{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}}}});
+    references_schema["allOf"]=Json::array();
+    references_schema["allOf"].push_back(Json{{"not",Json{{"required",Json::array({"asset","owner"})}}}});
+    references_schema["allOf"].push_back(Json{
+        {"if",Json{{"required",Json::array({"after"})}}},
+        {"then",Json{{"required",Json::array({"revision"})}}}
+    });
+    references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
+    Json result = {{"protocol_version", 1}, {"schema_revision", 54}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -488,6 +510,7 @@ Json describe() {
                 object_schema({{"view",{{"const","mutation"}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}}},{"view","operation"})
             })}}}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
+            {"world.asset.references",references_schema},
             {"session.close", object_schema(Json::object())},
             {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", component_type}}, {"id"})},
             {"entity.world_transform", object_schema({{"id", id}, {"revision", rev}}, {"id"})},
@@ -1366,8 +1389,51 @@ public:
         camera.near_plane=lens.at("near");camera.far_plane=lens.at("far");
         auto result=editor_snapshot(camera,false);result.camera_id=id;return result;
     }
+    Json asset_reference_dispatch(const Json& params) const {
+        fields(params,{"revision","asset","owner","after","limit"});current_revision(params);
+        auto parse_owner=[&](const Json& value) {
+            fields(value,{"kind","id"},{"kind","id"});
+            require(value.at("kind").is_string() && value.at("id").is_string(),"Asset-reference owner fields must be text.");
+            asset_references::Owner owner{value.at("kind").get<std::string>(),value.at("id").get<std::string>()};
+            require(asset_references::valid_owner(owner),"Invalid asset-reference owner selector.");return owner;
+        };
+        asset_references::Query query;
+        if(params.contains("asset")) {
+            require(params.at("asset").is_string(),"Asset-reference asset selector must be text.");query.asset=params.at("asset").get<std::string>();
+            require(asset_references::valid_asset(*query.asset),"Invalid asset-reference asset selector.");
+        }
+        if(params.contains("owner"))query.owner=parse_owner(params.at("owner"));
+        require(!(query.asset && query.owner),"Asset and owner selectors are mutually exclusive.");
+        if(params.contains("after")) {
+            require(params.contains("revision"),"Asset-reference continuation requires revision.");
+            const auto& after=params.at("after");fields(after,{"owner","component","path"},{"owner","component","path"});
+            require(after.at("component").is_string() && after.at("path").is_string(),"Asset-reference cursor fields must be text.");
+            query.after=asset_references::Cursor{parse_owner(after.at("owner")),after.at("component").get<std::string>(),after.at("path").get<std::string>()};
+            require(asset_references::valid_cursor(*query.after),"Invalid asset-reference cursor.");
+        }
+        const auto limit=params.contains("limit") ? revision(params.at("limit")):64;
+        require(limit>=1 && limit<=asset_references::max_page,"Asset-reference page limit must be 1..256.");query.limit=static_cast<std::uint32_t>(limit);
+        auto owner_json=[](const asset_references::Owner& owner) { return Json{{"kind",owner.kind},{"id",owner.id}}; };
+        auto cursor_json=[&](const asset_references::Cursor& cursor) { return Json{{"owner",owner_json(cursor.owner)},{"component",cursor.component},{"path",cursor.path}}; };
+        asset_references::Page page;
+        try { page=asset_references::collect(doc_.at("entities"),doc_.contains("templates") ? &doc_.at("templates"):nullptr,query); }
+        catch(const asset_references::Error& error) { throw Error(error.code,error.what()); }
+        Json selection=Json::object();if(query.asset)selection["asset"]=*query.asset;if(query.owner)selection["owner"]=owner_json(*query.owner);
+        Json edges=Json::array();
+        for(const auto& edge:page.edges) {
+            auto value=cursor_json(edge.source);value["asset"]=edge.asset;value["kind"]=edge.kind;
+            value["subresource"]=edge.subresource ? Json{{"kind",edge.subresource->kind},{"index",edge.subresource->index}}:Json(nullptr);
+            edges.push_back(std::move(value));
+        }
+        Json result={{"revision",doc_.at("revision")},{"scope","authored"},{"selection",std::move(selection)},{"edges",std::move(edges)},
+            {"next_after",page.next_after ? cursor_json(*page.next_after):Json(nullptr)}};
+        require(result.dump().size()<=asset_references::max_result_bytes,"Asset-reference result exceeds 1 MiB.");return result;
+    }
     Json dispatch(const std::string& method, const Json& params) {
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
+        // This authored metadata read deliberately bypasses cache pruning and
+        // every package/snapshot resolver. Other dispatch behavior is unchanged.
+        if(method=="world.asset.references")return asset_reference_dispatch(params);
         prune_model_cache();
         if(method.starts_with("profiler.")) {
             try { return profiler_.dispatch(method,params); }

@@ -6,7 +6,7 @@ Windows CoreCLR is qualified against the final 0.0.51 binary: the existing compi
 
 Windows Native AOT is qualified in 0.0.52 for the same capacity-four entity/int32 component buffers. The unchanged 151-RPC contract passes with byte-exact failed-batch rollback and two fresh-process save continuations. A separate exported and relocated native player runs seven scripted ticks; the headless save contract also passes through that bundled runtime and artifact using its own fixture world. Those save checks do not demonstrate in-player inventory or save UX. [Native artifact and bundle evidence](evidence/m2-component-collections-native-windows.json).
 
-These results establish bounded component behavior, not all supported scalar kinds, a complete inventory game, clean-machine deployment or game-scale performance. Global-state collections, nested buffers, arbitrary managed arrays and capacity migration remain unqualified or unsupported as described below. No updated desktop package has been activated.
+These results establish bounded component behavior, not all supported scalar kinds, a complete inventory game, clean-machine deployment or game-scale performance. Global-state collections, nested buffers, arbitrary managed arrays and capacity migration remain unqualified or unsupported as described below.
 
 ## Declare and use a buffer
 

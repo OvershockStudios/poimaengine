@@ -383,6 +383,58 @@ void game_camera_regression(const fs::path& directory) {
     rejects([&]{(void)session.cameras(true);},"Stopped runtime exposed stale camera metadata.");
     rejects([&]{(void)session.runtime_camera_snapshot(camera);},"Stopped runtime exposed stale camera snapshot.");
 }
+void asset_reference_scope_regression(const fs::path& directory) {
+    const auto path=directory/"asset-reference-authoring.json";
+    const auto frozen=directory/"asset-reference-read-only.json";
+    const std::string entity(32,'7'),asset(64,'b');
+    const Json expected={{"revision",1},{"scope","authored"},{"selection",Json::object()},
+        {"edges",Json::array({{{"owner",{{"kind","entity"},{"id",entity}}},{"component","StaticMesh"},
+            {"path","/asset"},{"asset",asset},{"kind","model"},{"subresource",{{"kind","primitive"},{"index",0}}}}})},
+        {"next_after",nullptr}};
+    {
+        poima::WorldSession session(path.string());
+        call(session,"world.transact",{{"base_revision",0},{"request_id",std::string(32,'8')},{"ops",Json::array({
+            {{"op","entity.create"},{"id",entity},{"name","Invisible missing package"}},
+            {{"op","component.set"},{"id",entity},{"type","StaticMesh"},{"value",{{"asset",asset},{"primitive",0},{"visible",false}}}}
+        })}});
+        const auto original=read(path);
+        const auto history=call(session,"world.history"),state=call(session,"world.inspect");
+        for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless}) {
+            const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",70},{"method","world.asset.references"},
+                {"params",Json::object()}}.dump(),scope));
+            check(response.contains("result") && response.at("result")==expected,"Scoped authored asset provenance differs or resolves missing packages.");
+            const auto discovery=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",71},{"method","world.describe"},
+                {"params",{{"view","method"},{"name","world.asset.references"}}}}.dump(),scope));
+            check(discovery.contains("result") && discovery.at("result").at("methods").contains("world.asset.references"),
+                "Scoped discovery hides observational asset provenance.");
+            check(read(path)==original && call(session,"world.history")==history && call(session,"world.inspect")==state,
+                "Scoped asset reference observation changed authored storage/history/state.");
+        }
+        write(frozen,original);
+    }
+    const auto original=read(frozen);
+    const auto files=tree(directory);
+    {
+        poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
+        const auto history=call(session,"world.history"),state=call(session,"world.inspect");
+        for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless}) {
+            const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",72},{"method","world.asset.references"},
+                {"params",{{"revision",1}}}}.dump(),scope));
+            check(response.contains("result") && response.at("result")==expected,"Read-only asset references are hidden or resolve missing content.");
+            const auto discovery=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",73},{"method","world.describe"},
+                {"params",{{"view","method"},{"name","world.asset.references"}}}}.dump(),scope));
+            check(discovery.contains("result") && discovery.at("result").at("read_only")==true &&
+                discovery.at("result").at("methods").contains("world.asset.references"),"Read-only asset provenance discovery differs.");
+            const auto denied=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",74},{"method","world.transact"},
+                {"params",{{"base_revision",1},{"request_id",std::string(32,'9')},{"ops",Json::array({
+                    {{"op","entity.rename"},{"id",entity},{"name","Forbidden"}}
+                })}}}}.dump(),scope));
+            check(denied.at("error").at("code")==-32081,"Read-only asset provenance accidentally enabled authored mutations.");
+        }
+        check(call(session,"world.history")==history && call(session,"world.inspect")==state && read(frozen)==original && tree(directory)==files,
+            "Read-only reference observation or rejected mutation wrote files or changed history.");
+    }
+}
 int main() {
     const auto directory=fs::current_path()/("world-session-native-"+std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
     try {
@@ -454,7 +506,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==53,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==54,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
@@ -537,6 +589,7 @@ int main() {
         runtime_observation_scope_regression(directory);
         authored_preview_regression(directory);
         game_camera_regression(directory);
+        asset_reference_scope_regression(directory);
         fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo, transient transform preview and protocol adapter passed.\n";
     }catch(const std::exception& error) { fs::remove_all(directory);std::cerr<<error.what()<<'\n';return 1; }
 }

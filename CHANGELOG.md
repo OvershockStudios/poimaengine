@@ -1,6 +1,9 @@
 # Changelog
 
-Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
+## 0.0.60
+
+- Find the authored entity, template and material-slot fields using a cooked asset, or list one owner's references. Typed model/image/audio edges exclude unrelated values and retain distinct repeated uses. [API](docs/ASSET_REFERENCES.md).
+- Query references without loading packages, including when files are missing or corrupt. Revision-pinned pages reject stale continuations. Windows, Linux and authoring-only checks pass. [Evidence](docs/evidence/m2-asset-references.json).
 
 ## 0.0.59
 

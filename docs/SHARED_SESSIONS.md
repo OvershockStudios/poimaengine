@@ -132,8 +132,7 @@ slices of at most 100 ms; the headless owner also uses a 100 ms idle maintenance
 ceiling. Disconnect/error cleanup cancels and reaps pending Windows operations
 before reusing buffers or peer slots and can exceed that deadline. All calls
 remain serialized by the owner. GUI callers keep the normally nonblocking
-`poll()`; this checkpoint does not change editor dispatch cadence or install a
-new editor package. Endpoint startup retries are unchanged.
+`poll()`; editor dispatch cadence and endpoint startup retries are unchanged.
 
 `connect --timeout-ms N` accepts 100..600000 milliseconds, default 30000, for connection establishment and each exchange. A timeout/disconnect closes the client connection and does not replay the operation. The operation may already have committed: inspect state, then explicitly retry with the same durable `request_id` where supported. Editor controls/captures do not have durable request receipts. Transport startup/exchange errors exit the CLI with code 4; stderr explains the failure, and stdout uses the CLI error envelope rather than a JSON-RPC result.
 

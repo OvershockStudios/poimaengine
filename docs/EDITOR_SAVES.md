@@ -41,4 +41,4 @@ Save/Load observations also retain the runtime structure revision. A paused plai
 
 ## Logical UI freshness (development)
 
-The development save model also captures `ui_revision`. An agent changing logical UI text, visibility, enabled state or the active modal makes an older save observation stale even when simulation tick and structure are unchanged. Save and active-load requests retain that observed revision, including after a lost-response retry. This source change has a linked C# model test; it does not activate a new installed desktop package or qualify a visual UI-authoring workflow.
+The development save model also captures `ui_revision`. An agent changing logical UI text, visibility, enabled state or the active modal makes an older save observation stale even when simulation tick and structure are unchanged. Save and active-load requests retain that observed revision, including after a lost-response retry. This source change has a linked C# model test; it does not qualify a visual UI-authoring workflow.

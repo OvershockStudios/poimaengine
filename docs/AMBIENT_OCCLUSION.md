@@ -2,7 +2,7 @@
 
 Poima's experimental spatial GTAO path estimates local ambient visibility from the current view's depth and geometric normals. It affects diffuse ambient lighting. Direct lighting and material emission retain their existing values.
 
-**Bounded integration checks pass on both development-laptop GPUs.** Linux API and render-schedule contracts pass. Windows hardware capture, reconstruction lifecycle and UI tests pass on AMD Radeon integrated graphics and the NVIDIA RTX 4070 Laptop GPU with Vulkan synchronization validation. General visual quality, temporal behavior and performance remain unqualified. The default forward renderer retains exact pixel matches across 16 saved reference captures per device. This feature is disabled by default and is not activated in the installed desktop package. [Evidence](evidence/m2-ambient-occlusion.json).
+**Bounded integration checks pass on both development-laptop GPUs.** Linux API and render-schedule contracts pass. Windows hardware capture, reconstruction lifecycle and UI tests pass on AMD Radeon integrated graphics and the NVIDIA RTX 4070 Laptop GPU with Vulkan synchronization validation. General visual quality, temporal behavior and performance remain unqualified. The default forward renderer retains exact pixel matches across 16 saved reference captures per device. This feature is disabled by default. [Evidence](evidence/m2-ambient-occlusion.json).
 
 ## Requesting AO
 

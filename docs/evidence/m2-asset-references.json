@@ -1,0 +1,566 @@
+{
+  "checkpoint": "0.0.60",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 54,
+  "authoring_core_version": 1,
+  "source_sha256": {
+    "CMakeLists.txt": "7008ba0a96df6c23fa436d374151a6433018b3840b165e3f030bfb6c7f50a55f",
+    "src/asset_references.cpp": "5760d7316fe30baa31f1f1a8410991ac20386ec0705826707faae922d95f46b7",
+    "src/asset_references.hpp": "109eae26a4d3741143f36e6023355e260b647b2a1c0f04152d39bcc24e1b0cbc",
+    "src/world.cpp": "497e72feeddc9f548a201556945daffcde600aa8e44e42f5b1cdf86dce4247c5",
+    "tests/asset_references_native.cpp": "f68848d402ba3934d2d3eae8d4447a51cbdf210c1c230e12ef725b44ef53b5a7",
+    "tests/asset_references_contract.py": "fe8726b9a682d00a585c0235c7adc5b625234c2d999d1fcd00224b2aacc15f58",
+    "tests/world_session_native.cpp": "954b6bf2789f208c4ecf997acfd88e1b706c4582303c31d5291a084aac92a1dd",
+    "tests/profiler_contract.py": "116fb14f2ddefcaa770b70fc989fd2eea36a3f5d6e77c34f25ff1fb006e15887",
+    "tests/mcp_contract.py": "d47a49d8663936d1e1e11fd59ed5e3802ea63b2f832c98773e662b27f20e54a5"
+  },
+  "selected_source_freeze": {
+    "all_match": true,
+    "files": 9,
+    "report_sha256": "9229f1138c22ca77ba8526f2e25c33c466cf314a0461b8c66d73cc8f5fa8fca2"
+  },
+  "qualification": {
+    "linux_runtime": {
+      "passed": true,
+      "tests": 8,
+      "test_cases": [
+        "test_complete_typed_edges_namespaces_and_no_package_io",
+        "test_deleted_reference_history_and_stale_continuation",
+        "test_empty_discovery_and_legacy_no_upgrade",
+        "test_missing_and_corrupt_package_provenance_still_available",
+        "test_pages_exact_final_and_filtered_lookahead",
+        "test_real_import_edges_equal_external_package_closure",
+        "test_shared_owner_guarded_mutation_rejects_mixed_page",
+        "test_strict_nested_guards_errors_and_unchanged_history"
+      ],
+      "rpc_calls": 196,
+      "method_counts": {
+        "asset.audio.import": 7,
+        "asset.image.import": 14,
+        "asset.import": 21,
+        "host.shutdown": 1,
+        "runtime.inspect": 3,
+        "runtime.observe": 3,
+        "runtime.start": 1,
+        "world.asset.references": 91,
+        "world.dependencies": 5,
+        "world.describe": 3,
+        "world.history": 17,
+        "world.inspect": 17,
+        "world.redo": 1,
+        "world.transact": 11,
+        "world.undo": 1
+      },
+      "expected_rpc_error_counts": {
+        "-32000": 3,
+        "-32004": 3,
+        "-32009": 5,
+        "-32602": 30
+      },
+      "owned_processes": 11,
+      "owned_cleanup": [
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "shared_host",
+          "forced": false,
+          "diagnostic_error": null
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        }
+      ],
+      "cleanup_ok": true,
+      "report_sha256": "ca9dcb5e36cb65fb60d4d0b318d29d2a755ffcd11961a6554824a96c929672fd",
+      "binary_sha256": "0580b5da7902ea903eec86224023f85b6f4974a027b7aa7bee9f571af4ceeeed"
+    },
+    "windows_runtime": {
+      "passed": true,
+      "tests": 8,
+      "test_cases": [
+        "test_complete_typed_edges_namespaces_and_no_package_io",
+        "test_deleted_reference_history_and_stale_continuation",
+        "test_empty_discovery_and_legacy_no_upgrade",
+        "test_missing_and_corrupt_package_provenance_still_available",
+        "test_pages_exact_final_and_filtered_lookahead",
+        "test_real_import_edges_equal_external_package_closure",
+        "test_shared_owner_guarded_mutation_rejects_mixed_page",
+        "test_strict_nested_guards_errors_and_unchanged_history"
+      ],
+      "rpc_calls": 196,
+      "method_counts": {
+        "asset.audio.import": 7,
+        "asset.image.import": 14,
+        "asset.import": 21,
+        "host.shutdown": 1,
+        "runtime.inspect": 3,
+        "runtime.observe": 3,
+        "runtime.start": 1,
+        "world.asset.references": 91,
+        "world.dependencies": 5,
+        "world.describe": 3,
+        "world.history": 17,
+        "world.inspect": 17,
+        "world.redo": 1,
+        "world.transact": 11,
+        "world.undo": 1
+      },
+      "expected_rpc_error_counts": {
+        "-32000": 3,
+        "-32004": 3,
+        "-32009": 5,
+        "-32602": 30
+      },
+      "owned_processes": 11,
+      "owned_cleanup": [
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "shared_host",
+          "forced": false,
+          "diagnostic_error": null
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        }
+      ],
+      "cleanup_ok": true,
+      "report_sha256": "0a412dce800d98771163da07f7a61342479c85e181aca8e679751234076b1c2a",
+      "binary_sha256": "93e7070a6a47b88f780707100ec194ba16b32ce44de1c4f0672c09dded4a9be5"
+    },
+    "linux_authoring_only": {
+      "passed": true,
+      "tests": 8,
+      "test_cases": [
+        "test_complete_typed_edges_namespaces_and_no_package_io",
+        "test_deleted_reference_history_and_stale_continuation",
+        "test_empty_discovery_and_legacy_no_upgrade",
+        "test_missing_and_corrupt_package_provenance_still_available",
+        "test_pages_exact_final_and_filtered_lookahead",
+        "test_real_import_edges_equal_external_package_closure",
+        "test_shared_owner_guarded_mutation_rejects_mixed_page",
+        "test_strict_nested_guards_errors_and_unchanged_history"
+      ],
+      "rpc_calls": 178,
+      "method_counts": {
+        "asset.audio.import": 7,
+        "asset.image.import": 14,
+        "asset.import": 21,
+        "host.shutdown": 1,
+        "world.asset.references": 87,
+        "world.dependencies": 5,
+        "world.describe": 3,
+        "world.history": 14,
+        "world.inspect": 14,
+        "world.redo": 1,
+        "world.transact": 10,
+        "world.undo": 1
+      },
+      "expected_rpc_error_counts": {
+        "-32000": 3,
+        "-32004": 3,
+        "-32009": 5,
+        "-32602": 30
+      },
+      "owned_processes": 11,
+      "owned_cleanup": [
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        },
+        {
+          "exit_code": 0,
+          "role": "shared_host",
+          "forced": false,
+          "diagnostic_error": null
+        },
+        {
+          "exit_code": 0,
+          "role": "world_client",
+          "closed": true
+        }
+      ],
+      "cleanup_ok": true,
+      "report_sha256": "80dd89bd3a2dd0493c3d348f5d7ac54d3a7a0c480a6286d0264c4f515a498d0c",
+      "binary_sha256": "478f68bfbc36e28368921e43c9cfb545f78a7ae3dbae76f73e1e37a44fd87a94"
+    }
+  },
+  "stable_contract_gates": {
+    "passed": true,
+    "platforms": [
+      {
+        "name": "linux-runtime",
+        "passed": true,
+        "protocol_version": 1,
+        "schema_revision": 54,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "0580b5da7902ea903eec86224023f85b6f4974a027b7aa7bee9f571af4ceeeed"
+      },
+      {
+        "name": "windows-runtime",
+        "passed": true,
+        "protocol_version": 1,
+        "schema_revision": 54,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "93e7070a6a47b88f780707100ec194ba16b32ce44de1c4f0672c09dded4a9be5"
+      },
+      {
+        "name": "linux-authoring-only",
+        "passed": true,
+        "protocol_version": 1,
+        "schema_revision": 54,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "478f68bfbc36e28368921e43c9cfb545f78a7ae3dbae76f73e1e37a44fd87a94"
+      }
+    ],
+    "historical_response_compatibility": true,
+    "canonical_response_self_compatibility": true,
+    "report_sha256": "37be9f25f991a6c034942a6a0bfa755bee1aba996630cd9543cf300e319aec66"
+  },
+  "aggregation_limits": [
+    "Final accepted native/protocol cohorts; initial failed build/fixture attempts are not counted as passing qualification.",
+    "Reference rows describe explicit authored fields, not inherited effective material graphs or resolved resource availability.",
+    "Admission/page bounds are not maximum-content throughput or latency measurements."
+  ],
+  "ctest_cohorts": {
+    "linux_authoring_only": {
+      "passed": true,
+      "groups": 14,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "authoring_api_compatibility",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_api_projection",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_response_compatibility",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_contract_artifacts",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "status": "passed"
+        },
+        {
+          "name": "profiler_service",
+          "status": "passed"
+        },
+        {
+          "name": "profiler_contract",
+          "status": "passed"
+        },
+        {
+          "name": "build_metadata_contract",
+          "status": "passed"
+        },
+        {
+          "name": "world_session_native",
+          "status": "passed"
+        },
+        {
+          "name": "mcp_native",
+          "status": "passed"
+        },
+        {
+          "name": "mcp_contract",
+          "status": "passed"
+        },
+        {
+          "name": "world_contract",
+          "status": "passed"
+        },
+        {
+          "name": "asset-references-native",
+          "status": "passed"
+        }
+      ],
+      "report_sha256": "533e16d52fb75efa8b7a753dd188eb5bb48f561d5782811dcf34991ffe213e0c"
+    },
+    "linux_runtime": {
+      "passed": true,
+      "groups": 14,
+      "skipped": 0,
+      "cases": [
+        {
+          "name": "authoring_api_compatibility",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_api_projection",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_response_compatibility",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_contract_artifacts",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "status": "passed"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "status": "passed"
+        },
+        {
+          "name": "profiler_service",
+          "status": "passed"
+        },
+        {
+          "name": "profiler_contract",
+          "status": "passed"
+        },
+        {
+          "name": "build_metadata_contract",
+          "status": "passed"
+        },
+        {
+          "name": "world_session_native",
+          "status": "passed"
+        },
+        {
+          "name": "mcp_native",
+          "status": "passed"
+        },
+        {
+          "name": "mcp_contract",
+          "status": "passed"
+        },
+        {
+          "name": "world_contract",
+          "status": "passed"
+        },
+        {
+          "name": "asset-references-native",
+          "status": "passed"
+        }
+      ],
+      "report_sha256": "0312bb3be028df9d07f42f30647a4df2f7ae9ff5efae71435d194002c7858fdb"
+    }
+  },
+  "date": "2026-10-08",
+  "scope": "Read-only typed authored asset provenance, forward/inverse selectors and revision-pinned pages.",
+  "windows_selected_checks": {
+    "passed": true,
+    "binary_sha256": "93e7070a6a47b88f780707100ec194ba16b32ce44de1c4f0672c09dded4a9be5",
+    "binary_matches_after": true,
+    "checks": [
+      {
+        "name": "poima-asset-references-test",
+        "exit_code": 0
+      },
+      {
+        "name": "poima-world-session-test",
+        "exit_code": 0
+      },
+      {
+        "name": "poima-profiler-service-test",
+        "exit_code": 0
+      },
+      {
+        "name": "poima-mcp-test",
+        "exit_code": 0
+      },
+      {
+        "name": "windows-mcp",
+        "exit_code": 0
+      },
+      {
+        "name": "windows-core",
+        "exit_code": 0
+      },
+      {
+        "name": "windows-identity",
+        "exit_code": 0
+      },
+      {
+        "name": "windows-metadata",
+        "exit_code": 0
+      },
+      {
+        "name": "windows-profiler",
+        "exit_code": 0
+      },
+      {
+        "name": "windows-project",
+        "exit_code": 0
+      }
+    ],
+    "report_sha256": "b3697281ee5bc3765e7b721c8f901561ed0e94c5e77311c2db7316967cd97690"
+  },
+  "execution_provenance": {
+    "accepted_native_builds": {
+      "linux": 0,
+      "windows": 0,
+      "linux_authoring_only": 0
+    },
+    "accepted_protocol_runner_exit_codes": {
+      "linux": 0,
+      "windows": 0,
+      "linux_authoring_only": 0
+    },
+    "accepted_ctest_exit_codes": {
+      "linux": 0,
+      "linux_authoring_only": 0
+    },
+    "accepted_windows_check_runner_exit_code": 0,
+    "stable_gate_runner_exit_code": 0,
+    "engine_images_not_rebuilt_during_accepted_cohorts": true,
+    "linux_runtime_cohort_image_matches_recorded_pin": true,
+    "windows_checks_verify_pre_post_image_hash": true
+  }
+}

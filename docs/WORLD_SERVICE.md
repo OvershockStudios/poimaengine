@@ -8,6 +8,13 @@ The [Python automation client](PYTHON_CLIENT.md) provides bounded stdio/endpoint
 transport, revision-guarded helpers, pinned query pagination and candidate core
 response checks. Generic calls retain access to the discovered native API.
 
+## Asset references
+
+`world.asset.references` lists explicit model, image and audio bindings by
+entity/template, or finds the fields using a selected asset. Revision-pinned
+pages support targeted repairs without loading packages. See the
+[asset-reference contract](ASSET_REFERENCES.md) for typed paths and scope.
+
 ## Focused discovery (development)
 
 Sessions advertise the selected [authoring-core v1 contract](AUTHORING_API_COMPATIBILITY.md)

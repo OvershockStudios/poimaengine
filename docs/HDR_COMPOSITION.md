@@ -24,7 +24,7 @@ The Windows native engine, UI capture executable and desktop bridge build and li
 
 The HDR edge fixture finds 248 partially covered pixels on each GPU. Captures match the resolve-before-tone-map reference within the permitted tolerance and differ from the old ordering by at least 27 display levels. The saturation fixture returns the expected value of 169 rather than the unbounded reference of 245. Zero-exposure scene captures are entirely black. UI comparisons preserve every pixel at exposures 0, 1 and 64 while proving the scene background changes.
 
-These are small correctness fixtures. They do not qualify game-scale frame times, Linux rendering, HDR displays, physical input or the Avalonia editor shell. Hosted tests exercise native windows, resize, hide/restore and device teardown. No installed desktop package was activated. GPU behavior at 2×/8× MSAA remains separately unqualified.
+These are small correctness fixtures. They do not qualify game-scale frame times, Linux rendering, HDR displays, physical input or the Avalonia editor shell. Hosted tests exercise native windows, resize, hide/restore and device teardown. GPU behavior at 2×/8× MSAA remains separately unqualified.
 
 The independent capture fixture covers shared exposure, finite saturation, zero exposure, and partially covered MSAA pixels that distinguish resolving radiance from resolving already tone-mapped colors. Its analytic self-test validates the reference oracle only; it does not execute the renderer. Existing material, sky, lighting, UI and player checks remain relevant.
 

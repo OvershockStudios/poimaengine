@@ -192,6 +192,38 @@ class McpContract(unittest.TestCase):
         self.assertTrue(result['committed'])
         self.assertEqual(client.world('entity.get', {'id': entity, 'component': 'Transform'})['value']['position'], [1, 2, 3])
 
+    def test_asset_reference_discovery_reads_and_stale_error_translation(self):
+        client = self.client()
+        method = 'world.asset.references'
+        discovery = client.tool('poima_discover', {'view': 'method', 'name': method})
+        self.assertEqual(set(discovery['methods']), {method})
+        self.assertIn('owner', discovery['methods'][method]['properties'])
+        asset = 'b' * 64  # Syntactically valid; no cooked package is created.
+        ids = ['1' * 32, '2' * 32]
+        operations = []
+        for index, entity in enumerate(ids):
+            operations.extend([
+                {'op': 'entity.create', 'id': entity, 'name': 'MCP provenance ' + str(index)},
+                {'op': 'component.set', 'id': entity, 'type': 'StaticMesh',
+                 'value': {'asset': asset, 'primitive': index, 'visible': index == 1}}])
+        committed = client.world('world.transact', {'request_id': uuid.uuid4().hex,
+                                                   'base_revision': 0, 'ops': operations})
+        self.assertEqual(committed['revision'], 1)
+        before = client.world('world.inspect'), client.world('world.history'), self.path.read_bytes()
+        edges = [{'owner': {'kind': 'entity', 'id': entity}, 'component': 'StaticMesh',
+                  'path': '/asset', 'asset': asset, 'kind': 'model',
+                  'subresource': {'kind': 'primitive', 'index': index}}
+                 for index, entity in enumerate(ids)]
+        self.assertEqual(client.world(method), {'revision': 1, 'scope': 'authored',
+                                               'selection': {}, 'edges': edges, 'next_after': None})
+        owner = {'kind': 'entity', 'id': ids[1]}
+        self.assertEqual(client.world(method, {'owner': owner, 'revision': 1}),
+                         {'revision': 1, 'scope': 'authored', 'selection': {'owner': owner},
+                          'edges': [edges[1]], 'next_after': None})
+        client.world(method, {'revision': 0}, error=-32009)
+        self.assertEqual((client.world('world.inspect'), client.world('world.history'),
+                          self.path.read_bytes()), before)
+
     def test_shared_endpoint_receipts_conflicts_and_detach(self):
         endpoint = 'mcp-' + uuid.uuid4().hex
         host = subprocess.Popen([BINARY, 'serve', native(self.path), '--endpoint', endpoint],

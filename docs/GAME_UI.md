@@ -266,7 +266,7 @@ new authored/runtime captures on the AMD and NVIDIA laptop GPUs verify three
 viewport extents, opaque colors, frozen metadata and same-tick text edits at
 explicit density 1. Seven paired legacy captures on AMD are pixel-identical to
 0.0.49. The existing Windows CoreCLR and Native AOT callback/save fixtures also
-pass; these do not establish physical input or a new installed editor package.
+pass; these do not establish physical input.
 
 ![Authored native HUD and menu](evidence/m2-authored-ui.png)
 
@@ -275,7 +275,7 @@ The menu is authored data; this fixture does not execute its button actions.*
 
 [Input routing evidence](evidence/m2-ui-input.json) records focused native UI tests, compiled desktop controls and menu-only gamepad tests on both laptop GPUs, plus standalone player input checks. These use synthetic input and virtual controllers, not physical devices or the full Avalonia message path.
 
-[Control and presentation evidence](evidence/m2-ui-control-presentation.json) records services ABI 7 qualification under CoreCLR and NativeAOT on Windows and Linux, same-tick save/load and retry checks, desktop owner intent handling, and runtime UI captures on the laptop's AMD and NVIDIA GPUs at 1× and 4× MSAA. The full editor builds, but a new installed editor package and physical UI input are not qualified by these checks.
+[Control and presentation evidence](evidence/m2-ui-control-presentation.json) records services ABI 7 qualification under CoreCLR and NativeAOT on Windows and Linux, same-tick save/load and retry checks, desktop owner intent handling, and runtime UI captures on the laptop's AMD and NVIDIA GPUs at 1× and 4× MSAA. The full editor builds, but physical UI input is not qualified by these checks.
 
 ![Default runtime UI layout over a scene](evidence/m2-ui-control-presentation.png)
 
