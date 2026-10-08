@@ -59,6 +59,41 @@ binary from WSL. The test checks CLI, MCP and profiler versions; project exports
 still require the runtime descriptor's exact engine version and gameplay load
 still requires its matching native target.
 
+## World service and schema compilation
+
+Base API discovery lives in `src/world_schema.cpp`, while `src/world.cpp`
+retains world state, validation, dispatch and session filtering. Editing either
+source recompiles its own unit; shared headers can still rebuild both. The
+schema receives the world's serialized sky defaults and numeric limits, and
+returns a fresh JSON value for owner and scope filtering.
+
+The compiler's optimization, debug information and warning settings are
+unchanged. This separates incremental work; a clean build still compiles both
+units. Test scoped discovery with `world_schema_native`, which covers writable
+and read-only worlds through standalone, shared CLI and shared editor scopes.
+
+The [0.0.67 evidence](evidence/m2-world-schema-extraction.json) records unchanged
+compile flags, separate command timings and synthetic dirty-source scheduling
+on Linux and the Windows cross-build. Timings are single regular-build
+observations. They do not establish a controlled percentage improvement or a
+clean-build speedup.
+
+For an independent before/after discovery comparison, retain each engine's
+`poima` and `poima-world-schema-test` executables before replacing build outputs:
+
+```sh
+python3 tests/world_schema_extraction_contract.py \
+  --binary build/runtime-headless/poima \
+  --legacy-binary path/to/preserved/poima \
+  --scoped-probe build/runtime-headless/poima-world-schema-test \
+  --legacy-scoped-probe path/to/preserved/poima-world-schema-test \
+  --output build/schema-parity-check
+```
+
+Use a new output directory and matching feature configurations. Add
+`--windows-interop` when invoking Windows binaries from WSL. This is an exact
+parity gate for a refactor; intentional API additions change the transcript.
+
 ## Local Linux thin archives
 
 Native Linux development builds can opt into a thin `poima_core` archive:

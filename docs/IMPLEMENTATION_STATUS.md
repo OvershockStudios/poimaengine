@@ -1,10 +1,21 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.66**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.67**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
 
-The matched Windows desktop passes 232 scripted editor actions and four restart
+Version 0.0.67 separates base API schemas from the world owner. Both runtime-enabled
+Linux and renderer/UI-enabled Windows builds preserve all 1,067 scoped discovery
+responses byte for byte, including read-only and shared-editor filtering. Fresh
+standalone/shared CLI sessions preserve complete replies, state, history and
+world bytes, then shut down and reopen cleanly. Nine selected Linux CTest cases
+and seven Windows native/contract commands pass. Compilation graph probes
+isolate each source to its own unit without changing compiler flags. Recorded
+command timings are observations, not a controlled speedup benchmark.
+[Build details](BUILD.md#world-service-and-schema-compilation),
+[evidence](evidence/m2-world-schema-extraction.json).
+
+The 0.0.66 Windows desktop passes 232 scripted editor actions and four restart
 checks, plus 97 independent dual-view actions and three restart checks. Both
 Scene and Game render on the RTX 4070 Laptop GPU with zero reported NVRHI
 errors. The README now shows an inspected OS capture of this editor. These are

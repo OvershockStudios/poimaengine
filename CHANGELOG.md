@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.67
+
+- Separate world API schema construction from the stateful world service so source edits compile the relevant unit independently. Preserve existing compiler optimization, debug information and warnings.
+- Make unsigned URL-byte validation explicit and retain Unicode source paths in asset records.
+- Match 1,067 scoped discovery responses byte for byte on Windows/Linux, plus complete fresh CLI/shared-host comparisons and native contract regressions. [Evidence](docs/evidence/m2-world-schema-extraction.json).
+
 ## 0.0.66
 
 - Refresh the desktop screenshot from the matched Windows editor. Full editor and independent dual-view regressions pass, including fresh-process layout restoration and scripted Game input. [Desktop evidence](docs/evidence/m2-desktop-current.json).

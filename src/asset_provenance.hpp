@@ -42,7 +42,10 @@ inline void url(const Json& value) {
     const auto& s = text(value, 4096);
     const std::size_t prefix = s.starts_with("https://") ? 8 : s.starts_with("http://") ? 7 : 0;
     require(prefix != 0, "Provenance source must use http or https.");
-    for (unsigned char c : s) require(c > 32 && c != 127 && c != '\\', "Invalid provenance source character.");
+    for (char byte : s) {
+        const auto c = static_cast<unsigned char>(byte);
+        require(c > 32 && c != 127 && c != '\\', "Invalid provenance source character.");
+    }
     const auto end = s.find_first_of("/?#", prefix);
     const auto authority = s.substr(prefix, end == std::string::npos ? end : end - prefix);
     require(!authority.empty() && authority.find('@') == std::string::npos && authority.find('%') == std::string::npos,

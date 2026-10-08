@@ -23,6 +23,9 @@ int main() {
                     {"license", {{"identifier", "Custom permission"}, {"notice", "Caller-declared permission."}}},
                     {"inputs", {{{"sha256", std::string(64, 'b')}, {"bytes", 9007199254740991ULL}}}}};
         validate_record(record);
+        auto unicode_source = record;
+        unicode_source["source"] = "https://example.org/caf\xc3\xa9";
+        validate_record(unicode_source);
         for (const auto& change : std::vector<Json>{
             {{"unknown", true}}, {{"title", ""}}, {{"creator", std::string(1025, 'x')}},
             {{"version", 1.0}}, {{"asset", std::string(64, 'A')}}, {{"kind", "other"}},

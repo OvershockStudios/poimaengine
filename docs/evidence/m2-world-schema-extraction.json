@@ -1,0 +1,214 @@
+{
+  "format": "poima.world-schema-extraction-evidence",
+  "version": 1,
+  "engine_version": "0.0.67",
+  "legacy_engine_version": "0.0.66",
+  "passed": true,
+  "source_sha256": {
+    "CMakeLists.txt": "5f14db79ce594f10c7885e135933e165af776e1c25f753d87c7fefe3e44797c4",
+    "src/world.cpp": "657f42a28515e038e570040ea3990087875ac44ec6cc6d6ffd57f0842c70e74c",
+    "src/world_schema.cpp": "08032c05d6e3196cdd3014e9156222eb264d7342bb10d2d9ce58cf03de0b6bfc",
+    "src/world_schema.hpp": "4a944758d3ec4749ad9d4775377fd948ebdeb421225eed53dbce67216f435064",
+    "src/asset_provenance.hpp": "980f16265362692beb25858c97736f18d41587454d5d0fc29af5fbf79559e6a6",
+    "tests/world_schema_native.cpp": "cc1963c68768f83dae6542eaab4d5c3053070af0d12e136e4cf384e374f8b061",
+    "tests/asset_provenance_native.cpp": "e07a585e6ac3a157cfe2d5f313068ea5b528f695597386f8562eeef9f4189ce7",
+    "tests/world_schema_extraction_contract.py": "8398d4f04e578b9f3a4bd69ebc5f9b92b55c6a60ce234e34ecc5312084d8e7e2"
+  },
+  "protocol_version": 1,
+  "schema_revision": 59,
+  "authoring_contract": "poima.authoring-core v1",
+  "discovery": {
+    "linux": {
+      "engine_sha256": "41d9285ea6158c1cc897765740e4f15990061287f7fb53c78d2c8dbdae2ea74b",
+      "scoped_probe_sha256": "cd891eceb2f72ced66590c0325989a631778e2d511f6fd5e69229f819e8f313b",
+      "legacy_engine_sha256": "58c5711b06c4d99a26419355982ebd09fccd32ca1093b3a40b1024ae2d11a238",
+      "legacy_probe_sha256": "c324461eb2617284c1332aa9a16fc3c5dd6aa0cb45af6e82f065532211c6e0b2",
+      "native_transcript_sha256": "c337dca216459d7e47549a836bc408b480a181ebe87538aa69dd9ba4d2240d55",
+      "native_responses_per_engine": 1067,
+      "owner_scope_combinations": 6,
+      "cli_cases_per_engine_per_scope": 190,
+      "cli_scopes": [
+        "standalone",
+        "shared_headless"
+      ],
+      "commands_exit_zero": 12,
+      "world_owners_exit_zero": 4,
+      "fresh_owner_reopens": 4,
+      "exact_ready_banners": 2,
+      "comparison_rules": "Native: none; complete transcript bytes compared. RPC: parsed/canonical object-key order and whitespace ignored; every field, array order and boolean/integer/floating-point type retained."
+    },
+    "windows": {
+      "engine_sha256": "3640a7d633e3a1a2d593eb9b4baf8d0f3ad192efb0470a13768070f841a10c7f",
+      "scoped_probe_sha256": "9eb04b2475f09c9ab6e6ab8d8d324bccc3fe089b94583c656d317a4913ef1c1d",
+      "legacy_engine_sha256": "75fdaee9975aa2b34ac36f03cad23da584eeb2f91c4bcc9a8e884eceb24c8fd0",
+      "legacy_probe_sha256": "9f9deae4350af3267506cc92c5a00c85d4bb763cbdbe7f3a19a46fb9e78b6211",
+      "native_transcript_sha256": "355e976477cc84a0585f21f68f43c03d74eacd72f4d2133abe9165fccd3eafa1",
+      "native_responses_per_engine": 1067,
+      "owner_scope_combinations": 6,
+      "cli_cases_per_engine_per_scope": 190,
+      "cli_scopes": [
+        "standalone",
+        "shared_headless"
+      ],
+      "commands_exit_zero": 12,
+      "world_owners_exit_zero": 4,
+      "fresh_owner_reopens": 4,
+      "exact_ready_banners": 2,
+      "comparison_rules": "Native: none; complete transcript bytes compared. RPC: parsed/canonical object-key order and whitespace ignored; every field, array order and boolean/integer/floating-point type retained."
+    }
+  },
+  "regressions": {
+    "linux_selected_ctest": [
+      "asset-provenance-native",
+      "authoring_api_compatibility",
+      "authoring_response_compatibility",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "save_upgrade_document_native",
+      "world_session_native",
+      "world_schema_native",
+      "world_contract"
+    ],
+    "windows_commands": [
+      "poima-asset-provenance-test",
+      "poima-save-upgrade-document-test",
+      "poima-world-session-test",
+      "poima-world-schema-test",
+      "authoring_core_conformance",
+      "authoring_contract_identity",
+      "world_contract"
+    ]
+  },
+  "build_observations": {
+    "format": "poima.world-schema-build-observations",
+    "version": 1,
+    "engine_version": "0.0.67",
+    "build_observations_verified": true,
+    "qualification_scope": "Build flags, measured regular compilation, and isolated dirty-source scheduling only; discovery parity and native regressions are separate evidence.",
+    "platforms": {
+      "linux": {
+        "regular_build_wall_seconds": 496.8674968359992,
+        "recorded_ninja_rows": 12,
+        "world_object_seconds": 118.92,
+        "schema_object_seconds": 143.7,
+        "whole_build_resource_observation": {
+          "measurement": "Python resource.RUSAGE_CHILDREN; CPU before/after delta; RSS cumulative child high-water mark (Linux KiB)",
+          "user_seconds": 181.96965,
+          "system_seconds": 38.600622,
+          "maximum_child_rss_kib_before": 22888,
+          "maximum_child_rss_kib_after": 1729096
+        },
+        "compile_flags_unchanged": true,
+        "synthetic_dirty_source_graph": {
+          "world.cpp": {
+            "compile_objects": 1,
+            "core_archive": 1,
+            "host_link": 1
+          },
+          "world_schema.cpp": {
+            "compile_objects": 1,
+            "core_archive": 1,
+            "host_link": 1
+          }
+        },
+        "graph_baseline_compiles_links": 0,
+        "historical_0_0_66_world_object_seconds": 213.18,
+        "historical_comparison": "Uncontrolled earlier regular build, not a matched performance benchmark."
+      },
+      "windows": {
+        "regular_build_wall_seconds": 207.92579079899588,
+        "recorded_ninja_rows": 13,
+        "world_object_seconds": 49.238,
+        "schema_object_seconds": 60.391,
+        "whole_build_resource_observation": {
+          "measurement": "Python resource.RUSAGE_CHILDREN; CPU before/after delta; RSS cumulative child high-water mark (Linux KiB)",
+          "user_seconds": 95.2422,
+          "system_seconds": 16.583338,
+          "maximum_child_rss_kib_before": 26596,
+          "maximum_child_rss_kib_after": 1143112
+        },
+        "compile_flags_unchanged": true,
+        "synthetic_dirty_source_graph": {
+          "world.cpp": {
+            "compile_objects": 1,
+            "core_archive": 1,
+            "host_link": 1
+          },
+          "world_schema.cpp": {
+            "compile_objects": 1,
+            "core_archive": 1,
+            "host_link": 1
+          }
+        },
+        "graph_baseline_compiles_links": 0,
+        "historical_0_0_66_world_object_seconds": 100.288,
+        "historical_comparison": "Uncontrolled earlier regular build, not a matched performance benchmark."
+      }
+    },
+    "retained_failure": "First Linux wrapper attempt failed before compilation because /usr/bin/time was absent; corrected wrapper uses standard-library process metrics.",
+    "compiler_note": "GCC still reported its variable-tracking size-limit retry in the extracted schema function. No debug/warning/optimization flags were weakened.",
+    "limits": [
+      "No claimed percentage speedup, clean-build improvement, or game/render performance change.",
+      "Per-object values are Ninja command elapsed times, not per-object CPU or memory.",
+      "Child CPU is a before/after delta for the regular build; RSS is cumulative child high-water mark, not total concurrent resident memory.",
+      "Synthetic graph probes modify only private manifest source edges and execute no compile/link commands. Source/header/build dependency changes can still invalidate multiple translation units.",
+      "Windows figures describe cross-compilation from Linux, not Windows-native compiler measurements."
+    ]
+  },
+  "raw_evidence_sha256": [
+    {
+      "role": "linux regular build",
+      "sha256": "cdbe4098ef898c1580a1d911707247e9bd42069a4f839c02dce0c19fd118e959"
+    },
+    {
+      "role": "linux isolated graph",
+      "sha256": "0debd86ceec76c963ad3743141582defcf3e578fc1e1cd2fd3a0b4bd7de70ec7"
+    },
+    {
+      "role": "windows regular build",
+      "sha256": "98cf7e6095768446e76d5b75e5ef084a504137c31547c2e31b7cdd5e2f975c9e"
+    },
+    {
+      "role": "windows isolated graph",
+      "sha256": "fce41460a66a1f2e7790dd65946a12bfe9a23eb0824e363b279799731f0cdf30"
+    },
+    {
+      "role": "retained initial wrapper failure",
+      "sha256": "85059b3d3a04f7106e2b46755e79b74d66c3fb2479d106fe6de6c9e9c0cfcff4"
+    },
+    {
+      "role": "historical baseline manifest",
+      "sha256": "ae16f404154ec8ee8e2ebb575b3b5089b8e366255ab4e8f8c1f321a4781d8f4b"
+    },
+    {
+      "role": "linux exact discovery parity",
+      "sha256": "a88aff060c6dd076444281fc63db19a5a07e9a7441c44720ad1de9ee7d27af42"
+    },
+    {
+      "role": "windows exact discovery parity",
+      "sha256": "dddc66af0edf9fe26e7076a3a688063218c9dbc5fdcaf9952fa482105067f39f"
+    },
+    {
+      "role": "linux-regressions",
+      "sha256": "4321aff0b09e712a1daa86346750584006895951d72c04f91efbc1213ab47c89"
+    },
+    {
+      "role": "linux-discovery-regressions",
+      "sha256": "d8be1592fca2906d4114978e5d864b2c57dd0decafcb76b1a60e173b0fb471f9"
+    },
+    {
+      "role": "windows native and contract regressions",
+      "sha256": "5fe93a5de1be61cd62dc977cb37d1369717119343dee9377b54cd39f0ff608e0"
+    },
+    {
+      "role": "retained initial parity harness failure",
+      "sha256": "dba4a99c83da1009de4dc6e9accf501e1836c0616e92311282163846d92aeb40"
+    }
+  ],
+  "retained_parity_failure": "The initial harness incorrectly required a silent shared-host stderr. Both native transcripts and standalone checks had passed; the legacy shared host exited cleanly with its documented ready banner. The corrected harness requires that exact banner and rejects additional output. The failed report is retained.",
+  "limits": [
+    "Discovery parity covers runtime-enabled Linux and renderer/UI-enabled native Windows executables; authoring-only execution was not rerun for this checkpoint.",
+    "Native transcript bytes match exactly. RPC object order and whitespace are canonicalized while fields, array order and scalar types remain significant.",
+    "No GPU/editor, physical input, shipping-artifact or game-scale performance qualification is added by this refactor."
+  ]
+}
