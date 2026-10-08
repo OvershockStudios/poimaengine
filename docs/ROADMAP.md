@@ -33,9 +33,9 @@ does not remove requirements from that destination. Single-player PC work comes
 first; multiplayer and console integration follow it. Console implementation
 needs licensed SDKs and approved development hardware.
 
-The 1.0 target is Windows single-player deployment, Linux headless authoring,
-and the engine systems below, including 2D and browser deployment. Linux
-graphics, multiplayer and consoles are explicitly planned after 1.0. Their
+The 1.0 target is Windows 3D single-player deployment, Linux headless authoring,
+and the engine systems below, including browser deployment. Advanced 2D is
+targeted for 1.1.0, before Linux graphics, multiplayer and consoles. Their
 portability boundaries and feasibility work begin earlier; their implementation
 and platform qualification do not block 1.0.
 
@@ -191,13 +191,12 @@ required workflows; physical keyboard/mouse/controller, translated UI and
 accessibility checks pass. These improvements start earlier and are qualified
 together here.
 
-### 8. Additional 1.0 gameplay and deployment destinations
+### 8. Browser deployment
 
 These are distinct tracks with separate builds and evidence:
 
 | Track | Deliverable | Acceptance |
 | --- | --- | --- |
-| Advanced 2D | Sprites, tilemaps, sorting/layers, animation, appropriate physics, normal/height/PBR-aware lighting and soft shadows, mixed 2D/3D scenes. | A complete 2D game exercises authoring, lighting, input, save and export; an orthographic camera alone is insufficient. |
 | Browser | Compiled WebAssembly core/gameplay, WebGPU renderer and an evaluated WebGL2 reduced tier; browser input/audio, asynchronous content/storage and deployment. | Actual browser/version matrix, downloaded-size/memory/frame budgets and save lifecycle. Desktop C# compilation is not browser qualification. |
 
 PC graphics remain Vulkan; browser graphics use supported browser interfaces.
@@ -209,8 +208,14 @@ content, device-lifecycle and delivery qualification.
 These requirements remain in the full engine roadmap. Their absence does not
 prevent the Windows single-player 1.0 release.
 
+Advanced 2D is the target for **1.1.0** and precedes the other three tracks.
+That minor release ships when its acceptance criteria pass; the number does
+not assign a date. Shared rendering, content, input and UI boundaries are
+designed for it before 1.0, without adding the full 2D implementation to 1.0.
+
 | Track | Deliverable | Acceptance |
 | --- | --- | --- |
+| 1.1.0: advanced 2D | Sprites, tilemaps, sorting/layers, animation, appropriate physics, normal/height/PBR-aware lighting and soft shadows, mixed 2D/3D scenes. | A complete 2D game exercises authoring, lighting, input, save and export; an orthographic camera alone is insufficient. |
 | Linux graphics | Qualify the Windows player through Proton and evaluate native Vulkan editor/player deployment. | Actual driver, input, audio, save and performance checks; Linux headless success does not qualify either graphical route. |
 | Multiplayer | Self-hosted authority, replication/interest management, prediction/reconciliation, co-op followed by extraction-scale play, reconnect/late join and acoustic proximity voice. | 4–8-player co-op and a representative 24–32-player extraction workload with AI pass latency/loss, authority and match-persistence checks. |
 | Consoles | Xbox Series X/S and PS5 native graphics, shader, audio, input, users, storage/save, lifecycle and packaging adapters. | Actual approved SDK/hardware execution and platform requirements; this track is gated by developer access. |
