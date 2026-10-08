@@ -354,7 +354,7 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     const auto saved=SaveJson::parse(saved_gameplay);
     require(saved.is_null()==!gameplay.has_value(),"Snapshot gameplay needs a matching trusted host configuration.");
     std::unique_ptr<Gameplay> game;
-    if(gameplay)game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore);
+    if(gameplay)game=std::make_unique<Gameplay>(*gameplay,nullptr,GameplayInitialization::restore,gameplay_abi::available_contract(bool(candidate->impl_->navigation_binding)));
     return bind_snapshot_gameplay(std::move(candidate),saved_gameplay,game_revision,std::move(game));
 }
 std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition& definition,const std::string& content_sha256,
@@ -373,6 +373,7 @@ std::unique_ptr<Runtime> Runtime::bind_snapshot_gameplay(std::unique_ptr<Runtime
     // constructors/statics may execute while registering the trusted module;
     // their external side effects cannot roll back. Initialize is skipped.
     if(game) {
+        game->validate_services(gameplay_abi::available_contract(bool(s.navigation_binding)));
         const auto current=SaveJson::parse(game->inspect());
         for(const auto* key:{"backend","assembly_sha256","type","schema"})require(current.at(key)==saved.at(key),"Snapshot gameplay module/schema differs from the trusted module.");
         game->edit(saved.at("values").dump());s.components->validate_module(game->component_schemas());

@@ -22,8 +22,9 @@ Json parse(const std::string& text) {
         return true;
     });
 }
-void keys(const Json& value,std::initializer_list<const char*> expected) {
-    check(value.is_object() && value.size()==expected.size(),"Unexpected save upgrade authored document members.");
+void keys(const Json& value,std::initializer_list<const char*> expected,bool optional_navigation=false) {
+    const auto extra=optional_navigation && value.contains("navigation") ? 1u : 0u;
+    check(value.is_object() && value.size()==expected.size()+extra,"Unexpected save upgrade authored document members.");
     for(const auto* key:expected)check(value.contains(key),"Missing save upgrade authored document member.");
 }
 void identifier(const std::string& value,bool nonzero=false) {
@@ -33,10 +34,19 @@ using Registry=std::map<std::string,components::Schema>;
 Registry normalize(Json& doc) {
     check(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Missing authored document version.");
     const auto version=doc.at("version");check(version>=1 && version<=4,"Unsupported authored document version.");
-    if(version==1)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"});
-    else if(version==2)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"});
-    else if(version==3)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"});
-    else keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"});
+    // Navigation is optional authored content, not a component schema migration.
+    // Validate its shape here; final exact-content comparison still forbids any
+    // unexplained binding/topology change and freeze_content checks the package.
+    if(doc.contains("navigation")) {
+        const auto& binding=doc.at("navigation");keys(binding,{"asset"});
+        check(binding.at("asset").is_string(),"Navigation binding asset must be text.");
+        const auto asset=binding.at("asset").get<std::string>();
+        check(asset.size()==64 && asset.find_first_not_of("0123456789abcdef")==std::string::npos,"Invalid navigation binding asset identity.");
+    }
+    if(version==1)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts"},true);
+    else if(version==2)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas"},true);
+    else if(version==3)keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids"},true);
+    else keys(doc,{"format","version","world_id","revision","entities","retired_ids","receipts","component_schemas","retired_component_schemas","templates","retired_template_ids","ui","retired_ui_ids"},true);
     check(doc.at("format")=="poima.authored-world" && doc.at("world_id").is_string(),"Invalid authored world identity.");identifier(doc.at("world_id").get<std::string>());
     const auto& revision=doc.at("revision");check(revision.is_number_integer() && (revision.is_number_unsigned() || revision.get<std::int64_t>()>=0) && revision.get<std::uint64_t>()<=9007199254740991ULL,"Invalid authored revision.");
     for(const auto* key:{"receipts","retired_ids","retired_component_schemas","retired_template_ids","retired_ui_ids"})

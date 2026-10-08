@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.64
+
+- Bind checked static navigation through guarded world transactions, with preview, retry, undo/redo and typed asset references. Runtime, export and saved-source closure retain the bound package. [Navigation workflow](docs/NAVIGATION.md).
+- Query routes from live characters through compiled C# `INavigationGame`; steer independently through normal character input. Immutable meshes, explicit path statuses and bounded Tick queries preserve caller buffers on failure.
+- Persist NPC routes and cursors in existing components. The compiled follower verifies physical detours, arrival, whole-batch rollback, compatible development reload and same/fresh-owner save continuation.
+- Append the independently negotiated 224-byte navigation service while retaining earlier services-7 profiles and save formats. Runtime inventories advertise the actual navigation feature and its dependency license.
+- Commit to no generative-AI art or music in Poima content, with AI-assisted code permitted. Licensed online asset acquisition and procedural wear/deformation are recorded directions. [Content principles](docs/CONTENT_PRINCIPLES.md).
+- Windows/Linux CoreCLR and actual Native AOT follower checks pass separately, alongside native, authoring and package-contract regressions. [Recorded evidence](docs/evidence/m2-runtime-navigation.json).
+
 ## 0.0.63
 
 - Bake static walkable space from authored box and indexed mesh collision geometry with optional Recast/Detour. Inspect clearances and query revision-guarded routes through native commands. [Navigation API](docs/NAVIGATION.md).

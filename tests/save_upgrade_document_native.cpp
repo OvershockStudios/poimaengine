@@ -88,6 +88,15 @@ int main() {
         bool failed=false;try {(void)map_authored_document(raw,target.dump(),approved);}catch(const std::exception&) {failed=true;}check(failed,"Duplicate document key accepted.");++rejected;
         check(source.dump()==source_before && target.dump()==target_before,"Authored transformation changed inputs.");
         check(map_authored_document(source.dump(),target.dump(),approved).mapped_document==mapped.mapped_document,"Rejected maps changed later results.");
+        auto bound_source=source,bound_target=target;
+        bound_source["navigation"]=bound_target["navigation"]={{"asset",std::string(64,'a')}};
+        check(Json::parse(map_authored_document(bound_source.dump(),bound_target.dump(),approved).mapped_document).at("navigation")==bound_source.at("navigation"),"Explicit component upgrade lost unchanged navigation binding.");
+        auto changed_binding=bound_target;changed_binding["navigation"]["asset"]=std::string(64,'b');reject(bound_source,changed_binding,approved);
+        changed_binding=bound_target;changed_binding.erase("navigation");reject(bound_source,changed_binding,approved);
+        reject(source,bound_target,approved);
+        for(const auto& binding:Json::array({nullptr,Json{{"asset",true}},Json{{"asset",std::string(64,'A')}},Json{{"asset",std::string(64,'a')},{"extra",0}}})) {
+            auto a=source,b=target;a["navigation"]=b["navigation"]=binding;reject(a,b,approved);
+        }
         std::cout<<"Frozen authored document mapping passed; "<<rejected<<" rejection cases. No IO/runtime activation claim.\n";return 0;
     }catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}
 }

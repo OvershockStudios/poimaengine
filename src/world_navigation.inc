@@ -8,6 +8,31 @@
         while(length<text.size() && length>0 && (static_cast<unsigned char>(text[length])&0xc0u)==0x80u)--length;
         text.resize(length);return text;
     }
+    struct CheckedNavigation {RuntimeNavigationDefinition definition;std::uint64_t bytes=0;};
+    CheckedNavigation navigation_read(const std::string& id) const {
+        require(navigation::available(),"Navigation binding requires POIMA_ENABLE_NAVIGATION=ON.",-32003);
+        try {
+            const auto path=asset_package_path(asset_directory(),id,".pnav");const auto length=fs::file_size(path);
+            require(length>0 && length<=navigation::max_package_bytes,"Navigation package must contain1..16MiB.",-32050);
+            std::string bytes(static_cast<std::size_t>(length),'\0');std::ifstream file(path,std::ios::binary);
+            require(bool(file.read(bytes.data(),static_cast<std::streamsize>(length))) && content_hash(bytes)==id,"Navigation package hash mismatch/read failure.",-32050);
+            auto mesh=navigation::Mesh::decode(bytes);require(mesh->encode()==bytes,"Navigation package must use canonical checked encoding.",-32050);
+            const auto metadata=Json::parse(mesh->metadata());
+            RuntimeNavigationDefinition definition{id,mesh->source_fingerprint(),navigation::parse_profile(metadata.at("profile").dump()),std::move(mesh)};
+            return {std::move(definition),static_cast<std::uint64_t>(length)};
+        }catch(const Error& error){throw Error(error.code,navigation_diagnostic(error.what()));}
+        catch(const std::exception& error){throw Error(-32050,navigation_diagnostic(error.what()));}
+    }
+    CheckedNavigation navigation_binding(const Json& source) const {
+        const auto& binding=source.at("navigation");fields(binding,{"asset"},{"asset"});
+        require(binding.at("asset").is_string() && valid_asset_id(binding.at("asset")),"Navigation binding asset must be64 lowercase hexadecimal digits.");
+        auto checked=navigation_read(binding.at("asset").get<std::string>());
+        std::string fingerprint;
+        try {fingerprint=navigation::source_fingerprint(navigation::collision_source(source.at("entities"),world_matrices(source.at("entities"))));}
+        catch(const std::exception& error){throw Error(-32602,navigation_diagnostic(error.what()));}
+        require(checked.definition.source_fingerprint==fingerprint,"Navigation binding topology is stale; bake and explicitly bind the current static collision source.",-32009);
+        return checked;
+    }
     std::string navigation_cache_id_;
     std::shared_ptr<const navigation::Mesh> navigation_cache_;
     std::optional<std::uint64_t> navigation_source_revision_;

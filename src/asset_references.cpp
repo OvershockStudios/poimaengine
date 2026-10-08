@@ -28,10 +28,11 @@ std::string asset_id(const Json& value) {
     need(valid_asset(result),"Asset-reference identity must contain 64 lowercase hexadecimal digits.");return result;
 }
 }
-bool valid_owner(const Owner& value) noexcept { return (value.kind=="entity" || value.kind=="template") && hex(value.id,32); }
+bool valid_owner(const Owner& value) noexcept { return (value.kind=="entity" || value.kind=="template" || value.kind=="world") && hex(value.id,32); }
 bool valid_asset(const std::string& value) noexcept { return hex(value,64); }
 bool valid_cursor(const Cursor& value) noexcept {
     if(!valid_owner(value.owner))return false;
+    if(value.owner.kind=="world")return value.component=="navigation" && value.path=="/asset";
     if(value.owner.kind=="template" && value.component!="StaticMesh" && value.component!="PbrTextures")return false;
     if(value.component=="PbrTextures") {
         for(const auto slot:texture_slots) {
@@ -46,7 +47,9 @@ bool valid_cursor(const Cursor& value) noexcept {
 bool before(const Cursor& a,const Cursor& b) noexcept {
     return std::tie(a.owner.kind,a.owner.id,a.component,a.path)<std::tie(b.owner.kind,b.owner.id,b.component,b.path);
 }
-Page collect(const Json& entities,const Json* templates,const Query& query) {
+Page collect(const Json& entities,const Json* templates,const Query& query,const std::string& world_id,const Json* navigation) {
+    need(world_id.empty() || hex(world_id,32),"Malformed authored world identity.");
+    need(!navigation || (!world_id.empty() && navigation->is_object() && navigation->size()==1 && navigation->contains("asset")),"Malformed authored navigation binding.");
     need(entities.is_object() && entities.size()<=max_entities,"Asset-reference entity map exceeds bounds.");
     need(!templates || (templates->is_object() && templates->size()<=max_templates),"Asset-reference template map exceeds bounds.");
     need(query.limit>=1 && query.limit<=max_page,"Asset-reference page limit must be 1..256.");
@@ -55,8 +58,9 @@ Page collect(const Json& entities,const Json* templates,const Query& query) {
     need(!query.owner || valid_owner(*query.owner),"Invalid asset-reference owner selector.");
     need(!query.after || valid_cursor(*query.after),"Invalid asset-reference cursor.");
     if(query.owner) {
-        const auto* selected=query.owner->kind=="entity" ? &entities : templates;
-        need(selected && selected->contains(query.owner->id),"Asset-reference owner does not exist.",-32004);
+        if(query.owner->kind=="world")need(!world_id.empty() && query.owner->id==world_id,"Asset-reference world owner does not exist.",-32004);
+        else {const auto* selected=query.owner->kind=="entity" ? &entities : templates;
+            need(selected && selected->contains(query.owner->id),"Asset-reference owner does not exist.",-32004);}
     }
     Page result;result.edges.reserve(query.limit+1);std::size_t examined=0;
     auto emit=[&](const Owner& owner,std::string_view component,std::string path,const Json& reference,const char* kind,std::optional<Subresource> subresource) {
@@ -96,13 +100,14 @@ Page collect(const Json& entities,const Json* templates,const Query& query) {
         }
     };
     if(query.owner) {
-        const auto& owners=query.owner->kind=="entity" ? entities : *templates;
-        visit(*query.owner,owners.at(query.owner->id));
+        if(query.owner->kind=="world") {if(navigation)emit(*query.owner,"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);}
+        else {const auto& owners=query.owner->kind=="entity" ? entities : *templates;visit(*query.owner,owners.at(query.owner->id));}
     } else {
         // nlohmann::json object storage is a sorted std::map, not insertion order.
         for(const auto& [id,value]:entities.items()) { visit({"entity",id},value);if(result.edges.size()>query.limit)break; }
         if(result.edges.size()<=query.limit && templates)
             for(const auto& [id,value]:templates->items()) { visit({"template",id},value);if(result.edges.size()>query.limit)break; }
+        if(result.edges.size()<=query.limit && navigation)emit({"world",world_id},"navigation","/asset",navigation->at("asset"),"navigation",std::nullopt);
     }
     if(result.edges.size()>query.limit) { result.edges.pop_back();result.next_after=result.edges.back().source; }
     return result;

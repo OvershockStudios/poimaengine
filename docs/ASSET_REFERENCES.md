@@ -1,8 +1,8 @@
 # Authored asset references
 
-`world.asset.references` identifies the authored entity or template fields that reference cooked models, images and audio. It supports both directions: find the users of an asset, or list one owner's dependencies. It reads the current loaded authoring document, including while a runtime is active. It does not read packages, decode models, rebuild snapshots or enumerate live spawned owners.
+`world.asset.references` identifies the authored entity, template or world fields that reference cooked models, images, audio and navigation. It supports both directions: find the users of an asset, or list one owner's dependencies. It reads the current loaded authoring document, including while a runtime is active. It does not read packages, decode models, rebuild snapshots or enumerate live spawned owners.
 
-This is an evolving development API, outside selected authoring-core v1. Discovery revision 54 adds the method; protocol 1 and the selected stable contract remain unchanged.
+This is an evolving development API, outside selected authoring-core v1. Discovery revision 54 added the method; 0.0.64 adds typed world-owned navigation references. Protocol 1 and the selected stable contract remain unchanged.
 
 ## Query
 
@@ -18,7 +18,7 @@ For forward references, replace `asset` with `owner`:
 {"jsonrpc":"2.0","id":2,"method":"world.asset.references","params":{"owner":{"kind":"template","id":"<32 lowercase hex template ID>"}}}
 ```
 
-`asset` and `owner` are mutually exclusive. Omit both to list all explicit authored references. Owner kind is `entity` or `template`; the namespaces are distinct even when their textual IDs match. A known owner without references and a well-formed unused asset hash return an empty page. An unknown owner is an error. Null selectors are invalid.
+`asset` and `owner` are mutually exclusive. Omit both to list all explicit authored references. Owner kind is `entity`, `template` or `world`; the namespaces are distinct even when their textual IDs match. A known owner without references and a well-formed unused asset hash return an empty page. An unknown owner is an error. Null selectors are invalid.
 
 Optional `revision` pins the loaded authored revision. `limit` is an integer 1â€“256, default 64. Unknown object fields, malformed identifiers, Boolean/fractional numeric fields and incompatible selectors reject.
 
@@ -45,7 +45,7 @@ Optional `revision` pins the loaded authored revision. `limit` is an integer 1â€
 
 Each edge identifies a field location and its declared package kind. `subresource` is null or an authored primitive/image index; the operation does not verify that the index exists. `selection` echoes the asset filter, owner filter or `{}`. Names, filesystem source paths and unrelated component values are not returned.
 
-Edges sort by `(owner.kind, owner.id, component, path)` in bytewise lexical order, with entities before templates. Repeated use of one asset through different fields remains distinct. `next_after` is null unless another matching edge exists, including when the last page exactly fills the requested limit. Otherwise it contains the last returned field location:
+Edges sort by `(owner.kind, owner.id, component, path)` in bytewise lexical order, with entities before templates and the world last. Repeated use of one asset through different fields remains distinct. `next_after` is null unless another matching edge exists, including when the last page exactly fills the requested limit. Otherwise it contains the last returned field location:
 
 ```json
 {
@@ -66,6 +66,7 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 
 | Component and field | Package kind | Subresource |
 | --- | --- | --- |
+| World `navigation.asset` | navigation | null |
 | `AnimationRig.asset` | model | null |
 | `AudioEmitter.asset` | audio | null |
 | `MeshCollider.asset` | model | authored primitive |
@@ -74,7 +75,7 @@ Continue with the returned revision and the same selector. `after` is an exclusi
 | `PbrTextures.<slot>.asset`, without `image` | image | null |
 | `PbrTextures.<slot>.asset`, with `image` | model | authored embedded image |
 
-Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`; their cursor paths are `/<slot>/asset`. Templates currently admit only the StaticMesh and PbrTextures reference rows.
+Direct component cursors use `/asset`. Texture slots are `base_color`, `emissive`, `metallic_roughness`, `normal` and `occlusion`; their cursor paths are `/<slot>/asset`. Templates currently admit only the StaticMesh and PbrTextures reference rows. A world owner uses the current `world_id` from `world.inspect`; its optional [navigation binding](NAVIGATION.md#bind-a-world) is the only supported world reference, at component `navigation`, path `/asset`.
 
 Invisible meshes, collision-only geometry, disabled emitters and frozen template references are included. Omitted texture slots inherit imported maps; null slots disable them. Neither creates another explicit edge. Imported material images, skins, curves and layer/reference clips live inside the referenced model package; this operation does not decode them into an effective material graph. Use [effective material inspection](MATERIAL_AUTHORING.md#inspect-the-effective-material) when that is needed.
 
@@ -86,7 +87,7 @@ The existing `world.dependencies` operation remains the resource-validation/expo
 
 The method is available to standalone, shared-headless, shared-editor and read-only packaged sessions. All observe one owner-serialized loaded document revision; an active runtime does not redirect the read into its frozen definition. The operation does not reread external world-file edits, write receipts/history/storage, modify caches or advance simulation. Ordinary diagnostic tracing can record the read.
 
-Current loaded documents permit 10,000 entities and 256 templates. The conservative typed scan bound is 101,536 references; pages retain at most `limit + 1` records. Results are limited to 1 MiB of serialized UTF-8 result JSON before the JSON-RPC wrapper; overflow fails without truncation. These bounds do not establish maximum-content performance or a process-memory ceiling.
+Current loaded documents permit 10,000 entities and 256 templates. The conservative typed scan bound is 101,537 references; pages retain at most `limit + 1` records. Results are limited to 1 MiB of serialized UTF-8 result JSON before the JSON-RPC wrapper; overflow fails without truncation. These bounds do not establish maximum-content performance or a process-memory ceiling.
 
 Malformed requests and invalid continuation shape use `-32602`; stale revision uses `-32009`; unknown owner uses `-32004`. An unused valid hash is an empty result, not a resource-resolution error.
 

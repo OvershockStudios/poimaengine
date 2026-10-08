@@ -41,7 +41,7 @@
             require(content_hash(upgrade_read_bounded(assembly,256*1024*1024))==plan.target.image_sha256,"Save upgrade target image differs.",-32070);
             // Trusted constructors/statics may run here. Initialize does not.
             // This same instance is consumed by exact restore, not registered twice.
-            selected=std::make_unique<Gameplay>(config,nullptr,GameplayInitialization::restore);
+            selected=std::make_unique<Gameplay>(config,nullptr,GameplayInitialization::restore,gameplay_abi::available_contract(bool(target.definition.navigation)));
             const auto inspected=Json::parse(selected->inspect());metadata=Json::object();
             for(const auto* key:{"backend","assembly_sha256","type","schema"})metadata[key]=inspected.at(key);
         }

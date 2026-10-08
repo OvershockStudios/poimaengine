@@ -1,0 +1,427 @@
+{
+  "checkpoint": "0.0.64",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 58,
+  "source_sha256": {
+    "CMakeLists.txt": "c1e887c9fa93e40dc6e2c92ec20db256fef29ece1cd8932d657aa095d7d43ade",
+    "cmake/navigation.cmake": "d6dc97efde40fa70d29dff1d0d58318866e48d9c32415b7d7d15d809deea4793",
+    "cmake/runtime.json.in": "bff5e68e24082fe931b2d3f6835aa32003043c90079e807514639167c455dd16",
+    "include/poima/core.hpp": "315317a7db27ac76c001c2016abe3010ecf7a85d6342324342302a3f2a64499b",
+    "include/poima/gameplay.hpp": "ea17e3fd5a70fca9481ec9e4e6200b6044d1e7e04b4cd8e58ad33b6ae3b94d2f",
+    "include/poima/gameplay_abi.h": "442128c0d24292b823a1e71fb188d435c30e982c48fcc2cf1d58c9eac5204654",
+    "include/poima/gameplay_compatibility.hpp": "202399ec450a1345d876cf3149f7cafaa52dcf1182da553e3535dafa889e449e",
+    "include/poima/navigation.hpp": "09d96cbcaf61ab3f8a70a0a816cfe616b5f4f587b3134fdca7862bea2434f861",
+    "include/poima/runtime.hpp": "f0e8ff303f60cc052cd8c416b422d35e19bc196ecd7cad7468750c9cd1b91fed",
+    "include/poima/world.hpp": "0ef53d64fd88526e03b2fca15ac55f16c437fb6282c87be07d323e2dd2881c74",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "4243cc9f7d93f9f57cd0f840e266bf2596b689e55467c1ea0c23cf5e820b3687",
+    "managed/Poima.Gameplay/Navigation.cs": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef",
+    "managed/Poima.ManagedBridge/Entry.cs": "3a9b298183724f4bb62ab25389a5985ab8837efead7a453a86d405d525d3382a",
+    "managed/Poima.NativeGame.Generator/Program.cs": "477557074216c92ae0f548595d10f918693907996ed34f2c15955ddfb2af7581",
+    "managed/Poima.NativeGame/Entry.cs": "b52da2716b522c74ab29d42958d248324c8414afe1d5fa261211af507fa88f8b",
+    "scripts/publish_native_gameplay.py": "c95b9bd0020de7e2c433921e6394be26e3886646247d01f43c0e53a6e3b71d57",
+    "src/asset_references.cpp": "a1d432b1ce0f6c7e4da9dc727e0c0275bf6166bf588d25b41e0b9c972c1d39af",
+    "src/asset_references.hpp": "17ca6b99f538dbbbeaffb347dfdfb33983e30d219af21b27dfeeadba52e51597",
+    "src/core.cpp": "d66761afeddb70add3ef07c38e541e56354d69626d161d52dd098cd1d6d7fd5f",
+    "src/gameplay.cpp": "d9ff054feb82994876423e0e3b07e30636ee614dc2ff9fed6f4c1d1272068d1e",
+    "src/navigation.cpp": "5aa148e7096e6a4a89ec426e42b1a36ac12fc41edba737558a5882258064bc21",
+    "src/navigation_disabled.cpp": "a13939876a82507d5a7e11763427c02bd7db6a7d6b7619f2e976c2fe2e9bf0bf",
+    "src/navigation_geometry.cpp": "2affa0a1dfc17f7ca44bf6e187a817a44ea0078227ff7fea7304acf59cd8299f",
+    "src/navigation_geometry.hpp": "c12c8b7755e7f0fffe3acd94170be33766c87659afba5c4bc2fa158c5698399f",
+    "src/navigation_memory.hpp": "7a54aaff9224ce0be650b122d77b02b4519791edec8fce94aab3c365f5ec66a7",
+    "src/navigation_schema.hpp": "6dc2781f3f6650016ca145d5d42d22969619a36be196ebe452ef3817d3360264",
+    "src/project.cpp": "6ce0a99eb6715b71a5947f8a1c0a1dedf404189aceef2911bddeee5d452ef235",
+    "src/runtime.cpp": "23aecc381c4dedafb035e4486e73259aaf18ebcfb11a78add6b3b7a8158e28fc",
+    "src/runtime_disabled.cpp": "f4f8ee78e42d19f05e2910ad8a22108c40b5441910eab6bc99bf06b5e4026f27",
+    "src/runtime_navigation.inc": "156a0bf8a3ef7210e31372dc596ee1b52c6d3d881a7ea3dbf49284f2fd5b27e3",
+    "src/runtime_save.inc": "73a2c36c3b4c14df0f7f374d6972d765275a8ae27565f5256e53fb31e67d1cd9",
+    "src/runtime_ui.inc": "73106da180a4d8723724fa1e419c6154f659ca74b0f4c2b76fdf1b408eb1caa9",
+    "src/save_upgrade_document.cpp": "f1d576df91c212c1082bdc75d372c643e4124876fea9669f9d89538450683244",
+    "src/world.cpp": "4935903f4b5d286bbbf0c2edf816f2c0de064eb42f08d3cb93639b03ef40db9a",
+    "src/world_navigation.inc": "538eee70e46ddcb8e9c816e68568434be559e142ae663540be610517db0ef7ad",
+    "src/world_save.inc": "556ed68928c79240453b9645cab3b08b0b776f062b8867792d8a304522fd2b5e",
+    "src/world_save_upgrade.inc": "5cc2d35ccc9130621d5d217c141ee8698b652054ec985ecf6df7919f2d8669d3",
+    "tests/asset_references_contract.py": "14607c70443a856f5d38cb33d74acfcc97c1f5f56314d33b8c4dd35e0ba5a8ae",
+    "tests/gameplay_compatibility_native.cpp": "c58c6172a6be6297b8f693a744920ec29d1f833a2682e85de01b9c210d41eb6d",
+    "tests/gameplay_service_contract_native.cpp": "e6c4f173442a1de7d02d226a611dd3ea338c40165692a72c56064824ef117c35",
+    "tests/managed_navigation_entry/Binding.cs": "77de4fcf5b0aaf97f1d213e58f06a45c985cb2cbf333cf6a258595128c255f39",
+    "tests/managed_navigation_entry/ManagedNavigationEntry.csproj": "471bc2a6da6608c1524b7cdce6dfd056b8da740e146bf599fbbac86feffbf90e",
+    "tests/managed_navigation_entry/NuGet.Config": "2142cfb2dfa2c7feefbe40fabcc68b0dfecadafa99a1db9b70239d977cf2a7ef",
+    "tests/managed_navigation_entry/Program.cs": "48e2d181f82eaec19a635afef550be55a534a652e6927686b08038abdeff8aec",
+    "tests/managed_navigation_gameplay/NavigationGame.cs": "3d98ce7cab0080d5cbdef13ff8b5cb978d30db38b7edfa648ad15602c52dab26",
+    "tests/managed_navigation_gameplay/Poima.NavigationGameplay.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+    "tests/managed_navigation_gameplay/README.md": "d990a0aeb7491ab69f2fd4e4ae631d0c65b05908c8f02187939defc289f49c67",
+    "tests/managed_service_abi/NavigationExtension.cs": "60140451fefdec297d219ea19b303a518738e52affb6b4f96b24089a0c497c9a",
+    "tests/managed_service_abi/Program.cs": "9f93c75ec5c6e93ce8548bcf50c3bbe613755463038d89bbbddba2b148af0f0f",
+    "tests/native_gameplay_publish_requirements.py": "05fbf7bad57266c5d88439c6cf143fe99e15ae62d4d8174c424bcfd49e049399",
+    "tests/navigation_binding_contract.py": "32965b8a030854c5c7b3cd28964beec5933c5704c4646469e323846579404441",
+    "tests/navigation_binding_native.cpp": "36caeaec9edaf762adbca179e68e6258aece7e0567d3f243b64bf7984fe7a149",
+    "tests/navigation_contract.py": "e30228a4597d559883ade79002a57e7e1b656c6c0a7affee49f671a2e7644d89",
+    "tests/navigation_native.cpp": "a148f1eca0560b024811017d815ad2d46ad7033d5c926cbc68fa55854582dd1c",
+    "tests/navigation_project_contract.py": "8cf053b83a4f485c31e1b8bf4f00e6ea0ed5d45c2a02b70967984decfd9e26df",
+    "tests/navigation_runtime_contract.py": "0bd44c3f2df340ecd0bdc747bd85c95d09ed2fe443d8d20c54e12657d0422d22",
+    "tests/profiler_contract.py": "e96fce036ddc5fd9b2eb395d51c634e599bc5b40f3ba0b6e5bac718142227061",
+    "tests/runtime_navigation_native.cpp": "7887f87d0df323f03f9b1cdaad5ffbe6c6c4d205c15760d7f83226b2c59d9b6c",
+    "tests/save_upgrade_document_native.cpp": "ab83c2741c09401bd99443abca1d6a644d1403199492bb0518f29abe4f8c159b",
+    "tests/world_session_native.cpp": "5bb2ac7224539fabe84a3921d15b448e24ab8cf33d0ba3d78127c3db72f6a8a1"
+  },
+  "contract": {
+    "service_epoch": 7,
+    "existing_profiles": [
+      176,
+      192,
+      208,
+      216
+    ],
+    "new_independent_profile": 224,
+    "feature": "navigation_query_v1",
+    "request_bytes": 64,
+    "result_bytes": 128,
+    "point_bytes": 12,
+    "callback_offset": 216,
+    "tick_native_attempts": 8,
+    "save_formats_unchanged": true,
+    "selected_authoring_core_v1_unchanged": true
+  },
+  "platforms": {
+    "linux": {
+      "coreclr": {
+        "passed": true,
+        "checks": 10,
+        "rpc_calls": 1009,
+        "owned_processes": 5,
+        "all_owned_exit_zero": true,
+        "engine_sha256": "08f05da20699ffdf5e8f57f1dfc07b7df319fd26eefa96fda1ed07b59df55b84",
+        "artifact_sha256": {
+          "manifest": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+          "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+          "bridge": "e519f2739a8ef53ee152d8cafbd239ac54e68f119681cd46ce4f4ff8a9a78928",
+          "assembly": "70482336099b7f0dcad7232024de0a08d9eeef1fd09682a9bfb7572b5f6664d2",
+          "legacy_binary": "6fa868228477ce91752dce2ae990c84cd3d5765b1a484f0148dd8e2952f6a383",
+          "unavailable_binary": "ee3f3a1fd49d45338e3f8c7ba0f6763057c2c8f7e436f58cd588cda26c86b466"
+        },
+        "report_sha256": "13a9132841cc928470634d9198f652e1ac400c720c1aeaabd1a7205e58523a3d",
+        "backend_disabled_rejection_exercised": true
+      },
+      "native_aot": {
+        "passed": true,
+        "checks": 10,
+        "rpc_calls": 1009,
+        "owned_processes": 5,
+        "all_owned_exit_zero": true,
+        "engine_sha256": "08f05da20699ffdf5e8f57f1dfc07b7df319fd26eefa96fda1ed07b59df55b84",
+        "artifact_sha256": {
+          "manifest": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+          "descriptor": "0e5c1e680a53cd7adbc15897ce3a024f723dd65e1952a3eb4f8c0f5b8bd077df",
+          "legacy_binary": "6fa868228477ce91752dce2ae990c84cd3d5765b1a484f0148dd8e2952f6a383",
+          "unavailable_binary": "ee3f3a1fd49d45338e3f8c7ba0f6763057c2c8f7e436f58cd588cda26c86b466"
+        },
+        "report_sha256": "950e80be1e1c5faa06663f59c9bf3cc3582161cc42575f7d6b92ca572c1ee127",
+        "backend_disabled_rejection_exercised": true
+      }
+    },
+    "windows": {
+      "coreclr": {
+        "passed": true,
+        "checks": 9,
+        "rpc_calls": 998,
+        "owned_processes": 4,
+        "all_owned_exit_zero": true,
+        "engine_sha256": "078c8babd5433ffb61f36cce58dbf0edb5ccc721004e07592625a8deaa352d3d",
+        "artifact_sha256": {
+          "manifest": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+          "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+          "bridge": "71002f98da2019b0acc6276e7cd3c910c6348f7e6d5ebc595677fb9f2cff4610",
+          "assembly": "4eee4adcc0e6ba821d916e92d01e70e55b86bf6001f103c066ecf140c831a267",
+          "legacy_binary": "b1bf0b6ef2aa228c52271e6924de9645dc8363fc5b83b3441892f44790bde167"
+        },
+        "report_sha256": "8a01da31954054a2cbe2d471321767a73501de26b27f92544d0a049ab1693151",
+        "backend_disabled_rejection_exercised": false
+      },
+      "native_aot": {
+        "passed": true,
+        "checks": 9,
+        "rpc_calls": 998,
+        "owned_processes": 4,
+        "all_owned_exit_zero": true,
+        "engine_sha256": "078c8babd5433ffb61f36cce58dbf0edb5ccc721004e07592625a8deaa352d3d",
+        "artifact_sha256": {
+          "manifest": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+          "descriptor": "3fa7b4203ccc9b017cde612f497e9d513c04da214d7ab35047ed3a20a02cac29",
+          "legacy_binary": "b1bf0b6ef2aa228c52271e6924de9645dc8363fc5b83b3441892f44790bde167"
+        },
+        "report_sha256": "5511f5d6731c88f4f631c0aa0f019401dfec5a682a20491c25a2df92ea63a151",
+        "backend_disabled_rejection_exercised": false
+      }
+    }
+  },
+  "publication": {
+    "linux": {
+      "passed": true,
+      "descriptor_sha256": "0e5c1e680a53cd7adbc15897ce3a024f723dd65e1952a3eb4f8c0f5b8bd077df",
+      "library_sha256": "edf5ed514a7cf12bc2a15d01c185486b0ad28e95965cbf3a2ab7027822216ac0",
+      "component_manifest_sha256": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+      "component_fingerprint": "fd724e8a7f09f0760e0632d5cf2d89035b5e5c12449ec339a9ab1c7ea5ef479e",
+      "payload_files": 8,
+      "verified_inventory_sha256": {
+        "Poima.NativeGame.so": "edf5ed514a7cf12bc2a15d01c185486b0ad28e95965cbf3a2ab7027822216ac0",
+        "game.poima-components.json": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "51bbd20443ddaa8d300cf329ae12d5480b4da5de1671ed41b32ede71426e8b80"
+      },
+      "verification_report_sha256": "f73af160936819a2e9de3de26dc78332ae18a5ed024357f2877f08bc9c4ed846",
+      "scope": "Actual Native AOT image publication, checked export and payload inventory; runtime execution is recorded separately."
+    },
+    "windows": {
+      "passed": true,
+      "descriptor_sha256": "3fa7b4203ccc9b017cde612f497e9d513c04da214d7ab35047ed3a20a02cac29",
+      "library_sha256": "dabf7bebeb833680c8808f0fa18fd0020225ffdefc23d53d68c29bebfa2a392c",
+      "component_manifest_sha256": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+      "component_fingerprint": "fd724e8a7f09f0760e0632d5cf2d89035b5e5c12449ec339a9ab1c7ea5ef479e",
+      "payload_files": 8,
+      "verified_inventory_sha256": {
+        "game.poima-components.json": "e242930ff799c2193864aac34e1a5185748613ed33b1d213be1931afa55470f4",
+        "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "notices/POIMA-THIRD-PARTY-NOTICES.md": "51bbd20443ddaa8d300cf329ae12d5480b4da5de1671ed41b32ede71426e8b80",
+        "Poima.NativeGame.dll": "dabf7bebeb833680c8808f0fa18fd0020225ffdefc23d53d68c29bebfa2a392c"
+      },
+      "verification_report_sha256": "1ab64a9de125361b10d2fee4c3313ade165ed81f9c8ff41a8b52c202ef4036c4",
+      "scope": "Actual Native AOT image publication, checked export and payload inventory; runtime execution is recorded separately."
+    }
+  },
+  "guarded_managed_abi": {
+    "linux": {
+      "passed": true,
+      "sdk_bridge_guard_groups": 71,
+      "static_entry_groups": 4,
+      "bridge_sha256": "e519f2739a8ef53ee152d8cafbd239ac54e68f119681cd46ce4f4ff8a9a78928",
+      "sdk_sha256": "ea9ced2432cf841f636d3cbec99096044e24f8a9e184f630633375ca819e323a",
+      "report_sha256": "371f547790240ea9b4979855b3668e385110e13e37a7fe17f11b5fa604698d61",
+      "guard_report_sha256": "2209fc2656a88a868cb77106ae35124a9d00548dd9d2c2202fa45679da3a3b36",
+      "entry_report_sha256": "9e40b80eb8699c91d8b1ff4fe28a6de980b6c44ea46a067399238babf4c1e039",
+      "scope": "SDK/real bridge protected allocations and mock callbacks; static native entry invoked under CoreCLR, not production Native AOT routing or arbitrary raw Runtime POD validation."
+    },
+    "windows": {
+      "passed": true,
+      "sdk_bridge_guard_groups": 71,
+      "static_entry_groups": 4,
+      "bridge_sha256": "71002f98da2019b0acc6276e7cd3c910c6348f7e6d5ebc595677fb9f2cff4610",
+      "sdk_sha256": "6ed6cb63a96d7a5e9d17aa3e0e51e6de56236fb5aec14b4c607dcbf7b714a33a",
+      "report_sha256": "1ab64a9de125361b10d2fee4c3313ade165ed81f9c8ff41a8b52c202ef4036c4",
+      "guard_report_sha256": "88e0d5dce3db614b52e061de8b0e8381ba8368922dd6e7666e2c84f21231421c",
+      "entry_report_sha256": "9e40b80eb8699c91d8b1ff4fe28a6de980b6c44ea46a067399238babf4c1e039",
+      "scope": "SDK/real bridge protected allocations and mock callbacks; static native entry invoked under CoreCLR, not production Native AOT routing or arbitrary raw Runtime POD validation."
+    }
+  },
+  "native_and_protocol": {
+    "linux_enabled": {
+      "passed": true,
+      "groups": 8,
+      "tests": [
+        "gameplay_compatibility_policy",
+        "gameplay_service_contract",
+        "save_upgrade_document_native",
+        "navigation-native",
+        "navigation_contract",
+        "navigation-binding-native",
+        "navigation_binding_contract",
+        "runtime-navigation-native"
+      ],
+      "report_sha256": "25e91df07a9e765ecc8a1bbfadf26a3c0c5a5d03f09808b16ebaacf4161540df"
+    },
+    "linux_navigation_disabled": {
+      "passed": true,
+      "groups": 6,
+      "tests": [
+        "gameplay_compatibility_policy",
+        "gameplay_service_contract",
+        "save_upgrade_document_native",
+        "navigation_contract",
+        "navigation-binding-native",
+        "navigation_binding_contract"
+      ],
+      "report_sha256": "c56a806afdda9e5face379374ab171e5628bae620652de4a3d46b7bbc4be184e"
+    },
+    "windows": {
+      "passed": true,
+      "native_groups": 6,
+      "execution_groups": 9,
+      "all_stage_exit_zero": true,
+      "report_sha256": "1e479217db1b9c6cf34c0e111239c0719de9d36119384b483e0dc3274966509e",
+      "static_protocol": {
+        "tests": 6,
+        "rpc_calls": 70,
+        "owned_processes": 8,
+        "all_owned_exit_zero": true,
+        "report_sha256": "a78dc4a23aab7f9e754f9f3c6770131ff0bb4867c771c362d413ae2e8640c93e"
+      },
+      "binding_protocol": {
+        "tests": 3,
+        "rpc_calls": 81,
+        "owned_processes": 5,
+        "all_owned_exit_zero": true,
+        "report_sha256": "0c3b06a776601493fe126e14437c0ea4970aad5ded9c9a0e2bfc6c2103ddc0c7"
+      },
+      "binding_processes": {
+        "children": 5,
+        "zero_exit_children": 5,
+        "expected_rejection_exit_4_children": 0,
+        "forced_cleanup": false,
+        "report_sha256": "8001181132129c4485ea32699ac727909695d594836ca4e10ec19c49c463a9a6"
+      },
+      "project_processes": {
+        "children": 55,
+        "zero_exit_children": 38,
+        "expected_rejection_exit_4_children": 17,
+        "forced_cleanup": false,
+        "report_sha256": "e629787c91894f88220cc62c9c7bc2c754693029b7cfa5531f8dc9965d1ccddc"
+      }
+    }
+  },
+  "project_content_contract": {
+    "linux": {
+      "passed": true,
+      "tests": 6,
+      "world_calls": 40,
+      "cli_calls": 49,
+      "owned_world_processes": 6,
+      "all_owned_exit_zero": true,
+      "expected_rejection_exit_4_commands": 17,
+      "engine_sha256": "08f05da20699ffdf5e8f57f1dfc07b7df319fd26eefa96fda1ed07b59df55b84",
+      "report_sha256": "c944fda181b21e0a87fa59b2072a0a89fa2ba2b0fa2f60c960b8fb71e13d22f9",
+      "scope": "Actual baked/bound content and native bundle verification; runtime executables and artifact images are non-executable metadata fixtures."
+    },
+    "windows": {
+      "passed": true,
+      "tests": 6,
+      "world_calls": 40,
+      "cli_calls": 49,
+      "owned_world_processes": 6,
+      "all_owned_exit_zero": true,
+      "expected_rejection_exit_4_commands": 17,
+      "engine_sha256": "078c8babd5433ffb61f36cce58dbf0edb5ccc721004e07592625a8deaa352d3d",
+      "report_sha256": "d8ea72f2637c5154e7d6f31414fc5dedde5eb8989ad385f390d529a0cc47432b",
+      "scope": "Actual baked/bound content and native bundle verification; runtime executables and artifact images are non-executable metadata fixtures."
+    }
+  },
+  "regressions": {
+    "linux": {
+      "passed": true,
+      "groups": 12,
+      "tests": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "profiler_contract",
+        "world_session_native",
+        "mcp_contract",
+        "runtime_components_native",
+        "runtime_save_native",
+        "runtime_save_contract",
+        "project_gameplay_contract",
+        "world_history_contract",
+        "asset_references_contract",
+        "procedural_material_contract"
+      ],
+      "report_sha256": "6f4c455acdfc9266cd3cbcdf0e8eb1006aedb870e026e18898aa6c69d93a5d78"
+    },
+    "linux_authoring_only": {
+      "passed": true,
+      "groups": 10,
+      "tests": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "gameplay_compatibility_policy",
+        "gameplay_service_contract",
+        "save_upgrade_document_native",
+        "world_session_native",
+        "mcp_contract",
+        "navigation_contract",
+        "navigation-binding-native",
+        "navigation_binding_contract"
+      ],
+      "report_sha256": "973d48e8557ecad9c6a993f59bb278355989afe0d498deac70553aeec441bd1b"
+    },
+    "preserved_patrol_linux": {
+      "passed": true,
+      "checks": 4,
+      "rpc_calls": 1483,
+      "owned_processes": 2,
+      "all_owned_exit_zero": true,
+      "artifact_sha256": {
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "71d9748cc6b362e3a6285bd0a3216fdb8b337974860d33505d31129d85535932"
+      },
+      "report_sha256": "b6f5d007e2ae0695811b5d41909c0abef6a1093bb458b1ddeb6e10d9b1cc767d",
+      "scope": "Unchanged 0.0.61 matched CoreCLR bridge/game using the 216-byte character-input profile and direct steering; no navmesh use or GPU capture."
+    },
+    "preserved_patrol_windows": {
+      "passed": true,
+      "checks": 4,
+      "rpc_calls": 1483,
+      "owned_processes": 2,
+      "all_owned_exit_zero": true,
+      "artifact_sha256": {
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "71d9748cc6b362e3a6285bd0a3216fdb8b337974860d33505d31129d85535932"
+      },
+      "report_sha256": "731b41b67f0aa45f6510c952034ee91194c02ed06e3da2118d92e361b0c353d2",
+      "scope": "Unchanged 0.0.61 matched CoreCLR bridge/game using the 216-byte character-input profile and direct steering; no navmesh use or GPU capture."
+    }
+  },
+  "compatibility": {
+    "passed": true,
+    "platforms": [
+      "linux-runtime",
+      "windows-runtime",
+      "linux-authoring-only"
+    ],
+    "binary_sha256": {
+      "linux-runtime": "08f05da20699ffdf5e8f57f1dfc07b7df319fd26eefa96fda1ed07b59df55b84",
+      "windows-runtime": "078c8babd5433ffb61f36cce58dbf0edb5ccc721004e07592625a8deaa352d3d",
+      "linux-authoring-only": "1b7c272d35fd608e9dc222cab0aaeee48cf105694a1c3956a4e07ae2b9b8a834"
+    },
+    "report_sha256": "bf41c54d5e9f7881cbe01454c79321b2ef5df13813ff47a2d722669db68cfa2e"
+  },
+  "test_binary_linkage": {
+    "passed": true,
+    "linux_ledger_sha256": "7241d1486cbc56f2cb195afc76d1e95bc0ae5e354e2972213770de0a680f5c5b",
+    "authoring_ledger_sha256": "46877f72e979a670d5b2a637c979856ce23be0529bde2aef8891dfcf4acc5513",
+    "disabled_retained_binary_sha256": "ee3f3a1fd49d45338e3f8c7ba0f6763057c2c8f7e436f58cd588cda26c86b466",
+    "scope": "Root-owned serial build/test ledger and immutable retained images link final XML results to binaries; XML alone identifies test names/results, not executable bytes."
+  },
+  "retained_windows_legacy_dependency": {
+    "passed": true,
+    "sidecar_sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+    "matches_pinned_sdk": true,
+    "report_sha256": "c040de06a6ab431304ac510dcedc6f5692d8656a32f49e49383ae8dbeac4ea24"
+  },
+  "checks": [
+    "Native capsule-foot queries read immutable frozen navigation with checked clearance; they do not move or teleport the agent.",
+    "Compiled routes/cursors persist in the generated capacity-30 float component; observed native positions detour around solid cover and reach the goal.",
+    "Eight native attempts include failed attempts; caught ninth rejects without overwriting the span, and the next Tick resets quota.",
+    "A late compiled Tick exception restores the complete multi-tick batch; checkpoint restore reproduces route, native state, UI, and immediate replan.",
+    "Matched navigation-marked games reject unbound and preserved older hosts before constructor/Initialize/Tick; Linux additionally executes the navigation-disabled host case.",
+    "Compatible CoreCLR reload retains route state; published Native AOT replacement rejects unchanged."
+  ],
+  "corrected_qualification_failures": [
+    "Private Linux/Windows export-verification patterns initially rejected valid symbol formatting after successful publication. Verification-only correction checked the existing unchanged images and their exact payload inventories.",
+    "A preserved Windows rejection-host copy initially lacked its required existing audio sidecar. The matching dependency was supplied and the actual host-rejection run passed; this was qualification setup, not an engine/game source fix."
+  ],
+  "limits": [
+    "Static single-mesh ground navigation and one bounded cover/capsule follower fixture; no crowds, avoidance, moving obstacles, traversal, streaming, automatic rebakes, or full AI graph.",
+    "Typed Tick-only SDK, protected-allocation mocks and static entry checks do not establish arbitrary malformed raw Runtime POD, forged non-Tick callback, or malicious native-memory safety.",
+    "Loader pre-construction guard excludes arbitrary assembly/module initialization and native loader side effects; matched SDK/bridge cohorts only.",
+    "Package tests use non-executable runtime/artifact metadata fixtures. Actual image publication and compiled route execution are separate checks; no in-player UX or clean-machine deployment proof.",
+    "No GPU rendering, OS screenshots, physical input, GUI, consoles, networking or game-scale performance/memory/latency qualification."
+  ]
+}

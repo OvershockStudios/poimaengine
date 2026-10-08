@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/core.hpp"
+#include "poima/navigation.hpp"
 #include "poima/build_info.hpp"
 #include "poima/build_metadata.hpp"
 
@@ -7,6 +8,7 @@
 #include <array>
 
 namespace poima {
+bool runtime_navigation_available() noexcept { return POIMA_SIMULATION!=0 && navigation::available(); }
 const BuildMetadata& build_metadata() noexcept {
     static constexpr BuildMetadata metadata{
         POIMA_VERSION, POIMA_COMPILER_ID, POIMA_COMPILER_VERSION,
@@ -123,6 +125,7 @@ Reply capabilities() {
         ",\"fsr3_upscaler\":" + boolean(POIMA_FSR3_UPSCALER != 0 && POIMA_RENDER_SMOKE != 0) +
         ",\"sound_events\":" + boolean(POIMA_SIMULATION != 0) + ",\"audio_stream_capture\":" + boolean(POIMA_AUDIO != 0 && POIMA_SIMULATION != 0) + ",\"audio_authoring\":true,\"wav_import\":true,\"audio_capture\":" + boolean(POIMA_AUDIO != 0) +
         ",\"audio_device_playback\":" + boolean(POIMA_AUDIO != 0 && POIMA_RENDER_SMOKE != 0 && POIMA_SIMULATION != 0) +
+        ",\"navigation\":" + boolean(runtime_navigation_available()) +
         ",\"physics_queries\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"kinematic_motion\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"managed_gameplay\":" + boolean(POIMA_MANAGED_GAMEPLAY != 0) +

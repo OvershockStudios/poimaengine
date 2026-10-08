@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace poima::asset_references {
-inline constexpr std::size_t max_entities=10000,max_templates=256,max_edges=101536;
+inline constexpr std::size_t max_entities=10000,max_templates=256,max_edges=101537;
 inline constexpr std::uint32_t max_page=256;
 inline constexpr std::size_t max_result_bytes=1048576;
 struct Error : std::runtime_error {
@@ -36,5 +36,6 @@ bool before(const Cursor&,const Cursor&) noexcept;
 // Defensively checks cardinalities, typed reference shapes and query bounds.
 // Stores at most limit+1 rows, returns sorted matching rows after an exclusive
 // field-location cursor. A supplied unknown owner raises -32004.
-Page collect(const nlohmann::json& entities,const nlohmann::json* templates,const Query&);
+Page collect(const nlohmann::json& entities,const nlohmann::json* templates,const Query&,
+    const std::string& world_id={},const nlohmann::json* navigation=nullptr);
 }

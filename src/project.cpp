@@ -250,6 +250,7 @@ Project project(const std::string& filename) {
 Json project_summary(const Project& p) {
     Json assets=Json::array();for(const auto& asset:p.content.assets)assets.push_back({{"filename",asset.filename},{"sha256",asset.sha256},{"bytes",asset.bytes}});
     Json result={{"manifest",text(p.manifest)},{"project_id",p.spec.at("project_id")},{"name",p.spec.at("name")},{"entry",p.spec.at("entry")},{"revision",p.content.revision},{"assets",assets},{"needs_audio",p.content.needs_audio},{"audio",p.spec.value("audio",false)},{"input_profile",p.profile.empty() ? Json(nullptr) : Json(text(p.profile))}};
+    if(p.content.needs_navigation)result["needs_navigation"]=true;
     if(p.gameplay) {
         const auto& contract=p.gameplay->requirements;
         result["gameplay"]={{"backend","native_aot"},{"descriptor",p.spec.at("gameplay").at("descriptor")},
@@ -313,7 +314,7 @@ Json runtime_spec(const std::string& bytes) {
     if(contract_fields==4)(void)runtime_gameplay_contract(value);
     require((value.at("target_os")=="Windows" || value.at("target_os")=="Linux") && value.at("target_arch")=="x86_64","Only Windows/Linux x86_64 runtime targets are supported.");
     require(value.at("executable")== (value.at("target_os")=="Windows" ? "bin/poima.exe" : "bin/poima"),"Runtime executable path does not match target.");
-    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
+    const auto& features=value.at("features");fields(features,{"simulation","renderer","audio","managed","editor","native_gameplay","game_ui","navigation"},{"simulation","renderer","audio","managed","editor"});for(const auto& v:features)require(v.is_boolean(),"Runtime feature flags must be Boolean.");
     require(features.at("simulation")==true && features.at("renderer")==true,"Game bundles require a simulation and renderer runtime.");return value;
 }
 std::vector<std::string> file_tree(const fs::path& root) {
@@ -393,6 +394,8 @@ VerifiedGame verify_game(const std::string& filename) {
     for(const auto& [path,item]:inventory) {
         const auto role=item.at("role").get<std::string>();require((role=="runtime" && (path=="runtime/runtime.json" || path.starts_with("runtime/bin/") || path.starts_with("runtime/lib/") || path.starts_with("runtime/share/poima/"))) || (role=="world" && path=="content/world.json") || (role=="asset" && required_assets.contains(path)) || (role=="input" && spec.contains("input_profile") && path==spec.at("input_profile").get<std::string>()) || (role=="launcher" && path==launcher) || (gameplay_paths.contains(path) && gameplay_paths.at(path)==role),"Unexpected payload role/path: "+path);
     }
+    require(!content.needs_navigation || runtime.at("features").value("navigation",false),"Game needs a navigation-enabled runtime.");
+    if(runtime.at("features").value("navigation",false))expect("runtime/share/poima/licenses/RecastNavigation/License.txt","runtime");
     require(!(content.needs_audio || spec.at("audio").get<bool>()) || runtime.at("features").at("audio")==true,"Game needs an audio-enabled runtime.");if(runtime.at("features").at("audio")==true)expect(runtime.at("target_os")=="Windows" ? "runtime/bin/phonon.dll" : "runtime/lib/libphonon.so","runtime");
     require(read(result.manifest,4*1024*1024)==manifest_bytes,"Game manifest changed during verification.");
     for(const auto& [path,item]:inventory) { const auto bytes=read(contained(root,path));require(bytes.size()==item.at("size") && hash(bytes)==item.at("sha256").get<std::string>(),"Bundle changed during validation: "+path); }
@@ -431,6 +434,7 @@ Reply inspect_project(const std::string& manifest) { return operation("project.i
 Reply build_project(const std::string& manifest,const std::string& output,const std::string& runtime_root) {
     return operation("project.build",[&] {
         const auto p=project(manifest);require(fs::is_directory(fs::symlink_status(path_of(runtime_root))),"Runtime root must be a directory without symlink.");const auto runtime_path=fs::canonical(path_of(runtime_root));const auto descriptor=read(contained(runtime_path,"runtime.json"),65536);const auto runtime=runtime_spec(descriptor);
+        require(!p.content.needs_navigation || runtime.at("features").value("navigation",false),"Project requires a navigation-enabled runtime.");
         require(!(p.content.needs_audio || p.spec.value("audio",false)) || runtime.at("features").at("audio")==true,"Project requires an audio-enabled runtime.");
         require(parse(p.content.document).value("ui",Json::object()).empty() || runtime.at("features").value("game_ui",false),"Project requires a game-UI-enabled runtime.");
         require_content_contract(p.content.document,runtime);
@@ -444,6 +448,10 @@ Reply build_project(const std::string& manifest,const std::string& output,const 
 #endif
         executable_mode(contained(runtime_path,runtime.at("executable")),runtime.at("target_os"));contained(runtime_path,"share/poima/LICENSE");contained(runtime_path,"share/poima/THIRD_PARTY_NOTICES.md");
         if(runtime.at("features").at("audio")==true)contained(runtime_path,runtime.at("target_os")=="Windows" ? "bin/phonon.dll" : "lib/libphonon.so");
+        if(runtime.at("features").value("navigation",false)) {
+            try {contained(runtime_path,"share/poima/licenses/RecastNavigation/License.txt");}
+            catch(const std::exception& error) {throw std::runtime_error("Navigation runtime requires RecastNavigation/License.txt: "+std::string(error.what()));}
+        }
         const auto runtime_files=file_tree(runtime_path);const auto destination=destination_path(output);
         require(!within(destination,p.root) && !within(p.root,destination),"Bundle destination must not overlap the source project.");require(!within(destination,runtime_path) && !within(runtime_path,destination),"Bundle destination must not overlap the runtime distribution.");
         for(const auto& path:runtime_files)require(path=="runtime.json" || path.starts_with("bin/") || path.starts_with("lib/") || path.starts_with("share/poima/"),"Unexpected runtime distribution file: "+path);

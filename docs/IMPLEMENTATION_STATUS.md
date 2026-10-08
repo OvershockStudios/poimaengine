@@ -1,8 +1,36 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.63**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.64**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.64 binds static navigation into compiled NPC gameplay. A guarded
+`navigation.set` transaction associates the world with a checked `.pnav` asset.
+Binding, runtime freeze, export and saved-source restore validate the relevant
+static geometry and package bytes. Unbound worlds retain their earlier content
+shape; binding changes participate in preview, retry, history and undo/redo.
+
+C# `INavigationGame` enables live-character route queries during Tick. The
+independent named extension appends a callback to the 224-byte services-7 view,
+preserving the existing 176/192/208/216-byte profiles. Queries use an immutable
+mesh and bounded scratch, with eight native attempts per Tick and explicit
+incomplete-route statuses. Games own their route/cursor in existing components
+and steer through ordinary character input; navigation does not teleport actors.
+
+CoreCLR and actual published Native AOT each pass ten compiled follower checks
+over 1,009 RPCs with five clean owner exits on Linux, and nine checks over 998
+RPCs with four clean exits on Windows. The fixture physically detours
+around cover, reaches its goal, enforces query limits, rolls back a late failed
+batch, and resumes a persisted route in a fresh owner. CoreCLR checks compatible
+reload; Native AOT checks replacement rejection. Six project tests verify content
+and license closure using metadata-only runtime/artifact fixtures, separately
+from real compiled gameplay execution on both operating systems. [Navigation contract](NAVIGATION.md),
+[compiled fixture](../tests/managed_navigation_gameplay/README.md),
+[evidence](evidence/m2-runtime-navigation.json).
+
+Navigation remains a static ground-planning foundation. Dynamic obstacles,
+crowds, traversal, streaming and editor navigation tools are unfinished; these
+fixtures do not establish game-scale performance or clean-machine deployment.
 
 Version 0.0.63 adds optional static navigation through pinned Recast/Detour.
 Revision-guarded native baking, inspection and path queries use authored static
@@ -22,9 +50,9 @@ initialization cleanup, malformed-path diagnostics and the reserved neighbor-bit
 polygon boundary. Discovery revision 57 retains protocol 1, authoring-core v1,
 existing gameplay service profiles and save formats.
 
-This is authored ground-navigation infrastructure. It does not yet bind meshes
-into compiled gameplay or automatic runtime bundle/save closure. Patrol Room
-still uses its authored route and direct steering. Moving obstacles, avoidance,
+The 0.0.63 checkpoint covers authored ground-navigation infrastructure; runtime
+binding and compiled queries were added in 0.0.64. Patrol Room still uses its
+authored route and direct steering. Moving obstacles, avoidance,
 crowds, traversal links and streaming remain separate work. Endpoint projection
 uses a bounded linear scan; bake/query memory admission limits are not a game-scale
 CPU or latency guarantee. [Navigation API](NAVIGATION.md),

@@ -48,3 +48,8 @@ __pycache__/
 
 /tests/managed_character_gameplay/**/bin/
 /tests/managed_character_gameplay/**/obj/
+
+/tests/managed_navigation_gameplay/**/bin/
+/tests/managed_navigation_gameplay/**/obj/
+/tests/managed_navigation_entry/**/bin/
+/tests/managed_navigation_entry/**/obj/

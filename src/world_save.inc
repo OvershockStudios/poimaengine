@@ -126,6 +126,9 @@
             const auto& document=save.at("document");require(document.dump().size()<=max_document_bytes,"Saved authored definition exceeds 16 MiB.",-32070);validate(document);
             require(document.at("world_id")==doc_.at("world_id"),"Save belongs to a different world.",-32070);
             result.frozen=freeze_content(document);
+        }catch(const Error& error) {
+            if(error.code==-32003 && save.is_object() && save.contains("document") && save.at("document").is_object() && save.at("document").contains("navigation"))throw;
+            throw Error(-32070,error.what());
         }catch(const std::exception& error) { throw Error(-32070,error.what()); }
         if(upgrade) {
             require(config.has_value(),"Save upgrade requires explicit target gameplay.",-32070);

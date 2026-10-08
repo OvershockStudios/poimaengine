@@ -33,7 +33,8 @@ string identity=PersistenceMetadata.GameIdentity(game);
 bool inertial=typeof(IInertialAnimationGame).IsAssignableFrom(game);
 bool masked=typeof(IMaskedAnimationGame).IsAssignableFrom(game);
 bool character=typeof(ICharacterInputGame).IsAssignableFrom(game);
-string requirements=GameplayRequirements.Json(GameplayRequirements.Features(inertial,masked,character));
+bool navigation=typeof(INavigationGame).IsAssignableFrom(game);
+string requirements=GameplayRequirements.Json(GameplayRequirements.Features(inertial,masked,character,navigation));
 int bytes=Marshal.SizeOf(state);if(bytes is <1 or >65536)throw new ArgumentException("State exceeds 1..65536 bytes.");
 var fields=state.GetFields(BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic).OrderBy(f=>f.Name,StringComparer.Ordinal).ToArray();
 if(fields.Length is <1 or >128 || fields.Any(f=>!f.IsPublic || f.IsInitOnly || f.Name.Length>64))throw new ArgumentException("Expected 1..128 public mutable state fields.");
@@ -56,6 +57,7 @@ internal static unsafe class Binding
     internal static bool RequiresInertial=>{{(inertial ? "true" : "false")}};
     internal static bool RequiresLayers=>{{(masked ? "true" : "false")}};
     internal static bool RequiresCharacterInput=>{{(character ? "true" : "false")}};
+    internal static bool RequiresNavigation=>{{(navigation ? "true" : "false")}};
     internal const string TypeName={{JsonSerializer.Serialize(game.FullName)}};
     internal const int StateBytes={{bytes}};
     internal static {{Name(game)}} Create()=>new();

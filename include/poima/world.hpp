@@ -15,6 +15,7 @@ struct WorldPackageContent {
     std::vector<WorldPackageAsset> assets;
     std::uint64_t revision=0;
     bool needs_audio=false;
+    bool needs_navigation=false;
 };
 enum class WorldRequestScope { standalone, shared_headless, shared_editor };
 struct WorldRuntimeStatus {

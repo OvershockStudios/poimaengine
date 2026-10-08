@@ -151,6 +151,31 @@ typedef struct PoimaGameCharacterServicesV1 {
     PoimaGameAnimationLayerServicesV1 animation;
     int32_t (POIMA_CALL *character_input)(void*,const PoimaGameCharacterInputV1*,PoimaGameError*);
 } PoimaGameCharacterServicesV1;
+// Independent immutable navigation query extension. Named opt-in does not
+// grant access to intermediate animation or character callbacks.
+typedef struct PoimaGameNavigationRequestV1 {
+    uint32_t version,bytes;
+    PoimaEntityId agent;
+    float goal[3],extents[3];
+    uint32_t max_polygons,max_corners,max_nodes,reserved;
+} PoimaGameNavigationRequestV1;
+typedef struct PoimaGameNavigationPointV1 { float position[3]; } PoimaGameNavigationPointV1;
+typedef struct PoimaGameNavigationResultV1 {
+    uint32_t version,bytes;
+    uint64_t asset[4]; // SHA-256 as four big-endian hexadecimal words.
+    uint32_t status,flags,corner_count,polygons;
+    float requested_start[3],projected_start[3],projected_end[3],reachable_end[3];
+    double start_projection_distance,end_projection_distance;
+    uint32_t reserved[2];
+} PoimaGameNavigationResultV1;
+typedef struct PoimaGameNavigationServicesV1 {
+    PoimaGameCharacterServicesV1 character;
+    // Tick-only, <=8 attempts. Caller initializes version/bytes/reserved.
+    // Success writes the known 128-byte result prefix and actual corners only.
+    // Failure leaves both output buffers unchanged. Capacity must be 2..256.
+    int32_t (POIMA_CALL *navigation_path)(void*,const PoimaGameNavigationRequestV1*,
+        PoimaGameNavigationPointV1*,uint32_t,PoimaGameNavigationResultV1*,PoimaGameError*);
+} PoimaGameNavigationServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -159,6 +184,15 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameNavigationRequestV1)==64 && alignof(PoimaGameNavigationRequestV1)==8);
+static_assert(offsetof(PoimaGameNavigationRequestV1,agent)==8 && offsetof(PoimaGameNavigationRequestV1,goal)==24 && offsetof(PoimaGameNavigationRequestV1,extents)==36);
+static_assert(offsetof(PoimaGameNavigationRequestV1,max_polygons)==48 && offsetof(PoimaGameNavigationRequestV1,max_corners)==52 && offsetof(PoimaGameNavigationRequestV1,max_nodes)==56 && offsetof(PoimaGameNavigationRequestV1,reserved)==60);
+static_assert(sizeof(PoimaGameNavigationPointV1)==12 && alignof(PoimaGameNavigationPointV1)==4);
+static_assert(sizeof(PoimaGameNavigationResultV1)==128 && alignof(PoimaGameNavigationResultV1)==8);
+static_assert(offsetof(PoimaGameNavigationResultV1,asset)==8 && offsetof(PoimaGameNavigationResultV1,status)==40 && offsetof(PoimaGameNavigationResultV1,flags)==44 && offsetof(PoimaGameNavigationResultV1,corner_count)==48 && offsetof(PoimaGameNavigationResultV1,polygons)==52);
+static_assert(offsetof(PoimaGameNavigationResultV1,requested_start)==56 && offsetof(PoimaGameNavigationResultV1,projected_start)==68 && offsetof(PoimaGameNavigationResultV1,projected_end)==80 && offsetof(PoimaGameNavigationResultV1,reachable_end)==92);
+static_assert(offsetof(PoimaGameNavigationResultV1,start_projection_distance)==104 && offsetof(PoimaGameNavigationResultV1,end_projection_distance)==112 && offsetof(PoimaGameNavigationResultV1,reserved)==120);
+static_assert(sizeof(PoimaGameNavigationServicesV1)==224 && offsetof(PoimaGameNavigationServicesV1,character)==0 && offsetof(PoimaGameNavigationServicesV1,navigation_path)==216);
 static_assert(sizeof(PoimaGameCharacterInputV1)==48 && offsetof(PoimaGameCharacterInputV1,entity)==8 && offsetof(PoimaGameCharacterInputV1,move)==24 && offsetof(PoimaGameCharacterInputV1,look)==32 && offsetof(PoimaGameCharacterInputV1,flags)==40 && offsetof(PoimaGameCharacterInputV1,reserved)==44);
 static_assert(sizeof(PoimaGameCharacterServicesV1)==216 && offsetof(PoimaGameCharacterServicesV1,animation)==0 && offsetof(PoimaGameCharacterServicesV1,character_input)==208);
 static_assert(sizeof(PoimaUiId)==16 && sizeof(PoimaGameUiState)==40 && sizeof(PoimaGameUiPatch)==40 && sizeof(PoimaGameUiModalEdit)==24 && sizeof(PoimaGameUiControlEvent)==160);

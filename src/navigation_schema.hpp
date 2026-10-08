@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/navigation.hpp"
+#include "poima/core.hpp"
 #include <nlohmann/json.hpp>
 namespace poima::navigation {
 inline nlohmann::json schemas() {
@@ -16,8 +17,8 @@ inline nlohmann::json schemas() {
         {"world.navigation.path",object({{"revision",revision},{"asset",asset},{"start",vector(-1000000,1000000)},{"end",vector(-1000000,1000000)},{"extents",vector(.01,100)},{"max_polygons",count(1,4096)},{"max_corners",count(2,4096)},{"max_nodes",count(32,4096)}},{"revision","asset","start","end"})}};
 }
 inline nlohmann::json capability() {
-    return {{"available",available()},{"backend","Recast/Detour 1.6.0"},{"source","current authored static BoxCollider and indexed MeshCollider only"},
-        {"scope","single immutable static mesh; no runtime, crowd, dynamic obstacles or compiled navigation service"},
+    return {{"available",available()},{"runtime_available",poima::runtime_navigation_available()},{"backend","Recast/Detour 1.6.0"},{"source","current authored static BoxCollider and indexed MeshCollider only"},
+        {"scope","single immutable static mesh; optional frozen runtime binding and Tick query service; no crowd or dynamic obstacles"},
         {"publication","content-addressed .pnav; authoring-only synchronous bake"},{"endpoint_lookup","bounded linear scan; no BV tree"},{"determinism","same build/platform; cross-platform byte identity is not promised"},
         {"limits",{{"triangles",max_triangles},{"vertices",max_vertices},{"xz_cells",max_cells},{"height_voxels",1024},{"mesh_polygons",max_mesh_polygons},{"package_bytes",max_package_bytes},{"recast_allocation_bytes",max_bake_memory},{"detour_operation_allocation_bytes",max_detour_memory},{"path_polygons",4096},{"path_corners",4096},{"query_nodes",4096}}}};
 }

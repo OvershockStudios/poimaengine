@@ -31,12 +31,16 @@ public:
     static bool available();
     static bool native_available();
     static std::string collect();
-    Gameplay(const GameplayConfig&,const Gameplay* previous=nullptr,GameplayInitialization initialization=GameplayInitialization::defaults);
+    // Per-instance availability gates optional frozen-resource services before
+    // the matched bridge/module constructs the game. Null uses host defaults.
+    Gameplay(const GameplayConfig&,const Gameplay* previous=nullptr,GameplayInitialization initialization=GameplayInitialization::defaults,
+        std::optional<gameplay_abi::Contract> available=std::nullopt);
     ~Gameplay();
     Gameplay(const Gameplay&)=delete;
     Gameplay& operator=(const Gameplay&)=delete;
     std::string inspect() const;
     const std::vector<components::Schema>& component_schemas() const;
+    void validate_services(const gameplay_abi::Contract& available) const;
     void edit(const std::string& values);
     // Cached field offsets; no JSON/reflection/allocation on success. Null IDs
     // are allowed, every non-null schema-declared entity field must resolve.

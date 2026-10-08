@@ -5,8 +5,8 @@
   "gameplay_services_version": 7,
   "gameplay_call_version": 1,
   "gameplay_call_bytes": 80,
-  "gameplay_services_bytes": 192,
-  "gameplay_features": ["baseline_v7", "gameplay_persistence_v1", "component_collections_v1", "animation_inertial_v1"],
+  "gameplay_services_bytes": @POIMA_RUNTIME_GAMEPLAY_SERVICES_BYTES@,
+  "gameplay_features": [@POIMA_RUNTIME_GAMEPLAY_FEATURES@],
   "target_os": "@CMAKE_SYSTEM_NAME@",
   "target_arch": "@POIMA_TARGET_ARCH@",
   "executable": "bin/poima@CMAKE_EXECUTABLE_SUFFIX@",
@@ -17,6 +17,7 @@
     "managed": @POIMA_RUNTIME_MANAGED_GAMEPLAY@,
     "native_gameplay": @POIMA_RUNTIME_NATIVE_GAMEPLAY@,
     "game_ui": @POIMA_RUNTIME_GAME_UI@,
+    "navigation": @POIMA_RUNTIME_NAVIGATION@,
     "editor": @POIMA_RUNTIME_EDITOR@
   }
 }

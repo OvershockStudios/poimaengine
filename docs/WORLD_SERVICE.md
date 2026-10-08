@@ -10,10 +10,20 @@ response checks. Generic calls retain access to the discovered native API.
 
 ## Asset references
 
-`world.asset.references` lists explicit model, image and audio bindings by
-entity/template, or finds the fields using a selected asset. Revision-pinned
+`world.asset.references` lists explicit model, image, audio and navigation bindings by
+entity/template/world, or finds the fields using a selected asset. Revision-pinned
 pages support targeted repairs without loading packages. See the
 [asset-reference contract](ASSET_REFERENCES.md) for typed paths and scope.
+
+## Static navigation
+
+Optional [Recast/Detour navigation](NAVIGATION.md) bakes walkable space from
+static colliders. Bind a checked asset through the guarded `navigation.set`
+transaction operation; `asset:null` clears it. Binding changes use
+`changed_world_fields:["navigation"]`, separately from entity `changed_ids`.
+The bound package participates in runtime, export and saved-source content
+validation. Compiled C# games query the immutable mesh through `INavigationGame`
+and control movement through the independent character-input API.
 
 ## Focused discovery (development)
 

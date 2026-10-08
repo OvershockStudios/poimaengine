@@ -10,6 +10,9 @@
 
 namespace poima {
 
+// Actual compiled runtime query backend, independent of any world binding.
+bool runtime_navigation_available() noexcept;
+
 struct HostInfo {
     std::string os;
     std::string kernel;

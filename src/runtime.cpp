@@ -32,7 +32,9 @@
 #include <cstdarg>
 #include <cstring>
 #include <cstdio>
+#include <limits>
 #include <map>
+#include <charconv>
 #include <numbers>
 #include <set>
 #include <stdexcept>
@@ -163,7 +165,10 @@ struct Runtime::Impl {
     std::vector<RuntimeInput> game_character_inputs;
     SoundState sounds;
     std::vector<AcousticGeometry> acoustic_geometry;
-    std::uint32_t game_sound_calls=0;
+    std::uint32_t game_sound_calls=0,game_navigation_calls=0;
+    std::optional<RuntimeNavigationDefinition> navigation_binding;
+    std::array<std::uint64_t,4> navigation_asset{};
+    float navigation_radius=0,navigation_height=0;
     const std::string presentation_source_id=new_presentation_source_id();
     std::string world_id;
     std::uint64_t revision=0, tick=0;
@@ -216,11 +221,13 @@ struct Runtime::Impl {
         }
         world_matrices();
     }
+#include "runtime_navigation.inc"
     void initialize(const RuntimeDefinition& definition) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
         auto candidate=std::make_shared<Topology>();topology=candidate;
         world_id=definition.world_id; revision=definition.authored_revision;
+        initialize_navigation(definition.navigation);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
         std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
@@ -933,7 +940,7 @@ struct Runtime::Impl {
                     require(scheduled_structure_calls>=1 && scheduled_structure_calls<=4096,"Scheduled structural command budget exceeded.");
                 }
                 if(game) {
-                    game_sound_calls=0;sync();game_commands.clear();game_animation_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
+                    game_sound_calls=0;game_navigation_calls=0;sync();game_commands.clear();game_animation_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
                         (void)e;PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
@@ -942,7 +949,7 @@ struct Runtime::Impl {
                     clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1037,7 +1044,7 @@ struct Runtime::Impl {
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();clear_structure_commands();
-            game_animation_commands.clear();game_character_inputs.clear();
+            game_animation_commands.clear();game_character_inputs.clear();game_navigation_calls=0;
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
             for(const auto& saved:angles) {
@@ -1082,6 +1089,7 @@ std::uint64_t Runtime::structure_revision() const { return impl_->structure_revi
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t ticks,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds,const std::vector<AnimationCommand>& animations,const std::vector<RuntimeStructureTick>& structure) { return impl_->step(ticks,inputs,motions,sounds,animations,structure); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string& id) const { (void)impl_->find(id);return impl_->animations->state(id,impl_->tick); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string& id,std::uint32_t slot) const { (void)impl_->find(id);return impl_->animations->layer_state(id,slot,impl_->tick); }
+RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest& request) const {return impl_->navigation_query(request);}
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay& query) const {
     require(std::isfinite(query.distance) && query.distance>=.001 && query.distance<=10000,"Ray distance must be .001..10000 meters.");
     double length=0;
@@ -1147,7 +1155,7 @@ void Runtime::gameplay_load(const GameplayConfig& config,const std::string& valu
     require(!impl_->save_queue.pending(),"Resolve pending gameplay save before code reload.");
     require(impl_->game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
     if(config.native_aot)validate_gameplay_values(config.native_schema,values);
-    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get());candidate->edit(values);
+    auto candidate=std::make_unique<Gameplay>(config,impl_->game.get(),GameplayInitialization::defaults,gameplay_abi::available_contract(bool(impl_->navigation_binding)));candidate->edit(values);
     impl_->components->validate_module(candidate->component_schemas());
     candidate->validate_entity_references([](void* context,PoimaEntityId id) {
         return static_cast<RuntimeComponents*>(context)->alive(id);

@@ -31,7 +31,7 @@ heading, uses each controller's speed, and clamps diagonal magnitude to one.
 The API accepts move axes in `[-1,1]`, yaw/pitch deltas in `[-180,180]` degrees,
 and an optional `jump`. Jump requires ground support; pitch clamps to ±85°.
 These are the existing direct-velocity capsule controls, including in air.
-Acceleration, navigation and a production locomotion model remain separate work.
+[Static pathfinding](NAVIGATION.md#query-from-compiled-gameplay) is available through the independent `INavigationGame` marker. Acceleration, dynamic avoidance and a production locomotion model remain separate work.
 
 Each command applies for one fixed 60 Hz Tick. Issue movement on every Tick
 while walking; omission neutralizes horizontal movement on the next Tick.

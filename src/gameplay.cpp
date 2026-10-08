@@ -59,7 +59,43 @@ void require_compatible(const gameplay_abi::Contract& required,const gameplay_ab
     const auto error=gameplay_abi::compatibility_error(required,available);
     if(!error.empty())throw std::runtime_error(error);
 }
+// A caller may restrict this host for one frozen world, but cannot claim a
+// known feature or readable allocation beyond the actual compiled host. Unknown
+// well-formed available names remain non-granting metadata for newer hosts.
+void validate_offered_contract(const gameplay_abi::Contract& offered,const gameplay_abi::Contract& actual) {
+    check(offered.call_version==actual.call_version && offered.call_bytes==actual.call_bytes &&
+        offered.services_version==actual.services_version,"Offered gameplay availability has an incompatible ABI epoch/header.");
+    check(offered.services_bytes<=actual.services_bytes,"Offered gameplay service allocation exceeds the compiled runtime.");
+    check(!offered.features.empty() && offered.features.size()<=64,"Offered gameplay available features exceed bounds.");
+    std::set<std::string> names;
+    for(const auto& feature:offered.features) {
+        check(!feature.empty() && feature.size()<=64 && std::all_of(feature.begin(),feature.end(),[](char c){
+            return (c>='a' && c<='z') || (c>='0' && c<='9') || c=='_';
+        }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
+        const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
+            feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature;
+        check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
+            "Offered gameplay feature is unavailable in the compiled runtime.");
+    }
+    const auto invalid=gameplay_abi::compatibility_error(gameplay_abi::Contract{},offered);
+    if(!invalid.empty())throw std::runtime_error("Offered gameplay availability is invalid: "+invalid);
+}
 template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::navigation_feature)!=required.features.end()) {
+        check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameNavigationServicesV1),
+            "Gameplay requires services epoch 7 and the 224-byte navigation extension.");
+        PoimaGameNavigationServicesV1 extended{};
+        std::memcpy(&extended,&provided,sizeof(extended));extended.character.animation.animation.baseline.bytes=sizeof(extended);
+        check(extended.navigation_path,"Gameplay navigation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::character_input_feature)!=required.features.end())
+            check(extended.character.character_input,"Gameplay character input extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_feature)!=required.features.end())
+            check(extended.character.animation.animation.animation_get_extended && extended.character.animation.animation.animation_set_extended,"Gameplay animation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_layers_feature)!=required.features.end())
+            check(extended.character.animation.animation_layer_get && extended.character.animation.animation_layer_set,"Gameplay animation layer extension callback is absent.");
+        callback(&extended.character.animation.animation.baseline);return;
+    }
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::character_input_feature)!=required.features.end()) {
         check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameCharacterServicesV1),
             "Gameplay requires services epoch 7 and the 216-byte character input extension.");
@@ -281,13 +317,16 @@ struct Gameplay::Impl {
 };
 bool Gameplay::available() { return POIMA_MANAGED_GAMEPLAY!=0; }
 bool Gameplay::native_available() { return POIMA_NATIVE_GAMEPLAY!=0; }
-Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,GameplayInitialization initialization):impl_(std::make_unique<Impl>()) {
+Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,GameplayInitialization initialization,std::optional<gameplay_abi::Contract> available):impl_(std::make_unique<Impl>()) {
+    const auto actual_available=gameplay_abi::available_contract();
+    const auto host_available=available.value_or(actual_available);
+    validate_offered_contract(host_available,actual_available);
     check(initialization==GameplayInitialization::defaults || !previous,"Restored gameplay cannot migrate a previous live module.");
     if(previous && (config.native_aot || previous->impl_->config.native_aot))
         throw std::runtime_error("Native gameplay replacement is unsupported; restart the runtime with the same artifact, or restart the process for a different artifact.");
     if(config.native_aot) {
         validate_gameplay_schema(config.native_schema);
-        require_compatible(config.native_requirements.value_or(gameplay_abi::Contract{}),gameplay_abi::available_contract());
+        require_compatible(config.native_requirements.value_or(gameplay_abi::Contract{}),host_available);
 #if POIMA_NATIVE_GAMEPLAY
         native_host().initialize(config);impl_->entry=native_host().entry;
 #else
@@ -301,13 +340,13 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
 #endif
     }
     impl_->config=config;PoimaGameCall call{};call.operation=1;
-    const auto offered=config.native_aot ? config.native_requirements.value_or(gameplay_abi::Contract{}) : gameplay_abi::available_contract();
+    const auto offered=config.native_aot ? config.native_requirements.value_or(gameplay_abi::Contract{}) : host_available;
     const auto text=Json{{"assembly",config.assembly},{"type",config.type},{"host_contract",service_contract_json(offered)}}.dump();call.text=text.c_str();
     impl_->manifest=parse_control_manifest(invoke(impl_->entry,call,true));impl_->handle=impl_->manifest.at("handle");impl_->manifest.erase("handle");
     if(impl_->manifest.contains("requirements")) {
         impl_->requirements=parse_gameplay_service_contract(impl_->manifest.at("requirements").dump());impl_->manifest.erase("requirements");
     }
-    require_compatible(impl_->requirements,gameplay_abi::available_contract());
+    require_compatible(impl_->requirements,host_available);
     if(config.native_aot) {
         require_compatible(impl_->requirements,offered);
         impl_->diagnostics=impl_->manifest.at("diagnostics");impl_->manifest.erase("diagnostics");
@@ -348,6 +387,7 @@ Gameplay::Gameplay(const GameplayConfig& config,const Gameplay* previous,Gamepla
     impl_->migration={{"added",added},{"removed",removed},{"preserved",preserved}};impl_->validate();
 }
 Gameplay::~Gameplay()=default;
+void Gameplay::validate_services(const gameplay_abi::Contract& available) const {require_compatible(impl_->requirements,available);}
 const std::vector<components::Schema>& Gameplay::component_schemas() const { return impl_->component_schemas; }
 std::vector<std::uint64_t>& Gameplay::state() { return impl_->storage; }
 std::string Gameplay::inspect() const {

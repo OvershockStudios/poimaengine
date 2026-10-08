@@ -54,7 +54,7 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==216 &&
+    check(capable.services_version==7 && capable.services_bytes==(runtime_navigation_available()?224u:216u) &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end(),"Runtime did not declare the actual layered animation extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
@@ -105,6 +105,37 @@ void policy() {
     auto layers_character_without_inertia=baseline;layers_character_without_inertia.services_bytes=216;
     layers_character_without_inertia.features.push_back(character_input_feature);layers_character_without_inertia.features.push_back(animation_layers_feature);
     check(!compatibility_error(layers_character_without_inertia,capable).empty(),"Character extent bypassed layer dependency.");
+    // Navigation is an independent named opt-in: an opaque larger allocation
+    // never grants animation, character input, or a missing world binding.
+    auto navigation=baseline;navigation.services_bytes=224;navigation.features.push_back(navigation_feature);
+    auto synthetic=capable;synthetic.services_bytes=224;
+    if(std::find(synthetic.features.begin(),synthetic.features.end(),navigation_feature)==synthetic.features.end())synthetic.features.push_back(navigation_feature);
+    check(compatibility_error(navigation,synthetic).empty(),"Independent navigation profile rejected.");
+    check(!compatibility_error(navigation,available_contract(false)).empty(),"Unbound runtime grants navigation.");
+    check((std::find(capable.features.begin(),capable.features.end(),navigation_feature)!=capable.features.end())==runtime_navigation_available(),"Navigation advertisement differs from actual runtime backend.");
+    for(unsigned features=0;features<8;++features) {
+        auto required=navigation;
+        if(features&1)required.features.push_back(character_input_feature);
+        if(features&2)required.features.push_back(animation_feature);
+        if(features&4)required.features.push_back(animation_layers_feature);
+        const bool valid=!(features&4) || bool(features&2);
+        check(compatibility_error(required,synthetic).empty()==valid,"Navigation profile bypassed named intermediate permissions.");
+        for(unsigned bytes:{176u,192u,208u,216u,223u,225u,256u}) {
+            auto bad=required;bad.services_bytes=bytes;check(!compatibility_error(bad,synthetic).empty(),"Navigation requirement accepted wrong extent.");
+        }
+    }
+    auto opaque=synthetic;std::erase(opaque.features,std::string(navigation_feature));
+    check(!compatibility_error(navigation,opaque).empty(),"Opaque extent granted unnamed navigation.");
+    auto short_navigation=synthetic;short_navigation.services_bytes=216;
+    check(!compatibility_error(baseline,short_navigation).empty(),"Navigation capability advertised without allocation.");
+    auto duplicate_navigation=navigation;duplicate_navigation.features.push_back(navigation_feature);
+    check(!compatibility_error(duplicate_navigation,synthetic).empty(),"Duplicate navigation feature accepted.");
+    auto larger=synthetic;larger.services_bytes=256;larger.features.push_back("future_available_v1");
+    check(compatibility_error(navigation,larger).empty(),"Future available extent broke current navigation requirement.");
+    auto navigation_only=baseline;navigation_only.services_bytes=224;navigation_only.features.push_back(navigation_feature);
+    check(compatibility_error(navigation,navigation_only).empty(),"Navigation requires unrelated optional services.");
+    auto navigation_character=navigation;navigation_character.features.push_back(character_input_feature);
+    check(!compatibility_error(navigation_character,navigation_only).empty(),"Navigation allocation granted undeclared character input.");
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");

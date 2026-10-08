@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
+#include "poima/navigation.hpp"
 #include "poima/animation_layers.hpp"
 #include "poima/gameplay.hpp"
 #include "poima/gameplay_save.hpp"
@@ -135,6 +136,11 @@ struct RuntimeSpawnTemplate {
     std::optional<RuntimeMesh> mesh;
     std::map<std::string,components::Payload> components;
 };
+struct RuntimeNavigationDefinition {
+    std::string asset,source_fingerprint;
+    navigation::Profile profile;
+    std::shared_ptr<const navigation::Mesh> mesh;
+};
 struct RuntimeDefinition {
     std::string world_id;
     std::uint64_t authored_revision=0;
@@ -142,6 +148,7 @@ struct RuntimeDefinition {
     std::vector<components::Schema> component_schemas;
     std::vector<RuntimeSpawnTemplate> templates;
     ui::Definition ui;
+    std::optional<RuntimeNavigationDefinition> navigation;
 };
 // Shared authoring/native validation, also available without Jolt.
 void validate_runtime_animation(const RuntimeDefinition& definition);
@@ -176,6 +183,12 @@ struct RuntimeRayHit {
     std::optional<std::array<double,3>> normal; // Absent for primitive origin-inside hits; mesh surface hits retain winding normals.
     std::optional<std::uint32_t> triangle; // Original mesh indices triple ordinal; absent for primitives.
 };
+struct RuntimeNavigationRequest {
+    std::string entity;
+    navigation::Point goal{},extents{2,4,2};
+    std::uint32_t max_polygons=256,max_corners=256,max_nodes=4096;
+};
+struct RuntimeNavigationPath { std::string asset;navigation::Path path; };
 struct RuntimeEntityState {
     std::string id;
     RuntimeTransform local;
@@ -284,6 +297,8 @@ public:
     RuntimeControlResult control(std::uint64_t expected_ui_revision,
         std::uint64_t expected_control_sequence,const std::string& element);
     std::optional<RuntimeRayHit> raycast(const RuntimeRay& ray) const;
+    // Immutable bound mesh, live capsule foot start; no state/time mutation.
+    RuntimeNavigationPath navigation_path(const RuntimeNavigationRequest&) const;
     // The serialized owner installs a fresh epoch and a ledger that outlives
     // this runtime. Direct runtimes start with saving disabled. Pending intents
     // are part of whole-batch rollback; storage is serviced only by the owner.
