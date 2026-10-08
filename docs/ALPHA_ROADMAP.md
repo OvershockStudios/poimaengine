@@ -1,10 +1,14 @@
-# Road to Alpha 1 — 0.1.0
+# Road to Alpha 1 — 0.1.0-alpha.1
 
 Alpha 1 is the first usable release for building small 3D single-player games
 with agents, with a desktop editor available for inspection and manual work.
 It is a milestone toward the full engine, not completion of its graphics,
 simulation or platform ambitions. Version numbers count development checkpoints;
 they do not measure completion.
+
+Development checkpoints use `0.0.x`. The first alpha release will be tagged
+`0.1.0-alpha.1`, followed by `0.1.0-alpha.2` and later prereleases as needed.
+The suffix identifies alpha status explicitly; a plain `0.1.0` does not.
 
 ## Release gates
 
