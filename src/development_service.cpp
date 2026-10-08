@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "development_service.hpp"
+#include "development_diagnostics.hpp"
 #include <algorithm>
 #include <cctype>
 namespace poima::development {
@@ -76,12 +77,33 @@ Json Service::dispatch(const std::string& method,const Json& p) {
         fields(p,{});Json result=Json::array();if(jobs_)for(const auto& item:jobs_->list())result.push_back(status(item,false));
         return {{"jobs",result},{"retained_limit",32},{"request_budget_remaining",4096-used_requests_.size()}};
     }
-    const bool inspect=method=="development.inspect",cancel=method=="development.cancel",forget=method=="development.forget";
-    need(inspect || cancel || forget,"Unknown development operation.",-32601);
-    fields(p,{"job_id"},{"job_id"});const auto id=job_id(p.at("job_id"));
+    const bool inspect=method=="development.inspect",diagnostics=method=="development.diagnostics",cancel=method=="development.cancel",forget=method=="development.forget";
+    need(inspect || diagnostics || cancel || forget,"Unknown development operation.",-32601);
+    if(diagnostics)fields(p,{"job_id","limit"},{"job_id"});else fields(p,{"job_id"},{"job_id"});
+    const auto limit=p.value("limit",Json(32));
+    if(diagnostics)need(limit.is_number_integer() && limit>=1 && limit<=128,"Diagnostic limit must be 1..128.");
+    const auto id=job_id(p.at("job_id"));
     const auto prior=jobs_ ? jobs_->poll(id):std::optional<Status>{};need(prior.has_value(),"Development job is unknown or forgotten.",-32004);
     if(forget) { need(terminal(prior->state),"Only terminal jobs can be forgotten.",-32090);need(jobs_->forget(id),"Job could not be forgotten.",-32090);return {{"job_id",id},{"forgotten",true}}; }
     if(cancel) { const bool requested=jobs_->cancel(id);auto result=status(*jobs_->poll(id),false);result["requested"]=requested;return result; }
+    if(diagnostics) {
+        const auto report=parse_diagnostics(prior->standard_output,prior->output_truncated,prior->standard_error,prior->error_truncated,
+            terminal(prior->state),limit.get<std::size_t>());
+        auto result=status(*prior,false);result["diagnostics"]=Json::array();
+        for(const auto& item:report.diagnostics) {
+            Json location=nullptr;
+            if(item.location)location={{"line",item.location->line},
+                {"column",item.location->column ? Json(*item.location->column):Json(nullptr)},
+                {"end_line",item.location->end_line ? Json(*item.location->end_line):Json(nullptr)},
+                {"end_column",item.location->end_column ? Json(*item.location->end_column):Json(nullptr)}};
+            result["diagnostics"].push_back({{"severity",item.severity==Severity::error ? "error":"warning"},
+                {"code",safe_diagnostic(item.code)},{"origin",safe_diagnostic(item.origin)},
+                {"message",safe_diagnostic(item.message)},{"project",item.project.empty() ? Json(nullptr):safe_diagnostic(item.project)},
+                {"location",location}});
+        }
+        result["recognized_lines"]=report.recognized_count;result["more"]=report.more;result["incomplete"]=report.incomplete;
+        result["limit"]=limit;result["parser"]="msbuild-csharp-subset-v1";return result;
+    }
     return status(*prior,true);
 }
 Json Service::schemas() {
@@ -92,6 +114,7 @@ Json Service::schemas() {
             {"configuration",{{"enum",{"Debug","Release"}},{"default","Debug"}}},{"timeout_ms",{{"type","integer"},{"minimum",100},{"maximum",600000},{"default",600000}}}}, {"request_id","executable","project","output"})},
         {"development.jobs",object(Json::object())},
         {"development.inspect",object({{"job_id",id}},{"job_id"})},
+        {"development.diagnostics",object({{"job_id",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",128},{"default",32}}}},{"job_id"})},
         {"development.cancel",object({{"job_id",id}},{"job_id"})},
         {"development.forget",object({{"job_id",id}},{"job_id"})}};
 }

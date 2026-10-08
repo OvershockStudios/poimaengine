@@ -69,7 +69,7 @@ service supplies policy, retry receipts and generated compilation arguments.
 ## Authoring compile adapter (development)
 
 Source integration exposes `development.compile`, `development.jobs`,
-`development.inspect`, `development.cancel` and `development.forget` through
+`development.inspect`, `development.diagnostics`, `development.cancel` and `development.forget` through
 the world service. Packaged read-only worlds hide and reject these operations.
 Compile accepts an explicit absolute SDK executable, `.csproj`, output directory,
 fresh request ID, Debug/Release configuration and optional timeout. It generates
@@ -88,8 +88,46 @@ diagnostics, byte counters and truncation flags. Cancellation preserves any
 already-written output files. Compilation does not change authored world revisions.
 
 The standalone worker passes real-child contracts on Linux and native Windows.
-The service passes Linux self-child checks for generated arguments, path fidelity,
+The service passes Linux and native Windows self-child checks for generated arguments, path fidelity,
 retry guards, capacity-failure rollback, expired receipts and malformed diagnostic
 bytes. A real .NET 10 SDK build through this adapter produces the escape-room
 fixture assembly. Full world-host and packaged integration qualification is
 recorded separately; no new installed desktop package is implied.
+
+## Structured compiler feedback (development)
+
+Agents can request recognized compiler errors and warnings without retrieving
+the raw diagnostic tails:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"development.diagnostics","params":{"job_id":1,"limit":16}}
+```
+
+The response retains the job's state, exit code and stream byte/truncation
+counters. `diagnostics` contains deduplicated records with `severity`, `code`,
+`origin`, `message`, optional `project` and optional `location`. Locations are
+one-based; absent columns/end positions remain null. An origin can be a source
+path or a tool name, and is preserved without filesystem resolution. Raw
+stdout/stderr are omitted; `development.inspect` still retrieves them.
+
+`recognized_lines` counts matching physical lines before deduplication, including
+MSBuild's repeated summary. Results follow retained stdout then stderr, without
+claiming cross-stream time order. `limit` defaults to 32 and accepts 1–128;
+`more:true` means additional distinct recognized records were omitted. Re-query
+with a larger limit for more records; this is a live job observation, not a
+revision-bound pagination cursor.
+
+The parser recognizes a conservative subset of
+[Microsoft's diagnostic format](https://learn.microsoft.com/en-us/visualstudio/msbuild/msbuild-diagnostic-format-for-tasks?view=visualstudio):
+error/warning categories with codes, optional origins and common source-coordinate
+forms. It caps each input stream at 64 KiB and each line at 16 KiB. `incomplete`
+marks skipped truncated prefixes, unfinished running-job lines, oversized lines
+or malformed diagnostic-looking input. Other formats may remain unrecognized;
+an empty list never proves that compilation succeeded or that no errors occurred.
+Use the job's terminal state and exit status, and inspect raw logs when needed.
+
+The standalone parser and adapter contracts pass on Linux and native Windows.
+A real Linux SDK failure reports its code and exact source coordinates; repairing
+that fixture produces an assembly while retaining its warning. These checks are
+separate from rebuilt world-host execution. This API does not load the resulting
+module or change gameplay automatically. [Qualification evidence](evidence/m2-development-diagnostics.json).

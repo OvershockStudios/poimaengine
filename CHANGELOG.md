@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.41 — Unreleased
+
+This source checkpoint adds compact compiler feedback for agent iteration. The installed desktop package remains unchanged; full world-host integration qualification remains pending.
+
+- `development.diagnostics` returns bounded, deduplicated compiler codes, messages and source locations while retaining the job's actual state and exit status. Raw logs remain available through `development.inspect`; an empty diagnostic list never implies success. [Development jobs](docs/DEVELOPMENT_JOBS.md).
+- Native discovery advances to schema revision 47 for the development operations and kind-specific UI schemas. Agents caching discovery can detect the change.
+
 ## 0.0.40 — Unreleased
 
 This checkpoint collects development since 0.0.39. The installed desktop package remains at its earlier qualified checkpoint. This entry tracks the next source checkpoint, not an available release download.

@@ -130,6 +130,17 @@ Schema revision 27 adds `save.status`, `save.configure`, `save.inspect`, `save.w
 
 Schema revision 35 adds authored `ui.element.set/remove` transactions and `world.ui.get/list`, plus `runtime.ui.inspect/edit` for native logical state. UI definitions use authored format 4 and participate in history and frozen content identity. Runtime edits retain an independent revision without advancing physics. UI-bearing saves use snapshot version 4 and require the observed UI revision on external save/load operations. See [Game UI](GAME_UI.md#authoritative-controls) for payloads, bounds, retry semantics and remaining presentation/gameplay integration work.
 
+## Development compilation (development)
+
+Schema revision 47 adds discoverable `development.compile`, `development.jobs`,
+`development.inspect`, `development.diagnostics`, `development.cancel` and
+`development.forget`, plus kind-specific panel/label/button discovery variants.
+Compile jobs use a bounded native background worker and session-local retry
+receipts; structured compiler feedback omits raw logs and retains actual job
+status. Packaged read-only scope hides and rejects these operations in source.
+Standalone qualification is separate from execution through a rebuilt world
+host; see [development jobs](DEVELOPMENT_JOBS.md) for payloads and limits.
+
 ## Reconstruction observations
 
 Schema revision 46 adds optional `ambient_occlusion` to the same capture/play operations. It is a strict object: `mode` is `none` (default) or `gtao`, `quality` is `low`, `medium` (default), or `high`, and `radius` is a finite number in `[0.01,100]` world units (default `1`). Unknown keys and invalid types are rejected even with mode `none`. Enabled AO requires `lighting_path: "deferred"` and `samples: 1`; the `ambient_occlusion` scene debug view also requires enabled AO. Non-color views remain incompatible with reconstruction. Invalid requests preserve authored/runtime state and do not create capture output.

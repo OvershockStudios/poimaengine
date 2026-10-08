@@ -1,0 +1,120 @@
+{
+  "checkpoint": "0.0.41 development",
+  "scope": "Bounded compiler diagnostic extraction and standalone authoring compile adapter",
+  "passed": true,
+  "schemas": {
+    "source_revision": 47,
+    "full_world_host_execution": false
+  },
+  "source_sha256": {
+    "src/development_diagnostics.cpp": "90554fb764f53eaf8e3f425ec0ec2e96670a088894133c3bd488ea435c9539ee",
+    "src/development_diagnostics.hpp": "4f52e23d1240b72fa3bc48262690dc9ca71d18de84abf5fcaffeb7182813fa0d",
+    "src/development_service.cpp": "c826356b451e074ee0070a0c5d5f858461c2176a586ab20389324ee3abd5e7f0",
+    "tests/development_diagnostics.cpp": "9a64819f5e24952b2acdde06e4e20f2030659fd6b88522f08be564deff03e868",
+    "tests/development_service.cpp": "5cc09dcb794263bdff7fe078a69ea3b8e2d753367bf7fcf2db5e6d66bce5a651"
+  },
+  "linux": {
+    "cmake_contract_build": true,
+    "service_contract_passed": true,
+    "parser_contract_passed": true,
+    "service_binary_sha256": "29ff5fbe810f77603f08cf12754b54066a5ae8fa25a472c7123dbd8cff0c8d95",
+    "parser_binary_sha256": "3351b052d79a5639daa5f357d48e5d7e62e08eca3b466f82839303eed5fddbcd",
+    "service_ctest_log_sha256": "9de2a1c5837617ee382079ebee1481ec853907bc4247727e3aebf6219aef8e75",
+    "final_parser_ctest_log_sha256": "733d49eea035f62cbbaff856e2fd765609b19eddf3b76652d5fef08e0853968f"
+  },
+  "windows": {
+    "compiler": "MSVC 14.44.35207",
+    "service_contract_passed": true,
+    "parser_contract_passed": true,
+    "final_changed_test_compile_warning_policy": "/W4 /WX; production compilation warning-free",
+    "compiler_sha256": "fe251ef50a1545b1b0835ee17b1e785459712b38d79e45b5c1d3d28970a36619",
+    "service_binary_sha256": "9a0fac721c0a01273cc152c69d1bcd513d80e4648525b3ed96fc2e80ff7c847e",
+    "parser_binary_sha256": "f3c8f345eaf5725a0137c25c42d6afa1bc09e6b545ae2581636b6dafeb51512f",
+    "source_and_snapshot_hashes_match": true,
+    "immutable_reused_objects_verified": true,
+    "test_exit_codes": [
+      0,
+      0
+    ]
+  },
+  "adapter_checks": [
+    "literal_argv_and_cwd",
+    "incremental_build_arguments",
+    "invalid_parameters",
+    "exact_retry",
+    "changed_retry_rejected",
+    "compact_catalog",
+    "forget_does_not_recompile",
+    "launch_failure",
+    "invalid_utf8_diagnostics",
+    "cancel_and_terminal_forget",
+    "capacity_failure_retry_rollback",
+    "expired_receipt_tombstone",
+    "discovery",
+    "structured_source_location",
+    "summary_deduplication",
+    "limited_results_explicit",
+    "invalid_limits",
+    "invalid_utf8_diagnostic",
+    "unrecognized_output_preserves_failure"
+  ],
+  "parser_checks": [
+    "Linux/Windows paths, spaces, parentheses and nested bracketed project names",
+    "Canonical UTF-8 byte sequences and arbitrary diagnostic bytes",
+    "Case-insensitive categories; blank/tool origins; one-based optional source coordinates",
+    "Summary deduplication across stdout/stderr without collapsing distinct records",
+    "Truncated prefixes, unfinished running lines, input/line/result caps and explicit omissions",
+    "Malformed location/code rejection and bracketed message preservation"
+  ],
+  "real_sdk_failure_repair": {
+    "platform": "Linux",
+    "sdk": "10.0.401",
+    "adapter_used": true,
+    "failure": {
+      "state": "failed",
+      "exit_code": 1,
+      "recognized_lines": 4,
+      "diagnostics": [
+        {
+          "code": "CS1030",
+          "severity": "warning",
+          "location": {
+            "column": 10,
+            "end_column": null,
+            "end_line": null,
+            "line": 1
+          }
+        },
+        {
+          "code": "CS1525",
+          "severity": "error",
+          "location": {
+            "column": 57,
+            "end_column": null,
+            "end_line": null,
+            "line": 2
+          }
+        }
+      ]
+    },
+    "repair": "Changed the invalid expression identified by CS1525 from Value => ; to Value => 42; in the disposable source fixture.",
+    "rebuild": {
+      "state": "succeeded",
+      "exit_code": 0,
+      "recognized_lines": 2,
+      "codes": [
+        "CS1030"
+      ],
+      "assembly_sha256": "e65b9a6c700b9279b3abb24e5a4c705c1c33dceed03866499a6dae879cdb4b27"
+    },
+    "timing_claim": false,
+    "gameplay_execution_claim": false
+  },
+  "limits": [
+    "Full rebuilt world-host protocol and packaged read-only execution remain pending; source guards were independently reviewed.",
+    "No installed desktop package activation, source watching or automatic gameplay reload.",
+    "Parser supports a documented diagnostic subset; an empty record list never proves compilation success.",
+    "No graphics, provider-agent benchmark or performance qualification.",
+    "Raw SDK/MSVC logs and machine-local paths remain in ignored build output."
+  ]
+}
