@@ -1,0 +1,279 @@
+{
+  "checkpoint": "0.0.54 development",
+  "passed": true,
+  "scope": "Coherent bounded runtime reads, native protocol/scope availability and one provider-free Windows CoreCLR Workshop replay comparison.",
+  "protocol_version": 1,
+  "schema_revision": 51,
+  "implementation": {
+    "operation": "runtime.observe",
+    "owner_serialized": true,
+    "advances_simulation": false,
+    "invokes_gameplay_callbacks": false,
+    "retains_observation_cache": false,
+    "bounds": {
+      "explicit_ids": 32,
+      "query_page": 64,
+      "union_rows": 96,
+      "component_types": 4,
+      "entity_fields": 13,
+      "fields_per_component": 32,
+      "result_utf8_json_bytes": 1048576
+    },
+    "gameplay_abi_changed": false,
+    "save_format_changed": false,
+    "selected_authoring_contract_changed": false,
+    "installed_desktop_package_changed": false
+  },
+  "qualification": {
+    "linux_runtime": {
+      "tests": 9,
+      "rpc_calls": 168,
+      "skipped": 0,
+      "owned_processes": 9,
+      "cleanup_ok": true,
+      "binary_sha256": "0cb96b54fcb569bd8c2232baf1686009f8a20421425d506f69fbccfa074c6060",
+      "regression_groups": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "components_native",
+        "world_session_native",
+        "runtime_entity_ids_native",
+        "runtime_templates_native",
+        "world_templates_contract",
+        "world_ui_contract",
+        "runtime_components_native",
+        "world_components_contract",
+        "runtime_save_contract",
+        "runtime_ui_contract",
+        "runtime_contract"
+      ]
+    },
+    "windows_runtime": {
+      "tests": 9,
+      "rpc_calls": 168,
+      "skipped": 0,
+      "owned_processes": 9,
+      "cleanup_ok": true,
+      "binary_sha256": "13f373379bdae06914763275791393ac77a4246b49dd199db44869c2570cfdfb",
+      "command_groups": [
+        {
+          "name": "observation",
+          "exit_code": 0
+        },
+        {
+          "name": "world-session",
+          "exit_code": 0
+        },
+        {
+          "name": "components",
+          "exit_code": 0
+        },
+        {
+          "name": "templates",
+          "exit_code": 0
+        },
+        {
+          "name": "ui",
+          "exit_code": 0
+        },
+        {
+          "name": "core-conformance",
+          "exit_code": 0
+        },
+        {
+          "name": "core-identity",
+          "exit_code": 0
+        }
+      ]
+    },
+    "linux_authoring_only": {
+      "configuration": "Debug; -O0 -g0; simulation and Vulkan probe disabled",
+      "groups": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "world_session_native",
+        "runtime_observe_contract"
+      ],
+      "observer_absent_from_discovery": true,
+      "direct_observer_error": -32003,
+      "protocol_cases_passed": 1,
+      "protocol_cases_skipped": 8,
+      "scope_checks_passed": true
+    },
+    "stable_contract_gates": {
+      "passed": true,
+      "platforms": [
+        {
+          "name": "linux-runtime",
+          "passed": true,
+          "schema_revision": 51,
+          "protocol_version": 1,
+          "observer_discovered": true,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "0cb96b54fcb569bd8c2232baf1686009f8a20421425d506f69fbccfa074c6060"
+        },
+        {
+          "name": "windows-runtime",
+          "passed": true,
+          "schema_revision": 51,
+          "protocol_version": 1,
+          "observer_discovered": true,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "13f373379bdae06914763275791393ac77a4246b49dd199db44869c2570cfdfb"
+        },
+        {
+          "name": "linux-authoring-only",
+          "passed": true,
+          "schema_revision": 51,
+          "protocol_version": 1,
+          "observer_discovered": false,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "2042df754801c1dbc48290e2c50a54142b430e84d61411ae689f27da100114db"
+        }
+      ],
+      "historical_response_compatibility": true,
+      "canonical_response_self_compatibility": true
+    },
+    "compatibility_test_groups": {
+      "request_compatibility": 16,
+      "response_compatibility": 16,
+      "frozen_artifacts": 4
+    }
+  },
+  "replay_comparison": {
+    "format": "poima.agent-workshop-observation-compare",
+    "version": 1,
+    "passed": true,
+    "normalization": "Replace only values of dictionary keys named session_id with <runtime-session>; require each original value to be a 32hex ID. No path, entity ID, tick, revision, pose, motion, velocity, UI or buffer normalization.",
+    "json_byte_definition": "Compact Python UTF-8 reserialization, ensure_ascii=False and no NaN: request body is {method,params}; result body is the parsed native result. Excludes JSON-RPC envelopes, framing, stderr, MCP/provider data; not exact native wire bytes or tokens.",
+    "limitations": [
+      "One synthetic native replay pair on the supplied game/artifacts.",
+      "RPC counts and reserialized JSON body sizes only; no timing, provider-token, FPS or success-rate conclusion.",
+      "Retains the replay fixture limitations; no new physical input, rendering or shipping qualification."
+    ],
+    "hashes": {
+      "engine": "13f373379bdae06914763275791393ac77a4246b49dd199db44869c2570cfdfb",
+      "world": "c546dd69c5dec20357471ac609f1b6b9c603048d3b2ef029b372d675ffe1cad8",
+      "manifest": "44565c287b64779a8a605fe12d9f7247fccfbcdf79f018eaa570849a9e8f6516",
+      "assembly": "b3dac6dda3621f913c50affed98fbff6490cdeb3076dcf939d05c7c743857fe0",
+      "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+      "bridge": "361a35df9e0762c3a4f3f72f3a441de9ef749fc107ac119f018252d96bbcfad7",
+      "replay": "1a2c4ac56f7c850931eca3bb2e484fdad175fc4f5aa9e686397e5bbdfdb63676",
+      "comparison_runner": "5b8baf5f14ddc25e309e7e8746c12496681ab2bc6f236f9efc9651c940924bb6"
+    },
+    "compared_snapshots": [
+      "checkpoint",
+      "compiled_restore",
+      "fresh_process_restore",
+      "win",
+      "win_after_compiled_load",
+      "fresh_process_win"
+    ],
+    "snapshot_sha256": {
+      "checkpoint": "c9cd09c1528c92f95eb361326b562890eeed0bb0b5053191288c0c0bbc2ccae4",
+      "compiled_restore": "c9cd09c1528c92f95eb361326b562890eeed0bb0b5053191288c0c0bbc2ccae4",
+      "fresh_process_restore": "c9cd09c1528c92f95eb361326b562890eeed0bb0b5053191288c0c0bbc2ccae4",
+      "win": "366bde984f4baada26aaffe6b4ca05bf26136554dcef06e67d1d1e1b2e2dad52",
+      "win_after_compiled_load": "366bde984f4baada26aaffe6b4ca05bf26136554dcef06e67d1d1e1b2e2dad52",
+      "fresh_process_win": "366bde984f4baada26aaffe6b4ca05bf26136554dcef06e67d1d1e1b2e2dad52"
+    },
+    "route_events": 13,
+    "game_checks": 13,
+    "runs": {
+      "legacy": {
+        "calls": 2549,
+        "method_counts": {
+          "runtime.component.get": 276,
+          "runtime.component.query": 70,
+          "runtime.entity": 609,
+          "runtime.gameplay.inspect": 159,
+          "runtime.gameplay.load": 1,
+          "runtime.inspect": 1139,
+          "runtime.raycast": 24,
+          "runtime.start": 1,
+          "runtime.status": 2,
+          "runtime.step": 170,
+          "runtime.ui.activate": 11,
+          "runtime.ui.inspect": 77,
+          "save.configure": 2,
+          "save.inspect": 1,
+          "save.load": 1,
+          "save.status": 1,
+          "world.inspect": 3,
+          "world.ui.layout": 2
+        },
+        "request_body_json_bytes": 352169,
+        "result_body_json_bytes": 1654466,
+        "owned_native_processes": 2,
+        "cleanup_ok": true
+      },
+      "observe": {
+        "calls": 1292,
+        "method_counts": {
+          "runtime.gameplay.inspect": 159,
+          "runtime.gameplay.load": 1,
+          "runtime.inspect": 184,
+          "runtime.observe": 653,
+          "runtime.raycast": 24,
+          "runtime.start": 1,
+          "runtime.status": 2,
+          "runtime.step": 170,
+          "runtime.ui.activate": 11,
+          "runtime.ui.inspect": 77,
+          "save.configure": 2,
+          "save.inspect": 1,
+          "save.load": 1,
+          "save.status": 1,
+          "world.inspect": 3,
+          "world.ui.layout": 2
+        },
+        "request_body_json_bytes": 310916,
+        "result_body_json_bytes": 1374747,
+        "owned_native_processes": 2,
+        "cleanup_ok": true
+      }
+    },
+    "reductions": {
+      "calls": {
+        "legacy": 2549,
+        "observe": 1292,
+        "saved": 1257,
+        "reduction_percent": 49.313456257355824
+      },
+      "request_body_json_bytes": {
+        "legacy": 352169,
+        "observe": 310916,
+        "saved": 41253,
+        "reduction_percent": 11.713978232042003
+      },
+      "result_body_json_bytes": {
+        "legacy": 1654466,
+        "observe": 1374747,
+        "saved": 279719,
+        "reduction_percent": 16.906905309628605
+      }
+    }
+  },
+  "source_sha256": {
+    "src/world.cpp": "45131c7c2b40686054db8cf9c33b4340c329dbf3f766b516a75d52ff7c4674bf",
+    "src/world_observe.inc": "3cb074960872dee891eddff4a5f162c40dec23a009766f7cc91e08054bebe31f",
+    "tests/world_session_native.cpp": "fdf1bdef9f27a01ef40b61ee508f68ec684c8f43bb768ded2750e4d745a0dddf",
+    "tests/runtime_observe_contract.py": "1db374ae4575bd9183ea2731462b8f6dd5cc42a6c36d0c8be465db59082ba83b",
+    "tests/agent_workshop_replay.py": "1a2c4ac56f7c850931eca3bb2e484fdad175fc4f5aa9e686397e5bbdfdb63676",
+    "tests/agent_workshop_observation_compare.py": "5b8baf5f14ddc25e309e7e8746c12496681ab2bc6f236f9efc9651c940924bb6"
+  },
+  "limitations": [
+    "One provider-free Windows CoreCLR game replay pair; no new external-agent creation comparison.",
+    "Counts and compact reserialized JSON bodies exclude RPC framing and provider data; no token, latency or FPS conclusion.",
+    "Legal 96-row output tested with small values; actual result-byte overflow rejection remains unqualified.",
+    "Nonzero component/structure/UI stale guards tested; stale nonzero compiled gameplay/control pins remain unqualified.",
+    "Synthetic/headless checks; no new physical input, GPU/UI appearance, Native AOT game replay or installed desktop package qualification.",
+    "The retained Workshop game limitations remain applicable."
+  ]
+}

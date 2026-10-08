@@ -439,7 +439,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 50}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 51}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -504,6 +504,22 @@ Json describe() {
     methods["runtime.save.result"]=object_schema({{"epoch",id},{"sequence",{{"type","integer"},{"minimum",1},{"maximum",max_revision}}}},{"epoch","sequence"});
     for(const auto* method:{"runtime.inspect","runtime.stop"}) methods[method]=object_schema({{"session_id",id}},{"session_id"});
     methods["runtime.entity"]=object_schema({{"session_id",id},{"id",id},{"tick",rev}},{"session_id","id"});
+    if(Runtime::available()) {
+        const Json entity_fields={{"type","array"},{"maxItems",13},{"uniqueItems",true},{"items",{{"enum",{
+            "world_matrix","layout","local_transform","animation","motion","kinematic_target","motion_remaining_ticks",
+            "velocity","has_body","is_character","ground","yaw","pitch"}}}},{"default",{
+            "world_matrix","layout","velocity","has_body","is_character","ground","yaw","pitch"}}};
+        const Json component_selector=object_schema({{"type",id},{"fields",{{"type","array"},{"maxItems",32},{"uniqueItems",true},{"items",id}}}},{"type"});
+        const Json query=object_schema({{"type",id},{"after",id},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64},{"default",32}}}},{"type"});
+        auto observation=object_schema({{"session_id",id},{"tick",rev},{"ids",{{"type","array"},{"maxItems",32},{"uniqueItems",true},{"items",id}}},
+            {"query",query},{"entity_fields",entity_fields},{"components",{{"type","array"},{"maxItems",4},{"items",component_selector}}},
+            {"include_schemas",{{"type","boolean"},{"default",false}}}},{"session_id","tick"});
+        for(const auto* key:{"structure_revision","component_revision","gameplay_revision","ui_revision","control_sequence"})observation["properties"][key]=rev;
+        observation["anyOf"]=Json::array({{{"required",{"ids"}},{"properties",{{"ids",{{"minItems",1}}}}}},{{"required",{"query"}}}});
+        observation["allOf"]=Json::array({{{"if",{{"required",{"query"}},{"properties",{{"query",{{"required",{"after"}}}}}}}},
+            {"then",{{"required",{"structure_revision","component_revision"}}}}}});
+        methods["runtime.observe"]=std::move(observation);
+    }
     methods["runtime.gameplay.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"include_schema",{{"type","boolean"},{"default",false}}},{"fields",{{"type","array"},{"maxItems",128},{"uniqueItems",true},{"items",{{"type","string"}}}}}},{"session_id"});
     methods["runtime.gameplay.collect"]=object_schema({{"session_id",id}},{"session_id"});
     auto game_edit=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_revision",rev},
@@ -2522,6 +2538,7 @@ public:
     Json component_runtime_info() const {
         return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"component_revision",runtime_->component_revision()},{"structure_revision",runtime_->structure_revision()}};
     }
+#include "world_observe.inc"
     Json component_dispatch(const std::string& method,const Json& params) {
         require(params.is_object() && params.contains("session_id"),"Runtime component requests require session_id.");runtime_guard(params);
         if(method=="runtime.components") {
@@ -2682,6 +2699,7 @@ public:
         return structure_receipt_json(*structure_receipts_[index],false);
     }
     Json runtime_dispatch(const std::string& method,const Json& params) {
+        if(method=="runtime.observe")return observe_runtime(params);
         // Validate guard representation before receipt equality (JSON considers
         // integer and floating numeric values equal).
         if(params.is_object() && params.contains("expected_structure_revision"))revision(params.at("expected_structure_revision"));
@@ -2782,11 +2800,8 @@ public:
             RuntimeEntityState e;
             try { e=runtime_->entity(identifier(params.at("id"))); }
             catch(const std::runtime_error& error) { throw Error(-32004,error.what()); }
-            return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"structure_revision",runtime_->structure_revision()},{"id",e.id},{"world_matrix",e.world},{"layout","column_major"},
-                {"local_transform",{{"position",e.local.position},{"rotation",e.local.rotation},{"scale",e.local.scale}}},
-                {"animation",e.animation ? animation_json(*e.animation) : Json(nullptr)},
-                {"motion",e.motion},{"kinematic_target",e.kinematic_target ? motion_json(*e.kinematic_target) : Json(nullptr)},{"motion_remaining_ticks",e.motion_remaining_ticks},
-                {"velocity",e.velocity},{"has_body",e.has_body},{"is_character",e.is_character},{"ground",e.ground},{"yaw",e.yaw},{"pitch",e.pitch}};
+            auto result=runtime_entity_value(e);result["session_id"]=runtime_id_;result["tick"]=runtime_->inspect().tick;
+            result["structure_revision"]=runtime_->structure_revision();result["id"]=e.id;return result;
         }
         if(method=="runtime.step") {
             fields(params,{"session_id","request_id","expected_tick","ticks","inputs","motions","sounds","animations","expected_structure_revision"},{"session_id","request_id","expected_tick","ticks"});

@@ -4,6 +4,7 @@
 Uses compiled gameplay, generated native buffers and newly computed controller
 routes. Owns two standalone processes and edits only copies of the input worlds.
 No model/provider calls, source repairs, runtime field edits or teleports.
+Optional --observe joins native reads without caching or reducing game checks.
 Run Python on the engine's native operating system. Local evidence includes
 paths and RPCs; public-summary.json contains only allowlisted results.
 """
@@ -30,7 +31,14 @@ ALLOWED = frozenset(('runtime.status', 'runtime.stop', 'world.inspect', 'world.u
     'runtime.start', 'runtime.gameplay.load', 'runtime.gameplay.inspect', 'runtime.inspect',
     'runtime.entity', 'runtime.components', 'runtime.component.get', 'runtime.component.query',
     'runtime.step', 'runtime.ui.inspect', 'runtime.ui.activate', 'runtime.raycast',
-    'save.status', 'save.configure', 'save.inspect', 'save.load'))
+    'save.status', 'save.configure', 'save.inspect', 'save.load', 'runtime.observe'))
+ENTITY_FIELDS = ('world_matrix', 'layout', 'local_transform', 'animation', 'motion',
+    'kinematic_target', 'motion_remaining_ticks', 'velocity', 'has_body', 'is_character',
+    'ground', 'yaw', 'pitch')
+DEFAULT_ENTITY_FIELDS = ('world_matrix', 'layout', 'velocity', 'has_body', 'is_character', 'ground', 'yaw', 'pitch')
+JSON_BYTE_DEFINITION = ('Compact Python UTF-8 reserialization, ensure_ascii=False and no NaN: '
+    'request body is {method,params}; result body is the parsed native result. '
+    'Excludes JSON-RPC envelopes, framing, stderr, MCP/provider data; not exact native wire bytes or tokens.')
 
 
 def require(condition, message):
@@ -44,6 +52,10 @@ def digest(path):
         for chunk in iter(lambda: stream.read(65536), b''):
             result.update(chunk)
     return result.hexdigest()
+
+
+def json_bytes(value):
+    return len(json.dumps(value, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8'))
 
 
 def position(entity):
@@ -73,11 +85,13 @@ class Game:
         require(len(self.e['calls']) < MAX_CALLS, 'Independent RPC budget exceeded')
         remaining = self.deadline-time.monotonic()
         require(remaining > 0, 'Independent overall deadline exceeded')
-        record = dict(process=self.name, method=method, params=copy.deepcopy(params or {}))
+        record = dict(process=self.name, method=method, params=copy.deepcopy(params or {}),
+            request_body_json_bytes=json_bytes(dict(method=method, params=params or {})))
         self.e['calls'].append(record)
         try:
             result = self.client.call(method, params, timeout=min(30, remaining))
             record['result'] = copy.deepcopy(result)
+            record['result_body_json_bytes'] = json_bytes(result)
             return result
         except BaseException as error:
             record['error'] = dict(kind=type(error).__name__, message=str(error), code=getattr(error, 'code', None))
@@ -108,12 +122,60 @@ class Game:
         require(type(value) is int or (isinstance(value, str) and value.lstrip('-').isdigit()), 'Invalid state integer '+field)
         return int(value)
 
+    def observe(self, **selectors):
+        result = self.rpc('runtime.observe', dict(session_id=self.session, tick=self.tick, **selectors))
+        require(result['session_id'] == self.session and result['tick'] == self.tick,
+                'Joined observation has a different runtime session/tick')
+        for field in ('tick', 'structure_revision', 'component_revision', 'gameplay_revision',
+                      'ui_revision', 'control_sequence'):
+            require(type(result[field]) is int and 0 <= result[field] <= 9007199254740991,
+                    'Invalid joined observation revision '+field)
+        rows = result['entities']
+        identities = [row['id'] for row in rows]
+        require(identities == sorted(set(identities)), 'Joined entity rows are not unique and sorted')
+        expected_fields = set(selectors.get('entity_fields', DEFAULT_ENTITY_FIELDS))
+        expected_types = {selected['type'] for selected in selectors.get('components', [])}
+        for row in rows:
+            require(set(row['state']) == expected_fields and set(row['components']) == expected_types,
+                    'Joined observation does not preserve requested entity/component projection')
+        types = result['component_types']
+        require([t['type'] for t in types] == sorted(expected_types), 'Joined component metadata differs from selection')
+        if selectors.get('include_schemas'):
+            for metadata in types:
+                require(metadata['schema']['id'] == metadata['type'] and
+                        metadata['schema']['fingerprint'] == metadata['fingerprint'],
+                        'Joined component schema identity/fingerprint differs')
+        return result
+
+    @staticmethod
+    def observed_entity(result, row):
+        return dict(session_id=result['session_id'], tick=result['tick'],
+                    structure_revision=result['structure_revision'], id=row['id'], **row['state'])
+
+    @staticmethod
+    def observed_component(result, row, type):
+        metadata = next(t for t in result['component_types'] if t['type'] == type)
+        return dict(session_id=result['session_id'], tick=result['tick'],
+                    component_revision=result['component_revision'], structure_revision=result['structure_revision'],
+                    id=row['id'], type=type, schema=metadata['schema'], values=row['components'][type])
+
     def entity(self, identity):
+        if self.s.get('observe', False):
+            result = self.observe(ids=[identity], entity_fields=list(ENTITY_FIELDS))
+            require(result['query'] is None and len(result['entities']) == 1 and
+                    result['entities'][0]['id'] == identity, 'Joined known-entity selection differs')
+            return self.observed_entity(result, result['entities'][0])
         state = self.inspect()
         return self.rpc('runtime.entity', dict(session_id=self.session, tick=self.tick,
             structure_revision=state['structure_revision'], id=identity))
 
     def component(self, identity, type):
+        if self.s.get('observe', False):
+            type = raw_type(type)
+            result = self.observe(ids=[identity], entity_fields=[], components=[dict(type=type)], include_schemas=True)
+            require(result['query'] is None and len(result['entities']) == 1 and
+                    result['entities'][0]['id'] == identity, 'Joined component entity selection differs')
+            return self.observed_component(result, result['entities'][0], type)
         state = self.inspect()
         return self.rpc('runtime.component.get', dict(session_id=self.session, tick=self.tick,
             structure_revision=state['structure_revision'], id=identity, type=raw_type(type)))
@@ -132,6 +194,27 @@ class Game:
         return items
 
     def pickups(self):
+        if self.s.get('observe', False):
+            component_type = raw_type(self.m['pickups']['type'])
+            joined = self.observe(query=dict(type=component_type, limit=64), entity_fields=list(ENTITY_FIELDS),
+                                  components=[dict(type=component_type)], include_schemas=True)
+            query = joined['query']
+            require(query['type'] == component_type and query['next_after'] is None and len(query['entities']) <= 7,
+                    'Pickup query exceeded bounded native set')
+            require(query['entities'] == [row['id'] for row in joined['entities']],
+                    'Joined pickup membership differs from returned native entity rows')
+            result = {}
+            for row in joined['entities']:
+                component = self.observed_component(joined, row, component_type)
+                field = next((f for f in component['schema']['fields'] if f['id'] == self.m['pickups']['kind_field']), None)
+                require(field and field['kind'] == 'int32', 'Pickup kind is not native scalar int32')
+                require(component['values'] is not None, 'Query returned absent pickup membership')
+                kind = component['values'][self.m['pickups']['kind_field']]
+                require(type(kind) is int and kind in (1, 2), 'Native pickup kind is invalid')
+                body = self.observed_entity(joined, row)
+                require(body['has_body'], 'Pickup has no native collision body')
+                result[row['id']] = dict(kind=kind, entity=body)
+            return result
         state = self.inspect()
         query = self.rpc('runtime.component.query', dict(session_id=self.session, tick=self.tick,
             structure_revision=state['structure_revision'], type=raw_type(self.m['pickups']['type']), limit=256))
@@ -521,6 +604,10 @@ def summary(evidence, manifest):
                 counters={key:int(outcome['values'][field]) for key,field in manifest['fields'].items()})
     return dict(format='poima.agent-workshop-replay',version=1,passed=evidence['passed'],
         calls=len(evidence['calls']),elapsed_seconds=evidence['elapsed_seconds'],
+        observation_mode=evidence['observation_mode'],
+        json_bytes=dict(definition=JSON_BYTE_DEFINITION,
+            request_body=sum(call.get('request_body_json_bytes', 0) for call in evidence['calls']),
+            result_body=sum(call.get('result_body_json_bytes', 0) for call in evidence['calls'])),
         hashes=evidence.get('hashes',{}),checks=evidence['checks'],limitations=evidence['limitations'],
         checkpoint_inventory=evidence.get('checkpoint',{}).get('inventory'),outcomes=outcomes,
         owned_processes=len(evidence['processes']),
@@ -534,6 +621,8 @@ def main():
     parser.add_argument('--source',type=Path,action='append',default=[],
                         help='Optional retained source/project file to hash and check unchanged; repeatable')
     parser.add_argument('--timeout',type=float,default=180)
+    parser.add_argument('--observe',action='store_true',
+                        help='Use guarded joined native reads; retains all controller/resource/checkpoint checks')
     args = parser.parse_args()
     require(not sys.flags.optimize and 30 <= args.timeout <= 300,
             'Run without optimization and within bounded timeout')
@@ -552,7 +641,10 @@ def main():
     saves.mkdir()
     settings = {key:str(inputs[key]) for key in ('world','assembly','hostfxr','bridge')}
     settings['binary'] = str(inputs['engine'])
+    settings['observe'] = args.observe
     evidence = dict(passed=False,calls=[],checks=[],route=[],cleanup_errors=[],processes=[],
+        observation_mode='runtime.observe' if args.observe else 'legacy',
+        json_byte_definition=JSON_BYTE_DEFINITION,
         platform=sys.platform,runner_sha256=digest(__file__),started_unix=time.time(),deadline_seconds=args.timeout,
         input_paths={name:str(path) for name,path in inputs.items()},
         limitations=['Synthetic native controller and logical UI; no physical input or GPU/render qualification.',

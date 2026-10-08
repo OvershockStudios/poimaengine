@@ -142,6 +142,114 @@ void custom_read_only_regression(const fs::path& directory) {
     }
     check(tree(directory)==before,"Readonly custom teardown changed bundle files.");
 }
+void runtime_observation_scope_regression(const fs::path& directory) {
+    const auto path=directory/"runtime-observation-scopes.json";
+    const std::string type(32,'1'),field(32,'2'),other_field(32,'3'),entity(32,'4'),empty_entity(32,'5'),runtime_id(32,'6');
+    const Json schema={{"id",type},{"name","Observation values"},{"version",1},{"fields",Json::array({
+        {{"id",field},{"name","Exact integer"},{"kind","int64"},{"default","0"}},
+        {{"id",other_field},{"name","Hidden integer"},{"kind","int32"},{"default",0}}
+    })}};
+    {
+        poima::WorldSession author(path.string());
+        call(author,"world.transact",{{"request_id",std::string(32,'7')},{"base_revision",0},{"ops",Json::array({
+            {{"op","component.schema.set"},{"schema",schema}},
+            {{"op","entity.create"},{"id",entity},{"name","Observation component owner"}},
+            {{"op","entity.create"},{"id",empty_entity},{"name","Observation absent component"}},
+            {{"op","component.set"},{"id",entity},{"type","game:"+type},
+                {"value",{{field,"9223372036854775807"},{other_field,23}}}}
+        })}});
+    }
+    for(const auto mode:{poima::WorldOpenMode::authoring,poima::WorldOpenMode::read_only_runtime}) {
+        poima::WorldSession session(path.string(),mode);
+        const auto scoped_request=[&](const char* method,const Json& params,poima::WorldRequestScope scope) {
+            const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id","observation-scope"},
+                {"method",method},{"params",params}}.dump(),scope));
+            check(response.at("jsonrpc")=="2.0" && response.at("id")=="observation-scope",
+                "Observation request changed JSON-RPC identity.");
+            return response;
+        };
+        const auto assert_observational=[&](const Json& authored,const Json& history,const Json& runtime,
+                                          const Json& components,const std::map<std::string,std::string>& files) {
+            check(call(session,"world.inspect")==authored && call(session,"world.history")==history &&
+                  call(session,"runtime.inspect",{{"session_id",runtime_id}})==runtime &&
+                  call(session,"runtime.components",{{"session_id",runtime_id}})==components && tree(directory)==files,
+                "Scoped runtime observation changed authoring, committed clocks, components or files.");
+        };
+        const auto authored_revision=call(session,"world.inspect").at("revision");
+        for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless}) {
+            const auto discovery=scoped_request("world.describe",Json::object(),scope).at("result");
+            check(discovery.at("methods").contains("runtime.observe")==poima::Runtime::available(),
+                "Observation discovery disagrees with the actual runtime build.");
+            const auto focused=scoped_request("world.describe",{{"view","method"},{"name","runtime.observe"}},scope);
+            if(!poima::Runtime::available()) {
+                check(focused.at("error").at("code")==-32602,"Authoring-only focused discovery exposed observation.");
+                check(scoped_request("runtime.observe",Json::object(),scope).at("error").at("code")==-32003,
+                    "Unavailable observation reached payload/session validation.");
+            } else {
+                check(focused.at("result").at("methods").at("runtime.observe")==discovery.at("methods").at("runtime.observe"),
+                    "Scoped focused observation schema differs from its full schema.");
+                check(scoped_request("runtime.observe",{{"session_id",runtime_id},{"tick",0}},scope).at("error").at("code")==-32030,
+                    "Observation accepted an absent runtime.");
+            }
+        }
+        if(!poima::Runtime::available())continue;
+        call(session,"runtime.start",{{"session_id",runtime_id},{"revision",authored_revision}});
+        const auto authored=call(session,"world.inspect"),history=call(session,"world.history"),
+                   runtime=call(session,"runtime.inspect",{{"session_id",runtime_id}}),
+                   components=call(session,"runtime.components",{{"session_id",runtime_id}});
+        const auto files=tree(directory);
+        const auto frozen_schema=components.at("schemas").at(0);
+        const Json params={{"session_id",runtime_id},{"tick",0},{"structure_revision",0},{"component_revision",0},
+            {"gameplay_revision",0},{"ui_revision",0},{"control_sequence",0},
+            {"ids",{empty_entity,entity}},{"entity_fields",{"local_transform","has_body"}},
+            {"components",Json::array({{{"type",type},{"fields",{field}}}})},{"include_schemas",true}};
+        Json expected;
+        for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless}) {
+            const auto response=scoped_request("runtime.observe",params,scope);
+            check(response.contains("result"),"Supported scoped observation was rejected.");
+            const auto result=response.at("result");
+            check(result.at("session_id")==runtime_id && result.at("tick")==0 && result.at("structure_revision")==0 &&
+                  result.at("component_revision")==0 && result.at("gameplay_revision")==0 &&
+                  result.at("ui_revision")==0 && result.at("control_sequence")==0,
+                "Scoped observation did not pin all committed runtime clocks.");
+            check(result.at("authored_revision")==authored_revision && result.at("current_authored_revision")==authored_revision &&
+                  result.at("source_stale")==false,"Observation source revision differs from frozen/current authoring.");
+            const auto& rows=result.at("entities");
+            check(rows.size()==2 && rows.at(0).at("id")==entity && rows.at(1).at("id")==empty_entity,
+                "Observation rows were not deterministically sorted by entity ID.");
+            check(rows.at(0).at("state").size()==2 && rows.at(0).at("state").at("has_body")==false &&
+                  rows.at(0).at("state").at("local_transform")==call(session,"runtime.entity",{{"session_id",runtime_id},{"tick",0},{"id",entity}}).at("local_transform"),
+                "Observation state projection disagrees with the committed native entity.");
+            check(rows.at(0).at("components")==Json{{type,{{field,"9223372036854775807"}}}} &&
+                  rows.at(1).at("components")==Json{{type,nullptr}},
+                "Observation lost exact Int64 projection or confused absent component with absent entity.");
+            check(result.at("component_types")==Json::array({{{"type",type},{"fingerprint",frozen_schema.at("fingerprint")},{"schema",frozen_schema}}}) &&
+                  result.at("query").is_null(),"Observation schema metadata/query shape differs.");
+            if(expected.is_null())expected=result;else check(result==expected,"Observation differs across request scopes.");
+            auto query=params;query.erase("ids");query["query"]={{"type",type},{"limit",1}};
+            const auto queried=scoped_request("runtime.observe",query,scope).at("result");
+            check(queried.at("entities")==Json::array({rows.at(0)}) &&
+                  queried.at("query")==Json{{"type",type},{"entities",{entity}},{"next_after",nullptr}},
+                "Scoped component query did not agree with explicit observation membership.");
+            auto stale=params;stale["component_revision"]=1;
+            check(scoped_request("runtime.observe",stale,scope).at("error").at("code")==-32009,
+                "Scoped observation accepted a stale component revision.");
+            auto missing=params;missing["ids"]={std::string(32,'f')};
+            check(scoped_request("runtime.observe",missing,scope).at("error").at("code")==-32004,
+                "Scoped observation accepted an unknown entity.");
+            assert_observational(authored,history,runtime,components,files);
+            if(mode==poima::WorldOpenMode::read_only_runtime) {
+                const Json rename={{"request_id",std::string(32,'8')},{"base_revision",authored_revision},
+                    {"ops",Json::array({{{"op","entity.rename"},{"id",entity},{"name","Forbidden observation rename"}}})}};
+                check(scoped_request("world.transact",rename,scope).at("error").at("code")==-32081,
+                    "Read-only observation host accepted a valid authored mutation.");
+                assert_observational(authored,history,runtime,components,files);
+            }
+        }
+        call(session,"runtime.stop",{{"session_id",runtime_id}});
+        check(tree(directory)==files,"Observation host teardown changed authored files.");
+    }
+}
 void authored_preview_regression(const fs::path& directory) {
     const auto path=directory/"preview.json",assets=fs::path(path).concat(".assets");fs::create_directory(assets);
     // An analytic one-joint skin proves a bone preview rebuilds palettes, rather
@@ -346,7 +454,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==50,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==51,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
@@ -426,6 +534,7 @@ int main() {
             poima::WorldSession invalid(package.string(),poima::WorldOpenMode::read_only_runtime);failed=false;try { (void)invalid.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Invalid embedded texture index was bundled.");
         }
         custom_read_only_regression(directory);
+        runtime_observation_scope_regression(directory);
         authored_preview_regression(directory);
         game_camera_regression(directory);
         fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo, transient transform preview and protocol adapter passed.\n";

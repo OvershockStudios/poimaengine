@@ -81,6 +81,7 @@ Use camera ID `000000000000000000000000000000c8` for the independent observer. A
 | --- | --- |
 | `runtime.start` | Require the current authored `revision` and a fresh caller-generated `session_id`; validate and instantiate the complete runtime before publishing it. |
 | `runtime.inspect` | Return tick, fixed timestep, entity/body/controller counts, source revision and whether authoring has changed since start. |
+| `runtime.observe` | Join bounded live entity/component reads at an exact tick, with revision pins and field projection. [Protocol and qualification](RUNTIME_OBSERVATION.md). |
 | `runtime.entity` | Inspect one stable entity ID, its live world matrix, body velocity, motion kind/target/progress and controller contact/look state; optional exact `tick` guard. |
 | `runtime.raycast` | Query the closest live collider with an exact tick guard, world ray and optional ignored IDs. [Query contract](PHYSICS_INTERACTIONS.md). |
 | `runtime.step` | Apply 1–600 fixed ticks with optional inputs for up to 32 distinct controller entities and up to 128 timed kinematic targets. Requires `session_id`, `expected_tick` and `request_id`. |

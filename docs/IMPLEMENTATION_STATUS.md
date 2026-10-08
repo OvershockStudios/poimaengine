@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.53 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.54 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.54 checkpoint adds `runtime.observe`: a bounded, exact-tick read joining
+selected live entity state and native custom-component fields in one serialized
+owner dispatch. Metadata is returned once per selected type; optional revisions
+reject stale observations and guard query continuations. Nine protocol tests pass
+on both Linux and Windows, alongside shared/read-only scope checks and an actual
+authoring-only build. Discovery advances to revision 51; the selected stable
+authoring-core v1 contract, gameplay ABI and save formats remain unchanged.
+
+One provider-free replay comparison uses the same compiled Workshop Relay game
+and final Windows host for both read paths. Native RPCs decrease from 2,549 to
+1,292 (49.3%); compact reserialized request/result JSON bodies decrease by 11.7%
+and 16.9%, respectively. Thirteen game checks, thirteen route events and six
+complete checked snapshots match, with only opaque runtime session IDs
+normalized. Each mode closes both owned native processes cleanly. This measures
+request count and defined JSON-body size, not provider tokens, latency or game
+performance. Byte-budget overflow, stale nonzero compiled gameplay/control pins,
+physical input and a new installed desktop package remain unqualified.
+[Observation protocol and reproduction](RUNTIME_OBSERVATION.md),
+[evidence](evidence/m2-runtime-observation.json).
 
 The 0.0.53 checkpoint retains a third external-agent game exercise: Codex authors,
 compiles and playtests Workshop Relay with generated capacity-three int32

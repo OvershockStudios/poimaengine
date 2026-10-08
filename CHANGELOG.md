@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.54 — Unreleased
+
+This checkpoint adds coherent, bounded runtime observations for agent playtesting. The installed desktop package remains unchanged.
+
+- `runtime.observe` joins selected live entity state and native custom-component values in one guarded owner dispatch. Field projection, shared schema metadata, sorted membership pages and revision pins reduce repeated reads without changing simulation. [Protocol](docs/RUNTIME_OBSERVATION.md).
+- A reproducible Windows comparison runs the same compiled Workshop Relay game with both observation paths. It preserves thirteen game checks, thirteen route events and six complete checked snapshots, normalizing only runtime session IDs. Native RPCs fall from 2,549 to 1,292; returned JSON bodies are 16.9% smaller under the documented reserialization measure. [Evidence](docs/evidence/m2-runtime-observation.json).
+- Nine native protocol tests pass on Windows and Linux. Shared/read-only scope checks, an actual authoring-only build and selected stable authoring-contract gates pass. Discovery advances to revision 51; gameplay ABI, save formats and authoring-core v1 remain unchanged. This provider-free comparison does not measure agent tokens, latency or game performance.
+
 ## 0.0.53 — Unreleased
 
 This checkpoint adds a recorded agent-authored inventory and recipe game, with a provider-free public replay. The installed desktop package remains unchanged.
