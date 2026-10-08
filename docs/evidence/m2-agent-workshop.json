@@ -81,7 +81,6 @@
     },
     "outcomes": {
       "win": {
-        "observed_terminal_tick": 505,
         "values": {
           "Camera": "b1000000000000000000000000000002",
           "Collected": 7,
@@ -98,10 +97,10 @@
           "Won": 1
         },
         "inventory": [],
-        "remaining_pickup_count": 0
+        "remaining_pickup_count": 0,
+        "final_checked_tick": 505
       },
       "win_after_compiled_load": {
-        "observed_terminal_tick": 505,
         "values": {
           "Camera": "b1000000000000000000000000000002",
           "Collected": 7,
@@ -118,10 +117,10 @@
           "Won": 1
         },
         "inventory": [],
-        "remaining_pickup_count": 0
+        "remaining_pickup_count": 0,
+        "final_checked_tick": 505
       },
       "fresh_process_win": {
-        "observed_terminal_tick": 505,
         "values": {
           "Camera": "b1000000000000000000000000000002",
           "Collected": 7,
@@ -138,7 +137,8 @@
           "Won": 1
         },
         "inventory": [],
-        "remaining_pickup_count": 0
+        "remaining_pickup_count": 0,
+        "final_checked_tick": 505
       }
     },
     "delivery_observations": [
@@ -179,7 +179,7 @@
     "world_change": "Only transaction receipts removed.",
     "source_sha256": {
       "docs/evidence/fixtures/agent-workshop/.gitignore": "96e4b155d9570408b9a2aa560d70c9eaae081903897d049750bc60dcd606b280",
-      "docs/evidence/fixtures/agent-workshop/README.md": "780b2a993bef93874cde27cb21493d764736fb19dbf9ab9a564855b8c40aa49e",
+      "docs/evidence/fixtures/agent-workshop/README.md": "e337d0c2835db7cc4669a5c573f2bf87b319f5effc83942e9207942968449e16",
       "docs/evidence/fixtures/agent-workshop/TASK.md": "51a1f5dffccf0858e17695b69d617fc8d8febf1a9bfa841159906702fa5ca5b9",
       "docs/evidence/fixtures/agent-workshop/game/Relay.cs": "d021cee5ed5ccced3be9aae5936de6a4ce27a5c1e2b5fe4086ed436d461cefc0",
       "docs/evidence/fixtures/agent-workshop/game/WorkshopRelay.csproj": "97e49e7b277ee29920d200e3e516e01f00107b66bcd3cf57e8e36b4b712a012b",
@@ -260,7 +260,6 @@
     },
     "outcomes": {
       "win": {
-        "observed_terminal_tick": 505,
         "values": {
           "Camera": "b1000000000000000000000000000002",
           "Collected": 7,
@@ -277,10 +276,10 @@
           "Won": 1
         },
         "inventory": [],
-        "remaining_pickup_count": 0
+        "remaining_pickup_count": 0,
+        "final_checked_tick": 505
       },
       "win_after_compiled_load": {
-        "observed_terminal_tick": 505,
         "values": {
           "Camera": "b1000000000000000000000000000002",
           "Collected": 7,
@@ -297,10 +296,10 @@
           "Won": 1
         },
         "inventory": [],
-        "remaining_pickup_count": 0
+        "remaining_pickup_count": 0,
+        "final_checked_tick": 505
       },
       "fresh_process_win": {
-        "observed_terminal_tick": 505,
         "values": {
           "Camera": "b1000000000000000000000000000002",
           "Collected": 7,
@@ -317,7 +316,8 @@
           "Won": 1
         },
         "inventory": [],
-        "remaining_pickup_count": 0
+        "remaining_pickup_count": 0,
+        "final_checked_tick": 505
       }
     },
     "delivery_observations": [

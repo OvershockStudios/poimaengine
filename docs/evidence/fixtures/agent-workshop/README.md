@@ -57,8 +57,9 @@ not desktop screenshots, edited mockups or frames from the rebuilt public replay
 
 ## Reproduce the retained game
 
-Use a compatible engine with simulation and managed gameplay enabled, the
-matching SDK/analyzer/managed bridge, and an installed .NET 10 SDK. Run Python on
+Use a compatible engine with simulation, managed gameplay and the native UI
+backend enabled, the matching SDK/analyzer/managed bridge, and an installed .NET
+10 SDK. Run Python on
 the engine's operating system; replay uses the repository's standard-library
 client and needs no provider account or AI invocation. Native/managed build
 instructions are in the [gameplay guide](../../../MANAGED_GAMEPLAY.md).
