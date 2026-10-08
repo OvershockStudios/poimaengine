@@ -1,0 +1,64 @@
+{
+  "format": "poima.agent-workshop",
+  "version": 1,
+  "assembly": "compiled/WorkshopRelay.dll",
+  "type": "WorkshopRelay.RelayGame",
+  "player": "b1000000000000000000000000000001",
+  "camera": "b1000000000000000000000000000002",
+  "stations": {
+    "first": "b1000000000000000000000000000003",
+    "second": "b1000000000000000000000000000004"
+  },
+  "inventory": {
+    "type": "game:a1000000000000000000000000000001",
+    "field": "a1000000000000000000000000000002",
+    "capacity": 3,
+    "element_kind": "int32"
+  },
+  "pickups": {
+    "type": "game:a2000000000000000000000000000001",
+    "kind_field": "a2000000000000000000000000000002",
+    "templates": {
+      "1": "d1000000000000000000000000000001",
+      "2": "d1000000000000000000000000000002"
+    },
+    "initial_counts": {
+      "1": 3,
+      "2": 3
+    }
+  },
+  "fields": {
+    "delivered": "Delivered",
+    "won": "Won",
+    "paused": "Paused",
+    "drop_pending": "DropPending",
+    "collected": "Collected",
+    "dropped": "Dropped",
+    "rejected": "Rejected"
+  },
+  "ui": {
+    "inventory": "c1000000000000000000000000000001",
+    "progress": "c1000000000000000000000000000002",
+    "message": "c1000000000000000000000000000003",
+    "drop": "c1000000000000000000000000000004",
+    "pause": "c1000000000000000000000000000005",
+    "resume": "c1000000000000000000000000000006",
+    "save": "c1000000000000000000000000000007",
+    "load": "c1000000000000000000000000000008",
+    "menu": "c1000000000000000000000000000009"
+  },
+  "recipes": [
+    [
+      1,
+      1,
+      2
+    ],
+    [
+      1,
+      2,
+      2
+    ]
+  ],
+  "interaction_range": 3,
+  "save_slot": "workshop-checkpoint"
+}

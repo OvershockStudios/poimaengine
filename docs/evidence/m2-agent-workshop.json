@@ -1,0 +1,427 @@
+{
+  "checkpoint": "0.0.53 development",
+  "passed": true,
+  "scope": "One externally authored Windows CoreCLR first-person inventory/recipe game, independent controller-input/save verification, retained-source rebuild and two original rendered observations.",
+  "agent_exercise": {
+    "provider": "Codex CLI",
+    "model": "gpt-6.1-sol",
+    "sessions": 1,
+    "elapsed_seconds": 440.7002089989983,
+    "exit_code": 0,
+    "observed_mcp_calls": 798,
+    "discovery_calls": 23,
+    "native_calls": 775,
+    "automatic_provider_retry": false,
+    "reference_artifacts_unchanged": true,
+    "scoped_capture_policy_satisfied": true,
+    "authoring": "Four guarded world transactions plus compiled component manifest import; final authored revision 5.",
+    "compiled_sdk": "10.0.401",
+    "compilation_host": "Linux WSL; portable .NET assembly executed by Windows CoreCLR",
+    "original_engine_version": "0.0.52",
+    "original_engine_sha256": "fb61561971f6a2dff18682bc3092d8eacdf7668309e2778cb9ca36b9c11a6e92",
+    "original_assembly_sha256": "069c28c912f5d8e55797fc7b8a5a780c53b47ca6a2ec26d3d3b877c4475def8d",
+    "direct_world_or_history_edits_observed": false,
+    "live_runtime_field_or_transform_patches_observed": false,
+    "reads_not_all_structure_revision_guarded": true,
+    "scope_is_not_security_sandbox": true
+  },
+  "original_independent_verification": {
+    "passed": true,
+    "rpc_calls": 2550,
+    "runner_sha256": "0566bc4839a446a3b99f0fcdf4cecf5878c2cb2e9190a19d584b4c10f063ad93",
+    "checks": [
+      "Genuine native camera-ray miss Use preserves resources/counters.",
+      "Actual aimed native pickup beyond three meters cannot be collected.",
+      "Full-capacity pickup rejection preserved exact inventory/native pickup set and poses.",
+      "Wrong AAA recipe rejection preserved exact inventory/native pickup set and poses.",
+      "Locked second station rejection preserved exact inventory/native pickup set and poses.",
+      "Generated native capacity-three int32 buffer and six compiled-spawned kind-tagged collision props.",
+      "AAA capacity rejection, wrong recipe and locked station preserve exact resources.",
+      "Compiled Drop Control only queues; next Tick removes LAST and spawns reachable matching-kind native prop.",
+      "Per-kind conservation through two exact deliveries, seven successful collects and one completed drop.",
+      "Pause/Resume owner intents at unchanged ticks and durable compiled Save/Load.",
+      "Full reflected state, ordered buffer, native identities/poses, runtime revisions and logical modal UI restore before callback.",
+      "Fresh native process loads without Initialize and independently completes second recipe.",
+      "Terminal neutral/Use/Drop inputs preserve victory/resources."
+    ],
+    "checkpoint": {
+      "tick": 410,
+      "inventory": [
+        1,
+        2
+      ],
+      "values": {
+        "Camera": "b1000000000000000000000000000002",
+        "Collected": 6,
+        "Delivered": 1,
+        "DropPending": 0,
+        "Dropped": 1,
+        "First": "b1000000000000000000000000000003",
+        "Message": 1,
+        "Paused": 1,
+        "Player": "b1000000000000000000000000000001",
+        "Rejected": 3,
+        "Second": "b1000000000000000000000000000004",
+        "Started": 1,
+        "Won": 0
+      },
+      "native_entity_count": 5,
+      "remaining_pickup_count": 1,
+      "logical_ui_elements": 13,
+      "gameplay_revision": 4,
+      "component_revision": 9,
+      "runtime_revisions": {
+        "ui_revision": 412,
+        "control_sequence": 3,
+        "structure_revision": 8
+      },
+      "compiled_load_exact": true,
+      "fresh_process_restore_exact": true,
+      "checked_projection_sha256": "33cc94b72143bb11ccc005d6f2b6394cb573d5355aacb6ba6738de0d6f5774ab"
+    },
+    "outcomes": {
+      "win": {
+        "observed_terminal_tick": 505,
+        "values": {
+          "Camera": "b1000000000000000000000000000002",
+          "Collected": 7,
+          "Delivered": 2,
+          "DropPending": 0,
+          "Dropped": 1,
+          "First": "b1000000000000000000000000000003",
+          "Message": 9,
+          "Paused": 0,
+          "Player": "b1000000000000000000000000000001",
+          "Rejected": 3,
+          "Second": "b1000000000000000000000000000004",
+          "Started": 1,
+          "Won": 1
+        },
+        "inventory": [],
+        "remaining_pickup_count": 0
+      },
+      "win_after_compiled_load": {
+        "observed_terminal_tick": 505,
+        "values": {
+          "Camera": "b1000000000000000000000000000002",
+          "Collected": 7,
+          "Delivered": 2,
+          "DropPending": 0,
+          "Dropped": 1,
+          "First": "b1000000000000000000000000000003",
+          "Message": 9,
+          "Paused": 0,
+          "Player": "b1000000000000000000000000000001",
+          "Rejected": 3,
+          "Second": "b1000000000000000000000000000004",
+          "Started": 1,
+          "Won": 1
+        },
+        "inventory": [],
+        "remaining_pickup_count": 0
+      },
+      "fresh_process_win": {
+        "observed_terminal_tick": 505,
+        "values": {
+          "Camera": "b1000000000000000000000000000002",
+          "Collected": 7,
+          "Delivered": 2,
+          "DropPending": 0,
+          "Dropped": 1,
+          "First": "b1000000000000000000000000000003",
+          "Message": 9,
+          "Paused": 0,
+          "Player": "b1000000000000000000000000000001",
+          "Rejected": 3,
+          "Second": "b1000000000000000000000000000004",
+          "Started": 1,
+          "Won": 1
+        },
+        "inventory": [],
+        "remaining_pickup_count": 0
+      }
+    },
+    "delivery_observations": [
+      {
+        "process": "shared-native-owner",
+        "event": "deliver",
+        "station": "first",
+        "tick": 376
+      },
+      {
+        "process": "shared-native-owner",
+        "event": "deliver",
+        "station": "second",
+        "tick": 477
+      },
+      {
+        "process": "shared-native-owner",
+        "event": "deliver",
+        "station": "second",
+        "tick": 477
+      },
+      {
+        "process": "fresh-native-process",
+        "event": "deliver",
+        "station": "second",
+        "tick": 477
+      }
+    ],
+    "owned_shared_client_exit_code": 0,
+    "owned_fresh_world_exit_code": 0,
+    "parent_driver_host_exit_code": 0,
+    "cleanup_errors": []
+  },
+  "public_fixture": {
+    "root": "docs/evidence/fixtures/agent-workshop",
+    "authored_revision": 5,
+    "original_cs_and_project_bytes_preserved": true,
+    "world_change": "Only transaction receipts removed.",
+    "source_sha256": {
+      "docs/evidence/fixtures/agent-workshop/.gitignore": "96e4b155d9570408b9a2aa560d70c9eaae081903897d049750bc60dcd606b280",
+      "docs/evidence/fixtures/agent-workshop/README.md": "780b2a993bef93874cde27cb21493d764736fb19dbf9ab9a564855b8c40aa49e",
+      "docs/evidence/fixtures/agent-workshop/TASK.md": "51a1f5dffccf0858e17695b69d617fc8d8febf1a9bfa841159906702fa5ca5b9",
+      "docs/evidence/fixtures/agent-workshop/game/Relay.cs": "d021cee5ed5ccced3be9aae5936de6a4ce27a5c1e2b5fe4086ed436d461cefc0",
+      "docs/evidence/fixtures/agent-workshop/game/WorkshopRelay.csproj": "97e49e7b277ee29920d200e3e516e01f00107b66bcd3cf57e8e36b4b712a012b",
+      "docs/evidence/fixtures/agent-workshop/manifest.json": "44565c287b64779a8a605fe12d9f7247fccfbcdf79f018eaa570849a9e8f6516",
+      "docs/evidence/fixtures/agent-workshop/world.json": "c546dd69c5dec20357471ac609f1b6b9c603048d3b2ef029b372d675ffe1cad8"
+    }
+  },
+  "rebuilt_public_replay": {
+    "passed": true,
+    "engine_version": "0.0.53",
+    "engine_sha256": "bf71911aa263bbc1c63c7e19e649c3bc4a8ac0a6d2b16b766d476bf24b20acb3",
+    "assembly_sha256": "b3dac6dda3621f913c50affed98fbff6490cdeb3076dcf939d05c7c743857fe0",
+    "runner": "tests/agent_workshop_replay.py",
+    "runner_sha256": "4b64ec44abd4ac02904cc7d61b156ab615f7639402f0fde37c52fae433bc3823",
+    "sdk": "10.0.401",
+    "build_zero_warnings_and_errors": true,
+    "build_command_exit_codes": [
+      0,
+      0
+    ],
+    "generated_component_schemas_equal_authored": true,
+    "build_artifact_sha256": {
+      "reference/Poima.Gameplay.dll": "5a482f12ef8621bb2d1aaf7d398c1795d25ab14936063e3de4a33a306725e511",
+      "reference/Poima.Components.Generator.dll": "5827ea4fab9593eacbec8d8e9db1b98ad1340ac8d7a7ef0d49f5ecc5b5e39ecb",
+      "compiled/WorkshopRelay.dll": "b3dac6dda3621f913c50affed98fbff6490cdeb3076dcf939d05c7c743857fe0",
+      "compiled-components.json": "30f258d0f5848e4f97af14da6b82769919a58bd7471c9926eaf434e93ac6afbd"
+    },
+    "rpc_calls": 2549,
+    "checks": [
+      "Genuine native camera-ray miss Use preserves resources/counters.",
+      "Actual aimed native pickup beyond three meters cannot be collected.",
+      "Full-capacity pickup rejection preserved exact inventory/native pickup set and poses.",
+      "Wrong AAA recipe rejection preserved exact inventory/native pickup set and poses.",
+      "Locked second station rejection preserved exact inventory/native pickup set and poses.",
+      "Generated native capacity-three int32 buffer and six compiled-spawned kind-tagged collision props.",
+      "AAA capacity rejection, wrong recipe and locked station preserve exact resources.",
+      "Compiled Drop Control only queues; next Tick removes LAST and spawns a reachable matching-kind native prop in the tested open-space placement.",
+      "Per-kind conservation through two exact deliveries, seven successful collects and one completed drop.",
+      "Pause/Resume owner intents at unchanged ticks and durable compiled Save/Load.",
+      "Full reflected state, ordered buffer, native identities/poses, runtime revisions and logical modal UI restore before callback.",
+      "Fresh native process loads without Initialize and independently completes second recipe.",
+      "Terminal neutral/Use/Drop inputs preserve victory/resources."
+    ],
+    "checkpoint": {
+      "tick": 410,
+      "inventory": [
+        1,
+        2
+      ],
+      "values": {
+        "Camera": "b1000000000000000000000000000002",
+        "Collected": 6,
+        "Delivered": 1,
+        "DropPending": 0,
+        "Dropped": 1,
+        "First": "b1000000000000000000000000000003",
+        "Message": 1,
+        "Paused": 1,
+        "Player": "b1000000000000000000000000000001",
+        "Rejected": 3,
+        "Second": "b1000000000000000000000000000004",
+        "Started": 1,
+        "Won": 0
+      },
+      "native_entity_count": 5,
+      "remaining_pickup_count": 1,
+      "logical_ui_elements": 13,
+      "gameplay_revision": 4,
+      "component_revision": 9,
+      "runtime_revisions": {
+        "ui_revision": 412,
+        "control_sequence": 3,
+        "structure_revision": 8
+      },
+      "compiled_load_exact": true,
+      "fresh_process_restore_exact": true,
+      "checked_projection_sha256": "33cc94b72143bb11ccc005d6f2b6394cb573d5355aacb6ba6738de0d6f5774ab"
+    },
+    "outcomes": {
+      "win": {
+        "observed_terminal_tick": 505,
+        "values": {
+          "Camera": "b1000000000000000000000000000002",
+          "Collected": 7,
+          "Delivered": 2,
+          "DropPending": 0,
+          "Dropped": 1,
+          "First": "b1000000000000000000000000000003",
+          "Message": 9,
+          "Paused": 0,
+          "Player": "b1000000000000000000000000000001",
+          "Rejected": 3,
+          "Second": "b1000000000000000000000000000004",
+          "Started": 1,
+          "Won": 1
+        },
+        "inventory": [],
+        "remaining_pickup_count": 0
+      },
+      "win_after_compiled_load": {
+        "observed_terminal_tick": 505,
+        "values": {
+          "Camera": "b1000000000000000000000000000002",
+          "Collected": 7,
+          "Delivered": 2,
+          "DropPending": 0,
+          "Dropped": 1,
+          "First": "b1000000000000000000000000000003",
+          "Message": 9,
+          "Paused": 0,
+          "Player": "b1000000000000000000000000000001",
+          "Rejected": 3,
+          "Second": "b1000000000000000000000000000004",
+          "Started": 1,
+          "Won": 1
+        },
+        "inventory": [],
+        "remaining_pickup_count": 0
+      },
+      "fresh_process_win": {
+        "observed_terminal_tick": 505,
+        "values": {
+          "Camera": "b1000000000000000000000000000002",
+          "Collected": 7,
+          "Delivered": 2,
+          "DropPending": 0,
+          "Dropped": 1,
+          "First": "b1000000000000000000000000000003",
+          "Message": 9,
+          "Paused": 0,
+          "Player": "b1000000000000000000000000000001",
+          "Rejected": 3,
+          "Second": "b1000000000000000000000000000004",
+          "Started": 1,
+          "Won": 1
+        },
+        "inventory": [],
+        "remaining_pickup_count": 0
+      }
+    },
+    "delivery_observations": [
+      {
+        "process": "first-owned-native-process",
+        "event": "deliver",
+        "station": "first",
+        "tick": 376
+      },
+      {
+        "process": "first-owned-native-process",
+        "event": "deliver",
+        "station": "second",
+        "tick": 477
+      },
+      {
+        "process": "first-owned-native-process",
+        "event": "deliver",
+        "station": "second",
+        "tick": 477
+      },
+      {
+        "process": "fresh-owned-native-process",
+        "event": "deliver",
+        "station": "second",
+        "tick": 477
+      }
+    ],
+    "owned_world_exit_codes": [
+      0,
+      0
+    ],
+    "cleanup_errors": [],
+    "build": {
+      "version": "0.0.53",
+      "compiler": "Clang",
+      "compiler_version": "23.1.2",
+      "target_os": "Windows",
+      "target_arch": "x86_64"
+    },
+    "protocol_version": 1
+  },
+  "rendered_observations": [
+    {
+      "label": "paused checkpoint",
+      "engine_version": "0.0.52",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "width": 960,
+      "height": 540,
+      "samples": 4,
+      "ui_scale": 1,
+      "tick": 522,
+      "ui_revision": 524,
+      "nvrhi_errors": 0,
+      "actual_bmp_sha256": "828d37f48584a0da0b5ae0bbf05e6a7a6d5e0644143e61d524026df5697c5ead",
+      "image": "docs/evidence/agent-workshop-checkpoint.png",
+      "image_sha256": "fe0c51ebadc8682dbdb5fdfd838309389ecdee4d62019d21207373ad117c9069",
+      "conversion": "Lossless RGB PNG encoding of the native BMP; not the smaller MCP observation image.",
+      "visually_inspected": true,
+      "os_screenshot": false
+    },
+    {
+      "label": "completed game",
+      "engine_version": "0.0.52",
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "width": 960,
+      "height": 540,
+      "samples": 4,
+      "ui_scale": 1,
+      "tick": 793,
+      "ui_revision": 796,
+      "nvrhi_errors": 0,
+      "actual_bmp_sha256": "9e2a23e150a8cb6fae1d31e52754b04c6220481ad26d793691a5d8df6ce0582a",
+      "image": "docs/evidence/agent-workshop-completed.png",
+      "image_sha256": "a1ec679ea2a1eb131c9f884a0030f734cee9037445ac8d5b0fd54cb86276007f",
+      "conversion": "Lossless RGB PNG encoding of the native BMP; not the smaller MCP observation image.",
+      "visually_inspected": true,
+      "os_screenshot": false
+    }
+  ],
+  "stable_core_regressions": {
+    "passed": true,
+    "tests": 5,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "windows_interop": true,
+    "binary_sha256": "bf71911aa263bbc1c63c7e19e649c3bc4a8ac0a6d2b16b766d476bf24b20acb3",
+    "test_sha256": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "scope": "Native authored-world wire IDs/errors, durable core receipts, affine hierarchy, pinned query pages and failed history publication; no graphics.",
+    "released_identity_tests": 2,
+    "released_identity_passed": true,
+    "identity_log_sha256": "d79777fa3af4ef13967f520d8841c94f7cdc7527a72c7db8b6a5f245efae61d3"
+  },
+  "limits": [
+    "One bounded assignment with primitive geometry; creation time is not a general success rate, cross-engine comparison, FPS or performance benchmark.",
+    "The retained game Drop places a prop at a fixed forward position/height without wall or overlap validation; the verifier proves one ray-probed open-space route only.",
+    "The retained Save label announces accepted queuing before storage completion. Actual tested operations complete durably and restore exactly; failures are not qualified by that label.",
+    "Synthetic controller input and logical UI; no physical mouse/controller or desktop-editor interaction qualification.",
+    "True interaction occlusion and saved nonzero pending Drop intent are unqualified in this independent route. Authored virtual layout is separate from live paused geometry.",
+    "Windows CoreCLR game replay only. Its Native AOT, Linux, browser, console, clean-machine deployment and relocated shipping-bundle execution are not qualified.",
+    "Two private-verifier preparation faults (compact-schema assumption and nonexistent save root) were fixed before the passing run; game/engine implementation stayed unchanged. No first-attempt independent-pass claim.",
+    "Raw provider events, local settings, account data and execution paths are excluded. The installed desktop package remains unchanged."
+  ]
+}

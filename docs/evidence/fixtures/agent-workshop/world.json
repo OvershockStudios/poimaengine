@@ -1,0 +1,1367 @@
+{
+  "component_schemas": {
+    "a1000000000000000000000000000001": {
+      "fields": [
+        {
+          "capacity": 3,
+          "default": [],
+          "element_kind": "int32",
+          "id": "a1000000000000000000000000000002",
+          "kind": "array",
+          "name": "Items",
+          "unit": ""
+        }
+      ],
+      "fingerprint": "415426b8f53afb73f04150898359b8bb1876945ebf26fc7f48581d6b981f2465",
+      "id": "a1000000000000000000000000000001",
+      "name": "Inventory",
+      "version": 2
+    },
+    "a2000000000000000000000000000001": {
+      "fields": [
+        {
+          "default": 0,
+          "id": "a2000000000000000000000000000002",
+          "kind": "int32",
+          "name": "ItemKind",
+          "unit": ""
+        }
+      ],
+      "fingerprint": "126eab8056f37b2410e17bb0e548fa12b671ffc6fe7225f73a02e67220b1ad43",
+      "id": "a2000000000000000000000000000001",
+      "name": "Pickup",
+      "version": 1
+    }
+  },
+  "entities": {
+    "b1000000000000000000000000000001": {
+      "components": {
+        "CharacterController": {
+          "camera": "b1000000000000000000000000000002",
+          "height": 1.8,
+          "jump_speed": 4,
+          "radius": 0.3,
+          "speed": 3
+        },
+        "Transform": {
+          "position": [
+            0,
+            0.95,
+            1
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        },
+        "game:a1000000000000000000000000000001": {
+          "a1000000000000000000000000000002": []
+        }
+      },
+      "name": "Relay operator",
+      "parent": null
+    },
+    "b1000000000000000000000000000002": {
+      "components": {
+        "Camera": {
+          "far": 100,
+          "near": 0.05,
+          "vertical_fov": 70
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.6,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Operator eyes",
+      "parent": "b1000000000000000000000000000001"
+    },
+    "b1000000000000000000000000000003": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.65,
+            0.55,
+            0.39
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4,
+            1.1,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            2.2,
+            1.2
+          ]
+        }
+      },
+      "name": "STATION 1 • A A B",
+      "parent": null
+    },
+    "b1000000000000000000000000000004": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.32,
+            0.045,
+            0.09
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4,
+            1.1,
+            -3
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            2.2,
+            1.2
+          ]
+        }
+      },
+      "name": "STATION 2 • A B B",
+      "parent": null
+    },
+    "b1000000000000000000000000000005": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.25,
+            0.22,
+            0.2
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            -0.2,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            0.4,
+            12
+          ]
+        }
+      },
+      "name": "Workshop floor",
+      "parent": null
+    },
+    "b1000000000000000000000000000006": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.48,
+            0.43,
+            0.38
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.5,
+            -8
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            3,
+            0.3
+          ]
+        }
+      },
+      "name": "Back wall",
+      "parent": null
+    },
+    "b1000000000000000000000000000007": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.4,
+            0.35,
+            0.31
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -6,
+            1.5,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.3,
+            3,
+            12
+          ]
+        }
+      },
+      "name": "Left wall",
+      "parent": null
+    },
+    "b1000000000000000000000000000008": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.4,
+            0.35,
+            0.31
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            6,
+            1.5,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.3,
+            3,
+            12
+          ]
+        }
+      },
+      "name": "Right wall",
+      "parent": null
+    },
+    "b100000000000000000000000000000a": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.4,
+            0.35,
+            0.31
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.5,
+            4
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            12,
+            3,
+            0.3
+          ]
+        }
+      },
+      "name": "Front wall",
+      "parent": null
+    },
+    "b100000000000000000000000000000b": {
+      "components": {
+        "LightingEnvironment": {
+          "ambient": [
+            0.5,
+            0.45,
+            0.4
+          ],
+          "exposure": 1
+        },
+        "Transform": {
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Workshop ambient",
+      "parent": null
+    },
+    "b100000000000000000000000000000c": {
+      "components": {
+        "Light": {
+          "color": [
+            1,
+            0.86,
+            0.72
+          ],
+          "enabled": true,
+          "intensity": 80,
+          "kind": "point",
+          "range": 15
+        },
+        "Transform": {
+          "position": [
+            0,
+            4,
+            -2
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Ceiling lamp",
+      "parent": null
+    },
+    "b100000000000000000000000000001e": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.12,
+            0.035,
+            0.07
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4,
+            1.8,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.12,
+            0.5,
+            0.04
+          ]
+        }
+      },
+      "name": "Station 1 numeral",
+      "parent": null
+    },
+    "b100000000000000000000000000001f": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4,
+            2.05,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.45,
+            0.08,
+            0.04
+          ]
+        }
+      },
+      "name": "Station 2 numeral",
+      "parent": null
+    },
+    "b1000000000000000000000000000020": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4.19,
+            1.92,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.08,
+            0.25,
+            0.04
+          ]
+        }
+      },
+      "name": "Station 2 numeral",
+      "parent": null
+    },
+    "b1000000000000000000000000000021": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4,
+            1.8,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.45,
+            0.08,
+            0.04
+          ]
+        }
+      },
+      "name": "Station 2 numeral",
+      "parent": null
+    },
+    "b1000000000000000000000000000022": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            3.81,
+            1.6800000000000002,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.08,
+            0.25,
+            0.04
+          ]
+        }
+      },
+      "name": "Station 2 numeral",
+      "parent": null
+    },
+    "b1000000000000000000000000000023": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4,
+            1.55,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.45,
+            0.08,
+            0.04
+          ]
+        }
+      },
+      "name": "Station 2 numeral",
+      "parent": null
+    },
+    "b1000000000000000000000000000024": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4.3,
+            0.9,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.05
+          ]
+        }
+      },
+      "name": "Recipe 1",
+      "parent": null
+    },
+    "b1000000000000000000000000000025": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -4,
+            0.9,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.05
+          ]
+        }
+      },
+      "name": "Recipe 1",
+      "parent": null
+    },
+    "b1000000000000000000000000000026": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.6,
+            0.025,
+            0.1
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            -3.7,
+            0.9,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.05
+          ]
+        }
+      },
+      "name": "Recipe 2",
+      "parent": null
+    },
+    "b1000000000000000000000000000027": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.95,
+            0.84,
+            0.62
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            3.7,
+            0.9,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.05
+          ]
+        }
+      },
+      "name": "Recipe 1",
+      "parent": null
+    },
+    "b1000000000000000000000000000028": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.6,
+            0.025,
+            0.1
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4,
+            0.9,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.05
+          ]
+        }
+      },
+      "name": "Recipe 2",
+      "parent": null
+    },
+    "b1000000000000000000000000000029": {
+      "components": {
+        "MeshRenderer": {
+          "albedo": [
+            0.6,
+            0.025,
+            0.1
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            4.3,
+            0.9,
+            -2.38
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.2,
+            0.2,
+            0.05
+          ]
+        }
+      },
+      "name": "Recipe 2",
+      "parent": null
+    }
+  },
+  "format": "poima.authored-world",
+  "receipts": [],
+  "retired_component_schemas": [],
+  "retired_ids": [],
+  "retired_template_ids": [],
+  "retired_ui_ids": [],
+  "revision": 5,
+  "templates": {
+    "d1000000000000000000000000000001": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.9,
+            0.78,
+            0.5
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "game:a2000000000000000000000000000001": {
+          "a2000000000000000000000000000002": 1
+        }
+      },
+      "name": "A ivory part"
+    },
+    "d1000000000000000000000000000002": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.6,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.48,
+            0.035,
+            0.12
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.5,
+            0.5,
+            0.5
+          ]
+        },
+        "game:a2000000000000000000000000000001": {
+          "a2000000000000000000000000000002": 2
+        }
+      },
+      "name": "B wine part"
+    }
+  },
+  "ui": {
+    "c1000000000000000000000000000001": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 58
+        },
+        "width": {
+          "unit": "dp",
+          "value": 420
+        }
+      },
+      "name": "label 1",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#30272be8",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "PACK [ ] 0/3",
+      "visible": true
+    },
+    "c1000000000000000000000000000002": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 100
+        },
+        "width": {
+          "unit": "dp",
+          "value": 560
+        }
+      },
+      "name": "label 2",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#30272be8",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "1: A A B → 2: A B B",
+      "visible": true
+    },
+    "c1000000000000000000000000000003": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "bottom": {
+          "unit": "dp",
+          "value": 24
+        },
+        "height": {
+          "unit": "dp",
+          "value": 36
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "width": {
+          "unit": "percent",
+          "value": 70
+        }
+      },
+      "name": "label 3",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#30272be8",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "WASD move | mouse look | E use",
+      "visible": true
+    },
+    "c1000000000000000000000000000004": {
+      "action": "drop",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 42
+        },
+        "position": "absolute",
+        "right": {
+          "unit": "dp",
+          "value": 24
+        },
+        "top": {
+          "unit": "dp",
+          "value": 24
+        },
+        "width": {
+          "unit": "dp",
+          "value": 120
+        }
+      },
+      "name": "button 4",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#70283f",
+        "color": "#f5ede1",
+        "font_size": 18
+      },
+      "text": "DROP",
+      "visible": true
+    },
+    "c1000000000000000000000000000005": {
+      "action": "pause",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 42
+        },
+        "position": "absolute",
+        "right": {
+          "unit": "dp",
+          "value": 24
+        },
+        "top": {
+          "unit": "dp",
+          "value": 76
+        },
+        "width": {
+          "unit": "dp",
+          "value": 120
+        }
+      },
+      "name": "button 5",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#70283f",
+        "color": "#f5ede1",
+        "font_size": 18
+      },
+      "text": "PAUSE",
+      "visible": true
+    },
+    "c1000000000000000000000000000006": {
+      "action": "resume",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 42
+        },
+        "width": {
+          "unit": "percent",
+          "value": 100
+        }
+      },
+      "name": "button 6",
+      "parent": "c1000000000000000000000000000009",
+      "style": {
+        "background_color": "#70283f",
+        "color": "#f5ede1",
+        "font_size": 18
+      },
+      "text": "RESUME",
+      "visible": true
+    },
+    "c1000000000000000000000000000007": {
+      "action": "save",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 42
+        },
+        "width": {
+          "unit": "percent",
+          "value": 100
+        }
+      },
+      "name": "button 7",
+      "parent": "c1000000000000000000000000000009",
+      "style": {
+        "background_color": "#70283f",
+        "color": "#f5ede1",
+        "font_size": 18
+      },
+      "text": "SAVE CHECKPOINT",
+      "visible": true
+    },
+    "c1000000000000000000000000000008": {
+      "action": "load",
+      "enabled": true,
+      "kind": "button",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 42
+        },
+        "width": {
+          "unit": "percent",
+          "value": 100
+        }
+      },
+      "name": "button 8",
+      "parent": "c1000000000000000000000000000009",
+      "style": {
+        "background_color": "#70283f",
+        "color": "#f5ede1",
+        "font_size": 18
+      },
+      "text": "LOAD CHECKPOINT",
+      "visible": true
+    },
+    "c1000000000000000000000000000009": {
+      "action": null,
+      "enabled": true,
+      "kind": "panel",
+      "layout": {
+        "direction": "column",
+        "gap": 12,
+        "height": {
+          "unit": "dp",
+          "value": 240
+        },
+        "left": {
+          "unit": "percent",
+          "value": 32
+        },
+        "padding": [
+          20,
+          20,
+          20,
+          20
+        ],
+        "position": "absolute",
+        "top": {
+          "unit": "percent",
+          "value": 30
+        },
+        "width": {
+          "unit": "percent",
+          "value": 36
+        }
+      },
+      "name": "panel 9",
+      "parent": null,
+      "style": {
+        "background_color": "#35252ff2",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "",
+      "visible": false
+    },
+    "c100000000000000000000000000000a": {
+      "action": null,
+      "enabled": true,
+      "kind": "panel",
+      "layout": {
+        "height": {
+          "unit": "percent",
+          "value": 100
+        },
+        "hit_test": "pass_through",
+        "position": "absolute",
+        "width": {
+          "unit": "percent",
+          "value": 100
+        }
+      },
+      "name": "panel 10",
+      "parent": null,
+      "style": {
+        "background_color": "#00000000",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "",
+      "visible": true
+    },
+    "c100000000000000000000000000000b": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 34
+        },
+        "left": {
+          "unit": "dp",
+          "value": 24
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "dp",
+          "value": 18
+        },
+        "width": {
+          "unit": "dp",
+          "value": 420
+        }
+      },
+      "name": "label 11",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#30272be8",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "WORKSHOP RELAY",
+      "visible": true
+    },
+    "c100000000000000000000000000000c": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 26
+        },
+        "left": {
+          "unit": "percent",
+          "value": 49
+        },
+        "position": "absolute",
+        "top": {
+          "unit": "percent",
+          "value": 48
+        },
+        "width": {
+          "unit": "dp",
+          "value": 24
+        }
+      },
+      "name": "label 12",
+      "parent": "c100000000000000000000000000000a",
+      "style": {
+        "background_color": "#30272be8",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "+",
+      "visible": true
+    },
+    "c100000000000000000000000000000d": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "layout": {
+        "height": {
+          "unit": "dp",
+          "value": 32
+        }
+      },
+      "name": "label 13",
+      "parent": "c1000000000000000000000000000009",
+      "style": {
+        "background_color": "#30272be8",
+        "color": "#f5ede1",
+        "font_size": 20
+      },
+      "text": "RELAY PAUSED",
+      "visible": true
+    }
+  },
+  "version": 4,
+  "world_id": "456532e87a5dfa0115bc1cae28b3f25f"
+}

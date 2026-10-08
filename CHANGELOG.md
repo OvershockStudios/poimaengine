@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.53 — Unreleased
+
+This checkpoint adds a recorded agent-authored inventory and recipe game, with a provider-free public replay. The installed desktop package remains unchanged.
+
+- Codex creates and playtests Workshop Relay through native MCP authoring: a generated three-slot int32 inventory, actual spawned pickups, recipes, deferred Drop, wine-styled HUD/menu and compiled controls. Independent tests observe resources directly, use genuine controller inputs and check full checkpoint restoration and fresh-process continuation. [Source and reproduction](docs/evidence/fixtures/agent-workshop/README.md).
+- The retained source rebuilds on Windows with zero warnings or errors. Its replay passes 2,549 native requests on the final host; both owned native processes exit cleanly. The original exercise has separate verification and two inspected NVIDIA Vulkan checkpoints. [Evidence](docs/evidence/m2-agent-workshop.json).
+- Public documentation records the generated game's fixed Drop-placement and premature save-label limitations. This is one bounded prototype exercise, with no claim of general agent success rate, physical input, production performance or new gameplay/API implementation.
+
 ## 0.0.52 — Unreleased
 
 This checkpoint qualifies the existing generated component collections in Windows Native AOT games. The installed desktop package remains unchanged.

@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **Early development · 0.0.49.** Poima is a prototype. Important systems are incomplete. The selected authoring-core v1 API is stable; broader APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **Early development · 0.0.53.** Poima is a prototype. Important systems are incomplete. The selected authoring-core v1 API is stable; broader APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -23,11 +23,15 @@ Poima makes engine operations directly available to tools. External agents such 
 
 The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows.
 
-Two recorded exercises put this workflow into practice: [Codex builds an escape room](docs/evidence/m2-agent-game.json), and [Claude builds a wave-defense game](docs/evidence/fixtures/agent-defense/README.md). Both compile C# gameplay and pass independent controller-input and save-continuation checks. The escape room also has a [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints). These are small, bounded demonstrations, not a general success-rate or production-readiness claim.
+Three recorded exercises put this workflow into practice: [Codex builds an escape room](docs/evidence/m2-agent-game.json), [Claude builds a wave-defense game](docs/evidence/fixtures/agent-defense/README.md), and [Codex builds Workshop Relay](docs/evidence/fixtures/agent-workshop/README.md) with a native inventory, recipes and styled UI. They compile C# gameplay and pass independent controller-input and save-continuation checks. The escape room also has a [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints). These are small, bounded demonstrations, not a general success-rate or production-readiness claim.
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 
 *Three captured gameplay checkpoints, shown as a slideshow; not a live authoring session or real-time video.*
+
+![Wine-colored HUD from the recorded agent-built Workshop Relay game](docs/evidence/agent-workshop-completed.png)
+
+*Agent-authored Workshop Relay, captured through Vulkan after completion. Primitive geometry; this is a rendered checkpoint, not a live authoring video.*
 
 The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits, with separate request and response compatibility gates and native behavioral checks. The [Python automation client](docs/PYTHON_CLIENT.md) adds guarded editing and revision-pinned queries over the native service. Broader API stability remains unfinished.
 

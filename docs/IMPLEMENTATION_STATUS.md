@@ -1,8 +1,26 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.52 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.53 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.53 checkpoint retains a third external-agent game exercise: Codex authors,
+compiles and playtests Workshop Relay with generated capacity-three int32
+inventory, six native spawned parts, ordered recipes, deferred Drop, typed styled
+UI and compiled Pause/Resume/Save/Load controls. Independent original-binary
+verification passes 2,550 requests; a fresh Windows public-source rebuild passes
+2,549 requests on the final 0.0.53 host. Both restore a nonempty `[A,B]` checkpoint,
+complete reflected state, remaining native identities/poses and logical modal UI
+through compiled Load and a fresh process, then finish the second delivery.
+Two inspected NVIDIA readbacks show the wine-styled checkpoint menu and completed
+HUD. This is one bounded exercise with primitive geometry, not general autonomy,
+physical controls or performance qualification. The generated game's fixed Drop
+position lacks wall/overlap validation, and its Save label acknowledges acceptance
+before storage completion; independent tests check actual durable completion.
+True interaction occlusion, nonzero pending-intent saves, Linux/Native AOT replay
+of this game and a new installed desktop package remain unqualified.
+[Retained source and replay](evidence/fixtures/agent-workshop/README.md),
+[evidence](evidence/m2-agent-workshop.json).
 
 The 0.0.52 checkpoint qualifies the existing generated capacity-four entity/int32
 component buffers on Windows Native AOT. Publication uses the real fixture and
