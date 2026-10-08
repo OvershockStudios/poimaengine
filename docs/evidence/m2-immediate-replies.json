@@ -1,0 +1,204 @@
+{
+  "checkpoint": "0.0.45 development",
+  "passed": true,
+  "scope": "Bounded immediate local replies, transport correctness and same-machine Windows authoring-query latency",
+  "protocol_version": 1,
+  "schema_revision": 47,
+  "implementation": {
+    "request_limit_bytes": 1048576,
+    "response_limit_bytes": 33554432,
+    "clients": 8,
+    "per_client_poll_budget_bytes": 262144,
+    "immediate_reply_budget_bytes": 262144,
+    "world_owner_thread_unchanged": true,
+    "new_transport_threads": false,
+    "busy_spin_added": false,
+    "global_timer_resolution_changed": false,
+    "automatic_retry_added": false,
+    "partial_replies_retained_for_poll": true,
+    "reply_success_is_not_delivery_confirmation": true,
+    "source_sha256": {
+      "src/local_session.cpp": "55f213630ad24f55d5995d7f51830a76fb0b7593420b6656a172efab33d09724",
+      "include/poima/local_session.hpp": "14968f76f4fc6f80b35c8a42ce0fc34ecbfa76ba173f1ad39b0a0d3e4a4097d5",
+      "tests/local_session_native.cpp": "a971e712e96e924d70d37ac9664e9649d05eada0820c2ceff591c8516d29063a",
+      "tools/benchmark_shared_session.py": "651c733eee1e08360ea207c8bd1ecd83cb467e9e3ca06624384f3bafb61547c3"
+    }
+  },
+  "engines": {
+    "before_windows": {
+      "version": "0.0.44",
+      "sha256": "8ff72c6b55b6dbf2554a636ee3e4bb6f89f959ff98c11fe8fb07a405929f6ed8"
+    },
+    "after_windows": {
+      "version": "0.0.45",
+      "sha256": "91a59d79644b6733814d4f4ca709cec2a1dc26351c55216428392a10f0cab98c"
+    },
+    "after_linux": {
+      "version": "0.0.45",
+      "sha256": "04b82cca558fe0595a694da53531282192a17cc34653d76bcb4d90835e376fa0"
+    }
+  },
+  "windows_query_measurement": {
+    "platform": "Windows",
+    "python_version": [
+      3,
+      14,
+      8
+    ],
+    "world_input_sha256": "f77b16bbc70e3e5ffce295cff7274452673a365883402801207223b7dc8c49df",
+    "method": "world.inspect",
+    "pairs_per_build": 4,
+    "warmup_calls_per_trial": 10,
+    "timed_calls_per_mode_per_build": 400,
+    "order": "Standalone/shared, shared/standalone, standalone/shared, shared/standalone within each build; all before-build pairs precede after-build pairs.",
+    "core_response_validation_enabled": true,
+    "every_identity_revision_entity_count_checked": true,
+    "individual_timing_excludes": [
+      "startup",
+      "discovery",
+      "warmup",
+      "cleanup"
+    ],
+    "percentile_method": "nearest-rank ceil(n*0.95); p50 median; pooled mode samples",
+    "before_modes": {
+      "standalone": {
+        "samples": 400,
+        "p50_ms": 0.12165000000000001,
+        "p95_ms": 0.21,
+        "mean_ms": 0.13436125,
+        "min_ms": 0.0947,
+        "max_ms": 0.4305,
+        "timed_total_ms": 54.6318,
+        "complete_trials": 4
+      },
+      "shared": {
+        "samples": 400,
+        "p50_ms": 47.560649999999995,
+        "p95_ms": 48.4438,
+        "mean_ms": 47.05454575,
+        "min_ms": 31.1246,
+        "max_ms": 53.1526,
+        "timed_total_ms": 18827.1244,
+        "complete_trials": 4
+      }
+    },
+    "after_modes": {
+      "standalone": {
+        "samples": 400,
+        "p50_ms": 0.11915,
+        "p95_ms": 0.2522,
+        "mean_ms": 0.13970525,
+        "min_ms": 0.0928,
+        "max_ms": 0.5197,
+        "timed_total_ms": 56.7808,
+        "complete_trials": 4
+      },
+      "shared": {
+        "samples": 400,
+        "p50_ms": 31.756700000000002,
+        "p95_ms": 32.4655,
+        "mean_ms": 31.68135725,
+        "min_ms": 15.0591,
+        "max_ms": 34.6253,
+        "timed_total_ms": 12677.4778,
+        "complete_trials": 4
+      }
+    },
+    "shared_median_reduction_percent": 33.22904543987518,
+    "all_input_hashes_stable": true,
+    "all_client_and_host_exit_codes_zero": true,
+    "benchmark_tool_sha256": "651c733eee1e08360ea207c8bd1ecd83cb467e9e3ca06624384f3bafb61547c3",
+    "public_report_sha256": {
+      "before": "9d52560b7d0727d8dcb72284431d5e1db9ec573b2a928a4786780f6edc4f4f5e",
+      "after": "e7511a92b12ad9cf6ac0b7ea2ecb4a1f25a81d990c134cf6772aa83d2e58ec94"
+    }
+  },
+  "native_transport_regressions": {
+    "windows_exit_code": 0,
+    "linux_exit_code": 0,
+    "checks": [
+      "Small, empty and reused-connection replies arrive without another server poll.",
+      "A 2 MiB slow-reader response retains exact bytes while another client receives its small reply.",
+      "Pipelined follow-up reaches the owner exactly once after the preceding response; stale and duplicate tokens are rejected.",
+      "Existing eight-client, large-frame, UTF-8/size rejection, timeout/no-replay, disconnect and endpoint ownership cases pass."
+    ],
+    "negative_control": {
+      "backend": "Preserved queued-only Linux archive from the earlier headless build; protocol/source transport unchanged across 0.0.43\u20130.0.44.",
+      "same_new_regression_source": true,
+      "exit_code": 1,
+      "expected_failure": "Reply required another server poll instead of reaching the waiting client.",
+      "binary_sha256": "b0e5ada38539f87b4f3fd422ef4ac7e70529c4980283771b42cadb0f318f1159"
+    }
+  },
+  "integration_regressions": {
+    "linux_ctest_groups": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "python_response_contract",
+      "python_client_contract",
+      "local_session_native",
+      "shared_session_contract",
+      "mcp_contract"
+    ],
+    "all_passed": true,
+    "windows_shared_host_cases": {
+      "passed": 7,
+      "skipped": 1,
+      "skip": "Linux-only pathname socket publication test"
+    },
+    "windows_python_client_cases": 18,
+    "windows_mcp_cases": 5,
+    "native_desktop_abi": {
+      "passed": true,
+      "checks": 10,
+      "bridge_sha256": "8e57b24f7537263eb0a64176d6d0182fb58518687a617b94abca3efc61a22a7c",
+      "test_sha256": "8571a1723112b0b7073f9617b9813a4f91a383653eedf9dae2739fb271ce5241",
+      "gpu_attached": false,
+      "physical_frontend_qualified": false
+    },
+    "candidate_input_gate": {
+      "windows_passed": true,
+      "linux_passed": true,
+      "baseline_schema_revision": 46,
+      "candidate_schema_revision": 47,
+      "selected_methods": 9,
+      "selected_components": [
+        "Transform"
+      ],
+      "broader_api_stability_qualified": false
+    }
+  },
+  "shared_compiled_gameplay": {
+    "fixture": "fixtures/agent-defense/README.md",
+    "platform": "Windows",
+    "backend": "CoreCLR",
+    "original_verifier_unchanged": true,
+    "native_calls": 3208,
+    "passed": true,
+    "assembly_sha256": "9b7c22ad2adf76482c37c34285a74d464d1d188cc493b73c69041f6bf6185cf8",
+    "verifier_sha256": "5506ac02c164418805fa9ef84b9b2bd14075f89bfed8824626689aaa5d729f1e",
+    "verifier_evidence_sha256": "b27d7546e88b6daf630629d29c9960b9c2608e727cefb3631002567842f2adb2",
+    "checkpoint_tick": 130,
+    "loss_stability_tick": 1345,
+    "victory_stability_tick": 402,
+    "compiled_restore_tick": 130,
+    "fresh_process_restore_tick": 130,
+    "complete_reflected_state_native_poses_motion_and_ui_restored": true,
+    "continued_win_after_each_restore": true,
+    "source_world_and_game_artifacts_unchanged": true,
+    "owned_process_count": 6,
+    "all_exit_codes_zero": true,
+    "timed_out": false,
+    "forced_cleanup": false,
+    "cleanup_error_count": 0
+  },
+  "limits": [
+    "One laptop and a small persisted six-entity world; no large-project, saturation throughput, game FPS or universal latency guarantee.",
+    "Alternating order balances modes within each build; builds were measured sequentially, without randomized interleaving, power/idle-CPU measurement or kernel scheduling traces.",
+    "Windows client retry sleeps, headless owner sleep and the desktop dispatcher cadence remain unchanged; substantial shared-path delay remains.",
+    "The bounded native desktop ABI check has no GPU attachment or physical GUI input; installed editor activation and actual GUI responsiveness remain unqualified.",
+    "Shared defense qualification is synthetic Windows CoreCLR gameplay; no fresh provider session, graphics, physical input, Native AOT or Linux gameplay claim.",
+    "Result framing and input schemas are unchanged; runtime/gameplay/save APIs remain outside the candidate authoring contract.",
+    "Raw diagnostics, RPC logs and machine-local paths remain in ignored output."
+  ]
+}

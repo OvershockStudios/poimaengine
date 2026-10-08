@@ -245,6 +245,18 @@ struct LocalSessionServer::Impl {
         }
 #endif
     }
+    bool flush_output(std::size_t index,std::size_t& budget) {
+        auto& peer=*peers[index];
+        if(peer.output.empty())return true;
+        while(peer.output_used<peer.output.size() && budget) {
+            const auto io=peer.channel.write(peer.output.data()+peer.output_used,std::min(budget,peer.output.size()-peer.output_used));
+            if(io.closed) { drop(index);return false; }
+            if(!io.bytes)break;
+            peer.output_used+=io.bytes;budget-=io.bytes;
+        }
+        if(peer.output_used==peer.output.size())peer.reset_request();
+        return true;
+    }
     std::vector<LocalSessionRequest> poll() {
         accept_clients();std::vector<LocalSessionRequest> requests;requests.reserve(peers.size());
         for(std::size_t i=0;i<peers.size();++i) {
@@ -253,13 +265,8 @@ struct LocalSessionServer::Impl {
             if(!peer.channel.alive()) { drop(i);continue; }
             if(peer.token)continue;
             if(!peer.output.empty()) {
-                while(peer.output_used<peer.output.size() && budget) {
-                    const auto io=peer.channel.write(peer.output.data()+peer.output_used,std::min(budget,peer.output.size()-peer.output_used));
-                    if(io.closed) { drop(i);break; }if(!io.bytes)break;peer.output_used+=io.bytes;budget-=io.bytes;
-                }
-                if(!peers[i] || !peers[i]->connected)continue;
-                if(peer.output_used<peer.output.size())continue;
-                peer.reset_request();
+                if(!flush_output(i,budget))continue;
+                if(!peer.output.empty())continue;
             }
             while(budget && !peer.token) {
                 if(peer.header_used<4) {
@@ -284,7 +291,8 @@ struct LocalSessionServer::Impl {
         validate_payload(payload,local_session_response_limit,true);
         for(std::size_t i=0;i<peers.size();++i)if(peers[i] && peers[i]->connected && token!=0 && peers[i]->token==token) {
             auto& peer=*peers[i];if(!peer.channel.alive()) { drop(i);return false; }
-            auto bytes=frame(payload);peer.output=std::move(bytes);peer.output_used=0;peer.token=0;return true;
+            auto bytes=frame(payload);peer.output=std::move(bytes);peer.output_used=0;peer.token=0;
+            std::size_t budget=pump_budget;return flush_output(i,budget);
         }
         return false;
     }

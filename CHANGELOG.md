@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.45 — Unreleased
+
+This checkpoint removes an avoidable local reply wait and adds a reproducible authoring-latency probe. The installed desktop package remains unchanged.
+
+- Native replies attempt immediate nonblocking delivery within a 256 KiB budget, retaining partial frames for later owner polls. No extra request polling, transport threads, busy spin, automatic retry or global timer change is introduced. [Transport contract](docs/SHARED_SESSIONS.md#transport-and-limits).
+- Windows/Linux transport regressions cover immediate small/empty replies, slow readers, other-client progress and pipelined frame ordering. The new regression rejects the old queued-only backend. Shared-host, SDK, MCP and native desktop ABI checks pass; the compiled defense game also passes shared-host checkpoint continuation with clean process exits.
+- Four matched Windows trial pairs per build reduce the shared read-query median from 47.6 ms to 31.8 ms on the development machine. Client sleeps and editor dispatch cadence remain unchanged; this is authoring latency evidence, not game FPS or GUI responsiveness. [Measurement and limits](docs/evidence/m2-immediate-replies.json), [probe](tools/benchmark_shared_session.py).
+
 ## 0.0.44 — Unreleased
 
 This checkpoint adds a second independently checked agent-built game and a reproducible defense fixture. The installed desktop package remains unchanged.

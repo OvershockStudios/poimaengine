@@ -92,11 +92,48 @@ Endpoint names are 1–64 ASCII letters, digits, underscores or hyphens. They ar
 
 The framing is a four-byte little-endian payload length followed by strict UTF-8. Requests are 1 byte through 1 MiB; responses are zero through 32 MiB. Empty responses acknowledge notifications without emitting stdout. JSON-RPC batches remain unsupported. The host admits eight active clients, one in-flight request each; OS connection backlogs may contain additional waiting connections. Polling bounds each client's transport I/O to 256 KiB per call. World operations execute serially on the owner thread.
 
+In 0.0.45 development, `reply()` also attempts an immediate nonblocking write,
+with its own 256 KiB budget. Small responses can leave the server before the next
+owner sleep or editor frame; partial or backpressured responses retain their
+offsets for later polls. This write does not receive or dispatch new requests.
+Successful acceptance is not confirmation that the client received the reply.
+An observed disconnect returns false, possibly after partial delivery; the world
+operation may already have committed. There is no automatic replay, extra
+transport thread, busy wait or change to global timer resolution.
+
 `connect --timeout-ms N` accepts 100..600000 milliseconds, default 30000, for connection establishment and each exchange. A timeout/disconnect closes the client connection and does not replay the operation. The operation may already have committed: inspect state, then explicitly retry with the same durable `request_id` where supported. Editor controls/captures do not have durable request receipts. Transport startup/exchange errors exit the CLI with code 4; stderr explains the failure, and stdout uses the CLI error envelope rather than a JSON-RPC result.
 
 Normal shutdown attempts a bounded reply drain; a nonreading client or graphics failure can still observe a disconnect. Linux clean shutdown removes only the owned socket inode. A crash can leave a socket path: verify the old host is gone before removing that endpoint, or use a new name. Startup never removes a preexisting endpoint automatically.
 
-The native interfaces are `poima/local_session.hpp`, `poima/shared_session.hpp` and `WorldSession::request(..., WorldRequestScope)`. Call `poll()` to receive requests and flush queued `reply()` data. Callers serialize WorldSession access; this is not a stable binary plugin ABI.
+The native interfaces are `poima/local_session.hpp`, `poima/shared_session.hpp` and `WorldSession::request(..., WorldRequestScope)`. Call `poll()` to receive requests and flush remaining `reply()` data; never discard requests from an extra poll intended only to flush replies. Callers serialize WorldSession access; this is not a stable binary plugin ABI.
+
+### Measure authoring latency
+
+The repository includes a provider-free probe using the Python client. Supply a
+compatible native engine and a persisted authored world, and run Python on the
+engine's operating system. The output directory must be new:
+
+```powershell
+python tools/benchmark_shared_session.py `
+  --engine build/windows-runtime/poima.exe `
+  --world docs/evidence/fixtures/agent-defense/world.json `
+  --output build/shared-session-probe --repeats 4
+```
+
+Each pair measures standalone and freshly owned shared hosts against identical
+world copies. The order alternates; four pairs balance which mode runs first.
+Defaults are ten warmup and 100 timed `world.inspect` calls per mode per pair,
+with core response validation and identity/revision/count checks. Startup,
+discovery, warmup and cleanup are outside individual timings. Requests and
+cleanup have explicit budgets; no runtime, GPU, provider or authored edits run.
+Success requires zero exit codes from all directly owned native processes.
+
+`public-summary.json` contains hashes, parameters, per-trial and pooled timing
+statistics, correctness and cleanup results. `local-report.json` also contains
+machine-local paths, individual samples and bounded diagnostics. Publish the
+summary rather than the local report. The [0.0.45 evidence](evidence/m2-immediate-replies.json)
+records Windows before/after trials. These are authoring-query measurements on
+one machine, not game frame rates, agent success rates or GUI input latency.
 
 ## Qualification and current limits
 
@@ -104,4 +141,4 @@ The following evidence describes the original ImGui shared-session checkpoint. C
 
 [Recorded evidence](evidence/m2-shared-sessions.json) covers 23 headless and 27 runtime CTest suites, native Windows transport/session checks, seven Windows shared-host tests, and live shared-editor checks on both NVIDIA and AMD laptop GPUs. The [actual editor capture](evidence/m2-shared-sessions.png) shows an Inspector draft preserved across an external revision. `tests/shared_editor_capture.py` uses two real CLI connections and actual captures; its draft setup uses the GUI's semantic action dispatcher. It does not qualify physical mouse/keyboard input or autonomous agent policy.
 
-Imports, transactions and runtime calls remain synchronous and can stall every client and the GUI. The legacy ImGui editor loop has a 60 Hz CPU-side cap (30 Hz when unfocused or minimized). The Avalonia desktop uses a 33 ms dispatcher timer: it polls the shared host once, then draws its two viewports synchronously. Native simulation uses fixed 60 Hz ticks with bounded catch-up; the dispatcher interval is not a rendering frame-rate guarantee. Rendering still waits for the GPU each frame. No large-project responsiveness or game-performance claim follows from this fixture. The desktop now exposes remote Scene/Game camera controls. The development [MCP adapter](MCP.md) can target this transport, but its endpoint execution remains unqualified. Change subscriptions, separate-process GUI attachment to a headless host, durable drafts and collaborative permissions remain future work.
+Imports, transactions and runtime calls remain synchronous and can stall every client and the GUI. The legacy ImGui editor loop has a 60 Hz CPU-side cap (30 Hz when unfocused or minimized). The Avalonia desktop uses a 33 ms dispatcher timer: it polls the shared host once, then draws its two viewports synchronously. Native simulation uses fixed 60 Hz ticks with bounded catch-up; the dispatcher interval is not a rendering frame-rate guarantee. View rendering can still wait on frame-slot completion; see [render diagnostics](RENDER_DIAGNOSTICS.md). No large-project responsiveness or game-performance claim follows from this fixture. The desktop now exposes remote Scene/Game camera controls. The development [MCP adapter](MCP.md) targets this transport; bounded Windows/Linux endpoint and agent-client checks are recorded in the [client guide](AGENT_CLIENTS.md). Change subscriptions, separate-process GUI attachment to a headless host, durable drafts and collaborative permissions remain future work.

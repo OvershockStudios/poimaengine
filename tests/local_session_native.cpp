@@ -49,6 +49,7 @@ template<class Ready,class Receive> void pump(LocalSessionServer& server,Ready r
 template<class T> bool ready(std::future<T>& result) { return result.wait_for(std::chrono::milliseconds(0))==std::future_status::ready; }
 
 struct RawClient {
+    std::string incoming;
 #ifdef _WIN32
     HANDLE handle=INVALID_HANDLE_VALUE;
     explicit RawClient(const std::string& path) {
@@ -58,6 +59,12 @@ struct RawClient {
     ~RawClient() { if(handle!=INVALID_HANDLE_VALUE)CloseHandle(handle); }
     void send(std::string_view data) { DWORD n=0;check(WriteFile(handle,data.data(),static_cast<DWORD>(data.size()),&n,nullptr)!=0 && n==data.size(),"Raw pipe short test write."); }
     bool gone() { DWORD count=0;return !PeekNamedPipe(handle,nullptr,0,nullptr,&count,nullptr); }
+    std::size_t read_available(char* data,std::size_t count) {
+        DWORD used=0;if(ReadFile(handle,data,static_cast<DWORD>(count),&used,nullptr))return used;
+        const auto error=GetLastError();
+        if(error==ERROR_NO_DATA || error==ERROR_PIPE_BUSY || error==ERROR_PIPE_LISTENING)return 0;
+        throw std::runtime_error("Raw pipe disconnected while awaiting reply.");
+    }
 #else
     int fd=-1;
     explicit RawClient(const std::string& path) {
@@ -68,9 +75,35 @@ struct RawClient {
     ~RawClient() { if(fd>=0)::close(fd); }
     void send(std::string_view data) { check(::send(fd,data.data(),data.size(),MSG_NOSIGNAL)==static_cast<ssize_t>(data.size()),"Raw socket short test write."); }
     bool gone() { char c=0;const auto n=recv(fd,&c,1,MSG_PEEK|MSG_DONTWAIT);return n==0 || (n<0 && errno!=EAGAIN && errno!=EWOULDBLOCK && errno!=EINTR); }
+    std::size_t read_available(char* data,std::size_t count) {
+        const auto used=recv(fd,data,count,MSG_DONTWAIT);
+        if(used>0)return static_cast<std::size_t>(used);
+        if(used<0 && (errno==EAGAIN || errno==EWOULDBLOCK || errno==EINTR))return 0;
+        throw std::runtime_error("Raw socket disconnected while awaiting reply.");
+    }
 #endif
+    bool receive_frame(std::string& payload) {
+        // A deliberately small reader allows a large reply to remain pending
+        // while another connection is serviced. Retain subsequent frame bytes.
+        std::array<char,32*1024> chunk{};
+        const auto used=read_available(chunk.data(),chunk.size());incoming.append(chunk.data(),used);
+        if(incoming.size()<4)return false;
+        std::uint32_t size=0;
+        for(unsigned i=0;i<4;++i)size|=static_cast<std::uint32_t>(static_cast<unsigned char>(incoming[i]))<<(8*i);
+        check(size<=local_session_response_limit,"Raw reply declared an oversized response frame.");
+        if(incoming.size()<4+static_cast<std::size_t>(size))return false;
+        payload.assign(incoming.data()+4,size);incoming.erase(0,4+static_cast<std::size_t>(size));return true;
+    }
 };
 std::string header(std::uint32_t size) { std::string bytes(4,'\0');for(unsigned i=0;i<4;++i)bytes[i]=static_cast<char>((size>>(8*i))&255);return bytes; }
+std::string receive_without_poll(RawClient& client) {
+    const auto end=Clock::now()+std::chrono::seconds(8);std::string reply;
+    while(!client.receive_frame(reply)) {
+        check(Clock::now()<end,"Reply required another server poll instead of reaching the waiting client.");
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    return reply;
+}
 }
 
 int main() {
@@ -112,6 +145,73 @@ int main() {
         check(!std::filesystem::exists(address),"Owned socket endpoint survived server destruction.");
 #endif
         { LocalSessionServer reopened(name);check(reopened.address()==address,"Reopened endpoint address changed."); }
+
+        {
+            LocalSessionServer server(endpoint("immediate"));RawClient raw(server.address());
+            raw.send(header(5)+"small");std::uint64_t small=0;
+            pump(server,[&]{return small!=0;},[&](const auto& request){
+                check(small==0 && request.payload=="small","Immediate small request was duplicated or corrupted.");small=request.token;
+            });
+            check(server.reply(small,"delivered-now"),"Immediate small reply was rejected.");
+            check(receive_without_poll(raw)=="delivered-now","Small reply did not arrive intact without polling.");
+            check(!server.reply(small,"duplicate"),"Immediate completed reply token was reused.");
+
+            raw.send(header(5)+"empty");std::uint64_t empty=0;
+            pump(server,[&]{return empty!=0;},[&](const auto& request){
+                check(empty==0 && request.payload=="empty","Empty-response request was duplicated or discarded.");empty=request.token;
+            });
+            check(empty!=small && !server.reply(small,"stale"),"Stale small token could answer a later request.");
+            check(server.reply(empty,""),"Immediate empty reply was rejected.");
+            check(receive_without_poll(raw).empty(),"Empty response frame did not arrive without polling.");
+            check(!server.reply(empty,"duplicate"),"Immediate empty token was reused.");
+
+            raw.send(header(5)+"reuse");std::uint64_t reused=0;
+            pump(server,[&]{return reused!=0;},[&](const auto& request){
+                check(reused==0 && request.payload=="reuse","Request following empty reply was duplicated or discarded.");reused=request.token;
+            });
+            check(server.reply(reused,"after-empty"),"Reply following empty response was rejected.");
+            check(receive_without_poll(raw)=="after-empty","Immediate frame order changed after empty response.");
+        }
+
+        {
+            LocalSessionServer server(endpoint("slow_reader"));RawClient slow(server.address());
+            slow.send(header(4)+"slow");std::uint64_t slow_token=0,next_token=0,fast_token=0;
+            std::size_t slow_count=0,next_count=0,fast_count=0;
+            pump(server,[&]{return slow_token!=0;},[&](const auto& request){
+                check(request.payload=="slow" && ++slow_count==1,"Slow request was corrupted or re-emitted.");slow_token=request.token;
+            });
+            const std::string large="begin:"+std::string(2*1024*1024,'z')+":end";
+            check(server.reply(slow_token,large),"Large slow-reader reply was rejected.");
+            check(!server.reply(slow_token,"duplicate"),"Pending large-reply token accepted a duplicate.");
+            std::string received;const auto prefix_deadline=Clock::now()+std::chrono::seconds(8);
+            while(slow.incoming.size()<4) {
+                check(!slow.receive_frame(received),"Large reply unexpectedly completed during its prefix read.");
+                check(Clock::now()<prefix_deadline,"Large reply prefix needed another server poll.");
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            slow.send(header(10)+"after-slow");
+            RawClient fast(server.address());fast.send(header(4)+"fast");
+            const auto dispatch=[&](const auto& request) {
+                if(request.payload=="fast") {
+                    check(++fast_count==1,"Other client request was re-emitted.");fast_token=request.token;
+                }else if(request.payload=="after-slow") {
+                    check(++next_count==1,"Pipelined slow-reader request was re-emitted.");next_token=request.token;
+                }else throw std::runtime_error("Completed slow request was re-emitted or a request was corrupted.");
+            };
+            pump(server,[&]{return fast_token!=0;},dispatch);
+            check(server.reply(fast_token,"fast-now"),"Other client reply was rejected behind slow output.");
+            check(receive_without_poll(fast)=="fast-now","Slow reader blocked another client's immediate reply.");
+            check(!server.reply(fast_token,"duplicate"),"Other completed client token was reused.");
+            pump(server,[&]{return slow.receive_frame(received);},dispatch);
+            check(received==large,"Partial large response lost, duplicated or reordered bytes.");
+            pump(server,[&]{return next_token!=0;},dispatch);
+            check(next_token!=slow_token && !server.reply(slow_token,"stale"),"Stale slow token could answer its follow-up request.");
+            check(server.reply(next_token,"after-large"),"Pipelined request was discarded after slow output.");
+            check(receive_without_poll(slow)=="after-large","Follow-up frame crossed or corrupted the large response.");
+            check(!server.reply(next_token,"duplicate"),"Completed follow-up token was reused.");
+            check(server.poll().empty(),"Completed requests were re-emitted after all replies.");
+            check(slow_count==1 && next_count==1 && fast_count==1,"Slow-reader multi-client request counts differ.");
+        }
 
         {
             const auto token=endpoint("delayed");

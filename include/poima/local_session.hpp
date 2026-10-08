@@ -27,8 +27,11 @@ public:
     LocalSessionServer& operator=(const LocalSessionServer&)=delete;
     // Bounded, nonblocking I/O pump. Also flushes previously queued replies.
     std::vector<LocalSessionRequest> poll();
-    // Queues a reply; poll() completes delivery. False for a disconnected or
-    // already-replied token. Invalid/oversized UTF-8 throws without mutation.
+    // Queues a reply and attempts bounded, nonblocking delivery immediately;
+    // poll() flushes any remaining bytes. True means accepted without an observed
+    // disconnect, not confirmed receipt. False for stale/already-replied tokens
+    // or an observed disconnect (possibly after partial delivery). Never replay
+    // automatically. Invalid/oversized UTF-8 throws without mutation.
     bool reply(std::uint64_t token,std::string_view payload);
     std::size_t clients() const;
     std::string address() const;

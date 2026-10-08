@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **Early development · 0.0.44.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **Early development · 0.0.45.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
