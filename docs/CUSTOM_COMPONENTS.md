@@ -106,7 +106,7 @@ Saves with custom schemas use runtime snapshot version 2 and include component r
 
 A world permits up to 64 component schemas, each with 1–32 fields. Scalars use canonical 16-byte cells; collection fields add a 16-byte header plus capacity × 16 bytes. The total remains at most 512 bytes. The runtime permits 32,768 total instances and 16 MiB of payloads. A tick accepts up to 4,096 component writes and 2 MiB of staged data. The shared manifest limit is 512 KiB.
 
-Floating fields must be finite; wire padding is zero and negative zero normalizes to positive zero. JSON represents `long` as a canonical decimal string to retain all 64 bits. Components do not yet support strings, arrays, dictionaries, nested objects, inheritance or arbitrary managed references.
+Floating fields must be finite; wire padding is zero and negative zero normalizes to positive zero. JSON represents `long` as a canonical decimal string to retain all 64 bits. [Bounded generated buffers](COMPONENT_COLLECTIONS.md) support ordered scalar values and entity handles, represented as JSON arrays. General managed arrays, strings, dictionaries, nested objects, inheritance and arbitrary managed references remain unsupported.
 
 C# queries and generated reads do not allocate payloads. Writes allocate staged payloads and a sparse rollback backup the first time each instance changes in a batch. These limits are validation bounds, not a claim that a maximum-size gameplay workload meets a frame budget.
 
@@ -115,3 +115,5 @@ C# queries and generated reads do not allocate payloads. Writes allocate staged 
 The [0.0.37 evidence record](evidence/m2-custom-components.json) binds the qualified sources, Linux/Windows binaries and editor package to native, C#, reload, save, Inspector and relocated compiled-game checks. It also records resource bounds, isolated storage measurements and unqualified deployment/UI cases.
 
 The subsequent [component lifecycle foundation evidence](evidence/m2-component-lifecycle-foundation.json) covers internal membership journaling, allocation-failure recovery and global gameplay reference validation on Linux under CoreCLR and Native AOT. It records isolated staging measurements and their overhead. That checkpoint qualifies the component journal on Linux. The later world-service lifecycle path and its platform qualifications are documented in [Runtime](RUNTIME.md).
+
+Collections have separate [Linux CoreCLR evidence](evidence/m2-component-collections.json). The [Windows CoreCLR 0.0.51 checkpoint](evidence/m2-component-collections-windows.json) qualifies generated buffer writes, spawned references, rollback and fresh-process save continuation against the final rebuilt binary. Neither record qualifies Native AOT collection gameplay or arbitrary managed arrays.

@@ -31,4 +31,8 @@ Create a configuration JSON with `hostfxr`, `bridge`, `assembly` and `type:"Poim
 python tests/collection_gameplay_contract.py --binary path/to/poima --config build/collection-check/config.json --manifest build/collection-check/components.json --output build/collection-check/result
 ```
 
-The output directory must be new. The runner retains RPCs, source/artifact hashes, original saves and terminal results. Native AOT can instead select a separately published artifact through `{"descriptor":"path/to/native-gameplay.json"}`; that option is not evidence that the backend was tested. Linux CoreCLR is currently qualified in [the recorded development evidence](../../docs/evidence/m2-component-collections.json).
+The output directory must be new. The runner retains RPCs, source/artifact hashes, original saves and terminal results. On Windows, use Windows Python and Windows paths throughout the configuration; this runner does not translate WSL paths. Write the configuration as UTF-8 without a BOM.
+
+Linux CoreCLR is qualified in [the historical development evidence](../../docs/evidence/m2-component-collections.json). The separate [Windows CoreCLR 0.0.51 evidence](../../docs/evidence/m2-component-collections-windows.json) records 151 RPCs and three clean owner-process exits against the final rebuilt binary. The fixture verifies compiled ordered mutation, capacity and reference rejection, complete batch rollback, template spawning, and two fresh-process save continuations. It is not an autonomous game-creation or rendering test.
+
+Native AOT can select a separately published artifact through `{"descriptor":"path/to/native-gameplay.json"}`; that option does not qualify the backend. Native AOT collection gameplay remains unqualified, as do global-state collections, nested buffers, general managed arrays and collection-capacity migration.

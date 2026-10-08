@@ -1,6 +1,8 @@
 # Bounded component collections (development)
 
-Collection fields store ordered lists of scalar values or entity handles in native-owned components. Linux native and compiled CoreCLR development tests cover ordered mutation, failed-tick rollback, spawned references and fresh-process save continuation. Windows and Native AOT collection gameplay remain unqualified, and no updated desktop package has been activated. See the [qualification evidence](evidence/m2-component-collections.json).
+Collection fields store ordered lists of scalar values or entity handles in native-owned components. Linux native and compiled CoreCLR development tests cover ordered mutation, failed-tick rollback, spawned references and fresh-process save continuation. The [Linux evidence](evidence/m2-component-collections.json) remains a separate historical record.
+
+Windows CoreCLR is qualified against the final 0.0.51 binary: the existing compiled inventory fixture passes 151 RPCs and three clean owner-process exits. Its [separate evidence record](evidence/m2-component-collections-windows.json) identifies the sources, artifacts and checks. Native AOT collection gameplay remains unqualified, and no updated desktop package has been activated. This fixture establishes bounded component behavior, not a complete inventory game or game-scale performance.
 
 ## Declare and use a buffer
 

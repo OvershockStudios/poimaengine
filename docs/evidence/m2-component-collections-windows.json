@@ -1,0 +1,140 @@
+{
+  "checkpoint": "0.0.51 development",
+  "passed": true,
+  "scope": "Existing generated bounded component collections qualified on Windows CoreCLR using the actual compiled inventory fixture. No new gameplay implementation or ABI/catalog change.",
+  "engine": {
+    "version": "0.0.51",
+    "compiler": "Clang",
+    "compiler_version": "23.1.2",
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "sha256": "80dbae710520a2ebcbcfb917fb1f0c8432fd42af383f04c13811685c1da9b71b",
+    "protocol_version": 1,
+    "schema_revision": 50,
+    "authoring_core_version": 1
+  },
+  "build": {
+    "sdk": "10.0.401",
+    "host_runtime": "10.0.12",
+    "target_framework": "net10.0",
+    "configuration": "Release",
+    "components_manifest_extracted_from_compiled_fixture": true,
+    "game_bridge_manifest_extractor_each_zero_warnings_and_errors": true,
+    "matched_game_and_bridge_sdk_sha256": "5a482f12ef8621bb2d1aaf7d398c1795d25ab14936063e3de4a33a306725e511",
+    "artifacts": {
+      "game": "94309a403862f466e89eb47f8879bfcaa8c84664e2450a69a6024b8edbaa429e",
+      "bridge": "361a35df9e0762c3a4f3f72f3a441de9ef749fc107ac119f018252d96bbcfad7",
+      "component_generator": "5827ea4fab9593eacbec8d8e9db1b98ad1340ac8d7a7ef0d49f5ecc5b5e39ecb",
+      "manifest_extractor": "fc9a460a304ef6e28a35e759e041c7ea34360cfe92a540305d50a0b20dac4481",
+      "manifest": "f2a80ec821ffe6d088559b1217c8c8195826112935a5600bf1ebb004a7c8d598",
+      "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+    }
+  },
+  "manifest": {
+    "format": "poima.components",
+    "version": 1,
+    "schemas": [
+      {
+        "id": "66666666666666666666666666666666",
+        "name": "Inventory",
+        "version": 2,
+        "fields": [
+          {
+            "id": "00000000000000000000000000000001",
+            "name": "Items",
+            "kind": "array",
+            "element_kind": "entity",
+            "capacity": 4,
+            "default": [],
+            "unit": ""
+          },
+          {
+            "id": "00000000000000000000000000000002",
+            "name": "Quantities",
+            "kind": "array",
+            "element_kind": "int32",
+            "capacity": 4,
+            "default": [],
+            "unit": ""
+          },
+          {
+            "id": "00000000000000000000000000000003",
+            "name": "Changes",
+            "kind": "int32",
+            "default": 0,
+            "unit": ""
+          }
+        ],
+        "fingerprint": "5a8880e6be00eeceb6c91bcf5c5eb3e1de46405e548d17c7c8a5cd622b889caa"
+      }
+    ]
+  },
+  "fixture": {
+    "source": "tests/collection_gameplay/CollectionGameplay.cs",
+    "runner": "tests/collection_gameplay_contract.py",
+    "managed_type": "Poima.Tests.CollectionGameplay",
+    "backend": "Windows CoreCLR",
+    "native_host_python": "3.14.8",
+    "rpc_calls": 151,
+    "owned_processes": 3,
+    "clean_exit_requirement_enforced_by_harness": true,
+    "cleanup_errors": [],
+    "checks": [
+      "Generated Get/Set fills capacity4, rejects overflow without mutation, preserves published reads",
+      "Dangling first/last references, index failure, queued-write exception and later-tick batch failure preserve complete world-save bytes",
+      "Actual template spawn, Init-bypassed fresh exact restore, first/last reference repair+despawn, generation2 and fresh continuation passed"
+    ],
+    "initial_saved_tick": 8,
+    "second_saved_tick": 10,
+    "final_values": {
+      "FirstItem": "00000000000000000000000000000000",
+      "FullRejected": 1,
+      "Inventories": 2,
+      "LastItem": "00000000000000000000000000000000",
+      "Mode": 0,
+      "ObservedCount": 2,
+      "PublishedRead": 1,
+      "SecondItem": "00000000000000000000000000000003",
+      "Spawned": "00000000000000000000000000000006",
+      "Started": 1,
+      "ThirdItem": "00000000000000000000000000000004",
+      "Ticks": 11
+    },
+    "generation_1_payload_sha256_preserved": "ea5160d492b8326576c8b1b5fb6ed3676a94fb879f16146cf7f6f4895979d05c"
+  },
+  "stable_core_regressions": {
+    "passed": true,
+    "binary_sha256": "80dbae710520a2ebcbcfb917fb1f0c8432fd42af383f04c13811685c1da9b71b",
+    "checks": [
+      {
+        "test": "tests/authoring_core_conformance.py",
+        "exit_code": 0,
+        "log_sha256": "92fdabdc9c4c3b5334d1c9d8a19c31173782c1b8a6f368658d013f7670152fe6"
+      },
+      {
+        "test": "tests/authoring_contract_identity.py",
+        "exit_code": 0,
+        "log_sha256": "2c4af0b5f30d3b6d3c0a652f11800f644046b640312cbd74051383404109860f"
+      }
+    ]
+  },
+  "source_sha256": {
+    "tests/collection_gameplay/CollectionGameplay.cs": "2ae9d7f3423d98944247d0c88a8dfb101162547271051b7a720b30e27a587300",
+    "tests/collection_gameplay/Poima.CollectionGameplay.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+    "tests/collection_gameplay_contract.py": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+    "managed/Poima.Gameplay/Buffers.cs": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f",
+    "managed/Poima.Components.Generator/Generator.cs": "0fc907b247d2a29dcb7053c4409e93d2da93d5de3f92177d5c346f1d93971612",
+    "managed/Poima.Components.Generator/Buffers.cs": "94c6719e9b00491e5a26ae0f3e8cd5876583fcfc0654c0b621e560162416109d"
+  },
+  "reproduction": "tests/collection_gameplay/README.md",
+  "historical_linux_evidence": "m2-component-collections.json",
+  "limits": [
+    "Capacity-4 entity and int32 buffers in one generated unmanaged component; arbitrary managed arrays, other managed objects and general collections are not qualified.",
+    "The runner has finite fixture loops and per-RPC timeouts; it does not establish a hard overall I/O or wall-clock bound.",
+    "Clean exits are asserted by the runner; individual process exit-code arrays are not separately logged.",
+    "Save continuation uses the same declared component schema and compiled artifact; collection capacity migration and cross-version upgrades are not qualified.",
+    "Windows CoreCLR only in this checkpoint. Native AOT collection gameplay remains unqualified; Linux evidence is historical and unchanged.",
+    "No autonomous agent/game creation, graphics, editor visual interaction, physical input or performance measurement. The installed desktop package is unchanged.",
+    "The selected stable authoring core does not freeze the gameplay SDK, component schemas or save formats."
+  ]
+}

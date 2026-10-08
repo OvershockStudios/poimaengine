@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.51 — Unreleased
+
+This checkpoint qualifies the existing bounded component collections on Windows CoreCLR with the actual compiled inventory fixture. The installed desktop package remains unchanged.
+
+- Matching SDK, source generator and bridge build the fixture and extract its real component manifest. Compiled callbacks exercise ordered entity/int buffers, capacity rejection, published reads and actual template spawning.
+- Reference/index/exception failures and a later-tick batch failure preserve complete saved payload bytes. Nonempty inventories restore and continue in two fresh processes, including atomic reference repair and second-generation saves. [Windows evidence](docs/evidence/m2-component-collections-windows.json).
+- Documentation distinguishes bounded generated buffers from arbitrary managed arrays. Historical Linux qualification is retained separately; Native AOT collections, global-state collections, nested buffers and capacity migration remain unqualified. No gameplay ABI or API catalog change is introduced.
+
 ## 0.0.50 — Unreleased
 
 This checkpoint gives agents typed control over native runtime HUD/menu layouts and styling. The installed desktop package remains unchanged.

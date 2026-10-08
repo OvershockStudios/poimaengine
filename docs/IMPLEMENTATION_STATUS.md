@@ -1,8 +1,19 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.50 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.51 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.51 checkpoint qualifies the existing bounded component collections on
+Windows CoreCLR using the actual generated inventory fixture. Compiled Get/Set,
+capacity rejection, template spawning and failed-batch rollback retain complete
+saved state; two fresh-process loads continue nonempty inventories and repaired
+references. Matching SDK/generator/bridge builds have zero warnings or errors.
+This adds platform qualification, with no gameplay ABI or catalog change. Native
+AOT collections, global-state collections and capacity migration remain unqualified;
+the installed editor package and graphics evidence are unchanged.
+[Collection contract](COMPONENT_COLLECTIONS.md),
+[Windows evidence](evidence/m2-component-collections-windows.json).
 
 The 0.0.50 checkpoint adds bounded typed runtime UI layout/style authoring and
 `world.ui.layout` for virtual-viewport geometry inspection without a window or GPU.
