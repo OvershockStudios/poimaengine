@@ -46,6 +46,7 @@ observable workload, declared hardware tier and measured acceptance evidence.
 | Streaming and actor scale | Background I/O/cooking, resource retirement, simulation/animation/audio LOD and memory budgets. | Encounter populations and quality policies. | No unbounded work per distant actor; representative combat/streaming frame pacing rather than empty-scene FPS. |
 | Delivery and recovery | Compiled gameplay, reload boundaries, supported saves/migrations, packaging and diagnostics. | Progression, checkpoints, death/retry and game completion. | Fresh installation, relocated export, repeated save/reload, interrupted jobs and sustained play without lost committed state. |
 | Crash reporting | Bounded local crash/failure records, build/symbol identity, native/managed diagnostics and GPU/worker breadcrumbs. | Optional report upload backend and project reporting policy. | Deliberate native/managed failure and device-loss cases produce inspectable, symbolizable records without relying on a paid service; committed project state remains recoverable. |
+| Documentation and playbooks | Version-matched manual/API reference, runnable examples and capability discovery. | Task playbooks and compact Codex/Claude skills for installed packages and game workflows. | Documented fresh-project setup, authoring, debugging and export succeed without hidden steps; errors/recovery and package limits are covered. |
 
 ## Package boundaries
 
@@ -92,6 +93,8 @@ not a dependency of these independently implemented systems.
 Profiling, documentation, agent access and meaningful tests accompany every
 stage. New research can adjust dependencies; it does not replace the current
 verified workflow or erase previous requirements.
+The [documentation standard](DOCUMENTATION.md) defines human manuals, API
+reference, task playbooks and skills as complementary release deliverables.
 
 The separate full character creator remains planned after the imported-character
 pipeline. Browser deployment targets 1.1.0 and advanced 2D 1.2.0; Linux graphics,
