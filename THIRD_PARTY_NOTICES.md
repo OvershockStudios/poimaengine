@@ -72,6 +72,14 @@ Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 - License: MIT; original `LICENSE` is installed.
 - Use: private native runtime entity/component storage. Engine identity, schema, scheduling, transactions and presentation snapshots remain Poima responsibilities.
 
+## Recast Navigation (optional static navigation)
+
+- Source: [Recast Navigation v1.6.0](https://github.com/recastnavigation/recastnavigation/tree/6dc1667f580357e8a2154c28b7867bea7e8ad3a7).
+- Pinned commit: `6dc1667f580357e8a2154c28b7867bea7e8ad3a7`.
+- Archive SHA-256: `f565cc91b85df95a656cfc672e41c02e8aa44ba2363905aa8277ce20ea87491d`.
+- License: zlib; upstream `License.txt` is installed in `share/poima/licenses/RecastNavigation` when enabled.
+- Use: Recast builds static walkable surfaces; Detour reconstructs checked meshes and queries paths. Demo, crowd and tile-cache modules are excluded. Poima supplies bounded allocation tracking, authored geometry extraction, package validation and agent-facing commands.
+
 ## Workspace build tools
 
 The optional `experiments/managed_gameplay` launcher also includes `hostfxr.h` and `coreclr_delegates.h` from a caller-supplied .NET SDK. Those files carry the .NET Foundation MIT notice; the tested headers come from the Windows host pack 10.0.8. The lab loads an existing CoreCLR runtime and does not redistribute a .NET SDK/runtime or install this launcher in the engine package. Runtime packaging will require pinning its distribution and preserving its full license/dependency notices. The initial measured SDK/runtime are 10.0.204/10.0.11; this is recorded development evidence, not a shipping dependency approval.

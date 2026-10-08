@@ -1,8 +1,34 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.62**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.63**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.63 adds optional static navigation through pinned Recast/Detour.
+Revision-guarded native baking, inspection and path queries use authored static
+box and indexed mesh colliders, including physical holes. Profiles control
+capsule clearance, slope, climb and voxel resolution. Routes distinguish complete,
+partial, unreachable, output-budget and node-budget results, with explicit
+endpoint projections. Content-addressed packages contain checked neutral arrays;
+loaded meshes are immutable and source fingerprints reject stale topology.
+
+Windows and Linux each pass native navigation checks and six protocol groups
+over 70 RPCs, with eight clean native-owner exits per platform. A disabled build
+passes availability checks while intentionally skipping five enabled-only groups.
+Selected regressions cover eleven Linux groups, ten authoring-only groups and
+ten Windows execution groups; the existing CoreCLR patrol sample also passes
+its four gameplay checks. Native regressions reproduce and fix partial mesh
+initialization cleanup, malformed-path diagnostics and the reserved neighbor-bit
+polygon boundary. Discovery revision 57 retains protocol 1, authoring-core v1,
+existing gameplay service profiles and save formats.
+
+This is authored ground-navigation infrastructure. It does not yet bind meshes
+into compiled gameplay or automatic runtime bundle/save closure. Patrol Room
+still uses its authored route and direct steering. Moving obstacles, avoidance,
+crowds, traversal links and streaming remain separate work. Endpoint projection
+uses a bounded linear scan; bake/query memory admission limits are not a game-scale
+CPU or latency guarantee. [Navigation API](NAVIGATION.md),
+[evidence](evidence/m2-navigation.json).
 
 Version 0.0.62 adds a compiled CPU recipe baker for tileable brick and plaster.
 Versioned recipes produce correlated base-color, tangent-normal and packed

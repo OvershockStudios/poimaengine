@@ -25,6 +25,8 @@
 #include "mutation_discovery.hpp"
 #include "asset_references.hpp"
 #include "material_service.hpp"
+#include "navigation_geometry.hpp"
+#include "navigation_schema.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
@@ -503,7 +505,7 @@ Json describe() {
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 56}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 57}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -543,6 +545,8 @@ Json describe() {
             "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; a supplied controller camera must be a direct child; camera:null creates a camera-free actor.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
+    methods.update(navigation::schemas());
+    result["navigation"]=navigation::capability();
     methods["world.history"]=object_schema(Json::object());
     for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
     result["limits"]["history_entries"]=32;result["limits"]["history_bytes"]=max_document_bytes;
@@ -1026,7 +1030,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake"};
 class World {
     profiling::Service profiler_;
     fs::path path_;
@@ -1440,6 +1444,7 @@ public:
         // This authored metadata read deliberately bypasses cache pruning and
         // every package/snapshot resolver. Other dispatch behavior is unchanged.
         if(method=="world.asset.references")return asset_reference_dispatch(params);
+        if(method.starts_with("world.navigation."))return navigation_dispatch(method,params);
         prune_model_cache();
         if(method.starts_with("profiler.")) {
             try { return profiler_.dispatch(method,params); }
@@ -1577,6 +1582,7 @@ public:
         throw Error(-32601, "Unknown world method.");
     }
     fs::path asset_directory() const { return fs::path(path_).concat(".assets"); }
+#include "world_navigation.inc"
     static Json render_diagnostics(const RenderDiagnostics& d) {
         auto timing=[](const TimingSummary& t) { return Json{{"samples",t.samples},{"mean_ms",t.samples ? Json(t.total_ms/static_cast<double>(t.samples)) : Json(nullptr)},
             {"min_ms",t.samples ? Json(t.min_ms) : Json(nullptr)},{"max_ms",t.samples ? Json(t.max_ms) : Json(nullptr)},{"last_ms",t.samples ? Json(t.last_ms) : Json(nullptr)}}; };

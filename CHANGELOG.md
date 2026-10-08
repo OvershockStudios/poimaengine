@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.63
+
+- Bake static walkable space from authored box and indexed mesh collision geometry with optional Recast/Detour. Inspect clearances and query revision-guarded routes through native commands. [Navigation API](docs/NAVIGATION.md).
+- Report complete, partial, unreachable and budget-limited paths with endpoint projections; reject stale topology and malformed packages. Immutable meshes retain independent query scratch.
+- Bound native allocations and recover from every tested Detour allocation-failure stage. Filesystem failures return bounded UTF-8 diagnostics without terminating the owner.
+- Isolate upstream backend dependencies from core compile commands and enforce static linkage even when ambient shared-library builds are enabled. Native Windows/Linux and disabled authoring checks pass. [Evidence](docs/evidence/m2-navigation.json).
+
 ## 0.0.62
 
 - Generate tileable brick and plaster PBR materials from versioned native recipes: correlated color, tangent normals and roughness, cooked mips and reusable image assets. No downloaded art or generation service is required. [Workflow](docs/PROCEDURAL_MATERIALS.md).

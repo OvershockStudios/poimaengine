@@ -1,0 +1,206 @@
+{
+  "checkpoint": "0.0.63",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 57,
+  "authoring_contract": "poima.authoring-core.v1",
+  "source_sha256": {
+    "CMakeLists.txt": "70f2121dc28b69a622ca16b6b90d3a0a1960be5ed1fc84c7b4ad0dc37a429fda",
+    "cmake/navigation.cmake": "d6dc97efde40fa70d29dff1d0d58318866e48d9c32415b7d7d15d809deea4793",
+    "include/poima/navigation.hpp": "09d96cbcaf61ab3f8a70a0a816cfe616b5f4f587b3134fdca7862bea2434f861",
+    "src/navigation.cpp": "5aa148e7096e6a4a89ec426e42b1a36ac12fc41edba737558a5882258064bc21",
+    "src/navigation_disabled.cpp": "a13939876a82507d5a7e11763427c02bd7db6a7d6b7619f2e976c2fe2e9bf0bf",
+    "src/navigation_geometry.cpp": "2affa0a1dfc17f7ca44bf6e187a817a44ea0078227ff7fea7304acf59cd8299f",
+    "src/navigation_geometry.hpp": "c12c8b7755e7f0fffe3acd94170be33766c87659afba5c4bc2fa158c5698399f",
+    "src/navigation_memory.hpp": "7a54aaff9224ce0be650b122d77b02b4519791edec8fce94aab3c365f5ec66a7",
+    "src/navigation_schema.hpp": "c4fcac240927e4ed8ec90756ea6063cf3428cbd8be532f434c6f1fdbca458ac3",
+    "src/world.cpp": "cd298c833e5d40d9fb28ef9de4fd9cb2cb3382f5a610ae54941d8c72066d46ef",
+    "src/world_navigation.inc": "5b63a0366186fdd88bfa874c9e5f605d8463eb605b4515c0ac077419e47bebd2",
+    "tests/asset_references_contract.py": "09e410708ae0ccbdae5674dfbafbad2161fbc8bab790e9b4ab4b35749de7d57d",
+    "tests/navigation_contract.py": "e30228a4597d559883ade79002a57e7e1b656c6c0a7affee49f671a2e7644d89",
+    "tests/navigation_native.cpp": "a148f1eca0560b024811017d815ad2d46ad7033d5c926cbc68fa55854582dd1c",
+    "tests/profiler_contract.py": "fa8320c066fd66b619325f739b2375070d35fc5d4130272c641f96ecd1fb4705",
+    "tests/world_session_native.cpp": "1f66f4aa3798851f8bda5d86a8472606f38716b016ccac8cbc97568e88e9be2a"
+  },
+  "dependency": {
+    "name": "RecastNavigation",
+    "version": "1.6.0",
+    "commit": "6dc1667f580357e8a2154c28b7867bea7e8ad3a7",
+    "archive_sha256": "f565cc91b85df95a656cfc672e41c02e8aa44ba2363905aa8277ce20ea87491d",
+    "license": "zlib",
+    "cached_files_verified": 156,
+    "all_cached_files_match_archive": true,
+    "modules": [
+      "Recast",
+      "Detour"
+    ],
+    "report_sha256": "4c2da561bdb5ce4bb56f6b987722e0e6a3b339d5cac2634e2213bb588d305372"
+  },
+  "platforms": {
+    "linux": {
+      "passed": true,
+      "navigation_enabled": true,
+      "groups": 6,
+      "executed_groups": 6,
+      "intentional_disabled_skips": 0,
+      "rpc_calls": 70,
+      "owned_processes": 8,
+      "all_owned_exit_zero": true,
+      "native_executed": true,
+      "native_passed": true,
+      "engine_sha256": "6fa868228477ce91752dce2ae990c84cd3d5765b1a484f0148dd8e2952f6a383",
+      "report_sha256": "acdd736b5c131f607c9819ec71c23350e67bf9bc6154e51fea8a376a99a906d4",
+      "native_log_sha256": "ed967c53974863d56730fc095ffc73ffe395a7c0bf91270662fa7595456eb44f",
+      "protocol_log_sha256": "05747502d1485db5a0968317378310a6f79bb56a765a4a8935d3751f0c10b3b0"
+    },
+    "windows": {
+      "passed": true,
+      "navigation_enabled": true,
+      "groups": 6,
+      "executed_groups": 6,
+      "intentional_disabled_skips": 0,
+      "rpc_calls": 70,
+      "owned_processes": 8,
+      "all_owned_exit_zero": true,
+      "native_executed": true,
+      "native_passed": true,
+      "engine_sha256": "b1bf0b6ef2aa228c52271e6924de9645dc8363fc5b83b3441892f44790bde167",
+      "report_sha256": "b8454ac570d9a28becb98dbcd01ecf96bc3a9c2ac25d847a3d97eb9042e57db8",
+      "native_log_sha256": "c9e775a5dd35571dada3d0287a8df5d182ca762b693e11c7d7c396eef2d7c5f8",
+      "protocol_log_sha256": "7dfecbcbf850fa47fa27fc4e62370b9f65dedc5dc0f78388724fae3bf9107d2c"
+    },
+    "linux_authoring_only": {
+      "passed": true,
+      "navigation_enabled": false,
+      "groups": 6,
+      "executed_groups": 1,
+      "intentional_disabled_skips": 5,
+      "rpc_calls": 17,
+      "owned_processes": 6,
+      "all_owned_exit_zero": true,
+      "native_executed": false,
+      "native_passed": null,
+      "engine_sha256": "a2f48fbdba5114e489c180f2263d11457c458fd7c609c4b615809348ea0a25cd",
+      "report_sha256": "061cd62ea9e1b8119fed8965adce271cb836816d1353640659663afec8720243",
+      "native_log_sha256": null,
+      "protocol_log_sha256": "4156d7561450593d9dc90e1cf266aef4f58d50785871b2665add75ac0248b905"
+    }
+  },
+  "regressions": {
+    "linux": {
+      "passed": true,
+      "groups": 11,
+      "tests": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "profiler_contract",
+        "world_session_native",
+        "mcp_contract",
+        "asset_contract",
+        "runtime_contract",
+        "asset-references-native",
+        "asset_references_contract",
+        "material-recipe-native",
+        "procedural_material_contract"
+      ],
+      "report_sha256": "9e1450728d514da81af58d2eeb473337d611ab943cb3830730ab251159fbea06"
+    },
+    "linux_authoring_only": {
+      "passed": true,
+      "groups": 10,
+      "tests": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "profiler_contract",
+        "world_session_native",
+        "mcp_contract",
+        "asset_contract",
+        "asset-references-native",
+        "asset_references_contract",
+        "material-recipe-native",
+        "procedural_material_contract"
+      ],
+      "report_sha256": "7298eff478d90873b44d1c9328d3cf2bacd2c56278a2de749bff222d0a223852"
+    },
+    "windows": {
+      "passed": true,
+      "execution_groups": 10,
+      "native_groups": 3,
+      "protocol_groups": 7,
+      "groups": [
+        "material-native",
+        "world-session-native",
+        "asset-references-native",
+        "asset",
+        "mcp",
+        "profiler",
+        "runtime",
+        "world",
+        "core-conformance",
+        "identity"
+      ],
+      "owned_protocol_children": 109,
+      "zero_exit_children": 106,
+      "expected_rejection_exit_4_children": 3,
+      "forced_cleanup": false,
+      "report_sha256": "dc9530cbce2bce574f78a2fdde766a94869133e359737912ce216c5cf6990489"
+    },
+    "preserved_patrol_coreclr": {
+      "passed": true,
+      "groups": 4,
+      "rpc_calls": 1483,
+      "owned_processes": 2,
+      "all_owned_exit_zero": true,
+      "artifact_sha256": {
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "71d9748cc6b362e3a6285bd0a3216fdb8b337974860d33505d31129d85535932"
+      },
+      "report_sha256": "7ac7754488c9b4f67e726c287905952abcbc2dd8c20a3cb7c1cab34eb9e55c61",
+      "scope": "Existing camera-free direct-steering sample; not navmesh-driven gameplay."
+    }
+  },
+  "compatibility": {
+    "protocol_version": 1,
+    "authoring_core_v1": true,
+    "service_epoch": 7,
+    "gameplay_profiles_unchanged": true,
+    "save_formats_unchanged": true,
+    "discovery_revision": 57,
+    "platforms": [
+      "linux-runtime",
+      "windows-runtime",
+      "linux-authoring-only"
+    ],
+    "report_sha256": "c74ffd3ede0df5291f82c353cab43ab21ce779431acf62ac1c1641d5a81b5a6a"
+  },
+  "backend_build_isolation": {
+    "passed": true,
+    "static_archives": true,
+    "ambient_shared_library_policy": "ON",
+    "upstream_includes_excluded_core_units_per_platform": 57,
+    "core_gameplay_compile_commands_unchanged": true,
+    "report_sha256": "e2bf16667970409f51025a597d0a5953d03337dafb93a2e0708b9a4358a1bd82"
+  },
+  "native_checks": [
+    "Wall detours and capsule-clearance opening tests with independently checked path segments.",
+    "Disconnected surfaces, low headroom, missing projections and explicit output budgets.",
+    "Checked neutral package reload; conservative collision-source fingerprints and stale topology rejection.",
+    "Every exercised Detour decode/query allocation ordinal fails cleanly and permits subsequent reuse.",
+    "Recast/Detour memory ceilings unwind intermediate allocations; all closed-owner tracked allocations are zero.",
+    "Read-only/shared owner rules; valid bounded UTF-8 diagnostics for oversized Unicode and malformed POSIX filesystem paths."
+  ],
+  "corrected_failures": [
+    "A 32,768-polygon fixture was accepted by the pre-fix binary; the admission ceiling is now 32,767 so Detour internal-neighbor values cannot collide with its external-link flag. The regression was rerun against final sources.",
+    "An initial injected allocation failure exposed unsafe cleanup of incompletely initialized upstream mesh storage. Ownership now transfers only after successful initialization; allocation-ordinal tests were rerun.",
+    "An actual malformed POSIX path fixture exposed response serialization failure. Storage failures now use bounded valid UTF-8 diagnostics, and the fixture passes.",
+    "Owned signed-index conversion warnings were corrected and final native sources rebuilt on both platforms."
+  ],
+  "limits": [
+    "Static single-mesh authored ground navigation only; compiled gameplay binding, bundle/save closure and movement following are separate integration.",
+    "No dynamic obstacles, crowds, avoidance, traversal links, swimming, tiled streaming or automatic rebaking.",
+    "Endpoint projection uses a bounded linear scan; no game-scale latency, throughput or memory-performance claim.",
+    "Cached immutable packages do not observe external edits until reloading or a fresh owner; path regular-file checks remain active.",
+    "No GPU rendering, editor UI, physical device or console qualification follows from these navigation tests."
+  ]
+}
