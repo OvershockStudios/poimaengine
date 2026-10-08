@@ -2,12 +2,72 @@
 #include "poima/ui_presenter.hpp"
 #include "poima/ui_document.hpp"
 #include <span>
+#include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 namespace poima {std::span<const std::uint8_t> embedded_ui_font();}
 namespace {
 void check(bool value,const char* why) {if(!value)throw std::runtime_error(why);}
 template<class F>void rejects(F f) {bool failed=false;try{f();}catch(const std::exception&){failed=true;}check(failed,"Invalid presentation succeeded.");}
+std::string stable_id(char digit) {return std::string(32,digit);}
+poima::UiElementInspection control(poima::UiPresenter& p,const std::string& id) {
+    const auto rows=p.inspect();const auto at=std::find_if(rows.begin(),rows.end(),[&](const auto& row){return row.id==id;});check(at!=rows.end(),"Authored control absent from layout inspection.");return *at;
+}
+void rectangle(const std::array<float,4>& actual,std::array<float,4> expected) {for(std::size_t i=0;i<4;++i)check(std::abs(actual[i]-expected[i])<.05f,"Authored responsive rectangle differs from expected geometry.");}
+bool color(const poima::UiFrame& frame,std::array<std::uint8_t,4> value) {return std::any_of(frame.vertices.begin(),frame.vertices.end(),[&](const auto& vertex){return vertex.color==value;});}
+void authored_layout_tests() {
+    using namespace poima;using namespace poima::ui;
+    const auto canvas=stable_id('1'),panel=stable_id('2'),title=stable_id('3'),save=stable_id('4'),resume=stable_id('5'),cover=stable_id('6');
+    Definition definition{{canvas,"","Canvas",Kind::panel},{panel,canvas,"Menu",Kind::panel},{title,panel,"Title",Kind::label,"Paused"},{save,panel,"Save",Kind::button,"Save","save"},{resume,panel,"Resume",Kind::button,"Resume","resume"},{cover,"","Cover",Kind::panel,"","",false}};
+    // Scientific notation is accepted by pinned RmlUi's strtof-based number
+    // parser; this finite subnormal authored offset underflows to float zero.
+    Layout root;root.position=Position::absolute;root.left=Length{1e-300};root.top=Length{0};root.width=Length{100,LengthUnit::percent};root.height=Length{100,LengthUnit::percent};root.padding=std::array<double,4>{0,0,0,0};root.direction=Direction::column;root.align=Align::center;root.justify=Justify::center;root.hit_test=HitTest::pass_through;definition[0].layout=root;
+    Style transparent;transparent.background_color="#00000000";transparent.border_width=0;definition[0].style=transparent;
+    Layout menu;menu.width=Length{320};menu.height=Length{200};menu.padding=std::array<double,4>{16,16,16,16};menu.gap=8;menu.shrink=0;menu.align=Align::stretch;definition[1].layout=menu;
+    Style menu_style;menu_style.background_color="#241c24";menu_style.border_width=0;menu_style.disabled=ColorState{std::nullopt,"#563412",std::nullopt};definition[1].style=menu_style;
+    for(std::size_t i=2;i<=4;++i) {Layout child;child.width=Length{100,LengthUnit::percent};child.height=Length{i==2?32.:40.};child.shrink=0;child.order=i==2?-10:i==3?2:1;definition[i].layout=child;}
+    Style button_style;button_style.background_color="#6f243b";button_style.border_width=0;button_style.border_radius=6;button_style.hover=ColorState{std::nullopt,"#89354e",std::nullopt};button_style.focus=button_style.hover;button_style.pressed=ColorState{std::nullopt,"#531a2c",std::nullopt};button_style.disabled=ColorState{std::nullopt,"#403039",std::nullopt};definition[4].style=button_style;
+    Layout overlay;overlay.position=Position::absolute;overlay.left=Length{336};overlay.top=Length{226};overlay.width=Length{288};overlay.height=Length{40};overlay.padding=std::array<double,4>{0,0,0,0};definition[5].layout=overlay;definition[5].style=transparent;
+    Model model(definition);UiPresenter presenter;rejects([&]{presenter.inspect();});auto frame=presenter.frame(model.presentation(),960,540);
+    const auto rows=presenter.inspect();check(rows.size()==3 && rows[0].id==title && rows[1].id==resume && rows[2].id==save,"Inspector traversal did not follow authored sibling order.");
+    rectangle(control(presenter,resume).bounds,{336,226,624,266});rectangle(control(presenter,save).bounds,{336,274,624,314});
+    check(color(*frame,{111,36,59,255}),"Authored button palette was not rendered.");
+    check(!presenter.input({UiInputKind::pointer_down,5,5}).consumed && !presenter.input({UiInputKind::pointer_up,5,5}).consumed,"Pass-through fullviewport canvas swallowed gameplay input.");
+    check(presenter.input({UiInputKind::pointer_down,325,175}).consumed,"Capturing menu padding did not own its gesture.");presenter.input({UiInputKind::pointer_up,325,175});
+    check(presenter.input({UiInputKind::focus_next}).focused==resume && presenter.input({UiInputKind::focus_next}).focused==save,"Focus order did not match visual authored order.");presenter.reset_input();
+    presenter.input({UiInputKind::pointer_move,350,240});check(color(*presenter.frame(model.presentation(),960,540),{137,53,78,255}),"Authored hover color was not presented.");
+    presenter.input({UiInputKind::pointer_down,350,240});check(color(*presenter.frame(model.presentation(),960,540),{83,26,44,255}),"Authored pressed color was not presented.");
+    model.edit(0,{{title,"Paused 2"}});presenter.frame(model.presentation(),960,540);check(presenter.input({UiInputKind::pointer_up,350,240}).activated==resume,"Unchanged authored target lost a held gesture during HUD update.");
+    presenter.input({UiInputKind::pointer_down,350,240});model.edit(1,{{cover,std::nullopt,true}});presenter.frame(model.presentation(),960,540);
+    auto blocked=presenter.input({UiInputKind::accept_down});check(blocked.consumed && blocked.focused==resume,"Occluded focus lost keyboard ownership.");blocked=presenter.input({UiInputKind::accept_up});check(blocked.consumed && !blocked.activated,"Fresh keyboard confirm activated a fully covered control.");
+    presenter.input({UiInputKind::accept_down});model.edit(2,{{cover,std::nullopt,false}});presenter.frame(model.presentation(),960,540);blocked=presenter.input({UiInputKind::accept_up});check(blocked.consumed && !blocked.activated,"Removing cover rearmed an initially blocked held confirm.");auto release=presenter.input({UiInputKind::pointer_up,350,240});check(release.consumed && !release.activated,"Occlusion change retained an armed callback or lost release ownership.");
+    presenter.input({UiInputKind::accept_down});model.edit(3,{{cover,std::nullopt,true}});presenter.frame(model.presentation(),960,540);blocked=presenter.input({UiInputKind::accept_up});check(blocked.consumed && !blocked.activated,"New cover retained a previously armed keyboard confirm.");model.edit(4,{{cover,std::nullopt,false}});presenter.frame(model.presentation(),960,540);
+    presenter.input({UiInputKind::pointer_down,350,240});auto altered=std::make_shared<Presentation>(*model.presentation());altered->elements[4].element.action="different";presenter.frame(altered,960,540);check(!presenter.input({UiInputKind::pointer_up,350,240}).activated,"Changed action retained an armed gesture.");
+    presenter.reset_input();presenter.frame(model.presentation(),640,360);rectangle(control(presenter,resume).bounds,{176,136,464,176});
+    presenter.frame(model.presentation(),1920,1080,2);rectangle(control(presenter,resume).bounds,{672,452,1248,532});
+    presenter.frame(model.presentation(),960,540);model.edit(5,{{panel,std::nullopt,std::nullopt,false}});frame=presenter.frame(model.presentation(),960,540);check(!control(presenter,resume).enabled && color(*frame,{86,52,18,255}) && color(*frame,{64,48,57,255}),"Inherited disabled state did not apply authored panel/button colors.");
+}
+void authored_scroll_tests() {
+    using namespace poima;using namespace poima::ui;const auto panel=stable_id('1');Definition definition{{panel,"","Scroller",Kind::panel}};
+    Layout layout;layout.position=Position::absolute;layout.left=Length{20};layout.top=Length{20};layout.width=Length{180};layout.height=Length{100};layout.padding=std::array<double,4>{0,0,0,0};layout.gap=5;layout.overflow=Overflow::auto_scroll;definition[0].layout=layout;Style style;style.border_width=0;definition[0].style=style;
+    for(char n='2';n<='6';++n) {Element e{stable_id(n),panel,"Item",Kind::button,"Item","item"};Layout child;child.height=Length{40};child.shrink=0;e.layout=child;definition.push_back(e);}
+    Model model(definition);UiPresenter p;p.frame(model.presentation(),320,180);const auto last=stable_id('6');check(!control(p,last).hittable,"Clipped control remained presentation-hittable.");
+    const auto first=control(p,stable_id('2'));rectangle(first.clip,{20,20,200,120});check(!p.input({UiInputKind::pointer_down,40,125}).consumed,"Scroller captured input outside its clipped extent.");p.input({UiInputKind::pointer_up,40,125});
+    for(int i=0;i<5;++i)p.input({UiInputKind::focus_next});p.frame(model.presentation(),320,180);check(control(p,last).hittable,"Visual-order focus failed to reveal clipped authored control.");
+    check(p.input({UiInputKind::pointer_wheel,40,40,-100}).consumed,"Authored scroller did not own wheel input.");p.frame(model.presentation(),320,180);check(control(p,stable_id('2')).hittable && !control(p,last).hittable,"Authored scroller did not apply bounded wheel motion/clipping.");
+}
+void mixed_root_tests() {
+    using namespace poima;using namespace poima::ui;const auto canvas=stable_id('1'),authored=stable_id('2'),legacy=stable_id('8'),old_button=stable_id('9');
+    Definition d{{canvas,"","Authored root",Kind::panel},{authored,canvas,"Authored",Kind::button,"New","new"},{legacy,"","Legacy root",Kind::panel},{old_button,legacy,"Legacy",Kind::button,"Old","old"}};
+    Layout root;root.position=Position::absolute;root.left=Length{80,LengthUnit::percent};root.top=Length{20};root.width=Length{100};root.height=Length{40};root.padding=std::array<double,4>{0,0,0,0};root.order=-100;d[0].layout=root;Style style;style.border_width=0;d[0].style=style;
+    Layout child;child.height=Length{40};child.shrink=0;d[1].layout=child;
+    Model model(d);UiPresenter p;p.frame(model.presentation(),640,360);rectangle(control(p,authored).bounds,{512,20,612,60});
+    const auto old=control(p,old_button);check(old.bounds[0]>0 && old.bounds[2]<320,"Explicit canvas displaced the retained legacy sidebar.");
+    // Separate legacy/sidebar and authored/canvas groups intentionally keep
+    // traversal group-local instead of interleaving their differently laid-out roots.
+    const auto rows=p.inspect();check(rows.size()==2 && rows[0].id==old_button && rows[1].id==authored,"Mixed-root traversal groups changed unexpectedly.");
+}
 void document_input_tests() {
     using namespace poima;UiDocumentSource source;const auto font=embedded_ui_font();source.fonts.push_back({"Input Test",{font.begin(),font.end()}});
     source.rml=R"(<rml><head><style>body {margin:0px;font-family:Input Test;} #region {position:absolute;left:20px;top:20px;width:80px;height:40px;overflow:hidden;clip:always;} button {position:absolute;left:0px;top:0px;width:100px;height:40px;margin:0px;padding:0px;border-width:0px;transform:translateX(30px);}</style></head><body><div id="region"><button id="button"></button></div></body></rml>)";
@@ -128,6 +188,9 @@ void input_tests() {
 }
 }
 int main() {try {
+    authored_layout_tests();
+    authored_scroll_tests();
+    mixed_root_tests();
     document_input_tests();
     input_tests();
     changing_hud_tests();

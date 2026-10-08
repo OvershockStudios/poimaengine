@@ -40,7 +40,7 @@ Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WOR
 | Graphics | Vulkan PBR, HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
 | Gameplay | Fixed-step Jolt physics, capsule movement, static triangle-mesh collision, raycasts, root-prop spawning and interruptible two-pose animation crossfades. |
 | C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. Bounded collections and explicit scalar save upgrades have Linux CoreCLR development qualification. |
-| Player systems | Keyboard, mouse and gamepad profiles; native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
+| Player systems | Keyboard, mouse and gamepad profiles; typed [HUD/menu layout and styling](docs/GAME_UI.md#authored-layout-and-styling), native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
 | Content and tools | glTF/GLB, PNG/JPEG and WAV import; project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |
 
 These are bounded implementations, not production or game-scale performance claims. Windows graphics/editor workflows and Linux headless workflows have recorded qualification. Browser and console backends, advanced 2D, multiplayer, comprehensive water/weather, GI and production VFX tooling remain future work. Animation layers, IK, retargeting and direct FBX import are unfinished.

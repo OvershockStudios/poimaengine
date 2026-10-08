@@ -134,7 +134,7 @@ def plane_oracle(probes, normal=(0, 0, 1)):
 
 try:
     description = batch([('world.describe', {})])[0]
-    assert description['schema_revision'] == 49, description['schema_revision']
+    assert description['schema_revision'] == 50, description['schema_revision']
     for method in ('world.capture', 'runtime.capture', 'asset.animation.capture', 'runtime.play'):
         props = description['methods'][method]['properties']
         ao = props['ambient_occlusion']

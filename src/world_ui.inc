@@ -19,6 +19,7 @@
             auto result=ui_runtime_info();result["modal"]=model.modal().empty() ? Json(nullptr) : Json(model.modal());
             result["elements"]=Json::array();result["next_after"]=nullptr;
             const auto state=model.inspect();const auto& definitions=model.definition();
+            const auto authored=Json::parse(ui::definition_json(definitions));
             for(std::size_t i=0;i<state.size();++i) {
                 const auto& value=state[i];if(value.id<=after)continue;
                 if(result["elements"].size()==limit) {result["next_after"]=result["elements"].back().at("id");break;}
@@ -28,6 +29,8 @@
                     {"action",definition.action.empty() ? Json(nullptr) : Json(definition.action)},{"text",value.text},
                     {"visible",value.visible},{"enabled",value.enabled},{"effective_visible",value.effective_visible},
                     {"effective_enabled",value.effective_enabled},{"eligible",value.eligible}});
+                for(const auto* key:{"layout","style"})if(authored.at(value.id).contains(key))
+                    result["elements"].back()[key]=authored.at(value.id).at(key);
             }
             return result;
         }

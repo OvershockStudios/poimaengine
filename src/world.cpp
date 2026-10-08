@@ -6,6 +6,11 @@
 #include "poima/scene.hpp"
 #include "poima/runtime.hpp"
 #include "poima/ui_model.hpp"
+#if POIMA_GAME_UI
+#include "poima/ui_presenter.hpp"
+#include "poima/ui_document.hpp"
+#endif
+#include "ui_authoring_schema.hpp"
 #include "poima/player.hpp"
 #include "poima/build_info.hpp"
 #include "poima/native_gameplay_artifact.hpp"
@@ -434,7 +439,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 49}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 50}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -679,10 +684,14 @@ Json describe() {
     mutations.push_back(object_schema({{"op",{{"const","template.remove"}}},{"id",stable_type}},{"op","id"}));
     const Json template_page_limit={{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}};
     const auto ui_kind_schema=[&](const char* kind,const Json& text,const Json& action) {
-        return object_schema({{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
+        auto element_schema=object_schema({{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
             {"name",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"kind",{{"const",kind}}},
             {"text",text},{"action",action},{"visible",{{"type","boolean"}}},{"enabled",{{"type","boolean"}}}},
             {"parent","name","kind","text","action","visible","enabled"});
+        element_schema["properties"]["layout"]=ui_authoring_schema::layout(std::string_view(kind)=="panel");
+        element_schema["properties"]["style"]=ui_authoring_schema::style();
+        element_schema.update(ui_authoring_schema::rounded_clip_exclusion());
+        return element_schema;
     };
     const Json ui_text={{"type","string"},{"maxLength",16384}},ui_action={{"type","string"},{"pattern","^[A-Za-z0-9_.-]{1,128}$"}};
     const Json ui_element={{"description","Choose exactly one kind: panels require empty text and null action; labels require null action; buttons require a nonempty action token."},
@@ -692,6 +701,11 @@ Json describe() {
     mutations.push_back(object_schema({{"op",{{"const","ui.element.remove"}}},{"id",stable_type}},{"op","id"}));
     methods["world.ui.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});
     methods["world.ui.list"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
+    methods["runtime.capture"]["properties"]["ui_scale"]={{"type","number"},{"minimum",.25},{"maximum",8},
+        {"description","Optional density for a frozen native UI capture; omission retains window display density. Match world.ui.layout scale for geometry comparisons."}};
+    methods["world.ui.layout"]=object_schema({{"revision",rev},{"width",{{"type","integer"},{"minimum",1},{"maximum",8192}}},
+        {"height",{{"type","integer"},{"minimum",1},{"maximum",8192}}},{"scale",{{"type","number"},{"minimum",.25},{"maximum",8},{"default",1}}}},
+        {"revision","width","height"});
     methods["runtime.ui.inspect"]=object_schema({{"session_id",id},{"tick",rev},{"ui_revision",rev},{"after",stable_type},{"limit",template_page_limit}},
         {"session_id","tick"});
     const auto ui_edit=object_schema({{"id",stable_type},{"text",{{"type","string"},{"maxLength",16384}}},
@@ -706,11 +720,11 @@ Json describe() {
         {"session_id","request_id","expected_tick","expected_ui_revision","expected_control_sequence","expected_gameplay_revision","id"});
     methods["save.write"]["properties"]["expected_control_sequence"]=rev;
     methods["save.load"]["properties"]["expected_control_sequence"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
-    result["ui"]={{"authored_version",4},{"max_elements",256},{"max_depth",32},{"element",ui_element},
+    result["ui"]={{"presentation_available",static_cast<bool>(POIMA_GAME_UI)},{"authored_version",4},{"max_elements",256},{"max_depth",32},{"element",ui_element},
         {"max_text_bytes",16384},{"max_total_text_bytes",1048576},
         {"state","Same-tick native text/visibility/enabled/modal edits with independent ui_revision and retry receipts. Runtime inspection pagination requires ui_revision after the first page."},
         {"save_guard","save.write/load require expected_ui_revision and expected_control_sequence for an active UI-bearing world; stopped restore accepts absent or null. Snapshot v5 preserves logical UI state and control sequence; v4 restores sequence zero."},
-        {"limits","Button actions invoke compiled Control callbacks without advancing simulation. C# UI writes are staged atomically; optional rendering uses a default layout. Physical player input routing remains pending."},
+        {"limits","Button actions invoke compiled Control callbacks without advancing simulation. C# UI writes are staged atomically; Optional typed layout/style metadata is frozen at runtime start; absent metadata retains the default layout. world.ui.layout observes an ephemeral virtual viewport, not live focus/scroll or physical input."},
         {"authority","Stable native panel/label/button definitions; frozen at runtime start. Parent must be a panel; panel text is empty; only buttons have non-null action tokens. RmlUi is presentation, not authored authority."}};
     methods["template.get"]=object_schema({{"id",stable_type},{"revision",rev}},{"id"});
     methods["template.query"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
@@ -1301,6 +1315,26 @@ public:
             result["authoring_contract"]=authoring_contract_identity(read_only_);
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
+        }
+        if(method=="world.ui.layout") {
+            fields(params,{"revision","width","height","scale"},{"revision","width","height"});
+            current_revision(params);
+            const auto width=revision(params.at("width")),height=revision(params.at("height"));
+            require(width>=1 && width<=8192 && height>=1 && height<=8192,"UI layout extent must be 1..8192.");
+            require(!params.contains("scale") || params.at("scale").is_number(),"UI scale must be numeric.");
+            const auto scale=params.value("scale",1.0);
+            require(std::isfinite(scale) && scale>=.25 && scale<=8,"UI scale must be .25..8.");
+#if POIMA_GAME_UI
+            const ui::Model model(ui::parse_definition(doc_.value("ui",Json::object()).dump()));
+            UiPresenter presenter;
+            (void)presenter.frame(model.presentation(),static_cast<std::uint32_t>(width),static_cast<std::uint32_t>(height),static_cast<float>(scale));
+            auto controls=Json::array();
+            for(const auto& row:presenter.inspect())controls.push_back({{"id",row.id},{"kind",row.kind==UiElementKind::button ? "button" : "label"},
+                {"bounds",row.bounds},{"clip",row.clip},{"hittable",row.hittable},{"visible",row.visible},{"enabled",row.enabled},{"focused",row.focused}});
+            return {{"revision",doc_.at("revision")},{"width",width},{"height",height},{"scale",scale},{"controls",std::move(controls)}};
+#else
+            throw Error(-32003,"Native UI presentation is not available in this build.");
+#endif
         }
         if(method=="world.ui.get" || method=="world.ui.list") {
             const bool single=method=="world.ui.get";
@@ -1911,11 +1945,18 @@ public:
         return options;
     }
     Json capture(const Json& params, bool live=false,bool asset_preview=false) const {
+        std::optional<float> ui_scale;
         if(live) {
-            fields(params, {"session_id","tick","ui_revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","capture_frames","profile"}, {"session_id","tick","camera","path"});
+            fields(params, {"session_id","tick","ui_revision","ui_scale","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","capture_frames","profile"}, {"session_id","tick","camera","path"});
             runtime_guard(params); require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
             require(runtime_->ui_model().definition().empty() || params.contains("ui_revision"),"UI-bearing captures require ui_revision.");
             if(params.contains("ui_revision"))require(revision(params.at("ui_revision"))==runtime_->ui_model().revision(),"UI revision conflict.",-32009);
+            if(params.contains("ui_scale")) {
+                require(params.at("ui_scale").is_number(),"Capture UI scale must be numeric.");
+                const auto density=params.at("ui_scale").get<double>();
+                require(std::isfinite(density) && density>=.25 && density<=8,"Capture UI scale must be .25..8.");
+                ui_scale=static_cast<float>(density);
+            }
         } else {
             if(asset_preview)fields(params,{"revision","camera","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","capture_frames","profile","asset","clip","time","loop","skinning"},{"revision","camera","path","asset","time"});
             else fields(params, {"revision", "camera", "path", "width", "height", "gpu", "samples", "culling", "clustered_lighting", "frames_in_flight", "scene_debug_view", "scene_product_probes", "lighting_path", "ambient_occlusion", "reconstruction", "capture_frames", "profile"}, {"revision", "camera", "path"});
@@ -2004,6 +2045,18 @@ public:
             else stamp_authored(snapshot);
         }
         const Json lens={{"vertical_fov",snapshot.vertical_fov},{"near",snapshot.near_plane},{"far",snapshot.far_plane}};
+        if(ui_scale && snapshot.logical_ui && !snapshot.logical_ui->elements.empty()) {
+#if POIMA_GAME_UI
+            // Capture-only density is independent of the hidden window's monitor.
+            // Reuse the existing native packet boundary; live view/input state is
+            // not involved, and omitting the option retains legacy window DPI.
+            UiPresenter presenter;
+            snapshot.ui=presenter.frame(snapshot.logical_ui,options.width,options.height,*ui_scale);
+            snapshot.logical_ui.reset();
+#else
+            throw Error(-32003,"Native UI presentation is not available in this build.");
+#endif
+        }
         const auto report = run_render_scene(options, snapshot);
         require(report.available, report.detail, -32003);
         require(report.success, report.detail, -32020);
@@ -2012,6 +2065,7 @@ public:
             {"session_id",live ? Json(runtime_id_) : Json(nullptr)}, {"ui_revision",live ? Json(runtime_->ui_model().revision()) : Json(nullptr)}, {"camera_world", snapshot.camera_world}, {"lens", lens}, {"object_count", snapshot.objects.size()},{"lighting",lighting_json(snapshot.lighting)},
             {"path", options.capture}, {"format", "BMP"}, {"width", report.width}, {"height", report.height},
             {"samples", report.samples}, {"gpu", report.gpu_name}, {"hardware", report.hardware},
+            {"ui_scale",ui_scale ? params.at("ui_scale") : Json(nullptr)},
             {"frames_presented", report.frames_presented}, {"capture_written", report.capture_written},
             {"nvrhi_errors", report.validation_errors}, {"build_version", POIMA_VERSION},{"render_diagnostics",render_diagnostics(report.diagnostics)},
             {"renderer", "forward static and skinned geometry; legacy preview or GGX metallic/roughness with PNG/JPEG material maps; authored lighting with optional cascaded directional, point and spot shadow maps; explicit preview fallback"}};

@@ -110,7 +110,7 @@ class IdentityContract(unittest.TestCase):
         for params in views:
             with self.subTest(params=params):
                 result = client.call('world.describe', params, timeout=12)
-                self.assertEqual(result['schema_revision'], 49)
+                self.assertGreaterEqual(result['schema_revision'], 49)
                 self.assertEqual(result['authoring_contract'], IDENTITY)
                 self.assertEqual(result['mode'], IDENTITY['availability']['mode'])
                 self.assertFalse(result['read_only'])

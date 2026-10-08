@@ -161,7 +161,18 @@ Schema revision 27 adds `save.status`, `save.configure`, `save.inspect`, `save.w
 
 ## Logical UI definitions and state
 
-Schema revision 35 adds authored `ui.element.set/remove` transactions and `world.ui.get/list`, plus `runtime.ui.inspect/edit` for native logical state. UI definitions use authored format 4 and participate in history and frozen content identity. Runtime edits retain an independent revision without advancing physics. UI-bearing saves use snapshot version 4 and require the observed UI revision on external save/load operations. See [Game UI](GAME_UI.md#authoritative-controls) for payloads, bounds, retry semantics and remaining presentation/gameplay integration work.
+Authored `ui.element.set/remove` transactions and `world.ui.get/list` use format 4
+and participate in history and frozen content identity. Runtime
+`runtime.ui.inspect/edit` has an independent revision without advancing physics.
+UI-bearing saves use snapshot version 5 and retain control sequence; version 4
+remains readable. External save/load operations require the observed UI and
+control revisions when replacing an active UI-bearing runtime.
+
+Schema revision 50 adds sparse typed layout/style metadata and the read-only
+`world.ui.layout` virtual-viewport observation, available with the optional
+native UI backend. These remain development APIs outside authoring-core v1.
+See [Game UI](GAME_UI.md#authored-layout-and-styling) for payloads, bounds,
+compatibility behavior and presentation limits.
 
 ## Development compilation (development)
 

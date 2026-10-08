@@ -1,12 +1,12 @@
 # Native game UI foundation
 
-Poima owns logical controls in the world/runtime and uses native retained layout for Vulkan presentation. The current development changes connect this state to a default layout and add compiled C# control callbacks. Bounded native, agent-service, desktop-owner and Vulkan capture checks are recorded below. The live input routing scope and qualification limits are recorded below.
+Poima owns logical controls in the world/runtime and uses native retained layout for Vulkan presentation. Typed authored layouts, optional styles and compiled C# control callbacks connect this state to native presentation. Bounded native, agent-service, desktop-owner and Vulkan capture checks are recorded below. The live input routing scope and qualification limits are recorded below.
 
-The current blue default skin is presentation scaffolding. A polished,
-customizable runtime UI is planned: reusable styles, responsive layouts,
-typography, animation and editor authoring, with the same controls accessible
-to agents. Those visual authoring features are not available yet; the existing
-logical controls and input contracts below are the implemented foundation.
+Typed authored layout and styling are available in 0.0.50 development. Agents can
+place HUDs and menus, choose a palette and inspect virtual-viewport bounds through
+the native service. The blue skin remains the compatibility fallback when metadata
+is absent. Theme assets, reusable style inheritance, images, text inputs, inventory
+widgets, animations and a visual UI authoring tool remain future work.
 
 The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The logical model is available in the default headless engine; it has no RmlUi, font or graphics dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
 
@@ -38,7 +38,8 @@ Development discovery now encodes these kind constraints as explicit panel,
 label and button `oneOf` variants in both the `ui` section and `ui.element.set`
 mutation schema. This corrects a discovery gap exposed by a real agent's rejected
 panel-text edit; native validation is unchanged. The focused discovery/authoring
-regression is added, but execution against a rebuilt world host remains pending.
+regression passes against the rebuilt Windows and Linux world hosts; the typed
+UI fixture also checks focused mutation discovery against the complete schema.
 
 `world.ui.get` and `world.ui.list` inspect authored definitions. Pagination uses `revision`, `after` and `limit`. `runtime.ui.inspect` accepts `session_id`, `tick`, optional `ui_revision`, `after` and `limit`. Continuation pages require `ui_revision`. It returns frozen metadata alongside live text, local and inherited visibility/enabled state, modal membership eligibility and the next cursor. Inspection does not search for pixels or require a window.
 
@@ -63,6 +64,88 @@ An accepted edit advances `ui_revision` once, including a same-value edit; it le
 Definitions allow 256 controls, hierarchy depth 32, 128 UTF-8 bytes per name, 16 KiB per text and 1 MiB total text. Text is literal UTF-8 without NUL. These are bounded contract limits, not performance claims. The [native model API](../include/poima/ui_model.hpp) validates sorted complete definitions and owns mutable values. It is available without simulation; a live `Runtime` additionally requires the simulation build.
 
 UI-bearing runtimes now write snapshot version 5, preserving complete logical state, modal, UI revision and `control_sequence` against trusted frozen definitions. Version 4 remains readable with control sequence zero; UI-free snapshots retain versions 1–3. No focus, atlas or pixel data is serialized. External `save.write` and replacement `save.load` require `expected_ui_revision` and `expected_control_sequence` when the active world contains UI. The Save/Load editor model retains the observed guards across retries and detects same-tick control activity even when no UI value changes. Stopped restore accepts absent or null guards.
+
+## Authored layout and styling
+
+Each `ui.element.set.element` retains its seven required logical fields and may
+add nonempty `layout` and `style` objects. They are frozen with the runtime's
+trusted authored definition. `world.ui.get/list` and `runtime.ui.inspect` expose
+these objects only when present. `runtime.ui.edit` changes text, visibility,
+enabled state and modal ownership; it does not edit presentation metadata.
+
+Lengths use `{ "unit": "dp", "value": 320 }` or
+`{ "unit": "percent", "value": 100 }`. Density-independent pixels scale with
+the viewport's UI density. Percentages use the containing layout box.
+
+| Layout field | Values and bounds |
+| --- | --- |
+| `position` | `flow`, `absolute`; offsets require `absolute` |
+| `width`, `height`, `min_width`, `max_width`, `min_height`, `max_height` | Nonnegative lengths, up to 8192 dp or 100 percent. Same-unit minimum must not exceed maximum. |
+| `left`, `top`, `right`, `bottom` | Length offsets: −8192..8192 dp or −100..100 percent |
+| `padding` | Four dp values in top/right/bottom/left order, each 0..512 |
+| `order` | Integer −1024..1024; siblings within a layout group use `(order, stable ID)` for presentation and keyboard/gamepad focus traversal |
+| `grow`, `shrink` | 0..16 flex factors |
+| `direction` | Panel only: `column`, `row` |
+| `align` | Panel only: `start`, `center`, `end`, `stretch` |
+| `justify` | Panel only: `start`, `center`, `end`, `space_between` |
+| `gap` | Panel only: 0..256 dp |
+| `hit_test` | Panel only: `capture`, `pass_through` |
+| `overflow` | Panel only: `visible`, `hidden`, `auto` |
+
+Explicitly laid-out roots use a full-viewport canvas. The canvas does not capture
+input; buttons remain interactive under a pass-through panel. Roots without
+layout retain the earlier scrollable default container, including roots with
+only a style override. Set dimensions and spacing explicitly when replacing a
+fallback layout. Legacy roots precede explicit canvas roots in traversal; order is local to each
+layout group and subtree. Keyboard/gamepad focus now follows visual tree traversal,
+rather than a global ID ordering. Model inspection and serialized definitions
+remain stable-ID sorted, independently of presentation order.
+
+Styles support `color`, `background_color` and `border_color` as lowercase
+`#rrggbb` or `#rrggbbaa`; `font_size` (8..128 dp), `border_width` (0..32 dp),
+`border_radius` (0..128 dp), and `text_align` (`left`, `center`, `right`). Optional
+`hover`, `focus`, `pressed` and `disabled` objects contain color overrides only.
+Focus and pressed presentation states apply to buttons; accepting those metadata
+fields on panels or labels does not make them focusable or pressable.
+No field accepts arbitrary CSS, scripts, URLs, font files or markup. Rounded
+borders are supported; a positive radius on a panel with `overflow:hidden/auto`
+is rejected because the renderer does not support rounded clip masks.
+
+The [authored HUD fixture](../examples/ui/authored-hud.json) combines a centered
+menu and a bottom-left HUD. Its wine/neutral palette is an example; games choose
+their own styling. Insert the ID-map entries as `ui.element.set` operations in a
+single guarded transaction, then inspect the layout:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"world.ui.layout","params":{"revision":1,"width":1280,"height":720,"scale":1}}
+```
+
+`world.ui.layout` requires the current authored revision, integer width/height
+1..8192 and optional numeric scale 0.25..8 (default 1). It returns `revision`,
+`width`, `height`, `scale` and `controls`. Each label/button row contains its
+stable ID, kind, physical-pixel `bounds` and ancestor `clip` rectangles
+`[left, top, right, bottom]`, plus `visible`, `enabled`, `hittable` and `focused`.
+It lays out a fresh virtual viewport with no focus or scroll history, without
+advancing simulation or editing the world. It is not an observation of a live
+window. `world.describe.ui.presentation_available` reports build support;
+without the optional native UI backend, a valid request returns `-32003`.
+The method and UI fields are development APIs outside authoring-core v1.
+
+`runtime.capture` accepts optional `ui_scale` (finite numeric 0.25..8). Set it to
+the same value as `world.ui.layout.scale` to compare physical bounds with rendered
+pixels independently of Windows display scaling. The capture builds a fresh owned
+native UI packet from frozen live state; it does not alter focus, gestures or
+runtime state. The result's `ui_scale` echoes the requested override; null means
+window density was retained. An empty UI has nothing to scale. Explicit packets
+must match the actual render-target extent; a surface that clamps the requested
+size can reject the capture. Omission preserves earlier window-density behavior.
+This option applies only to runtime captures; authored captures have no runtime UI.
+
+Absent metadata stays absent through serialization; defaults are not written
+into older worlds. Logical save state keeps its existing fields. Frozen layout
+and style participate in the trusted content hash, preventing a saved snapshot
+from being restored against a different embedded definition. Loading an older
+save still uses that save's frozen world, even when current authoring has changed.
 
 ## Compiled control callbacks
 
@@ -101,7 +184,7 @@ The [compiled gameplay fixture](../tests/managed_ui_gameplay/ManagedUiGame.cs), 
 
 ## Presentation boundary
 
-The optional `UiPresenter` now converts an immutable logical-state projection into a default nested panel/label/button layout. It uses literal text and logical visibility/eligibility, an embedded font and cached immutable packets. This is a fixed initial layout, not an authored style/layout editor. Named-camera runtime snapshots carry the projection into the shared renderer. Authored and editor Scene snapshots stay free of runtime UI. Runtime captures of UI-bearing worlds require the observed `ui_revision`.
+The optional `UiPresenter` converts an immutable logical-state projection into native panel/label/button layout. It uses literal text and logical visibility/eligibility, an embedded font and cached immutable packets. Sparse authored layout/style metadata overrides the compatibility fallback; there is no visual UI authoring tool yet. Named-camera runtime snapshots carry the projection into the shared renderer. Authored and editor Scene snapshots stay free of runtime UI. Runtime captures of UI-bearing worlds require the observed `ui_revision`.
 
 The native document adapter lays out in-memory RML and produces an owned, immutable `UiFrame`. It exposes registered label/button identities separately from rendered pixels. It returns semantic action identifiers to its caller; the document does not execute gameplay, write saves or advance simulation.
 
@@ -155,7 +238,7 @@ Current bounds include a 1 MiB RML document, 4,096 parsed nodes, 256 registered 
 
 The native player and the desktop Game pane route mouse, keyboard and assigned gamepad input through the displayed `UiPresenter`. Hit testing uses the actual layout, clipping and scroll position. Presentation returns a stable button ID; the native control service checks eligibility and executes compiled `Control`. Agents should normally use `runtime.ui.inspect` and `runtime.ui.activate` directly, without synthesizing pointer events.
 
-- Left-button release activates only the eligible button that received the press. Dragging away, focus loss, resizing, DPI changes or a runtime replacement cancel the gesture. Unrelated HUD text updates preserve a held gesture when its target geometry and eligibility remain unchanged.
+- Left-button release activates only the eligible button that received the press. Releasing outside the pressed target cancels activation. Focus loss, resizing, DPI changes or a runtime replacement cancel the gesture. Unrelated HUD text updates preserve a held gesture when its target geometry and eligibility remain unchanged.
 - Tab and Shift+Tab move focus; Enter presses/releases the focused button. Assigned gamepad D-pad or left-stick edges navigate, South confirms and East cancels the gesture. Navigation currently has no held-direction repeat.
 - Modal UI owns input even outside its visible controls. It blocks gameplay bindings without implicitly stopping simulation. Compiled Pause/Resume intents change playback explicitly and clear held gameplay input.
 - The generated menu scrolls with the wheel, scrollbar and focused-control navigation. Mouse coordinates supplied to the hosted interface are physical Game-client pixels.
@@ -172,9 +255,23 @@ The desktop host exposes `desktop.ui.input` with `session_id`, `camera`, `reques
 
 ## Current limits
 
-These APIs are experimental. Logical state, default native layout and compiled semantic execution are implemented and covered by bounded checks. General control-turn replay tooling, authored styles/layouts, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished. Physical-device and full Avalonia interaction qualification remain separate from synthetic routing tests. The standalone document API still returns presentation action strings; executing gameplay requires the authoritative control boundary above.
+These APIs are experimental. Logical state, default native layout and compiled semantic execution are implemented and covered by bounded checks. General control-turn replay tooling, style inheritance/theme assets, inventory controls, text input, comprehensive accessibility and the UI editor remain unfinished. Physical-device and full Avalonia interaction qualification remain separate from synthetic routing tests. The standalone document API still returns presentation action strings; executing gameplay requires the authoritative control boundary above.
 
 ## Recorded checks
+
+[Authored UI evidence](evidence/m2-authored-ui.json) records 15 selected Linux
+headless and 10 native-layout test groups, 17 Windows check commands, and nine
+typed-authoring cases (backend-dependent cases skip where unavailable). Eighteen
+new authored/runtime captures on the AMD and NVIDIA laptop GPUs verify three
+viewport extents, opaque colors, frozen metadata and same-tick text edits at
+explicit density 1. Seven paired legacy captures on AMD are pixel-identical to
+0.0.49. The existing Windows CoreCLR and Native AOT callback/save fixtures also
+pass; these do not establish physical input or a new installed editor package.
+
+![Authored native HUD and menu](evidence/m2-authored-ui.png)
+
+*Actual NVIDIA Vulkan runtime capture at 960×540, density 1 and 4× MSAA.
+The menu is authored data; this fixture does not execute its button actions.*
 
 [Input routing evidence](evidence/m2-ui-input.json) records focused native UI tests, compiled desktop controls and menu-only gamepad tests on both laptop GPUs, plus standalone player input checks. These use synthetic input and virtual controllers, not physical devices or the full Avalonia message path.
 

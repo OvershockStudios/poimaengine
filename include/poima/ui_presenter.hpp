@@ -3,6 +3,7 @@
 #include "poima/ui.hpp"
 #include "poima/ui_model.hpp"
 #include "poima/ui_input.hpp"
+#include "poima/ui_document.hpp"
 #include <memory>
 namespace poima {
 // Default nested vertical layout. All authoritative values arrive in an owned
@@ -15,6 +16,9 @@ public:
     UiPresenter(const UiPresenter&)=delete;
     UiPresenter& operator=(const UiPresenter&)=delete;
     std::shared_ptr<const UiFrame> frame(std::shared_ptr<const ui::Presentation>,std::uint32_t width,std::uint32_t height,float scale=1);
+    // Requires a successful frame. Returns current viewport-local layout in
+    // authored visual traversal order, without executing actions.
+    std::vector<UiElementInspection> inspect();
     // Requires a successful frame. Coordinates are physical viewport-local;
     // positive wheel delta scrolls down, bounded to 100 lines per event.
     // activate=false consumes only the last displayed regions/owned releases.

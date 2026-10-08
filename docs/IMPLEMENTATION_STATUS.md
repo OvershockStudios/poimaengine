@@ -1,8 +1,25 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.49 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.50 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.50 checkpoint adds bounded typed runtime UI layout/style authoring and
+`world.ui.layout` for virtual-viewport geometry inspection without a window or GPU.
+Explicit layouts support anchored HUDs and responsive flex menus; optional colors,
+font/border settings and state colors override the compatibility fallback.
+Frozen metadata participates in save content identity; absent metadata stays absent.
+Presentation input follows visual order and rejects confirmation through an
+occluding panel. Theme inheritance, images, widgets, animation, accessibility and
+visual UI authoring remain unfinished. These UI interfaces are outside the selected
+stable authoring contract. [UI contract](GAME_UI.md#authored-layout-and-styling).
+Fifteen selected Linux headless and ten native-layout groups, seventeen Windows
+check commands and both GPU capture suites pass. Seven old/new default UI
+capture pairs on AMD are pixel-identical to 0.0.49; eighteen styled captures
+verify three extents at density 1 on AMD and NVIDIA. Existing compiled Windows
+CoreCLR/Native AOT control fixtures also pass. This is native readback and
+synthetic-input evidence, with no new installed editor or physical-device
+qualification. [Evidence](evidence/m2-authored-ui.json).
 
 The 0.0.49 checkpoint releases a selected **authoring-core v1** boundary: nine world/entity methods, entity create/rename/reparent/delete and Transform edits. Native discovery identifies the contract and mode across full/focused views. Canonical request and response artifacts retain the earlier candidate schemas; their paths and hashes are pinned separately. A dedicated output-compatibility gate proves recognized producer-to-consumer restrictions, while native conformance covers RPC IDs/errors, retained retries after edits/restart, true hierarchical shear, query boundaries and failed undo/redo storage. Read-only scopes reject even valid mutations and retained receipts before replay. This does not freeze runtime/rendering/gameplay/save APIs or world formats, or establish alpha readiness. Windows/Linux service and installed-client qualification are recorded in [release evidence](evidence/m2-authoring-core-v1.json); the installed desktop package and GUI/GPU qualification remain unchanged. [Contract](AUTHORING_API_COMPATIBILITY.md).
 

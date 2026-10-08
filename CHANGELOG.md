@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.50 — Unreleased
+
+This checkpoint gives agents typed control over native runtime HUD/menu layouts and styling. The installed desktop package remains unchanged.
+
+- Optional frozen layout/style fields support responsive dp/percent dimensions, anchored placement, flex rows/columns, spacing, visual ordering, palettes, borders, font size and color states. Native validation rejects malformed metadata and unsupported rounded clipping. Older definitions retain absent fields and their default presentation. [UI contract](docs/GAME_UI.md#authored-layout-and-styling).
+- `world.ui.layout` observes a revision-pinned virtual viewport with bounds, clipping and hit eligibility when the native UI backend is built. An explicit runtime-capture density matches layout measurements independently of monitor DPI, while omission retains the earlier behavior. Runtime inspection exposes frozen metadata; these UI interfaces remain development APIs outside authoring-core v1.
+- Pass-through canvases let HUDs leave gameplay input free. Focus follows visual traversal; pointer and keyboard gestures cancel across action or occlusion changes while retaining release ownership. Confirmation cannot activate a fully occluded control.
+- A centered menu/HUD fixture exercises transactions, history, retries, runtime freezing, save-content binding and rendered presentation. Theme assets, images, inventory/text widgets, UI animation, visual authoring and broad accessibility remain unfinished. Both laptop GPUs pass the styled capture suite; seven default-UI capture pairs on AMD are pixel-identical to 0.0.49. [Evidence](docs/evidence/m2-authored-ui.json).
+
 ## 0.0.49 — Unreleased
 
 This checkpoint releases authoring-core v1 for a selected authored-world API. The broader engine remains a prototype, and the installed desktop package remains unchanged.

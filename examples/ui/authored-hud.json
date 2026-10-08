@@ -1,0 +1,284 @@
+{
+  "00000000000000000000000000000064": {
+    "parent": null,
+    "name": "Menu canvas",
+    "kind": "panel",
+    "text": "",
+    "action": null,
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "position": "absolute",
+      "left": {
+        "unit": "dp",
+        "value": 0
+      },
+      "top": {
+        "unit": "dp",
+        "value": 0
+      },
+      "width": {
+        "unit": "percent",
+        "value": 100
+      },
+      "height": {
+        "unit": "percent",
+        "value": 100
+      },
+      "direction": "column",
+      "align": "center",
+      "justify": "center",
+      "padding": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gap": 0,
+      "hit_test": "pass_through"
+    },
+    "style": {
+      "background_color": "#00000000",
+      "border_width": 0,
+      "border_color": "#00000000"
+    }
+  },
+  "0000000000000000000000000000006e": {
+    "parent": "00000000000000000000000000000064",
+    "name": "Pause menu",
+    "kind": "panel",
+    "text": "",
+    "action": null,
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "width": {
+        "unit": "dp",
+        "value": 320
+      },
+      "height": {
+        "unit": "dp",
+        "value": 200
+      },
+      "direction": "column",
+      "align": "stretch",
+      "justify": "start",
+      "padding": [
+        16,
+        16,
+        16,
+        16
+      ],
+      "gap": 8,
+      "shrink": 0,
+      "hit_test": "capture"
+    },
+    "style": {
+      "background_color": "#241c24",
+      "color": "#eee9e8",
+      "border_width": 0,
+      "font_size": 18
+    }
+  },
+  "0000000000000000000000000000006f": {
+    "parent": "0000000000000000000000000000006e",
+    "name": "Menu title",
+    "kind": "label",
+    "text": "Relay paused",
+    "action": null,
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "width": {
+        "unit": "percent",
+        "value": 100
+      },
+      "height": {
+        "unit": "dp",
+        "value": 32
+      },
+      "shrink": 0,
+      "order": -10
+    },
+    "style": {
+      "color": "#eee9e8",
+      "font_size": 22
+    }
+  },
+  "00000000000000000000000000000070": {
+    "parent": "0000000000000000000000000000006e",
+    "name": "Save checkpoint",
+    "kind": "button",
+    "text": "Save",
+    "action": "save",
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "width": {
+        "unit": "percent",
+        "value": 100
+      },
+      "height": {
+        "unit": "dp",
+        "value": 40
+      },
+      "shrink": 0,
+      "order": 2
+    },
+    "style": {
+      "background_color": "#302a33",
+      "color": "#eee9e8",
+      "border_width": 0,
+      "font_size": 18,
+      "hover": {
+        "background_color": "#463947"
+      },
+      "focus": {
+        "border_color": "#b17687"
+      },
+      "pressed": {
+        "background_color": "#241c24"
+      },
+      "disabled": {
+        "background_color": "#302d31",
+        "color": "#969096"
+      }
+    }
+  },
+  "00000000000000000000000000000071": {
+    "parent": "0000000000000000000000000000006e",
+    "name": "Resume game",
+    "kind": "button",
+    "text": "Resume",
+    "action": "resume",
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "width": {
+        "unit": "percent",
+        "value": 100
+      },
+      "height": {
+        "unit": "dp",
+        "value": 40
+      },
+      "shrink": 0,
+      "order": 1
+    },
+    "style": {
+      "background_color": "#6f243b",
+      "color": "#fff4f3",
+      "border_width": 0,
+      "font_size": 18,
+      "hover": {
+        "background_color": "#89354e"
+      },
+      "focus": {
+        "background_color": "#89354e"
+      },
+      "pressed": {
+        "background_color": "#531a2c"
+      },
+      "disabled": {
+        "background_color": "#403039",
+        "color": "#b7a6ad"
+      }
+    }
+  },
+  "000000000000000000000000000000c8": {
+    "parent": null,
+    "name": "Status HUD",
+    "kind": "panel",
+    "text": "",
+    "action": null,
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "position": "absolute",
+      "left": {
+        "unit": "dp",
+        "value": 24
+      },
+      "bottom": {
+        "unit": "dp",
+        "value": 24
+      },
+      "width": {
+        "unit": "dp",
+        "value": 240
+      },
+      "height": {
+        "unit": "dp",
+        "value": 48
+      },
+      "direction": "row",
+      "align": "center",
+      "justify": "space_between",
+      "padding": [
+        0,
+        12,
+        0,
+        12
+      ],
+      "gap": 0,
+      "shrink": 0,
+      "hit_test": "capture"
+    },
+    "style": {
+      "background_color": "#241c24",
+      "color": "#eee9e8",
+      "border_width": 0,
+      "font_size": 18
+    }
+  },
+  "000000000000000000000000000000c9": {
+    "parent": "000000000000000000000000000000c8",
+    "name": "Health",
+    "kind": "label",
+    "text": "Health 100",
+    "action": null,
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "width": {
+        "unit": "dp",
+        "value": 96
+      },
+      "height": {
+        "unit": "dp",
+        "value": 24
+      },
+      "shrink": 0,
+      "order": 0
+    },
+    "style": {
+      "color": "#eee9e8",
+      "font_size": 18
+    }
+  },
+  "000000000000000000000000000000ca": {
+    "parent": "000000000000000000000000000000c8",
+    "name": "Ammunition",
+    "kind": "label",
+    "text": "Ammo 12",
+    "action": null,
+    "visible": true,
+    "enabled": true,
+    "layout": {
+      "width": {
+        "unit": "dp",
+        "value": 96
+      },
+      "height": {
+        "unit": "dp",
+        "value": 24
+      },
+      "shrink": 0,
+      "order": 1
+    },
+    "style": {
+      "color": "#b7a6ad",
+      "font_size": 18
+    }
+  }
+}

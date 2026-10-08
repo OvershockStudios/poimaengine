@@ -1,0 +1,2207 @@
+{
+  "checkpoint": "0.0.50 development",
+  "passed": true,
+  "scope": "Typed frozen runtime UI layout/style authoring, virtual geometry observation and explicit capture density; no editor activation or physical-device qualification.",
+  "protocol_version": 1,
+  "schema_revision": 50,
+  "authoring_core_version": 1,
+  "engines": {
+    "windows": {
+      "version": "0.0.50",
+      "binary_sha256": "7685b9b67f90c0464e0cdad98dd1c7229a377803b0c75f921b0fff505eb5d111",
+      "features": [
+        "Vulkan",
+        "simulation",
+        "CoreCLR/native gameplay",
+        "native UI",
+        "audio",
+        "FSR3"
+      ],
+      "selected_authoring_v1_request_gate": {
+        "passed": true,
+        "schema_revision": 50,
+        "protocol_version": 1,
+        "selected_methods": [
+          "entity.get",
+          "entity.query",
+          "entity.world_transform",
+          "world.describe",
+          "world.history",
+          "world.inspect",
+          "world.redo",
+          "world.transact",
+          "world.undo"
+        ],
+        "components": [
+          "Transform"
+        ],
+        "findings": [],
+        "binary_sha256": "7685b9b67f90c0464e0cdad98dd1c7229a377803b0c75f921b0fff505eb5d111",
+        "contract_identity_matches_release": true
+      },
+      "commanded_checks": {
+        "passed": true,
+        "groups": 17,
+        "checks": [
+          {
+            "name": "poima-ui-model-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "7411889d7a63e270acce20f42d9357e2eabdc696b5b41eb978db0c4c4537881d"
+          },
+          {
+            "name": "poima-ui-document-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "d137f5758ea0cf6d5970c9bf5cab68fa29b842819ff9b31c034672618b40b47f"
+          },
+          {
+            "name": "poima-ui-presenter-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "4b37f49d289890f408f0120ea3d16a0c24f49f19f91615758abcf2053d99b760"
+          },
+          {
+            "name": "poima-runtime-ui-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "0e55f041ffe4b1781955cc4a9dad2e13f31d8aec2c1762fee9b257abfb99cbaf"
+          },
+          {
+            "name": "poima-world-session-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+          },
+          {
+            "name": "ui_authoring_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "7337e2aa0829b872c4496b4fdf93bc22236614f049e9c5d66ec179e64489eae7"
+          },
+          {
+            "name": "world_ui_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "394a7b957873abfffe07fae8abbbc3d21a8a655c94a2f21ea729322fbb50cf0d"
+          },
+          {
+            "name": "runtime_ui_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "883f3e6fe3a0778cb67606d9123beba7689d39b6c36b4baa713eab46ce167f62"
+          },
+          {
+            "name": "authoring_core_conformance.py.log",
+            "exit_code": 0,
+            "log_sha256": "01173e1c8266fbebb25d8413e50bec0d2dc960bf0c50eccf19d74defc8557568"
+          },
+          {
+            "name": "authoring_contract_identity.py.log",
+            "exit_code": 0,
+            "log_sha256": "96efe097fa756c93f2ef84dd0835400daca91671c0e303eb1be62640383cde93"
+          },
+          {
+            "name": "python_client_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "7904ba96ed2d88ecaae3229973d449b4c53460915a995b1a777ffa595da81408"
+          },
+          {
+            "name": "mcp_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "87399972a4725fdffcac5d2f1b2c73a45a7a72ec49edef734e7243173b44717e"
+          },
+          {
+            "name": "desktop_bridge_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "d83f7e34f0f848dc4187db4d1fe5fb5dc23b6f7ac54f7f54931fc4b1dee423fa"
+          },
+          {
+            "name": "poima-runtime-ui-control-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "c42b68d240224fb3af856d01b48d9504b10be37f4a8be65c3b28526c5e88c2a1"
+          },
+          {
+            "name": "poima-runtime-ui-control-test.exe.log",
+            "exit_code": 0,
+            "log_sha256": "47bc2a3ca1cbeb7320317d03fd7c098d9dde56e13ff9c615d82467cf67e4c0f3"
+          },
+          {
+            "name": "runtime_ui_control_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "ac34bacea8a7a1e9f40db09c12ed2eb61311b368b198499afe463f8702eed3a7"
+          },
+          {
+            "name": "runtime_ui_control_contract.py.log",
+            "exit_code": 0,
+            "log_sha256": "0592d31e79469c231fdf9260410e9565ede774ad40009898de1cfe51afe5a7fe"
+          }
+        ]
+      }
+    },
+    "linux": {
+      "version": "0.0.50",
+      "binary_sha256": "cb8b56e42862919e2f725a873a598ed781f9909656484806791cda9cc3e33d0b",
+      "features": [
+        "headless authored-world service"
+      ],
+      "selected_authoring_v1_request_gate": {
+        "passed": true,
+        "schema_revision": 50,
+        "protocol_version": 1,
+        "selected_methods": [
+          "entity.get",
+          "entity.query",
+          "entity.world_transform",
+          "world.describe",
+          "world.history",
+          "world.inspect",
+          "world.redo",
+          "world.transact",
+          "world.undo"
+        ],
+        "components": [
+          "Transform"
+        ],
+        "findings": [],
+        "binary_sha256": "cb8b56e42862919e2f725a873a598ed781f9909656484806791cda9cc3e33d0b",
+        "contract_identity_matches_release": true
+      },
+      "selected_ctest_groups": {
+        "passed": true,
+        "groups": 15,
+        "seconds": 23.66,
+        "group_names": [
+          "ui_model_native",
+          "authoring_core_conformance",
+          "authoring_contract_identity",
+          "python_response_contract",
+          "python_client_contract",
+          "world_session_native",
+          "mcp_contract",
+          "world_templates_contract",
+          "world_ui_contract",
+          "ui_authoring_contract",
+          "world_components_contract",
+          "runtime_ui_contract",
+          "shared_session_contract",
+          "world_history_contract",
+          "world_contract"
+        ],
+        "log_sha256": "a5a163790c09e1cdce31aa4e52e31e3bb4406a36cff626adf199939c4bf87986"
+      }
+    },
+    "linux-layout": {
+      "version": "0.0.50",
+      "binary_sha256": "a619544c96ec7640f6b4c5ec20473a84bde818372fd62da50f2547be16ccd366",
+      "features": [
+        "headless authored-world service",
+        "native UI layout"
+      ],
+      "selected_authoring_v1_request_gate": {
+        "passed": true,
+        "schema_revision": 50,
+        "protocol_version": 1,
+        "selected_methods": [
+          "entity.get",
+          "entity.query",
+          "entity.world_transform",
+          "world.describe",
+          "world.history",
+          "world.inspect",
+          "world.redo",
+          "world.transact",
+          "world.undo"
+        ],
+        "components": [
+          "Transform"
+        ],
+        "findings": [],
+        "binary_sha256": "a619544c96ec7640f6b4c5ec20473a84bde818372fd62da50f2547be16ccd366",
+        "contract_identity_matches_release": true
+      },
+      "selected_ctest_groups": {
+        "passed": true,
+        "groups": 10,
+        "seconds": 10.54,
+        "group_names": [
+          "ui_model_native",
+          "ui_document_native",
+          "ui_presenter_native",
+          "authoring_core_conformance",
+          "authoring_contract_identity",
+          "python_response_contract",
+          "python_client_contract",
+          "mcp_contract",
+          "world_ui_contract",
+          "ui_authoring_contract"
+        ],
+        "log_sha256": "3a534032210641ed0175f0fdf9f41385486877476bb035393bface943ab3e079"
+      }
+    }
+  },
+  "typed_ui_contract": {
+    "tests": "tests/ui_authoring_contract.py",
+    "cases": 9,
+    "windows": {
+      "passed": 9,
+      "skipped": 0
+    },
+    "linux_headless": {
+      "passed": 5,
+      "skipped": 4
+    },
+    "linux_layout": {
+      "passed": 6,
+      "skipped": 3
+    },
+    "cases_cover": [
+      "Transactional complete definitions, previews, exact retry receipts, history and restart",
+      "24 malformed late metadata cases reject atomically",
+      "Legacy seven-field definitions and frozen content hashes retain absent metadata",
+      "Focused mutation discovery equals the full UI schema and exposes bounded layout/capture parameters",
+      "Virtual layout available/unavailable and invalid/stale observations leave authored state untouched",
+      "Virtual geometry at 960x540, 1280x720 and 1024x768 at scale 1 plus 1280x720 at scale 2",
+      "Runtime freezes layout/style and rejects live metadata edits; a fresh runtime adopts changed authoring",
+      "Legacy UI checkpoint round-trip retains logical state and content identity",
+      "Rechecksummed saved-world metadata mismatch is rejected against the original inner trusted content identity"
+    ],
+    "round_clip_validation": "Positive panel border radius with own hidden/auto overflow is rejected; rounded clip masks are not implemented."
+  },
+  "native_input_regressions": [
+    "Visual sibling order and traversal independent of logical ID serialization",
+    "Pass-through canvases, capturing panel padding and clipping",
+    "Held pointer and confirmation preserve owned releases across target/action/occlusion changes",
+    "Fresh and held keyboard confirmation cannot activate a fully occluded control",
+    "Unrelated drawn HUD text update can preserve a held compatible gesture",
+    "Hover/focus/pressed/disabled color states and hidden flex roots"
+  ],
+  "compiled_callbacks": {
+    "windows_coreclr": true,
+    "windows_native_aot": true,
+    "scope": "Existing unchanged compiled UI fixture and control/save contracts rerun on the rebuilt engine; no newly authored complete game."
+  },
+  "rendered": [
+    {
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "samples": 4,
+      "owner_exit_code": 0,
+      "fixture_sha256": "fc121a4e6e8cb2a0328ae14521ceb4ee5b94e31bce761cdb5ba873c71cb16351",
+      "capture_count": 9,
+      "checks": {
+        "transaction_authored_exact_definition": true,
+        "responsive_layout_three_extents": true,
+        "numeric_opaque_color_witnesses": true,
+        "authored_scene_ui_free": true,
+        "runtime_style_frozen": true,
+        "fresh_runtime_adopts_new_style": true,
+        "hidden_roots_remove_all_ui": true,
+        "same_tick_literal_text_update": true,
+        "simulation_tick_and_control_sequence_unchanged": true,
+        "explicit_capture_density_matches_layout": true,
+        "invalid_capture_density_rejected_without_file_or_runtime_change": true
+      },
+      "rejected_ui_scales": [
+        true,
+        null,
+        "1",
+        [
+          1
+        ],
+        {
+          "value": 1
+        },
+        0.24,
+        8.01
+      ],
+      "virtual_layouts": [
+        {
+          "controls": [
+            {
+              "bounds": [
+                336.0,
+                186.0,
+                624.0,
+                218.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "0000000000000000000000000000006f",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                336.0,
+                226.0,
+                624.0,
+                266.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000071",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                336.0,
+                274.0,
+                624.0,
+                314.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000070",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                36.0,
+                480.0,
+                132.0,
+                504.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000c9",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                156.0,
+                480.0,
+                252.0,
+                504.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000ca",
+              "kind": "label",
+              "visible": true
+            }
+          ],
+          "height": 540,
+          "revision": 1,
+          "scale": 1.0,
+          "width": 960
+        },
+        {
+          "controls": [
+            {
+              "bounds": [
+                496.0,
+                276.0,
+                784.0,
+                308.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "0000000000000000000000000000006f",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                496.0,
+                316.0,
+                784.0,
+                356.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000071",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                496.0,
+                364.0,
+                784.0,
+                404.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000070",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                36.0,
+                660.0,
+                132.0,
+                684.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000c9",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                156.0,
+                660.0,
+                252.0,
+                684.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000ca",
+              "kind": "label",
+              "visible": true
+            }
+          ],
+          "height": 720,
+          "revision": 1,
+          "scale": 1.0,
+          "width": 1280
+        },
+        {
+          "controls": [
+            {
+              "bounds": [
+                368.0,
+                300.0,
+                656.0,
+                332.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "0000000000000000000000000000006f",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                368.0,
+                340.0,
+                656.0,
+                380.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000071",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                368.0,
+                388.0,
+                656.0,
+                428.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000070",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                36.0,
+                708.0,
+                132.0,
+                732.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000c9",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                156.0,
+                708.0,
+                252.0,
+                732.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000ca",
+              "kind": "label",
+              "visible": true
+            }
+          ],
+          "height": 768,
+          "revision": 1,
+          "scale": 1.0,
+          "width": 1024
+        }
+      ],
+      "opaque_color_witnesses": {
+        "960": {
+          "menu": {
+            "x": 324.0,
+            "y": 174.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 612.0,
+            "y": 246.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 612.0,
+            "y": 294.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 512,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "1280": {
+          "menu": {
+            "x": 484.0,
+            "y": 264.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 772.0,
+            "y": 336.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 772.0,
+            "y": 384.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 692,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "1024": {
+          "menu": {
+            "x": 356.0,
+            "y": 288.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 644.0,
+            "y": 360.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 644.0,
+            "y": 408.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 740,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "live_text": {
+          "menu": {
+            "x": 324.0,
+            "y": 174.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 612.0,
+            "y": 246.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 612.0,
+            "y": 294.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 512,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "new_style": {
+          "menu": {
+            "x": 324.0,
+            "y": 174.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 612.0,
+            "y": 246.0,
+            "expected_rgb": [
+              34,
+              68,
+              102
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              34,
+              68,
+              102
+            ],
+            "max_rgb": [
+              34,
+              68,
+              102
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "5513262c3f4d063a455b5c434427426d2fcc4e319df0b8f4fe98e7ed6573f091"
+          },
+          "save": {
+            "x": 612.0,
+            "y": 294.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 512,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        }
+      },
+      "captures": {
+        "authored": {
+          "bmp_sha256": "ada02556e954eb283db0629bb1ae1edd484b34e3e8a7e2c269e4bcda539183d7",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "authored",
+          "tick": null,
+          "ui_revision": null,
+          "ui_scale": null,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-960": {
+          "bmp_sha256": "b5a16784111299c7b66edcbcce9c63be4dd78c406f554aae383c346598dbfc42",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-1280": {
+          "bmp_sha256": "78ec5cd18ca8a1ca016b0265f073549e0a9756fd67e9edf5024cca2af809506a",
+          "width": 1280,
+          "height": 720,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-1024": {
+          "bmp_sha256": "f1e3409b02f6a5217847560716d481ffb193ab1912d09b3655d6aa6506ce83f0",
+          "width": 1024,
+          "height": 768,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-frozen": {
+          "bmp_sha256": "b5a16784111299c7b66edcbcce9c63be4dd78c406f554aae383c346598dbfc42",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "authored-after": {
+          "bmp_sha256": "ada02556e954eb283db0629bb1ae1edd484b34e3e8a7e2c269e4bcda539183d7",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "authored",
+          "tick": null,
+          "ui_revision": null,
+          "ui_scale": null,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-hidden": {
+          "bmp_sha256": "ada02556e954eb283db0629bb1ae1edd484b34e3e8a7e2c269e4bcda539183d7",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 1,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-text": {
+          "bmp_sha256": "41b1c1586992192467a62ae6ce2a7d7704bdec98c414442a84e52eda1446b819",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 2,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-new-style": {
+          "bmp_sha256": "be4a498c2195fcfd2f4eacb445f04825dcec979e4e19c01219737c1392931f9d",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        }
+      }
+    },
+    {
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "owner_exit_code": 0,
+      "fixture_sha256": "fc121a4e6e8cb2a0328ae14521ceb4ee5b94e31bce761cdb5ba873c71cb16351",
+      "capture_count": 9,
+      "checks": {
+        "transaction_authored_exact_definition": true,
+        "responsive_layout_three_extents": true,
+        "numeric_opaque_color_witnesses": true,
+        "authored_scene_ui_free": true,
+        "runtime_style_frozen": true,
+        "fresh_runtime_adopts_new_style": true,
+        "hidden_roots_remove_all_ui": true,
+        "same_tick_literal_text_update": true,
+        "simulation_tick_and_control_sequence_unchanged": true,
+        "explicit_capture_density_matches_layout": true,
+        "invalid_capture_density_rejected_without_file_or_runtime_change": true
+      },
+      "rejected_ui_scales": [
+        true,
+        null,
+        "1",
+        [
+          1
+        ],
+        {
+          "value": 1
+        },
+        0.24,
+        8.01
+      ],
+      "virtual_layouts": [
+        {
+          "controls": [
+            {
+              "bounds": [
+                336.0,
+                186.0,
+                624.0,
+                218.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "0000000000000000000000000000006f",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                336.0,
+                226.0,
+                624.0,
+                266.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000071",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                336.0,
+                274.0,
+                624.0,
+                314.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000070",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                36.0,
+                480.0,
+                132.0,
+                504.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000c9",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                156.0,
+                480.0,
+                252.0,
+                504.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                960.0,
+                540.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000ca",
+              "kind": "label",
+              "visible": true
+            }
+          ],
+          "height": 540,
+          "revision": 1,
+          "scale": 1.0,
+          "width": 960
+        },
+        {
+          "controls": [
+            {
+              "bounds": [
+                496.0,
+                276.0,
+                784.0,
+                308.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "0000000000000000000000000000006f",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                496.0,
+                316.0,
+                784.0,
+                356.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000071",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                496.0,
+                364.0,
+                784.0,
+                404.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000070",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                36.0,
+                660.0,
+                132.0,
+                684.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000c9",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                156.0,
+                660.0,
+                252.0,
+                684.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1280.0,
+                720.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000ca",
+              "kind": "label",
+              "visible": true
+            }
+          ],
+          "height": 720,
+          "revision": 1,
+          "scale": 1.0,
+          "width": 1280
+        },
+        {
+          "controls": [
+            {
+              "bounds": [
+                368.0,
+                300.0,
+                656.0,
+                332.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "0000000000000000000000000000006f",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                368.0,
+                340.0,
+                656.0,
+                380.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000071",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                368.0,
+                388.0,
+                656.0,
+                428.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "00000000000000000000000000000070",
+              "kind": "button",
+              "visible": true
+            },
+            {
+              "bounds": [
+                36.0,
+                708.0,
+                132.0,
+                732.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000c9",
+              "kind": "label",
+              "visible": true
+            },
+            {
+              "bounds": [
+                156.0,
+                708.0,
+                252.0,
+                732.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                1024.0,
+                768.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": false,
+              "id": "000000000000000000000000000000ca",
+              "kind": "label",
+              "visible": true
+            }
+          ],
+          "height": 768,
+          "revision": 1,
+          "scale": 1.0,
+          "width": 1024
+        }
+      ],
+      "opaque_color_witnesses": {
+        "960": {
+          "menu": {
+            "x": 324.0,
+            "y": 174.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 612.0,
+            "y": 246.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 612.0,
+            "y": 294.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 512,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "1280": {
+          "menu": {
+            "x": 484.0,
+            "y": 264.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 772.0,
+            "y": 336.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 772.0,
+            "y": 384.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 692,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "1024": {
+          "menu": {
+            "x": 356.0,
+            "y": 288.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 644.0,
+            "y": 360.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 644.0,
+            "y": 408.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 740,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "live_text": {
+          "menu": {
+            "x": 324.0,
+            "y": 174.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 612.0,
+            "y": 246.0,
+            "expected_rgb": [
+              111,
+              36,
+              59
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_rgb": [
+              111,
+              36,
+              59
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "99c438704b55f22241773ed3c782367abed94680a19be5486b86092dda35e0d6"
+          },
+          "save": {
+            "x": 612.0,
+            "y": 294.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 512,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        },
+        "new_style": {
+          "menu": {
+            "x": 324.0,
+            "y": 174.0,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          },
+          "resume": {
+            "x": 612.0,
+            "y": 246.0,
+            "expected_rgb": [
+              34,
+              68,
+              102
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              34,
+              68,
+              102
+            ],
+            "max_rgb": [
+              34,
+              68,
+              102
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "5513262c3f4d063a455b5c434427426d2fcc4e319df0b8f4fe98e7ed6573f091"
+          },
+          "save": {
+            "x": 612.0,
+            "y": 294.0,
+            "expected_rgb": [
+              48,
+              42,
+              51
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_rgb": [
+              48,
+              42,
+              51
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "30e004b233f536fc8743c1f7654d1dcdbc7644dc84180395f78370f99677d4d2"
+          },
+          "hud": {
+            "x": 28,
+            "y": 512,
+            "expected_rgb": [
+              36,
+              28,
+              36
+            ],
+            "sample_count": 9,
+            "min_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_rgb": [
+              36,
+              28,
+              36
+            ],
+            "max_abs_channel_error": 0,
+            "sampled_rgb_sha256": "1149b1159942f202bded57ed03742068fec20bcdf5aaaa9b886b7c718b96ae41"
+          }
+        }
+      },
+      "captures": {
+        "authored": {
+          "bmp_sha256": "ada02556e954eb283db0629bb1ae1edd484b34e3e8a7e2c269e4bcda539183d7",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "authored",
+          "tick": null,
+          "ui_revision": null,
+          "ui_scale": null,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-960": {
+          "bmp_sha256": "629330ba9868fbb283ef336a4ae87298b44d940aa6eb310452256e2167b72e06",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-1280": {
+          "bmp_sha256": "1a1806b3976361652924072fd8f1ee3c11c5f07bff915cf7da2ad7bf9f0d982b",
+          "width": 1280,
+          "height": 720,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-1024": {
+          "bmp_sha256": "e5623974eb750535e068a323842dda177eed3b7130e48db5c0a6fcc27bcc285d",
+          "width": 1024,
+          "height": 768,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-frozen": {
+          "bmp_sha256": "629330ba9868fbb283ef336a4ae87298b44d940aa6eb310452256e2167b72e06",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "authored-after": {
+          "bmp_sha256": "ada02556e954eb283db0629bb1ae1edd484b34e3e8a7e2c269e4bcda539183d7",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "authored",
+          "tick": null,
+          "ui_revision": null,
+          "ui_scale": null,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-hidden": {
+          "bmp_sha256": "ada02556e954eb283db0629bb1ae1edd484b34e3e8a7e2c269e4bcda539183d7",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 1,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-text": {
+          "bmp_sha256": "070b5a4737629d1bac9bd964e862dd526db055f8bbf73a221e0ce5890242ada8",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 2,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        },
+        "runtime-new-style": {
+          "bmp_sha256": "72d580224504f1161cd75dcfc2653bb42f6e3caef3ff0f01abc5a26400c644b0",
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "source": "runtime",
+          "tick": 0,
+          "ui_revision": 0,
+          "ui_scale": 1,
+          "hardware": true,
+          "nvrhi_errors": 0
+        }
+      }
+    }
+  ],
+  "legacy_pixel_pairing": {
+    "gpu": "AMD Radeon(TM) Graphics",
+    "gpu_index": 0,
+    "samples": 4,
+    "harness": "tests/runtime_ui_render_contract.py",
+    "harness_sha256": "fdd7edcd9dfe6e393103596ad299e4d30a2e9e2f6007a116892b4ba87f48768e",
+    "old_checkpoint": "0.0.49",
+    "old_engine_sha256": "892ffb9443421a7059dbd3242127f68b2100b6201dd889c2eb636d138eac3f77",
+    "new_engine_sha256": "7685b9b67f90c0464e0cdad98dd1c7229a377803b0c75f921b0fff505eb5d111",
+    "owner_exit_codes": [
+      0,
+      0
+    ],
+    "pixel_digest_format": "Top-to-bottom BGR8 rows, excluding alpha and row padding.",
+    "pairs": {
+      "authored-after-runtime-edits": {
+        "equal_pixels": true,
+        "pixel_sha256": "ed414e2b32e5a31713edb5b67ac91d53a166f8f751e01baf11aad22bd5d70351",
+        "equal_bmp_bytes": true
+      },
+      "authored-baseline": {
+        "equal_pixels": true,
+        "pixel_sha256": "ed414e2b32e5a31713edb5b67ac91d53a166f8f751e01baf11aad22bd5d70351",
+        "equal_bmp_bytes": true
+      },
+      "runtime-hidden": {
+        "equal_pixels": true,
+        "pixel_sha256": "ed414e2b32e5a31713edb5b67ac91d53a166f8f751e01baf11aad22bd5d70351",
+        "equal_bmp_bytes": true
+      },
+      "runtime-initial": {
+        "equal_pixels": true,
+        "pixel_sha256": "75d402e0de6a808eba5085721b76fde10748a7b2ecdd2574bf15246ce578bd12",
+        "equal_bmp_bytes": true
+      },
+      "runtime-literal": {
+        "equal_pixels": true,
+        "pixel_sha256": "7fd5b67e5c5a86a80a2d78dca22b54627f0a1dd870e7c01da5eebd38670bf18a",
+        "equal_bmp_bytes": true
+      },
+      "runtime-resized": {
+        "equal_pixels": true,
+        "pixel_sha256": "f9d0b198ee3dc0b201a50bb91f20279b304fd7a09779eba05c9994224f8413e2",
+        "equal_bmp_bytes": true
+      },
+      "runtime-restored": {
+        "equal_pixels": true,
+        "pixel_sha256": "7fd5b67e5c5a86a80a2d78dca22b54627f0a1dd870e7c01da5eebd38670bf18a",
+        "equal_bmp_bytes": true
+      }
+    }
+  },
+  "image": {
+    "file": "m2-authored-ui.png",
+    "sha256": "80231317af9530830463ea333e8694e307f01218a9f030697d0127c3badbf800",
+    "source_gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+    "source_capture": "runtime-960",
+    "width": 960,
+    "height": 540,
+    "conversion": "Lossless BMP RGB pixels to PNG; visually inspected. This is a native readback, not an OS/editor screenshot."
+  },
+  "source_sha256": {
+    "include/poima/ui_model.hpp": "35bdba2764ae9592c1461d407ce33dfc848653a689d21810791046680e6aef2b",
+    "include/poima/ui_presenter.hpp": "1e5287d5786f8c63cedeabf774a060a541e8f81afebee66a8671442b15d6a5d8",
+    "src/ui_model.cpp": "61a15caa8cf70048479c07ab92d04d5f675acbe2625520d1028e890680a8d8c7",
+    "src/ui_presenter.cpp": "7e2874f178e043482dfbada26d245f73ce7ecc0ad64f6e399ead47e1c1763e3b",
+    "src/ui_authoring_schema.hpp": "baa1d70ab544d8336134535b8ce2038f76ad204fdde90180a88d46d688ff19c0",
+    "src/world.cpp": "37bd768f43fe3909766e8d64aae713975c244a465c3937f3742aebeeee510062",
+    "src/world_ui.inc": "dea0baa761ab7ae7f6982a5ec910213385e0530a4f9538df0afb874382fe9176",
+    "tests/ui_model.cpp": "0956f79be7b3798a9a5c7e1932da54b07ec29aba9a5eca02ba37e89889142b69",
+    "tests/ui_presenter.cpp": "34a90b3cee35abff567642582caff35a96223567c0bb110d3d673c2813747733",
+    "tests/ui_authoring_contract.py": "e283c793684f920b13d214012f4000ee2ad96e6c97c8ed2781128e512d4c368b",
+    "tests/ui_authoring_capture.py": "ddac691b0f60b0ca2331fc483efcdc2ca728709e7bde3e5153998ec347e0fc89",
+    "examples/ui/authored-hud.json": "fc121a4e6e8cb2a0328ae14521ceb4ee5b94e31bce761cdb5ba873c71cb16351"
+  },
+  "limits": [
+    "Three rendered extents cover two aspect ratios, with explicit UI scale 1. Scale 2 has virtual-layout qualification only.",
+    "Legacy pixel equality covers seven scenes on the AMD GPU only; it does not prove all old worlds are identical.",
+    "Color witnesses measure opaque interior patches with a two-byte rounding tolerance; no general text-shaping or geometric anti-aliasing claim.",
+    "Semantic hitability uses bounded point sampling; thin or partly occluded regions may report false despite a small clickable region.",
+    "The fixture has no compiled gameplay callback, physics body/controller or physical device. Tick/control sequence checks are not physics-trajectory proof.",
+    "Existing compiled callbacks are qualified separately; editor visual authoring and installed desktop package are unchanged.",
+    "Theme inheritance, images, inventory/text widgets, animation, accessibility and localization remain unfinished.",
+    "UI/layout/capture APIs remain outside the selected stable authoring-core contract; broader game-scale performance and alpha readiness are not established."
+  ]
+}
