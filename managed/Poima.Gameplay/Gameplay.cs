@@ -164,11 +164,12 @@ public readonly unsafe ref partial struct GameContext
 {
     private readonly NativeServices* services;
     private readonly ReadOnlySpan<GameInput> inputs;
+    private readonly GameplayRequiredFeatures requiredFeatures;
     public ulong Tick { get; }
     public double DeltaTime => 1.0/60.0;
     public ReadOnlySpan<GameInput> Inputs => inputs;
     internal GameContext(NativeServices* services,GameInput* inputs,int count,ulong tick)
-    { this.services=services;this.inputs=new(inputs,count);Tick=tick; }
+    { this.services=services;this.inputs=new(inputs,count);Tick=tick;requiredFeatures=GameplayRequiredFeatures.None; }
     private static void Check(int code,NativeError* error)
     { if(code!=0)throw new InvalidOperationException(Marshal.PtrToStringUTF8((nint)error->Text) ?? "Native gameplay service failed."); }
     public SaveCapabilities Saves

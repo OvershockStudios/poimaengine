@@ -58,6 +58,12 @@ typedef struct PoimaGameAnimationLayerStateV1 {
     double weight_source,weight_target;
     uint32_t weight_transition_present,reserved;
 } PoimaGameAnimationLayerStateV1;
+// Independent opt-in character_input_v1. Tick-only intent, borrowed for one
+// callback; exact version1/48 bytes. Flags bit0=jump; no use/unknown bits.
+typedef struct PoimaGameCharacterInputV1 {
+    uint32_t version,bytes;PoimaEntityId entity;
+    float move[2],look[2];uint32_t flags,reserved;
+} PoimaGameCharacterInputV1;
 // Save control plane. Numeric kind/state/rejection values match gameplay_save.hpp.
 // Slots are borrowed bounded ASCII bytes (no required trailing NUL). Ticket
 // epoch words are opaque bit patterns; sequence is positive and JSON-safe.
@@ -139,6 +145,12 @@ typedef struct PoimaGameAnimationLayerServicesV1 {
     int32_t (POIMA_CALL *animation_layer_get)(void*,const PoimaEntityId*,uint32_t,PoimaGameAnimationLayerStateV1*,PoimaGameError*);
     int32_t (POIMA_CALL *animation_layer_set)(void*,const PoimaGameAnimationLayerCommandV1*,PoimaGameError*);
 } PoimaGameAnimationLayerServicesV1;
+// Independent 216-byte character extension. Animation tails are accessible
+// only when separately declared; older views remain exactly 176/192/208 bytes.
+typedef struct PoimaGameCharacterServicesV1 {
+    PoimaGameAnimationLayerServicesV1 animation;
+    int32_t (POIMA_CALL *character_input)(void*,const PoimaGameCharacterInputV1*,PoimaGameError*);
+} PoimaGameCharacterServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -147,6 +159,8 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGameCharacterInputV1)==48 && offsetof(PoimaGameCharacterInputV1,entity)==8 && offsetof(PoimaGameCharacterInputV1,move)==24 && offsetof(PoimaGameCharacterInputV1,look)==32 && offsetof(PoimaGameCharacterInputV1,flags)==40 && offsetof(PoimaGameCharacterInputV1,reserved)==44);
+static_assert(sizeof(PoimaGameCharacterServicesV1)==216 && offsetof(PoimaGameCharacterServicesV1,animation)==0 && offsetof(PoimaGameCharacterServicesV1,character_input)==208);
 static_assert(sizeof(PoimaUiId)==16 && sizeof(PoimaGameUiState)==40 && sizeof(PoimaGameUiPatch)==40 && sizeof(PoimaGameUiModalEdit)==24 && sizeof(PoimaGameUiControlEvent)==160);
 static_assert(offsetof(PoimaGameUiState,kind)==8 && offsetof(PoimaGameUiState,text_bytes)==32 && offsetof(PoimaGameUiPatch,text)==16 && offsetof(PoimaGameUiPatch,mask)==28 && offsetof(PoimaGameUiModalEdit,change)==16);
 static_assert(offsetof(PoimaGameUiControlEvent,sequence)==16 && offsetof(PoimaGameUiControlEvent,action)==32);

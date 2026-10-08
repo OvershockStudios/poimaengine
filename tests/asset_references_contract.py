@@ -94,7 +94,7 @@ class References(unittest.TestCase):
         self.tx(0,[create(1)])
         self.assertEqual(json.loads(self.world.read_text())['version'],1)
         before=self.preserved();full=self.call('world.describe')
-        self.assertEqual(full['protocol_version'],1);self.assertEqual(full['schema_revision'],54)
+        self.assertEqual(full['protocol_version'],1);self.assertEqual(full['schema_revision'],55)
         self.assertEqual(full['authoring_contract']['version'],1)
         focused=self.call('world.describe',dict(view='method',name=METHOD))
         self.assertEqual(focused['methods'],{METHOD:full['methods'][METHOD]})

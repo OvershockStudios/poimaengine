@@ -1,8 +1,40 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.60**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.61**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.61 adds camera-free CharacterControllers and compiled per-tick
+movement, look and jump through `ICharacterInputGame` and `SetCharacterInput`.
+Commands stage before physics, do not appear as caller inputs and do not change
+same-tick reads. Caller input owns its target for the whole requested batch;
+conflicts and later failures restore the batch's complete observed state.
+Interactive player selection still requires a camera-bound controller.
+
+Windows and Linux each pass six actual CoreCLR checks over 237 RPCs and five
+published Native AOT checks over 213 RPCs. They cover wall contact, neutral
+ticks, jump, invalid commands, second-tick rollback and durable fresh-process
+continuation; CoreCLR also covers compatible and failed reload. Each OS passes
+65 SDK/bridge ABI guard groups using protected allocations and mock callbacks.
+These guard tests do not qualify arbitrary malformed Runtime callback storage.
+
+The independent named 216-byte services-7 profile retains the original
+176/192/208-byte profiles. Preserved 176-byte Native AOT Tick/Control fixtures
+and original 208-byte layer artifacts execute on both OSes. Actual 0.0.60 versus
+0.0.61 player input and save comparisons pass 108 RPCs per OS. Discovery advances
+to revision 55 for nullable camera bindings; protocol 1, selected authoring-core
+v1 and save formats remain unchanged. Navigation, acceleration and production
+locomotion remain separate work. Native AOT libraries remain process-pinned.
+[Character API](CHARACTER_INPUT.md), [evidence](evidence/m2-character-input.json).
+
+The accompanying Patrol Room sample passes four native-input groups over
+1,483 RPCs on each OS, with two clean owned exits per cohort. Checks exercise
+actual capsule patrol, physics-ray occlusion, noise investigation, visual chase,
+earned extraction, capture, compatible reload and exact fresh-process save
+continuation. AMD and NVIDIA Vulkan cohorts each pass four rendered readbacks
+over 1,531 RPCs, with zero reported NVRHI errors. These are primitive-room
+gameplay checks, not general navigation, physical-device or performance evidence.
+[Sample](../examples/managed/PatrolGame), [evidence](evidence/m2-patrol-game.json).
 
 Version 0.0.60 adds `world.asset.references`: typed model/image/audio bindings
 by authored entity or template, with inverse asset lookup and revision-pinned

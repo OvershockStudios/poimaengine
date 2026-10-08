@@ -60,6 +60,18 @@ void require_compatible(const gameplay_abi::Contract& required,const gameplay_ab
     if(!error.empty())throw std::runtime_error(error);
 }
 template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::character_input_feature)!=required.features.end()) {
+        check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameCharacterServicesV1),
+            "Gameplay requires services epoch 7 and the 216-byte character input extension.");
+        PoimaGameCharacterServicesV1 extended{};
+        std::memcpy(&extended,&provided,sizeof(extended));extended.animation.animation.baseline.bytes=sizeof(extended);
+        check(extended.character_input,"Gameplay character input extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_feature)!=required.features.end())
+            check(extended.animation.animation.animation_get_extended && extended.animation.animation.animation_set_extended,"Gameplay animation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_layers_feature)!=required.features.end())
+            check(extended.animation.animation_layer_get && extended.animation.animation_layer_set,"Gameplay animation layer extension callback is absent.");
+        callback(&extended.animation.animation.baseline);return;
+    }
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_layers_feature)!=required.features.end()) {
         check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameAnimationLayerServicesV1),
             "Gameplay requires services epoch 7 and the 208-byte animation layer extension.");

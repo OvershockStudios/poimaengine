@@ -83,6 +83,7 @@ public readonly unsafe ref partial struct GameContext
     /// <summary>Reads committed animation state; writes staged by this callback are not visible yet.</summary>
     public AnimationStateExtended? GetAnimationExtended(EntityId entity)
     {
+        RequireFeature(GameplayRequiredFeatures.InertialAnimation,nameof(IInertialAnimationGame));
         var extended=AnimationServiceAbi.Validate(services);
         NativeAnimationStateV1 result=new(){Version=1,Bytes=136};NativeError error=default;
         Check(extended->AnimationGetExtended(services->Context,&entity,&result,&error),&error);
@@ -117,6 +118,7 @@ public readonly unsafe ref partial struct GameContext
         if(transitionMode is not AnimationTransitionMode.Crossfade and not AnimationTransitionMode.Inertial)
             throw new ArgumentOutOfRangeException(nameof(transitionMode));
         if(clip is <0)throw new ArgumentOutOfRangeException(nameof(clip),"Use null for the authored rest pose.");
+        RequireFeature(GameplayRequiredFeatures.InertialAnimation,nameof(IInertialAnimationGame));
         var extended=AnimationServiceAbi.Validate(services);
         NativeAnimationCommandV1 command=new(){Version=1,Bytes=64,TransitionMode=(uint)transitionMode,
             Command=new(){Entity=entity,Clip=clip ?? -1,Time=time,Speed=speed,Loop=loop ? 1u : 0u,Playing=playing ? 1u : 0u,BlendTicks=blendTicks}};

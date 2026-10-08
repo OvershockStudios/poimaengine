@@ -35,7 +35,7 @@ public static unsafe class Entry
             if(!redirected) { Console.SetOut(Console.Error);redirected=true; }
             if(sizeof(NativeCall)!=80 || sizeof(NativeServices)!=176 || sizeof(GameInput)!=40 || sizeof(EntitySnapshot)!=160 ||
                sizeof(NativeRay)!=72 || sizeof(NativeHit)!=88 || sizeof(NativeMotion)!=80 || sizeof(NativeSound)!=32 ||
-               sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !Binding.LayoutValid() || !AbiLayout() || !AnimationServiceAbi.LayoutValid() || !AnimationLayerServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
+               sizeof(NativeAnimationCommand)!=48 || sizeof(NativeAnimationTransition)!=56 || sizeof(NativeAnimationState)!=120 || !Binding.LayoutValid() || !AbiLayout() || !AnimationServiceAbi.LayoutValid() || !AnimationLayerServiceAbi.LayoutValid() || !CharacterInputServiceAbi.LayoutValid() || !SaveAbiLayout.Valid() || !ComponentAbiLayout.Valid() || !LifecycleAbiLayout.Valid() || !UiAbiLayout.Valid())
                 throw new InvalidOperationException("Generated gameplay ABI layout mismatch.");
             switch(call->Operation)
             {
@@ -59,7 +59,7 @@ public static unsafe class Entry
                     if(call->Operation==6) {
                         if(call->InputCount!=0 || call->Inputs!=null)throw new ArgumentException("Control callbacks cannot carry physics input.");
                         Binding.ControlObject(instance,call->State,new ControlContext(call->Services,call->Tick));
-                    } else Binding.TickObject(instance,call->State,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick));break;
+                    } else Binding.TickObject(instance,call->State,new GameContext(call->Services,call->Inputs,(int)call->InputCount,call->Tick,RequiredFeatures()));break;
                 case 4: modules.Remove(call->Handle);break;
                 case 5: Write(call,"{\"active_modules\":"+modules.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)+",\"retired_alive\":0,\"unload_supported\":false,\"diagnostics\":"+Diagnostics()+"}");break;
                 default: throw new ArgumentException("Unknown native game operation.");

@@ -1,0 +1,409 @@
+{
+  "checkpoint": "0.0.61",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 55,
+  "authoring_core_version": 1,
+  "gameplay_services_epoch": 7,
+  "call_bytes": 80,
+  "service_profiles": {
+    "baseline": 176,
+    "animation_inertial_v1": 192,
+    "animation_layers_v1": 208,
+    "character_input_v1": 216
+  },
+  "character_command_version": 1,
+  "character_command_bytes": 48,
+  "source_sha256": {
+    "CMakeLists.txt": "8a75722188f9942ba03199723496846e4b69a93d56964281f9219548bce1971e",
+    "include/poima/gameplay_abi.h": "8c29e9b1157244fba1f17093b578d28b2525b0a68674a2821916cd20b4675089",
+    "include/poima/gameplay_compatibility.hpp": "9192a8a5518cccb10d5add1c0fcdb597eaad3a9eb1f80d8bd08e0bfacef08a3d",
+    "managed/Poima.Gameplay/Animation.cs": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9",
+    "managed/Poima.Gameplay/AnimationLayers.cs": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497",
+    "managed/Poima.Gameplay/CharacterInput.cs": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118",
+    "managed/Poima.Gameplay/Gameplay.cs": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "805efc67727938da8d79a61aea7cef731f18640bebe1f857f890a47fbd7a8c3e",
+    "managed/Poima.ManagedBridge/Entry.cs": "24e44553924dc576ab8bbfa249ae6d16b73d519f97b7015f94d3516f864d1b94",
+    "managed/Poima.NativeGame.Generator/Program.cs": "3ed681cfb9d15b52352e0af8e4e197eae853d4bae73a920136fee9e6d4a0b341",
+    "managed/Poima.NativeGame/Entry.cs": "bcfde42b3447076561d9bd5d7376f660c0e488f20ffe79b6786ea8b73c00389d",
+    "scripts/publish_native_gameplay.py": "94aa2571f1eb91b599fb4850f8851fb70925d7ac3dfec51d033022933834e0b5",
+    "src/gameplay.cpp": "cb21dddc42ecee692e933e9f9f2ec435815423ed8f7d264a7fb81a340493218f",
+    "src/runtime.cpp": "14aa53ef2657f63ed79c10b10ff38f605f4185f09fc1efa59d2b08349c4be00d",
+    "src/runtime_ui.inc": "389b042b42f72b260c2dc72865b2fea1ac61bd02ffc41453359508db3ac6802a",
+    "src/world.cpp": "d76c53843fc65d269a322af0f9c73d0e142d50763246a52aaf00bbc612a9da32",
+    "tests/asset_references_contract.py": "2f78f3ae791d396cc6f99022237e591d9e740a8e4c0d872a46a9bb04d74bf85b",
+    "tests/character_gameplay_contract.py": "57d02429734a5b6bd40d195e2ca7b7230c7e295c1809d73a147c14588c61b35a",
+    "tests/character_legacy_compatibility.py": "596b910a8a86cebf7c55dbbc763dd8ea928b1d39984005431d7653aee550860a",
+    "tests/gameplay_compatibility_native.cpp": "f6dee0746cd172b6580f074adde6d29937a1671e335e15470c2c61230edd22aa",
+    "tests/managed_character_gameplay/ManagedCharacterGame.cs": "001abae7ce90674f59a4671f77fed822cf3b845ccb97d5cda9aecacf23ba3e3b",
+    "tests/managed_character_gameplay/Poima.ManagedCharacterGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/managed_character_gameplay/README.md": "4bd79e6359821045a12a107a3c504a6ca33cd1ec875582929ea53a696a47a1e0",
+    "tests/managed_service_abi/CharacterInputExtension.cs": "709d5f716e80bb43292cdafc8a26f4d7e5a39b92bbbcb4e03b988e8dc436996b",
+    "tests/managed_service_abi/Program.cs": "01c88413e9e8959449f997d090aeb23bc4fcf931d774736e21a64dd69ed5654e",
+    "tests/native_gameplay_publish_requirements.py": "c4f5e457b25530927f12b201a3100d2af7ee45a1d9697f21469759b777c80aea",
+    "tests/profiler_contract.py": "d026cddc2f104e60c0f55828cbe01b269d8140511e2eb7b8a6a5fbd2f57ee7fe",
+    "tests/runtime_native.cpp": "0082c49007307c51e0302c753c08b788da9c9fa9be8a9838f8480c31895dcfaa",
+    "tests/world_session_native.cpp": "82cc5ff969366bef000b174faa084833085280c6631df405d224541605e5e402",
+    "examples/managed/PatrolGame/PatrolGame.cs": "226af00849bfb49b4e6b231316384112ee9f2fb4805256374b2d02e1abe636c2",
+    "examples/managed/PatrolGame/Poima.PatrolGame.csproj": "7145f02cbb1d355973bbc6c77ae3124571ae6880fa0be55b291a72f432daa5c1",
+    "examples/managed/PatrolGame/README.md": "67aced8b21df23990dbc57eba5137c60425ed8881fa6f7aa0246124ff253ab43",
+    "examples/managed/PatrolGame/run.py": "83269891fbf74b7d46143a55c36395abadbd73e303f0a7a8d1b7abdd38ec7428",
+    "examples/patrol-room.jsonl": "397c8a70b4f4e546f182dcbe344c760bca68119c478a834a1fdfb307f6d2164a",
+    "tests/patrol_game_contract.py": "c39db8b384d5c3057bdc1d8d0eeb438d82bf316a8ea6f12e116295bdb9371977",
+    ".gitignore": "26a7383d41f1d3c7400ee795dd732e0e000061e04c8bd53889ece1dd7f23ea90"
+  },
+  "selected_source_freeze": {
+    "all_match": true,
+    "files": 36,
+    "report_sha256": "5115dbe5c93334904e0c048a5c3abf47f930c8c9415c1601c8fc50ff39d4ebe2"
+  },
+  "qualification": {
+    "linux_coreclr": {
+      "passed": true,
+      "checks": 6,
+      "rpc_calls": 237,
+      "hashes": {
+        "binary": "8e2ea85c86e8b1c91533306a03e417acde6ad6e4a45434db7f9f2b1dc988cf3c",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "58dd03b591635f47dca62bb82548c166f2ea3ff2fd78008fbce4c32135f3839f",
+        "incompatible": "fdf75126e267a4da3de6acf88d2c313cbc9f6251b3fdd92020d81583979ba223"
+      },
+      "report_sha256": "e42e5380afbadc1e90be52de30bf104512c93d0d8d79aaa7bca9371ad23c832e",
+      "harness_sha256": "57d02429734a5b6bd40d195e2ca7b7230c7e295c1809d73a147c14588c61b35a"
+    },
+    "windows_coreclr": {
+      "passed": true,
+      "checks": 6,
+      "rpc_calls": 237,
+      "hashes": {
+        "binary": "b38ae19b62ad795de39a568fafa7b918453e696e1b3fdfe0d916657d1d450ef4",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "58dd03b591635f47dca62bb82548c166f2ea3ff2fd78008fbce4c32135f3839f",
+        "incompatible": "fdf75126e267a4da3de6acf88d2c313cbc9f6251b3fdd92020d81583979ba223"
+      },
+      "report_sha256": "c42ae8dd28cb41d526739a9ad17fb66659ba23e9cb70eb623049092ccff71c38",
+      "harness_sha256": "57d02429734a5b6bd40d195e2ca7b7230c7e295c1809d73a147c14588c61b35a"
+    },
+    "linux_native_aot": {
+      "passed": true,
+      "checks": 5,
+      "rpc_calls": 213,
+      "hashes": {
+        "binary": "8e2ea85c86e8b1c91533306a03e417acde6ad6e4a45434db7f9f2b1dc988cf3c",
+        "native_descriptor": "dab3467c432b48c8771abd2fc8e75f361c8d7db7e2a687787d4022cc175281d8",
+        "library": "80cd282d8424101623d830daf4e9925ca89148a2738ce5d513bc42c0a445c3ea"
+      },
+      "report_sha256": "fd51b1de756924716b87fed449aa8acc8f12b0b0cc0857852e712d2c5ffc9af7",
+      "harness_sha256": "57d02429734a5b6bd40d195e2ca7b7230c7e295c1809d73a147c14588c61b35a"
+    },
+    "windows_native_aot": {
+      "passed": true,
+      "checks": 5,
+      "rpc_calls": 213,
+      "hashes": {
+        "binary": "b38ae19b62ad795de39a568fafa7b918453e696e1b3fdfe0d916657d1d450ef4",
+        "native_descriptor": "da925c0651147b16a250c9e77a229b846aa2191ddd4f5f785cb8a7d179ecc134",
+        "library": "d4ac8a838462b47470ebd721ebc7efae687d59948c7d4c6932ffbe9a539cf09c"
+      },
+      "report_sha256": "a1ba0df1c29fb04c1b74b80d8b51ef8648f2ff4b3a5fd4e3c70dc629512ac1ac",
+      "harness_sha256": "57d02429734a5b6bd40d195e2ca7b7230c7e295c1809d73a147c14588c61b35a"
+    },
+    "linux_sdk_bridge_guarded_abi": {
+      "passed": true,
+      "groups": 65,
+      "report_sha256": "4ca20551b61d0cb841bd12d144a183a6adb410888040845f2ca540f97a014442",
+      "bridge_sha256": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+      "sdk_sha256": "2b523024189efff3491f3fbd1eff99109ad129fd59c30332835ebed635297f33",
+      "scope": "Protected allocations and mock callback fixtures; not arbitrary malformed raw Runtime callback storage."
+    },
+    "linux_old_new_player_and_save": {
+      "passed": true,
+      "checks": 2,
+      "rpc_calls": 108,
+      "hashes": {
+        "old": "0580b5da7902ea903eec86224023f85b6f4974a027b7aa7bee9f571af4ceeeed",
+        "current": "8e2ea85c86e8b1c91533306a03e417acde6ad6e4a45434db7f9f2b1dc988cf3c"
+      },
+      "report_sha256": "77f73ea8b968f0fa069568fa768ce64fe08b9c0ca45f061c0f3833925819a0fe",
+      "harness_sha256": "596b910a8a86cebf7c55dbbc763dd8ea928b1d39984005431d7653aee550860a",
+      "saved_payload_sha256": "35f48b2771504ee86ecdb40c17fb57df09e4695f92275072dabe0d2b9a286245"
+    },
+    "linux_preserved_208_native_aot": {
+      "passed": true,
+      "groups": 8,
+      "rpc_calls": 501,
+      "report_sha256": "913552219bdcb83a1fc64c4e291ab99cf9063851e42fb6c5d0450b90280050cf",
+      "hashes": {
+        "binary": "8e2ea85c86e8b1c91533306a03e417acde6ad6e4a45434db7f9f2b1dc988cf3c",
+        "legacy_binary": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "descriptor": "0cbe669b7f03770c442e34391b8a3ed61587fedf97ef79a04637034ba61dfb66"
+      }
+    },
+    "windows_sdk_bridge_guarded_abi": {
+      "passed": true,
+      "groups": 65,
+      "report_sha256": "ea27650e8bac7f16f9b4208b0d4eb469a51c850aa7de6593433fc72f1bc90731",
+      "bridge_sha256": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+      "sdk_sha256": "2b523024189efff3491f3fbd1eff99109ad129fd59c30332835ebed635297f33",
+      "scope": "Protected allocations and mock callback fixtures; not arbitrary malformed raw Runtime callback storage."
+    },
+    "windows_old_new_player_and_save": {
+      "passed": true,
+      "checks": 2,
+      "rpc_calls": 108,
+      "hashes": {
+        "old": "93e7070a6a47b88f780707100ec194ba16b32ce44de1c4f0672c09dded4a9be5",
+        "current": "b38ae19b62ad795de39a568fafa7b918453e696e1b3fdfe0d916657d1d450ef4"
+      },
+      "report_sha256": "83d1d96c6d6457276a937917330843d1df908ed4b2367f9ff085d4acb9f226cc",
+      "harness_sha256": "596b910a8a86cebf7c55dbbc763dd8ea928b1d39984005431d7653aee550860a",
+      "saved_payload_sha256": "33e17bab405cb51f6166282a04a769099ed1e1240d293b00a4856cb0b3ea96a5"
+    },
+    "windows_preserved_208_native_aot": {
+      "passed": true,
+      "groups": 8,
+      "rpc_calls": 501,
+      "report_sha256": "68ac82ba1983d9e1c7f5a3a5c09dbb7ce1cd0cb86356a594dcfb1bbb3094386d",
+      "hashes": {
+        "binary": "b38ae19b62ad795de39a568fafa7b918453e696e1b3fdfe0d916657d1d450ef4",
+        "legacy_binary": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+        "fixture": "2214c0c46802c6f3ee46400570e23709d774c867cd098c35290abb2f5622d19e",
+        "runner": "d1a6b79342a0d181be49a1355fb47c370d4fdb4dd998adbca96fa14792269953",
+        "project": "22943ab45c91eb6727f7a80bc91c7a415339e7a3200335589a04dee7d419560b",
+        "descriptor": "6171e977af09c95586e933f2a3b6fe212eb6692e221f805c9ba3c8d4ce485916"
+      }
+    },
+    "preserved_176_native_aot_tick_control": {
+      "passed": true,
+      "platforms": [
+        {
+          "platform": "linux",
+          "passed": true,
+          "descriptor_version": 1,
+          "fixture_type": "Poima.Tests.ManagedUiGame",
+          "services_version": 7,
+          "bounded_prefix_bytes": 176,
+          "descriptor_sha256": "83ae02a9965404d10ef9aa88bb6af512cbfb0cb7e76dc93bcd876556eac59cf0",
+          "library_sha256": "dd6d7f726d5d01e0c776d912f598e99520fc3b858014bfc7dafb8e38899e33ca",
+          "log_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef",
+          "exit_code": 0
+        },
+        {
+          "platform": "windows",
+          "passed": true,
+          "descriptor_version": 1,
+          "fixture_type": "Poima.Tests.ManagedUiGame",
+          "services_version": 7,
+          "bounded_prefix_bytes": 176,
+          "descriptor_sha256": "f4ef1ff96bb2208568a27359a7e7e450374bfbaa7277a82eb5fdd6e044dd8ee3",
+          "library_sha256": "1ed874b02ebc61734bc451c8ccd4119399af00a19ec78d4787e24b35ce34376b",
+          "log_sha256": "f053c263769029b7f517b8662e4433dca5357ab4cacaf337c8eb4a1cb010159a",
+          "exit_code": 0
+        }
+      ],
+      "report_sha256": "f18940877efd2ca3f240059eb083365ebc1c8580bce30a190c35ec89ef6b7b8e"
+    },
+    "linux_selected_checks": {
+      "passed": true,
+      "groups": 13,
+      "tests": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "runtime_animation_save_native",
+        "gameplay_compatibility_policy",
+        "world_session_native",
+        "runtime_native",
+        "runtime_save_native",
+        "runtime_animation_layers_native",
+        "runtime_observe_contract",
+        "runtime_save_contract",
+        "project_gameplay_contract",
+        "runtime_animation_layers_contract",
+        "runtime_contract"
+      ],
+      "report_sha256": "33f5d4508f5774d6ea7e0c37a352564a50b49046f766a9e583ebee0fa4cd80ed"
+    },
+    "linux_added_checks": {
+      "passed": true,
+      "groups": 2,
+      "tests": [
+        "profiler_contract",
+        "asset_references_contract"
+      ],
+      "report_sha256": "dd42709ac7f1dfc550fd9d965088e79593fb6f7f44a5e051d6089b4a2c46d193"
+    },
+    "linux_authoring_only_checks": {
+      "passed": true,
+      "groups": 5,
+      "tests": [
+        "authoring_core_conformance",
+        "authoring_contract_identity",
+        "gameplay_compatibility_policy",
+        "profiler_contract",
+        "asset_references_contract"
+      ],
+      "report_sha256": "560da85065e8bbc9fb62d06eca9919dd270c7129a0b2ade3a2d3fca4f35f5f1d"
+    },
+    "linux_authoring_only_world_session": {
+      "passed": true,
+      "exit_code": 0,
+      "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+    },
+    "windows_checks": {
+      "passed": true,
+      "groups": 13,
+      "checks": [
+        {
+          "name": "runtime",
+          "exit_code": 0,
+          "log_sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        },
+        {
+          "name": "world-session",
+          "exit_code": 0,
+          "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        {
+          "name": "gameplay-compatibility",
+          "exit_code": 0,
+          "log_sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        },
+        {
+          "name": "runtime-save",
+          "exit_code": 0,
+          "log_sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        {
+          "name": "runtime-animation-save",
+          "exit_code": 0,
+          "log_sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+        },
+        {
+          "name": "runtime-animation-layers",
+          "exit_code": 0,
+          "log_sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        },
+        {
+          "name": "runtime_contract",
+          "exit_code": 0,
+          "log_sha256": "3c7120ff9d0b9ab559ad315f0bbb79636d19b0f3feee9b89c9edf48176971183"
+        },
+        {
+          "name": "runtime_observe_contract",
+          "exit_code": 0,
+          "log_sha256": "15e3d5c929b80aaaa26df77ff4b03e0b46cd6a5a719e52fe5c5f0f91a2169139"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "log_sha256": "2a4b3c4c144abc268813ee0cb9b38833d3fe8eedb1a335d47c9e075061a78f6a"
+        },
+        {
+          "name": "runtime_animation_layers_contract",
+          "exit_code": 0,
+          "log_sha256": "9f681f7d8a54e81f458836d75eb94dc535a7676245e9462baa3d575f723b5932"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "log_sha256": "1f9b5a3faa818faa8a8d0f07ce75091828b681cee4c99562d5627a7d4c03c08d"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "log_sha256": "21d0932a57c54d954ec44ee8b270e62f80a4c8826cf4079377d632110002c5d2"
+        },
+        {
+          "name": "project_gameplay_contract",
+          "exit_code": 0,
+          "log_sha256": "029bf612910c4fd5ca7043ecde7cdc4b4e66c960f87b36bb461857bfef9aab48"
+        }
+      ],
+      "report_sha256": "b84e37ea1587df32a44f1feeb52891061c845ce6b4e6231e1e17ca1d037d9133"
+    },
+    "added_windows_tests.json": {
+      "passed": true,
+      "groups": 2,
+      "checks": [
+        {
+          "name": "references",
+          "exit_code": 0,
+          "log_sha256": "ffe7e4b4fdce7d98f3d8f4cc47430daefca40e2c3878c78ac3ef85c2353a0c2d"
+        },
+        {
+          "name": "profiler",
+          "exit_code": 0,
+          "log_sha256": "7e4524d7d04242660eb698ac8c67fe8cdffa088efd84c992b5d5465ae9c296c3"
+        }
+      ],
+      "report_sha256": "63a7da31643ff5eb14035da73ff0e66bb29a3a27048519fe3c8d575dadd0ced3"
+    },
+    "stable_authoring_gates": {
+      "passed": true,
+      "platforms": [
+        {
+          "name": "linux-runtime",
+          "passed": true,
+          "schema_revision": 55,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "8e2ea85c86e8b1c91533306a03e417acde6ad6e4a45434db7f9f2b1dc988cf3c"
+        },
+        {
+          "name": "windows-runtime",
+          "passed": true,
+          "schema_revision": 55,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "b38ae19b62ad795de39a568fafa7b918453e696e1b3fdfe0d916657d1d450ef4"
+        },
+        {
+          "name": "linux-authoring-only",
+          "passed": true,
+          "schema_revision": 55,
+          "protocol_version": 1,
+          "selected_request_findings": [],
+          "contract_identity_matches_release": true,
+          "process_exit_code": 0,
+          "binary_sha256": "ddd30423277cbd6a5cfb45b4d45cd65cfec1e9d98eaaae6b222a76ff8e1acf55"
+        }
+      ],
+      "historical_response_compatibility": true,
+      "canonical_response_self_compatibility": true,
+      "report_sha256": "e3116296136969b28f7158b7f7349d59a6f123b6bb29f418df315caef947e5bb"
+    }
+  },
+  "verified_behaviors": [
+    "Camera-free authored actors retain capsule movement, wall contact, yaw/pitch and grounded jump; supplied camera validation stays strict.",
+    "Compiled intents stage for one fixed Tick; omitted intents neutralize horizontal movement next Tick and caller Inputs contain no synthesized NPC commands.",
+    "Same-tick entity reads remain unchanged by staged intents and reflect existing caller/neutral preparation before physics.",
+    "Duplicate, dead and non-controller targets, malformed values, second-tick exceptions and caller conflicts reject with whole-batch observed-state restoration.",
+    "Caller controls own a target for the complete batch, including neutral inputs; independent player and NPC controls coexist.",
+    "Compatible CoreCLR reload preserves decision fields; failed reload leaves the module intact.",
+    "Fresh-process saves restore actual controller physics, angles and decision fields and reproduce subsequent movement.",
+    "Actual old/new player replays and complete saved payloads match; preserved baseline and masked-layer Native AOT artifacts still execute."
+  ],
+  "corrected_initial_findings": [
+    "The first managed build rejected a state field declared across partial structs; its declaration was moved into the existing GameContext field block.",
+    "The first character verifier treated load migration diagnostics as permanent state; assertions now check their exact operation-specific meaning while retaining full rollback comparisons.",
+    "The first Windows build invocation named a nonexistent desktop target; the corrected native target cohort completed.",
+    "An initial Windows AOT verifier invocation used a nonexistent binary path; the corrected current binary completed."
+  ],
+  "limits": [
+    "Small synthetic character fixture, not general navigation, acceleration, locomotion quality or game-scale throughput.",
+    "Character-only negotiation does not grant animation features; combined modules declare each requested feature.",
+    "Matched bridge/SDK cohorts only; arbitrary mixed old bridges with newer SDKs are unsupported.",
+    "Native AOT libraries remain pinned until process exit.",
+    "Character core fixture adds no physical-device, desktop-panel, console, browser or clean-machine distribution qualification.",
+    "Patrol Room is separately qualified in m2-patrol-game.json."
+  ]
+}

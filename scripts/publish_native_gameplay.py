@@ -42,13 +42,13 @@ def generated_requirements(path):
     if not isinstance(features, list) or not 1 <= len(features) <= 64 or any(type(v) is not str for v in features):
         raise ValueError('Generated gameplay features must be bounded text.')
     if len(set(features)) != len(features) or 'baseline_v7' not in features or any(
-            v not in ('baseline_v7', 'animation_inertial_v1', 'animation_layers_v1') for v in features):
+            v not in ('baseline_v7', 'animation_inertial_v1', 'animation_layers_v1', 'character_input_v1') for v in features):
         raise ValueError('Unsupported or duplicate generated gameplay feature.')
     if (data['call_version'], data['call_bytes'], data['services_version']) != (1, 80, 7):
         raise ValueError('Generated gameplay requires an unsupported ABI.')
     if 'animation_layers_v1' in features and 'animation_inertial_v1' not in features:
         raise ValueError('Generated layer gameplay also requires animation_inertial_v1.')
-    expected_bytes = 208 if 'animation_layers_v1' in features else 192 if 'animation_inertial_v1' in features else 176
+    expected_bytes = 216 if 'character_input_v1' in features else 208 if 'animation_layers_v1' in features else 192 if 'animation_inertial_v1' in features else 176
     if data['services_bytes'] != expected_bytes:
         raise ValueError('Generated gameplay prefix does not match its feature requirements.')
     return data

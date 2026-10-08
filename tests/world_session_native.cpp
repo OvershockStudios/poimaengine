@@ -5,6 +5,7 @@
 #include "poima/audio.hpp"
 #include <nlohmann/json.hpp>
 #include <chrono>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -383,6 +384,101 @@ void game_camera_regression(const fs::path& directory) {
     rejects([&]{(void)session.cameras(true);},"Stopped runtime exposed stale camera metadata.");
     rejects([&]{(void)session.runtime_camera_snapshot(camera);},"Stopped runtime exposed stale camera snapshot.");
 }
+void camera_free_controller_regression(const fs::path& directory) {
+    const auto path=directory/"camera-free-controller.json";
+    const std::string actor(32,'1'),player(32,'3'),camera(32,'4'),floor(32,'5'),runtime_id(32,'6');
+    const auto transform=[](std::array<double,3> position) {return Json{{"position",position},{"rotation",{0,0,0,1}},{"scale",{1,1,1}}};};
+    const auto controller=[](Json camera) {return Json{{"radius",.3},{"height",1.8},{"speed",4},{"jump_speed",5},{"camera",std::move(camera)}};};
+    poima::WorldSession session(path.string());
+    const auto schema=call(session,"world.describe").at("components").at("CharacterController");
+    check(schema.at("properties").at("camera")==Json{{"anyOf",Json::array({
+        Json{{"type","string"},{"pattern","^[0-9a-f]{32}$"}},Json{{"type","null"}}})}},
+        "Character camera discovery does not preserve the original identity or admit null.");
+    check(std::find(schema.at("required").begin(),schema.at("required").end(),Json("camera"))!=schema.at("required").end(),
+          "Character camera became an optional field.");
+    const auto fixture=Json::array({
+        {{"op","entity.create"},{"id",actor},{"name","Camera-free actor"}},
+        {{"op","component.set"},{"id",actor},{"type","Transform"},{"value",transform({0,1,0})}},
+        {{"op","component.set"},{"id",actor},{"type","CharacterController"},{"value",controller(nullptr)}},
+        {{"op","entity.create"},{"id",player},{"name","Interactive player"}},
+        {{"op","component.set"},{"id",player},{"type","Transform"},{"value",transform({3,1,0})}},
+        {{"op","component.set"},{"id",player},{"type","CharacterController"},{"value",controller(camera)}},
+        {{"op","entity.create"},{"id",camera},{"name","Player camera"},{"parent",player}},
+        {{"op","component.set"},{"id",camera},{"type","Transform"},{"value",transform({0,1.6,0})}},
+        {{"op","component.set"},{"id",camera},{"type","Camera"},{"value",{{"vertical_fov",60},{"near",.1},{"far",1000}}}},
+        {{"op","entity.create"},{"id",floor},{"name","Floor"}},
+        {{"op","component.set"},{"id",floor},{"type","Transform"},{"value",transform({0,-.5,0})}},
+        {{"op","component.set"},{"id",floor},{"type","BoxCollider"},{"value",{{"half_extents",{10,.5,10}},{"motion","static"},{"mass",1},{"friction",.5},{"restitution",0}}}}
+    });
+    call(session,"world.transact",{{"base_revision",0},{"request_id",std::string(32,'7')},{"ops",fixture}});
+    const auto selected=session.controllers(false);
+    check(selected.size()==1 && selected.front().id==player && selected.front().camera==camera,
+          "Interactive authoring enumeration selected a camera-free actor.");
+    check(call(session,"entity.get",{{"id",actor},{"component","CharacterController"}}).at("value").at("camera").is_null(),
+          "Camera-free authoring round trip changed the null camera.");
+    const auto original=read(path);
+    const auto history=call(session,"world.history"),inspected=call(session,"world.inspect");
+    std::size_t request=8;
+    for(const Json bad:{Json(""),Json("bad"),Json(std::string(32,'G')),Json(true),Json(0),Json::array(),Json::object()}) {
+        auto value=controller(bad);
+        const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","world.transact"},
+            {"params",{{"base_revision",1},{"request_id",std::string(31,'a')+"89abcde"[request++-8]},{"ops",Json::array({
+                {{"op","component.set"},{"id",actor},{"type","CharacterController"},{"value",value}}})}}}}.dump()));
+        check(response.contains("error") && response.at("error").at("code")==-32602,"Invalid supplied character camera was accepted.");
+    }
+    auto missing=controller(nullptr);missing.erase("camera");
+    const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","world.transact"},
+        {"params",{{"base_revision",1},{"request_id",std::string(32,'b')},{"ops",Json::array({
+            {{"op","component.set"},{"id",actor},{"type","CharacterController"},{"value",missing}}})}}}}.dump()));
+    check(response.contains("error") && response.at("error").at("code")==-32602,"Missing character camera was accepted.");
+    check(read(path)==original && call(session,"world.history")==history && call(session,"world.inspect")==inspected,
+          "Rejected camera fields changed authoring files/history/state.");
+    if(!poima::Runtime::available())return;
+    // Nullable camera does not relax supplied-camera existence, component or
+    // direct-child ownership. Each invalid graph uses an independent owner.
+    for(unsigned variant=0;variant<3;++variant) {
+        const auto invalid_path=directory/("invalid-character-camera-"+std::to_string(variant)+".json");
+        poima::WorldSession invalid(invalid_path.string());auto operations=fixture;
+        for(auto& operation:operations) {
+            if(operation.at("id")==player && operation.at("op")=="component.set" && operation.at("type")=="CharacterController") {
+                if(variant==0)operation["value"]["camera"]=std::string(32,'2'); // absent entity
+                if(variant==1)operation["value"]["camera"]=actor; // existing non-camera
+            }
+            if(variant==2 && operation.at("id")==camera && operation.at("op")=="entity.create")operation["parent"]=actor;
+        }
+        call(invalid,"world.transact",{{"base_revision",0},{"request_id",std::string(32,'7')},{"ops",operations}});
+        const auto bytes=read(invalid_path),history=call(invalid,"world.history").dump();
+        const auto rejected=Json::parse(invalid.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","runtime.start"},
+            {"params",{{"session_id",runtime_id},{"revision",1}}}}.dump()));
+        check(rejected.contains("error") && rejected.at("error").at("code")==-32602,
+              "Supplied character camera graph validation became permissive.");
+        check(!invalid.runtime_status().active && read(invalid_path)==bytes && call(invalid,"world.history").dump()==history,
+              "Rejected supplied character camera published a runtime or authoring changes.");
+    }
+    call(session,"runtime.start",{{"session_id",runtime_id},{"revision",1}});
+    const auto live=session.controllers(true);
+    check(live.size()==1 && live.front().id==player && live.front().camera==camera,
+          "Interactive runtime enumeration selected a camera-free actor.");
+    const auto entity=call(session,"runtime.entity",{{"session_id",runtime_id},{"id",actor}});
+    check(entity.at("is_character")==true,"Camera-free character disappeared from native runtime observation.");
+    for(const auto* mode:{"interactive","replay"}) {
+        Json params={{"session_id",runtime_id},{"request_id",mode==std::string("interactive") ? std::string(32,'c'):std::string(32,'d')},
+            {"expected_tick",0},{"camera",camera},{"controller",actor},{"mode",mode}};
+        if(mode==std::string("interactive"))params["max_frames"]=1;
+        else params["sequence"]=Json::array({{{"ticks",1}}});
+        const auto rejected=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","runtime.play"},{"params",params}}.dump()));
+        check(rejected.contains("error") && rejected.at("error").at("code")==-32004,
+              "Camera-free actor was accepted as an interactive/replay player.");
+        check(session.runtime_status().tick==0,"Rejected player selection advanced simulation.");
+    }
+    call(session,"world.transact",{{"base_revision",1},{"request_id",std::string(32,'e')},{"ops",Json::array({
+        {{"op","component.set"},{"id",player},{"type","CharacterController"},{"value",controller(nullptr)}}})}});
+    check(session.controllers(false).empty() && session.controllers(true).size()==1,
+          "Camera-free authored edit changed frozen interactive runtime metadata.");
+    call(session,"runtime.stop",{{"session_id",runtime_id}});
+    call(session,"runtime.start",{{"session_id",std::string(32,'f')},{"revision",2}});
+    check(session.controllers(true).empty(),"Restart retained an interactive binding for camera-free actors.");
+}
 void asset_reference_scope_regression(const fs::path& directory) {
     const auto path=directory/"asset-reference-authoring.json";
     const auto frozen=directory/"asset-reference-read-only.json";
@@ -506,7 +602,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==54,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==55,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
@@ -589,6 +685,7 @@ int main() {
         runtime_observation_scope_regression(directory);
         authored_preview_regression(directory);
         game_camera_regression(directory);
+        camera_free_controller_regression(directory);
         asset_reference_scope_regression(directory);
         fs::remove_all(directory);std::cout<<"Shared native session, external cameras, immutable snapshots, frozen runtime, undo/redo, transient transform preview and protocol adapter passed.\n";
     }catch(const std::exception& error) { fs::remove_all(directory);std::cerr<<error.what()<<'\n';return 1; }

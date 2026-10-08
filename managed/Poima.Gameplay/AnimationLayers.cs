@@ -60,6 +60,7 @@ public readonly unsafe ref partial struct GameContext
     public AnimationLayerState? GetAnimationLayer(EntityId entity,uint slot)
     {
         if(slot is <1 or >4)throw new ArgumentOutOfRangeException(nameof(slot));
+        RequireFeature(GameplayRequiredFeatures.MaskedAnimation,nameof(IMaskedAnimationGame));
         var extended=AnimationLayerServiceAbi.Validate(services);
         NativeAnimationLayerStateV1 result=new(){Version=1,Bytes=200};NativeError error=default;
         Check(extended->AnimationLayerGet(services->Context,&entity,slot,&result,&error),&error);
@@ -102,6 +103,7 @@ public readonly unsafe ref partial struct GameContext
         if(!double.IsFinite(speed) || speed<0 || speed>8)throw new ArgumentOutOfRangeException(nameof(speed));
         if(blendTicks>3600)throw new ArgumentOutOfRangeException(nameof(blendTicks));
         if(weightBlendTicks>3600)throw new ArgumentOutOfRangeException(nameof(weightBlendTicks));
+        RequireFeature(GameplayRequiredFeatures.MaskedAnimation,nameof(IMaskedAnimationGame));
         var extended=AnimationLayerServiceAbi.Validate(services);
         NativeAnimationLayerCommandV1 command=new(){Version=1,Bytes=80,TransitionMode=(uint)transitionMode,Slot=slot,Weight=weight,WeightBlendTicks=weightBlendTicks,
             Command=new(){Entity=entity,Clip=clip ?? -1,Time=time,Speed=speed,Loop=loop ? 1u : 0u,Playing=playing ? 1u : 0u,BlendTicks=blendTicks}};

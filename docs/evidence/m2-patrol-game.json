@@ -1,0 +1,229 @@
+{
+  "checkpoint": "0.0.61",
+  "passed": true,
+  "source_sha256": {
+    "examples/managed/PatrolGame/PatrolGame.cs": "226af00849bfb49b4e6b231316384112ee9f2fb4805256374b2d02e1abe636c2",
+    "examples/managed/PatrolGame/Poima.PatrolGame.csproj": "7145f02cbb1d355973bbc6c77ae3124571ae6880fa0be55b291a72f432daa5c1",
+    "examples/managed/PatrolGame/README.md": "67aced8b21df23990dbc57eba5137c60425ed8881fa6f7aa0246124ff253ab43",
+    "examples/managed/PatrolGame/run.py": "83269891fbf74b7d46143a55c36395abadbd73e303f0a7a8d1b7abdd38ec7428",
+    "examples/patrol-room.jsonl": "397c8a70b4f4e546f182dcbe344c760bca68119c478a834a1fdfb307f6d2164a",
+    "tests/patrol_game_contract.py": "c39db8b384d5c3057bdc1d8d0eeb438d82bf316a8ea6f12e116295bdb9371977"
+  },
+  "qualification": {
+    "linux_coreclr": {
+      "passed": true,
+      "groups": 4,
+      "rpc_calls": 1483,
+      "owners": [
+        {
+          "exit_code": 0,
+          "calls": 61
+        },
+        {
+          "exit_code": 0,
+          "calls": 1422
+        }
+      ],
+      "checks": [
+        "Camera-free guard physically patrols; a native ray hits authored cover and compiled vision does not acquire the stationary player.",
+        "Player noise enters investigation; compatible compiled reload preserves decisions; a fresh native owner restores exact remembered target/timers/poses/UI and reproduces 30 subsequent ticks.",
+        "Actual player movement exposes the player, causes visual chase, breaks sight behind solid cover, enters last-position investigation and reaches earned extraction; terminal guard intent is neutral.",
+        "A stationary exposed player is physically reached and caught; outcome remains terminal without resetting or teleporting either capsule."
+      ],
+      "hashes": {
+        "binary": "8e2ea85c86e8b1c91533306a03e417acde6ad6e4a45434db7f9f2b1dc988cf3c",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "71d9748cc6b362e3a6285bd0a3216fdb8b337974860d33505d31129d85535932"
+      },
+      "report_sha256": "98ec3c8e8c1b4284346f998c5fcd13516730b92aa8524d457b5a881188ec869d"
+    },
+    "windows_coreclr": {
+      "passed": true,
+      "groups": 4,
+      "rpc_calls": 1483,
+      "owners": [
+        {
+          "exit_code": 0,
+          "calls": 61
+        },
+        {
+          "exit_code": 0,
+          "calls": 1422
+        }
+      ],
+      "checks": [
+        "Camera-free guard physically patrols; a native ray hits authored cover and compiled vision does not acquire the stationary player.",
+        "Player noise enters investigation; compatible compiled reload preserves decisions; a fresh native owner restores exact remembered target/timers/poses/UI and reproduces 30 subsequent ticks.",
+        "Actual player movement exposes the player, causes visual chase, breaks sight behind solid cover, enters last-position investigation and reaches earned extraction; terminal guard intent is neutral.",
+        "A stationary exposed player is physically reached and caught; outcome remains terminal without resetting or teleporting either capsule."
+      ],
+      "hashes": {
+        "binary": "b38ae19b62ad795de39a568fafa7b918453e696e1b3fdfe0d916657d1d450ef4",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "bridge": "707390cd3c258933c7467e824f452e522fb8439a35a68ab92b0cd8cb44a0c5a7",
+        "assembly": "71d9748cc6b362e3a6285bd0a3216fdb8b337974860d33505d31129d85535932"
+      },
+      "report_sha256": "b8b7dcd77c6c23a8feea1a2d9ddd4c0d8bc55642a038b3a3ab7093afa2deeee5"
+    }
+  },
+  "rendered_checkpoints": [
+    {
+      "passed": true,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "groups": 4,
+      "rpc_calls": 1531,
+      "owners": [
+        {
+          "exit_code": 0,
+          "calls": 73
+        },
+        {
+          "exit_code": 0,
+          "calls": 1458
+        }
+      ],
+      "captures": [
+        {
+          "name": "patrol",
+          "tick": 540,
+          "mode": 0,
+          "outcome": 0,
+          "alerts": 0,
+          "seen": 0,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "8af4f75af55f09d7bc9e5eeb50735d5c5f9f463bb99111dcd72865b83de7e6b8"
+        },
+        {
+          "name": "chase",
+          "tick": 182,
+          "mode": 2,
+          "outcome": 0,
+          "alerts": 1,
+          "seen": 1,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "653996c1fe6b1112660d1d242fd994bd784ceb00c00201eb3cc5ab8d4b753637"
+        },
+        {
+          "name": "evaded",
+          "tick": 447,
+          "mode": 0,
+          "outcome": 1,
+          "alerts": 1,
+          "seen": 0,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "7190c5678b804cb34283313291860ee002696e5b494780eef9353e0e384cce54"
+        },
+        {
+          "name": "caught",
+          "tick": 441,
+          "mode": 2,
+          "outcome": 2,
+          "alerts": 1,
+          "seen": 1,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "0922c239c92c2b91dfa6eb7f8958a138e08da879460c537736e7b67a5a95dc25"
+        }
+      ],
+      "report_sha256": "f131e6b627173d4b2785e62c960a96306b469b6581c39eed93ac64f17a12cb93"
+    },
+    {
+      "passed": true,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "groups": 4,
+      "rpc_calls": 1531,
+      "owners": [
+        {
+          "exit_code": 0,
+          "calls": 73
+        },
+        {
+          "exit_code": 0,
+          "calls": 1458
+        }
+      ],
+      "captures": [
+        {
+          "name": "patrol",
+          "tick": 540,
+          "mode": 0,
+          "outcome": 0,
+          "alerts": 0,
+          "seen": 0,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "fc55b77ed114baa5dec066f2ca14b3d518716431b00bbff455ed0bff9d4d3593"
+        },
+        {
+          "name": "chase",
+          "tick": 182,
+          "mode": 2,
+          "outcome": 0,
+          "alerts": 1,
+          "seen": 1,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "9ee5f06d0f1373a5c83ec9806b6f08c2569232d0bd07e46b9d35280e9c628cdc"
+        },
+        {
+          "name": "evaded",
+          "tick": 447,
+          "mode": 0,
+          "outcome": 1,
+          "alerts": 1,
+          "seen": 0,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "3729c9f1fa520c6cfaf11fb6244b7655d17010e4df5ba373edd7e8a6287003c6"
+        },
+        {
+          "name": "caught",
+          "tick": 441,
+          "mode": 2,
+          "outcome": 2,
+          "alerts": 1,
+          "seen": 1,
+          "width": 1280,
+          "height": 720,
+          "samples": 1,
+          "nvrhi_errors": 0,
+          "bmp_sha256": "4d643a504b01d91226c134e680f3f4c1b3eae7ac659edf68097d5e82867322db"
+        }
+      ],
+      "report_sha256": "676334ed0ace5121da6878c0f993e1fad80e422849785a2a94482be8543469ae"
+    }
+  ],
+  "public_image": {
+    "file": "patrol-chase.png",
+    "sha256": "a3fc0f13f7996cd3477363ccea1494c6bc3ca429e526f2a0639bcebd316bf3be",
+    "source": "NVIDIA chase renderer readback converted losslessly from BMP to PNG"
+  },
+  "limits": [
+    "Authored four-waypoint training room with direct steering, not navmesh or general obstacle avoidance.",
+    "Primitive geometry, no skeletal animation, physical-device, game-scale performance or shipping-platform qualification.",
+    "Rendered readbacks are not OS screenshots or real-time authoring videos.",
+    "Patrol example uses CoreCLR; Native AOT qualification belongs to the separate compiled-character fixture."
+  ],
+  "corrected_initial_findings": [
+    "UI-bearing save verifier now supplies exact control/UI revision guards.",
+    "The escape verifier retreats immediately after genuine visual acquisition; it no longer unnecessarily approaches the pursuing guard. Game logic and authored balance were unchanged."
+  ]
+}

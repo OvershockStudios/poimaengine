@@ -54,7 +54,7 @@ void policy() {
     check(compatibility_error(baseline,available_contract()).empty(),"Collection capability broke old scalar game.");
     check(collections.services_version==7 && collections.services_bytes==176,"Collection feature changed baseline ABI.");
     const auto capable=available_contract();
-    check(capable.services_version==7 && capable.services_bytes==208 &&
+    check(capable.services_version==7 && capable.services_bytes==216 &&
         std::find(capable.features.begin(),capable.features.end(),animation_feature)!=capable.features.end() &&
         std::find(capable.features.begin(),capable.features.end(),"animation_layers_v1")!=capable.features.end(),"Runtime did not declare the actual layered animation extent.");
     auto animation=baseline;animation.services_bytes=192;animation.features.push_back(animation_feature);
@@ -81,6 +81,30 @@ void policy() {
     check(!compatibility_error(layers,without_layers).empty(),"Opaque large extent granted an unnamed layer feature.");
     auto appended=capable;appended.services_bytes=256;appended.features.push_back("future_available_v1");
     check(compatibility_error(layers,appended).empty(),"Larger same-epoch host rejected a known layered prefix.");
+    check(std::find(capable.features.begin(),capable.features.end(),character_input_feature)!=capable.features.end(),"Runtime omitted independent character input capability.");
+    for(unsigned animation_kind:{0u,1u,2u}) {
+        auto actor=baseline;actor.services_bytes=216;actor.features.push_back(character_input_feature);
+        if(animation_kind)actor.features.push_back(animation_feature);
+        if(animation_kind==2)actor.features.push_back(animation_layers_feature);
+        check(compatibility_error(actor,capable).empty(),"Valid character/animation feature combination rejected.");
+        auto character_only=baseline;character_only.services_bytes=216;character_only.features.push_back(character_input_feature);
+        check(compatibility_error(actor,character_only).empty()==(animation_kind==0),"Character allocation granted undeclared animation features.");
+        for(unsigned size:{176u,192u,208u,215u,217u,240u}) {
+            auto wrong=actor;wrong.services_bytes=size;
+            check(!compatibility_error(wrong,capable).empty(),"Character requirement accepted wrong prefix extent.");
+        }
+        auto no_character=capable;std::erase(no_character.features,std::string(character_input_feature));
+        check(!compatibility_error(actor,no_character).empty(),"Opaque extent granted unnamed character input.");
+        auto old_host=capable;old_host.services_bytes=208;std::erase(old_host.features,std::string(character_input_feature));
+        check(!compatibility_error(actor,old_host).empty(),"Character game accepted by old layered host.");
+    }
+    auto invalid_character_host=capable;invalid_character_host.services_bytes=208;
+    check(!compatibility_error(baseline,invalid_character_host).empty(),"Host declared character capability without allocated tail.");
+    auto duplicate_character=baseline;duplicate_character.services_bytes=216;duplicate_character.features.push_back(character_input_feature);duplicate_character.features.push_back(character_input_feature);
+    check(!compatibility_error(duplicate_character,capable).empty(),"Duplicate character feature accepted.");
+    auto layers_character_without_inertia=baseline;layers_character_without_inertia.services_bytes=216;
+    layers_character_without_inertia.features.push_back(character_input_feature);layers_character_without_inertia.features.push_back(animation_layers_feature);
+    check(!compatibility_error(layers_character_without_inertia,capable).empty(),"Character extent bypassed layer dependency.");
     Host context;auto source=host(context);const auto copy=source;
     auto view=baseline_view(source.services);check(view.version==7 && view.bytes==176 && view.context==&context && view.control_request==source.services.control_request,"Baseline view lost prefix semantics.");
     auto expected=source.services;expected.bytes=176;check(std::memcmp(&view,&expected,176)==0,"Baseline view changed callback prefix.");

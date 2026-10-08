@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **0.0.60.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.61.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -44,7 +44,7 @@ Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WOR
 | Area | Implemented foundations |
 | --- | --- |
 | Graphics | Vulkan PBR, HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
-| Gameplay | Fixed-step Jolt physics, capsule movement, static triangle-mesh collision, raycasts, root-prop spawning and [crossfades, inertial transitions and masked animation layers](docs/RUNTIME_ANIMATION.md). |
+| Gameplay | Fixed-step Jolt physics, player and [compiled NPC character controls](docs/CHARACTER_INPUT.md), static triangle-mesh collision, raycasts, root-prop spawning and [crossfades, inertial transitions and masked animation layers](docs/RUNTIME_ANIMATION.md). |
 | C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. [Opt-in C# inertial transitions and masked layers](docs/MANAGED_GAMEPLAY.md#control-masked-layers-from-c) pass Windows/Linux CoreCLR and Native AOT fixtures while preserving older animation calls. Bounded collections have Windows/Linux CoreCLR development qualification and a relocated Windows Native AOT fixture; explicit scalar save upgrades retain separate Linux qualification. |
 | Player systems | Keyboard, mouse and gamepad profiles; typed [HUD/menu layout and styling](docs/GAME_UI.md#authored-layout-and-styling), native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
 | Content and tools | glTF/GLB, PNG/JPEG and WAV import; project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |
@@ -88,6 +88,8 @@ The `runtime-headless` preset adds simulation and downloads pinned dependencies.
 Follow the [Windows editor build and launch guide](docs/DESKTOP_EDITOR.md#build-and-launch). The documented path builds from Linux/WSL and uses Windows Vulkan drivers. The published editor includes its .NET runtime.
 
 [Collection Room](examples/collection-game) is a small first-person C# game with movement, collectible interactions, native UI and checkpoint saves. Its headless verification runs actual gameplay and checks save continuation in a fresh process. It includes CoreCLR and Native AOT instructions.
+
+[Patrol Room](examples/managed/PatrolGame) demonstrates compiled NPC decisions: a guard patrols, investigates noise, pursues a visible player and loses sight behind solid cover. Native-input checks exercise escape, capture, reload and checkpoint continuation. It uses an authored route and direct steering; arbitrary obstacle pathfinding remains separate work.
 
 Recorded qualification covers Windows graphics/editor workflows and Linux headless workflows. Linux desktop rendering, clean-machine distribution and consoles remain unqualified; physical input testing is separate from scripted and virtual-device checks.
 

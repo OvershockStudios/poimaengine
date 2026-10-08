@@ -362,7 +362,7 @@ void validate_component(const std::string& type, const Json& value) {
     }
     if (type == "CharacterController") {
         fields(value, {"radius","height","speed","jump_speed","camera"}, {"radius","height","speed","jump_speed","camera"});
-        identifier(value.at("camera"));
+        if(!value.at("camera").is_null())identifier(value.at("camera"));
         for(const auto* key:{"radius","height","speed","jump_speed"}) require(value.at(key).is_number() && std::isfinite(value.at(key).get<double>()),"Invalid controller parameter.");
         require(value.at("radius")>=0.05 && value.at("radius")<=2 && value.at("height")>2*value.at("radius").get<double>() && value.at("height")<=4,"Invalid capsule dimensions.");
         require(value.at("speed")>0 && value.at("speed")<=30 && value.at("jump_speed")>=0 && value.at("jump_speed")<=20,"Controller speed out of range.");
@@ -416,7 +416,7 @@ Json describe() {
         {"friction",{{"type","number"},{"minimum",0},{"maximum",2}}}, {"restitution",{{"type","number"},{"minimum",0},{"maximum",1}}}}, {"half_extents","motion","mass","friction","restitution"});
     const Json character = object_schema({{"radius",{{"type","number"},{"minimum",0.05},{"maximum",2}}},
         {"height",{{"type","number"},{"maximum",4}}}, {"speed",{{"type","number"},{"exclusiveMinimum",0},{"maximum",30}}},
-        {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",id}}, {"radius","height","speed","jump_speed","camera"});
+        {"jump_speed",{{"type","number"},{"minimum",0},{"maximum",20}}}, {"camera",parent}}, {"radius","height","speed","jump_speed","camera"});
     const Json asset_id={{"type","string"},{"pattern","^[0-9a-f]{64}$"}};
     const Json unit={{"type","number"},{"minimum",0},{"maximum",1}};
     const Json static_mesh=object_schema({{"asset",asset_id},{"primitive",{{"type","integer"},{"minimum",0},{"maximum",9999}}},{"visible",{{"type","boolean"}}}}, {"asset","primitive","visible"});
@@ -502,7 +502,7 @@ Json describe() {
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 54}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 55}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -539,7 +539,7 @@ Json describe() {
             "Capture is a bounded forward preview, not a playable runtime or advanced renderer.",
             "Custom components use registered stable scalar/collection schemas and game:<type-id> keys; collection capacities count toward the 512-byte component budget. Prefabs and keep_world reparenting remain unsupported.",
             "Simulation is optional; runtime.start freezes authored state at a revision.",
-            "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; controller camera must be a direct child.",
+            "Dynamic/kinematic bodies and controllers must be roots; colliders reject shear; a supplied controller camera must be a direct child; camera:null creates a camera-free actor.",
             "Character height must exceed twice radius; runtime is single-threaded fixed 60 Hz."}}};
     auto& methods=result["methods"];
     methods["world.history"]=object_schema(Json::object());
@@ -1347,10 +1347,12 @@ public:
         std::vector<WorldControllerInfo> result;
         if(live) {
             require(bool(runtime_),"No runtime is active for controller enumeration.",-32030);
-            for(const auto& entity:runtime_definition_.entities)if(entity.character)result.push_back({entity.id,entity.character->camera});
+            for(const auto& entity:runtime_definition_.entities)if(entity.character && !entity.character->camera.empty())result.push_back({entity.id,entity.character->camera});
         } else {
-            for(const auto& [id,entity]:doc_.at("entities").items())if(entity.at("components").contains("CharacterController"))
-                result.push_back({id,entity.at("components").at("CharacterController").at("camera").get<std::string>()});
+            for(const auto& [id,entity]:doc_.at("entities").items())if(entity.at("components").contains("CharacterController")) {
+                const auto& camera=entity.at("components").at("CharacterController").at("camera");
+                if(!camera.is_null())result.push_back({id,camera.get<std::string>()});
+            }
         }
         std::sort(result.begin(),result.end(),[](const auto& a,const auto& b){return a.id<b.id;});return result;
     }
@@ -2378,7 +2380,7 @@ public:
                 }
                 value.mesh_collider=std::move(collider);
             }
-            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera")}; }
+            if(components.contains("CharacterController")) { const auto& c=components.at("CharacterController"); value.character=CharacterController{c.at("radius"),c.at("height"),c.at("speed"),c.at("jump_speed"),c.at("camera").is_null() ? std::string{} : c.at("camera").get<std::string>()}; }
             result.entities.push_back(std::move(value));
         }
         if(!animation_only && !audio_only) {
@@ -2598,8 +2600,8 @@ public:
         require(options.gamepad_selection.mode=="disabled" || options.input_profile->gamepad.has_value(),"Gamepad selection requires a v2 profile; copy a v1 profile to a new v2 destination first.");
         input_info["format"]=options.input_profile->gamepad ? "poima.input.v2" : "poima.input.v1";
         const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
-            [&](const auto& e){return e.id==options.controller && e.character.has_value();});
-        require(options.controller.empty() || controller!=runtime_definition_.entities.end(),"Player requires a valid CharacterController when controller is supplied.",-32004);
+            [&](const auto& e){return e.id==options.controller && e.character.has_value() && !e.character->camera.empty();});
+        require(options.controller.empty() || controller!=runtime_definition_.entities.end(),"Player requires a camera-bound CharacterController when controller is supplied.",-32004);
         try { runtime_->snapshot(options.camera); }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         if(options.replay) {
@@ -2636,7 +2638,8 @@ public:
             std::string identity() const override { return owner.runtime_id_; }
             std::uint64_t tick() const override { return owner.runtime_->inspect().tick; }
             bool controller_valid(const std::string& id) const override {
-                try { return owner.runtime_->entity(id).is_character; }catch(const std::exception&) { return false; }
+                return std::any_of(owner.runtime_definition_.entities.begin(),owner.runtime_definition_.entities.end(),
+                    [&](const auto& entity){return entity.id==id && entity.character && !entity.character->camera.empty();});
             }
             SceneSnapshot snapshot(const std::string& camera) const override { return owner.runtime_->snapshot(camera); }
             PlayerAudioState audio_state(const std::string& listener) const override {

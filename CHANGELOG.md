@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.61
+
+- Drive camera-free characters from compiled C# with `ICharacterInputGame` and `SetCharacterInput`. NPC movement uses native capsule physics, while interactive players retain their camera bindings. [Character controls](docs/CHARACTER_INPUT.md).
+- Stage movement, look and jump per fixed tick, reject caller/NPC control conflicts and restore the whole batch after failed updates. Saves retain actual character and gameplay state rather than queued commands.
+- Add the independent `character_input_v1` service extension while preserving older gameplay profiles. Windows and Linux CoreCLR, Native AOT, guarded ABI and preserved-artifact checks pass. [Evidence](docs/evidence/m2-character-input.json).
+- Add [Patrol Room](examples/managed/PatrolGame), a compiled guard encounter with vision occlusion, investigation, pursuit, extraction and checkpoint continuation. Native-input checks pass on both OSes, with rendered checkpoints on both laptop GPUs. [Evidence](docs/evidence/m2-patrol-game.json).
+
 ## 0.0.60
 
 - Find the authored entity, template and material-slot fields using a cooked asset, or list one owner's references. Typed model/image/audio edges exclude unrelated values and retain distinct repeated uses. [API](docs/ASSET_REFERENCES.md).

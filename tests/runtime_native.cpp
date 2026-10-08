@@ -187,10 +187,55 @@ void equal(const RuntimeEntityState& a,const RuntimeEntityState& b) {
             <<" / "<<b.world[12]<<','<<b.world[13]<<','<<b.world[14]<<" ground "<<a.ground<<" / "<<b.ground<<'\n';
     require(a.world==b.world && a.velocity==b.velocity && a.ground==b.ground && a.yaw==b.yaw && a.pitch==b.pitch,"Same-build deterministic state differs.");
 }
+void camera_free_characters() {
+    auto definition=fixture();
+    for(auto& entity:definition.entities)if(entity.character)entity.character->camera.clear();
+    Runtime free(definition),camera_bound(fixture());
+    free.step(120,{});camera_bound.step(120,{});equal(free.entity("player"),camera_bound.entity("player"));
+    RuntimeInput walk;walk.entity="player";walk.move={0,1};
+    free.step(90,{walk});for(unsigned i=0;i<90;++i)camera_bound.step(1,{walk});
+    equal(free.entity("player"),camera_bound.entity("player"));
+    require(free.entity("player").world[14]>-2.5 && free.entity("player").world[14]<-2.3,"Camera-free actor passed through wall.");
+    RuntimeInput jump;jump.entity="player";jump.jump=true;
+    free.step(10,{jump});camera_bound.step(1,{jump});camera_bound.step(9,{});
+    equal(free.entity("player"),camera_bound.entity("player"));require(free.entity("player").world[13]>.5,"Camera-free actor did not jump.");
+    free.step(120,{});camera_bound.step(120,{});
+    RuntimeInput look;look.entity="player";look.look={90,180};
+    free.step(4,{look});camera_bound.step(1,{look});camera_bound.step(3,{});
+    equal(free.entity("player"),camera_bound.entity("player"));
+    require(free.entity("player").yaw==90 && free.entity("player").pitch==85,"Camera-free actor lost look or clamp semantics.");
+    free.step(6,{walk});camera_bound.step(6,{walk});equal(free.entity("player"),camera_bound.entity("player"));
+    require(std::abs(free.entity("player").velocity[0])>1,"Camera-free actor did not move using heading.");
+    free.step(1,{});camera_bound.step(1,{});equal(free.entity("player"),camera_bound.entity("player"));
+    require(std::abs(free.entity("player").velocity[0])<1e-6 && std::abs(free.entity("player").velocity[2])<1e-6,"Neutral actor retained horizontal input.");
+    const std::string hash(64,'b');const auto saved=free.save_snapshot(hash);
+    auto restored=Runtime::from_snapshot(definition,hash,saved);
+    equal(free.entity("player"),restored->entity("player"));
+    RuntimeInput resume;resume.entity="player";resume.move={.25f,.75f};resume.look={-15,-10};
+    free.step(12,{resume});restored->step(12,{resume});
+    require(free.save_snapshot(hash)==restored->save_snapshot(hash),"Camera-free fresh restore continuation differs.");
+    const auto before=free.save_snapshot(hash);bool rejected=false;
+    try {free.step(4,{look},{},{},{},{{2,1,{}, {"no-spawn"}}});}catch(const std::exception&) {rejected=true;}
+    require(rejected && free.save_snapshot(hash)==before,"Camera-free later failure did not restore yaw/physics/support.");
+    // Two autonomous actors share no camera, while a separate player retains
+    // its bound camera. Neutral actors must not inherit caller movement.
+    auto multi=fixture();RuntimeEntityDefinition npc;npc.id="npc";npc.transform.position={6,1,2};npc.character=CharacterController{};
+    multi.entities.push_back(npc);auto another=npc;another.id="npc2";another.transform.position={-6,1,2};multi.entities.push_back(another);
+    Runtime independent(multi);independent.step(120,{});
+    const auto npc_pose=independent.entity("npc").world,npc2_pose=independent.entity("npc2").world;
+    independent.step(10,{walk});
+    require(independent.entity("npc").world==npc_pose && independent.entity("npc2").world==npc2_pose,"Camera-free actors inherited player input.");
+    auto malformed=fixture();for(auto& entity:malformed.entities)if(entity.id=="camera")entity.parent.clear();
+    rejected=false;try {Runtime invalid(malformed);}catch(const std::exception&) {rejected=true;}
+    require(rejected,"Supplied non-child camera accepted after optional camera change.");
+    malformed=fixture();for(auto& entity:malformed.entities)if(entity.id=="camera")entity.camera.reset();
+    rejected=false;try {Runtime invalid(malformed);}catch(const std::exception&) {rejected=true;}
+    require(rejected,"Supplied non-camera entity accepted.");
+}
 }
 int main() {
     try {
-        lifecycle();scheduled_lifecycle();scheduled_character_support();
+        lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();
         const auto definition=fixture(); Runtime a(definition), b(definition);
         {
             RuntimeDefinition source;source.world_id="template-only";

@@ -160,6 +160,7 @@ struct Runtime::Impl {
         game_spawns.clear();game_despawns.clear();game_structure_calls=scheduled_structure_calls=0;
     }
     std::vector<AnimationCommand> game_animation_commands;
+    std::vector<RuntimeInput> game_character_inputs;
     SoundState sounds;
     std::vector<AcousticGeometry> acoustic_geometry;
     std::uint32_t game_sound_calls=0;
@@ -205,6 +206,7 @@ struct Runtime::Impl {
             }
             if (auto* controller=registry.try_get<Controller>(e)) {
                 set_pose(node,controller->character->GetPosition(),controller->character->GetRotation());
+                if(controller->settings.camera.empty())continue;
                 auto& camera=registry.get<Node>(find(controller->settings.camera));
                 const auto& q=camera.initial.rotation;
                 const auto rotation=JPH::Quat(static_cast<float>(q[0]),static_cast<float>(q[1]),static_cast<float>(q[2]),static_cast<float>(q[3])).Normalized()
@@ -360,9 +362,11 @@ struct Runtime::Impl {
                     std::isfinite(settings.height) && settings.height>2*settings.radius && settings.height<=4,"Invalid character capsule dimensions.");
                 require(std::isfinite(settings.speed) && settings.speed>0 && settings.speed<=30 &&
                     std::isfinite(settings.jump_speed) && settings.jump_speed>=0 && settings.jump_speed<=20,"Invalid controller speed.");
-                const auto camera=find(settings.camera);
-                require(registry.all_of<RuntimeCamera>(camera) && registry.get<Node>(camera).parent==d.id,"Character camera must be a direct child with Camera component.");
-                require(controlled_cameras.insert(settings.camera).second,"A camera cannot be controlled by multiple characters.");
+                if(!settings.camera.empty()) {
+                    const auto camera=find(settings.camera);
+                    require(registry.all_of<RuntimeCamera>(camera) && registry.get<Node>(camera).parent==d.id,"Character camera must be a direct child with Camera component.");
+                    require(controlled_cameras.insert(settings.camera).second,"A camera cannot be controlled by multiple characters.");
+                }
                 auto capsule=JPH::CapsuleShapeSettings(settings.height/2-settings.radius,settings.radius).Create();
                 require(!capsule.HasError(),"Jolt capsule shape creation failed.");
                 auto shape=JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0,settings.height/2,0),JPH::Quat::sIdentity(),capsule.Get()).Create();
@@ -684,6 +688,36 @@ struct Runtime::Impl {
             static_cast<Impl*>(context)->stage_animation(source->command,static_cast<AnimationTransitionMode>(source->transition_mode),source->slot,source->weight,source->weight_blend_ticks);
         });
     }
+    static int32_t POIMA_CALL set_character_input(void* context,const PoimaGameCharacterInputV1* source,PoimaGameError* error) {
+        return callback(error,[&] {
+            require(context && source,"Character input command is absent.");
+            require(source->version==1 && source->bytes==sizeof(PoimaGameCharacterInputV1),"Character input requires version 1 and exactly 48 bytes.");
+            require(source->reserved==0 && (source->flags&~1u)==0,"Invalid character input flags/reserved encoding.");
+            for(float value:source->move)require(std::isfinite(value) && std::abs(value)<=1,"Character move input must be in [-1,1].");
+            for(float value:source->look)require(std::isfinite(value) && std::abs(value)<=180,"Character look input must be in [-180,180] degrees.");
+            auto& self=*static_cast<Impl*>(context);self.require_tick();
+            const auto id=gameplay_id(source->entity);const auto entity=self.find(id);
+            require(self.registry.all_of<Controller>(entity),"Character input target needs a live CharacterController.");
+            require(self.game_character_inputs.size()<32,"Gameplay exceeded 32 character input commands in one tick.");
+            require(std::none_of(self.game_character_inputs.begin(),self.game_character_inputs.end(),[&](const auto& item){return item.entity==id;}),"Duplicate gameplay character input target in one tick.");
+            RuntimeInput command;command.entity=id;std::copy_n(source->move,2,command.move.begin());std::copy_n(source->look,2,command.look.begin());command.jump=(source->flags&1u)!=0;
+            self.game_character_inputs.push_back(std::move(command));
+        });
+    }
+    void apply_character_input(entt::entity entity,const RuntimeInput& input,bool edges) {
+        auto& controller=registry.get<Controller>(entity);
+        if(edges) {
+            controller.yaw=std::remainder(controller.yaw+input.look[0],360.0);controller.pitch=std::clamp(controller.pitch+input.look[1],-85.0,85.0);
+            // Reapplying an unchanged rotation invalidates Jolt contact caches.
+            if(input.look[0]!=0)controller.character->SetRotation(JPH::Quat::sRotation(JPH::Vec3::sAxisY(),static_cast<float>(controller.yaw*radians)));
+        }
+        JPH::Vec3 movement(input.move[0],0,-input.move[1]);
+        if(movement.LengthSq()>1)movement=movement.Normalized();
+        const auto desired=controller.character->GetRotation()*movement*controller.settings.speed;
+        float y=controller.character->GetLinearVelocity().GetY();
+        if(edges && input.jump && controller.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround)y=controller.settings.jump_speed;
+        controller.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
+    }
     std::uint64_t play_sound(const std::string& emitter,float gain) {
         auto e=find(emitter);require(registry.all_of<AudioEmitter>(e),"Sound target needs an AudioEmitter.");
         return sounds.play(emitter,registry.get<AudioEmitter>(e),tick,gain);
@@ -882,24 +916,11 @@ struct Runtime::Impl {
             for(auto& [e,motion]:prepared)registry.get<Body>(e).target=std::move(motion);
             for(std::uint32_t frame=0;frame<count;++frame) {
                 profiling::Scope tick_profile("runtime.tick",static_cast<std::int64_t>(tick));
+                game_character_inputs.clear();
                 for(auto e:topology->characters) {
-                    auto& c=registry.get<Controller>(e);
                     const RuntimeInput neutral;
                     const auto& input=controls.contains(e) ? *controls.at(e) : neutral;
-                    if(frame==0) {
-                        c.yaw=std::remainder(c.yaw+input.look[0],360.0); c.pitch=std::clamp(c.pitch+input.look[1],-85.0,85.0);
-                        // Reapplying an unchanged body rotation invalidates Jolt
-                        // contact caches and makes request chunking affect motion.
-                        if(input.look[0]!=0) c.character->SetRotation(JPH::Quat::sRotation(JPH::Vec3::sAxisY(),static_cast<float>(c.yaw*radians)));
-                    }
-                    JPH::Vec3 movement(input.move[0],0,-input.move[1]);
-                    if(movement.LengthSq()>1) movement=movement.Normalized();
-                    // Use Jolt's deterministic quaternion/SIMD math rather than
-                    // platform libm trigonometry in the control hot loop.
-                    const auto desired=c.character->GetRotation()*movement*c.settings.speed;
-                    float y=c.character->GetLinearVelocity().GetY();
-                    if(frame==0 && input.jump && c.character->GetGroundState()==JPH::CharacterBase::EGroundState::OnGround) y=c.settings.jump_speed;
-                    c.character->SetLinearVelocity(JPH::Vec3(desired.GetX(),y,desired.GetZ()));
+                    apply_character_input(e,input,frame==0);
                 }
                 if(frame==0)for(const auto& command:sound_commands) {
                     if(command.stop)sounds.stop(command.voice,tick);else (void)play_sound(command.emitter,command.gain);
@@ -921,7 +942,7 @@ struct Runtime::Impl {
                     clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -970,6 +991,15 @@ struct Runtime::Impl {
                         registry.get<Body>(e).target=std::move(motion);
                     }
                 }
+                // Caller input owns its character for every tick in this batch,
+                // even when neutral. Apply compiled intents only after all
+                // callback/candidate preparation; reads inside Tick are unchanged.
+                for(const auto& input:game_character_inputs) {
+                    const auto entity=find(input.entity);
+                    require(!controls.contains(entity),"Gameplay and caller targeted the same character in one tick.");
+                }
+                for(const auto& input:game_character_inputs)apply_character_input(find(input.entity),input,true);
+                game_character_inputs.clear();
                 game_commands.clear();clear_structure_commands();
                 for(auto e:topology->kinematics) {
                     auto& body=registry.get<Body>(e);
@@ -1007,7 +1037,7 @@ struct Runtime::Impl {
             sounds=std::move(sound_checkpoint);
             if(game)game->state().swap(game_checkpoint);
             game_commands.clear();clear_structure_commands();
-            game_animation_commands.clear();
+            game_animation_commands.clear();game_character_inputs.clear();
             checkpoint.Rewind();
             require(physics.RestoreState(checkpoint),"Internal physics rollback failed.");
             for(const auto& saved:angles) {
