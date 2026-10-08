@@ -1,0 +1,81 @@
+# Road to Alpha 1 — 0.1.0
+
+Alpha 1 is the first usable release for building small 3D single-player games
+with agents, with a desktop editor available for inspection and manual work.
+It is a milestone toward the full engine, not completion of its graphics,
+simulation or platform ambitions. Version numbers count development checkpoints;
+they do not measure completion.
+
+## Release gates
+
+| Gate | Current evidence | What must be closed for Alpha 1 |
+| --- | --- | --- |
+| Agent authoring | Three recorded Codex/Claude game exercises; focused discovery, transactions, revision guards, retries, observations and replay. [Workflows](AGENT_CLIENTS.md). | Repeat complete create → import → author → compile → playtest → repair → export workflows from fresh projects. Report failed attempts and recovery, not only successful final runs. Every operation used must have documented machine-readable results and actionable errors. |
+| Contracts and persistence | Selected [authoring-core v1](AUTHORING_API_COMPATIBILITY.md) is stable; C# components, reload, saves and bounded upgrades have recorded qualification. | Publish the supported alpha gameplay/content/save boundary, compatibility policy and runnable examples. Exercise supported schema upgrades on real games and retained saves; clearly identify experimental APIs. Alpha does not freeze every engine API. |
+| Content and characters | glTF/GLB, images, WAV, cooked assets, provenance, crossfades, inertial transitions and masked layers work within documented limits. | Qualify native FBX character intake and separate compatible animation clips, then use an imported animated character in a compiled game. Verify source-independent packages and export. Unsupported rigs/materials must produce specific diagnostics. |
+| Playable systems | Physics, character controls, static navigation, keyboard/mouse/gamepad profiles, styled game UI, audio, checkpoints and compiled callbacks exist. | Exercise these together in a complete small game with menus, settings, save/load and game completion. Close blocking focus, input, text/layout and lifecycle defects; verify physical mouse/keyboard/controller interaction on Windows. |
+| Observation and editor | Vulkan captures, CPU/GPU profiling, independent Scene/Game panels and typed inspection have evidence. | Keep visual observations and semantic state aligned through edits, Play, reload and recovery. Close blocking scene selection/navigation/docking defects; provide legible defaults and the agreed wine branding. Editor polish must support the workflow without replacing core work. |
+| Performance and delivery | Windows rendering and Linux headless fixtures run on the development laptop. Native bundle workflows have bounded qualification. | Publish representative scene/game frame-time, memory and edit-to-play measurements with workload/settings/hardware identified. Verify a fresh installation and relocated exported game, complete dependency notices, reproducible instructions and a full alpha regression run. Tiny fixtures alone do not pass this gate. |
+
+No gate is fully closed yet. Several foundations are implemented, but their
+combined use, supported boundaries and delivery still need qualification.
+The [implementation status](IMPLEMENTATION_STATUS.md) remains authoritative for
+individual capabilities. A checklist row is not a claim that every feature
+listed there is complete or production-ready.
+
+### Qualification target
+
+The initial alpha matrix is Windows native editor/player/rendering and Linux
+native CLI authoring/simulation. Each needs a fresh-project regression and
+source-independent cooked-content reopen. Linux desktop rendering, browser and
+console deployment require later platform qualification.
+
+Use a fixed, published small-game workload on the development laptop
+(Ryzen 7 8845HS, RTX 4070 Laptop 8 GB, 16 GB system RAM). Record laptop power
+mode, resolution, settings, asset/entity/light counts and cache state. Initial
+acceptance targets are:
+
+- 1080p at 60 genuinely rendered frames per second, without frame generation;
+  p95 frame time at most 16.7 ms and p99 at most 25 ms during the declared
+  steady-play workload. Report loading and save/reload spikes separately.
+- Peak player memory at most 4 GB and VRAM at most 6 GB; editor plus engine
+  processes at most 6 GB system RAM for the same project. These are alpha
+  workload budgets, not promises for arbitrary user games.
+- Compatible C# edit-to-first-updated-tick p95 at most 3 seconds; representative
+  material/texture edit-to-visible-update p95 at most 1 second. Record cold
+  builds and engine-code rebuilds separately.
+- At least 30 minutes of play with repeated save/load, supported script reload,
+  scene edits and fresh-owner continuation, with no crash, lost committed
+  state, stranded process or unexplained continuing memory growth.
+
+These are targets to verify, not measurements already achieved. A workload
+must exercise the shipped small game and its imported content; an empty scene
+or deliberately undersized fixture cannot substitute for it. Budget changes
+need an explicit technical reason and updated acceptance criteria.
+
+## Implementation order
+
+1. Complete native character/content intake and its compiled-game consumer.
+2. Close the practical agent/gameplay gaps revealed by that game, including
+   UI, settings, audio and save continuation.
+3. Qualify repeated fresh-project agent workflows and define the supported
+   alpha contracts and upgrade behavior.
+4. Measure a representative scene and game; fix material performance and
+   reliability problems before freezing the alpha candidate.
+5. Finish blocking editor issues, branding, installation and release checks.
+
+Independent source/test/review work can run in parallel. Heavy native builds
+and GPU qualification are scheduled to fit the development laptop. Findings
+may change the order when they expose a shared dependency or blocker.
+
+## Continuing beyond Alpha 1
+
+Advanced lighting and graphics, production VFX and cinematics, comprehensive
+water/weather/seasons, persistent surface simulation, richer deterministic
+NPC worlds, advanced 2D, browser rendering, multiplayer and console backends
+remain engine requirements. They continue through later milestones; Alpha 1
+does not imply their completion. Console qualification needs the platform SDKs
+and development hardware.
+
+There is no qualified release-date forecast yet. Progress is assessed by
+closed gates and runnable games, not patch count or lines of code.
