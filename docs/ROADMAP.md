@@ -33,6 +33,12 @@ does not remove requirements from that destination. Single-player PC work comes
 first; multiplayer and console integration follow it. Console implementation
 needs licensed SDKs and approved development hardware.
 
+The 1.0 target is Windows single-player deployment, Linux headless authoring,
+and the engine systems below, including 2D and browser deployment. Linux
+graphics, multiplayer and consoles are explicitly planned after 1.0. Their
+portability boundaries and feasibility work begin earlier; their implementation
+and platform qualification do not block 1.0.
+
 Before beta, a versioned 1.0 support manifest must name every included feature,
 platform, hardware tier and compatibility guarantee, with its acceptance
 evidence. Any narrower release scope needs an explicit decision and a visible
@@ -185,7 +191,7 @@ required workflows; physical keyboard/mouse/controller, translated UI and
 accessibility checks pass. These improvements start earlier and are qualified
 together here.
 
-### 8. Additional gameplay and deployment destinations
+### 8. Additional 1.0 gameplay and deployment destinations
 
 These are distinct tracks with separate builds and evidence:
 
@@ -193,17 +199,29 @@ These are distinct tracks with separate builds and evidence:
 | --- | --- | --- |
 | Advanced 2D | Sprites, tilemaps, sorting/layers, animation, appropriate physics, normal/height/PBR-aware lighting and soft shadows, mixed 2D/3D scenes. | A complete 2D game exercises authoring, lighting, input, save and export; an orthographic camera alone is insufficient. |
 | Browser | Compiled WebAssembly core/gameplay, WebGPU renderer and an evaluated WebGL2 reduced tier; browser input/audio, asynchronous content/storage and deployment. | Actual browser/version matrix, downloaded-size/memory/frame budgets and save lifecycle. Desktop C# compilation is not browser qualification. |
+
+PC graphics remain Vulkan; browser graphics use supported browser interfaces.
+Each destination needs its own gameplay compilation,
+content, device-lifecycle and delivery qualification.
+
+## Planned after 1.0
+
+These requirements remain in the full engine roadmap. Their absence does not
+prevent the Windows single-player 1.0 release.
+
+| Track | Deliverable | Acceptance |
+| --- | --- | --- |
+| Linux graphics | Qualify the Windows player through Proton and evaluate native Vulkan editor/player deployment. | Actual driver, input, audio, save and performance checks; Linux headless success does not qualify either graphical route. |
 | Multiplayer | Self-hosted authority, replication/interest management, prediction/reconciliation, co-op followed by extraction-scale play, reconnect/late join and acoustic proximity voice. | 4–8-player co-op and a representative 24–32-player extraction workload with AI pass latency/loss, authority and match-persistence checks. |
 | Consoles | Xbox Series X/S and PS5 native graphics, shader, audio, input, users, storage/save, lifecycle and packaging adapters. | Actual approved SDK/hardware execution and platform requirements; this track is gated by developer access. |
 
-Portability boundaries and feasibility experiments begin before these full
-integrations. PC graphics remain Vulkan; console and browser graphics use their
-supported native interfaces. Each destination needs its own gameplay compilation,
-content, device-lifecycle and delivery qualification.
-Retain Linux graphics qualification as a distinct destination: native Vulkan
-rendering and/or the Windows player through Proton need actual driver, input,
-audio, save and performance checks. Linux headless success alone does not
-qualify either graphical route.
+Before 1.0, keep renderer/platform services behind native interfaces, separate
+authoritative simulation from presentation, and define stable entity/event/time
+ownership and serialization boundaries. Use bounded portability experiments to
+identify incompatible dependencies and APIs early. These boundaries reduce
+later rework; they do not claim that a platform port or multiplayer is complete.
+Console graphics use the platform's native API. Each later destination gets its
+own gameplay compilation, content, lifecycle and delivery qualification.
 
 ## Beta entry: feature completeness
 
