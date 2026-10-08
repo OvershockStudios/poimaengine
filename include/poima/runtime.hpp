@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/scene.hpp"
+#include "poima/animation_layers.hpp"
 #include "poima/gameplay.hpp"
 #include "poima/gameplay_save.hpp"
 #include "poima/audio.hpp"
@@ -38,11 +39,22 @@ struct RuntimeMesh {
     std::optional<PbrMaterial> material;
     std::shared_ptr<const MaterialTextures> textures;
 };
+struct RuntimeAnimationLayer {
+    std::uint32_t slot=1;
+    AnimationLayerMode mode=AnimationLayerMode::Override;
+    std::optional<std::uint32_t> clip;
+    double time=0,speed=1,weight=1;
+    bool loop=true,playing=false;
+    std::vector<AnimationNodeWeight> mask;
+    std::optional<std::uint32_t> reference_clip;
+    double reference_time=0;
+};
 struct RuntimeAnimationRig {
     std::shared_ptr<const ModelAsset> model;
     std::optional<std::uint32_t> clip;
     double time=0,speed=1;
     bool loop=true,playing=false;
+    std::vector<RuntimeAnimationLayer> layers;
 };
 struct RuntimeRigNode { std::string rig;std::uint32_t node=0; };
 struct RuntimeSkinnedMesh { std::string rig;std::uint32_t node=0; };
@@ -54,6 +66,10 @@ struct AnimationCommand {
     bool loop=true,playing=false;
     std::uint32_t blend_ticks=0;
     AnimationTransitionMode transition_mode=AnimationTransitionMode::Crossfade;
+    // Null selects the base clock; 1..4 selects a frozen authored layer slot.
+    std::optional<std::uint32_t> layer;
+    double weight=1;
+    std::uint32_t weight_blend_ticks=0;
 };
 struct RuntimeAnimationTransition {
     std::uint64_t start_tick=0;
@@ -65,6 +81,22 @@ struct RuntimeAnimationTransition {
     bool source_loop=true,source_playing=false;
     AnimationTransitionMode mode=AnimationTransitionMode::Crossfade;
 };
+struct RuntimeAnimationWeightTransition {
+    std::uint64_t start_tick=0;
+    std::uint32_t duration_ticks=0,elapsed_ticks=0;
+    double source=0,target=0;
+};
+struct RuntimeAnimationLayerState {
+    std::uint32_t slot=1;
+    AnimationLayerMode mode=AnimationLayerMode::Override;
+    double weight=1,target_weight=1;
+    std::optional<RuntimeAnimationWeightTransition> weight_transition;
+    std::optional<std::uint32_t> clip;
+    double time=0,speed=1,duration=0;
+    bool loop=true,playing=false;
+    std::optional<RuntimeAnimationTransition> transition;
+    std::size_t mask_nodes=0;
+};
 struct RuntimeAnimationState {
     std::string entity;
     std::optional<std::uint32_t> clip;
@@ -72,6 +104,7 @@ struct RuntimeAnimationState {
     bool loop=true,playing=false;
     double duration=0;
     std::optional<RuntimeAnimationTransition> transition;
+    std::vector<RuntimeAnimationLayerState> layers;
 };
 struct RuntimeEntityDefinition {
     std::string id, parent;

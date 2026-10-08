@@ -1,8 +1,8 @@
 # Editable rigs and native clip playback
 
-Poima connects imported glTF rigs to ordinary authored entities, fixed-tick native playback and Vulkan compute skinning. Timed crossfades and opt-in inertial transitions share the native playback authority. Agents can inspect bones, edit their baseline transforms, set complete playback state, advance the simulation and capture the result through the same world protocol. This animation foundation supports crossfades and finite-time motion corrections; it does not provide a layered animation graph or a finished character controller.
+Poima connects imported glTF rigs to ordinary authored entities, fixed-tick native playback and Vulkan compute skinning. Timed crossfades, opt-in inertial transitions and authored masked layers share the native playback authority. Agents can inspect bones, edit their baseline transforms, set complete playback state, advance the simulation and capture the result through the same world protocol. This animation foundation supports ordered override/additive layers and finite-time motion corrections; state graphs and a finished character-animation system remain unfinished.
 
-`world.describe` exposes the components and commands below; revision 52 adds the inertial transition mode. `animation_rig_authoring` is available in headless builds. `runtime_clip_playback` requires the simulation build; `gpu_skinning` requires the renderer. The broader `animation` feature flag remains false because the full planned system is unfinished.
+`world.describe` exposes the components and commands below; revision 53 adds masked animation layers while retaining the common playback fields. `animation_rig_authoring` is available in headless builds. `runtime_clip_playback` requires the simulation build; `gpu_skinning` requires the renderer. The broader `animation` feature flag remains false because the full planned system is unfinished.
 
 ## Authored entities
 
@@ -10,7 +10,7 @@ Poima connects imported glTF rigs to ordinary authored entities, fixed-tick nati
 
 | Component | Complete value | Meaning |
 | --- | --- | --- |
-| `AnimationRig` | `asset`, `clip`, `time`, `speed`, `loop`, `playing` | Wrapper model reference and initial runtime playback state. |
+| `AnimationRig` | `asset`, `clip`, `time`, `speed`, `loop`, `playing`; optional `layers` | Wrapper model reference and initial runtime playback state. |
 | `RigNode` | `rig`, `node` | Wrapper entity ID and zero-based source model node index. |
 | `SkinnedMesh` | `asset`, `primitive`, `visible`, `rig`, `node` | Weighted primitive, wrapper binding and source mesh-node index. |
 
@@ -63,7 +63,7 @@ The transition starts at the current committed tick before the requested step. A
 
 For an ordinary fade, source and destination clocks both advance according to their own playback settings. Each samples against the frozen authored baseline. Translation and scale mix linearly in local space; rotation follows the normalized shortest quaternion arc. This does not blend matrices, preserve foot contacts or automatically synchronize locomotion phases.
 
-Interrupting an active fade takes its currently evaluated local pose as an immutable source, then transitions toward the new destination. The interrupted source is frozen rather than recursively retaining earlier transitions. The starting pose is continuous; velocity is not guaranteed continuous. Each rig retains at most one frozen source pose, bounded by the existing mapped-node budget. Endpoint evaluation uses the exact destination pose and stops sampling the expired source.
+Interrupting an active fade takes its currently evaluated local pose as an immutable source, then transitions toward the new destination. The interrupted source is frozen rather than recursively retaining earlier transitions. The starting pose is continuous; velocity is not guaranteed continuous. Each clock retains at most one frozen source pose, bounded by the mapped-node and layer-node admission limits. Endpoint evaluation uses the exact destination pose and stops sampling the expired source.
 
 While a fade is active, `animation.transition` reports:
 
@@ -76,13 +76,101 @@ While a fade is active, `animation.transition` reports:
 
 The enclosing animation fields always describe the destination, not the blended pose. Inspect mapped node transforms or capture the runtime to observe that pose. `transition` is null when absent or complete. This is current-state inspection, not a retained timeline or scrubbable simulation history.
 
+## Masked animation layers
+
+`AnimationRig.layers` is optional and defaults to no layers. A rig can configure four unique slots numbered 1–4; the base is implicit and is not slot zero in JSON. Layers compose in ascending slot order, independently of their authored array order.
+
+Each layer requires `slot`, `mode`, `clip`, `time`, `speed`, `loop`, `playing`, `weight` and `mask`. Playback fields follow the base rules. `mode` is `override` or `additive`; `weight` is a finite number in 0–1. A mask contains unique `{node,weight}` entries, using zero-based model-node indices and finite weights in 0–1. Absent nodes have zero contribution. An empty mask is valid. The effective local contribution is the layer's current weight multiplied by that node's mask weight.
+
+The following complete component value assumes an imported model with clips 0–2 and nodes 1–2. Replace the syntactically valid illustrative hash with its actual imported hash:
+
+```json
+{
+  "asset":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "clip":0,"time":0,"speed":1,"loop":true,"playing":true,
+  "layers":[
+    {
+      "slot":1,"mode":"override","clip":1,"time":0,"speed":1,
+      "loop":false,"playing":false,"weight":0,
+      "mask":[{"node":1,"weight":1},{"node":2,"weight":0.5}]
+    },
+    {
+      "slot":3,"mode":"additive","clip":2,"time":0,"speed":1,
+      "loop":true,"playing":true,"weight":0.25,
+      "mask":[{"node":1,"weight":1}],
+      "reference_clip":0,"reference_time":0
+    }
+  ]
+}
+```
+
+Set it with a guarded `world.transact` `component.set` operation for `AnimationRig`, supplying the current `base_revision` and a fresh `request_id`. The model must retain complete valid rig-node and skin bindings. Model-specific clip/node bounds are checked against the actual asset. Layer creation, masks, modes and references are authored configuration; editing them during playback does not mutate the existing runtime.
+
+Override blends the underlying local TRS toward the layer's independently evaluated full pose. Its unkeyed channels use the authored baseline too. Effective weight zero leaves local TRS untouched; weight one copies the target exactly. Translation and scale interpolate linearly and quaternion rotation follows the shortest normalized arc.
+
+Additive layers compare their full local pose with a frozen reference. The reference defaults to the authored baseline. Optional `reference_clip` and `reference_time` choose a clip pose sampled once at runtime construction; it does not advance with either clock. Null reference clip requires reference time zero. Override layers cannot use a separate reference.
+
+For node contribution `alpha`, additive translation adds `alpha * (layer.position - reference.position)`. Positive scale multiplies by `(layer.scale / reference.scale)^alpha`. Rotation uses the node-local delta `inverse(reference.rotation) * layer.rotation`, then postmultiplies the underlying rotation by its shortest-arc quaternion power. Thus the rotation order is `underlying * delta^alpha`; changing the order changes the result for noncommuting rotations.
+
+Composition works in local TRS. The hierarchy is recomposed after the ordered layers. An excluded child's local pose remains unchanged, but its world pose can move when a masked ancestor changes. Masks do not isolate entire world-space subtrees or provide IK/contact preservation.
+
+Each layer owns an independently advancing clock, its own crossfade/inertial transition and its own unmasked output history. Base history records base output before composition. Layer history records that layer's evaluated output before global or node weights. Zero-weight layers still sample and validate their content and retain history, so enabling a layer cannot conceal an invalid pose or borrow the base's motion history.
+
+## Layer commands and weight ramps
+
+Target a configured slot through `runtime.step.animations`. `layer` must be an integer 1–4 and `weight` is required. The remaining six playback fields still specify a complete destination state. This example starts a 15-tick inertial transition on slot 1 and raises its weight over 20 ticks:
+
+```json
+{
+  "session_id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "request_id":"11111111111111111111111111111111",
+  "expected_tick":0,"ticks":10,
+  "animations":[
+    {
+      "entity":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","layer":1,"weight":1,
+      "clip":1,"time":0,"speed":1,"loop":false,"playing":false,
+      "blend_ticks":15,"transition_mode":"inertial","weight_blend_ticks":20
+    }
+  ]
+}
+```
+
+`weight_blend_ticks` is an integer 0–3600, default zero. Zero immediately changes the layer weight. Positive duration linearly ramps from the current effective weight to the target, independently of clip playback and clip-transition duration. Interrupting a ramp captures its current value as the next source: weight remains continuous, but weight velocity need not. A paused clip does not pause its ramp; a paused simulation does.
+
+Base commands omit `layer` and must omit JSON weight fields. Native base commands retain their default weight 1 and weight duration zero. An unknown configured slot or duplicate `(entity,slot)` target rejects the batch. Base and distinct slots on the same rig can appear together. The existing limit is 64 combined animation commands per tick, including compiled gameplay's base commands; there is no separate 64-command allowance for layers.
+
+The step's expected-tick guard, rollback and retained retry receipt apply to the complete animation array. Omitted and explicit default `blend_ticks`, `transition_mode` and layer `weight_blend_ticks` normalize consistently. Integer fields are validated before receipt lookup. Reusing a retained request ID with changed parameters rejects; an exact retained retry does not advance clocks again.
+
+## Layer observation
+
+Wrappers with configured layers expose `animation.layers` through `runtime.entity`, and through `runtime.observe` when animation is selected. Unlayered wrappers omit the field. Summaries appear in ascending slot order:
+
+```json
+{
+  "slot":1,"mode":"override","weight":0.5,"target_weight":1,
+  "weight_transition":{
+    "start_tick":0,"duration_ticks":20,"elapsed_ticks":10,
+    "source":0,"target":1
+  },
+  "mask_nodes":2,
+  "playback":{
+    "clip":1,"time":0,"speed":1,"loop":false,"playing":false,
+    "duration":2,"transition":null
+  }
+}
+```
+
+This is an illustrative current-state summary, not the exact transition result of the preceding command. `weight` is effective now and `target_weight` is its destination; `weight_transition` is null when absent or complete. `mask_nodes` counts authored mask entries, including zero-weight entries. `playback` has the existing base playback/transition shape for that independent layer. Summaries do not include full masks, reference poses or motion-history buffers. Authored inspection retains the full frozen configuration, and the existing observation response-size cap still applies.
+
+`RuntimeAnimations::state(entity,tick)` and `Runtime::animation(entity)` return the base projection without populating layer summaries. Native callers can request `state(entity,tick,true)`; `Runtime::entity` does so for live entity observation. The original C# getter and its negotiated inertial extension remain base-only.
+
 ## Ownership, validation and rollback
 
 Rig nodes and their descendants own animation-driven transforms. That subtree cannot contain physics bodies, character controllers or a camera controlled by a character controller. Ordinary animated cameras are allowed. A physics-controlled outer wrapper may carry an animated rig; this does not implement extracted root motion or animation-driven colliders.
 
 Skinned mesh acoustics are rejected because the current acoustic geometry path does not follow vertex deformation. Use an explicit separate rigid collision/acoustic proxy. The authoring schema rejects combining `SkinnedMesh` and `AcousticMaterial`.
 
-Clip clocks, transition state, immutable interruption poses and local transforms join the existing batch checkpoint for physics, gameplay state and sound. A failed sample—including a cubic curve with an invalid intermediate scale—or an edited runtime hierarchy whose matrix exceeds finite ±1e12 bounds rolls back the whole requested step. Matrices are validated during runtime hierarchy evaluation, including reparented trees. Retrying a valid command after failure starts from the prior committed tick and state.
+Base and layer clip clocks, transition state, immutable interruption poses, weight ramps and local transforms join the existing batch checkpoint for physics, gameplay state and sound. A failed sample—including a cubic curve with an invalid intermediate scale—or an edited runtime hierarchy whose matrix exceeds finite ±1e12 bounds rolls back the whole requested step. Matrices are validated during runtime hierarchy evaluation, including reparented trees. Retrying a valid command after failure starts from the prior committed tick and state.
 
 Snapshots own their palette data. Mesh-local palettes derive from current entity transforms as `inverse(mesh_world) * joint_world * inverse_bind`; later stepping cannot mutate an earlier snapshot. The renderer uses these palettes through the existing [compute skinning pass](GPU_SKINNING.md). A GPU-only deformation failure remains a rendering error; capturing a bad blend does not retroactively roll back previously committed simulation ticks.
 
@@ -104,19 +192,27 @@ This preserves **estimated** output velocity at the boundary. It does not guaran
 
 Active inspection adds `mode:"inertial"` to `animation.transition`. `weight` reports elapsed duration divided by total duration, rather than a two-clip pose contribution. `source_frozen` is true and source-clock fields are null: the captured pose supplies correction initialization, not a playing source clip. Legacy crossfade inspection retains its earlier shape.
 
-Native checkpoints own immutable output history and correction buffers. After a rig has used inertial mode, nested animation saves use version 2 and retain both, including history after the transition completes. Crossfade-only saves retain version-1 bytes. Loading a version-1 save remains supported and starts without velocity history; subsequent distinct output samples establish it. The outer snapshot and durable slot format are unchanged. These broader save contracts remain in development.
+Native checkpoints own immutable output history and correction buffers. For worlds without layers, after a rig has used inertial mode, nested animation saves use version 2 and retain both, including history after the transition completes. Crossfade-only saves retain version-1 bytes. Loading a version-1 save remains supported and starts without velocity history; subsequent distinct output samples establish it. The outer snapshot and durable slot format are unchanged. These broader save contracts remain in development.
 
 At checkpoint 0.0.55 this mode was available through native C++ and the world protocol; C# and desktop controls selected crossfades. Version 0.0.56 adds opt-in C# access through `IInertialAnimationGame`, the enum-third-argument `SetAnimation` overload and `GetAnimationExtended`. It negotiates `animation_inertial_v1` in a separate 192-byte services-7 extension. The original numeric-time C# overload and its ABI structures remain unchanged and select crossfades. Desktop crossfade controls remain unchanged. See [the managed example and requirements](MANAGED_GAMEPLAY.md#control-animation-from-c).
 
 ## Native interfaces and bounds
 
-`RuntimeEntityDefinition` adds optional `animation_rig`, `rig_node` and `skinned_mesh` bindings. `AnimationCommand` carries optional-duration `blend_ticks` with a zero default and a trailing `AnimationTransitionMode` (`Crossfade` or `Inertial`). Active `RuntimeAnimationTransition.mode` identifies the native mode. `Runtime::step` takes a trailing `std::vector<AnimationCommand>`, and `Runtime::animation(id)` returns optional `RuntimeAnimationState`. `RuntimeEntityState` exposes the local transform and optional playback state. C# retains `GameContext.GetAnimation` and the numeric-time, crossfade-only `SetAnimation` in the 176-byte services-7 baseline. Its marked-game extension adds typed mode selection and `AnimationStateExtended`, whose `State` is the legacy projection and whose active `Mode`/`Progress` are nullable. See [managed gameplay](MANAGED_GAMEPLAY.md#control-animation-from-c) for negotiation, queued-write timing, conflicts and reload behavior.
+`RuntimeEntityDefinition` adds optional `animation_rig`, `rig_node` and `skinned_mesh` bindings. `AnimationCommand` carries optional-duration `blend_ticks` with a zero default and `AnimationTransitionMode` (`Crossfade` or `Inertial`), plus optional layer routing and weight-ramp fields. Active `RuntimeAnimationTransition.mode` identifies the native mode. `Runtime::step` takes a trailing `std::vector<AnimationCommand>`, and `Runtime::animation(id)` returns optional `RuntimeAnimationState`. `RuntimeEntityState` exposes the local transform and optional playback state. C# retains `GameContext.GetAnimation` and the numeric-time, crossfade-only `SetAnimation` in the 176-byte services-7 baseline. Its marked-game extension adds typed mode selection and `AnimationStateExtended`, whose `State` is the legacy projection and whose active `Mode`/`Progress` are nullable. See [managed gameplay](MANAGED_GAMEPLAY.md#control-animation-from-c) for negotiation, queued-write timing, conflicts and reload behavior.
 
 `validate_runtime_animation(definition)` is built without Jolt and shared by authoring/runtime validation. `CompiledAnimation` validates and copies source curves once, retains the parent traversal, and supports a supplied authored TRS baseline. Runtime rigs sharing a model share the compiled sampler. CPU sampling does not require a graphics device or scan every source key for validation on every tick. This has not yet established production animation throughput or crowd budgets.
 
 Current per-world limits are 128 rigs, 10,000 mapped nodes, 65,536 channels counted across rig instances, two million keys across unique compiled models, and 32,768 palette-joint entries across skinned primitive instances. The existing 10,000-entity limit includes wrappers, nodes, primitive children and unrelated entities. Per-model import limits and renderer memory limits also apply. A single runtime step advances 1–600 ticks and accepts at most 64 complete animation commands.
 
-`CompiledAnimation::sample_motion` returns a `ModelMotion` containing the ordinary validated `ModelPose` and node-ordered `NodeMotion` derivatives. Translation is local units per clip second; angular velocity is parent-frame radians per clip second; logarithmic scale velocity is inverse clip seconds. Playback speed is applied by the runtime, and this const sampler never retains output history. `runtime_inertial_transitions` in CLI capabilities is true only for simulation builds.
+`CompiledAnimation::sample_motion` returns a `ModelMotion` containing the ordinary validated `ModelPose` and node-ordered `NodeMotion` derivatives. Translation is local units per clip second; angular velocity is parent-frame radians per clip second; logarithmic scale velocity is inverse clip seconds. Playback speed is applied by the runtime, and this const sampler never retains output history. `runtime_inertial_transitions` and `runtime_animation_layers` in CLI capabilities are true only for simulation builds.
+
+## Layer persistence and bounds
+
+Configured layers use nested `poima.animation-state` v3. Every rig records its base clock and its complete ordered layer array, with histories, clip transitions and weight ramps. Each layer also binds the exact canonical mask and reference clip/time. Restoring against a changed slot, mode, mask or reference rejects atomically. Layered definitions reject v1/v2 instead of inventing missing clocks; unlayered definitions reject v3. Unlayered v1/v2 serialization and the outer snapshot/save formats remain unchanged. This does not provide animation-definition migration.
+
+The parser rejects duplicate fields, unexpected shapes, malformed integers and inconsistent effective weights; nesting is limited to 32 and parse events to eight million. Nested legacy state retains its 16 MiB limit; layered v3 has a 64 MiB limit. Outer snapshots and durable saves also remain capped at 64 MiB, so maximum admitted configurations are not guaranteed to fit a save.
+
+A rig admits up to four configured slots, and aggregate instanced layer work is limited to 20,000 full model nodes across the world. Existing limits of 128 rigs and 10,000 mapped nodes still apply. These are admission bounds, not measured throughput. Existing C# services-7 tables remain 176/192 bytes and base-only. The native `RuntimeAnimations::state(entity,tick,true)` includes layer summaries; its default and `Runtime::animation(entity)` retain the base projection.
 
 ## Verification and remaining work
 
@@ -130,4 +226,27 @@ The [0.0.55 inertial checkpoint](evidence/m2-animation-inertial.json) adds indep
 
 The [0.0.56 managed inertial record](evidence/m2-managed-inertial.json) records the separately negotiated C# extension and distinguishes executed CoreCLR, ABI guard and Native AOT checks. The extension uses the same native correction/history authority; it adds no layered graph, new rendering algorithm or implied GPU/performance qualification. Legacy version-1 saves still start without stored velocity history.
 
-Masked/additive layers, blend spaces/state graphs, events, IK, retargeting, root-motion extraction, ragdolls, animation compression/streaming remain unfinished. Single-sample backward UV motion and previous-frame skinning are documented separately in [Scene products](SCENE_PRODUCTS.md). Direct FBX import is not implemented. Mixamo rigs/animations have not been qualified; a supported glTF conversion still needs actual import and visual validation, and separately rigged clips cannot be assumed compatible without retargeting. Native Linux graphics and console graphics remain unqualified.
+The [0.0.57 layer checkpoint](evidence/m2-animation-layers.json) records independent local-TRS and hierarchy mathematics, masked override/additive composition, weight interruptions, per-clock history isolation, strict validation, command limits and atomic restoration. Eight layer protocol checks pass per runtime OS; two actual validation/discovery checks also run in an authoring-only build. Both GPUs produce 36 exact reference pairs from 72 captures. Actual old/new executable comparisons preserve unlayered v1/v2 save bytes and fresh continuation, including immediate interruption. Existing CoreCLR and Native AOT cohorts still pass with base-only animation APIs. These are bounded correctness checks, without new desktop activation or game-scale performance qualification.
+
+Reproduce the native and protocol checks with a simulation build:
+
+```sh
+cmake --build build/runtime-headless --target poima poima-animation-layers-test poima-runtime-animation-layers-test
+./build/runtime-headless/poima-animation-layers-test
+./build/runtime-headless/poima-runtime-animation-layers-test
+python3 tests/runtime_animation_layers_contract.py build/runtime-headless/poima --evidence build/layer-contract.json
+```
+
+For an authoring-only executable, pass `--runtime 0`. The Windows protocol runner additionally needs `--windows-interop` when launched from WSL. Rendered reference checks require a Windows Vulkan build:
+
+```sh
+python3 tests/runtime_animation_layers_capture.py build/windows-runtime/poima.exe --windows-interop --gpu 0 --output build/layer-captures
+```
+
+Repeat with `--gpu 1` and a separate output directory on a two-GPU system. The old/new compatibility runner requires a separately preserved 0.0.56 executable and its dependencies; it rejects identical images:
+
+```sh
+python3 tests/runtime_animation_legacy_compatibility.py --binary build/runtime-headless/poima --legacy-binary /path/to/preserved-0.0.56/poima --output build/layer-legacy
+```
+
+Compiled C# layer controls, desktop layer widgets, blend spaces/state graphs, events, IK, retargeting, root-motion extraction, ragdolls and animation compression/streaming remain unfinished. Single-sample backward UV motion and previous-frame skinning are documented separately in [Scene products](SCENE_PRODUCTS.md). Direct FBX import is not implemented. Mixamo rigs/animations have not been qualified; a supported glTF conversion still needs actual import and visual validation, and separately rigged clips cannot be assumed compatible without retargeting. Native Linux graphics and console graphics remain unqualified.

@@ -8,12 +8,21 @@
 namespace poima {
 struct RuntimeAnimationPose { std::string entity;RuntimeTransform local; };
 class RuntimeAnimations {
+    struct LayerDefinition {
+        std::uint32_t slot=1;
+        AnimationLayerMode mode=AnimationLayerMode::Override;
+        std::vector<AnimationNodeWeight> mask;
+        std::vector<NodePose> reference;
+        std::optional<std::uint32_t> reference_clip;
+        double reference_time=0;
+    };
     struct Rig {
         std::string entity;
         std::shared_ptr<const ModelAsset> model;
         std::shared_ptr<const CompiledAnimation> compiled;
         std::vector<NodePose> baseline;
         std::vector<std::string> nodes;
+        std::vector<LayerDefinition> layers;
     };
 public:
     struct InertialNode {
@@ -40,22 +49,36 @@ public:
         std::optional<History> current=std::nullopt,previous=std::nullopt;
         bool inertial_ever_used=false;
     };
+    struct LayerPlayback {
+        Clock clock;
+        double target_weight=1;
+        std::optional<RuntimeAnimationWeightTransition> weight_transition;
+    };
+    struct Checkpoint {
+        std::vector<Clock> bases;
+        std::vector<std::vector<LayerPlayback>> layers;
+        const Clock& operator[](std::size_t index) const { return bases[index]; }
+    };
 private:
     std::vector<Rig> rigs_;
     std::map<std::string,std::size_t> indices_;
     std::map<std::string,RuntimeSkinnedMesh> skins_;
     std::vector<Clock> clocks_;
+    std::vector<std::vector<LayerPlayback>> layers_;
     ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
+    ModelPose composed(std::size_t index,const Clock& base,const std::vector<LayerPlayback>& layers,std::uint64_t tick) const;
+    Clock replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const;
+    RuntimeAnimationState clock_summary(std::size_t index,const Clock& clock,std::uint64_t tick) const;
 public:
     explicit RuntimeAnimations(const RuntimeDefinition& definition);
-    std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick) const;
+    std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick,bool include_layers=false) const;
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick);
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);
-    std::vector<Clock> checkpoint() const { return clocks_; }
-    void restore(std::vector<Clock>& checkpoint) noexcept { clocks_.swap(checkpoint); }
+    Checkpoint checkpoint() const { return {clocks_,layers_}; }
+    void restore(Checkpoint& checkpoint) noexcept { clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
 };
 }

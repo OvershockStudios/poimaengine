@@ -243,11 +243,47 @@ AnimationCommand animation_value(const Json& value) {
     require(value.at("loop").is_boolean() && value.at("playing").is_boolean(),"Animation loop/playing must be Boolean.");
     state.loop=value.at("loop");state.playing=value.at("playing");return state;
 }
+std::vector<RuntimeAnimationLayer> animation_layers_value(const Json& values) {
+    require(values.is_array() && values.size()<=4,"AnimationRig layers must contain at most four authored slots.");
+    std::vector<RuntimeAnimationLayer> result;std::set<std::uint32_t> slots;
+    for(const auto& value:values) {
+        fields(value,{"slot","mode","clip","time","speed","loop","playing","weight","mask","reference_clip","reference_time"},
+            {"slot","mode","clip","time","speed","loop","playing","weight","mask"});
+        const auto slot=revision(value.at("slot"));require(slot>=1 && slot<=4,"Animation layer slot must be 1..4.");
+        RuntimeAnimationLayer layer;layer.slot=static_cast<std::uint32_t>(slot);
+        require(slots.insert(layer.slot).second,"Duplicate authored animation layer slot.");
+        require(value.at("mode").is_string() && (value.at("mode")=="override" || value.at("mode")=="additive"),"Animation layer mode must be override or additive.");
+        layer.mode=value.at("mode")=="additive" ? AnimationLayerMode::Additive : AnimationLayerMode::Override;
+        const auto playback=animation_value(value);layer.clip=playback.clip;layer.time=playback.time;layer.speed=playback.speed;layer.loop=playback.loop;layer.playing=playback.playing;
+        require(value.at("weight").is_number() && std::isfinite(value.at("weight").get<double>()) && value.at("weight")>=0 && value.at("weight")<=1,"Animation layer weight must be within 0..1.");
+        layer.weight=value.at("weight").get<double>();
+        const auto& mask=value.at("mask");require(mask.is_array() && mask.size()<=10000,"Animation layer mask exceeds 10000 nodes.");
+        std::set<std::uint32_t> nodes;
+        for(const auto& item:mask) {
+            fields(item,{"node","weight"},{"node","weight"});const auto node=revision(item.at("node"));require(node<10000,"Animation mask node must be 0..9999.");
+            require(item.at("weight").is_number() && std::isfinite(item.at("weight").get<double>()) && item.at("weight")>=0 && item.at("weight")<=1,"Animation mask weight must be within 0..1.");
+            const auto index=static_cast<std::uint32_t>(node);require(nodes.insert(index).second,"Duplicate animation mask node.");
+            layer.mask.push_back({index,item.at("weight").get<double>()});
+        }
+        std::sort(layer.mask.begin(),layer.mask.end(),[](const auto& left,const auto& right) { return left.node<right.node; });
+        if(value.contains("reference_clip") && !value.at("reference_clip").is_null()) {
+            const auto clip=revision(value.at("reference_clip"));require(clip<max_model_clips,"Animation layer reference clip exceeds model limit.");layer.reference_clip=static_cast<std::uint32_t>(clip);
+        }
+        if(value.contains("reference_time")) {
+            require(value.at("reference_time").is_number() && std::isfinite(value.at("reference_time").get<double>()) && value.at("reference_time")>=0 && value.at("reference_time")<=1e9,"Animation reference time must be within 0..1e9.");
+            layer.reference_time=value.at("reference_time").get<double>();
+        }
+        require(layer.reference_clip || layer.reference_time==0,"A rest-pose animation reference must use time zero.");
+        require(layer.mode==AnimationLayerMode::Additive || (!layer.reference_clip && layer.reference_time==0),"Override layers do not use a separate reference clip.");
+        result.push_back(std::move(layer));
+    }
+    std::sort(result.begin(),result.end(),[](const auto& left,const auto& right) { return left.slot<right.slot; });return result;
+}
 void validate_component(const std::string& type, const Json& value) {
     if(type=="AnimationRig") {
-        fields(value,{"asset","clip","time","speed","loop","playing"},{"asset","clip","time","speed","loop","playing"});
+        fields(value,{"asset","clip","time","speed","loop","playing","layers"},{"asset","clip","time","speed","loop","playing"});
         require(value.at("asset").is_string() && valid_asset_id(value.at("asset").get<std::string>()),"AnimationRig requires a model content hash.");
-        (void)animation_value(value);return;
+        (void)animation_value(value);if(value.contains("layers"))(void)animation_layers_value(value.at("layers"));return;
     }
     if(type=="RigNode") {
         fields(value,{"rig","node"},{"rig","node"});identifier(value.at("rig"));require(revision(value.at("node"))<10000,"RigNode index must be 0..9999.");return;
@@ -390,6 +426,11 @@ Json describe() {
         {"time",{{"type","number"},{"minimum",0},{"maximum",1e9}}},{"speed",{{"type","number"},{"minimum",0},{"maximum",8}}},
         {"loop",{{"type","boolean"}}},{"playing",{{"type","boolean"}}}};
     auto rig_fields=animation_fields;rig_fields["asset"]=asset_id;
+    auto layer_fields=animation_fields;layer_fields["slot"]={{"type","integer"},{"minimum",1},{"maximum",4}};
+    layer_fields["mode"]={{"enum",{"override","additive"}}};layer_fields["weight"]=unit;
+    layer_fields["mask"]={{"type","array"},{"maxItems",10000},{"items",object_schema({{"node",model_node},{"weight",unit}},{"node","weight"})}};
+    layer_fields["reference_clip"]=animation_fields.at("clip");layer_fields["reference_time"]=animation_fields.at("time");
+    rig_fields["layers"]={{"type","array"},{"maxItems",4},{"items",object_schema(layer_fields,{"slot","mode","clip","time","speed","loop","playing","weight","mask"})}};
     const auto animation_rig=object_schema(rig_fields,{"asset","clip","time","speed","loop","playing"});
     const auto rig_node=object_schema({{"rig",id},{"node",model_node}},{"rig","node"});
     auto skin_fields=static_mesh.at("properties");skin_fields["rig"]=id;skin_fields["node"]=model_node;
@@ -439,7 +480,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 52}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 53}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -555,11 +596,21 @@ Json describe() {
     auto animation_command=animation_fields;animation_command["entity"]=id;
     animation_command["blend_ticks"]={{"type","integer"},{"minimum",0},{"maximum",3600},{"default",0}};
     animation_command["transition_mode"]={{"enum",{"crossfade","inertial"}},{"default","crossfade"}};
-    methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},
-        {"items",object_schema(animation_command,{"entity","clip","time","speed","loop","playing"})}};
+    auto layer_command=animation_command;layer_command["layer"]={{"type","integer"},{"minimum",1},{"maximum",4}};
+    layer_command["weight"]=unit;layer_command["weight_blend_ticks"]={{"type","integer"},{"minimum",0},{"maximum",3600},{"default",0}};
+    // Keep the existing common properties/required projection discoverable.
+    // Closed branches add layer-specific requirements without weakening the
+    // base command's rejection of weight-only or unknown fields.
+    auto animation_item=object_schema(layer_command,{"entity","clip","time","speed","loop","playing"});
+    animation_item["oneOf"]=Json::array({
+        object_schema(animation_command,{"entity","clip","time","speed","loop","playing"}),
+        object_schema(layer_command,{"entity","layer","clip","time","speed","loop","playing","weight"})});
+    methods["runtime.step"]["properties"]["animations"]={{"type","array"},{"maxItems",64},{"items",animation_item}};
     result["invariants"].push_back("Animated asset instances expose a wrapper AnimationRig, ordinary RigNode entities for every model node, and SkinnedMesh primitive children. Authored transforms are the baseline; authored capture does not play the initial clip. runtime.step animations replace complete clip/time/speed/loop/playing state atomically with other tick commands.");
     result["invariants"].push_back("Animation commands optionally accept blend_ticks (0..3600, default 0). Zero switches immediately; positive values blend the outgoing and destination local poses over fixed ticks, independently of playback speed. Both clip clocks advance during an ordinary fade. Interrupting a fade freezes its evaluated local pose as the new source; no nested blend tree is retained. runtime.entity animation.transition reports active weights/clocks and is null on completion. Transition state and frozen source poses join batch rollback.");
-    result["invariants"].push_back("Optional animation transition_mode defaults to crossfade. Inertial mode applies finite-duration translation, shortest-arc rotation and positive log-scale corrections to the destination, initialized from the last two distinct output ticks and analytic incoming clip derivatives. Missing output history uses zero outgoing velocity; STEP keys, loop seams and endpoints may still be discontinuous. Same-tick samples do not advance velocity history. Native checkpoints and version-2 animation saves retain history and corrections. Active inertial transitions report mode=inertial; weight reports elapsed progress, not a two-clip pose weight. C# animation writes currently select crossfade only.");
+    result["invariants"].push_back("Optional animation transition_mode defaults to crossfade. Inertial mode applies finite-duration translation, shortest-arc rotation and positive log-scale corrections to the destination, initialized from the last two distinct output ticks and analytic incoming clip derivatives. Missing output history uses zero outgoing velocity; STEP keys, loop seams and endpoints may still be discontinuous. Same-tick samples do not advance velocity history. Native checkpoints and version-2 animation saves retain history and corrections. Active inertial transitions report mode=inertial; weight reports elapsed progress, not a two-clip pose weight. The legacy C# setter selects crossfades; opt-in animation_inertial_v1 supports both transition modes.");
+    result["invariants"].push_back("AnimationRig optionally authors up to four frozen layers in slots1..4. Unique model-node mask weights multiply the current layer weight; unlisted nodes are unaffected locally. Ascending slots compose override or additive local TRS. Additive deltas use a frozen authored or explicit reference clip pose, with node-local rotation postmultiplication and positive scale ratios. Descendant world poses can change when a masked ancestor moves.");
+    result["invariants"].push_back("Animation commands with layer target a configured slot and require weight0..1. Clip transitions and optional linear weight_blend_ticks run on independent fixed clocks; interrupted weight fades retain the current value without guaranteeing continuous weight velocity. Base and distinct layer targets may share a batch, but duplicate(entity,slot) commands and more than64 combined caller/gameplay commands reject. Each clock retains its own unmasked motion history. animation.layers exposes configured summaries; nested animation-statev3 persists all clocks and weights. Existing C#176/192 callbacks remain base-only; compiled C# layer controls and desktop layer widgets are not implemented.");
     auto capture=methods["world.capture"];
     capture["properties"].erase("revision"); capture["properties"]["session_id"]=id; capture["properties"]["tick"]=rev;capture["properties"]["ui_revision"]=rev;
     capture["required"]={"session_id","tick","camera","path"}; methods["runtime.capture"]=capture;
@@ -2216,7 +2267,7 @@ public:
                 const auto& ref=components.at("AnimationRig");const auto state=animation_value(ref);RuntimeAnimationRig rig;
                 try { rig.model=cache.get(asset_directory(),ref.at("asset")); }
                 catch(const std::exception& error) { throw Error(-32050,error.what()); }
-                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;value.animation_rig=std::move(rig);
+                rig.clip=state.clip;rig.time=state.time;rig.speed=state.speed;rig.loop=state.loop;rig.playing=state.playing;if(ref.contains("layers"))rig.layers=animation_layers_value(ref.at("layers"));value.animation_rig=std::move(rig);
             }
             if(components.contains("RigNode")) {
                 const auto& ref=components.at("RigNode");value.rig_node=RuntimeRigNode{identifier(ref.at("rig")),static_cast<std::uint32_t>(revision(ref.at("node")))};
@@ -2309,14 +2360,25 @@ public:
                 {"source_playing",t.source_frozen ? Json(nullptr) : Json(t.source_playing)}};
             if(t.mode==AnimationTransitionMode::Inertial)transition["mode"]="inertial";
         }
-        return {{"clip",state.clip ? Json(*state.clip) : Json(nullptr)},{"time",state.time},{"speed",state.speed},
+        Json result={{"clip",state.clip ? Json(*state.clip) : Json(nullptr)},{"time",state.time},{"speed",state.speed},
             {"loop",state.loop},{"playing",state.playing},{"duration",state.duration},{"transition",transition}};
+        if(!state.layers.empty()) {
+            result["layers"]=Json::array();
+            for(const auto& layer:state.layers) {
+                RuntimeAnimationState playback;playback.clip=layer.clip;playback.time=layer.time;playback.speed=layer.speed;playback.loop=layer.loop;playback.playing=layer.playing;playback.duration=layer.duration;playback.transition=layer.transition;
+                Json weight_transition=nullptr;
+                if(layer.weight_transition) { const auto& fade=*layer.weight_transition;weight_transition={{"start_tick",fade.start_tick},{"duration_ticks",fade.duration_ticks},{"elapsed_ticks",fade.elapsed_ticks},{"source",fade.source},{"target",fade.target}}; }
+                result["layers"].push_back({{"slot",layer.slot},{"mode",layer.mode==AnimationLayerMode::Additive ? "additive" : "override"},
+                    {"weight",layer.weight},{"target_weight",layer.target_weight},{"weight_transition",weight_transition},{"mask_nodes",layer.mask_nodes},{"playback",animation_json(playback)}});
+            }
+        }
+        return result;
     }
     static std::vector<AnimationCommand> parse_animations(const Json& raw) {
         require(raw.is_array() && raw.size()<=64,"Animations must be an array of at most 64 complete playback commands.");
-        std::vector<AnimationCommand> result;std::set<std::string> seen;
+        std::vector<AnimationCommand> result;std::set<std::pair<std::string,std::uint32_t>> seen;
         for(const auto& value:raw) {
-            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks","transition_mode"},{"entity","clip","time","speed","loop","playing"});
+            fields(value,{"entity","clip","time","speed","loop","playing","blend_ticks","transition_mode","layer","weight","weight_blend_ticks"},{"entity","clip","time","speed","loop","playing"});
             auto command=animation_value(value);command.entity=identifier(value.at("entity"));
             if(value.contains("blend_ticks")) {
                 const auto ticks=revision(value.at("blend_ticks"));require(ticks<=3600,"Animation blend_ticks must be within 0..3600.");
@@ -2327,7 +2389,12 @@ public:
                 require(mode.is_string() && (mode=="crossfade" || mode=="inertial"),"Animation transition_mode must be crossfade or inertial.");
                 if(mode=="inertial")command.transition_mode=AnimationTransitionMode::Inertial;
             }
-            require(seen.insert(command.entity).second,"Duplicate animation command entity.");result.push_back(std::move(command));
+            if(value.contains("layer")) {
+                const auto slot=revision(value.at("layer"));require(slot>=1 && slot<=4,"Animation command layer must be1..4.");command.layer=static_cast<std::uint32_t>(slot);
+                require(value.contains("weight") && value.at("weight").is_number() && std::isfinite(value.at("weight").get<double>()) && value.at("weight")>=0 && value.at("weight")<=1,"Animation layer command requires weight0..1.");command.weight=value.at("weight").get<double>();
+                if(value.contains("weight_blend_ticks")) { const auto ticks=revision(value.at("weight_blend_ticks"));require(ticks<=3600,"Animation weight blend duration must be0..3600.");command.weight_blend_ticks=static_cast<std::uint32_t>(ticks); }
+            } else require(!value.contains("weight") && !value.contains("weight_blend_ticks"),"Base animation commands do not accept layer weight fields.");
+            require(seen.emplace(command.entity,command.layer.value_or(0)).second,"Duplicate animation command target.");result.push_back(std::move(command));
         }
         return result;
     }
@@ -2822,6 +2889,11 @@ public:
                 // JSON numeric equality treats 0 and 0.0 alike. Validate this
                 // integer field before receipt matching, including retries.
                 require(revision(command.at("blend_ticks"))<=3600,"Animation blend_ticks must be within 0..3600.");
+                if(command.contains("layer")) {
+                    const auto layer=revision(command.at("layer"));require(layer>=1 && layer<=4,"Animation command layer must be1..4.");
+                    if(!command.contains("weight_blend_ticks"))command["weight_blend_ticks"]=0;
+                    require(revision(command.at("weight_blend_ticks"))<=3600,"Animation weight blend duration must be0..3600.");
+                }
                 if(!command.contains("transition_mode"))command["transition_mode"]="crossfade";
                 require(command.at("transition_mode").is_string() && (command.at("transition_mode")=="crossfade" || command.at("transition_mode")=="inertial"),"Animation transition_mode must be crossfade or inertial.");
             }

@@ -1,0 +1,1904 @@
+{
+  "checkpoint": "0.0.57 development",
+  "date": "2026-10-08",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 53,
+  "authoring_core_version": 1,
+  "scope": "Four frozen animation layer slots with ordered masked override/additive composition, independent clocks and motion history, weight fades and nested v3 saves.",
+  "source_sha256": {
+    "CMakeLists.txt": "cfb538fb7bfbd65c68fd619c36e90898123f662ce9dbe47f02cf4e3dc592e683",
+    "include/poima/runtime.hpp": "f9ba01133bb7b295ea69a7f5b9ed176017b1398a9ad94fac7034efb84078479b",
+    "include/poima/runtime_animation.hpp": "75258681eaf5eb66fc5be564ea83196d63c79d1e5af09fc47d5268c3fc7a3bac",
+    "src/core.cpp": "1c53a7352ca6c5aac49eac6b1d3a2ba079cbd7b87e9f6dfb3bdc13be1d7c9997",
+    "src/runtime.cpp": "98d31fd2eb1a91e885a9e05d65864e8e727148ddcfde02a34fbfd830078157f7",
+    "src/runtime_animation.cpp": "01efa223b0ff3a19ae7ae4a51e84356f5aeca24246baae4bcd8ae9456bc930b9",
+    "src/world.cpp": "7f0c907728483271484fce5edf8f42dc8d942e5b773cb38b9b5928bf402ca2a5",
+    "tests/world_session_native.cpp": "640b5ade95c7c562f804d5eaa56165c866619f124034c88f6b42a50dd6f66732",
+    "include/poima/animation_layers.hpp": "b8045f047ec5ad20f48df054112e15edc947039395bf15c0f58985c3c33e1fd9",
+    "src/animation_layers.cpp": "358b994db25edb8d6acb894411d785326d458d94327d7bc1f72f3c8d18b98d29",
+    "tests/animation_layers_native.cpp": "5de1dea4ba2d8ee56972692a4cfbb5d56881028cb8828a125117867a9a583268",
+    "tests/runtime_animation_layers_capture.py": "10b5d7ca5590a97629923673c653e5aa016254d015333a391a0e97f1ec9823f2",
+    "tests/runtime_animation_layers_contract.py": "de62ffbe4a64d1c9d3d40acbb77f47846967cdf28d44c85df342cdc892206526",
+    "tests/runtime_animation_layers_native.cpp": "6aa82331431af8dd1030bdbeebb4bbd418503ab762ab60be0faacbd2ad8268b5",
+    "tests/runtime_animation_legacy_compatibility.py": "a4a4f4b6989d1755a9a96777ef12ddcccd7fffd6e55cc8b6264610044856df4b"
+  },
+  "source_closure": {
+    "files": 15,
+    "all_match": true
+  },
+  "linux_native": {
+    "initial_groups": 19,
+    "initial_passed": 17,
+    "initial_failed": [
+      "runtime_animation_blend_contract",
+      "runtime_animation_inertial_contract"
+    ],
+    "final_affected": {
+      "groups": 6,
+      "passed": true,
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "passed": true
+        },
+        {
+          "name": "authoring_contract_identity",
+          "passed": true
+        },
+        {
+          "name": "world_session_native",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_blend_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_layers_contract",
+          "passed": true
+        },
+        {
+          "name": "runtime_animation_inertial_contract",
+          "passed": true
+        }
+      ]
+    },
+    "qualification": "The 17 initially passing groups are retained; six affected groups reran successfully after restoring legacy discovery shape. All 19 were not rerun together on the final host."
+  },
+  "authoring_only_native": {
+    "groups": 7,
+    "passed": true,
+    "checks": [
+      {
+        "name": "authoring_core_conformance",
+        "passed": true
+      },
+      {
+        "name": "authoring_contract_identity",
+        "passed": true
+      },
+      {
+        "name": "animation_layers_math",
+        "passed": true
+      },
+      {
+        "name": "world_session_native",
+        "passed": true
+      },
+      {
+        "name": "runtime_animation_blend_contract",
+        "passed": true
+      },
+      {
+        "name": "runtime_animation_layers_contract",
+        "passed": true
+      },
+      {
+        "name": "runtime_animation_inertial_contract",
+        "passed": true
+      }
+    ]
+  },
+  "windows_native": {
+    "passed": true,
+    "groups": 16,
+    "binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+    "checks": [
+      {
+        "name": "animation-layers",
+        "exit_code": 0,
+        "log_sha256": "5394e898a3eee7e50d41effddf75023dd69fe6ee99e5bde2ac22a4d695dcd109"
+      },
+      {
+        "name": "runtime-animation-layers",
+        "exit_code": 0,
+        "log_sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+      },
+      {
+        "name": "runtime-animation",
+        "exit_code": 0,
+        "log_sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+      },
+      {
+        "name": "runtime-save",
+        "exit_code": 0,
+        "log_sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+      },
+      {
+        "name": "world-session",
+        "exit_code": 0,
+        "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+      },
+      {
+        "name": "runtime-animation-save",
+        "exit_code": 0,
+        "log_sha256": "f2161f627af53c7db275bfc49d97ce192e62c0789e60566089eab8cc87138394"
+      },
+      {
+        "name": "animation-save-write",
+        "exit_code": 0,
+        "log_sha256": "aca0db7e274f4aceae317f46aac12d7c5bf4aab52f9bfb2ef65ac34a99dff657"
+      },
+      {
+        "name": "animation-save-read",
+        "exit_code": 0,
+        "log_sha256": "44409b015ab21725d5162c12dd1a3028ad728f923ba0793cc3b2b6bce162680b"
+      },
+      {
+        "name": "runtime_animation_layers_contract",
+        "exit_code": 0,
+        "log_sha256": "12778db6df6e465cf7869aed4a14df3f171e99d6dd464a18b7fd8e3b720dad37"
+      },
+      {
+        "name": "runtime_animation_blend_contract",
+        "exit_code": 0,
+        "log_sha256": "e8d5fd0cd6ff0a94a90331443725deb4299a246532d4c0199d9d82360efeb117"
+      },
+      {
+        "name": "runtime_animation_inertial_contract",
+        "exit_code": 0,
+        "log_sha256": "c101f606be27db4f87cafefd91cb477e55ae75d87327417f93cccd63a634dc44"
+      },
+      {
+        "name": "runtime_save_contract",
+        "exit_code": 0,
+        "log_sha256": "41b9ce4de9755a0d22eef58ca6aed3c6ac46d187401569cdea60f02ad9bb3c56"
+      },
+      {
+        "name": "runtime_observe_contract",
+        "exit_code": 0,
+        "log_sha256": "05e196da2310c12c3e20e3e0a113f1041bf2509079808960c81a392b4f4c672b"
+      },
+      {
+        "name": "authoring_core_conformance",
+        "exit_code": 0,
+        "log_sha256": "e6902e00c2320e0e51717ce494dd8042dad2df43e541131d67cf8dbc74c15f16"
+      },
+      {
+        "name": "authoring_contract_identity",
+        "exit_code": 0,
+        "log_sha256": "cac0b6c4a4e1df9b82171ee9795f74a20df648504ea09fffcc9ad1d1d1805211"
+      },
+      {
+        "name": "legacy-compatibility",
+        "exit_code": 0,
+        "log_sha256": "1c92ac004a27e7ae4148fa2f7898d42d1f55ecbdab40bfae37db990abdef5003"
+      }
+    ]
+  },
+  "platforms": {
+    "linux": {
+      "layers": {
+        "passed": true,
+        "tests": 8,
+        "rpc_calls": 146,
+        "clean_owned_processes": 9,
+        "binary_sha256": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+        "test_sha256": "de62ffbe4a64d1c9d3d40acbb77f47846967cdf28d44c85df342cdc892206526"
+      },
+      "legacy_unlayered": {
+        "passed": true,
+        "rpc_calls": 1036,
+        "processes": [
+          {
+            "host": "inertial-fresh-immediate-interruption",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "inertial-fresh-continuation",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "crossfade-fresh-immediate-interruption",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "crossfade-fresh-continuation",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "new",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "old",
+            "closed": true,
+            "exit_code": 0
+          }
+        ],
+        "binary_sha256": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+        "legacy_binary_sha256": "e5e925ceb530be8702e08a761d56b0e6b0754771ebcfd1868be48b55d3991bcf",
+        "source_sha256": {
+          "tests/runtime_animation_legacy_compatibility.py": "a4a4f4b6989d1755a9a96777ef12ddcccd7fffd6e55cc8b6264610044856df4b",
+          "tests/runtime_animation_blend_contract.py": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+          "tests/animation_fixture.py": "0df2099292f669ddd75762c7093eb667b6af8811d590617b61c9ae5490a1a9fe",
+          "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf"
+        },
+        "normalization": "Remove only keys named session_id recursively; retain all entity fields, ticks, poses, velocities, playback and transitions.",
+        "scenarios": {
+          "crossfade": {
+            "checks": {
+              "old_payload_fresh_exact_continuation": true,
+              "old_payload_fresh_immediate_reinterruption": true
+            },
+            "poses": 12,
+            "saves": [
+              {
+                "label": "checkpoint",
+                "hosts": [
+                  "old",
+                  "new"
+                ],
+                "tick": 60,
+                "sha256": "7848aff15f444fb07fe8052566571381e798279fbedfecfe0b8bfcdc9afef705",
+                "bytes": 7754,
+                "animation_version": 1
+              },
+              {
+                "label": "continued-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-continuation"
+                ],
+                "tick": 61,
+                "sha256": "e55d0af5b12273d0165a9d0f28e4c90a54241623e29f98dd2cfc9d95d140dcb4",
+                "bytes": 7781,
+                "animation_version": 1
+              },
+              {
+                "label": "continued-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-continuation"
+                ],
+                "tick": 68,
+                "sha256": "ece66d2cb6dab1789b0cea514df969f65f388db309c90e09ae99bd234817c038",
+                "bytes": 8061,
+                "animation_version": 1
+              },
+              {
+                "label": "continued-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-continuation"
+                ],
+                "tick": 81,
+                "sha256": "2edb62b3979ca39308f7c12765cd3fe592777089a4271f24886ee6db8865ebd6",
+                "bytes": 8037,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 61,
+                "sha256": "ede1202302fa7598c462a66d5a5cc09c8ea5e4b50a29061bb8083b6383351213",
+                "bytes": 7911,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 68,
+                "sha256": "8e47cc41105ed4508e31ec8a5ea33a0ff0b18217173e9b5e090f90defed2c72d",
+                "bytes": 8191,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 81,
+                "sha256": "ecff768c3ef15ced6f9e460d4a531a3d9d5a7af1e3ce64463b7c4db9eb281694",
+                "bytes": 8167,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-3",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 110,
+                "sha256": "80ab4e2cfffd6b67de7147441f10312c3dcd1e63a92ec1a0aa71d5f647aa79eb",
+                "bytes": 8082,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-4",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 120,
+                "sha256": "ba8deb40946d1a26b884b3cb4a4e514dd4d54ed4424fb9c0a59b53738a171c67",
+                "bytes": 7751,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-5",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 127,
+                "sha256": "79331ba995f1516d9e4122531231370de0e7cebe2d412b3c19e59665b75bcf78",
+                "bytes": 7751,
+                "animation_version": 1
+              }
+            ]
+          },
+          "inertial": {
+            "checks": {
+              "old_payload_fresh_exact_continuation": true,
+              "old_payload_fresh_immediate_reinterruption": true
+            },
+            "poses": 12,
+            "saves": [
+              {
+                "label": "checkpoint",
+                "hosts": [
+                  "old",
+                  "new"
+                ],
+                "tick": 60,
+                "sha256": "da955c242648aaaf720f4d9398e56ec995c5715f3d3acbc20917facc37349866",
+                "bytes": 9865,
+                "animation_version": 2
+              },
+              {
+                "label": "continued-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-continuation"
+                ],
+                "tick": 61,
+                "sha256": "a3d2da3b51e59cf0ed0962f61a5010747e7c7960b6218c8a7d8c0f1d995671dd",
+                "bytes": 9872,
+                "animation_version": 2
+              },
+              {
+                "label": "continued-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-continuation"
+                ],
+                "tick": 68,
+                "sha256": "6b4ed1a4991a4b5072f7f4997613f840b941da0151d9342c1ca3634ddf4c9967",
+                "bytes": 10162,
+                "animation_version": 2
+              },
+              {
+                "label": "continued-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-continuation"
+                ],
+                "tick": 81,
+                "sha256": "f36b27f91b8ce0b81d5b69154115d57dc726c2bfecd640b2a272db0b8ef99e00",
+                "bytes": 10155,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 61,
+                "sha256": "1cf17a087d7f4469bea005bb5070010d167ad7a03ed0c85ef4aa0c950a151bdd",
+                "bytes": 9928,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 68,
+                "sha256": "bd2d8e61efc0917d3102c958decdbeace537fa64f226782ed4aec520de9a0ebf",
+                "bytes": 10218,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 81,
+                "sha256": "475a9d95035c72a06a23e6aea09d073433356013df1c5a3318ecca2677206345",
+                "bytes": 10217,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-3",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 110,
+                "sha256": "84ff48e9c417ca75c76cd9f023140f58787061670cb0806608bd922927096f99",
+                "bytes": 10112,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-4",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 120,
+                "sha256": "5d8b79fc596a2ffb6fc4ddd295ca043b3dab3a6c35ebe33aa5db572e30719cae",
+                "bytes": 8988,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-5",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 127,
+                "sha256": "d427e3a873dd8da93fa73fca88ebe5bc99be2a53768563f050e61f57a15d7201",
+                "bytes": 8959,
+                "animation_version": 2
+              }
+            ]
+          }
+        }
+      },
+      "coreclr": {
+        "passed": true,
+        "checks": {
+          "marked_constructor_initialize_tick_sentinel_observed": true,
+          "compiled_inertial_analytic_pose_extended_committed_staging_and_reload": true,
+          "duplicate_invalid_mode_target_conflict_and_exact_64_limit": true,
+          "sample_and_managed_failure_restore_active_history_physics_audio_and_gameplay": true,
+          "fresh_durable_save_exact_selected_state_and_immediate_compiled_reinterruption": true,
+          "old_compiled_new_host": true,
+          "old_cohort_marked": true,
+          "new_bridge_old_host_unmarked": true,
+          "new_bridge_old_host_marked": true,
+          "authored_bytes_and_preserved_cohort_unchanged": true
+        },
+        "rpc_calls": 486,
+        "processes": [
+          {
+            "host": "new-bridge-old-host-marked",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "new-bridge-old-host-unmarked",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "old-cohort-marked",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "old-compiled-new-host",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "fresh-restore",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "new-host-marked",
+            "closed": true,
+            "exit_code": 0
+          }
+        ],
+        "hashes": {
+          "binary": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+          "bridge": "2e81935aa8da9106f0f3266a4312940fd3a55f41252c43b6594327ae8c69735b",
+          "sdk": "2b167111bc9981bd1641255e8c2ad0768e04400e115786f67b2bda06d851110c",
+          "legacy_binary": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105",
+          "legacy_bridge": "361a35df9e0762c3a4f3f72f3a441de9ef749fc107ac119f018252d96bbcfad7",
+          "legacy_sdk": "5a482f12ef8621bb2d1aaf7d398c1795d25ab14936063e3de4a33a306725e511",
+          "fixture": "6a68dc0fb593e71e8d8c44278c95c624c4ae89feef12abb81792b35285556601"
+        }
+      },
+      "preserved_native_aot": {
+        "passed": true,
+        "checks": {
+          "native_analytic_motion_extended_queries_staging_and_replacement_rejection": true,
+          "duplicate_invalid_mode_target_conflict_and_exact_64_limit": true,
+          "active_history_and_full_payload_rollback_with_physics_audio_and_compiled_state": true,
+          "fresh_process_complete_payload_and_immediate_compiled_reinterruption": true,
+          "descriptor_omission_rejects_before_game_callbacks": true,
+          "legacy_native_host_rejects_before_game_callbacks": true,
+          "authored_world_fixture_original_descriptor_and_payloads_unchanged": true
+        },
+        "rpc_calls": 435,
+        "processes": [
+          {
+            "host": "legacy-native-host",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "descriptor-omission",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "fresh-native-restore",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "marked-native",
+            "closed": true,
+            "exit_code": 0
+          }
+        ],
+        "hashes": {
+          "binary": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa",
+          "descriptor": "bf6f5eb132dbd90a23282009c61a64d4a728561511732f72c87c51dc294446d9",
+          "legacy_binary": "ed598484b9e445c5df61fccfab02c5b419c32bb198e8b009ef405b656c0a0105",
+          "fixture": "6a68dc0fb593e71e8d8c44278c95c624c4ae89feef12abb81792b35285556601",
+          "runner": "d8075ac4effd2964ef537d6e68289be5f58d8f5b483436f2ff0f3cc2ce98bd65"
+        },
+        "artifact_payload_sha256": {
+          "Poima.NativeGame.so": "b6ca68569eda4d777ec4186eae5b8cb7790fa75ad9d74a1e620f3b4416cb5513",
+          "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76"
+        }
+      }
+    },
+    "windows": {
+      "layers": {
+        "passed": true,
+        "tests": 8,
+        "rpc_calls": 146,
+        "clean_owned_processes": 9,
+        "binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+        "test_sha256": "de62ffbe4a64d1c9d3d40acbb77f47846967cdf28d44c85df342cdc892206526"
+      },
+      "legacy_unlayered": {
+        "passed": true,
+        "rpc_calls": 1036,
+        "processes": [
+          {
+            "host": "inertial-fresh-immediate-interruption",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "inertial-fresh-continuation",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "crossfade-fresh-immediate-interruption",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "crossfade-fresh-continuation",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "new",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "old",
+            "closed": true,
+            "exit_code": 0
+          }
+        ],
+        "binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+        "legacy_binary_sha256": "e6c71148ebc49d7df44c68402b3fec03ed6bebb20408d5066e8e38d2a8b10187",
+        "source_sha256": {
+          "tests/runtime_animation_legacy_compatibility.py": "a4a4f4b6989d1755a9a96777ef12ddcccd7fffd6e55cc8b6264610044856df4b",
+          "tests/runtime_animation_blend_contract.py": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+          "tests/animation_fixture.py": "0df2099292f669ddd75762c7093eb667b6af8811d590617b61c9ae5490a1a9fe",
+          "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf"
+        },
+        "normalization": "Remove only keys named session_id recursively; retain all entity fields, ticks, poses, velocities, playback and transitions.",
+        "scenarios": {
+          "crossfade": {
+            "checks": {
+              "old_payload_fresh_exact_continuation": true,
+              "old_payload_fresh_immediate_reinterruption": true
+            },
+            "poses": 12,
+            "saves": [
+              {
+                "label": "checkpoint",
+                "hosts": [
+                  "old",
+                  "new"
+                ],
+                "tick": 60,
+                "sha256": "906c00c750183298e1d10fc98f9d67285f85daa7dcfd50bb9233474458c21565",
+                "bytes": 7754,
+                "animation_version": 1
+              },
+              {
+                "label": "continued-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-continuation"
+                ],
+                "tick": 61,
+                "sha256": "c2d56694be43bc46c555be1081dc2170741b96cc046b7056b7424ecfd85cb81c",
+                "bytes": 7781,
+                "animation_version": 1
+              },
+              {
+                "label": "continued-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-continuation"
+                ],
+                "tick": 68,
+                "sha256": "ca32c75191330d7fbe4e0c2b7cb8cf3b97a090c3bf493a08dcef42a7b0e16f81",
+                "bytes": 8061,
+                "animation_version": 1
+              },
+              {
+                "label": "continued-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-continuation"
+                ],
+                "tick": 81,
+                "sha256": "ec08614e033336388079db1309a499ba6ab49ab97a707df0e145a0f2cf534360",
+                "bytes": 8037,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 61,
+                "sha256": "ba04e39eaa500e560c3702d1626bdfc9099970e45bee12a41f7d502346050c23",
+                "bytes": 7911,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 68,
+                "sha256": "226995755d653c7fc6edbf1f46fc26988d2f83f7cd426e73fdb553fec339ea18",
+                "bytes": 8191,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 81,
+                "sha256": "2770768c5ad818c9a18ad812053835f38424a3deb4c61469f929884b62b1331d",
+                "bytes": 8167,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-3",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 110,
+                "sha256": "5437ea52d4b3b5d19d70fa8146973bdb4dff272d6173c75ff79ec159f6a23ec6",
+                "bytes": 8082,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-4",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 120,
+                "sha256": "61e2cc444d7ade43172b584958b7e3625251db5868dc7f0ffacab814ce462233",
+                "bytes": 7751,
+                "animation_version": 1
+              },
+              {
+                "label": "interrupted-5",
+                "hosts": [
+                  "old",
+                  "new",
+                  "crossfade-fresh-immediate-interruption"
+                ],
+                "tick": 127,
+                "sha256": "02e5b9fb22311a5312af4caabc49562d89d9d55cf522b33b498930bfdb1add86",
+                "bytes": 7751,
+                "animation_version": 1
+              }
+            ]
+          },
+          "inertial": {
+            "checks": {
+              "old_payload_fresh_exact_continuation": true,
+              "old_payload_fresh_immediate_reinterruption": true
+            },
+            "poses": 12,
+            "saves": [
+              {
+                "label": "checkpoint",
+                "hosts": [
+                  "old",
+                  "new"
+                ],
+                "tick": 60,
+                "sha256": "070aadba49f1aa6873f130412afbf6516d876dc119e80cd2fe996fc04ec18ca7",
+                "bytes": 9865,
+                "animation_version": 2
+              },
+              {
+                "label": "continued-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-continuation"
+                ],
+                "tick": 61,
+                "sha256": "fbe38c482a41250feab401d10822e0a57028b431fa0aa2d6eafb7c7692136f2c",
+                "bytes": 9872,
+                "animation_version": 2
+              },
+              {
+                "label": "continued-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-continuation"
+                ],
+                "tick": 68,
+                "sha256": "69835d116abecd59e3ac142ad8c178e9aded8856c4c25e74236a355d5ebb3eaf",
+                "bytes": 10162,
+                "animation_version": 2
+              },
+              {
+                "label": "continued-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-continuation"
+                ],
+                "tick": 81,
+                "sha256": "b56a5b64a0ff307c34985d652f03bcb48f8739cc988f10e2d8bbb900802fd96f",
+                "bytes": 10155,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-0",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 61,
+                "sha256": "4aaf706248cec3eecba1e48784e901d35ea21bba02a44ded9b00573df339b1f9",
+                "bytes": 9928,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-1",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 68,
+                "sha256": "8e9ca7c30aa0deec1c331f892ce8b794b64b49fb1d2c95b15843e17f471bc403",
+                "bytes": 10218,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-2",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 81,
+                "sha256": "288e546646c62e21a79dab146121aa6a55612bf1646da066c540d54caf7b6593",
+                "bytes": 10217,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-3",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 110,
+                "sha256": "388289a1707d672ff917a912ffe2273c6bf44c876f1a16df2b85734952ca8f49",
+                "bytes": 10112,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-4",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 120,
+                "sha256": "baaf9c054d95537842e5e2ec4af670b247b4d0c9cb74b9bb1fef9e8d58c1d861",
+                "bytes": 8988,
+                "animation_version": 2
+              },
+              {
+                "label": "interrupted-5",
+                "hosts": [
+                  "old",
+                  "new",
+                  "inertial-fresh-immediate-interruption"
+                ],
+                "tick": 127,
+                "sha256": "e4cc66af82ad06417f01d7a1ab91fb16410cdee13f5678e46d76d7f078995164",
+                "bytes": 8959,
+                "animation_version": 2
+              }
+            ]
+          }
+        }
+      },
+      "coreclr": {
+        "passed": true,
+        "checks": {
+          "marked_constructor_initialize_tick_sentinel_observed": true,
+          "compiled_inertial_analytic_pose_extended_committed_staging_and_reload": true,
+          "duplicate_invalid_mode_target_conflict_and_exact_64_limit": true,
+          "sample_and_managed_failure_restore_active_history_physics_audio_and_gameplay": true,
+          "fresh_durable_save_exact_selected_state_and_immediate_compiled_reinterruption": true,
+          "old_compiled_new_host": true,
+          "old_cohort_marked": true,
+          "new_bridge_old_host_unmarked": true,
+          "new_bridge_old_host_marked": true,
+          "authored_bytes_and_preserved_cohort_unchanged": true
+        },
+        "rpc_calls": 486,
+        "processes": [
+          {
+            "host": "new-bridge-old-host-marked",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "new-bridge-old-host-unmarked",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "old-cohort-marked",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "old-compiled-new-host",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "fresh-restore",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "new-host-marked",
+            "closed": true,
+            "exit_code": 0
+          }
+        ],
+        "hashes": {
+          "binary": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+          "bridge": "144c03ce08e87bc022b18e461a3b2b67177fd4b74380f61d766ae6f97b29614b",
+          "sdk": "a6022d0631b7de82757d9e43ec10dec029ab119d320d74a8fdcd5b4d0abf59a2",
+          "legacy_binary": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7",
+          "legacy_bridge": "361a35df9e0762c3a4f3f72f3a441de9ef749fc107ac119f018252d96bbcfad7",
+          "legacy_sdk": "5a482f12ef8621bb2d1aaf7d398c1795d25ab14936063e3de4a33a306725e511",
+          "fixture": "6a68dc0fb593e71e8d8c44278c95c624c4ae89feef12abb81792b35285556601"
+        }
+      },
+      "preserved_native_aot": {
+        "passed": true,
+        "checks": {
+          "native_analytic_motion_extended_queries_staging_and_replacement_rejection": true,
+          "duplicate_invalid_mode_target_conflict_and_exact_64_limit": true,
+          "active_history_and_full_payload_rollback_with_physics_audio_and_compiled_state": true,
+          "fresh_process_complete_payload_and_immediate_compiled_reinterruption": true,
+          "descriptor_omission_rejects_before_game_callbacks": true,
+          "legacy_native_host_rejects_before_game_callbacks": true,
+          "authored_world_fixture_original_descriptor_and_payloads_unchanged": true
+        },
+        "rpc_calls": 435,
+        "processes": [
+          {
+            "host": "legacy-native-host",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "descriptor-omission",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "fresh-native-restore",
+            "closed": true,
+            "exit_code": 0
+          },
+          {
+            "host": "marked-native",
+            "closed": true,
+            "exit_code": 0
+          }
+        ],
+        "hashes": {
+          "binary": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+          "descriptor": "f5b6ce687c9b2783269c8215ccbaf9d103296193172ad788e5612270d718a3db",
+          "legacy_binary": "904ba695126ba5aeafb141cfce06c031a5c99aa9de6c4f1b5d190324daea67c7",
+          "fixture": "6a68dc0fb593e71e8d8c44278c95c624c4ae89feef12abb81792b35285556601",
+          "runner": "d8075ac4effd2964ef537d6e68289be5f58d8f5b483436f2ff0f3cc2ce98bd65"
+        },
+        "artifact_payload_sha256": {
+          "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "notices/POIMA-THIRD-PARTY-NOTICES.md": "282edbe986979cc90031bf1aba03ca76cfa388dada5273cb229d6d62e98fbc76",
+          "Poima.NativeGame.dll": "229bce5fe3b97278d5e970235d12e391e1e892a047387371b2504ab9ef0197fe"
+        }
+      }
+    }
+  },
+  "gpu": [
+    {
+      "passed": true,
+      "gpu": 0,
+      "captures": 36,
+      "exact_reference_pairs": 18,
+      "clean_owned_processes": 4,
+      "nvrhi_errors": 0,
+      "binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+      "test_sha256": "10b5d7ca5590a97629923673c653e5aa016254d015333a391a0e97f1ec9823f2",
+      "fixture_sha256": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+      "motion_pixels": {
+        "1": 32403,
+        "4": 32854
+      },
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "sparse-fraction",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "1637761ea0ecbee6eacb1426ecd194b54c3ca953755b293d5d2b0162a143455f",
+          "authored_capture_report_sha256": "54a35bcf8783a50eb0949af14081ae25d9722b7841ea2e3ade140a30bc2100dc",
+          "live_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1",
+          "authored_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1"
+        },
+        {
+          "samples": 1,
+          "case": "additive-frozen-reference",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "efb17016e5431f070e2773e30ff11d1ed7ddf39f8b9ade866640e010c12972d1",
+          "authored_capture_report_sha256": "c63366b5b163955f52548c33c80c91d76466c61e635c2810daac85f72f4bc645",
+          "live_sha256": "9abc1d58d4e210a059dc3f42a49729c3132936abcda40e701a71084315d90e4e",
+          "authored_sha256": "9abc1d58d4e210a059dc3f42a49729c3132936abcda40e701a71084315d90e4e"
+        },
+        {
+          "samples": 1,
+          "case": "additive-reference-later",
+          "position": [
+            1.75,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "faa878d540fb29d11bdbda0b170c67772db9d6628152664dce09fe4973fe1163",
+          "authored_capture_report_sha256": "e539d69cf72ed97e724a678be1c296d078dccc91da22de14a768587916189579",
+          "live_sha256": "0e7ce0c7597f1bc66686b0aaa3a71bf35914dccf1d158e45b7085f129256d11c",
+          "authored_sha256": "0e7ce0c7597f1bc66686b0aaa3a71bf35914dccf1d158e45b7085f129256d11c"
+        },
+        {
+          "samples": 1,
+          "case": "sorted-overlap",
+          "position": [
+            0.625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "cd4cf521a0eef7f063be29a1f7738455fd2f97f631deeeeb41a7df0273fd583f",
+          "authored_capture_report_sha256": "e2c9753cee1245beff1ed1d06ae4f01028b5b13fc782d4bbec0f264e18445ef3",
+          "live_sha256": "580ac661c28743b608282b6c947d7499e2c35a08482bf9fae5ec19b18f4cb6a9",
+          "authored_sha256": "580ac661c28743b608282b6c947d7499e2c35a08482bf9fae5ec19b18f4cb6a9"
+        },
+        {
+          "samples": 1,
+          "case": "weight-midpoint",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "b32121da5148f79b7b062c80c17e8b318bc1985b18f53edcda99e654a48c28bc",
+          "authored_capture_report_sha256": "f88154990de78ac674e43fcd840fb47083c44df149b85b503e75c9a37f4f1712",
+          "live_sha256": "9abc1d58d4e210a059dc3f42a49729c3132936abcda40e701a71084315d90e4e",
+          "authored_sha256": "9abc1d58d4e210a059dc3f42a49729c3132936abcda40e701a71084315d90e4e"
+        },
+        {
+          "samples": 1,
+          "case": "weight-interrupted",
+          "position": [
+            1.0625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "2f11ee8cbc927f1d9c7828bdaf47a9d68997e38c7ac07b5bbc5d24f970f342b6",
+          "authored_capture_report_sha256": "d3c4c78f628d49b6cc5ab759aad2379ba01afea7fd51cc6f316c7d875e0745ee",
+          "live_sha256": "4d2eddc1a79558b3fa5b06b5e4c5e8fa58439cbfdd473f7d60794bf749fa16bd",
+          "authored_sha256": "4d2eddc1a79558b3fa5b06b5e4c5e8fa58439cbfdd473f7d60794bf749fa16bd"
+        },
+        {
+          "samples": 1,
+          "case": "layer-inertial",
+          "position": [
+            1.79296875,
+            2.79296875,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "b6abcc4f4c1e8e78b40896711b8ae632ecdd6bfd4e7567131474ed55b4ba7946",
+          "authored_capture_report_sha256": "71aab2720d47469f3431cae777b5fb79b1054d7239d2d847d61a22c4d890ec32",
+          "live_sha256": "b8d6aaaeee32e7d9ac7e0b0282cc5cfd6cf5034a540b5287dbdb65a97def9c08",
+          "authored_sha256": "b8d6aaaeee32e7d9ac7e0b0282cc5cfd6cf5034a540b5287dbdb65a97def9c08"
+        },
+        {
+          "samples": 1,
+          "case": "base-history-isolated",
+          "position": [
+            0.83984375,
+            1.20703125,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "56521bebf232c90c8005caa15137835537235a9ea5d62961c14b12307018be36",
+          "authored_capture_report_sha256": "24308c332827c87576328f2cc5369487231e6d8a4acc52fe4256c141f69cf9ec",
+          "live_sha256": "92a09b44e29fd82517b3ed454bf850f3e3199b7fe2eac1bca14ba652840e00f3",
+          "authored_sha256": "92a09b44e29fd82517b3ed454bf850f3e3199b7fe2eac1bca14ba652840e00f3"
+        },
+        {
+          "samples": 1,
+          "case": "fractional-rotation",
+          "position": [
+            0.25,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0.3826834323650898,
+            0.9238795325112867
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "360e604f49f6cc9ef292644d33d5a91d316fb1748cee9669eca24cea2d4d3e77",
+          "authored_capture_report_sha256": "6831a28d4e034f6ec7624ca360a99ff070b1b7aff6654168c1db555e601eb3c2",
+          "live_sha256": "a3489cabcd0ec70ccd8c83dddf79d2a4f8946564f4a8ac021a50bbe5fb9b5f76",
+          "authored_sha256": "a3489cabcd0ec70ccd8c83dddf79d2a4f8946564f4a8ac021a50bbe5fb9b5f76"
+        },
+        {
+          "samples": 4,
+          "case": "sparse-fraction",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "ed7c769fa10b46c638eb77d299564ee6211f9ec881a77c31efba67db02c2bede",
+          "authored_capture_report_sha256": "9911c8345dba6a960d764d0235f00e79b2c6430ffcc2cd4118e083ae3d9e353d",
+          "live_sha256": "ec950b3aac202fe91347dde252441fd8bc174d4f088ada8631d041b887c5de1a",
+          "authored_sha256": "ec950b3aac202fe91347dde252441fd8bc174d4f088ada8631d041b887c5de1a"
+        },
+        {
+          "samples": 4,
+          "case": "additive-frozen-reference",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "b0a3dbe22472dd5034f675a475ecb7deaedfcc06d7b78022836f8b8443e203d1",
+          "authored_capture_report_sha256": "07c933de759bf3f5cf8b9bcb6a2ee4e47a6e538af0c8fec7e71f8bc77a21943d",
+          "live_sha256": "ce6b88524b5253253fedc08893c391e7e88514be3fae7716ebef48701bb69ce3",
+          "authored_sha256": "ce6b88524b5253253fedc08893c391e7e88514be3fae7716ebef48701bb69ce3"
+        },
+        {
+          "samples": 4,
+          "case": "additive-reference-later",
+          "position": [
+            1.75,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "db2111146acfde92a27aa98097486f2d192426fe10cd277696da922112d3bf68",
+          "authored_capture_report_sha256": "98049fa73183a9f93a16ce8d70a75a41933ef33889499384a883ac41e93a1cfe",
+          "live_sha256": "f49636f6dcb9c4194fd47cf733c99d6f404e2ceb70c99dd03ff7fee76e500aca",
+          "authored_sha256": "f49636f6dcb9c4194fd47cf733c99d6f404e2ceb70c99dd03ff7fee76e500aca"
+        },
+        {
+          "samples": 4,
+          "case": "sorted-overlap",
+          "position": [
+            0.625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "4649a3a5f7f71eef1cbbe592ef6e3100ee4d76a109c2899ed142de6070abfb32",
+          "authored_capture_report_sha256": "962c0ef352d8f82ab325f843e88fe16ac8d9c857106cd8976151e981687762f5",
+          "live_sha256": "c37a92f2faf4d7368660496683c9e02eb208940767044e4c1e65591e0bbab577",
+          "authored_sha256": "c37a92f2faf4d7368660496683c9e02eb208940767044e4c1e65591e0bbab577"
+        },
+        {
+          "samples": 4,
+          "case": "weight-midpoint",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "3d9d2b31c1476cfe0548e0c4f94444dba9f8095076e6e84c2f6d94c983a11a5f",
+          "authored_capture_report_sha256": "7a5963d2f7a238cb19bd82bc4ca24f2b088454cbe236f5587fc52265d871abb6",
+          "live_sha256": "ce6b88524b5253253fedc08893c391e7e88514be3fae7716ebef48701bb69ce3",
+          "authored_sha256": "ce6b88524b5253253fedc08893c391e7e88514be3fae7716ebef48701bb69ce3"
+        },
+        {
+          "samples": 4,
+          "case": "weight-interrupted",
+          "position": [
+            1.0625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "981be91bacb3b7626b19f711a9a6ab4069ec3d1bb8a3c7b6fd7f29f444943977",
+          "authored_capture_report_sha256": "9a1bf2328922d544dd4fdcda515c28d591f5dfebbf5aa160ad6a8fa71ad6be35",
+          "live_sha256": "a20a406bbad4ba40cb086e5cf6f5d061eebb0870e2d4fd11b8a2e17e3bba5e5b",
+          "authored_sha256": "a20a406bbad4ba40cb086e5cf6f5d061eebb0870e2d4fd11b8a2e17e3bba5e5b"
+        },
+        {
+          "samples": 4,
+          "case": "layer-inertial",
+          "position": [
+            1.79296875,
+            2.79296875,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "1678e1f14c97eab3e0fccd59023037b0fbcb2fcf787779b6de4cfb84e1c45292",
+          "authored_capture_report_sha256": "2bb7508cfe4c1d2a7b12e76a1c45e52976b7a580d0e77f5ef8df03803532d2b2",
+          "live_sha256": "55bacc61d0b56eecf5cf93dc43f929b9c8797c473159e3ed15687d05b1ade6b5",
+          "authored_sha256": "55bacc61d0b56eecf5cf93dc43f929b9c8797c473159e3ed15687d05b1ade6b5"
+        },
+        {
+          "samples": 4,
+          "case": "base-history-isolated",
+          "position": [
+            0.83984375,
+            1.20703125,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "b495fd68a5f5a8b1cd77d851c0ee65c5ace8c7544a4faa42fdd83c4687c055d3",
+          "authored_capture_report_sha256": "99c312f9a2c32d96dca685b6875e13b245dcfd01685129bcc91e3fbab3d6d221",
+          "live_sha256": "96aa1a7aaded64e31f99766ee95088338d48894106118da50090fbecb0d935a4",
+          "authored_sha256": "96aa1a7aaded64e31f99766ee95088338d48894106118da50090fbecb0d935a4"
+        },
+        {
+          "samples": 4,
+          "case": "fractional-rotation",
+          "position": [
+            0.25,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0.3826834323650898,
+            0.9238795325112867
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "ee265fc1eba9e537fa2fa5c444bde0e101fe87323da0acd362361170e9e95881",
+          "authored_capture_report_sha256": "28739e31b4a0fc3753454f83caf816395a81c336abdd7702344489e6bb796840",
+          "live_sha256": "96a15bfc2d4472a44b49d6d9b86afe166ecace199267bf36f2cc6d5912981363",
+          "authored_sha256": "96a15bfc2d4472a44b49d6d9b86afe166ecace199267bf36f2cc6d5912981363"
+        }
+      ]
+    },
+    {
+      "passed": true,
+      "gpu": 1,
+      "captures": 36,
+      "exact_reference_pairs": 18,
+      "clean_owned_processes": 4,
+      "nvrhi_errors": 0,
+      "binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd",
+      "test_sha256": "10b5d7ca5590a97629923673c653e5aa016254d015333a391a0e97f1ec9823f2",
+      "fixture_sha256": "df4b21f0df9986409f7ab999018d5a7bc26aa7ce28bdf5388b361948f1ea3f2e",
+      "motion_pixels": {
+        "1": 32403,
+        "4": 32854
+      },
+      "comparisons": [
+        {
+          "samples": 1,
+          "case": "sparse-fraction",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "57d45a6993f23c29749139b796d190ca21638f8c9aca99b74ed9c69736aa5c42",
+          "authored_capture_report_sha256": "9c72d3ef227fdd4c5c546b20d7a25c05d1061f9e676e120f64471da5aceebe2c",
+          "live_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1",
+          "authored_sha256": "3be908e2b4feb692b8d058577b792f34c2ba2d81fa4164f36894efa5174e9dc1"
+        },
+        {
+          "samples": 1,
+          "case": "additive-frozen-reference",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "b65e693d41c74cb1608233522ed9ea10b3b8e54be1347ec69ed04c90a06a011d",
+          "authored_capture_report_sha256": "4bc3131de5371d72574c654c107d5484eab5761f4f360948312f48af81222917",
+          "live_sha256": "f519fbd59b2d8d6e350f13a240c7d67749535205adaf650eb37f451a7a77cd93",
+          "authored_sha256": "f519fbd59b2d8d6e350f13a240c7d67749535205adaf650eb37f451a7a77cd93"
+        },
+        {
+          "samples": 1,
+          "case": "additive-reference-later",
+          "position": [
+            1.75,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "e490ae5fb480e273a4b3f2a49abe14cfb12a7a745de7157128863c06ce8f47a5",
+          "authored_capture_report_sha256": "05d3a075f14a9e0fff24c46b32c61d42b82e2a434c2f8081c5b11c75c15f3a3b",
+          "live_sha256": "0e7ce0c7597f1bc66686b0aaa3a71bf35914dccf1d158e45b7085f129256d11c",
+          "authored_sha256": "0e7ce0c7597f1bc66686b0aaa3a71bf35914dccf1d158e45b7085f129256d11c"
+        },
+        {
+          "samples": 1,
+          "case": "sorted-overlap",
+          "position": [
+            0.625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "e4ac36b37e82257cbfb4ab0bfb72d3d9976d253a1c4b40b65b64ae6156496545",
+          "authored_capture_report_sha256": "6a8984bee75d8eabdc478d84e05096e59f186b591d46d44dcc403596ef3c0eb0",
+          "live_sha256": "319e81b39904b6b1dbc7509383d0eb43ef6c95191d90dbf9a1ca0963f374c279",
+          "authored_sha256": "319e81b39904b6b1dbc7509383d0eb43ef6c95191d90dbf9a1ca0963f374c279"
+        },
+        {
+          "samples": 1,
+          "case": "weight-midpoint",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "10a9e3fbf3ef2b5a979b63366e2c5f27504d6f6a0937a9144e84fa9b07b9b0a8",
+          "authored_capture_report_sha256": "0c31080ba5befaa9f6e255a3284a031fde0584be3222e94e646de1afacd11f93",
+          "live_sha256": "f519fbd59b2d8d6e350f13a240c7d67749535205adaf650eb37f451a7a77cd93",
+          "authored_sha256": "f519fbd59b2d8d6e350f13a240c7d67749535205adaf650eb37f451a7a77cd93"
+        },
+        {
+          "samples": 1,
+          "case": "weight-interrupted",
+          "position": [
+            1.0625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "ff7928c1fc9b5045a09768b29fa21f993440d3bafe0a4ceb55a7dc3ac4cf76ab",
+          "authored_capture_report_sha256": "5bb4f54fe4aa9aee4cab0d2cd7f6eb4b077b0b24a09f2c5524ab70400f2e2e29",
+          "live_sha256": "4d2eddc1a79558b3fa5b06b5e4c5e8fa58439cbfdd473f7d60794bf749fa16bd",
+          "authored_sha256": "4d2eddc1a79558b3fa5b06b5e4c5e8fa58439cbfdd473f7d60794bf749fa16bd"
+        },
+        {
+          "samples": 1,
+          "case": "layer-inertial",
+          "position": [
+            1.79296875,
+            2.79296875,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "5494489f4ba5824171c915a9be834f41dd0394229d7cf25c24d49dca3aaad427",
+          "authored_capture_report_sha256": "c6be5e1cebc45eb83a74a2898b51a0e9335b525f0943a5e625dc4aaed3b7a155",
+          "live_sha256": "2cd8a032baed8cf9106537ebca9a0ac7a60cb9ce3178183b64359437f543d186",
+          "authored_sha256": "2cd8a032baed8cf9106537ebca9a0ac7a60cb9ce3178183b64359437f543d186"
+        },
+        {
+          "samples": 1,
+          "case": "base-history-isolated",
+          "position": [
+            0.83984375,
+            1.20703125,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "beb4d6bfa3042a75dca0e171d084948713c042a3134994ef3549fcaf94fc9fea",
+          "authored_capture_report_sha256": "d5fbc88da148197cb226ec51f10fd84ae7edcdebc14f5de976b216eacbf930f6",
+          "live_sha256": "92a09b44e29fd82517b3ed454bf850f3e3199b7fe2eac1bca14ba652840e00f3",
+          "authored_sha256": "92a09b44e29fd82517b3ed454bf850f3e3199b7fe2eac1bca14ba652840e00f3"
+        },
+        {
+          "samples": 1,
+          "case": "fractional-rotation",
+          "position": [
+            0.25,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0.3826834323650898,
+            0.9238795325112867
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "ec6542e1f9fec263880f7009400bf23735d63c90a30b6ecf282b5563ee3361fd",
+          "authored_capture_report_sha256": "41bfc23ed8086db8de68e6fcb9cfac1be752f23cbd4a2b7c2b9fec59720af489",
+          "live_sha256": "a3489cabcd0ec70ccd8c83dddf79d2a4f8946564f4a8ac021a50bbe5fb9b5f76",
+          "authored_sha256": "a3489cabcd0ec70ccd8c83dddf79d2a4f8946564f4a8ac021a50bbe5fb9b5f76"
+        },
+        {
+          "samples": 4,
+          "case": "sparse-fraction",
+          "position": [
+            0.875,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "d14ec432a9378b627ad3d1b9affa355fdc4eb0d7c4f62ecc83de95de70972bc9",
+          "authored_capture_report_sha256": "e65611d384020c4dcfa4e397e5b5c3b722ed026bff5c5337eab538fb0891217b",
+          "live_sha256": "8b4a2834ae8c175c05c9fab182e541f1d47baf44ac153fe24938c10236e8c5ff",
+          "authored_sha256": "8b4a2834ae8c175c05c9fab182e541f1d47baf44ac153fe24938c10236e8c5ff"
+        },
+        {
+          "samples": 4,
+          "case": "additive-frozen-reference",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "a574d0764160c1983954856a1242f141c1b75741cc714cca9614b1d61442dcac",
+          "authored_capture_report_sha256": "8d78417e5066ba7fbfbe6271fbfabdebd198ccc967b0c5c9b265bc9592168c87",
+          "live_sha256": "160c25fa7335ab431d82508cd53663c07786082acbbf6e6a6f0aa7d5ff8561a6",
+          "authored_sha256": "160c25fa7335ab431d82508cd53663c07786082acbbf6e6a6f0aa7d5ff8561a6"
+        },
+        {
+          "samples": 4,
+          "case": "additive-reference-later",
+          "position": [
+            1.75,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "0a6f1ea737f6bac81c759496776223a7f73c8e279e62469c15d9b1217434a826",
+          "authored_capture_report_sha256": "7166c797c494c158c8850f9b0264ff6a7c3545ddcc769d18fe8d06a3afdad849",
+          "live_sha256": "1a28d92378ac672d125315c078caf4cc2159b987637344c83678e5d982485b03",
+          "authored_sha256": "1a28d92378ac672d125315c078caf4cc2159b987637344c83678e5d982485b03"
+        },
+        {
+          "samples": 4,
+          "case": "sorted-overlap",
+          "position": [
+            0.625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "f5adbc0f0a9e02de7a7fdbb24f2d640c2906d1d777808583bcdca1b167f3025b",
+          "authored_capture_report_sha256": "926c1617a7459c55dcbb888782f984b269c6a722e1dc4468c8c1162b40a83ed2",
+          "live_sha256": "8574ee6a405300d87b5a3161cb530a0abcb32e7b8b357c4cdda02f36706585b9",
+          "authored_sha256": "8574ee6a405300d87b5a3161cb530a0abcb32e7b8b357c4cdda02f36706585b9"
+        },
+        {
+          "samples": 4,
+          "case": "weight-midpoint",
+          "position": [
+            1.25,
+            2,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "02075b713752ab74c5692ff3e52558b99ef98109795875d404d134f21dc01389",
+          "authored_capture_report_sha256": "d62dde6b96c468a6988c83360083b88909991651c25263bb3cde8f8e05cc5809",
+          "live_sha256": "160c25fa7335ab431d82508cd53663c07786082acbbf6e6a6f0aa7d5ff8561a6",
+          "authored_sha256": "160c25fa7335ab431d82508cd53663c07786082acbbf6e6a6f0aa7d5ff8561a6"
+        },
+        {
+          "samples": 4,
+          "case": "weight-interrupted",
+          "position": [
+            1.0625,
+            1.5,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "4f170c86a56cd0f9b78c2133a008c3d2ddd1e77dcfd2ef9fabf7df8b8a783da4",
+          "authored_capture_report_sha256": "433f3567075717e6fa34addc91db016e4d2c7a74a66c02efbe8a0feb15208cb0",
+          "live_sha256": "508de281ad99e929bbc3cae249493e4f7771c7e0035852a90c304a1eef020cd3",
+          "authored_sha256": "508de281ad99e929bbc3cae249493e4f7771c7e0035852a90c304a1eef020cd3"
+        },
+        {
+          "samples": 4,
+          "case": "layer-inertial",
+          "position": [
+            1.79296875,
+            2.79296875,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "bba6d92caeec306fef104b7508b2a7de557d74f7ee1f5bedc75130ccb6041b20",
+          "authored_capture_report_sha256": "5d84810d266bf387d9dc98f9f685ef333609e473b62dda1296701fb60ea883dc",
+          "live_sha256": "471afb6674d4380e22d91fd44edd88514f5b26ec581c023f0c9f85586c0731fc",
+          "authored_sha256": "471afb6674d4380e22d91fd44edd88514f5b26ec581c023f0c9f85586c0731fc"
+        },
+        {
+          "samples": 4,
+          "case": "base-history-isolated",
+          "position": [
+            0.83984375,
+            1.20703125,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "0baa789af0a13c6d1ebea6b9cbc558b3187d8cfd8989102b7f70ab47775eb10f",
+          "authored_capture_report_sha256": "de4fac3d06fdfbe335645066b5024275ebf4afb24975218195a43b6b83dd6d83",
+          "live_sha256": "470eff837b7a7b1960df3b1e0317b3b8548650f915165f6734e76f3d4846e0b1",
+          "authored_sha256": "470eff837b7a7b1960df3b1e0317b3b8548650f915165f6734e76f3d4846e0b1"
+        },
+        {
+          "samples": 4,
+          "case": "fractional-rotation",
+          "position": [
+            0.25,
+            1,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0.3826834323650898,
+            0.9238795325112867
+          ],
+          "changed_pixels": 0,
+          "maximum_channel_difference": 0,
+          "live_capture_report_sha256": "939dd45a6ec1fe0e1a8e7cd4c7bc7e655d6b8f6e665d4a2751009d6767e24361",
+          "authored_capture_report_sha256": "256d12438cf986e0e7313aa7025a9adb85c0e58df56dc083beba283c9703fd8b",
+          "live_sha256": "d7cca277495e751d65b8e0bbf662138da8566c5bda5b09506d68b4faa3858555",
+          "authored_sha256": "d7cca277495e751d65b8e0bbf662138da8566c5bda5b09506d68b4faa3858555"
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    "Initial Linux blend/inertial discovery failures exposed removal of legacy flat command properties/required. Restoring that projection alongside two closed branches fixed both; six affected groups and fresh final layer/legacy cohorts pass."
+  ],
+  "limits": [
+    "Bounded analytic rigs and original ribbons; maximum 20,000-node work and 64 MiB save capacity were not filled.",
+    "No new physical input or installed desktop/editor package qualification.",
+    "No game-scale performance, crowd throughput, character quality, foot locking or retargeting claim.",
+    "Existing compiled C# 176/192 services remain base-only; C# layer controls and desktop layer widgets are unfinished.",
+    "Weight fades retain value continuity, not weight-velocity continuity.",
+    "GPU references cover translation/skinning and one fractional rotation; broader math and atomicity are native/protocol checks.",
+    "Native AOT remains process-pinned, without compatible native reload or new clean-machine, console or browser qualification."
+  ],
+  "authoring_only_layers": {
+    "passed": true,
+    "tests": 2,
+    "rpc_calls": 17,
+    "clean_owned_processes": 2,
+    "binary_sha256": "aeeb0dd6c22d66496543d76d2f6811ef544fc9cb4439bf17c2d3e417139a0dee",
+    "test_sha256": "de62ffbe4a64d1c9d3d40acbb77f47846967cdf28d44c85df342cdc892206526"
+  },
+  "legacy_provenance": [
+    {
+      "file": "poima-linux-0056",
+      "sha256": "e5e925ceb530be8702e08a761d56b0e6b0754771ebcfd1868be48b55d3991bcf"
+    },
+    {
+      "file": "poima-windows-0056.exe",
+      "sha256": "e6c71148ebc49d7df44c68402b3fec03ed6bebb20408d5066e8e38d2a8b10187"
+    },
+    {
+      "file": "phonon.dll",
+      "sha256": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d"
+    }
+  ],
+  "binary_closure": {
+    "final_linux_current_match": true,
+    "final_windows_current_match": true,
+    "authoring_only_current_match": true,
+    "preserved_legacy_files_match": true
+  },
+  "source_base_commit": "c70330bdb8f582255de04225514f1a9141a91b73",
+  "authoring_compatibility": {
+    "passed": true,
+    "platforms": [
+      {
+        "name": "linux-runtime",
+        "passed": true,
+        "schema_revision": 53,
+        "protocol_version": 1,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "daa431925e6ed685b49f9e08f82a9a450af65a06c396217e29455b78ead6a7fa"
+      },
+      {
+        "name": "windows-runtime",
+        "passed": true,
+        "schema_revision": 53,
+        "protocol_version": 1,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "6b351dd9c9e3886294103c02bce5c74b76d2cec1767905d8e9ecf297b175acfd"
+      },
+      {
+        "name": "linux-authoring-only",
+        "passed": true,
+        "schema_revision": 53,
+        "protocol_version": 1,
+        "selected_request_findings": [],
+        "contract_identity_matches_release": true,
+        "process_exit_code": 0,
+        "binary_sha256": "aeeb0dd6c22d66496543d76d2f6811ef544fc9cb4439bf17c2d3e417139a0dee"
+      }
+    ],
+    "historical_response_compatibility": true,
+    "canonical_response_self_compatibility": true
+  }
+}

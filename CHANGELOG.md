@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.57 — Unreleased
+
+This checkpoint adds persistent native masked animation layers. The installed desktop package remains unchanged.
+
+- Author up to four ordered override/additive slots with sparse node masks and frozen reference poses. Each layer owns playback, crossfade/inertial history and independent weight ramps. Native commands and joined runtime observations expose the layers. [Contract](docs/RUNTIME_ANIMATION.md#masked-animation-layers).
+- Rollback and nested animation-state v3 retain complete layered state and reject changed mask/reference identity. Unlayered v1/v2 bytes remain compatible; actual old/new executable checks pass on Windows and Linux.
+- Each OS passes eight layer protocol checks, preserved CoreCLR/Native AOT animation cohorts and fresh save continuation. Both GPUs pass 36 exact reference pairs across 72 captures. The evidence distinguishes initial Linux discovery failures from successful affected reruns. [Evidence](docs/evidence/m2-animation-layers.json).
+- Discovery advances to revision 53 while protocol 1, selected authoring-core v1 and the 176/192-byte services-7 tables remain unchanged. Compiled C# layer access, desktop layer widgets and game-scale animation performance remain unfinished.
+
 ## 0.0.56 — Unreleased
 
 This checkpoint exposes native inertial animation to compiled C# games through explicit service negotiation. The installed desktop package remains unchanged.

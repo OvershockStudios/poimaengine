@@ -1,8 +1,39 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.56 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-08 for **0.0.57 development**. **Poima is an engine prototype.** Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+The 0.0.57 checkpoint adds up to four frozen masked animation layers per rig,
+with ordered override/additive composition, independent playback and motion
+history, clip transitions and linear weight ramps. Native commands and joined
+observations expose the layers; rollback and nested animation-state v3 saves
+retain their clocks, transitions, weights and exact mask/reference identity.
+Unlayered v1/v2 saves retain their previous bytes and behavior.
+
+Windows and Linux each pass eight layer protocol checks over 146 RPCs and nine
+clean owned exits. An actual 0.0.56-versus-0.0.57 comparison passes 1,036 RPCs on
+each OS, including byte-identical unlayered saves and fresh-process continuation
+with immediate re-interruption. The unchanged compiled C# fixtures pass ten
+CoreCLR checks (486 RPCs) and seven Native AOT checks (435 RPCs) per platform;
+these fixtures remain base-only and do not qualify C# layer access.
+
+Both laptop GPUs pass 36 exact reference pairs across 72 captures at 640×480
+with 1×/4× MSAA and zero reported NVRHI errors. Sixteen selected Windows checks
+and seven authoring-only Linux groups pass. The initial Linux cohort passed 17
+of 19 groups; two legacy discovery-shape failures were fixed, and all six affected
+groups passed their final rerun. A fresh final layer and legacy comparison also
+pass. This is not a fresh simultaneous rerun of all nineteen groups.
+
+Discovery advances to revision 53. Protocol 1, selected authoring-core v1 and the
+176/192-byte gameplay services-7 tables remain unchanged. Bounds of four slots,
+128 rigs and 20,000 aggregate full-model layer nodes are admission limits, not
+measured throughput. Maximum configurations and the 64 MiB outer-save ceiling
+are not jointly qualified. Compiled C# layer controls, desktop layer widgets,
+IK, root motion and retargeting remain unfinished. There is no new installed
+editor, physical-input or game-scale performance qualification.
+[Layer contract](RUNTIME_ANIMATION.md#masked-animation-layers),
+[evidence](evidence/m2-animation-layers.json).
 
 The 0.0.56 checkpoint adds opt-in C# inertial animation through
 `IInertialAnimationGame`, typed mode selection and extended committed-state
@@ -196,7 +227,7 @@ Planned editor workflow improvements include configurable hierarchy/folder styli
 
 Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 
-Animation supports bounded two-pose crossfades and opt-in native inertial transitions. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. Blend layers, state machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
+Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. Compiled C# layer controls, state machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
 
 ## Implemented
 
@@ -258,7 +289,7 @@ Animation supports bounded two-pose crossfades and opt-in native inertial transi
 
 - Native keyboard/mouse and gamepad profiles with alternate bindings, sensitivity/inversion, radial stick deadzones/response, trigger hysteresis, atomic profile edits, persistent retry receipts and isolated event evaluation. SDL gamepad discovery, single-player device assignment and attachment/focus/disconnect handling feed the same evaluator as headless traces; semantic replay remains independent of bindings. General action maps, in-game rebinding UI, haptics and general settings menus remain unfinished. [Input profile contract](INPUT_PROFILES.md), [gamepad contract](GAMEPADS.md).
 
-- glTF skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Blend layers, retargeting, IK, root motion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md).
+- glTF skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Native masked layers add independent clocks, transitions and persistent weights. Compiled C# layer controls, retargeting, IK and root motion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md).
 
 - Native mono WAV import and content-addressed audio packages, editable acoustic materials/emitters, and optional Steam Audio direct-path/HRTF capture from authored or live poses. Linux/Windows tests measure actual PCM, dynamic-door obstruction, delayed arrival, directional cues and mixing; the C# use action changes the observed acoustic path. Native logical voices, rollback-safe C# play/stop, persistent direct/HRTF streams, temporal replay recording and optional SDL3 player output and a separate bounded [editor DSP worker](EDITOR_AUDIO.md) are now implemented; reflections, production scheduling and the full environmental system remain unfinished. [Event/output contract](AUDIO_EVENTS.md). [Native audio contract and evidence](AUDIO.md).
 

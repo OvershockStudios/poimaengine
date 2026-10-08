@@ -895,7 +895,7 @@ struct Runtime::Impl {
                     profiling::Scope commands_profile("runtime.gameplay.commands");
                     require(game_animation_commands.size()+(frame==0 ? animation_commands.size() : 0)<=64,"Caller and gameplay exceed 64 combined animation commands in one tick.");
                     for(const auto& command:game_animation_commands)
-                        require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity; }),
+                        require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity && explicit_command.layer==command.layer; }),
                             "Gameplay and caller targeted the same animation rig in one tick.");
                     if(!game_animation_commands.empty()) {
                         animations->apply(game_animation_commands,tick);animation_locals();sync();
@@ -1000,7 +1000,7 @@ const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const {retur
 RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->topology->order.size(),impl_->topology->body_names.size(),impl_->topology->characters.size()}; }
 RuntimeEntityState Runtime::entity(const std::string& id) const {
     const auto e=impl_->find(id); const auto& node=impl_->registry.get<Node>(e);
-    RuntimeEntityState result; result.id=id; result.world=node.world;result.local=node.local;result.animation=impl_->animations->state(id,impl_->tick);
+    RuntimeEntityState result; result.id=id; result.world=node.world;result.local=node.local;result.animation=impl_->animations->state(id,impl_->tick,true);
     JPH::Vec3 velocity=JPH::Vec3::sZero();
     if(const auto* body=impl_->registry.try_get<Body>(e)) {
         result.has_body=true;velocity=impl_->physics.GetBodyInterface().GetLinearVelocity(body->id);
