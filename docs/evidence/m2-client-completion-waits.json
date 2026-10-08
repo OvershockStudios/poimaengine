@@ -1,0 +1,279 @@
+{
+  "checkpoint": "0.0.46 development",
+  "passed": true,
+  "scope": "Windows client completion waits, transport correctness and same-machine authoring-query latency",
+  "protocol_version": 1,
+  "schema_revision": 47,
+  "implementation": {
+    "windows_client": "FILE_FLAG_OVERLAPPED, PIPE_WAIT, private manual-reset event and zeroed OVERLAPPED per transfer",
+    "single_absolute_exchange_deadline": true,
+    "cancel_then_reap_before_buffer_event_release": true,
+    "cancellation_cleanup_can_exceed_deadline": true,
+    "failure_closes_connection": true,
+    "server_poll_reply_budgets_unchanged": true,
+    "linux_readiness_path_unchanged": true,
+    "endpoint_startup_retry_sleep_unchanged": true,
+    "headless_owner_sleep_unchanged": true,
+    "editor_dispatch_cadence_unchanged": true,
+    "new_transport_threads": false,
+    "busy_spin_added": false,
+    "global_timer_resolution_changed": false,
+    "automatic_replay_added": false,
+    "source_sha256": {
+      "src/local_session.cpp": "54f44159ccd1a818cfcd9e5696c0203234d54dae462b6d64bdaf1a206102b023",
+      "src/shared_session.cpp": "8e990bd437a11614b034721da536e2781bc1216f2b011c458afb514947b72f4e",
+      "include/poima/local_session.hpp": "9e85acc1ad0424afa9315fdf93f2ee1afc858dbd2780f5ff0628ea5cc73001c8",
+      "tests/local_session_native.cpp": "8a6924d28a0e94c4a460ed31c587aea991c6bb45f02a745e84af69cff8f9524b",
+      "tools/benchmark_shared_session.py": "651c733eee1e08360ea207c8bd1ecd83cb467e9e3ca06624384f3bafb61547c3"
+    }
+  },
+  "engines": {
+    "before_windows": {
+      "version": "0.0.45",
+      "sha256": "91a59d79644b6733814d4f4ca709cec2a1dc26351c55216428392a10f0cab98c"
+    },
+    "after_windows": {
+      "version": "0.0.46",
+      "sha256": "d84868e964a922b694ba9a4ccd83939fe8f30b329c2c690c40a8b1f15938bb27"
+    },
+    "after_linux": {
+      "version": "0.0.46",
+      "sha256": "c0f4b4402f6fbac414e4d15becc7ffa040a6f0142da03389edbfaa147e6ce3c5"
+    }
+  },
+  "windows_query_measurement": {
+    "platform": "Windows",
+    "python_version": [
+      3,
+      14,
+      8
+    ],
+    "world_input_sha256": "f77b16bbc70e3e5ffce295cff7274452673a365883402801207223b7dc8c49df",
+    "method": "world.inspect",
+    "pairs_per_build_group": 4,
+    "warmup_calls_per_trial": 10,
+    "timed_calls_per_mode_per_group": 400,
+    "order": "Initial old build, preliminary new build, old-build recheck, final new build. Reported after statistics use the final new build; the preliminary build is excluded. Each group alternates standalone/shared, shared/standalone, standalone/shared, shared/standalone.",
+    "parameters": {
+      "warmup": 10,
+      "samples": 100,
+      "repeats": 4,
+      "overall_request_budget_seconds": 120,
+      "rpc_timeout_seconds": 10,
+      "cleanup_timeout_per_owned_process_seconds": 5,
+      "max_inspect_calls": 880
+    },
+    "core_response_validation_enabled": true,
+    "every_identity_revision_entity_count_checked": true,
+    "individual_timing_excludes": [
+      "startup",
+      "discovery",
+      "warmup",
+      "cleanup"
+    ],
+    "percentile_method": "nearest-rank ceil(n*0.95); p50 median; pooled mode samples",
+    "groups": {
+      "before": {
+        "engine_sha256": "91a59d79644b6733814d4f4ca709cec2a1dc26351c55216428392a10f0cab98c",
+        "public_report_sha256": "45ffc3fc2a3d99c5d6c1e5280b69e7ff0462f4428261bc6c704d2a283cea8d6e",
+        "modes": {
+          "standalone": {
+            "samples": 400,
+            "p50_ms": 0.2132,
+            "p95_ms": 0.3717,
+            "mean_ms": 0.225625,
+            "min_ms": 0.1072,
+            "max_ms": 1.1151,
+            "timed_total_ms": 91.95320000000001,
+            "complete_trials": 4
+          },
+          "shared": {
+            "samples": 400,
+            "p50_ms": 31.40345,
+            "p95_ms": 32.1999,
+            "mean_ms": 25.730858,
+            "min_ms": 3.5173,
+            "max_ms": 34.6368,
+            "timed_total_ms": 10297.4961,
+            "complete_trials": 4
+          }
+        },
+        "all_inspections_correct": true,
+        "all_input_hashes_stable": true,
+        "all_owned_process_exit_codes_zero": true
+      },
+      "after": {
+        "engine_sha256": "d84868e964a922b694ba9a4ccd83939fe8f30b329c2c690c40a8b1f15938bb27",
+        "public_report_sha256": "87a43efb4c42d52bf59be1befaad07e6a9ae6a5fc135a54fcba69d21da82d2a8",
+        "modes": {
+          "standalone": {
+            "samples": 400,
+            "p50_ms": 0.1279,
+            "p95_ms": 0.2463,
+            "mean_ms": 0.14950225,
+            "min_ms": 0.0955,
+            "max_ms": 1.3374,
+            "timed_total_ms": 60.758700000000005,
+            "complete_trials": 4
+          },
+          "shared": {
+            "samples": 400,
+            "p50_ms": 15.896650000000001,
+            "p95_ms": 16.4556,
+            "mean_ms": 15.91159075,
+            "min_ms": 14.4402,
+            "max_ms": 17.3198,
+            "timed_total_ms": 6367.7924,
+            "complete_trials": 4
+          }
+        },
+        "all_inspections_correct": true,
+        "all_input_hashes_stable": true,
+        "all_owned_process_exit_codes_zero": true
+      },
+      "baseline-recheck": {
+        "engine_sha256": "91a59d79644b6733814d4f4ca709cec2a1dc26351c55216428392a10f0cab98c",
+        "public_report_sha256": "c572ccbf3d01b6e9e0d81dd7326bc4b424c3388958d41054c0f151cf48d003f9",
+        "modes": {
+          "standalone": {
+            "samples": 400,
+            "p50_ms": 0.1263,
+            "p95_ms": 0.208,
+            "mean_ms": 0.13634925,
+            "min_ms": 0.1014,
+            "max_ms": 0.4212,
+            "timed_total_ms": 55.444,
+            "complete_trials": 4
+          },
+          "shared": {
+            "samples": 400,
+            "p50_ms": 32.1582,
+            "p95_ms": 32.843,
+            "mean_ms": 32.0702285,
+            "min_ms": 15.8124,
+            "max_ms": 33.545,
+            "timed_total_ms": 12832.5646,
+            "complete_trials": 4
+          }
+        },
+        "all_inspections_correct": true,
+        "all_input_hashes_stable": true,
+        "all_owned_process_exit_codes_zero": true
+      }
+    },
+    "shared_median_reduction_percent": 49.37928794447743
+  },
+  "native_transport_regressions": {
+    "windows_exit_code": 0,
+    "linux_exit_code": 0,
+    "windows_cases": [
+      "Timeout diagnostics distinguish ERROR_IO_PENDING plus WAIT_TIMEOUT for reads and writes.",
+      "Prequeued nonempty/empty replies and repeated endpoint reopening.",
+      "Three pending response-read timeouts; dead-client reuse and late replies rejected.",
+      "Three unread 1 MiB requests against an advisory 4 KiB quota time out and close; late replies rejected.",
+      "Peer disconnect during response wait closes the connection.",
+      "Fragmented header/body uses the original exchange deadline.",
+      "Fresh clients work after cancellation."
+    ],
+    "preserved_cases": [
+      "Immediate server replies, slow-reader fairness and pipelined exact frame ordering.",
+      "Large frames, strict UTF-8, frame limits, eight clients, ownership, endpoint and timeout/no-replay checks."
+    ],
+    "native_test_binary_sha256": "ff552e48997d1933e3171d3c305c220e4841cb6bb7e546db887b7672898a7678"
+  },
+  "integration_regressions": {
+    "linux_ctest_groups": [
+      "authoring_api_compatibility",
+      "authoring_api_projection",
+      "python_response_contract",
+      "python_client_contract",
+      "local_session_native",
+      "shared_session_contract",
+      "mcp_contract"
+    ],
+    "all_passed": true,
+    "windows_shared_host_cases": {
+      "passed": 7,
+      "skipped": 1,
+      "skip": "Linux-only pathname socket publication test"
+    },
+    "windows_python_client_cases": 18,
+    "windows_mcp_cases": 5,
+    "windows_desktop_native_abi": {
+      "checks": 10,
+      "passed": true,
+      "gpu_attachment": false,
+      "physical_editor_widgets": false,
+      "bridge_sha256": "78fbcfbcd114688a2b7cc4fedcd2f0a0b679cd0cb5f80b13c6c23462cac827da",
+      "test_sha256": "8571a1723112b0b7073f9617b9813a4f91a383653eedf9dae2739fb271ce5241"
+    },
+    "candidate_request_gate": {
+      "windows": true,
+      "linux": true,
+      "scope": "Selected nine authoring request schemas and Transform only; no full API or binary ABI stability guarantee."
+    }
+  },
+  "compiled_defense_shared_replay": {
+    "passed": true,
+    "platform": "Windows",
+    "backend": "CoreCLR",
+    "engine_version": "0.0.46",
+    "native_calls": 3208,
+    "verifier_seconds": 39.767849200005,
+    "exact_seven_outcome_objects_equal_to_0_0_45": true,
+    "checks": [
+      "Native cover closest-hit blocks drone damage.",
+      "Immediate cooldown gate spends no ammunition.",
+      "Accepted camera misses consume finite ammunition.",
+      "Controller movement reveals cover-occluded target.",
+      "Empty magazine refuses a visible drone shot.",
+      "Three-breach unattended loss.",
+      "Exactly three waves of three two-hit native drones produce nine-kill win.",
+      "Compiled Reload/Pause/Resume/Save/Load handlers exercised.",
+      "Mid-wave checkpoint restores complete reflected state, logical UI, native identities/poses and motion.",
+      "Fresh native process restores the same checkpoint and completes newly computed controller play."
+    ],
+    "outcome_ticks": {
+      "loss": 1345,
+      "checkpoint": 130,
+      "win": 402,
+      "compiled_restore": 130,
+      "win_after_compiled_load": 402,
+      "fresh_process_restore": 130,
+      "fresh_process_win": 402
+    },
+    "assembly_sha256": "9b7c22ad2adf76482c37c34285a74d464d1d188cc493b73c69041f6bf6185cf8",
+    "original_verifier_sha256": "5506ac02c164418805fa9ef84b9b2bd14075f89bfed8824626689aaa5d729f1e",
+    "harness_sha256": "74d9755883d24220e67dcd9d943dbea737e92870b01136fc094015472b192db1",
+    "raw_verifier_evidence_sha256": "fc7bb19e56d498b694b4957c8b5ea2d38aef72b9eae057eb6075ad3a969d2201",
+    "six_owned_process_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "forced_cleanup": false,
+    "cleanup_error_count": 0,
+    "fresh_provider_turn": false,
+    "rendering_or_physical_input": false
+  },
+  "limits": [
+    "One laptop and a small read-only fixture; no game FPS, GUI responsiveness, provider tokens or agent success-rate claim.",
+    "Build groups are sequential rather than randomized; no idle CPU, power, timer-resolution or kernel scheduling trace was recorded.",
+    "Normal completion waits use an absolute deadline; Windows cancellation/reaping and synchronous kernel/process/filesystem calls are not forcibly preempted.",
+    "Endpoint startup retries, headless owner idle sleeps and desktop 33 ms dispatch cadence remain unchanged.",
+    "No exhaustive injection of every cancellation/completion race or driver failure was performed.",
+    "No installed desktop package activation, GPU, physical-device, fresh-provider, Linux gameplay or Native AOT qualification.",
+    "Raw RPC logs, paths, process identifiers and private reports are excluded from this record."
+  ],
+  "primary_references": [
+    "https://learn.microsoft.com/en-us/windows/win32/ipc/synchronous-and-overlapped-input-and-output",
+    "https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-type-read-and-wait-modes",
+    "https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex",
+    "https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-getoverlappedresult",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-createnamedpipea",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-writefile"
+  ]
+}

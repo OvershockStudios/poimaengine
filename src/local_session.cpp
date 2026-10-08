@@ -108,9 +108,55 @@ struct Channel {
         const auto error=GetLastError();if((error==ERROR_NO_DATA || error==ERROR_PIPE_BUSY) && alive())return {};return {0,true};
     }
 };
-void wait_io(Channel&,bool,Clock::time_point deadline) {
+struct ClientOperation {
+    HANDLE pipe;
+    OVERLAPPED state{};
+    bool pending=false;
+    explicit ClientOperation(HANDLE handle):pipe(handle) {
+        state.hEvent=CreateEventW(nullptr,TRUE,FALSE,nullptr);
+        check(state.hEvent!=nullptr,"Cannot create local session I/O completion event.");
+    }
+    ClientOperation(const ClientOperation&)=delete;
+    ClientOperation& operator=(const ClientOperation&)=delete;
+    ~ClientOperation() {
+        if(pending) {
+            // Cancellation only requests completion. A raced normal completion
+            // (including ERROR_NOT_FOUND from CancelIoEx) must also be reaped
+            // before the caller's buffer, this OVERLAPPED or its event is freed.
+            // Kernel cancellation/reaping is not bounded by the exchange timeout.
+            // https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex
+            CancelIoEx(pipe,&state);DWORD ignored=0;
+            GetOverlappedResult(pipe,&state,&ignored,TRUE);
+        }
+        CloseHandle(state.hEvent);
+    }
+};
+Io client_io(Channel& channel,bool writing,char* data,std::size_t count,Clock::time_point deadline) {
+    ClientOperation operation(channel.handle);
     check(Clock::now()<deadline,"Local session exchange timed out; connection closed.");
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    const auto size=static_cast<DWORD>(std::min(count,std::size_t(65536)));
+    const auto completed=writing ? WriteFile(channel.handle,data,size,nullptr,&operation.state)
+                                 : ReadFile(channel.handle,data,size,nullptr,&operation.state);
+    const auto error=completed ? ERROR_SUCCESS : GetLastError();
+    check(completed || error==ERROR_IO_PENDING,"Local session disconnected or overlapped I/O failed.");
+    operation.pending=true;
+    if(!completed) {
+        const auto remaining=std::chrono::ceil<std::chrono::milliseconds>(deadline-Clock::now()).count();
+        check(remaining>0,"Local session exchange timed out; connection closed.");
+        const auto waited=WaitForSingleObject(operation.state.hEvent,static_cast<DWORD>(std::min<std::int64_t>(remaining,600000)));
+        const auto timeout_message=writing ? "Local session pending write timed out; connection closed."
+                                           : "Local session pending read timed out; connection closed.";
+        check(waited==WAIT_OBJECT_0,waited==WAIT_TIMEOUT ? timeout_message
+                                                      : "Local session I/O completion wait failed; connection closed.");
+    }
+    DWORD used=0;
+    const auto success=GetOverlappedResult(channel.handle,&operation.state,&used,FALSE);
+    const auto result_error=success ? ERROR_SUCCESS : GetLastError();
+    if(result_error!=ERROR_IO_INCOMPLETE)operation.pending=false;
+    check(success,"Local session disconnected or overlapped I/O completion failed.");
+    check(Clock::now()<deadline,"Local session exchange timed out; connection closed.");
+    check(used>0,"Local session I/O completed without transferring frame bytes; connection closed.");
+    return {used,false};
 }
 bool owner_is_current(HANDLE pipe) {
     PSID owner=nullptr;PSECURITY_DESCRIPTOR descriptor=nullptr;
@@ -305,13 +351,13 @@ struct LocalSessionClient::Impl {
 #ifdef _WIN32
         const std::wstring name(path.begin(),path.end());
         while(!channel.valid()) {
-            channel.handle=CreateFileW(name.c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,SECURITY_SQOS_PRESENT|SECURITY_IDENTIFICATION,nullptr);
+            channel.handle=CreateFileW(name.c_str(),GENERIC_READ|GENERIC_WRITE,0,nullptr,OPEN_EXISTING,FILE_FLAG_OVERLAPPED|SECURITY_SQOS_PRESENT|SECURITY_IDENTIFICATION,nullptr);
             if(channel.valid())break;const auto error=GetLastError();
             check(error==ERROR_PIPE_BUSY || error==ERROR_FILE_NOT_FOUND,"Cannot connect to local session pipe.");
             check(Clock::now()<deadline,"Local session connection timed out.");std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        check(owner_is_current(channel.handle),"Local pipe server is not owned by the current user.");DWORD mode=PIPE_READMODE_BYTE|PIPE_NOWAIT;
-        check(SetNamedPipeHandleState(channel.handle,&mode,nullptr,nullptr)!=0,"Cannot configure nonblocking local pipe client.");
+        check(owner_is_current(channel.handle),"Local pipe server is not owned by the current user.");DWORD mode=PIPE_READMODE_BYTE|PIPE_WAIT;
+        check(SetNamedPipeHandleState(channel.handle,&mode,nullptr,nullptr)!=0,"Cannot configure overlapped local pipe client.");
 #else
         const auto directory=path.substr(0,path.find_last_of('/'));const auto address=socket_address(path);
         auto await_endpoint=[&] {
@@ -353,12 +399,20 @@ struct LocalSessionClient::Impl {
             validate_payload(payload,local_session_request_limit,false);auto bytes=frame(payload);std::size_t sent=0;
             while(sent<bytes.size()) {
                 check(Clock::now()<deadline,"Local session exchange timed out; connection closed.");
+#ifdef _WIN32
+                const auto io=client_io(channel,true,bytes.data()+sent,bytes.size()-sent,deadline);sent+=io.bytes;
+#else
                 const auto io=channel.write(bytes.data()+sent,bytes.size()-sent);check(!io.closed,"Local session disconnected while sending.");sent+=io.bytes;if(!io.bytes)wait_io(channel,true,deadline);
+#endif
             }
             auto read_exact=[&](char* data,std::size_t count) {
                 std::size_t received=0;while(received<count) {
                     check(Clock::now()<deadline,"Local session exchange timed out; connection closed.");
+#ifdef _WIN32
+                    const auto io=client_io(channel,false,data+received,count-received,deadline);received+=io.bytes;
+#else
                     const auto io=channel.read(data+received,count-received);check(!io.closed,"Local session disconnected while receiving.");received+=io.bytes;if(!io.bytes)wait_io(channel,false,deadline);
+#endif
                 }
             };
             std::array<unsigned char,4> header{};read_exact(reinterpret_cast<char*>(header.data()),header.size());const auto count=decode_size(header);

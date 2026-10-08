@@ -2,6 +2,12 @@
 
 Poima owns logical controls in the world/runtime and uses native retained layout for Vulkan presentation. The current development changes connect this state to a default layout and add compiled C# control callbacks. Bounded native, agent-service, desktop-owner and Vulkan capture checks are recorded below. The live input routing scope and qualification limits are recorded below.
 
+The current blue default skin is presentation scaffolding. A polished,
+customizable runtime UI is planned: reusable styles, responsive layouts,
+typography, animation and editor authoring, with the same controls accessible
+to agents. Those visual authoring features are not available yet; the existing
+logical controls and input contracts below are the implemented foundation.
+
 The optional `POIMA_ENABLE_GAME_UI` build uses pinned RmlUi 6.3 and FreeType. It does not enable Lua, browser code or third-party scripting. The logical model is available in the default headless engine; it has no RmlUi, font or graphics dependency. Existing Inter font files are redistributed under their retained OFL license; see [third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## Authoritative controls

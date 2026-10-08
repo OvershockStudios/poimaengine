@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.46 — Unreleased
+
+This checkpoint replaces Windows client exchange retry sleeps with completion waits. The installed desktop package remains unchanged.
+
+- Overlapped pipe reads and writes share one exchange deadline. Timeout or failure cancels and reaps pending operations before releasing buffers, closes the client and never replays work. Kernel cleanup can outlast the requested deadline; server polling and editor cadence are unchanged. [Transport contract](docs/SHARED_SESSIONS.md#transport-and-limits).
+- Native Windows regressions cover stalled responses, write backpressure, disconnects, fragmented deadlines and endpoint recovery. Shared-host, SDK, MCP and native desktop ABI checks pass. The unchanged compiled defense game preserves every recorded checkpoint and win/loss outcome with clean process exits.
+- Four matched Windows trial pairs reduce shared read-query median from 31.4 ms to 15.9 ms; an old-build repeat remains at 32.2 ms. This is same-machine authoring latency, not game FPS or GUI responsiveness. [Measurement and limits](docs/evidence/m2-client-completion-waits.json).
+
 ## 0.0.45 — Unreleased
 
 This checkpoint removes an avoidable local reply wait and adds a reproducible authoring-latency probe. The installed desktop package remains unchanged.

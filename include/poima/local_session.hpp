@@ -46,6 +46,8 @@ public:
     LocalSessionClient& operator=(const LocalSessionClient&)=delete;
     // Timeout/disconnect/protocol failure closes this connection and throws.
     // Never automatically replays a request. Successful exchanges reuse it.
+    // Windows waits on overlapped completion within the exchange deadline;
+    // cancellation is reaped before buffers are released and can outlast it.
     std::string exchange(std::string_view payload,std::uint32_t timeout_ms=5000);
     std::string address() const;
 };

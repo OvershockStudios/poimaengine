@@ -17,6 +17,7 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+#include <sddl.h>
 #else
 #include <cerrno>
 #include <sys/socket.h>
@@ -96,6 +97,164 @@ struct RawClient {
     }
 };
 std::string header(std::uint32_t size) { std::string bytes(4,'\0');for(unsigned i=0;i<4;++i)bytes[i]=static_cast<char>((size>>(8*i))&255);return bytes; }
+#ifdef _WIN32
+// Independent raw peer: tiny buffers force pending client writes, and explicit
+// same-user ownership exercises the native client's real ownership check.
+struct RawPipeServer {
+    HANDLE handle=INVALID_HANDLE_VALUE;
+    explicit RawPipeServer(const std::string& name) {
+        std::string path;{ LocalSessionServer derive(name);path=derive.address(); }
+        HANDLE token=nullptr;check(OpenProcessToken(GetCurrentProcess(),TOKEN_QUERY,&token)!=0,"Raw server token query failed.");
+        DWORD count=0;GetTokenInformation(token,TokenUser,nullptr,0,&count);std::vector<unsigned char> info(count);
+        const bool found=count>0 && GetTokenInformation(token,TokenUser,info.data(),count,&count)!=0;CloseHandle(token);
+        check(found,"Raw server user SID query failed.");
+        LPWSTR text=nullptr;check(ConvertSidToStringSidW(reinterpret_cast<TOKEN_USER*>(info.data())->User.Sid,&text)!=0,"Raw server SID conversion failed.");
+        const std::unique_ptr<void,decltype(&LocalFree)> sid_owner(text,&LocalFree);
+        const std::wstring sddl=L"O:"+std::wstring(text)+L"D:P(A;;GA;;;"+std::wstring(text)+L")";
+        PSECURITY_DESCRIPTOR descriptor=nullptr;
+        check(ConvertStringSecurityDescriptorToSecurityDescriptorW(sddl.c_str(),SDDL_REVISION_1,&descriptor,nullptr)!=0,"Raw server ACL conversion failed.");
+        const std::unique_ptr<void,decltype(&LocalFree)> descriptor_owner(descriptor,&LocalFree);
+        SECURITY_ATTRIBUTES attributes{};attributes.nLength=sizeof(attributes);attributes.lpSecurityDescriptor=descriptor;
+        const std::wstring wide(path.begin(),path.end());
+        handle=CreateNamedPipeW(wide.c_str(),PIPE_ACCESS_DUPLEX|FILE_FLAG_FIRST_PIPE_INSTANCE,
+            PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT|PIPE_REJECT_REMOTE_CLIENTS,1,4096,4096,0,&attributes);
+        check(handle!=INVALID_HANDLE_VALUE,"Raw server creation failed.");
+    }
+    RawPipeServer(const RawPipeServer&)=delete;
+    ~RawPipeServer() { close(); }
+    void close() { if(handle!=INVALID_HANDLE_VALUE) { CloseHandle(handle);handle=INVALID_HANDLE_VALUE; } }
+    void connect() {
+        const auto end=Clock::now()+std::chrono::seconds(4);
+        for(;;) {
+            const bool listening=ConnectNamedPipe(handle,nullptr)!=0;
+            const auto error=listening ? ERROR_SUCCESS : GetLastError();
+            if(error==ERROR_PIPE_CONNECTED)return;
+            // NOWAIT success enters listening state; only PIPE_CONNECTED
+            // establishes a client. Do not race the async client's startup.
+            check(error==ERROR_SUCCESS || error==ERROR_PIPE_LISTENING,"Raw server accept failed.");
+            check(Clock::now()<end,"Raw server accept timed out.");std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+    bool send(std::string_view bytes) {
+        DWORD used=0;return WriteFile(handle,bytes.data(),static_cast<DWORD>(bytes.size()),&used,nullptr)!=0 && used==bytes.size();
+    }
+    std::string request() {
+        std::string bytes;const auto end=Clock::now()+std::chrono::seconds(4);
+        for(;;) {
+            std::array<char,4096> buffer{};DWORD used=0;
+            const bool read=ReadFile(handle,buffer.data(),static_cast<DWORD>(buffer.size()),&used,nullptr)!=0;
+            if(!read)check(GetLastError()==ERROR_NO_DATA,"Raw server request disconnected.");
+            bytes.append(buffer.data(),used);
+            if(bytes.size()>=4) {
+                std::uint32_t size=0;for(unsigned i=0;i<4;++i)size|=static_cast<std::uint32_t>(static_cast<unsigned char>(bytes[i]))<<(8*i);
+                check(size<=local_session_request_limit,"Raw server received oversized request.");
+                if(bytes.size()>=4+static_cast<std::size_t>(size)) {
+                    check(bytes.size()==4+static_cast<std::size_t>(size),"Raw server received an automatic replay or extra request.");
+                    return bytes.substr(4);
+                }
+            }
+            check(Clock::now()<end,"Raw server request timed out.");std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+    void await_buffered_request() {
+        const auto end=Clock::now()+std::chrono::seconds(4);
+        for(;;) {
+            DWORD count=0;check(PeekNamedPipe(handle,nullptr,0,nullptr,&count,nullptr)!=0,"Raw server lost unread request.");
+            if(count>0)return;
+            check(Clock::now()<end,"Raw server never received write bytes.");std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+};
+std::string failure(LocalSessionClient& client,std::string_view request,std::uint32_t timeout) {
+    try { client.exchange(request,timeout); }catch(const std::exception& error) { return error.what(); }
+    throw std::runtime_error("Raw-peer exchange unexpectedly succeeded.");
+}
+template<class T> T complete(std::future<T>& client,RawPipeServer& server) {
+    const bool finished=client.wait_for(std::chrono::seconds(5))==std::future_status::ready;
+    if(!finished) {
+        // Release a faulty pending implementation before std::future's joining
+        // destructor; the failed deadline still fails this regression.
+        server.close();client.wait_for(std::chrono::seconds(5));
+    }
+    check(finished,"Raw-peer client did not finish within its bounded deadline.");return client.get();
+}
+void windows_client_completion_contract() {
+    const auto reusable=endpoint("completion_reuse");
+    // A response already queued before exchange covers immediate completion;
+    // the ordinary roundtrip above also exercises response reads that must wait.
+    for(unsigned i=0;i<3;++i) {
+        RawPipeServer server(reusable);LocalSessionClient client(reusable);server.connect();
+        check(server.send(header(5)+"ready"),"Prequeued raw response failed.");
+        check(client.exchange("first",2000)=="ready","Prequeued response changed.");
+        check(server.request()=="first","Synchronous request changed.");
+        check(server.send(header(0)),"Prequeued empty response failed.");
+        check(client.exchange("empty",2000).empty(),"Prequeued empty response changed.");
+        check(server.request()=="empty","Connection failed after immediate completion.");
+    }
+    // Each cancellation is followed by a fresh connection on exactly the same
+    // endpoint, detecting leaked handles/listeners rather than just new names.
+    for(unsigned i=0;i<3;++i) {
+        {
+            RawPipeServer server(reusable);
+            auto client=std::async(std::launch::async,[&] {
+                LocalSessionClient connection(reusable);
+                const auto message=failure(connection,"withheld",250);
+                check(message.find("pending read timed out")!=std::string::npos,"Withheld response did not time out a pending read.");
+                rejects([&]{connection.exchange("retry",50);},"Timed-out response connection was reusable.");
+            });
+            server.connect();check(server.request()=="withheld","Pending read request changed.");complete(client,server);
+            check(!server.send(header(4)+"late"),"Late reply survived cancellation and closed connection.");
+        }
+        {
+            RawPipeServer server(reusable);
+            auto client=std::async(std::launch::async,[&] {
+                LocalSessionClient connection(reusable);
+                const auto message=failure(connection,std::string(local_session_request_limit,'w'),250);
+                check(message.find("pending write timed out")!=std::string::npos,"Unread oversized-quota request did not time out a pending write.");
+                rejects([&]{connection.exchange("retry",50);},"Timed-out write connection was reusable.");
+            });
+            server.connect();server.await_buffered_request();
+            // Sizes are advisory: assert the pending-write timeout diagnostic
+            // rather than assuming the operating system cannot grow buffers.
+            complete(client,server);check(!server.send(header(4)+"late"),"Late reply survived pending-write cancellation.");
+        }
+    }
+    {
+        RawPipeServer server(reusable);
+        auto client=std::async(std::launch::async,[&] {
+            LocalSessionClient connection(reusable);
+            const auto message=failure(connection,"disconnect",2000);
+            check(message.find("disconnected")!=std::string::npos,"Peer close was reported as a timeout instead of disconnect.");
+            rejects([&]{connection.exchange("retry",50);},"Disconnected response connection was reusable.");
+        });
+        server.connect();check(server.request()=="disconnect","Pending disconnect request changed.");server.close();complete(client,server);
+    }
+    {
+        RawPipeServer server(reusable);
+        auto client=std::async(std::launch::async,[&] {
+            LocalSessionClient connection(reusable);
+            const auto message=failure(connection,"fragment",800);
+            check(message.find("timed out")!=std::string::npos,"Fragmented response did not honor the original exchange deadline.");
+            rejects([&]{connection.exchange("retry",50);},"Fragment timeout connection was reusable.");
+        });
+        server.connect();check(server.request()=="fragment","Partial response request changed.");
+        const auto started=Clock::now();const auto prefix=header(2);
+        check(server.send(std::string_view(prefix).substr(0,2)),"First response fragment failed.");
+        std::this_thread::sleep_until(started+std::chrono::milliseconds(450));
+        check(server.send(prefix.substr(2)+"a"),"Second response fragment failed before its deadline.");
+        // Resetting the deadline per read/header/payload would allow this last
+        // byte and falsely complete the request; one exchange deadline rejects.
+        std::this_thread::sleep_until(started+std::chrono::milliseconds(1100));
+        const bool late=server.send("b");complete(client,server);check(!late,"Late partial response reached a connection that should be closed.");
+    }
+    {
+        RawPipeServer server(reusable);LocalSessionClient client(reusable);server.connect();
+        check(server.send(header(8)+"reopened"),"Fresh reply after cancellation failed.");
+        check(client.exchange("final",2000)=="reopened","Cancellation poisoned a subsequent fresh client.");
+        check(server.request()=="final","Fresh request after cancellation changed.");
+    }
+}
+#endif
 std::string receive_without_poll(RawClient& client) {
     const auto end=Clock::now()+std::chrono::seconds(8);std::string reply;
     while(!client.receive_frame(reply)) {
@@ -279,6 +438,9 @@ int main() {
             std::filesystem::rename(path,moved);{ std::ofstream replacement(path);replacement<<"replacement"; }server.reset();
             std::ifstream file(path);std::string contents;file>>contents;check(contents=="replacement","Server cleanup removed a replacement endpoint.");file.close();std::filesystem::remove(path);std::filesystem::remove(moved);
         }
+#endif
+#ifdef _WIN32
+        windows_client_completion_contract();
 #endif
         std::cout<<"Local session transport tests passed.\n";return 0;
     }catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }

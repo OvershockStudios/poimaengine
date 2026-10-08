@@ -101,6 +101,20 @@ An observed disconnect returns false, possibly after partial delivery; the world
 operation may already have committed. There is no automatic replay, extra
 transport thread, busy wait or change to global timer resolution.
 
+In 0.0.46 development, the Windows client opens its pipe for overlapped I/O
+and waits on a completion event instead of sleeping and retrying during an
+exchange. Reads and writes share one absolute deadline, including partial
+frames. The server retains its nonblocking polling contract; endpoint startup
+retries, headless owner sleeps and editor dispatch cadence are unchanged.
+Linux clients continue to wait on socket readiness.
+
+A failed Windows wait cancels and reaps that operation before releasing its
+buffer, event or `OVERLAPPED` structure, then closes the connection. Reaping
+kernel cancellation can exceed the requested deadline; the timeout does not
+promise a hard bound on driver cleanup. See Microsoft's [overlapped I/O
+guidance](https://learn.microsoft.com/en-us/windows/win32/ipc/synchronous-and-overlapped-input-and-output)
+and [cancellation rules](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelioex).
+
 `connect --timeout-ms N` accepts 100..600000 milliseconds, default 30000, for connection establishment and each exchange. A timeout/disconnect closes the client connection and does not replay the operation. The operation may already have committed: inspect state, then explicitly retry with the same durable `request_id` where supported. Editor controls/captures do not have durable request receipts. Transport startup/exchange errors exit the CLI with code 4; stderr explains the failure, and stdout uses the CLI error envelope rather than a JSON-RPC result.
 
 Normal shutdown attempts a bounded reply drain; a nonreading client or graphics failure can still observe a disconnect. Linux clean shutdown removes only the owned socket inode. A crash can leave a socket path: verify the old host is gone before removing that endpoint, or use a new name. Startup never removes a preexisting endpoint automatically.
