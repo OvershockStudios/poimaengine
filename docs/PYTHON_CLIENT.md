@@ -87,7 +87,7 @@ remain available, and the generic `call` can send any discovered native request.
 Read its descriptor and applicable subsystem invariants before calling it.
 Discovery is not cached. Methods outside the nine-method core do not receive
 invented wrapper schemas. Core successes are checked against the packaged
-`core_responses.v1.candidate.json` manifest and contextual invariants: requested
+`core_responses.v1.json` manifest (the historical candidate resource is also retained) and contextual invariants: requested
 IDs/read revisions, original-base-plus-one mutation revisions, focused
 discovery, history bounds, sorted IDs and query filters/cursors. Additional
 result properties are allowed. Component-specific result validation is limited

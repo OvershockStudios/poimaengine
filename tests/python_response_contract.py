@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent candidate response fixtures; no native processes or provider calls."""
+"""Independent authoring-core response fixtures; no native processes or provider calls."""
 # SPDX-License-Identifier: Apache-2.0
 import copy
 from pathlib import Path

@@ -3,7 +3,7 @@
 A standard-library client for Poima's native world service. It launches an
 explicit native executable or attaches through its shared endpoint, with bounded
 JSON-RPC transport, guarded authoring helpers, revision-pinned queries and
-candidate core response validation. It never retries mutations automatically.
+authoring-core v1 response validation. It never retries mutations automatically.
 
 From the engine checkout: `python -m pip install ./tools/python`.
 An existing Poima executable is required; this package does not install the

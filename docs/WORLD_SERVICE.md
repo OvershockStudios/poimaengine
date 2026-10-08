@@ -10,6 +10,11 @@ response checks. Generic calls retain access to the discovered native API.
 
 ## Focused discovery (development)
 
+Sessions advertise the selected [authoring-core v1 contract](AUTHORING_API_COMPATIBILITY.md)
+in `authoring_contract` metadata across discovery views. This is independent of
+the catalog revision and does not freeze other components or runtime APIs.
+
+
 `world.describe` without parameters retains the full descriptor. Clients can request a smaller response when they only need an operation, built-in component or contract section:
 
 ```json

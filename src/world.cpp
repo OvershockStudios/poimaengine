@@ -68,11 +68,23 @@ std::string discovery_view(const Json& params) {
     }
     return view;
 }
+Json authoring_contract_identity(bool read_only) {
+    // This identifies the selected source-46 authoring inputs and response
+    // contract. It does not freeze the complete evolving method catalog.
+    return {{"id","poima.authoring-core"},{"version",1},{"status","stable"},
+        {"scope","authored-world"},{"request_baseline","authoring-core-v1.json"},
+        {"response_baseline","authoring-core-responses-v1.json"},
+        {"methods",{"entity.get","entity.query","entity.world_transform","world.describe",
+                    "world.history","world.inspect","world.redo","world.transact","world.undo"}},
+        {"components",{"Transform"}},
+        {"mutations",{"component.set","entity.create","entity.delete","entity.rename","entity.reparent"}},
+        {"availability",{{"mode",read_only ? "read_only_runtime" : "authoring"},{"mutations",!read_only}}}};
+}
 Json project_discovery(Json description,const Json& params,const std::function<void(const std::string&)>& registered_type) {
     const auto view=discovery_view(params);
     if(view=="full")return description;
     Json result={{"partial",true},{"view",view}};
-    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations"})
+    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations","authoring_contract"})
         if(description.contains(key)) { result[key]=std::move(description[key]);description.erase(key); }
     auto methods=std::move(description.at("methods"));description.erase("methods");
     auto components=std::move(description.at("components"));description.erase("components");
@@ -422,7 +434,7 @@ Json describe() {
     for (const auto& [type, value] : components.items())
         op("component.set", {{"type", {{"const", type}}}, {"value", value}}, {"type", "value"});
     op("component.remove", {{"type", {{"enum", {"Camera", "MeshRenderer", "BoxCollider", "MeshCollider", "CharacterController", "StaticMesh", "PbrMaterial", "PbrTextures", "Light", "LightingEnvironment", "AcousticMaterial", "AudioEmitter", "AnimationRig", "RigNode", "SkinnedMesh"}}}}}, {"type"});
-    Json result = {{"protocol_version", 1}, {"schema_revision", 48}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 49}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -1286,6 +1298,7 @@ public:
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") {
             (void)discovery_view(params);auto result=describe();result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only C# compilation via explicit executable; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local compile receipts; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            result["authoring_contract"]=authoring_contract_identity(read_only_);
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
         }

@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **Early development · 0.0.48.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **Early development · 0.0.49.** Poima is a prototype. Important systems are incomplete. The selected authoring-core v1 API is stable; broader APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -29,7 +29,7 @@ Two recorded exercises put this workflow into practice: [Codex builds an escape 
 
 *Three captured gameplay checkpoints, shown as a slideshow; not a live authoring session or real-time video.*
 
-A [candidate authoring API contract](docs/AUTHORING_API_COMPATIBILITY.md) provides a conservative request compatibility gate and core response checks. The [Python automation client](docs/PYTHON_CLIENT.md) adds guarded editing and revision-pinned queries over the native service. Broader API stability remains unfinished.
+The [authoring-core v1 contract](docs/AUTHORING_API_COMPATIBILITY.md) stabilizes nine selected world/entity methods and Transform edits, with separate request and response compatibility gates and native behavioral checks. The [Python automation client](docs/PYTHON_CLIENT.md) adds guarded editing and revision-pinned queries over the native service. Broader API stability remains unfinished.
 
 Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WORLD_SERVICE.md), [shared-session guide](docs/SHARED_SESSIONS.md) and [C# gameplay guide](docs/MANAGED_GAMEPLAY.md).
 

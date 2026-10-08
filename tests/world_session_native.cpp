@@ -33,8 +33,19 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
     };
     const auto full=result(Json::object());
     check(result({{"view","full"}})==full,"Explicit full discovery differs from legacy discovery.");
+    const bool read_only=full.at("read_only").get<bool>();
+    const Json identity={{"id","poima.authoring-core"},{"version",1},{"status","stable"},
+        {"scope","authored-world"},{"request_baseline","authoring-core-v1.json"},
+        {"response_baseline","authoring-core-responses-v1.json"},
+        {"methods",{"entity.get","entity.query","entity.world_transform","world.describe",
+                    "world.history","world.inspect","world.redo","world.transact","world.undo"}},
+        {"components",{"Transform"}},
+        {"mutations",{"component.set","entity.create","entity.delete","entity.rename","entity.reparent"}},
+        {"availability",{{"mode",read_only ? "read_only_runtime" : "authoring"},{"mutations",!read_only}}}};
+    check(full.at("authoring_contract")==identity,"Authoring contract identity or availability differs.");
+    check(full.at("mode")==identity.at("availability").at("mode"),"Contract availability differs from discovery mode.");
     Json metadata=Json::object();
-    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations"})
+    for(const auto* key:{"protocol_version","schema_revision","mode","read_only","runtime_available","session_scope","editor_discovery","unavailable_methods","unavailable_mutations","authoring_contract"})
         if(full.contains(key))metadata[key]=full.at(key);
     Json methods=Json::array(),components=Json::array(),sections=Json::array();
     for(const auto& [key,value]:full.at("methods").items()){(void)value;methods.push_back(key);}
@@ -42,6 +53,8 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
     for(const auto& [key,value]:full.items()){(void)value;if(key!="methods"&&key!="components"&&!metadata.contains(key))sections.push_back(key);}
     auto expected=metadata;expected["partial"]=true;expected["view"]="catalog";expected["methods"]=methods;expected["components"]=components;expected["sections"]=sections;
     check(result({{"view","catalog"}})==expected,"Scoped discovery catalog leaked names or lost metadata.");
+    check(request({{"view","section"},{"name","authoring_contract"}})["error"]["code"]==-32602,
+          "Contract metadata was exposed as a selectable contract section.");
     for(const auto* view:{"method","component","section"}) {
         const auto key=std::string(view)=="method" ? "methods" : std::string(view)=="component" ? "components" : "sections";
         const auto& names=std::string(view)=="method" ? methods : std::string(view)=="component" ? components : sections;
@@ -333,7 +346,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==48,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"]==49,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
@@ -342,6 +355,19 @@ int main() {
                 "development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
                 const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",9},{"method",method},{"params",{{"source","missing"},{"path","forbidden.poima-input.json"}}}}.dump(),scope));
                 check(response["error"]["code"]==-32081,"Read-only operation reached validation or mutation.");
+            }
+            const auto readonly_state=call(session,"world.inspect"),readonly_history=call(session,"world.history");
+            for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
+                const Json rename={{"request_id",std::string(32,'e')},{"base_revision",3},{"ops",Json::array({
+                    {{"op","entity.rename"},{"id",entity},{"name","Forbidden rename"}}
+                })}};
+                const Json retry={{"request_id",std::string(32,'3')},{"base_revision",2}};
+                for(const auto& [method,params]:std::map<std::string,Json>{{"world.transact",rename},{"world.redo",retry}}) {
+                    const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",10},{"method",method},{"params",params}}.dump(),scope));
+                    check(response.at("error").at("code")==-32081,"Read-only mode accepted a valid mutation or retained retry.");
+                    check(call(session,"world.inspect")==readonly_state && call(session,"world.history")==readonly_history && read(frozen)==original,
+                        "Read-only valid mutation or retained retry changed authored state/history/files.");
+                }
             }
             const auto inspected=call(session,"input.inspect",{{"path","packaged.poima-input.json"}});check(inspected["revision"]==1 && inspected["profile"]==controls,"Read-only input inspection differs.");
             const auto evaluated=call(session,"input.evaluate",{{"path","packaged.poima-input.json"},{"events",Json::array({{{"control","key.up"},{"down",true}},{{"consume",true}}})}});

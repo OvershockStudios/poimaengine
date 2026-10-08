@@ -2,6 +2,15 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.49 — Unreleased
+
+This checkpoint releases authoring-core v1 for a selected authored-world API. The broader engine remains a prototype, and the installed desktop package remains unchanged.
+
+- Native session discovery advertises the contract identity, selected methods/Transform scope and mode-specific mutation availability across full and focused views. Catalog revisions remain independent; runtime, rendering, game saves, gameplay ABI and world formats are outside this guarantee. [Contract](docs/AUTHORING_API_COMPATIBILITY.md).
+- Canonical v1 request/response artifacts and a hashed release manifest preserve the earlier candidate schemas and paths. The 0.0.49 Python wheel uses the canonical response resource while retaining the historical one.
+- A separate conservative response gate checks that new producer outputs fit old consumer requirements. Recognized required fields, types, bounds and extras are directional; unsupported interacting context fails closed. This does not replace native behavioral qualification.
+- Focused native conformance checks caller IDs/errors, old transaction/undo/redo receipts after later edits and restart, true hierarchical shear, keep-local reparenting, pinned query boundaries and storage rejection without consuming history or retry IDs. Windows/Linux request-scope, shared-host and client checks qualify this bounded release. [Evidence](docs/evidence/m2-authoring-core-v1.json).
+
 ## 0.0.48 — Unreleased
 
 This checkpoint adds focused mutation discovery for external agents and automation. The installed desktop package remains unchanged.

@@ -1,0 +1,84 @@
+{
+  "format": "poima.authoring-core-release.v1",
+  "id": "poima.authoring-core",
+  "version": 1,
+  "status": "stable",
+  "introduced_in": "0.0.49",
+  "scope": "authored-world",
+  "request_baseline": {
+    "file": "authoring-core-v1.json",
+    "sha256": "7bf80048877b263cee56605687f5ec614688759583b1c710d239b84a2498bfa8",
+    "source_schema_revision": 46
+  },
+  "response_baseline": {
+    "file": "authoring-core-responses-v1.json",
+    "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+  },
+  "methods": [
+    "entity.get",
+    "entity.query",
+    "entity.world_transform",
+    "world.describe",
+    "world.history",
+    "world.inspect",
+    "world.redo",
+    "world.transact",
+    "world.undo"
+  ],
+  "components": [
+    "Transform"
+  ],
+  "mutations": [
+    "component.set",
+    "entity.create",
+    "entity.delete",
+    "entity.rename",
+    "entity.reparent"
+  ],
+  "mutation_constraints": {
+    "component.set": {
+      "type": "Transform"
+    },
+    "entity.reparent": {
+      "mode": "keep_local"
+    }
+  },
+  "scopes": [
+    "standalone",
+    "shared_editor",
+    "shared_headless"
+  ],
+  "modes": {
+    "authoring": {
+      "mutations": true
+    },
+    "read_only_runtime": {
+      "mutations": false
+    }
+  },
+  "behavioral_contract": "../AUTHORING_API_COMPATIBILITY.md",
+  "additive_extensions": [
+    "world.describe view=mutation"
+  ],
+  "excluded": [
+    "catalog contents outside selected core inputs",
+    "other components and mutations",
+    "runtime and simulation APIs",
+    "gameplay SDK and ABI",
+    "game saves",
+    "world document formats",
+    "rendering",
+    "editor-specific APIs"
+  ],
+  "error_codes": {
+    "parse_or_request_size": -32700,
+    "invalid_envelope": -32600,
+    "unknown_method": -32601,
+    "invalid_parameters": -32602,
+    "missing_entity_component_or_history": -32004,
+    "revision_or_external_file_conflict": -32009,
+    "retained_mutation_id_reuse": -32010,
+    "read_only_mutation": -32081,
+    "storage_or_internal_failure": -32000
+  }
+}

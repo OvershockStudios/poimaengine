@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Validate the candidate core results; this is not a general schema engine."""
+"""Validate the released authoring core results; this is not a general schema engine."""
 import copy
 import json
 import math
@@ -7,7 +7,7 @@ import re
 from importlib import resources
 
 _CONTRACT = json.loads(resources.files(__package__).joinpath(
-    'core_responses.v1.candidate.json').read_text(encoding='utf-8'))
+    'core_responses.v1.json').read_text(encoding='utf-8'))
 
 
 class ResponseContractError(RuntimeError):
@@ -27,7 +27,7 @@ class ResponseContractError(RuntimeError):
 
 
 def response_contract():
-    """Return a detached copy of the portable candidate response manifest."""
+    """Return a detached copy of the portable authoring-core v1 response manifest."""
     return copy.deepcopy(_CONTRACT)
 
 

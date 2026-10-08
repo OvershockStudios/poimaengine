@@ -1,0 +1,342 @@
+{
+  "checkpoint": "0.0.49 development",
+  "passed": true,
+  "scope": "Released selected authored-world core v1; provider-free contract qualification",
+  "protocol_version": 1,
+  "schema_revision": 49,
+  "contract": {
+    "format": "poima.authoring-core-release.v1",
+    "id": "poima.authoring-core",
+    "version": 1,
+    "status": "stable",
+    "introduced_in": "0.0.49",
+    "scope": "authored-world",
+    "request_baseline": {
+      "file": "authoring-core-v1.json",
+      "sha256": "7bf80048877b263cee56605687f5ec614688759583b1c710d239b84a2498bfa8",
+      "source_schema_revision": 46
+    },
+    "response_baseline": {
+      "file": "authoring-core-responses-v1.json",
+      "sha256": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507"
+    },
+    "methods": [
+      "entity.get",
+      "entity.query",
+      "entity.world_transform",
+      "world.describe",
+      "world.history",
+      "world.inspect",
+      "world.redo",
+      "world.transact",
+      "world.undo"
+    ],
+    "components": [
+      "Transform"
+    ],
+    "mutations": [
+      "component.set",
+      "entity.create",
+      "entity.delete",
+      "entity.rename",
+      "entity.reparent"
+    ],
+    "mutation_constraints": {
+      "component.set": {
+        "type": "Transform"
+      },
+      "entity.reparent": {
+        "mode": "keep_local"
+      }
+    },
+    "scopes": [
+      "standalone",
+      "shared_editor",
+      "shared_headless"
+    ],
+    "modes": {
+      "authoring": {
+        "mutations": true
+      },
+      "read_only_runtime": {
+        "mutations": false
+      }
+    },
+    "behavioral_contract": "../AUTHORING_API_COMPATIBILITY.md",
+    "additive_extensions": [
+      "world.describe view=mutation"
+    ],
+    "excluded": [
+      "catalog contents outside selected core inputs",
+      "other components and mutations",
+      "runtime and simulation APIs",
+      "gameplay SDK and ABI",
+      "game saves",
+      "world document formats",
+      "rendering",
+      "editor-specific APIs"
+    ],
+    "error_codes": {
+      "parse_or_request_size": -32700,
+      "invalid_envelope": -32600,
+      "unknown_method": -32601,
+      "invalid_parameters": -32602,
+      "missing_entity_component_or_history": -32004,
+      "revision_or_external_file_conflict": -32009,
+      "retained_mutation_id_reuse": -32010,
+      "read_only_mutation": -32081,
+      "storage_or_internal_failure": -32000
+    }
+  },
+  "native_identity": {
+    "metadata_key": "authoring_contract",
+    "all_discovery_views": [
+      "full",
+      "catalog",
+      "method",
+      "component",
+      "section",
+      "mutation"
+    ],
+    "mode_specific_availability": true,
+    "identity_matches_release_manifest": true,
+    "metadata_not_selectable_as_section": true,
+    "request_scopes": [
+      "standalone",
+      "shared_editor",
+      "shared_headless"
+    ],
+    "read_only_checks": "Native constructor fixtures in all three request scopes: read discovery, unavailable mutation selections, malformed and valid mutations, retained exact redo receipt denial before replay; no authored/history/file changes.",
+    "shared_editor_scope_is_native_service_not_gui_qualification": true
+  },
+  "engines": {
+    "windows": {
+      "version": "0.0.49",
+      "sha256": "892ffb9443421a7059dbd3242127f68b2100b6201dd889c2eb636d138eac3f77",
+      "compiler": "Clang 23.1.2",
+      "architecture": "x86_64",
+      "features": [
+        "Vulkan",
+        "simulation",
+        "managed/native gameplay",
+        "audio",
+        "game UI",
+        "FSR3"
+      ]
+    },
+    "linux": {
+      "version": "0.0.49",
+      "sha256": "6ede8d88eccd050c48c0142715918cb8007c7805414604e68bcc805490c96767",
+      "compiler": "GNU 16.2.0",
+      "architecture": "x86_64",
+      "features": [
+        "headless authored-world service"
+      ],
+      "simulation_render_audio_gameplay_disabled": true
+    }
+  },
+  "behavioral_conformance": {
+    "windows": {
+      "passed": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "windows_interop": true,
+      "binary_sha256": "892ffb9443421a7059dbd3242127f68b2100b6201dd889c2eb636d138eac3f77",
+      "test_sha256": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+      "scope": "Native authored-world wire IDs/errors, durable core receipts, affine hierarchy, pinned query pages and failed history publication; no graphics."
+    },
+    "linux": {
+      "passed": true,
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "windows_interop": false,
+      "binary_sha256": "6ede8d88eccd050c48c0142715918cb8007c7805414604e68bcc805490c96767",
+      "test_sha256": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+      "scope": "Native authored-world wire IDs/errors, durable core receipts, affine hierarchy, pinned query pages and failed history publication; no graphics."
+    }
+  },
+  "behavioral_cases": [
+    "Valid null/string/signed64/unsigned64 RPC IDs on success and seven core error conditions; invalid ID values rejected; successful/failed notifications do not add replies.",
+    "Exact transact/undo/redo receipts replay original outcomes after unrelated edits and reopening; request IDs collide across mutation methods before stale checks.",
+    "Closed-form hierarchical shear from a nonuniformly scaled parent and rotated child; keep_local changes world matrix while retaining local Transform; undo/redo and invalid-cycle atomicity.",
+    "Sorted/default/filtered query pages, direct-child versus root/all filters, nonmember exclusive cursor, exact terminal full page and stale continuation guards.",
+    "Undo/redo staging failures preserve state/history/file bytes; retrying the same ID after storage recovery commits once."
+  ],
+  "request_gate": {
+    "windows": {
+      "passed": true,
+      "schema_revision": 49,
+      "protocol_version": 1,
+      "selected_methods": [
+        "entity.get",
+        "entity.query",
+        "entity.world_transform",
+        "world.describe",
+        "world.history",
+        "world.inspect",
+        "world.redo",
+        "world.transact",
+        "world.undo"
+      ],
+      "components": [
+        "Transform"
+      ],
+      "findings": [],
+      "binary_sha256": "892ffb9443421a7059dbd3242127f68b2100b6201dd889c2eb636d138eac3f77",
+      "contract_identity_matches_release": true
+    },
+    "linux": {
+      "passed": true,
+      "schema_revision": 49,
+      "protocol_version": 1,
+      "selected_methods": [
+        "entity.get",
+        "entity.query",
+        "entity.world_transform",
+        "world.describe",
+        "world.history",
+        "world.inspect",
+        "world.redo",
+        "world.transact",
+        "world.undo"
+      ],
+      "components": [
+        "Transform"
+      ],
+      "findings": [],
+      "binary_sha256": "6ede8d88eccd050c48c0142715918cb8007c7805414604e68bcc805490c96767",
+      "contract_identity_matches_release": true
+    }
+  },
+  "response_gate": {
+    "tests_passed": 16,
+    "producer_outputs_fit_old_consumer": true,
+    "historical_candidate_to_canonical_passed": true,
+    "canonical_self_check_passed": true,
+    "reference_policy": "Bare static root definitions only; acyclic bounded expansion and comparison. External/dynamic/resource/dialect contexts refused.",
+    "unknown_context_policy": "An unsupported keyword in a changed node requires review even when that keyword value is unchanged. Complete unchanged supported-reference nodes can pass.",
+    "regression": "Removing an optional declared property under unchanged patternProperties cannot be mistaken for preventing that property from being emitted.",
+    "limits": "Selected authored output schemas, not generated native-output schemas or a general JSON Schema subsumption/availability/behavior proof."
+  },
+  "pure_checks": {
+    "input_compatibility": 16,
+    "input_projection": 12,
+    "response_fixtures": 18,
+    "artifact_consistency": 4,
+    "response_evolution": 16
+  },
+  "native_checks": {
+    "windows": {
+      "authoring_conformance": 5,
+      "identity": 2,
+      "world": {
+        "passed": 13,
+        "skipped": 1,
+        "skip": "Abrupt Windows process termination is not qualified by the WSL harness"
+      },
+      "history": 10,
+      "sdk": 21,
+      "response_fixtures": 18,
+      "mcp": 6,
+      "shared_session": {
+        "passed": 7,
+        "skipped": 1,
+        "skip": "Linux pathname socket publication"
+      },
+      "world_session_native": true,
+      "desktop_abi": 10
+    },
+    "linux": {
+      "authoring_conformance": 5,
+      "selected_ctest_groups_passed": 11,
+      "ctest_seconds": 20.99,
+      "selected_groups": [
+        "authoring_contract_identity",
+        "python_client_contract",
+        "profiler_contract",
+        "world_session_native",
+        "mcp_contract",
+        "world_templates_contract",
+        "world_ui_contract",
+        "world_components_contract",
+        "shared_session_contract",
+        "world_history_contract",
+        "world_contract"
+      ]
+    }
+  },
+  "python_wheel": {
+    "passed": true,
+    "version": "0.0.49",
+    "wheel_sha256": "f77e5c9b8cfcbf08503604d23bbc3c74566357e6f1fff13bc4a88d278290be80",
+    "resources_and_sources_exact": [
+      "__init__.py",
+      "client.py",
+      "core_responses.v1.candidate.json",
+      "core_responses.v1.json",
+      "errors.py",
+      "responses.py",
+      "transport.py"
+    ],
+    "license_exact": true,
+    "python_39_grammar": true,
+    "python_39_runtime_tested": false
+  },
+  "installed_sdk": {
+    "linux": {
+      "tests_passed": 21,
+      "python": "3.14.7",
+      "import_origin_asserted": true
+    },
+    "windows": {
+      "tests_passed": 21,
+      "python": "3.14.8",
+      "import_origin_asserted": true
+    },
+    "python_39_runtime_tested": false
+  },
+  "historical_artifacts_and_changelog_entries_unchanged": true,
+  "source_sha256": {
+    "src/world.cpp": "8315949b8c66a6a051e4b1d77758ac2c92e1f2d3321f548b5c719a15b95b88af",
+    "tests/world_session_native.cpp": "12809d55c5b43a15098b820a34b7299d199c0ce6b5ceaa8e96a5883a16cc2b36",
+    "tests/authoring_core_conformance.py": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "tests/authoring_contract_identity.py": "5c06724a16b4a6da4c8dbaccafc6699831ed6265cafa7b8eaa63a6a31352d003",
+    "tests/authoring_contract_artifacts.py": "262b4dde045078e2720b85395ff39fea3c930b842803e3295c77f2d7d82034ae",
+    "scripts/check_authoring_responses.py": "1fd54fc873010c4cbb970e51cddee4e0833c1de3cf5283057ea8900978637425",
+    "tests/authoring_response_compatibility.py": "4349e1840e1d7f176883f4f121e0557e8710c169bcb1fb53ebdc894909850309",
+    "scripts/check_authoring_api.py": "8564bd290d5f3cece4ebf97fe3223b186e0c27771c512e5132d89c649a4dafef",
+    "scripts/project_authoring_api.py": "498f16d48e22542912e1cbe03c8e8599465ad420ed2a0aa6b8504ee55736ce1c",
+    "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+    "tools/python/pyproject.toml": "9eca7fc4c6f9526e79dcb2355226acd337ac0f8750bc5650185b36d082beb580"
+  },
+  "reproduction": {
+    "build": [
+      "cmake --build build/windows-runtime --target poima poima-world-session-test poima_desktop -j 2",
+      "cmake --build build/headless --target poima poima-world-session-test -j 2"
+    ],
+    "checks": [
+      "python3 tests/authoring_core_conformance.py build/headless/poima",
+      "python3 tests/authoring_core_conformance.py build/windows-runtime/poima.exe --windows-interop",
+      "python3 tests/authoring_contract_identity.py build/headless/poima",
+      "python3 tests/authoring_contract_identity.py build/windows-runtime/poima.exe --windows-interop",
+      "python3 tests/authoring_response_compatibility.py",
+      "python3 tests/authoring_contract_artifacts.py"
+    ],
+    "other_suites": "Existing native world/history/SDK/MCP/shared-session and native scope suites; see tests and AUTHORING_API_COMPATIBILITY.md. Windows desktop ABI checks use native Windows Python without a GPU argument.",
+    "request_gate": "Capture native world.describe from an authored world; project_authoring_api.py then check_authoring_api.py against docs/contracts/authoring-core-v1.json."
+  },
+  "limitations": [
+    "No whole-engine alpha or production readiness claim.",
+    "Only selected schema46 core inputs and documented semantics are frozen; mutation discovery is an additive extension.",
+    "World formats, gameplay ABI/runtime/render/save/editor APIs and other components remain outside v1.",
+    "No new provider exercise, benchmark success rate or development-speed measurement.",
+    "No new GPU, GUI presentation, physical-input, AOT or console/browser qualification.",
+    "The installed desktop package is unchanged.",
+    "One-machine Windows/Linux service checks; numerical transform tolerance is not cross-platform bit-exact simulation.",
+    "Response contracts are authored manifests qualified against fixtures/native clients, not authoritative generated native output schemas."
+  ]
+}
