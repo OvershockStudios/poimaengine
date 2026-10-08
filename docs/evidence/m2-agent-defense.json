@@ -1,0 +1,301 @@
+{
+  "checkpoint": "0.0.44 development",
+  "passed": true,
+  "scope": "Second bounded external-agent game exercise and independently reproducible Windows CoreCLR defense fixture",
+  "fixture": "fixtures/agent-defense/README.md",
+  "external_agent_exercise": {
+    "engine_version": "0.0.43",
+    "engine_sha256": "42b08d36d97bbd5702a7fe3579b3190ec5eb52be3034c4781c3915c1b311fef1",
+    "client": "Claude Code",
+    "client_version": "2.1.290",
+    "model": "claude-opus-5-5",
+    "single_fresh_session": true,
+    "duration_ms": 439484,
+    "completed_tool_calls": 118,
+    "poima_discovery_calls": 9,
+    "poima_operation_calls": 99,
+    "successful_operation_calls": 98,
+    "corrected_operation_errors": [
+      {
+        "method": "runtime.step",
+        "code": -32602,
+        "message": "Changed runtime structure requires expected_structure_revision."
+      }
+    ],
+    "world_transactions": 3,
+    "native_entities": 6,
+    "spawn_templates": 1,
+    "logical_ui_elements": 7,
+    "source_provenance": {
+      "game/RelayDefense.csproj": {
+        "sha256": "da1c42053e66c7465aa9a0be6f56df5a919b578dc936370f14ff1ef4e4447802",
+        "exact_reconstructed_bytes": true
+      },
+      "game/RelayDefenseGame.cs": {
+        "sha256": "e6e0bb709ce88e695b47780c4cedcad7aa0bb6a571c55c91a8aa5d953edd0f78",
+        "exact_reconstructed_bytes": true
+      },
+      "manifest.json": {
+        "sha256": "fad2e9705d6d81fa8cba2ed5c27947f4d85a281c817b674534fe2ac26911ba39",
+        "exact_reconstructed_bytes": true
+      }
+    },
+    "source_created_and_repaired_by_external_agent": true,
+    "manual_game_repairs_by_verifier": false,
+    "persisted_world_reconstructed_from_guarded_transactions": true,
+    "direct_world_file_edits": false,
+    "runtime_field_motion_or_structure_patches": false,
+    "original_game_assembly_sha256": "f9891c81b11b0e06f8d693082a37305c4a8155875432c87efdd72edb685856b8",
+    "recorded_world_sha256": "120437b27b33fe8d2edaad2bd63889986dcea89754abf891bb8c00624eab2ca1",
+    "public_world_sha256": "f77b16bbc70e3e5ffce295cff7274452673a365883402801207223b7dc8c49df",
+    "public_world_changes": "Receipt history removed; authored entities, templates, UI, IDs and revision retained.",
+    "trace_sha256": "c05eb7570152a5b0b974e3ad913bb7c119a977121e8c7dfa2dee33119eaf2c4e",
+    "scope_caveats": [
+      "The recorded tool trace corroborates provenance; it is not tamper-proof attestation or an OS sandbox.",
+      "One Read opened provider-persisted output of an authorized reference-document read outside the literal disposable workspace; no auth-file read appears in the trace.",
+      "The agent used a local shell source repair and compiler invocation in addition to Write/Edit tools; game source is retained byte-for-byte.",
+      "The original compiler output reports success with zero warnings/errors but its shell pipeline did not preserve a separate compiler exit code. Native loading and independent gameplay verify the resulting DLL."
+    ],
+    "independent_original_verification": {
+      "native_calls": 3209,
+      "passed": true,
+      "checkpoint_tick": 130,
+      "loss_observed_tick": 1321,
+      "loss_stable_through_tick": 1345,
+      "victory_observed_tick": 378,
+      "victory_stable_through_tick": 402,
+      "exact_complete_reflected_state_restored": true,
+      "exact_native_poses_and_motion_restored": true,
+      "exact_logical_ui_restored": true,
+      "fresh_process_checkpoint_continuation": true,
+      "verifier_sha256": "5506ac02c164418805fa9ef84b9b2bd14075f89bfed8824626689aaa5d729f1e",
+      "checks": [
+        "Native cover closest-hit blocks drone damage.",
+        "Immediate cooldown gate spends no ammunition.",
+        "Accepted camera misses consume finite ammunition.",
+        "Controller movement reveals cover-occluded target.",
+        "Empty magazine refuses a visible drone shot.",
+        "Three-breach unattended loss.",
+        "Exactly three waves of three two-hit native drones produce nine-kill win.",
+        "Compiled Reload/Pause/Resume/Save/Load handlers exercised.",
+        "Mid-wave checkpoint restores complete reflected state, logical UI, native identities/poses and motion.",
+        "Fresh native process restores the same checkpoint and completes newly computed controller play."
+      ],
+      "owned_client_exit_codes": [
+        0,
+        0
+      ]
+    },
+    "cleanup": {
+      "provider_exit_code": 0,
+      "host_exit_code": 0
+    }
+  },
+  "public_fixture_replay": {
+    "engine_version": "0.0.44",
+    "platform": "Windows",
+    "gameplay_backend": "CoreCLR",
+    "runtime": "10.0.12",
+    "source_and_project_retained_verbatim": true,
+    "build_from_public_fixture_exit_code": 0,
+    "build_warnings": 0,
+    "build_errors": 0,
+    "supplied_artifact_provenance": "Retained public source/project copied into disposable output and compiled against the matching local gameplay SDK; source hashes checked before replay.",
+    "format": "poima.agent-defense-replay.v1",
+    "passed": true,
+    "recorded_agent_authoring": true,
+    "live_agent_session": false,
+    "native_calls": 3222,
+    "elapsed_seconds": 1.2740822000050684,
+    "timeout_seconds": 300,
+    "hashes": {
+      "engine": "8ff72c6b55b6dbf2554a636ee3e4bb6f89f959ff98c11fe8fb07a405929f6ed8",
+      "world": "f77b16bbc70e3e5ffce295cff7274452673a365883402801207223b7dc8c49df",
+      "manifest": "fad2e9705d6d81fa8cba2ed5c27947f4d85a281c817b674534fe2ac26911ba39",
+      "assembly": "9b7c22ad2adf76482c37c34285a74d464d1d188cc493b73c69041f6bf6185cf8",
+      "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+      "bridge": "5693490624663fd354397edc144f206789772de8f81d1eaae02ffe3e7c2e39ed",
+      "agent_defense_replay.py": "06465adee889c64a3235b56eebf4ab886377067dc060bdf5333de9af1c85215c"
+    },
+    "checks": [
+      "Native cover closest-hit blocks drone damage.",
+      "Immediate cooldown gate spends no ammunition.",
+      "Accepted camera misses consume finite ammunition.",
+      "Controller movement reveals cover-occluded target.",
+      "Empty magazine refuses a visible drone shot.",
+      "Three-breach unattended loss.",
+      "Exactly three waves of three two-hit native drones produce nine-kill win.",
+      "Compiled Reload/Pause/Resume/Save/Load handlers exercised.",
+      "Mid-wave checkpoint restores complete reflected state, logical UI, native identities/poses and motion.",
+      "Fresh native process restores the same checkpoint and completes newly computed controller play."
+    ],
+    "cleanup": {
+      "clean": true,
+      "owned_processes": 2,
+      "exit_codes": [
+        0,
+        0
+      ]
+    },
+    "limits": [
+      "Recorded agent-authored fixture replay, not fresh provider authoring.",
+      "Logical HUD and synthetic controller input; no graphics or physical input qualification.",
+      "One bounded primitive hitscan game; no production, scale, universal determinism or full API stability claim.",
+      "Qualified platforms are described by separately recorded evidence; runner availability is not qualification.",
+      "Supplied DLL source provenance is not independently established by this runner.",
+      "Raw local evidence contains RPCs and filesystem paths; public summary excludes them."
+    ],
+    "outcomes": {
+      "loss": {
+        "tick": 1345,
+        "values": {
+          "ammo": 6,
+          "kills": 0,
+          "wave": 1,
+          "health": 0,
+          "won": 0,
+          "lost": 1,
+          "paused": 0,
+          "shots": 0,
+          "breaches": 3,
+          "cooldown": 0
+        },
+        "observed_terminal_tick": 1321
+      },
+      "checkpoint": {
+        "tick": 130,
+        "values": {
+          "ammo": 4,
+          "kills": 1,
+          "wave": 1,
+          "health": 3,
+          "won": 0,
+          "lost": 0,
+          "paused": 0,
+          "shots": 8,
+          "breaches": 0,
+          "cooldown": 12
+        }
+      },
+      "win": {
+        "tick": 402,
+        "values": {
+          "ammo": 0,
+          "kills": 9,
+          "wave": 3,
+          "health": 3,
+          "won": 1,
+          "lost": 0,
+          "paused": 0,
+          "shots": 24,
+          "breaches": 0,
+          "cooldown": 12
+        },
+        "observed_terminal_tick": 378,
+        "drones_per_wave": {
+          "1": 3,
+          "2": 3,
+          "3": 3
+        }
+      },
+      "compiled_restore": {
+        "tick": 130,
+        "values": {
+          "ammo": 4,
+          "kills": 1,
+          "wave": 1,
+          "health": 3,
+          "won": 0,
+          "lost": 0,
+          "paused": 0,
+          "shots": 8,
+          "breaches": 0,
+          "cooldown": 12
+        }
+      },
+      "win_after_compiled_load": {
+        "tick": 402,
+        "values": {
+          "ammo": 0,
+          "kills": 9,
+          "wave": 3,
+          "health": 3,
+          "won": 1,
+          "lost": 0,
+          "paused": 0,
+          "shots": 24,
+          "breaches": 0,
+          "cooldown": 12
+        },
+        "observed_terminal_tick": 378,
+        "drones_per_wave": {
+          "1": 3,
+          "2": 3,
+          "3": 3
+        }
+      },
+      "fresh_process_restore": {
+        "tick": 130,
+        "values": {
+          "ammo": 4,
+          "kills": 1,
+          "wave": 1,
+          "health": 3,
+          "won": 0,
+          "lost": 0,
+          "paused": 0,
+          "shots": 8,
+          "breaches": 0,
+          "cooldown": 12
+        }
+      },
+      "fresh_process_win": {
+        "tick": 402,
+        "values": {
+          "ammo": 0,
+          "kills": 9,
+          "wave": 3,
+          "health": 3,
+          "won": 1,
+          "lost": 0,
+          "paused": 0,
+          "shots": 24,
+          "breaches": 0,
+          "cooldown": 12
+        },
+        "observed_terminal_tick": 378,
+        "drones_per_wave": {
+          "1": 3,
+          "2": 3,
+          "3": 3
+        }
+      }
+    }
+  },
+  "additional_regressions": {
+    "windows_python_client_cases": 18,
+    "windows_response_contract_cases": 15,
+    "request_compatibility_cases": 11,
+    "request_scope_projection_cases": 9,
+    "windows_candidate_input_gate": {
+      "passed": true,
+      "schema_revision": 47,
+      "selected_core_methods": 9,
+      "selected_components": [
+        "Transform"
+      ],
+      "discovery_sha256": "e945d803595a97d64b2f0337aa4cb45342800b5f8202a191b1acb697bb392c33",
+      "scope": "Selected schema46 candidate inputs preserved by rebuilt schema47 host; not broader behavior, response or API stability guarantee."
+    }
+  },
+  "limits": [
+    "Two different small agent-built game exercises are now recorded across Codex and Claude; this is not a broad success-rate benchmark or a comparison against another engine.",
+    "Defense uses primitive geometry, instantaneous hitscan and prescribed straight-line kinematic lanes, with logical HUD and synthetic controller inputs.",
+    "Rendered defense presentation, physical inputs, navigation, Native AOT, Linux and console execution of this fixture remain unqualified.",
+    "Pause is a playback intent; a headless owner that keeps stepping still advances physics.",
+    "The terminal branch after surviving waves with fewer than nine kills, despite remaining reactor health, is not exercised here.",
+    "Elapsed replay time measures this standalone test run only; it is not agent game-creation time, frame rate or a general engine benchmark.",
+    "The authoring API remains a candidate; runtime/gameplay/save formats are not frozen. The installed desktop package remains unchanged.",
+    "Raw provider/RPC logs and machine-local paths are excluded from the repository."
+  ]
+}

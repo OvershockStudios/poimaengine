@@ -1,0 +1,350 @@
+{
+  "component_schemas": {},
+  "entities": {
+    "7e1a0000000000000000000000000001": {
+      "components": {
+        "CharacterController": {
+          "camera": "7e1a0000000000000000000000000002",
+          "height": 1.8,
+          "jump_speed": 4,
+          "radius": 0.4,
+          "speed": 5
+        },
+        "Transform": {
+          "position": [
+            0,
+            1,
+            10
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Player",
+      "parent": null
+    },
+    "7e1a0000000000000000000000000002": {
+      "components": {
+        "Camera": {
+          "far": 500,
+          "near": 0.05,
+          "vertical_fov": 70
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.6,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "PlayerCamera",
+      "parent": "7e1a0000000000000000000000000001"
+    },
+    "7e1a0000000000000000000000000003": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.8,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.25,
+            0.27,
+            0.3
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            -0.5,
+            -15
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            40,
+            1,
+            80
+          ]
+        }
+      },
+      "name": "Floor",
+      "parent": null
+    },
+    "7e1a0000000000000000000000000004": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.1,
+            0.7,
+            0.9
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.5,
+            18
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "name": "Reactor",
+      "parent": null
+    },
+    "7e1a0000000000000000000000000005": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "static",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.45,
+            0.4,
+            0.3
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            2.4,
+            1.5,
+            -10
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            2,
+            3,
+            0.6
+          ]
+        }
+      },
+      "name": "Cover",
+      "parent": null
+    },
+    "7e1a0000000000000000000000000006": {
+      "components": {
+        "Light": {
+          "color": [
+            1,
+            0.95,
+            0.9
+          ],
+          "enabled": true,
+          "intensity": 3,
+          "kind": "directional"
+        },
+        "Transform": {
+          "position": [
+            0,
+            10,
+            0
+          ],
+          "rotation": [
+            -0.3826834,
+            0,
+            0,
+            0.9238795
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ]
+        }
+      },
+      "name": "Sun",
+      "parent": null
+    }
+  },
+  "format": "poima.authored-world",
+  "receipts": [],
+  "retired_component_schemas": [],
+  "retired_ids": [],
+  "retired_template_ids": [],
+  "retired_ui_ids": [],
+  "revision": 3,
+  "templates": {
+    "7e1a00000000000000000000000000d0": {
+      "components": {
+        "BoxCollider": {
+          "friction": 0.5,
+          "half_extents": [
+            0.5,
+            0.5,
+            0.5
+          ],
+          "mass": 1,
+          "motion": "kinematic",
+          "restitution": 0
+        },
+        "MeshRenderer": {
+          "albedo": [
+            0.9,
+            0.15,
+            0.1
+          ],
+          "primitive": "box",
+          "visible": true
+        },
+        "Transform": {
+          "position": [
+            0,
+            1.5,
+            -40
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            1.2,
+            1.2,
+            1.2
+          ]
+        }
+      },
+      "name": "Drone"
+    }
+  },
+  "ui": {
+    "7e1a00000000000000000000000000a0": {
+      "action": null,
+      "enabled": true,
+      "kind": "panel",
+      "name": "RelayPanel",
+      "parent": null,
+      "text": "",
+      "visible": true
+    },
+    "7e1a00000000000000000000000000a1": {
+      "action": null,
+      "enabled": true,
+      "kind": "label",
+      "name": "Hud",
+      "parent": "7e1a00000000000000000000000000a0",
+      "text": "RELAY DEFENSE | Wave 0/3 | Kills 0/9 | Ammo 6/6 | Reactor 3/3 | Drones 0 | DEFENDING",
+      "visible": true
+    },
+    "7e1a00000000000000000000000000b1": {
+      "action": "relay.reload",
+      "enabled": true,
+      "kind": "button",
+      "name": "Reload",
+      "parent": "7e1a00000000000000000000000000a0",
+      "text": "Reload",
+      "visible": true
+    },
+    "7e1a00000000000000000000000000b2": {
+      "action": "relay.pause",
+      "enabled": true,
+      "kind": "button",
+      "name": "Pause",
+      "parent": "7e1a00000000000000000000000000a0",
+      "text": "Pause",
+      "visible": true
+    },
+    "7e1a00000000000000000000000000b3": {
+      "action": "relay.resume",
+      "enabled": true,
+      "kind": "button",
+      "name": "Resume",
+      "parent": "7e1a00000000000000000000000000a0",
+      "text": "Resume",
+      "visible": true
+    },
+    "7e1a00000000000000000000000000b4": {
+      "action": "relay.save",
+      "enabled": true,
+      "kind": "button",
+      "name": "Save",
+      "parent": "7e1a00000000000000000000000000a0",
+      "text": "Save",
+      "visible": true
+    },
+    "7e1a00000000000000000000000000b5": {
+      "action": "relay.load",
+      "enabled": true,
+      "kind": "button",
+      "name": "Load",
+      "parent": "7e1a00000000000000000000000000a0",
+      "text": "Load",
+      "visible": true
+    }
+  },
+  "version": 4,
+  "world_id": "93fedadef9a9565bc3bbf5188d2f126a"
+}

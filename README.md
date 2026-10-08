@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Editor checkpoint showing independently dockable Scene and Game views.*
 
-> **Early development · 0.0.43.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **Early development · 0.0.44.** Poima is a prototype. Important systems are incomplete, and APIs and file formats may change. See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -23,7 +23,7 @@ Poima makes engine operations directly available to tools. External agents such 
 
 The desktop editor is a visual client of the same engine, with a hierarchy, typed Inspector, Project browser, transform gizmos and separate Scene and Game panels. Gameplay uses C#, including compatible development reload and Native AOT bundle workflows.
 
-A [recorded agent exercise](docs/evidence/m2-agent-game.json) creates and compiles a small escape-room game, repairs authoring mistakes and passes independent gameplay/save checks. Its [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints) shows the locked exit, completed escape and restored checkpoint. This is one bounded demonstration, not a production-readiness claim.
+Two recorded exercises put this workflow into practice: [Codex builds an escape room](docs/evidence/m2-agent-game.json), and [Claude builds a wave-defense game](docs/evidence/fixtures/agent-defense/README.md). Both compile C# gameplay and pass independent controller-input and save-continuation checks. The escape room also has a [rendered replay](docs/evidence/fixtures/agent-escape/README.md#rendered-checkpoints). These are small, bounded demonstrations, not a general success-rate or production-readiness claim.
 
 ![Three Vulkan checkpoints from the recorded agent-built escape game](docs/evidence/agent-escape-checkpoints.gif)
 

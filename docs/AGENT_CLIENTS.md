@@ -8,6 +8,14 @@ For custom automation and evaluation scripts, the [Python client](PYTHON_CLIENT.
 uses the same native API through an owned world process or shared endpoint.
 It does not authenticate providers or replace their MCP clients.
 
+Two separate game-authoring exercises extend these bounded checks: a
+[Codex escape room](evidence/fixtures/agent-escape/README.md) and a
+[Claude wave-defense game](evidence/fixtures/agent-defense/README.md). Their
+retained C# source and public replay runners check actual controller gameplay,
+compiled UI callbacks and checkpoint continuation in fresh native processes.
+These fixtures do not establish broad autonomous-development success rates or
+physical-device qualification; rendered evidence is separate.
+
 ## Connect a project
 
 Use an absolute engine executable path and a world path whose parent directory exists. For a standalone world, the MCP process owns its writer lock. To work alongside an editor or headless host, use its endpoint instead; see [MCP](MCP.md) and [shared sessions](SHARED_SESSIONS.md). A Windows host requires a Windows Poima executable.

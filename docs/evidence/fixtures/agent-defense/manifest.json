@@ -1,0 +1,33 @@
+{
+  "assembly": "compiled/RelayDefense.dll",
+  "type": "RelayDefense.RelayDefenseGame",
+  "player_id": "7e1a0000000000000000000000000001",
+  "camera_id": "7e1a0000000000000000000000000002",
+  "reactor_id": "7e1a0000000000000000000000000004",
+  "cover_id": "7e1a0000000000000000000000000005",
+  "field_map": {
+    "ammo": "Ammo",
+    "kills": "Kills",
+    "wave": "Wave",
+    "health": "CoreHealth",
+    "won": "Won",
+    "lost": "Lost",
+    "paused": "Paused",
+    "shots": "Shots",
+    "breaches": "Breaches",
+    "cooldown": "Cooldown"
+  },
+  "enemy_fields": ["Drone1", "Drone2", "Drone3"],
+  "ui": {
+    "hud": "7e1a00000000000000000000000000a1",
+    "reload": "7e1a00000000000000000000000000b1",
+    "pause": "7e1a00000000000000000000000000b2",
+    "resume": "7e1a00000000000000000000000000b3",
+    "save": "7e1a00000000000000000000000000b4",
+    "load": "7e1a00000000000000000000000000b5"
+  },
+  "magazine_size": 6,
+  "cooldown_ticks": 12,
+  "enemy_hit_points": 2,
+  "save_slot": "relay-checkpoint"
+}

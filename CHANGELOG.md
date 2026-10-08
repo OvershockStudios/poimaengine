@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.44 — Unreleased
+
+This checkpoint adds a second independently checked agent-built game and a reproducible defense fixture. The installed desktop package remains unchanged.
+
+- One fresh Claude Code session creates the scene, templates, logical UI and compiled C# for a three-wave defense game through guarded native MCP authoring. An independent trace audit reconstructs the retained source and authored world; no verifier game repairs or live gameplay patches are used. [Exercise evidence](docs/evidence/m2-agent-defense.json).
+- A public Python replay checks real controller movement, cover rays, two-hit drones, finite ammunition, cooldown, reload, victory, unattended loss and exact checkpoint continuation in a separate native process. The unchanged generated source rebuilds and passes 3,222 native calls on Windows CoreCLR with clean exits. This is bounded headless evidence; rendered defense presentation and physical input remain unqualified. [Fixture and reproduction](docs/evidence/fixtures/agent-defense/README.md).
+
 ## 0.0.43 — Unreleased
 
 This checkpoint adds an installable Python automation client and candidate core response checks. The installed desktop package remains unchanged.
