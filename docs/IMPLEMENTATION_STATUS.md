@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.81**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.82**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.82 qualifies the [exported settings/checkpoint workflow](EXPORTED_PLAYER_SETTINGS.md)
+using the retained genuine 0.0.81 Windows Native AOT consumer. The source project
+is removed before launching the relocated immutable bundle from an unrelated
+working directory with a system-only PATH. Native window input opens the modal,
+stages preferences, saves and restores the actual player Runtime. The restored
+compiled callback queries its original acceptance ticket while the same current
+player retains later FOV/UI/gain configuration and successful presentation.
+
+The verifier observes initial/modal/restored visible UI pixels and checks exact
+compiled-state, durable-save, ownership, revision, native backend and final Vulkan
+menu pixels. Both the RTX 4070 Laptop and AMD integrated GPU pass five check
+groups, with 10 menu actions per run; three native configurations pass 15
+selected regression executions. It retains seven failed debug-symbol export
+and input/verifier attempts;
+stripped installation keeps the shipping executable within the exporter's
+256 MiB per-file budget. The development binary retains its symbols. Protocol 1,
+authoring-core v1, schema revision 70 and gameplay services epoch 7 are unchanged.
+
+This is one small exported settings fixture, not complete-game or whole Alpha
+qualification. Physical devices, audible output, representative performance,
+clean-machine installation and fresh-process menu/save continuation remain
+separate work. Input spacing is explicit and does not itself establish redraw;
+changed OS header pixels supplement the exact final semantic assertions. See
+[recorded evidence](evidence/m2-exported-player-settings.json).
 
 Version 0.0.81 adds [compiled player settings and a native menu fixture](COMPILED_PLAYER_SETTINGS.md).
 C# Tick/Control callbacks read committed configuration and cached observations,

@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.82
+
+- Qualify compiled settings, native menu input and checkpoint restore inside a genuinely exported Windows Native AOT game, using the retained 0.0.81 gameplay artifact.
+- Verify removed owned source, relocation, system-only launch environment, unchanged runtime/artifact/bundle inventories and external durable save storage.
+- Observe initial/modal/restored UI pixels before dependent input; retain strict compiled callback, acceptance-ticket, preference application and final Vulkan image checks. Keep physical-input and game-scale qualification separate.
+- Document stripped runtime installation and the exporter's per-file budget; retain the failed debug-symbol export and input-verifier attempts in the qualification record.
+- Publish the [exported-player playbook](docs/EXPORTED_PLAYER_SETTINGS.md) and [recorded evidence](docs/evidence/m2-exported-player-settings.json), and connect them to the documentation task index and coverage inventory.
+
 ## 0.0.81
 
 - Add independently negotiated [compiled player preferences](docs/COMPILED_PLAYER_SETTINGS.md) to C# Tick/Control: typed snapshots, guarded staging and bounded acceptance tickets over the existing native owner.

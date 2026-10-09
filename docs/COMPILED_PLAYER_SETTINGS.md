@@ -65,7 +65,9 @@ Host capability is separate from an attached owner. A game can load before a
 player exists. A headless Tick can call the API and receive unavailable results.
 Binding covers shared `player.start`, blocking `runtime.play` and its exported
 player route without requiring a writable authoring document. The source wiring
-of these routes does not establish an executed export or graphics result.
+of these routes does not establish an executed export or graphics result. The
+[exported-player workflow](EXPORTED_PLAYER_SETTINGS.md) tests the shipping
+connection separately through native window input.
 
 ## Public C# reference
 
@@ -506,7 +508,8 @@ until process exit. Compatible development reload checks apply to CoreCLR, not
 replacement of a loaded NativeAOT image. See [Native gameplay](NATIVE_GAMEPLAY.md)
 and [Projects/export](PROJECTS.md) for installed-runtime and packaged content
 prerequisites. A published artifact or a test host is not a source-free exported
-game, and these commands do not establish that separate export proof.
+game. Follow the [exported-player workflow](EXPORTED_PLAYER_SETTINGS.md) to
+verify the real relocated player separately.
 
 ## Checkpoints, failures and qualification limits
 

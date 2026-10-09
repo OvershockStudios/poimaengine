@@ -49,12 +49,17 @@ Export takes an installed runtime tree, not a raw build directory. Build a rende
 
 ```sh
 cmake --build build/windows-runtime --target poima
-cmake --install build/windows-runtime --prefix build/runtime-windows
+cmake --install build/windows-runtime --strip --prefix build/runtime-windows
 
 ./build/headless/poima project build build/MyRoom/project.json \
   --output build/MyRoom-game --runtime build/runtime-windows
 ./build/headless/poima game inspect build/MyRoom-game/game.json
 ```
+
+Use the configured toolchain to strip runtime debug symbols during shipping
+installation. Keep the development build for debugging. Debug-symbol executables
+can exceed the exporter's 256 MiB per-file budget; install into a new prefix and
+verify the resulting player rather than expanding the budget to ship symbols.
 
 The exporter accepts only `runtime.json`, `bin/`, `lib/` and `share/poima/` in its runtime root. The default install includes only runtime files, including when the desktop bridge is enabled. Its C ABI development header is opt-in: `cmake --install build/windows-runtime --component Development --prefix build/desktop-sdk`. Keep that SDK prefix separate from the runtime. Use a fresh runtime prefix if an older installation left development headers in it; CMake does not remove obsolete installed files.
 

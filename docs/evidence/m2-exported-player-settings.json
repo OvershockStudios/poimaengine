@@ -1,0 +1,2413 @@
+{
+  "format": "poima.exported-player-settings-qualification",
+  "version": 1,
+  "engine_version": "0.0.82",
+  "date": "2026-10-09",
+  "passed": true,
+  "scope": "Source-free Windows Native AOT settings menu and same-player checkpoint replacement integration. No native or SDK behavior change in this checkpoint.",
+  "contracts": {
+    "protocol": 1,
+    "schema_revision": 70,
+    "authoring_core": "v1",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_epoch": 7,
+    "required_services_bytes": 256,
+    "required_features": [
+      "baseline_v7",
+      "player_preferences_v1"
+    ],
+    "callbacks": {
+      "preference_snapshot": 232,
+      "preference_patch": 240,
+      "preference_result": 248
+    },
+    "wire_sizes": {
+      "snapshot": 216,
+      "patch": 104,
+      "enqueue": 40,
+      "result": 56,
+      "ticket": 24
+    },
+    "earlier_named_prefixes": [
+      176,
+      192,
+      208,
+      216,
+      224,
+      232
+    ],
+    "retained_results": 32,
+    "authority": "Shared native PlayerPreferences outside authored worlds, input profiles and gameplay saves.",
+    "publication": "One prepared patch per whole Control/step boundary; publish only after complete native success, before queued storage/replacement. Failed boundaries consume no preference revision or ticket.",
+    "observations": "Committed configuration and sparse sources are distinct from cached observed/applied/presented device state; samples/frame slots remain next-launch intent.",
+    "availability": "Named host support is separate from an attached owner. Stop clears availability; new player creates an independent owner; replay rejects mutation."
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 104.45668152800499,
+      "log_sha256": "4cd30945284ba0a85da75245b351ddeecb0c63db4db85bc6972957f36919f910",
+      "binary_sha256": "ba615200694ee5bec07e9bc7678ab4d6df5e0807b3200f130a9e07bdf4efed99"
+    },
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 98.41164038699935,
+      "log_sha256": "e12f6c4ed66aaaac7f837a33625ae3959d87026077a58521641b9b66d89a8cba",
+      "binary_sha256": "00bc519086b023c86cb8dc841d7b20733b75676074a5a5091923c7bca2525de0"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 108.3462481769966,
+      "log_sha256": "d350068e8e268d7ae3b00befc39f115603d2c7bc08e23b09ca40264afc24f31a",
+      "binary_sha256": "1895a7be3af1d8e9fd404054698e999e02c0acf5328da50914850f3c18cab34e"
+    }
+  ],
+  "installations": [
+    {
+      "kind": "development_runtime",
+      "raw_report_sha256": "46119dcf4e7d48fae7e018ce9cfce17914743e1efa7750503ec11dc51a32d1c0",
+      "steps": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 33.16604821800138,
+          "log_sha256": "a08148194e74daad499b20241085489fb4e1cc297904df45a79c61e694631a81"
+        },
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 53.78705531699961,
+          "log_sha256": "722e8bca5d1bfd9cb39db44bacd11c0961cd6e7c88cb65d4b227f552489ed541"
+        }
+      ]
+    },
+    {
+      "kind": "stripped_runtime",
+      "raw_report_sha256": "25b25df115088f8343838672179159a7cfb1f3d5663c15660e88a68c9d8575f1",
+      "steps": [
+        {
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 51.779182969999965,
+          "log_sha256": "016dae7f00669f130bef6c4af2188e9065f64460cf6ca9ffe422039779d8f778"
+        }
+      ]
+    }
+  ],
+  "selected_regression_checks": [
+    {
+      "host": "windows",
+      "raw_report_sha256": "7493729b999f609dea8d27d192ed1c9bbab57ab603fd2266bf92ceba2d9a2975",
+      "binary_sha256": "ba615200694ee5bec07e9bc7678ab4d6df5e0807b3200f130a9e07bdf4efed99",
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.7738096160028363,
+          "log_sha256": "7e718f4bec19efacecd9090e597d3a11ccc5e36e9cc3ef118e0a00483a705082"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.620868154001073,
+          "log_sha256": "d05ffbf732d535c1fe1ceea92c058d04429fe3a9c960c7e542308e15f4e8e4fd"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 3.277960838000581,
+          "log_sha256": "5b291a0743f7a2e44b1bc90a4070ad44b9cef44e24a15a00b52f901ebe1c1ef8"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 7.943108931001916,
+          "log_sha256": "09fb49304bb2d8e387f770423bc1198abc0d094e61aea039711f84985d8ac2ae"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 3.078356899000937,
+          "log_sha256": "e86a3e8ea2814a3c311666db57940fd6bb07e9d134282be3cddb6a3730bee9a9"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "raw_report_sha256": "c5c517e4d50e29408c3fe75ac4a258047c20c3843caaede413ba1eeb9d8c742d",
+      "binary_sha256": "00bc519086b023c86cb8dc841d7b20733b75676074a5a5091923c7bca2525de0",
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.7238546299995505,
+          "log_sha256": "95accdba3e3262cc38054078c5efcaf02029bbdeb082f11282322935b75bf401"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.6702727399970172,
+          "log_sha256": "051f3e225aba3353f30f2a0b60753a3986ce6b003359ac55b4b6d22982df859f"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.5266379070017138,
+          "log_sha256": "615dda88c61091e1da8f20f289acd23383bba29ad7b528a2a623e7df7fad7af6"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 13.369515493002837,
+          "log_sha256": "7c6d64154baaad778bc02bfe3b23ab8144d4679a7c986ddefc5c56f35e3ef92b"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 2.1240085049939808,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        }
+      ]
+    },
+    {
+      "host": "authoring",
+      "raw_report_sha256": "faea0a02c4f1d930ddfb4a93fade67a7ad32ea2d3bfa00281678d3b455d3aae9",
+      "binary_sha256": "1895a7be3af1d8e9fd404054698e999e02c0acf5328da50914850f3c18cab34e",
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.2727343420046964,
+          "log_sha256": "584f9223c10de6d10750429e0685593481eb2aab1eef0b71332a62c836596a1b"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5190559100010432,
+          "log_sha256": "f9b9a2005aa21234cc9ba6216d68e3a46c306b9b6a9a53bad8cbd73cebe18404"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.6727559430000838,
+          "log_sha256": "ddf8faa47f85f27fe4b111b71ce3bf5a65265021ec1128e7534d8cbbe8832e33"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 13.567205711005954,
+          "log_sha256": "be5a3eeb360b6abd4b09ff5314e932731d8aec3c3fa79d55031f0f1d61f5c5f1"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 1.5226646250011981,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        }
+      ]
+    }
+  ],
+  "cohorts": [
+    {
+      "gpu_index": 1,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "passed": true,
+      "raw_report_sha256": "049d78c8463373762f2be2ff7ac949812a27fb1fc2d81a8ffbb653daafbc66c3",
+      "runner_sha256": "90569cedefd4b7819af0765ebdf2c3ae22a2b4bdf49bd99899c00cac2410911f",
+      "elapsed_seconds": 20.206786099995952,
+      "command_count": 6,
+      "author_calls_recorded": 4,
+      "targeted_win32_messages": 63,
+      "menu_actions": [
+        "pref.open",
+        "pref.ui.plus",
+        "pref.fov.plus",
+        "pref.gain.minus",
+        "pref.refresh",
+        "pref.stage.save",
+        "pref.fov.plus",
+        "pref.refresh",
+        "pref.stage.load",
+        "pref.refresh"
+      ],
+      "checks": [
+        "Owned foreground HWND keyboard release and actual pointer hit tests dispatch genuine compiled modal/tuning/save/load controls.",
+        "Durable compiled Save retains staged ticket4 and committed callback revision3; later Load commits settings revision6 before replacing runtime.",
+        "Restored callback queries saved ticket4 accepted revision4 while fresh owner snapshot/actual presentation remain revision6, FOV80, UI1.75, gain0.7.",
+        "Native hardware final report and renderer BMP contain the visible settings/checkpoint menu; paused saved tick survives one actual runtime replacement.",
+        "Owned source removed before execution, exact relocated NativeAOT/runtime closure, sanitized environment, no managed PE, immutable bundle and durable save."
+      ],
+      "source_removed_before_player": true,
+      "relocation": "Outside the checkout, on the same drive; unrelated working directory and system-only PATH.",
+      "focus_attempts": [
+        {
+          "request_succeeded": true,
+          "owned_foreground": true,
+          "temporary_queue_attachment": false
+        }
+      ],
+      "presentation_observations": [
+        {
+          "label": "initial_opener",
+          "kind": "owned_visible_client_os_readback",
+          "attempts": 1,
+          "sha256": "cc5f939a83011f21ed3d0b486d120dee240703f602140daacc77006422ac6d44",
+          "corners": [
+            [
+              53,
+              48,
+              57
+            ],
+            [
+              53,
+              48,
+              57
+            ],
+            [
+              53,
+              48,
+              57
+            ],
+            [
+              53,
+              48,
+              57
+            ]
+          ]
+        },
+        {
+          "label": "opened_modal_presented",
+          "kind": "owned_visible_client_os_readback",
+          "opener_attempts": 1,
+          "sha256": "72a0d4a9a9af5e84f8a38e637cb3a96c38b9e80856eda6fed4cf79bfd47d2475",
+          "corners": [
+            [
+              30,
+              27,
+              32
+            ],
+            [
+              30,
+              27,
+              32
+            ],
+            [
+              30,
+              27,
+              32
+            ],
+            [
+              30,
+              27,
+              32
+            ]
+          ]
+        },
+        {
+          "label": "restored_header_changed",
+          "kind": "owned_visible_client_os_readback",
+          "attempts": 1,
+          "before_sha256": "bb2cc34704570d990064d64df84c6f4f2cd8b8ef772f83cff45117c365676115",
+          "sha256": "6e8a97127fdc3ea1dc0b042b5a8d6f21646894ae72b0d355f1ea5be801334a6a",
+          "limitation": "Changed menu-header pixels; final compiled state independently verifies the restored owner and callbacks."
+        }
+      ],
+      "post_load_input_spacing_seconds": 2,
+      "author_owner": {
+        "exit_code": 0,
+        "stderr": "",
+        "stderr_truncated": false
+      },
+      "saved_witness": {
+        "manifest_sha256": "9f3f426535b99d953b96ad95ae5bffbd315ecc9dee092d22510f125839a78181",
+        "payload_sha256": "a2b9d4b785bf234488f0090104d4ac8901a19294c7a78db4ccd1b37ad3aa19d1",
+        "tick": 15,
+        "values": {
+          "AcceptedRevision": -1,
+          "AppliedRevision": 3,
+          "AudioOutcome": 0,
+          "Available": 1,
+          "Controls": 6,
+          "EffectiveFov": 65.0,
+          "EffectiveFovPresent": 1,
+          "EffectiveUi": 1.25,
+          "EffectiveUiPresent": 1,
+          "Fov": 65.0,
+          "FovPresent": 1,
+          "Gain": 0.9,
+          "GuardHigh": 0,
+          "GuardLow": 0,
+          "GuardRevision": 0,
+          "InvertX": 0,
+          "InvertY": 0,
+          "Mode": 0,
+          "NextFrames": 1,
+          "NextSamples": 1,
+          "ObservedRevision": 3,
+          "Overrides": 481,
+          "OwnerHigh": 855017085691409075,
+          "OwnerLow": -5663123189467430173,
+          "PresentedRevision": 3,
+          "ReadAfterRevision": 3,
+          "ReadUnchanged": 1,
+          "Replay": 0,
+          "ResultRejection": 0,
+          "ResultState": 1,
+          "Revision": 3,
+          "SaveHigh": -3159000082392941002,
+          "SaveLow": 4366370612888235582,
+          "SaveSequence": 1,
+          "SensitivityX": 0.1,
+          "SensitivityY": 0.1,
+          "SinkGain": 0.0,
+          "SinkGainPresent": 0,
+          "SourceFov": 8,
+          "SourceUi": 8,
+          "StageRejection": 0,
+          "Target": "00000000000000000000000000000064",
+          "TicketHigh": 855017085691409075,
+          "TicketLow": -5663123189467430173,
+          "TicketSequence": 4,
+          "Ticks": 15,
+          "UiPresent": 1,
+          "UiScale": 1.25
+        }
+      },
+      "final_compiled_values": {
+        "AcceptedRevision": 4,
+        "AppliedRevision": 6,
+        "AudioOutcome": 0,
+        "Available": 1,
+        "Controls": 7,
+        "EffectiveFov": 80.0,
+        "EffectiveFovPresent": 1,
+        "EffectiveUi": 1.75,
+        "EffectiveUiPresent": 1,
+        "Fov": 80.0,
+        "FovPresent": 1,
+        "Gain": 0.7000000000000001,
+        "GuardHigh": 0,
+        "GuardLow": 0,
+        "GuardRevision": 0,
+        "InvertX": 0,
+        "InvertY": 0,
+        "Mode": 0,
+        "NextFrames": 1,
+        "NextSamples": 1,
+        "ObservedRevision": 6,
+        "Overrides": 481,
+        "OwnerHigh": 855017085691409075,
+        "OwnerLow": -5663123189467430173,
+        "PresentedRevision": 6,
+        "ReadAfterRevision": 3,
+        "ReadUnchanged": 1,
+        "Replay": 0,
+        "ResultRejection": 0,
+        "ResultState": 2,
+        "Revision": 6,
+        "SaveHigh": -3159000082392941002,
+        "SaveLow": 4366370612888235582,
+        "SaveSequence": 1,
+        "SensitivityX": 0.1,
+        "SensitivityY": 0.1,
+        "SinkGain": 0.0,
+        "SinkGainPresent": 0,
+        "SourceFov": 8,
+        "SourceUi": 8,
+        "StageRejection": 0,
+        "Target": "00000000000000000000000000000064",
+        "TicketHigh": 855017085691409075,
+        "TicketLow": -5663123189467430173,
+        "TicketSequence": 4,
+        "Ticks": 15,
+        "UiPresent": 1,
+        "UiScale": 1.75
+      },
+      "same_preference_owner_and_saved_ticket": true,
+      "native_backend": {
+        "backend": "native_aot",
+        "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+        "assembly_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "native_diagnostics": {
+          "dynamic_code_compiled": false,
+          "dynamic_code_supported": false
+        }
+      },
+      "native_live_settings": {
+        "application": {
+          "applied_revision": 6,
+          "audio_outcome": "disabled",
+          "effective_ui_scale": 1.75,
+          "effective_vertical_fov": 80.0,
+          "invert_x": false,
+          "invert_y": false,
+          "observed_revision": 6,
+          "presented_revision": 6,
+          "requested_master_gain": 0.7000000000000001,
+          "sensitivity_x": 0.1,
+          "sensitivity_y": 0.1,
+          "sink_gain": null
+        },
+        "fields": {
+          "audio.master_gain": {
+            "application": "live",
+            "effective": 0.7000000000000001,
+            "outcome": "disabled",
+            "requested": 0.7000000000000001,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "camera.vertical_fov": {
+            "application": "live",
+            "effective": 80.0,
+            "outcome": "applied",
+            "requested": 80.0,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "graphics.frames_in_flight": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "graphics.samples": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "input.invert_x": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.invert_y": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_x": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_y": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "ui.scale": {
+            "application": "live",
+            "effective": 1.75,
+            "outcome": "applied",
+            "requested": 1.75,
+            "requires_next_player": false,
+            "source": "live_override"
+          }
+        },
+        "format": "poima.player-preferences.v1",
+        "profile": {
+          "content_hash": null,
+          "revision": 0,
+          "source": "none"
+        },
+        "revision": 6,
+        "sources": {
+          "audio.master_gain": "live_override",
+          "camera.vertical_fov": "live_override",
+          "graphics.frames_in_flight": "explicit_option",
+          "graphics.samples": "explicit_option",
+          "ui.scale": "live_override"
+        },
+        "values": {
+          "audio.master_gain": 0.7000000000000001,
+          "camera.vertical_fov": 80.0,
+          "graphics.frames_in_flight": 1,
+          "graphics.samples": 1,
+          "ui.scale": 1.75
+        }
+      },
+      "runtime": {
+        "tick": 15,
+        "control_sequence": 7,
+        "ui_revision": 7,
+        "scheduler": "single_threaded_fixed_60_hz"
+      },
+      "runtime_replacements": 1,
+      "current_runtime_differs_from_initial": true,
+      "frames_presented": 1125,
+      "nvrhi_errors": 0,
+      "stop_reason": "window_closed",
+      "capture": {
+        "kind": "native_renderer_readback",
+        "sha256": "9cbac7eb2af5528884c34c9b4e9d934c2b5781db6d9d87f6d6e186223de2fcec",
+        "bytes": 2073738,
+        "width": 960,
+        "height": 540,
+        "panel_sample_count": 16606,
+        "button_oracles": {
+          "pref.fov.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.fov.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.sensitivity.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.sensitivity.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.invert": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.ui.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.ui.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.gain.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.gain.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.reset": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.reset.all": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.graphics.low": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.graphics.high": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.refresh": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.close": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                114,
+                47,
+                55
+              ],
+              [
+                114,
+                47,
+                55
+              ],
+              [
+                114,
+                47,
+                55
+              ],
+              [
+                114,
+                47,
+                55
+              ]
+            ]
+          },
+          "pref.stage.save": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.stage.load": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          }
+        },
+        "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+      },
+      "bundle_inventory": {
+        "content/default.poima-input.json": "46af22803eb3797acc70baaf9cd7a56a7ac0504c5216ad65297e3fdf09d8fb60",
+        "content/world.json": "228be638e192b7dbce9d5dfe0dccd8f9c930e09282920acdf00f8851b40e01eb",
+        "game.json": "c43f78c1f424a78e7a859f7fd99a9c56ed48477ea3942a0a7440ff0101d70150",
+        "gameplay/native-gameplay.json": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "337ed88abdbfd3c5e105e38bf6d6ff10b6ac6faeb74d1439711efb36b73b136d",
+        "runtime/bin/poima_desktop.dll": "ff4005320dda00fd7b83ad589ce5d475a7f2d6ca40be3fa8f39eae438e56c46b",
+        "runtime/runtime.json": "dd36bf769e6c758db75ff164d07e11be0b2d71151591242f341d7c2f1fa396db",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "bundle_files": 57,
+      "immutable_bundle_runtime_artifact_and_save": true,
+      "clean_process_exit": true,
+      "physical_input_qualified": false
+    },
+    {
+      "gpu_index": 0,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "hardware": true,
+      "passed": true,
+      "raw_report_sha256": "a86aa484189c1b56d57334cb59b5e620f973d5cb9a90f4a4e7afe763be95a1d6",
+      "runner_sha256": "90569cedefd4b7819af0765ebdf2c3ae22a2b4bdf49bd99899c00cac2410911f",
+      "elapsed_seconds": 20.64455149997957,
+      "command_count": 6,
+      "author_calls_recorded": 4,
+      "targeted_win32_messages": 63,
+      "menu_actions": [
+        "pref.open",
+        "pref.ui.plus",
+        "pref.fov.plus",
+        "pref.gain.minus",
+        "pref.refresh",
+        "pref.stage.save",
+        "pref.fov.plus",
+        "pref.refresh",
+        "pref.stage.load",
+        "pref.refresh"
+      ],
+      "checks": [
+        "Owned foreground HWND keyboard release and actual pointer hit tests dispatch genuine compiled modal/tuning/save/load controls.",
+        "Durable compiled Save retains staged ticket4 and committed callback revision3; later Load commits settings revision6 before replacing runtime.",
+        "Restored callback queries saved ticket4 accepted revision4 while fresh owner snapshot/actual presentation remain revision6, FOV80, UI1.75, gain0.7.",
+        "Native hardware final report and renderer BMP contain the visible settings/checkpoint menu; paused saved tick survives one actual runtime replacement.",
+        "Owned source removed before execution, exact relocated NativeAOT/runtime closure, sanitized environment, no managed PE, immutable bundle and durable save."
+      ],
+      "source_removed_before_player": true,
+      "relocation": "Outside the checkout, on the same drive; unrelated working directory and system-only PATH.",
+      "focus_attempts": [
+        {
+          "request_succeeded": true,
+          "owned_foreground": true,
+          "temporary_queue_attachment": false
+        }
+      ],
+      "presentation_observations": [
+        {
+          "label": "initial_opener",
+          "kind": "owned_visible_client_os_readback",
+          "attempts": 1,
+          "sha256": "c0e7eb20f41763991b1b5d2f0ce8dfa2450884c88e510468a0838e996f34d2a8",
+          "corners": [
+            [
+              53,
+              48,
+              57
+            ],
+            [
+              53,
+              48,
+              57
+            ],
+            [
+              53,
+              48,
+              57
+            ],
+            [
+              53,
+              48,
+              57
+            ]
+          ]
+        },
+        {
+          "label": "opened_modal_presented",
+          "kind": "owned_visible_client_os_readback",
+          "opener_attempts": 1,
+          "sha256": "cdcb8c4663f99e7f8ddd0eda5368509fe41ee2308c22ac548548b930aa959512",
+          "corners": [
+            [
+              30,
+              27,
+              32
+            ],
+            [
+              30,
+              27,
+              32
+            ],
+            [
+              30,
+              27,
+              32
+            ],
+            [
+              30,
+              27,
+              32
+            ]
+          ]
+        },
+        {
+          "label": "restored_header_changed",
+          "kind": "owned_visible_client_os_readback",
+          "attempts": 1,
+          "before_sha256": "8c44fd161c0b6f40707daa1a5fbf1e479008e934d3a0e0f05a0032a95bf5eaa9",
+          "sha256": "aa9fa5e85c19b070a3ec1adeeb0fb7d50c659f41ec88ad00e1685a2211b21fac",
+          "limitation": "Changed menu-header pixels; final compiled state independently verifies the restored owner and callbacks."
+        }
+      ],
+      "post_load_input_spacing_seconds": 2,
+      "author_owner": {
+        "exit_code": 0,
+        "stderr": "",
+        "stderr_truncated": false
+      },
+      "saved_witness": {
+        "manifest_sha256": "20bda5fa21bfb1363bd590e3006d9d3bdbc6f6d03e157ea582c7e833da494303",
+        "payload_sha256": "ef59fedab7bb9102b850394eae5b8cf1fa1c5f4cfd2c477810ed995ddda9ecae",
+        "tick": 15,
+        "values": {
+          "AcceptedRevision": -1,
+          "AppliedRevision": 3,
+          "AudioOutcome": 0,
+          "Available": 1,
+          "Controls": 6,
+          "EffectiveFov": 65.0,
+          "EffectiveFovPresent": 1,
+          "EffectiveUi": 1.25,
+          "EffectiveUiPresent": 1,
+          "Fov": 65.0,
+          "FovPresent": 1,
+          "Gain": 0.9,
+          "GuardHigh": 0,
+          "GuardLow": 0,
+          "GuardRevision": 0,
+          "InvertX": 0,
+          "InvertY": 0,
+          "Mode": 0,
+          "NextFrames": 1,
+          "NextSamples": 1,
+          "ObservedRevision": 3,
+          "Overrides": 481,
+          "OwnerHigh": -546852368294163630,
+          "OwnerLow": 6599573983305440887,
+          "PresentedRevision": 3,
+          "ReadAfterRevision": 3,
+          "ReadUnchanged": 1,
+          "Replay": 0,
+          "ResultRejection": 0,
+          "ResultState": 1,
+          "Revision": 3,
+          "SaveHigh": -6242940762195217540,
+          "SaveLow": -3172186072818302401,
+          "SaveSequence": 1,
+          "SensitivityX": 0.1,
+          "SensitivityY": 0.1,
+          "SinkGain": 0.0,
+          "SinkGainPresent": 0,
+          "SourceFov": 8,
+          "SourceUi": 8,
+          "StageRejection": 0,
+          "Target": "00000000000000000000000000000064",
+          "TicketHigh": -546852368294163630,
+          "TicketLow": 6599573983305440887,
+          "TicketSequence": 4,
+          "Ticks": 15,
+          "UiPresent": 1,
+          "UiScale": 1.25
+        }
+      },
+      "final_compiled_values": {
+        "AcceptedRevision": 4,
+        "AppliedRevision": 6,
+        "AudioOutcome": 0,
+        "Available": 1,
+        "Controls": 7,
+        "EffectiveFov": 80.0,
+        "EffectiveFovPresent": 1,
+        "EffectiveUi": 1.75,
+        "EffectiveUiPresent": 1,
+        "Fov": 80.0,
+        "FovPresent": 1,
+        "Gain": 0.7000000000000001,
+        "GuardHigh": 0,
+        "GuardLow": 0,
+        "GuardRevision": 0,
+        "InvertX": 0,
+        "InvertY": 0,
+        "Mode": 0,
+        "NextFrames": 1,
+        "NextSamples": 1,
+        "ObservedRevision": 6,
+        "Overrides": 481,
+        "OwnerHigh": -546852368294163630,
+        "OwnerLow": 6599573983305440887,
+        "PresentedRevision": 6,
+        "ReadAfterRevision": 3,
+        "ReadUnchanged": 1,
+        "Replay": 0,
+        "ResultRejection": 0,
+        "ResultState": 2,
+        "Revision": 6,
+        "SaveHigh": -6242940762195217540,
+        "SaveLow": -3172186072818302401,
+        "SaveSequence": 1,
+        "SensitivityX": 0.1,
+        "SensitivityY": 0.1,
+        "SinkGain": 0.0,
+        "SinkGainPresent": 0,
+        "SourceFov": 8,
+        "SourceUi": 8,
+        "StageRejection": 0,
+        "Target": "00000000000000000000000000000064",
+        "TicketHigh": -546852368294163630,
+        "TicketLow": 6599573983305440887,
+        "TicketSequence": 4,
+        "Ticks": 15,
+        "UiPresent": 1,
+        "UiScale": 1.75
+      },
+      "same_preference_owner_and_saved_ticket": true,
+      "native_backend": {
+        "backend": "native_aot",
+        "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+        "assembly_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "native_diagnostics": {
+          "dynamic_code_compiled": false,
+          "dynamic_code_supported": false
+        }
+      },
+      "native_live_settings": {
+        "application": {
+          "applied_revision": 6,
+          "audio_outcome": "disabled",
+          "effective_ui_scale": 1.75,
+          "effective_vertical_fov": 80.0,
+          "invert_x": false,
+          "invert_y": false,
+          "observed_revision": 6,
+          "presented_revision": 6,
+          "requested_master_gain": 0.7000000000000001,
+          "sensitivity_x": 0.1,
+          "sensitivity_y": 0.1,
+          "sink_gain": null
+        },
+        "fields": {
+          "audio.master_gain": {
+            "application": "live",
+            "effective": 0.7000000000000001,
+            "outcome": "disabled",
+            "requested": 0.7000000000000001,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "camera.vertical_fov": {
+            "application": "live",
+            "effective": 80.0,
+            "outcome": "applied",
+            "requested": 80.0,
+            "requires_next_player": false,
+            "source": "live_override"
+          },
+          "graphics.frames_in_flight": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "graphics.samples": {
+            "application": "next_player",
+            "effective": 1,
+            "next_effective": 1,
+            "outcome": "unchanged",
+            "requested": 1,
+            "requires_next_player": false,
+            "source": "explicit_option"
+          },
+          "input.invert_x": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.invert_y": {
+            "application": "live",
+            "effective": false,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_x": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "input.sensitivity_y": {
+            "application": "live",
+            "effective": 0.1,
+            "outcome": "applied",
+            "requested": null,
+            "requires_next_player": false,
+            "source": "input_profile"
+          },
+          "ui.scale": {
+            "application": "live",
+            "effective": 1.75,
+            "outcome": "applied",
+            "requested": 1.75,
+            "requires_next_player": false,
+            "source": "live_override"
+          }
+        },
+        "format": "poima.player-preferences.v1",
+        "profile": {
+          "content_hash": null,
+          "revision": 0,
+          "source": "none"
+        },
+        "revision": 6,
+        "sources": {
+          "audio.master_gain": "live_override",
+          "camera.vertical_fov": "live_override",
+          "graphics.frames_in_flight": "explicit_option",
+          "graphics.samples": "explicit_option",
+          "ui.scale": "live_override"
+        },
+        "values": {
+          "audio.master_gain": 0.7000000000000001,
+          "camera.vertical_fov": 80.0,
+          "graphics.frames_in_flight": 1,
+          "graphics.samples": 1,
+          "ui.scale": 1.75
+        }
+      },
+      "runtime": {
+        "tick": 15,
+        "control_sequence": 7,
+        "ui_revision": 7,
+        "scheduler": "single_threaded_fixed_60_hz"
+      },
+      "runtime_replacements": 1,
+      "current_runtime_differs_from_initial": true,
+      "frames_presented": 709,
+      "nvrhi_errors": 0,
+      "stop_reason": "window_closed",
+      "capture": {
+        "kind": "native_renderer_readback",
+        "sha256": "daadbd47c3517b483e45eae9bfe3c51f44678dc5be770942187303964a0b55ba",
+        "bytes": 2073738,
+        "width": 960,
+        "height": 540,
+        "panel_sample_count": 16606,
+        "button_oracles": {
+          "pref.fov.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.fov.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.sensitivity.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.sensitivity.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.invert": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.ui.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.ui.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.gain.minus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                79,
+                26,
+                35
+              ],
+              [
+                79,
+                26,
+                35
+              ],
+              [
+                79,
+                26,
+                35
+              ],
+              [
+                79,
+                26,
+                35
+              ]
+            ]
+          },
+          "pref.gain.plus": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.reset": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.reset.all": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.graphics.low": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.graphics.high": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.refresh": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.close": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                114,
+                47,
+                55
+              ],
+              [
+                114,
+                47,
+                55
+              ],
+              [
+                114,
+                47,
+                55
+              ],
+              [
+                114,
+                47,
+                55
+              ]
+            ]
+          },
+          "pref.stage.save": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          },
+          "pref.stage.load": {
+            "matching_interior_corners": 4,
+            "samples": [
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ],
+              [
+                53,
+                48,
+                57
+              ]
+            ]
+          }
+        },
+        "limitation": "Opaque native UI rectangles; no OCR, scene projection, physical input or performance claim."
+      },
+      "bundle_inventory": {
+        "content/default.poima-input.json": "86a344cf83b14f0f0434e59b2defbc48e45cfdbc23c9b4ab7c615586444266b3",
+        "content/world.json": "62da5ee2f72c57a22b1ae954a2866fc2f549cc3970fdbc9d14f40f4c4a0a1db8",
+        "game.json": "a27354f7b2c85ad96d7e1d5a488942358cb0dedd45c6e1761a52d1f6f25f4155",
+        "gameplay/native-gameplay.json": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "337ed88abdbfd3c5e105e38bf6d6ff10b6ac6faeb74d1439711efb36b73b136d",
+        "runtime/bin/poima_desktop.dll": "ff4005320dda00fd7b83ad589ce5d475a7f2d6ca40be3fa8f39eae438e56c46b",
+        "runtime/runtime.json": "dd36bf769e6c758db75ff164d07e11be0b2d71151591242f341d7c2f1fa396db",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "bundle_files": 57,
+      "immutable_bundle_runtime_artifact_and_save": true,
+      "clean_process_exit": true,
+      "physical_input_qualified": false
+    }
+  ],
+  "retained_artifact": {
+    "engine_version": "0.0.81",
+    "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+    "image_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+    "descriptor_sha256": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+    "running_engine_version": "0.0.82"
+  },
+  "artifact_descriptor": {
+    "format": "poima.native-gameplay",
+    "version": 2,
+    "engine_version": "0.0.81",
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_version": 7,
+    "minimum_services_bytes": 256,
+    "required_features": [
+      "baseline_v7",
+      "player_preferences_v1"
+    ],
+    "entry": "poima_gameplay_entry",
+    "library": "Poima.NativeGame.dll",
+    "identity": "poima.test.player-preferences",
+    "type": "Poima.Tests.ManagedPlayerPreferencesGame",
+    "schema": {
+      "identity": "poima.test.player-preferences",
+      "bytes": 304,
+      "fields": [
+        {
+          "name": "AcceptedRevision",
+          "kind": "int64",
+          "offset": 128,
+          "bytes": 8
+        },
+        {
+          "name": "AppliedRevision",
+          "kind": "int64",
+          "offset": 168,
+          "bytes": 8
+        },
+        {
+          "name": "AudioOutcome",
+          "kind": "int32",
+          "offset": 280,
+          "bytes": 4
+        },
+        {
+          "name": "Available",
+          "kind": "int32",
+          "offset": 12,
+          "bytes": 4
+        },
+        {
+          "name": "Controls",
+          "kind": "int32",
+          "offset": 8,
+          "bytes": 4
+        },
+        {
+          "name": "EffectiveFov",
+          "kind": "float64",
+          "offset": 232,
+          "bytes": 8
+        },
+        {
+          "name": "EffectiveFovPresent",
+          "kind": "int32",
+          "offset": 28,
+          "bytes": 4
+        },
+        {
+          "name": "EffectiveUi",
+          "kind": "float64",
+          "offset": 240,
+          "bytes": 8
+        },
+        {
+          "name": "EffectiveUiPresent",
+          "kind": "int32",
+          "offset": 32,
+          "bytes": 4
+        },
+        {
+          "name": "Fov",
+          "kind": "float64",
+          "offset": 208,
+          "bytes": 8
+        },
+        {
+          "name": "FovPresent",
+          "kind": "int32",
+          "offset": 20,
+          "bytes": 4
+        },
+        {
+          "name": "Gain",
+          "kind": "float64",
+          "offset": 224,
+          "bytes": 8
+        },
+        {
+          "name": "GuardHigh",
+          "kind": "int64",
+          "offset": 136,
+          "bytes": 8
+        },
+        {
+          "name": "GuardLow",
+          "kind": "int64",
+          "offset": 144,
+          "bytes": 8
+        },
+        {
+          "name": "GuardRevision",
+          "kind": "int64",
+          "offset": 152,
+          "bytes": 8
+        },
+        {
+          "name": "InvertX",
+          "kind": "int32",
+          "offset": 272,
+          "bytes": 4
+        },
+        {
+          "name": "InvertY",
+          "kind": "int32",
+          "offset": 276,
+          "bytes": 4
+        },
+        {
+          "name": "Mode",
+          "kind": "int32",
+          "offset": 0,
+          "bytes": 4
+        },
+        {
+          "name": "NextFrames",
+          "kind": "int32",
+          "offset": 64,
+          "bytes": 4
+        },
+        {
+          "name": "NextSamples",
+          "kind": "int32",
+          "offset": 60,
+          "bytes": 4
+        },
+        {
+          "name": "ObservedRevision",
+          "kind": "int64",
+          "offset": 160,
+          "bytes": 8
+        },
+        {
+          "name": "Overrides",
+          "kind": "int32",
+          "offset": 56,
+          "bytes": 4
+        },
+        {
+          "name": "OwnerHigh",
+          "kind": "int64",
+          "offset": 88,
+          "bytes": 8
+        },
+        {
+          "name": "OwnerLow",
+          "kind": "int64",
+          "offset": 96,
+          "bytes": 8
+        },
+        {
+          "name": "PresentedRevision",
+          "kind": "int64",
+          "offset": 176,
+          "bytes": 8
+        },
+        {
+          "name": "ReadAfterRevision",
+          "kind": "int64",
+          "offset": 80,
+          "bytes": 8
+        },
+        {
+          "name": "ReadUnchanged",
+          "kind": "int32",
+          "offset": 68,
+          "bytes": 4
+        },
+        {
+          "name": "Replay",
+          "kind": "int32",
+          "offset": 16,
+          "bytes": 4
+        },
+        {
+          "name": "ResultRejection",
+          "kind": "int32",
+          "offset": 44,
+          "bytes": 4
+        },
+        {
+          "name": "ResultState",
+          "kind": "int32",
+          "offset": 40,
+          "bytes": 4
+        },
+        {
+          "name": "Revision",
+          "kind": "int64",
+          "offset": 72,
+          "bytes": 8
+        },
+        {
+          "name": "SaveHigh",
+          "kind": "int64",
+          "offset": 184,
+          "bytes": 8
+        },
+        {
+          "name": "SaveLow",
+          "kind": "int64",
+          "offset": 192,
+          "bytes": 8
+        },
+        {
+          "name": "SaveSequence",
+          "kind": "int64",
+          "offset": 200,
+          "bytes": 8
+        },
+        {
+          "name": "SensitivityX",
+          "kind": "float64",
+          "offset": 248,
+          "bytes": 8
+        },
+        {
+          "name": "SensitivityY",
+          "kind": "float64",
+          "offset": 256,
+          "bytes": 8
+        },
+        {
+          "name": "SinkGain",
+          "kind": "float64",
+          "offset": 264,
+          "bytes": 8
+        },
+        {
+          "name": "SinkGainPresent",
+          "kind": "int32",
+          "offset": 284,
+          "bytes": 4
+        },
+        {
+          "name": "SourceFov",
+          "kind": "int32",
+          "offset": 48,
+          "bytes": 4
+        },
+        {
+          "name": "SourceUi",
+          "kind": "int32",
+          "offset": 52,
+          "bytes": 4
+        },
+        {
+          "name": "StageRejection",
+          "kind": "int32",
+          "offset": 36,
+          "bytes": 4
+        },
+        {
+          "name": "Target",
+          "kind": "entity",
+          "offset": 288,
+          "bytes": 16
+        },
+        {
+          "name": "TicketHigh",
+          "kind": "int64",
+          "offset": 104,
+          "bytes": 8
+        },
+        {
+          "name": "TicketLow",
+          "kind": "int64",
+          "offset": 112,
+          "bytes": 8
+        },
+        {
+          "name": "TicketSequence",
+          "kind": "int64",
+          "offset": 120,
+          "bytes": 8
+        },
+        {
+          "name": "Ticks",
+          "kind": "int32",
+          "offset": 4,
+          "bytes": 4
+        },
+        {
+          "name": "UiPresent",
+          "kind": "int32",
+          "offset": 24,
+          "bytes": 4
+        },
+        {
+          "name": "UiScale",
+          "kind": "float64",
+          "offset": 216,
+          "bytes": 8
+        }
+      ]
+    },
+    "files": [
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+        "size": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+        "size": 1139,
+        "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "role": "notice"
+      },
+      {
+        "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+        "size": 78041,
+        "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-LICENSE.txt",
+        "size": 11358,
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "role": "notice"
+      },
+      {
+        "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+        "size": 21133,
+        "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "role": "notice"
+      },
+      {
+        "path": "Poima.NativeGame.dll",
+        "size": 1388544,
+        "sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+        "role": "library"
+      }
+    ]
+  },
+  "runtime_descriptor": {
+    "format": "poima.runtime",
+    "version": 1,
+    "engine_version": "0.0.82",
+    "gameplay_services_version": 7,
+    "gameplay_call_version": 1,
+    "gameplay_call_bytes": 80,
+    "gameplay_services_bytes": 256,
+    "gameplay_features": [
+      "baseline_v7",
+      "gameplay_persistence_v1",
+      "component_collections_v1",
+      "animation_inertial_v1",
+      "animation_layers_v1",
+      "character_input_v1",
+      "hierarchical_instances_v1",
+      "player_preferences_v1",
+      "navigation_query_v1"
+    ],
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "executable": "bin/poima.exe",
+    "features": {
+      "asset_provenance": true,
+      "simulation": true,
+      "renderer": true,
+      "audio": true,
+      "managed": true,
+      "native_gameplay": true,
+      "game_ui": true,
+      "navigation": true,
+      "editor": true
+    }
+  },
+  "runtime_binaries": {
+    "exporter": {
+      "sha256": "ba615200694ee5bec07e9bc7678ab4d6df5e0807b3200f130a9e07bdf4efed99",
+      "bytes": 273587712
+    },
+    "installed_stripped_player": {
+      "sha256": "337ed88abdbfd3c5e105e38bf6d6ff10b6ac6faeb74d1439711efb36b73b136d",
+      "bytes": 20472832
+    }
+  },
+  "retained_failed_attempts": [
+    {
+      "attempt": "gpu1",
+      "passed": false,
+      "raw_report_sha256": "3cebf862047fd0c503f58d54366ab920b472daf30a224dc111c9a4b908da017c",
+      "reason": "Debug-symbol executable exceeded the 256 MiB per-file export budget; project export failed before player launch."
+    },
+    {
+      "attempt": "gpu1-stripped",
+      "passed": false,
+      "raw_report_sha256": "e1af244a07b37735348e4700133c83b3ac8e971d17f8302b1847194361faa134",
+      "reason": "Final refresh did not produce Controls=7 after restore; strict compiled-state oracle failed."
+    },
+    {
+      "attempt": "gpu1-spaced",
+      "passed": false,
+      "raw_report_sha256": "6d3dcb08959ac2e10b98590cd3c9ba39d6c0265d255210d3541c617a8eca26b5",
+      "reason": "No durable Save witness; the initial controls were not activated."
+    },
+    {
+      "attempt": "gpu1-observed",
+      "passed": false,
+      "raw_report_sha256": "29c442fe47405d8abb0a3c8ed978897321057c9f80ef90e53f843a6369b7f01c",
+      "reason": "Owned foreground activation denied before player UI observations."
+    },
+    {
+      "attempt": "gpu1-visible",
+      "passed": false,
+      "raw_report_sha256": "6de5d54d10ae212295637546ec6ba1fad469e0d5b47a8d964ef748f391cbf57c",
+      "reason": "Owned foreground activation denied before player UI observations."
+    },
+    {
+      "attempt": "gpu1-focus",
+      "passed": false,
+      "raw_report_sha256": "57230161631123b0155c93f77abac613d1eeeee2d4f5e066c71e71369fc6cc0a",
+      "reason": "Owned foreground lost after initial opener observation; input refused."
+    },
+    {
+      "attempt": "gpu1-modal",
+      "passed": false,
+      "raw_report_sha256": "e89d94326c6883a7ad1b6303fd059076b37043f569bb21fb35f3a4684a263636",
+      "reason": "Semantic assertions passed, but verifier rejected a valid BI_BITFIELDS renderer BMP. Parser was corrected before final runs."
+    }
+  ],
+  "limitations": [
+    "One small fixture on two GPUs in one laptop; no complete-game or whole Alpha qualification.",
+    "Synthetic targeted Win32 input, not physical mouse/keyboard/gamepad qualification.",
+    "Audio disabled: gain is configured, not verified at the sink or by listening.",
+    "Source deletion and environment sanitation on a development host are not a clean-machine deployment test.",
+    "One same-player Runtime replacement; no fresh-process exported settings/save continuation qualification.",
+    "Post-load spacing and changed header pixels supplement exact compiled/native/save assertions; delay alone does not establish redraw.",
+    "Vulkan image is a renderer readback, not an OS desktop screenshot. Transient OS observations retain hashes and sampled colors only.",
+    "Elapsed times and frames presented are execution records, not representative game performance measurements.",
+    "No new SDK ABI, agent command or settings persistence behavior is added."
+  ],
+  "source_pins": {
+    "CMakeLists.txt": "f2a5fe3cbe5f475677ba9755896f0cd789ea431771b2fe4d4bd1d03b5dcba2ba",
+    "docs/COMPILED_PLAYER_SETTINGS.md": "a49c1fcac673bd70c68fe3b11df86c6518807fb7c7a772c3ff67666ae71194bf",
+    "docs/DOCUMENTATION_COVERAGE.md": "fe3866423246725baafcf5949f48a67e1f10180a826e324d1e0cabaa97177332",
+    "docs/EXPORTED_PLAYER_SETTINGS.md": "d424ebe9228bb06fdbac4d6fa444c6c10671c73558488d36cf7e330adf6541b6",
+    "docs/IMPLEMENTATION_STATUS.md": "7b9edab956d8d2dc0d56046a403f49595d7f0d5f74c53a0cbc95be7efd0fd7fd",
+    "docs/PLAYBOOKS.md": "42c8444edca9fd13bfca72334c028390a1cd8e58c53bc6dff96b0f2a85ea4d8b",
+    "docs/PROJECTS.md": "c621aa618ec6a029680ec9ac3e59faaaeb0947f28600efe31454bd42e38b8529",
+    "docs/evidence/m2-exported-player-settings.png": "61a60dddf11b88061c807cc7e611ab13e51778685d680d5231d304aa047f80a2",
+    "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+    "tests/managed_player_preferences_gameplay/PlayerPreferencesMenuGame.cs": "f2300a7c6e2eb49fbc0ffbadb70d6374aa47230d54fc2f0b03dcfb0bdb5b95e3",
+    "tests/managed_player_preferences_gameplay/Poima.PlayerPreferencesMenuGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/player_live_settings_contract.py": "7e29e4db82c49e6d8ff37d1b911e89d3e222d5fa418b820e21e8f2a086051ad8",
+    "tests/player_preferences_gameplay_bundle.py": "90569cedefd4b7819af0765ebdf2c3ae22a2b4bdf49bd99899c00cac2410911f",
+    "tests/player_preferences_gameplay_contract.py": "f08bdf0208a6153676dcb405b46e0b6f31826ccfd28e670b58a1472e58db062b",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+    "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+  },
+  "public_capture": {
+    "path": "docs/evidence/m2-exported-player-settings.png",
+    "sha256": "61a60dddf11b88061c807cc7e611ab13e51778685d680d5231d304aa047f80a2",
+    "source_gpu_index": 1,
+    "kind": "Native Vulkan RGB readback converted losslessly to PNG and inspected."
+  }
+}
