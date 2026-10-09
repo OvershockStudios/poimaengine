@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Owner-only frame-driven player state. The stable adapter owns no Runtime pointer.
-    struct PreparedPlayer { PlayerOptions options;Json input_info,settings_application; };
+    struct PreparedPlayer { PlayerOptions options;Json input_info,settings_application;
+        std::shared_ptr<GameplayPlayerPreferences> gameplay_preferences; };
+    static PlayerPreferenceGraphicsConstraints preference_graphics_constraints(const PlayerOptions& options) {
+        return {options.render.deferred,options.render.ambient_occlusion.mode!=AmbientOcclusionMode::none,
+            options.render.scene_debug_view==SceneDebugView::color,options.render.reconstruction!=ReconstructionMode::none};
+    }
     static void validate_player_parameters(const Json& params) {
         fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides"},
             {"session_id","request_id","expected_tick","camera","mode"});
@@ -67,10 +72,17 @@
             catch(const std::exception& e) { throw Error(-32071,e.what()); }
         }
 
-        return {std::move(options),std::move(input_info),std::move(settings_application)};
+        auto binding=std::make_shared<GameplayPlayerPreferences>(options.preferences,gameplay_id(new_id()),
+            options.replay,preference_graphics_constraints(options));
+        GameplayPlayerPreferences::Observation initial;
+        initial.requested_gain=options.preferences->snapshot()->values.master_gain;
+        initial.audio_outcome=options.audio ? PoimaPreferenceAudioNotInitialized : PoimaPreferenceAudioDisabled;
+        binding->observe(initial);
+        return {std::move(options),std::move(input_info),std::move(settings_application),std::move(binding)};
     }
     struct PlayerSessionAdapter final : PlayerSession {
             World& owner;explicit PlayerSessionAdapter(World& value):owner(value) {}
+            void preference_observation(const PlayerReport& report) noexcept override { owner.observe_gameplay_player_preferences(report); }
             std::string identity() const override { return owner.runtime_id_; }
             std::uint64_t tick() const override { return owner.runtime_->inspect().tick; }
             bool controller_valid(const std::string& id) const override {
@@ -139,6 +151,48 @@
     void invalidate_player_control() noexcept {
         if(player_control_revision_<max_revision)++player_control_revision_;
     }
+    void attach_gameplay_player_preferences(const std::shared_ptr<GameplayPlayerPreferences>& binding) noexcept {
+        gameplay_player_preferences_=binding;
+        if(runtime_)runtime_->gameplay_player_preferences_host(binding);
+    }
+    void detach_gameplay_player_preferences(const std::shared_ptr<GameplayPlayerPreferences>& binding) noexcept {
+        if(binding)binding->deactivate();
+        if(gameplay_player_preferences_==binding) {
+            gameplay_player_preferences_.reset();
+            if(runtime_)runtime_->gameplay_player_preferences_host({});
+        }
+    }
+    void prepare_gameplay_player_preferences_boundary() noexcept {
+        if(gameplay_player_preferences_)
+            gameplay_player_preferences_->mutation_capacity(!player_active() || player_control_revision_<max_revision);
+    }
+    void flush_gameplay_player_preferences() noexcept {
+        if(runtime_ && runtime_->commit_gameplay_player_preferences() && player_active())invalidate_player_control();
+    }
+    void observe_gameplay_player_preferences(const PlayerReport& report) noexcept {
+        if(!gameplay_player_preferences_)return;
+        GameplayPlayerPreferences::Observation observed;
+        const auto& preferences=report.preferences;
+        if(preferences.observed_revision) {observed.mask|=1;observed.observed_revision=*preferences.observed_revision;}
+        if(preferences.applied_revision) {observed.mask|=2;observed.applied_revision=*preferences.applied_revision;}
+        if(preferences.presented_revision) {observed.mask|=4;observed.presented_revision=*preferences.presented_revision;}
+        if(preferences.effective_vertical_fov) {observed.mask|=8;observed.effective_fov=*preferences.effective_vertical_fov;}
+        if(preferences.applied_revision) {observed.mask|=16;observed.effective_ui_scale=report.effective_ui_scale;}
+        if(preferences.sink_gain) {observed.mask|=32;observed.sink_gain=*preferences.sink_gain;}
+        observed.requested_gain=preferences.requested_master_gain;
+        observed.audio_outcome=preferences.audio_outcome=="sink_gain_verified" ? PoimaPreferenceAudioSinkGainVerified :
+            preferences.audio_outcome=="apply_failed" ? PoimaPreferenceAudioApplyFailed :
+            preferences.audio_outcome=="initialization_failed" ? PoimaPreferenceAudioInitializationFailed :
+            preferences.audio_outcome=="not_initialized" ? PoimaPreferenceAudioNotInitialized : PoimaPreferenceAudioDisabled;
+        gameplay_player_preferences_->observe(observed);
+    }
+    struct BlockingPreferenceScope {
+        World& owner;std::shared_ptr<GameplayPlayerPreferences> binding;
+        BlockingPreferenceScope(World& value,std::shared_ptr<GameplayPlayerPreferences> attachment):owner(value),binding(std::move(attachment)) {
+            owner.attach_gameplay_player_preferences(binding);
+        }
+        ~BlockingPreferenceScope() {owner.detach_gameplay_player_preferences(binding);}
+    };
     void player_boundary(PlayerOwner& player) {
         if(!runtime_)return;
         player.tick=runtime_->inspect().tick;
@@ -161,6 +215,7 @@
         player.cached_report=player_report_json(player.prepared.options,player.prepared.input_info,
             player.prepared.settings_application,player.window->report(),player.mode);
         if(player.window->finished()) {
+            detach_gameplay_player_preferences(player.prepared.gameplay_preferences);
             player.window.reset();player.session.reset();invalidate_player_control();
         }
     }
@@ -270,15 +325,8 @@
             {"control_revision",player_control_revision_},{"settings",std::move(settings)}};
     }
     static void validate_next_player_preferences(const PlayerOptions& options,const PlayerPreferences::State& candidate) {
-        const auto rows=Json::parse(candidate.fields_json);
-        const auto samples=rows.at("graphics.samples").at("next_effective").get<std::uint32_t>();
-        const auto& render=options.render;
-        require(!render.deferred || samples==1,"Next-player deferred lighting requires samples=1.");
-        require(render.ambient_occlusion.mode==AmbientOcclusionMode::none || (render.deferred && samples==1),
-            "Next-player ambient occlusion requires deferred single-sample lighting.");
-        require(render.scene_debug_view==SceneDebugView::color || samples==1,"Next-player scene debug views require samples=1.");
-        require(render.reconstruction==ReconstructionMode::none || (samples==1 && render.scene_debug_view==SceneDebugView::color),
-            "Next-player reconstruction requires single-sample color output.");
+        try {validate_player_preference_graphics(candidate,preference_graphics_constraints(options));}
+        catch(const PlayerPreferences::Error& error) {throw Error(error.code,error.what());}
     }
     Json player_dispatch(const std::string& method,const Json& params) {
         if(method=="player.settings.inspect") {
@@ -403,6 +451,7 @@
                 {"ui_revision",candidate->ui_revision},{"control_sequence",candidate->control_sequence},{"report",nullptr},{"replayed",false}};
             receipts->result=ack;receipts->committed=true;
             player_owner_=std::move(candidate);++player_generation_;player_control_revision_=0;
+            attach_gameplay_player_preferences(player_owner_->prepared.gameplay_preferences);
             publish_player_receipt(std::move(receipts));return ack;
         }
         if(method=="player.control") {

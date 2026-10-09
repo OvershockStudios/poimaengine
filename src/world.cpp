@@ -13,6 +13,7 @@
 #include "world_schema.hpp"
 #include "poima/player.hpp"
 #include "poima/player_preferences.hpp"
+#include "poima/gameplay_player_preferences.hpp"
 #include "poima/build_metadata.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/save_store.hpp"
@@ -905,6 +906,7 @@ public:
     struct PlayerOwner;
     // Latest owner retained for terminal metadata only; its GPU lifetime retires promptly.
     std::unique_ptr<PlayerOwner> player_owner_;
+    std::shared_ptr<GameplayPlayerPreferences> gameplay_player_preferences_;
     std::uint64_t player_generation_=0,player_control_revision_=0;
     struct PlayerReceipt;
     std::array<std::unique_ptr<PlayerReceipt>,32> player_receipts_;
@@ -2508,6 +2510,7 @@ public:
         auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());
         receipts.push_back({{"params",normalized},{"result",Json::object()}});
         PlayerSessionAdapter session(*this);
+        BlockingPreferenceScope preference_scope(*this,prepared.gameplay_preferences);
         const auto report=run_player(prepared.options,session);
         require(report.render.available,report.render.detail,-32003);
         auto result=player_report_json(prepared.options,std::move(prepared.input_info),std::move(prepared.settings_application),report,params.at("mode"));

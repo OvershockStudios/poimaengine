@@ -1,8 +1,45 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.80**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.81**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.81 adds [compiled player settings and a native menu fixture](COMPILED_PLAYER_SETTINGS.md).
+C# Tick/Control callbacks read committed configuration and cached observations,
+stage a guarded typed patch and query its process-local acceptance ticket. They
+use the same native preference owner as the external live API. At most one patch
+is prepared for an entire native step or Control boundary; failed callbacks,
+entity validation and later batch failure consume no preference revision or
+ticket. Successful publication precedes queued save/load replacement.
+
+The independent `player_preferences_v1` extension uses a named 256-byte service
+view with callbacks at 232/240/248, preserving epoch 7 and every earlier prefix.
+A larger table grants no undeclared intermediate feature. Host negotiation is
+separate from attached-owner availability. Replay permits observations and
+rejects mutations; stop detaches availability, while a fresh player gets a new
+owner. CoreCLR compatible reload retains that owner; Native AOT keeps its
+existing process-lifetime replacement restriction. Schema revision is 70;
+protocol 1 and authoring-core v1 are unchanged.
+
+The rendered menu opens a native modal, requests pause, tunes FOV/mouse/UI/gain,
+resets sparse intent, refreshes status and closes with resume. Current graphics
+remain frozen while presets report next-launch intent. Preferences do not enter
+authored documents or gameplay saves; saving diagnostic owner/ticket words does
+not restore the authority or ledger. Profile persistence remains explicit.
+
+Windows CoreCLR and genuine Native AOT pass attached checks on both laptop GPUs,
+including independent FOV/UI image calculations, accepted-versus-staged reads,
+exact retry, external stale guards, rollback of earlier completed physics,
+same-window save replacement and fresh-owner/process continuation. Linux
+headless callbacks pass with both backends. The unchanged original 0.0.78
+Windows consumers also pass under Native AOT/CoreCLR. Managed guard-page ABI
+probes pass on Windows/Linux, and the guide's C# example compiles without warnings.
+
+These checks do not qualify physical input, audible sound, injected Jolt or
+device failures, same-event-batch ordering, production performance or a new
+source-free exported settings menu. The native menu capture was inspected;
+logical Control activation is separate from physical mouse/controller testing.
+See [recorded evidence](evidence/m2-compiled-player-settings.json).
 
 Version 0.0.80 adds a shared native [live player-preference owner](PLAYER_SETTINGS.md).
 `player.settings.inspect` and guarded `player.settings.transact` support preview,

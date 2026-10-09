@@ -57,6 +57,7 @@
         auto& outcome=prepared->outcome;outcome.source=save_epoch(session);outcome.current=outcome.source;
         outcome.tick=tick;outcome.current_tick=tick;
         RuntimeControlResult accepted;
+        prepare_gameplay_player_preferences_boundary();
         try { accepted=runtime_->control(ui_revision,sequence,element); }
         catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
         outcome.control_sequence=accepted.control_sequence;outcome.ui_revision=accepted.ui_revision;outcome.intent=accepted.intent;
@@ -64,6 +65,9 @@
         const auto index=control_receipt_next_;control_receipts_[index].swap(prepared);
         control_receipt_next_=(index+1)%control_receipts_.size();
         auto& retained=control_receipts_[index]->outcome;
+        // The accepted callback and owner receipt precede preference publication.
+        // Flush before queued storage can destroy its original Runtime.
+        flush_gameplay_player_preferences();
         // Remember acceptance before irreversible storage and response building.
         // A Load may replace runtime_, but cannot replace this owner's receipt.
         if(const auto* queued=runtime_->gameplay_saves().pending()) {

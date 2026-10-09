@@ -10,8 +10,9 @@ channel changes the current native player's FOV, pointer tuning, UI scale and
 output gain through a shared headless owner. Inspection distinguishes requested
 configuration, native application and completed presentation. The live contract
 described here is introduced in 0.0.80; consult [implementation status](IMPLEMENTATION_STATUS.md)
-for execution qualification. C# settings access and generated in-game menus
-remain separate work in the [release roadmap](ROADMAP.md).
+for execution qualification. The [compiled settings guide](COMPILED_PLAYER_SETTINGS.md) covers C# access,
+whole-boundary staging and the native menu fixture. Automatic menu generation,
+remapping widgets and durable profile UX remain separate work.
 
 ## Keys and inheritance
 
@@ -52,7 +53,7 @@ window. Applying them requires a simulation build with the Windows Vulkan
 player; native game UI additionally requires `POIMA_ENABLE_GAME_UI=ON`.
 Follow [build setup](BUILD.md). Keep engine and packaged-game versions matched.
 
-`world.describe` schema revision **69** exposes stored and live methods. These
+`world.describe` schema revision **70** exposes stored and live methods. These
 are outside the limited [authoring-core contract](AUTHORING_API_COMPATIBILITY.md).
 
 | Method | Parameters | Result |

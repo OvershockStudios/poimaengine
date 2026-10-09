@@ -3101,6 +3101,7 @@ struct PlayerWindow::Impl {
         report.width=context.extent.width;report.height=context.extent.height;report.samples=context.samples;
         report.hardware=context.hardware;report.gpu_name=context.gpu_name;
         report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
+        session.preference_observation(result);
     }
     void initialize() {
         apply_preferences();
@@ -3127,6 +3128,9 @@ struct PlayerWindow::Impl {
     }
     bool after_advance(bool save_serviced) {
         if(save_serviced)previous=SDL_GetTicksNS();
+        // A successful compiled boundary may have published new preferences.
+        // Consume before any following event or catch-up input, without polling.
+        apply_preferences();
         const auto current=session.identity();
         profiling::SessionScope current_session(current);
         if(current==result.final_session) {

@@ -27,6 +27,8 @@ std::optional<RuntimeAnimationState> Runtime::animation(const std::string&) cons
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }
 RuntimeNavigationPath Runtime::navigation_path(const RuntimeNavigationRequest&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeRayHit> Runtime::raycast(const RuntimeRay&) const { throw std::runtime_error("Simulation is not built."); }
+void Runtime::gameplay_player_preferences_host(std::shared_ptr<GameplayPlayerPreferences>) { throw std::runtime_error("Simulation is not built."); }
+bool Runtime::commit_gameplay_player_preferences() noexcept { return false; }
 void Runtime::gameplay_save_host(GameplaySaveEpoch,const GameplaySaveLedger*) { throw std::runtime_error("Simulation is not built."); }
 GameplaySaveQueue& Runtime::gameplay_saves() { throw std::runtime_error("Simulation is not built."); }
 const GameplaySaveQueue& Runtime::gameplay_saves() const { throw std::runtime_error("Simulation is not built."); }

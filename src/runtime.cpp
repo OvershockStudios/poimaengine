@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
 #include "poima/runtime_animation.hpp"
+#include "poima/gameplay_player_preferences.hpp"
 #include "poima/jobs.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
@@ -158,6 +159,8 @@ struct Runtime::Impl {
     std::uint64_t game_revision=0,structure_revision=0;
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
+    std::weak_ptr<GameplayPlayerPreferences> player_preferences_host;
+    std::shared_ptr<const GameplayPlayerPreferences::Prepared> player_preferences_prepared;
     std::vector<KinematicTarget> game_commands;
     struct PendingSpawn {
         PoimaEntityId id;RuntimeSpawnRequest request;RuntimeSpawnInstance instance;
@@ -464,6 +467,7 @@ struct Runtime::Impl {
     template<class F> static int32_t callback(PoimaGameError* error,F&& f) noexcept {
         try { f();return 0; }catch(const std::exception& e) { if(error)std::snprintf(error->text,sizeof(error->text),"%s",e.what());return -1; }catch(...) { if(error)std::snprintf(error->text,sizeof(error->text),"Native gameplay callback failed.");return -1; }
     }
+#include "runtime_player_preferences.inc"
 #include "runtime_ui.inc"
     static int32_t POIMA_CALL component_query(void* context,const PoimaGameComponentType* type,const PoimaEntityId* after,PoimaEntityId* output,uint32_t capacity,uint32_t* written,PoimaGameError* error) {
         return callback(error,[&] {
@@ -1033,6 +1037,7 @@ struct Runtime::Impl {
     }
     std::vector<RuntimeStructureResult> step(std::uint32_t count,const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sound_commands,const std::vector<AnimationCommand>& animation_commands,const std::vector<RuntimeStructureTick>& structure) {
         profiling::Scope batch_profile("runtime.batch",static_cast<std::int64_t>(tick));
+        require(!player_preferences_prepared,"Flush pending player preferences before another simulation batch.");
         require(count>=1 && count<=600 && tick+count<=9007199254740991ULL,"Runtime step exceeds tick limits.");
         require(structure.size()<=count,"At most one structural transaction per tick is supported.");
         for(std::size_t i=0;i<structure.size();++i)
@@ -1101,7 +1106,7 @@ struct Runtime::Impl {
                     clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.instances.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -1195,11 +1200,13 @@ struct Runtime::Impl {
                 ++tick;animation_locals();sync();
             }
             sync();
+            validate_player_preferences_boundary();
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit gameplay save request boundary.");
             components->commit_batch();commit_structure(structure_checkpoint);
         } catch(...) {
             {
             profiling::Scope rollback_profile("runtime.rollback",static_cast<std::int64_t>(previous_tick));
+            clear_player_preferences_commands();
             components->rollback_batch();
             rollback_structure(structure_checkpoint);
             save_queue=save_checkpoint;ui_model=ui_checkpoint;game_phase=GamePhase::idle;clear_ui_commands();
@@ -1333,6 +1340,17 @@ void Runtime::gameplay_save_host(GameplaySaveEpoch epoch,const GameplaySaveLedge
     require(epoch.valid() && ledger,"Gameplay save host requires a nonempty epoch and owner ledger.");
     require(!impl_->save_queue.pending(),"Cannot replace a save host while an operation is pending.");
     impl_->save_queue=GameplaySaveQueue(epoch);impl_->save_ledger=ledger;
+}
+void Runtime::gameplay_player_preferences_host(std::shared_ptr<GameplayPlayerPreferences> host) {
+    require(impl_->game_phase==Impl::GamePhase::idle && !impl_->player_preferences_prepared,
+        "Resolve pending callback preferences before replacing their owner.");
+    impl_->player_preferences_host=std::move(host);
+}
+bool Runtime::commit_gameplay_player_preferences() noexcept {
+    if(impl_->game_phase!=Impl::GamePhase::idle || !impl_->player_preferences_prepared)return false;
+    auto prepared=std::move(impl_->player_preferences_prepared);
+    auto host=impl_->player_preferences_host.lock();
+    return host && host->commit(*prepared);
 }
 GameplaySaveQueue& Runtime::gameplay_saves() { return impl_->save_queue; }
 const GameplaySaveQueue& Runtime::gameplay_saves() const { return impl_->save_queue; }

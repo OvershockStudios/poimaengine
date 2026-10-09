@@ -75,13 +75,15 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGameInstanceServicesV1 services() {
-        PoimaGameInstanceServicesV1 result{};
-        result.navigation={{{{{7,sizeof(PoimaGameInstanceServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
+    PoimaGamePlayerPreferenceServicesV1 services() {
+        PoimaGamePlayerPreferenceServicesV1 result{};
+        result.instances.navigation={{{{{7,sizeof(PoimaGamePlayerPreferenceServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
             &save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,
             &spawn_entity,&despawn_entity,&template_component_get,&get_ui,&edit_ui,&get_control,&request_control},
             &get_animation_extended,&set_animation_extended},&get_animation_layer,&set_animation_layer},&set_character_input},&query_navigation};
-        result.instance_node=&resolve_instance_node;return result;
+        result.instances.instance_node=&resolve_instance_node;
+        result.preference_snapshot=&get_player_preferences;result.preference_patch=&patch_player_preferences;
+        result.preference_result=&get_player_preference_result;return result;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
         if(ui_commands.empty() && !ui_modal)return {};
@@ -90,6 +92,7 @@
     }
     RuntimeControlResult control(std::uint64_t expected_ui,std::uint64_t expected_sequence,const std::string& id) {
         require(game_phase==GamePhase::idle && !save_queue.pending(),"Resolve pending work before Control.");
+        require(!player_preferences_prepared,"Flush pending player preferences before another Control boundary.");
         require(game && expected_ui==ui_model->revision() && expected_sequence==control_sequence,"Control requires a loaded game and current UI/control revisions.");
         require(control_sequence<9007199254740991ULL,"Control sequence exhausted.");
         require(game_revision<9007199254740991ULL,"Gameplay revision limit reached.");
@@ -101,9 +104,10 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;const auto api=services();game->control(api.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;const auto api=services();game->control(api.instances.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
+            validate_player_preferences_boundary();
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit Control save intent.");
             if(candidate)ui_model.swap(candidate);
             // Control can change TState at an unchanged tick. Invalidate old
@@ -112,6 +116,7 @@
             const RuntimeControlResult result{control_sequence,ui_model->revision(),control_intent};
             clear_ui_commands();game_character_inputs.clear();control_event={};control_intent=RuntimeControlIntent::none;return result;
         }catch(...) {
+            clear_player_preferences_commands();
             game_phase=GamePhase::idle;save_queue=save_checkpoint;game->state().swap(game_checkpoint);
             clear_ui_commands();game_character_inputs.clear();control_event={};control_intent=RuntimeControlIntent::none;throw;
         }

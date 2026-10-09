@@ -6,6 +6,7 @@
     static std::string epoch_text(GameplaySaveEpoch epoch) { return gameplay_id(PoimaEntityId{epoch.high,epoch.low}); }
     void configure_runtime_saves(Runtime& runtime) {
         runtime.gameplay_save_host(save_epoch(new_id()),&gameplay_save_ledger_);
+        runtime.gameplay_player_preferences_host(gameplay_player_preferences_);
         require(runtime.gameplay_saves().configure(!save_root_.empty(),save_configuration_generation_),"Cannot configure gameplay save host.");
     }
     static Json gameplay_save_json(const GameplaySaveResult& result) {
@@ -107,8 +108,12 @@
         RuntimeAdvance result;result.save_serviced=previously_pending;result.operation=previous_operation;result.source=save_epoch(runtime_id_);result.current=result.source;
         result.previous_tick=runtime_->inspect().tick;result.committed_tick=result.previous_tick+ticks;result.current_tick=result.committed_tick;result.stepped=ticks;
         result.first_voice=runtime_->sound_state().next_id();
+        prepare_gameplay_player_preferences_boundary();
         try { runtime_->step(ticks,inputs,motions,sounds,animations); }
         catch(const std::runtime_error& error) { throw Error(-32040,error.what()); }
+        // Publish only after the complete native batch succeeds, before a
+        // queued Load can replace the Runtime that staged the preference.
+        flush_gameplay_player_preferences();
         result.next_voice=runtime_->sound_state().next_id();
         if(const auto* queued=runtime_->gameplay_saves().pending()) {
             const auto ticket=queued->ticket;result.save_serviced=true;service_gameplay_save();

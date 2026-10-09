@@ -506,6 +506,7 @@ static unsafe partial class Program
             CharacterInputContract(output,state,good,checks);
             NavigationContract(output,state,good,checks);
             InstanceContract(output,state,good,checks);
+            PlayerPreferencesContract(output,state,good,checks);
             var evidence=JsonSerializer.Serialize(new {passed=true,checks,platform=RuntimeInformation.OSDescription,
                 bridge_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Entry).Assembly.Location))),
                 sdk_sha256=Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(typeof(Game<>).Assembly.Location)))},new JsonSerializerOptions{WriteIndented=true});

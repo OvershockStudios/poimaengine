@@ -133,7 +133,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 69}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 70}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -180,6 +180,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["world.history"]=object_schema(Json::object());
     for(const auto* method:{"world.undo","world.redo"})methods[method]=object_schema({{"request_id",id},{"base_revision",rev}},{"request_id","base_revision"});
     result["limits"]["history_entries"]=32;result["limits"]["history_bytes"]=max_document_bytes;
+    result["gameplay_player_preferences"]={{"feature","player_preferences_v1"},{"services_abi",7},{"services_bytes",256},
+        {"wire_version",1},{"snapshot_bytes",216},{"patch_bytes",104},{"enqueue_bytes",40},{"result_bytes",56},
+        {"authority","The live native PlayerPreferences owner, outside authored worlds and gameplay saves."},
+        {"availability","Named host support is separate from an attached player. Tick/Control reads report unavailable without a current player; Initialize has no services."},
+        {"publication","At most one staged preference patch per whole Control or step batch. Reads see committed state. Host publication follows complete native success and precedes queued save/load; failed batches consume no ticket or revision."},
+        {"observation","Accepted configuration and cached native application/presentation are distinct. Graphics samples/frame slots remain next-player intent; replay is observation-only."}};
     result["invariants"].push_back("Undo/redo is session-local core history, bounded to 32 edits and 16 MiB of entity and component schema snapshots. Restoration advances revision and preserves inactive ID retirement. Oversized edits commit but clear history; new edits invalidate redo.");
     const Json input_path={{"type","string"},{"minLength",1},{"maxLength",4096},{"description","Profile file ending .poima-input.json; relative paths resolve beside the world."}};
     methods["input.describe"]=object_schema(Json::object());

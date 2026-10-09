@@ -185,6 +185,79 @@ typedef struct PoimaGameInstanceServicesV1 {
     // Output is cleared before validation; failure never returns a live handle.
     int32_t (POIMA_CALL *instance_node)(void*,const PoimaEntityId*,const PoimaEntityId*,PoimaEntityId*,PoimaGameError*);
 } PoimaGameInstanceServicesV1;
+// Fixed registry bits: FOV, sensitivity X/Y, invert X/Y, UI scale,
+// samples, frame slots, master gain. Unknown bits and unused patch values
+// must be zero. Booleans are exactly 0 or 1; no numeric coercion.
+typedef struct PoimaGamePreferenceValuesV1 {
+    double vertical_fov,sensitivity_x,sensitivity_y,ui_scale,master_gain;
+    uint32_t invert_x,invert_y,samples,frames_in_flight;
+} PoimaGamePreferenceValuesV1;
+enum PoimaGamePreferenceSource {
+    PoimaPreferenceSourceNone=0,PoimaPreferenceSourceAuthoredCamera=1,
+    PoimaPreferenceSourceInputProfile=2,PoimaPreferenceSourceWindowDensity=3,
+    PoimaPreferenceSourceEngineDefault=4,PoimaPreferenceSourceSettingsProfile=5,
+    PoimaPreferenceSourceSessionOverride=6,PoimaPreferenceSourceExplicitOption=7,
+    PoimaPreferenceSourceLiveOverride=8
+};
+enum PoimaGamePreferenceAudioOutcome {
+    PoimaPreferenceAudioDisabled=0,PoimaPreferenceAudioNotInitialized=1,
+    PoimaPreferenceAudioSinkGainVerified=2,PoimaPreferenceAudioApplyFailed=3,
+    PoimaPreferenceAudioInitializationFailed=4
+};
+enum PoimaGamePreferenceRejection {
+    PoimaPreferenceRejectionNone=0,PoimaPreferenceRejectionUnavailable=1,
+    PoimaPreferenceRejectionStaleOwner=2,PoimaPreferenceRejectionStaleRevision=3,
+    PoimaPreferenceRejectionReplay=4,PoimaPreferenceRejectionBusy=5,
+    PoimaPreferenceRejectionInvalid=6,PoimaPreferenceRejectionCapacity=7,
+    PoimaPreferenceRejectionUnknownTicket=8
+};
+enum PoimaGamePreferenceResultState {
+    PoimaPreferenceResultUnknown=0,PoimaPreferenceResultStaged=1,
+    PoimaPreferenceResultAccepted=2
+};
+typedef struct PoimaGamePreferenceSnapshotV1 {
+    uint32_t version,bytes,available,replay;
+    PoimaEntityId owner;
+    uint64_t revision;
+    uint32_t override_mask,value_mask;
+    PoimaGamePreferenceValuesV1 values;
+    uint32_t sources[9];
+    uint32_t next_samples,next_frames,observation_mask,audio_outcome,reserved;
+    uint64_t observed_revision,applied_revision,presented_revision;
+    double effective_fov,effective_ui_scale,requested_gain,sink_gain;
+} PoimaGamePreferenceSnapshotV1;
+typedef struct PoimaGamePreferencePatchV1 {
+    uint32_t version,bytes;
+    PoimaEntityId owner;
+    uint64_t expected_revision;
+    uint32_t set_mask,reset_mask;
+    PoimaGamePreferenceValuesV1 values;
+    uint64_t reserved;
+} PoimaGamePreferencePatchV1;
+typedef struct PoimaGamePreferenceTicket { uint64_t high,low,sequence; } PoimaGamePreferenceTicket;
+typedef struct PoimaGamePreferenceEnqueueV1 {
+    uint32_t version,bytes;
+    PoimaGamePreferenceTicket ticket;
+    uint32_t rejection,reserved;
+} PoimaGamePreferenceEnqueueV1;
+typedef struct PoimaGamePreferenceResultV1 {
+    uint32_t version,bytes;
+    PoimaGamePreferenceTicket ticket;
+    uint32_t state,rejection;
+    uint64_t accepted_revision;
+    int32_t error_code;
+    uint32_t reserved;
+} PoimaGamePreferenceResultV1;
+// Independent player_preferences_v1 opt-in; a larger prefix does not grant
+// any intermediate feature. Output callers initialize version/bytes/reserved.
+// Reads use cached owner observations. Patches stage intent only; accepted
+// results do not assert device application or presentation.
+typedef struct PoimaGamePlayerPreferenceServicesV1 {
+    PoimaGameInstanceServicesV1 instances;
+    int32_t (POIMA_CALL *preference_snapshot)(void*,PoimaGamePreferenceSnapshotV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *preference_patch)(void*,const PoimaGamePreferencePatchV1*,PoimaGamePreferenceEnqueueV1*,PoimaGameError*);
+    int32_t (POIMA_CALL *preference_result)(void*,const PoimaGamePreferenceTicket*,PoimaGamePreferenceResultV1*,PoimaGameError*);
+} PoimaGamePlayerPreferenceServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -193,6 +266,14 @@ typedef struct PoimaGameCall {
     char* output; uint32_t output_capacity,reserved;
 } PoimaGameCall;
 #ifdef __cplusplus
+static_assert(sizeof(PoimaGamePreferenceValuesV1)==56 && offsetof(PoimaGamePreferenceValuesV1,invert_x)==40 && offsetof(PoimaGamePreferenceValuesV1,frames_in_flight)==52);
+static_assert(sizeof(PoimaGamePreferenceSnapshotV1)==216 && offsetof(PoimaGamePreferenceSnapshotV1,owner)==16 && offsetof(PoimaGamePreferenceSnapshotV1,revision)==32 && offsetof(PoimaGamePreferenceSnapshotV1,values)==48);
+static_assert(offsetof(PoimaGamePreferenceSnapshotV1,sources)==104 && offsetof(PoimaGamePreferenceSnapshotV1,next_samples)==140 && offsetof(PoimaGamePreferenceSnapshotV1,observation_mask)==148 && offsetof(PoimaGamePreferenceSnapshotV1,reserved)==156);
+static_assert(offsetof(PoimaGamePreferenceSnapshotV1,observed_revision)==160 && offsetof(PoimaGamePreferenceSnapshotV1,effective_fov)==184 && offsetof(PoimaGamePreferenceSnapshotV1,sink_gain)==208);
+static_assert(sizeof(PoimaGamePreferencePatchV1)==104 && offsetof(PoimaGamePreferencePatchV1,owner)==8 && offsetof(PoimaGamePreferencePatchV1,expected_revision)==24 && offsetof(PoimaGamePreferencePatchV1,set_mask)==32 && offsetof(PoimaGamePreferencePatchV1,values)==40 && offsetof(PoimaGamePreferencePatchV1,reserved)==96);
+static_assert(sizeof(PoimaGamePreferenceTicket)==24 && sizeof(PoimaGamePreferenceEnqueueV1)==40 && offsetof(PoimaGamePreferenceEnqueueV1,ticket)==8 && offsetof(PoimaGamePreferenceEnqueueV1,rejection)==32);
+static_assert(sizeof(PoimaGamePreferenceResultV1)==56 && offsetof(PoimaGamePreferenceResultV1,ticket)==8 && offsetof(PoimaGamePreferenceResultV1,state)==32 && offsetof(PoimaGamePreferenceResultV1,accepted_revision)==40 && offsetof(PoimaGamePreferenceResultV1,error_code)==48);
+static_assert(sizeof(PoimaGamePlayerPreferenceServicesV1)==256 && offsetof(PoimaGamePlayerPreferenceServicesV1,instances)==0 && offsetof(PoimaGamePlayerPreferenceServicesV1,preference_snapshot)==232 && offsetof(PoimaGamePlayerPreferenceServicesV1,preference_patch)==240 && offsetof(PoimaGamePlayerPreferenceServicesV1,preference_result)==248);
 static_assert(sizeof(PoimaGameNavigationRequestV1)==64 && alignof(PoimaGameNavigationRequestV1)==8);
 static_assert(offsetof(PoimaGameNavigationRequestV1,agent)==8 && offsetof(PoimaGameNavigationRequestV1,goal)==24 && offsetof(PoimaGameNavigationRequestV1,extents)==36);
 static_assert(offsetof(PoimaGameNavigationRequestV1,max_polygons)==48 && offsetof(PoimaGameNavigationRequestV1,max_corners)==52 && offsetof(PoimaGameNavigationRequestV1,max_nodes)==56 && offsetof(PoimaGameNavigationRequestV1,reserved)==60);

@@ -1,0 +1,1833 @@
+{
+  "format": "poima.compiled-player-preferences-qualification",
+  "version": 1,
+  "engine_version": "0.0.81",
+  "date": "2026-10-09",
+  "passed": true,
+  "contracts": {
+    "protocol": 1,
+    "schema_revision": 70,
+    "authoring_core": "v1",
+    "call_version": 1,
+    "call_bytes": 80,
+    "services_epoch": 7,
+    "required_services_bytes": 256,
+    "required_features": [
+      "baseline_v7",
+      "player_preferences_v1"
+    ],
+    "callbacks": {
+      "preference_snapshot": 232,
+      "preference_patch": 240,
+      "preference_result": 248
+    },
+    "wire_sizes": {
+      "snapshot": 216,
+      "patch": 104,
+      "enqueue": 40,
+      "result": 56,
+      "ticket": 24
+    },
+    "earlier_named_prefixes": [
+      176,
+      192,
+      208,
+      216,
+      224,
+      232
+    ],
+    "retained_results": 32,
+    "authority": "Shared native PlayerPreferences outside authored worlds, input profiles and gameplay saves.",
+    "publication": "One prepared patch per whole Control/step boundary; publish only after complete native success, before queued storage/replacement. Failed boundaries consume no preference revision or ticket.",
+    "observations": "Committed configuration and sparse sources are distinct from cached observed/applied/presented device state; samples/frame slots remain next-launch intent.",
+    "availability": "Named host support is separate from an attached owner. Stop clears availability; new player creates an independent owner; replay rejects mutation."
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "binary_sha256": "5b5df67d4e571ab294e583c942ff372212e8e427244fd0fbd09cd2972bd58934",
+      "seconds": 161.26105836499482,
+      "log_sha256": "568ec8ddd493fd62380073408a5ff86fb719750b839a1706327e9c211e9855e0"
+    },
+    {
+      "host": "linux",
+      "binary_sha256": "a52d4ea40232f5990d62495fd807a1f2ffb59ebac99102954b3b47f1a534ea4e",
+      "seconds": 678.6345665109984,
+      "log_sha256": "588eff30fdcf6c62127d798f78ba2ae244eac5c8debd155fe8e5e69e0c339fe4"
+    },
+    {
+      "host": "authoring",
+      "binary_sha256": "33cc3996d5aeab4c5e8de30f6537eaed1566e81a97e9e6fe0c21f663d4e3afa5",
+      "seconds": 405.5785810660018,
+      "log_sha256": "c902208a7763ba19795b5c95c2d423cec1d0064a0d921f3ad872247b3af7dcac"
+    }
+  ],
+  "selected_regression_checks": [
+    {
+      "host": "windows",
+      "checks": [
+        {
+          "name": "poima-gameplay-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.22293043800164014,
+          "log_sha256": "84880a29bebbd1802585f150e63fd865807bd49c1c446022469a01de1c53a92d"
+        },
+        {
+          "name": "poima-player-live-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.07056337199901463,
+          "log_sha256": "430a6abd0b42e963a9e6f39f87f9431f0b8d180769e08a91af46d796d87ad4be"
+        },
+        {
+          "name": "poima-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.11838226299732924,
+          "log_sha256": "ff3e409405d51f19406b6364ae1d8b4e90071b515a00d07e3c0b5e00079bc193"
+        },
+        {
+          "name": "poima-input-profile-test",
+          "exit_code": 0,
+          "seconds": 0.12956380299874581,
+          "log_sha256": "b95dd8d48e0d6c88712989d37edb37ab28fea7a89569ec4136ed054a72d96813"
+        },
+        {
+          "name": "poima-player-input-test",
+          "exit_code": 0,
+          "seconds": 0.13346818100399105,
+          "log_sha256": "cf560fba19b93411b26b6c130c2f236a8f4bab5bb323be28c258396b6b268b11"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 8.211331489001168,
+          "log_sha256": "182a047ab519d8e1354ee835a09a071160f3149ee37eb9e72c3c04e390f8a2dd"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 3.9024900410004193,
+          "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "seconds": 0.11876115400082199,
+          "log_sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        },
+        {
+          "name": "poima-save-upgrade-snapshot-test",
+          "exit_code": 0,
+          "seconds": 0.16956972599291475,
+          "log_sha256": "fbcc0bb66a08d933ac1c9e56289de7e3de4b0ab93ed802b146208ba3075a85cc"
+        },
+        {
+          "name": "poima-runtime-instances-test",
+          "exit_code": 0,
+          "seconds": 0.18259950400533853,
+          "log_sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        },
+        {
+          "name": "poima-runtime-test",
+          "exit_code": 0,
+          "seconds": 0.3212842700013425,
+          "log_sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        },
+        {
+          "name": "poima-runtime-save-test",
+          "exit_code": 0,
+          "seconds": 0.47038364399486454,
+          "log_sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        {
+          "name": "poima-runtime-animation-test",
+          "exit_code": 0,
+          "seconds": 0.38877587099705124,
+          "log_sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        },
+        {
+          "name": "poima-runtime-animation-layers-test",
+          "exit_code": 0,
+          "seconds": 0.33984159999818075,
+          "log_sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        },
+        {
+          "name": "poima-player-window-test",
+          "exit_code": 0,
+          "seconds": 0.29106745299941394,
+          "log_sha256": "b5058bc3baae31206bb4f56ff85b7933221028f8a39cdf50229fa2f77447ae04"
+        },
+        {
+          "name": "poima-player-replacement-test",
+          "exit_code": 0,
+          "seconds": 0.2271248649994959,
+          "log_sha256": "614478e4dc8e39e25edd0da689f34aa924926590c8c239a8bc83528da90a63e8"
+        },
+        {
+          "name": "poima-runtime-ui-test",
+          "exit_code": 0,
+          "seconds": 0.28322490899881814,
+          "log_sha256": "229ba090372c47ad6fdb08e3d7eb659439c188f0f2408fe379aa1ced53ac5071"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 6.264718755999638,
+          "log_sha256": "d6e1c22aed0ed81ae33b366ed6e87c287a5de56a56ba4a5c873ac41e70bde579"
+        },
+        {
+          "name": "runtime_ui_contract",
+          "exit_code": 0,
+          "seconds": 9.356689828004164,
+          "log_sha256": "a675c076512f18c39abe2b8d6b1e6c7e5fed01136e347bef1784c0051a69c818"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.9225041919999057,
+          "log_sha256": "df73407db9ca2b975e9ae2d9a4f61e255fff31c98fc63a01ef8cdef3081623c3"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.6180917640012922,
+          "log_sha256": "ff225ad0e4e72b99b0da42ffe859b6e1a015916346d07bea8d05afa89b0f2911"
+        },
+        {
+          "name": "input_profile_contract",
+          "exit_code": 0,
+          "seconds": 8.34018869099964,
+          "log_sha256": "3b57d70b33b7cd0392db1d88a207fa1d217addef84d67ce8f03632aca5ff0dbf"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 4.228514829999767,
+          "log_sha256": "8cf6c4a46106d3758dc5687a251a91297af57c6ca43a02a55d2765a5a28cde26"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 8.891582742995524,
+          "log_sha256": "50efc2f1aa62bc69ba3e5ad4cb8362667531d50a81bf5c89dbaacda95a5f1e79"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 3.125542747999134,
+          "log_sha256": "e86a3e8ea2814a3c311666db57940fd6bb07e9d134282be3cddb6a3730bee9a9"
+        },
+        {
+          "name": "player_live_settings_contract",
+          "exit_code": 0,
+          "seconds": 3.1262903820024803,
+          "log_sha256": "9db3d74bd761b89ddc93860eb52e6a932be405a4e6bf9b4f49702913f0ce84b4"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "checks": [
+        {
+          "name": "poima-gameplay-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 1.766264443002001,
+          "log_sha256": "cf7bad532b678918ca3b9d05763546519d8edeedbc4af24e962d28a322b2fe8a"
+        },
+        {
+          "name": "poima-player-live-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.07028108799568145,
+          "log_sha256": "9a6b6e6bed633505b7283a12a977b0a817290dc827945a9520a47327d6e5d313"
+        },
+        {
+          "name": "poima-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.07006866700248793,
+          "log_sha256": "79030f5711e362c5aa09f4166d4bd1ade9e819115ec76cb40ef75f27d7c5cd8b"
+        },
+        {
+          "name": "poima-input-profile-test",
+          "exit_code": 0,
+          "seconds": 0.1205629640026018,
+          "log_sha256": "9fff6aecaa49ae889f4755f9c84233a905892210a9bd785d7c188850008fe138"
+        },
+        {
+          "name": "poima-player-input-test",
+          "exit_code": 0,
+          "seconds": 0.06982269199943403,
+          "log_sha256": "adf0b77e1912acb4ed5eb7c43cd8aa57b4cd4c3276d782e92acfc51e516f6186"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 8.107496698001341,
+          "log_sha256": "5a5d665f069885a85f19bcf9d45857c00fa607d4af7bf322e318a70b1170239b"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 14.340515012998367,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "seconds": 0.03712775400344981,
+          "log_sha256": "e5d6cbf6e75f418ffea8739597cf2e81c15c00169122b23d607608bf214f4fc4"
+        },
+        {
+          "name": "poima-save-upgrade-snapshot-test",
+          "exit_code": 0,
+          "seconds": 0.16915061599866021,
+          "log_sha256": "b15e91324414eaae3edb80fcff78ab5e50c72fabaa9163d6d64f2d930a3a62eb"
+        },
+        {
+          "name": "poima-runtime-instances-test",
+          "exit_code": 0,
+          "seconds": 0.17079318299511215,
+          "log_sha256": "6750495835823d800342d69fd7153b57d5f4747f65131a97bb17fe71a78273d7"
+        },
+        {
+          "name": "poima-runtime-test",
+          "exit_code": 0,
+          "seconds": 0.32029901100031566,
+          "log_sha256": "56bd299ed6443f36487c02a641693c5b1153e70cea9737bd7e07cc8d9f534eef"
+        },
+        {
+          "name": "poima-runtime-save-test",
+          "exit_code": 0,
+          "seconds": 0.3221653500004322,
+          "log_sha256": "5f3b9b686b818b89e26b0ff272f94352a808489df5f5ad65e225564c446a1f91"
+        },
+        {
+          "name": "poima-runtime-animation-test",
+          "exit_code": 0,
+          "seconds": 0.219884934995207,
+          "log_sha256": "2a3876cb56bf94c73b94b9223f27940e57412f6d676cbc11f0398b281cdfa1c8"
+        },
+        {
+          "name": "poima-runtime-animation-layers-test",
+          "exit_code": 0,
+          "seconds": 0.18111945000418928,
+          "log_sha256": "7afadd0d3d0a9d47021086e4ac8169e94da07647a60eaa56622d6134a3de060c"
+        },
+        {
+          "name": "poima-player-window-test",
+          "exit_code": 0,
+          "seconds": 0.12039421100053005,
+          "log_sha256": "f0e0228482c2eedc6766e7f3b43879ce2065598e6b36c643bb5a1138cb32f97f"
+        },
+        {
+          "name": "poima-player-replacement-test",
+          "exit_code": 0,
+          "seconds": 0.11982461999286897,
+          "log_sha256": "b5976c4bf7abe4560adfbfbc242172feb4850c6290cb5c0549b19870dfc1d9c3"
+        },
+        {
+          "name": "poima-runtime-ui-test",
+          "exit_code": 0,
+          "seconds": 0.16965678399719764,
+          "log_sha256": "0e55f041ffe4b1781955cc4a9dad2e13f31d8aec2c1762fee9b257abfb99cbaf"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 8.154798050993122,
+          "log_sha256": "ad0d814c939af8b1abc5efbbba9f75ad3a050d7b46f3844e9cdab190ac30432b"
+        },
+        {
+          "name": "runtime_ui_contract",
+          "exit_code": 0,
+          "seconds": 2.1751892840038636,
+          "log_sha256": "a19fdbb513ccc3185c3c51a7ba035278063eb313c193c5507592267d6675df23"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.5211302919997252,
+          "log_sha256": "de742e3fa6ed5293c7d75e41ddef8f77ea32ff610663e9e7004020afeabdc563"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.6182329649964231,
+          "log_sha256": "92be85909c817c22f96921bec320da9d472d35217a3fbee63d6a2863f5fd2e66"
+        },
+        {
+          "name": "input_profile_contract",
+          "exit_code": 0,
+          "seconds": 17.76764719199855,
+          "log_sha256": "018b871fa9106182784322b7857524eed9de53a4e44b3bbf643af164df4c8e88"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.325162334993365,
+          "log_sha256": "7afd5efdc17027130af9a1ae212e565425dff686c303dd2eaa2fc0bd22baf505"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 15.617216213002393,
+          "log_sha256": "4895aaa2a2d9a28f7c86af38223529dcc247293c80c77644898d1676bbd06d76"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 9.557927426998504,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        },
+        {
+          "name": "player_live_settings_contract",
+          "exit_code": 0,
+          "seconds": 2.4755967910023173,
+          "log_sha256": "e86a3e8ea2814a3c311666db57940fd6bb07e9d134282be3cddb6a3730bee9a9"
+        }
+      ]
+    },
+    {
+      "host": "authoring",
+      "checks": [
+        {
+          "name": "poima-gameplay-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.020469604998652358,
+          "log_sha256": "cf7bad532b678918ca3b9d05763546519d8edeedbc4af24e962d28a322b2fe8a"
+        },
+        {
+          "name": "poima-player-live-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.02043065799807664,
+          "log_sha256": "9a6b6e6bed633505b7283a12a977b0a817290dc827945a9520a47327d6e5d313"
+        },
+        {
+          "name": "poima-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.012172096998256166,
+          "log_sha256": "79030f5711e362c5aa09f4166d4bd1ade9e819115ec76cb40ef75f27d7c5cd8b"
+        },
+        {
+          "name": "poima-input-profile-test",
+          "exit_code": 0,
+          "seconds": 0.01316315899748588,
+          "log_sha256": "9fff6aecaa49ae889f4755f9c84233a905892210a9bd785d7c188850008fe138"
+        },
+        {
+          "name": "poima-player-input-test",
+          "exit_code": 0,
+          "seconds": 0.01260480299970368,
+          "log_sha256": "adf0b77e1912acb4ed5eb7c43cd8aa57b4cd4c3276d782e92acfc51e516f6186"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 4.832964326000365,
+          "log_sha256": "11013312118511d1be633318d6988146159723fd012892f688bc2f19aa68f51b"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 2.5780000200029463,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "seconds": 0.022271658999670763,
+          "log_sha256": "e5d6cbf6e75f418ffea8739597cf2e81c15c00169122b23d607608bf214f4fc4"
+        },
+        {
+          "name": "poima-save-upgrade-snapshot-test",
+          "exit_code": 0,
+          "seconds": 0.07079983999574324,
+          "log_sha256": "b5fedf787842c919932ba2288b2f5c2177da8ce147496735e29d40d0e4132c15"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 0.9209180710022338,
+          "log_sha256": "60e9584e6ec1771fceb9f2f36ee94718dfa25db5e1055a89ca6b11061d525ebc"
+        },
+        {
+          "name": "runtime_ui_contract",
+          "exit_code": 0,
+          "seconds": 0.8701384300002246,
+          "log_sha256": "83ac1815486c449a21ed4924981d861204658615ee11b456a08ae215495a2f70"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.2215923789990484,
+          "log_sha256": "1a4fd5f45d46ce8243abc2261d387c222dc1086f1391ed3a4890cd82da264056"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5207814749956015,
+          "log_sha256": "432b260bac8d71dcf3b80470bea22669dda24ddc4c13a8cde1dcdfc935b3cfc9"
+        },
+        {
+          "name": "input_profile_contract",
+          "exit_code": 0,
+          "seconds": 13.510213463996479,
+          "log_sha256": "e282744b4484cac244bbbbd00ce8a0c90e1e0e7c8c3e7bffe967d15d078e5d46"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.672905286999594,
+          "log_sha256": "472d533cf9ea9d198f7f12c0fc0c357ee37a077040985c555feea674a00bf409"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 9.749128524999833,
+          "log_sha256": "6636a055d1f6fbfe1bed12be118f70103c9c2a5992e0e51bb60437747c50c299"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 1.6740242960004252,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        },
+        {
+          "name": "player_live_settings_contract",
+          "exit_code": 0,
+          "seconds": 1.7243897459993605,
+          "log_sha256": "e86a3e8ea2814a3c311666db57940fd6bb07e9d134282be3cddb6a3730bee9a9"
+        }
+      ]
+    }
+  ],
+  "ctest_registration": {
+    "passed": true,
+    "tests": [
+      {
+        "host": "windows",
+        "exit_code": 0,
+        "seconds": 0.7713322320050793,
+        "log_sha256": "f1e0ee7857c0676387dffaf2a15faed8db76647e9984ee05f617213fdd848172"
+      },
+      {
+        "host": "linux",
+        "exit_code": 0,
+        "seconds": 0.5681985819974216,
+        "log_sha256": "bf852c174030569bf4d31b096070edfcf48a964f10dbf831eee5a8bf9e8751f2"
+      },
+      {
+        "host": "authoring",
+        "exit_code": 0,
+        "seconds": 0.4677689689997351,
+        "log_sha256": "2e4808051516c7e341e0ac0d7fb7fc8c856a123bedbde99cf67044c97ce1c1ae"
+      }
+    ]
+  },
+  "managed_abi": [
+    {
+      "host": "linux",
+      "passed": true,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 3/64 rejected before Tick",
+        "services 3/88 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 4/87 rejected before Tick",
+        "services 4/88 rejected before Tick",
+        "services 4/120 rejected before Tick",
+        "services 5/88 rejected before Tick",
+        "services 5/119 rejected before Tick",
+        "services 5/120 rejected before Tick",
+        "services 5/121 rejected before Tick",
+        "services 6/120 rejected before Tick",
+        "services 6/136 rejected before Tick",
+        "services 6/143 rejected before Tick",
+        "services 6/144 rejected before Tick",
+        "services 6/145 rejected before Tick",
+        "services 7/144 rejected before Tick",
+        "services 7/175 rejected before Tick",
+        "services 8/176 rejected before Tick",
+        "services 6/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "null entity callback rejected",
+        "null ray callback rejected",
+        "null motion callback rejected",
+        "null save info rejected",
+        "null save request rejected",
+        "null save result rejected",
+        "null component query rejected",
+        "null component get rejected",
+        "null component set rejected",
+        "null entity alive rejected",
+        "null spawn rejected",
+        "null despawn rejected",
+        "null template component get rejected",
+        "null UI read rejected",
+        "null UI edit rejected",
+        "null control info rejected",
+        "null control request rejected",
+        "matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation",
+        "lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors",
+        "100 additional generated-code module lifetimes invoke and retire without retained Type caches",
+        "CoreCLR bridge: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too",
+        "TemplateId remains distinct from persisted EntityId state fields",
+        "generated component and animation fixture collectible context released",
+        "linked production NativeGame entry: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "marked CoreCLR loads reject missing/short/wrong/duplicate host contracts before constructor; valid192 negotiation reaches constructor sentinel; failed contexts collected",
+        "marked Tick/Control reject actual176/184 guarded allocations before extension reads and reject either null tail callback before game execution",
+        "real bridge marked192 Tick/Control transfers independent64/136 PODs, both transition modes, nullable active mode/progress, rest clip, old getter and seven-argument setter; invalid enum never reaches callback",
+        "SDK rejects14 malformed mock extended-state responses, transfers mock native error, and later executes valid Tick; extension contexts retired",
+        "unmarked game remains legacy-compatible at load and safely rejects extended helper on176 baseline; no load-time IL capability claim",
+        "masked CoreCLR marker rejects missing/short/unnamed/dependency-incomplete hosts before constructor;208 positive sentinel executes",
+        "masked Tick/Control reject176/192/200 real guarded allocations and either missing layer callback before game execution",
+        "independent80/200 mock PODs transfer additive metadata, active clip inertia and weight fade, canonical missing slots and complete layer command; invalid public arguments do not invoke callbacks",
+        "SDK rejects34 independently malformed mock layer replies and transfers native error; valid subsequent Tick and collectible cleanup pass",
+        "unmarked SDK layer helper rejects its actual176 guarded baseline without reading the208 tail",
+        "character marker rejects absent, short, unnamed, wrong-epoch and duplicate hosts before constructor;216 and larger available prefixes reach positive sentinel",
+        "character Tick/Control reject actual176/192/208 guarded allocations and missing own callback before execution",
+        "independent48-byte character commands transfer explicit and neutral defaults;12 invalid arguments never call native; character-only216/224 tolerates poisoned unrequested animation pointers while all four animation helpers deny access",
+        "mock character callback error preserves diagnostic and gameplay state; subsequent Tick and collectible cleanup succeed",
+        "character+inertial and character+masked profiles transfer through requested callbacks only; absent requested callbacks reject before game, unrequested layer nulls remain valid",
+        "unmarked compiled character helper rejects before reading an actual176 guarded baseline tail",
+        "navigation marker rejects missing, unnamed, short, wrong-epoch and duplicate host features before constructor;224/larger valid hosts reach sentinel",
+        "actual176/192/208/216 guarded tables and absent own callback reject Tick/Control without reading ungranted tail",
+        "six typed routes include single-corner complete, canonical missing projection, partial and exhausted budgets;17 invalid arguments avoid callback; unrequested40-byte tails poisoned and five helpers deny access",
+        "25 malformed result/header/status/flags/count/projection/corner replies plus native failure reject with destination span unchanged; native error/recovery and collectible cleanup pass",
+        "all five navigation/animation/character combinations retain exact sorted required names; missing each requested callback rejects before game while unrequested callbacks may be null",
+        "unmarked navigation helper rejects actual guarded176 table before extension read",
+        "instance-only named232 and larger hosts admit before constructor; absent feature/old extents/wrong epoch reject before construction; local IDs parse distinctly",
+        "Tick/Control guard actual176..224 allocations; poison all unrequested extension callbacks; exact ID transfer, local argument denial, native failure and malformed zero success reject safely",
+        "independent instance plus character profile retains exact names and validates each opted-in callback only",
+        "unmarked Tick/Control deny resolver before protected tail access; template-local identity is not silently serialized as a live entity",
+        "preferences independent named256/larger negotiation precedes constructor; protected short allocations/unmarked access and missing own callbacks reject; poisoned unrelated tails are unread; exact sparse patch/ticket/result, nullable inheritance, actual density16 and frozen graphics transfer; malformed outputs roll back Tick/Control state"
+      ],
+      "platform": "Kali GNU/Linux Rolling",
+      "bridge_sha256": "ef7123dec552a90fba149e57155a8a6a32cf647c624a1899786134321eb6a44a",
+      "sdk_sha256": "a94f10ed2098e80c87b1b6360c9349596f010586ce236c4af46b16eca18371bb",
+      "raw_report_sha256": "32563f97738d80792412a2b3f042bfe4447d538bf866e2dcf3b0f15ee31e4841"
+    },
+    {
+      "host": "windows",
+      "passed": true,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 3/64 rejected before Tick",
+        "services 3/88 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 4/87 rejected before Tick",
+        "services 4/88 rejected before Tick",
+        "services 4/120 rejected before Tick",
+        "services 5/88 rejected before Tick",
+        "services 5/119 rejected before Tick",
+        "services 5/120 rejected before Tick",
+        "services 5/121 rejected before Tick",
+        "services 6/120 rejected before Tick",
+        "services 6/136 rejected before Tick",
+        "services 6/143 rejected before Tick",
+        "services 6/144 rejected before Tick",
+        "services 6/145 rejected before Tick",
+        "services 7/144 rejected before Tick",
+        "services 7/175 rejected before Tick",
+        "services 8/176 rejected before Tick",
+        "services 6/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "null entity callback rejected",
+        "null ray callback rejected",
+        "null motion callback rejected",
+        "null save info rejected",
+        "null save request rejected",
+        "null save result rejected",
+        "null component query rejected",
+        "null component get rejected",
+        "null component set rejected",
+        "null entity alive rejected",
+        "null spawn rejected",
+        "null despawn rejected",
+        "null template component get rejected",
+        "null UI read rejected",
+        "null UI edit rejected",
+        "null control info rejected",
+        "null control request rejected",
+        "matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation",
+        "lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors",
+        "100 additional generated-code module lifetimes invoke and retire without retained Type caches",
+        "CoreCLR bridge: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too",
+        "TemplateId remains distinct from persisted EntityId state fields",
+        "generated component and animation fixture collectible context released",
+        "linked production NativeGame entry: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "marked CoreCLR loads reject missing/short/wrong/duplicate host contracts before constructor; valid192 negotiation reaches constructor sentinel; failed contexts collected",
+        "marked Tick/Control reject actual176/184 guarded allocations before extension reads and reject either null tail callback before game execution",
+        "real bridge marked192 Tick/Control transfers independent64/136 PODs, both transition modes, nullable active mode/progress, rest clip, old getter and seven-argument setter; invalid enum never reaches callback",
+        "SDK rejects14 malformed mock extended-state responses, transfers mock native error, and later executes valid Tick; extension contexts retired",
+        "unmarked game remains legacy-compatible at load and safely rejects extended helper on176 baseline; no load-time IL capability claim",
+        "masked CoreCLR marker rejects missing/short/unnamed/dependency-incomplete hosts before constructor;208 positive sentinel executes",
+        "masked Tick/Control reject176/192/200 real guarded allocations and either missing layer callback before game execution",
+        "independent80/200 mock PODs transfer additive metadata, active clip inertia and weight fade, canonical missing slots and complete layer command; invalid public arguments do not invoke callbacks",
+        "SDK rejects34 independently malformed mock layer replies and transfers native error; valid subsequent Tick and collectible cleanup pass",
+        "unmarked SDK layer helper rejects its actual176 guarded baseline without reading the208 tail",
+        "character marker rejects absent, short, unnamed, wrong-epoch and duplicate hosts before constructor;216 and larger available prefixes reach positive sentinel",
+        "character Tick/Control reject actual176/192/208 guarded allocations and missing own callback before execution",
+        "independent48-byte character commands transfer explicit and neutral defaults;12 invalid arguments never call native; character-only216/224 tolerates poisoned unrequested animation pointers while all four animation helpers deny access",
+        "mock character callback error preserves diagnostic and gameplay state; subsequent Tick and collectible cleanup succeed",
+        "character+inertial and character+masked profiles transfer through requested callbacks only; absent requested callbacks reject before game, unrequested layer nulls remain valid",
+        "unmarked compiled character helper rejects before reading an actual176 guarded baseline tail",
+        "navigation marker rejects missing, unnamed, short, wrong-epoch and duplicate host features before constructor;224/larger valid hosts reach sentinel",
+        "actual176/192/208/216 guarded tables and absent own callback reject Tick/Control without reading ungranted tail",
+        "six typed routes include single-corner complete, canonical missing projection, partial and exhausted budgets;17 invalid arguments avoid callback; unrequested40-byte tails poisoned and five helpers deny access",
+        "25 malformed result/header/status/flags/count/projection/corner replies plus native failure reject with destination span unchanged; native error/recovery and collectible cleanup pass",
+        "all five navigation/animation/character combinations retain exact sorted required names; missing each requested callback rejects before game while unrequested callbacks may be null",
+        "unmarked navigation helper rejects actual guarded176 table before extension read",
+        "instance-only named232 and larger hosts admit before constructor; absent feature/old extents/wrong epoch reject before construction; local IDs parse distinctly",
+        "Tick/Control guard actual176..224 allocations; poison all unrequested extension callbacks; exact ID transfer, local argument denial, native failure and malformed zero success reject safely",
+        "independent instance plus character profile retains exact names and validates each opted-in callback only",
+        "unmarked Tick/Control deny resolver before protected tail access; template-local identity is not silently serialized as a live entity",
+        "preferences independent named256/larger negotiation precedes constructor; protected short allocations/unmarked access and missing own callbacks reject; poisoned unrelated tails are unread; exact sparse patch/ticket/result, nullable inheritance, actual density16 and frozen graphics transfer; malformed outputs roll back Tick/Control state"
+      ],
+      "platform": "Microsoft Windows 10.0.26220",
+      "bridge_sha256": "77fa2649ee0265f5f03b6ac54a4668ab4c343cfb0fcf5157e949c5721140573f",
+      "sdk_sha256": "3544a4ba39dd3f88e517efea5cb6ba66fa6bf20785871906fb84c67c0bf5e55d",
+      "raw_report_sha256": "e799f1ab1853d0d0572951e64fca8ae9536b63efb9f2617521ff5dbe3277599c"
+    }
+  ],
+  "native_aot_publications": [
+    {
+      "host": "linux",
+      "descriptor_sha256": "f92c5783ed498eb3b0e3a5aba63b9dc3aa5dda396adfe3582a92de9fef86944f",
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1640328,
+          "sha256": "44d65589e55409156fe74b6c2f56886f1dd25031378d8852b4863f5026f3d9df",
+          "role": "library"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        }
+      ],
+      "required_features": [
+        "baseline_v7",
+        "player_preferences_v1"
+      ],
+      "raw_report_sha256": "eb5ef986d441165baf347d1e02054bd9981e2b95934078de6a6fd05c21131d53"
+    },
+    {
+      "host": "windows",
+      "descriptor_sha256": "1d4903bad47dd039eb8ef6c90d1b9f00d883759d19c6cca8e425526a796df69d",
+      "files": [
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1388544,
+          "sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+          "role": "library"
+        }
+      ],
+      "required_features": [
+        "baseline_v7",
+        "player_preferences_v1"
+      ],
+      "raw_report_sha256": "aa4edd3af2b4f0de22d2c50b6ced0743aadbe210f40f8696b18993223b7a4607"
+    }
+  ],
+  "compiled_cohorts": [
+    {
+      "platform": "linux",
+      "backend": "coreclr",
+      "scope": "unattached_headless",
+      "rpc_count": 36,
+      "clean_owners": 3,
+      "checks": [
+        "Real compiled unattached Tick/Control snapshot and patch rejection; failed callback restores native state."
+      ],
+      "compiled_image_sha256": "586cf09514c8f7bac183dcf8dd9cf1ed7cf602644c480793a51f48df2754db01",
+      "raw_report_sha256": "291c8be49aab037bb7b792dd5539f13ea2b55f9e48b81d378c3bb057b2d43f04",
+      "readbacks": []
+    },
+    {
+      "platform": "linux",
+      "backend": "native_aot",
+      "scope": "unattached_headless",
+      "rpc_count": 36,
+      "clean_owners": 3,
+      "checks": [
+        "Real compiled unattached Tick/Control snapshot and patch rejection; failed callback restores native state."
+      ],
+      "compiled_image_sha256": "44d65589e55409156fe74b6c2f56886f1dd25031378d8852b4863f5026f3d9df",
+      "raw_report_sha256": "65e9c26da7dde7ded8e47fb43e1bbb7cfbd3f975499390f7623ed4df9864dd4d",
+      "readbacks": []
+    },
+    {
+      "platform": "windows",
+      "backend": "coreclr",
+      "scope": "attached_native_player",
+      "rpc_count": 364,
+      "clean_owners": 6,
+      "checks": [
+        "Real compiled unattached Tick/Control snapshot and patch rejection; failed callback restores native state.",
+        "Actual failed Control/entity-reference and later multi-tick callback rollback; completed falling-body physics restored; one batch patch and busy rejection.",
+        "Authored reachable native settings menu opens modal, tunes through compiled Control, refreshes visible status and closes with native resume intent.",
+        "Native same-window independent FOV/UI pixel oracles, guarded external conflicts, sparse reset and frozen next-launch graphics; CoreCLR reload or unchanged native replacement rejection.",
+        "Compiled callback stages preferences plus durable Save/Load; flush survives original Runtime replacement; owner/receipt state stays outside gameplay saves.",
+        "Stop detaches callback availability; fresh player owner rejects a saved old ticket without importing previous preferences.",
+        "Real replay-driven compiled Tick reads attached preferences and receives typed replay mutation rejection; semantic replay degrees stay unchanged.",
+        "Fresh process restores real compiled save state with explicit trusted code, starts independent native preferences and rejects the saved old-owner ticket."
+      ],
+      "compiled_image_sha256": "34fc03a51703f17e44bb34ef3b20b83e8702959b71ea0e07a74d81f26995be9c",
+      "raw_report_sha256": "57cf4895a75e818df3a6d91697e5df969bbbb8cb4df4c6f57a68040069f552bc",
+      "readbacks": [
+        {
+          "file": "compiled-fresh-process.bmp",
+          "bytes": 2073738,
+          "sha256": "707311ac35cf90b7d745bffca08d2707ec2f761a79ab242b9f2c97ba30892223"
+        },
+        {
+          "file": "compiled-initial.bmp",
+          "bytes": 2073738,
+          "sha256": "320ddeeaab16134a735f7755220eecbd7e267429de56f86b384a17005b600dcd"
+        },
+        {
+          "file": "compiled-live.bmp",
+          "bytes": 2073738,
+          "sha256": "21a2246a7ba0ed24ea17346bf6eb428ddad175f726d6a0accbc6fe8a107634d6"
+        },
+        {
+          "file": "compiled-reset.bmp",
+          "bytes": 2073738,
+          "sha256": "4e5c78d3b9c15bdcec704e58bdf442c4c5761f51ef5efb77eed118149e70f328"
+        },
+        {
+          "file": "compiled-settings-menu.bmp",
+          "bytes": 2073738,
+          "sha256": "ed2d24d55b9725e6954fa86eb2d189a729af2136612a915d7a739844f77998e5"
+        }
+      ],
+      "gpu_index": 0,
+      "image_oracles": {
+        "compiled-initial": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-live": {
+          "vertical_fov": 65,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 94.18113462704942,
+          "observed_box_height_pixels": 94,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-reset": {
+          "vertical_fov": 60,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-fresh-process": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        }
+      },
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "hardware": true,
+      "numeric_audio_gain_verified": true,
+      "audio_gain_observations": [
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        }
+      ]
+    },
+    {
+      "platform": "windows",
+      "backend": "coreclr",
+      "scope": "attached_native_player",
+      "rpc_count": 364,
+      "clean_owners": 6,
+      "checks": [
+        "Real compiled unattached Tick/Control snapshot and patch rejection; failed callback restores native state.",
+        "Actual failed Control/entity-reference and later multi-tick callback rollback; completed falling-body physics restored; one batch patch and busy rejection.",
+        "Authored reachable native settings menu opens modal, tunes through compiled Control, refreshes visible status and closes with native resume intent.",
+        "Native same-window independent FOV/UI pixel oracles, guarded external conflicts, sparse reset and frozen next-launch graphics; CoreCLR reload or unchanged native replacement rejection.",
+        "Compiled callback stages preferences plus durable Save/Load; flush survives original Runtime replacement; owner/receipt state stays outside gameplay saves.",
+        "Stop detaches callback availability; fresh player owner rejects a saved old ticket without importing previous preferences.",
+        "Real replay-driven compiled Tick reads attached preferences and receives typed replay mutation rejection; semantic replay degrees stay unchanged.",
+        "Fresh process restores real compiled save state with explicit trusted code, starts independent native preferences and rejects the saved old-owner ticket."
+      ],
+      "compiled_image_sha256": "34fc03a51703f17e44bb34ef3b20b83e8702959b71ea0e07a74d81f26995be9c",
+      "raw_report_sha256": "e704b04b1e65b9707ecbd1114488db4e664eb9cb064a72e9a98c60ff02108678",
+      "readbacks": [
+        {
+          "file": "compiled-fresh-process.bmp",
+          "bytes": 2073738,
+          "sha256": "54351b747eef3ae633e29d061bcb40c9280338798ab15dd9b077c13f71f2c423"
+        },
+        {
+          "file": "compiled-initial.bmp",
+          "bytes": 2073738,
+          "sha256": "54351b747eef3ae633e29d061bcb40c9280338798ab15dd9b077c13f71f2c423"
+        },
+        {
+          "file": "compiled-live.bmp",
+          "bytes": 2073738,
+          "sha256": "7508898de61344a59afb39f6c90723c964b13835ee6b9ff37f88979bf3f660e5"
+        },
+        {
+          "file": "compiled-reset.bmp",
+          "bytes": 2073738,
+          "sha256": "572fd175011462ee781d51f2cee8b6691446ede26857b2b38566ee3eab6c8a84"
+        },
+        {
+          "file": "compiled-settings-menu.bmp",
+          "bytes": 2073738,
+          "sha256": "56372875e2cdac186c0af6ce42f2a1800bad312c02165b37f20f19966df715bf"
+        }
+      ],
+      "gpu_index": 1,
+      "image_oracles": {
+        "compiled-initial": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-live": {
+          "vertical_fov": 65,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 94.18113462704942,
+          "observed_box_height_pixels": 94,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-reset": {
+          "vertical_fov": 60,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-fresh-process": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        }
+      },
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "numeric_audio_gain_verified": false
+    },
+    {
+      "platform": "windows",
+      "backend": "native_aot",
+      "scope": "attached_native_player",
+      "rpc_count": 378,
+      "clean_owners": 6,
+      "checks": [
+        "Real compiled unattached Tick/Control snapshot and patch rejection; failed callback restores native state.",
+        "Actual failed Control/entity-reference and later multi-tick callback rollback; completed falling-body physics restored; one batch patch and busy rejection.",
+        "Authored reachable native settings menu opens modal, tunes through compiled Control, refreshes visible status and closes with native resume intent.",
+        "Native same-window independent FOV/UI pixel oracles, guarded external conflicts, sparse reset and frozen next-launch graphics; CoreCLR reload or unchanged native replacement rejection.",
+        "Compiled callback stages preferences plus durable Save/Load; flush survives original Runtime replacement; owner/receipt state stays outside gameplay saves.",
+        "Stop detaches callback availability; fresh player owner rejects a saved old ticket without importing previous preferences.",
+        "Real replay-driven compiled Tick reads attached preferences and receives typed replay mutation rejection; semantic replay degrees stay unchanged.",
+        "Fresh process restores real compiled save state with explicit trusted code, starts independent native preferences and rejects the saved old-owner ticket."
+      ],
+      "compiled_image_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+      "raw_report_sha256": "00d7f2eee5a9f39f0eb1b17199f13c52bc0aea243a02b3660d7168f9bce9cd9a",
+      "readbacks": [
+        {
+          "file": "compiled-fresh-process.bmp",
+          "bytes": 2073738,
+          "sha256": "707311ac35cf90b7d745bffca08d2707ec2f761a79ab242b9f2c97ba30892223"
+        },
+        {
+          "file": "compiled-initial.bmp",
+          "bytes": 2073738,
+          "sha256": "707311ac35cf90b7d745bffca08d2707ec2f761a79ab242b9f2c97ba30892223"
+        },
+        {
+          "file": "compiled-live.bmp",
+          "bytes": 2073738,
+          "sha256": "f64040dc01d619ce9866f51d22c62c81b929bf44ed3d4cd8a57c7bf494384810"
+        },
+        {
+          "file": "compiled-reset.bmp",
+          "bytes": 2073738,
+          "sha256": "77a4584b0467364fd692c96a3c1f9e32bcc448ba97a1d230acc8f7a3d660efea"
+        },
+        {
+          "file": "compiled-settings-menu.bmp",
+          "bytes": 2073738,
+          "sha256": "b2ad66837a48aea7fc75f504657a5610640da9ded33d5e36e8ecc73b328767f9"
+        }
+      ],
+      "gpu_index": 0,
+      "image_oracles": {
+        "compiled-initial": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-live": {
+          "vertical_fov": 65,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 94.18113462704942,
+          "observed_box_height_pixels": 94,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-reset": {
+          "vertical_fov": 60,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-fresh-process": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        }
+      },
+      "gpu_name": "AMD Radeon(TM) Graphics",
+      "hardware": true,
+      "numeric_audio_gain_verified": false
+    },
+    {
+      "platform": "windows",
+      "backend": "native_aot",
+      "scope": "attached_native_player",
+      "rpc_count": 378,
+      "clean_owners": 6,
+      "checks": [
+        "Real compiled unattached Tick/Control snapshot and patch rejection; failed callback restores native state.",
+        "Actual failed Control/entity-reference and later multi-tick callback rollback; completed falling-body physics restored; one batch patch and busy rejection.",
+        "Authored reachable native settings menu opens modal, tunes through compiled Control, refreshes visible status and closes with native resume intent.",
+        "Native same-window independent FOV/UI pixel oracles, guarded external conflicts, sparse reset and frozen next-launch graphics; CoreCLR reload or unchanged native replacement rejection.",
+        "Compiled callback stages preferences plus durable Save/Load; flush survives original Runtime replacement; owner/receipt state stays outside gameplay saves.",
+        "Stop detaches callback availability; fresh player owner rejects a saved old ticket without importing previous preferences.",
+        "Real replay-driven compiled Tick reads attached preferences and receives typed replay mutation rejection; semantic replay degrees stay unchanged.",
+        "Fresh process restores real compiled save state with explicit trusted code, starts independent native preferences and rejects the saved old-owner ticket."
+      ],
+      "compiled_image_sha256": "1eb45d06c5e8b5058bda7e184786fc589513afa3056b2a5e340772eafe8f53c2",
+      "raw_report_sha256": "81502b17eabdae0200bc878cb338a2213200d84c0ee72558538c7d63bc79d9d3",
+      "readbacks": [
+        {
+          "file": "compiled-fresh-process.bmp",
+          "bytes": 2073738,
+          "sha256": "54351b747eef3ae633e29d061bcb40c9280338798ab15dd9b077c13f71f2c423"
+        },
+        {
+          "file": "compiled-initial.bmp",
+          "bytes": 2073738,
+          "sha256": "bce7bba7a8e6ac06ec73141b40e7d5a0dbecde39955f3465df49d41f0c68fb89"
+        },
+        {
+          "file": "compiled-live.bmp",
+          "bytes": 2073738,
+          "sha256": "9274c37ffda3c99a698a5bf78de94d9089d80ae5ffabd088f110dacecda94399"
+        },
+        {
+          "file": "compiled-reset.bmp",
+          "bytes": 2073738,
+          "sha256": "4e7c68d2babbcf81180504112013707a4bd21faca5ada1e28ae37423b84be45b"
+        },
+        {
+          "file": "compiled-settings-menu.bmp",
+          "bytes": 2073738,
+          "sha256": "39fc0dcbc583ecb0e601cf199452792eae902df3f7d35e7a03f22db63d337b13"
+        }
+      ],
+      "gpu_index": 1,
+      "image_oracles": {
+        "compiled-initial": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-live": {
+          "vertical_fov": 65,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 94.18113462704942,
+          "observed_box_height_pixels": 94,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-reset": {
+          "vertical_fov": 60,
+          "ui_scale": 1.25,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            30.0,
+            65.0,
+            210.0,
+            110.0
+          ],
+          "observed_button_bounds_pixels": [
+            30,
+            65,
+            210,
+            110
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        },
+        "compiled-fresh-process": {
+          "vertical_fov": 60,
+          "ui_scale": 1,
+          "expected_box_height_pixels": 103.92304845413264,
+          "observed_box_height_pixels": 104,
+          "expected_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "observed_button_bounds_pixels": [
+            24,
+            52,
+            168,
+            88
+          ],
+          "projection_error_bound_pixels": 3,
+          "ui_error_bound_pixels": 1
+        }
+      },
+      "gpu_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "hardware": true,
+      "numeric_audio_gain_verified": true,
+      "audio_gain_observations": [
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.9,
+          "sink_gain": 0.8999999761581421
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.8,
+          "sink_gain": 0.800000011920929
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.7000000000000001,
+          "sink_gain": 0.699999988079071
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.6000000000000001,
+          "sink_gain": 0.6000000238418579
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 0.5000000000000001,
+          "sink_gain": 0.5
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        },
+        {
+          "requested_master_gain": 1.0,
+          "sink_gain": 1.0
+        }
+      ]
+    }
+  ],
+  "preserved_original_consumers": [
+    {
+      "gpu_index": 0,
+      "backend": "native_aot",
+      "rpc_count": 103,
+      "clean_owners": 2,
+      "original_image_sha256": "2e0add5cc6edb3d00c527866d99028fee647ed6f16f7ead2a1ca80abc8ce29d8",
+      "checks": {
+        "actual_compiled_births": true,
+        "complete_maps_and_native_character_motion": true,
+        "camera_skin_draw_submission": true,
+        "live_settings_native_state_isolation": true,
+        "actual_compiled_17_tick_continuation": true,
+        "same_window_v6_restore_preserves_preferences": true,
+        "exact_restored_payload": true,
+        "same_tick_restored_pixels": true,
+        "historical_retry_not_reapplied": true,
+        "post_restore_compiled_tick": true,
+        "read_only_caller_inputs": true
+      },
+      "raw_report_sha256": "04015a6a8ae5c6d20ff05337ffab2c670e8229ecb1e41b61ba81b6b235a99b15",
+      "readbacks": [
+        {
+          "file": "compiled-initial.bmp",
+          "bytes": 2073738,
+          "sha256": "19f31ec67809c30495ff415df26ab923a3c25be4848336097ad7dcc1f300e3b2"
+        },
+        {
+          "file": "compiled-live.bmp",
+          "bytes": 2073738,
+          "sha256": "88e30d477a55bbaadc379e18737592fd0d8d83d987ce33c1aa24e95b85464efd"
+        },
+        {
+          "file": "compiled-restored.bmp",
+          "bytes": 2073738,
+          "sha256": "88e30d477a55bbaadc379e18737592fd0d8d83d987ce33c1aa24e95b85464efd"
+        }
+      ]
+    },
+    {
+      "gpu_index": 1,
+      "backend": "coreclr",
+      "rpc_count": 103,
+      "clean_owners": 2,
+      "original_image_sha256": "ee481be4290d63273169547cf4bae9ea59ff908ae1edef7540b46233151bdbf8",
+      "checks": {
+        "actual_compiled_births": true,
+        "complete_maps_and_native_character_motion": true,
+        "camera_skin_draw_submission": true,
+        "live_settings_native_state_isolation": true,
+        "actual_compiled_17_tick_continuation": true,
+        "same_window_v6_restore_preserves_preferences": true,
+        "exact_restored_payload": true,
+        "same_tick_restored_pixels": true,
+        "historical_retry_not_reapplied": true,
+        "post_restore_compiled_tick": true,
+        "read_only_caller_inputs": true
+      },
+      "raw_report_sha256": "7480ecc91a7e9cb8cec0daaa61b6f1620a67d031a63b7cd3b2d12b59e3502f90",
+      "readbacks": [
+        {
+          "file": "compiled-initial.bmp",
+          "bytes": 2073738,
+          "sha256": "50c1b778e277eaab34297524c989fd44eb89ae8a90a1dd2be8354076c0e111b2"
+        },
+        {
+          "file": "compiled-live.bmp",
+          "bytes": 2073738,
+          "sha256": "fc5a340e945d41f9c68853dad0c4d8715c484ec8c1e30cde07278cf23a3340ab"
+        },
+        {
+          "file": "compiled-restored.bmp",
+          "bytes": 2073738,
+          "sha256": "fc5a340e945d41f9c68853dad0c4d8715c484ec8c1e30cde07278cf23a3340ab"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Linux headless cohorts prove unavailable-owner callbacks and rollback only; native graphics are Windows checks.",
+    "Menu uses actual compiled native Control/Tick with rendered inspection, not physical mouse/controller qualification.",
+    "No physical input, audible-output, same-event-batch ordering, injected Jolt/device error, production performance or new source-free exported-menu claim.",
+    "Earlier completed falling-body physics is restored after a later callback failure; this is not injected Jolt Update/capacity failure.",
+    "CoreCLR compatible code reload is exercised; Native AOT replacement rejects unchanged and images remain process-pinned.",
+    "Numeric SDL sink gain is verified with empty logical voices; no listening, mix-bus, offline-DSP or acoustic claim.",
+    "Pure/native receipts test the32-result ring; attached compiled fixture does not exercise32+ successful patches.",
+    "Full searchable/generated/versioned documentation and evaluated Codex/Claude skills remain release deliverables."
+  ],
+  "documentation": {
+    "guide": "docs/COMPILED_PLAYER_SETTINGS.md",
+    "compiled_example_source_sha256": "cbac9d43307d162bf2d223333ec3027bfe02de60e7738a834ec774626b80a23d",
+    "example_build_log_sha256": "ff502e1a9d6229169fd6706ed3db05e9e3e36994584515d1e82cecc183d40d8f",
+    "sdk_sha256": "a94f10ed2098e80c87b1b6360c9349596f010586ce236c4af46b16eca18371bb",
+    "example_compiled": true,
+    "menu_capture": {
+      "file": "docs/evidence/m2-compiled-player-settings-menu.png",
+      "sha256": "d4a27fd5589f309807aec9c4c087d27a37182da614c71774488a379b2b27255f",
+      "source_bmp_sha256": "39fc0dcbc583ecb0e601cf199452792eae902df3f7d35e7a03f22db63d337b13",
+      "lossless_rgb_conversion": true,
+      "visually_inspected": true,
+      "kind": "native rendered readback, not an OS desktop screenshot"
+    }
+  },
+  "retained_failures": [
+    {
+      "raw_report_sha256": "b97c52e8408ab2f0e715e7159e53bc1ecde6987f021ef383f726f53d4ec559f3",
+      "resolution": "New native test missed third_party include; target include fixed, sources otherwise preserved."
+    },
+    {
+      "raw_report_sha256": "3fac651ff9acf1c7bf6d674abbdfe1ef703aeeefb94893a0cc967ef0a0a4e699",
+      "resolution": "ABI launcher used incorrect platform output path; successful assembly reused at actual path."
+    },
+    {
+      "raw_report_sha256": "056a9dda3c04b71e6c07291cca9fb9695465216992a7b351f876010fb99034b7",
+      "resolution": "ABI launcher missed vcvars platform-specific x64 output path; successful assembly reused at actual path."
+    },
+    {
+      "raw_report_sha256": "5c9850d3984dac1b6ebbecb1c4c0aded7f470e95ed04e396fbc00b0a430463f0",
+      "resolution": "Staged publisher lacked THIRD_PARTY_NOTICES.md; included notice and republished to new output/work."
+    },
+    {
+      "raw_report_sha256": "97c4e06665a5656e2750ece7f8a58f3fe6f68564a3c029d0c53e24447a289f7f",
+      "resolution": "Verifier reversed existing resume/pause numeric intents; corrected resume1 and reran."
+    },
+    {
+      "raw_report_sha256": "bb74541c5c301a4cbaaaab8d98d479d1ec6f8a01011787f11d07755f48ae7278",
+      "resolution": "Verifier attempted unsupported native library replacement; retained restriction and verify guarded unchanged rejection."
+    }
+  ],
+  "source_pins": {
+    "CMakeLists.txt": "68b96d77ebaa899d8fb7f91b45ee81f8f4ad7bddb467870da06349f5f34d2a37",
+    "README.md": "55de4825afeab9b494379e48edb29ac55ac8a81d36da02208f152848244b0e19",
+    "docs/COMPILED_PLAYER_SETTINGS.md": "d1b7e262eb5e5320e9f6df4739256eff5406c77be14658a2b15352e33fea5de9",
+    "docs/DOCUMENTATION.md": "149000a139ea587d47d9f3056358cd73f42f1d70a4d40d4420ab66476072aab4",
+    "docs/DOCUMENTATION_COVERAGE.md": "79d021e9c6a70915fc762b9bcf35fd458c519ec1f77d6ae9a97475617c2cd27f",
+    "docs/IMPLEMENTATION_STATUS.md": "1d8ac8636a27617b6addce7e0ae2e1f21f0ceba1e31950829ef10c12551639e3",
+    "docs/MANAGED_GAMEPLAY.md": "c07e9095aed76bc3a07123e1608d73e08c7e0e76f1c475c5c2c7aa92b6a8f115",
+    "docs/NATIVE_GAMEPLAY.md": "4761400093987c51a3a53785b7ff1f7845c7330b4228ac67fae2c5082e6bcf65",
+    "docs/PLAYBOOKS.md": "d5c8390566105c8d4b8f27c105c38d44e48b839fbba8cfb9d7a870ae4e1f22b7",
+    "docs/PLAYER_SETTINGS.md": "2b4abeb218452a6961c5e03e0645b2c37e87fa153ba870ec0146e4ef721c212e",
+    "include/poima/gameplay_abi.h": "04fc3fa24ef92a9b04a1e7c933880deddec496a4e499dd324db729f147a2c220",
+    "include/poima/gameplay_compatibility.hpp": "4bcaa6ed79d1965f607f5324d57a748d8a01e9c4dbe434a8038abd650c562f22",
+    "include/poima/gameplay_player_preferences.hpp": "f772a3583f2d9641926b0cc10eb624f8cf5a770867cd73d36af7667790baf164",
+    "include/poima/player.hpp": "fe500a32a22b5ef9756e84ccdd5925643957f22f3d696628ecc5884b23c836f6",
+    "include/poima/runtime.hpp": "a5b14c575f2793282a6637393f47dcc9a131ac12781e979d366b05d2124f7d2c",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "213eca52e48c8b2eba6c31e344336008e3b6c0627eb8a38a6bab2368f4fe714f",
+    "managed/Poima.Gameplay/PlayerPreferences.cs": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a",
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "managed/Poima.ManagedBridge/Entry.cs": "6dab8ba3306a86b1b6764339881ade8fe97aae2393937f010caa3cdadff99c39",
+    "managed/Poima.NativeGame.Generator/Program.cs": "019e650f4aba1b831da5ac2d81f70f2fce40c033d4bc93e92da7d2d0b52d6e64",
+    "managed/Poima.NativeGame/Entry.cs": "dff4ff2b5569bb5d0d463b1305fdb951f579143643c15a24157b17c540bc76f6",
+    "scripts/publish_native_gameplay.py": "3246b78de1d6d57f304f6d2b49ca96d810c04352694dfe8a39b9419506b3ca19",
+    "src/gameplay.cpp": "55a90cc175027fb8361163e5b458bb8c57f8fe4db9ebaecaff85f056b7d3626b",
+    "src/gameplay_player_preferences.cpp": "221a3f6c618c7fad6c099a29e6f6aa3e00600f92356c21ef96616726569a5e49",
+    "src/render_smoke.cpp": "2861f4d692ffcd45a810393cdc45fbe491d161c28234727aa7973cf92acf98cc",
+    "src/runtime.cpp": "f98387ee7331b680372592c3d0694e56bc9c25a42188f6fe90a3f3e9c4ec5cb7",
+    "src/runtime_disabled.cpp": "60101138c54fa60a53663bdad8617118320217ef84b73ef87789c2eb51a5dc38",
+    "src/runtime_player_preferences.inc": "5798d8efd78d8c5da0bcd347b4689827f9016ae26d3d7f98968be511defdccd1",
+    "src/runtime_ui.inc": "5085e86903963c098229b877e39e1dddbea713654fdadb9f79a54d25b84f60da",
+    "src/world.cpp": "32e8f780c50b2a08c13b9ba8796d80e5a07f760e0d5d87ac4ea61c6e009106df",
+    "src/world_control.inc": "5d5fb8702d76ed95ce9a2ec94f852d66bfc60b4e96d1196130f3723cb3897386",
+    "src/world_gameplay_save.inc": "aa31727cde5cfc7f213e28b8c68deca6e6134aed7a1da72c6352e1c7a84dbbb6",
+    "src/world_player_service.inc": "15f4b2b47c15de97eaa9cbbfd480666ad772e6be2603cf36736ec0abfec73edc",
+    "src/world_schema.cpp": "af7d69a630d263b349fe973b4c441f750ddcee9e4e4c9a1186a3bae4974c4973",
+    "tests/gameplay_compatibility_native.cpp": "f5ff594af6120f574ea4dd3626209e68878331d7f6723437e5ff332cd5fa3fe9",
+    "tests/gameplay_player_preferences_native.cpp": "0a746e1dcda5955099fd692f22ee03b91020cd6cf9c3ebe47b1c9b7cfc35ce2a",
+    "tests/managed_player_preferences_gameplay/PlayerPreferencesMenuGame.cs": "f2300a7c6e2eb49fbc0ffbadb70d6374aa47230d54fc2f0b03dcfb0bdb5b95e3",
+    "tests/managed_player_preferences_gameplay/Poima.PlayerPreferencesMenuGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/managed_player_preferences_gameplay/README.md": "e07800950a5e8497817e5a983eaa9d0b9d559165d61a529d925117b1a12dfd0a",
+    "tests/managed_service_abi/ManagedServiceAbi.csproj": "46831b1ddcc2ee2b7b3d75bd291d14f8c783c49e5b57f615e1f4f65f7ae7b0b4",
+    "tests/managed_service_abi/PlayerPreferencesExtension.cs": "4aec8fdc36c8d28635fb5472560cadd6ecb834054a6e43ade4d5a1f6a4a7c903",
+    "tests/managed_service_abi/Program.cs": "524907ea7815f6ab3850c5f806051e3f5bd79f672d55f61e4ee87d4959d4ed26",
+    "tests/native_gameplay_publish_requirements.py": "73ed1f63d1f2b95872882f6fd33d05a884c56c185f318c9ea0567f4a2d441b78",
+    "tests/player_compiled_preferences_contract.py": "47081303457e98212e6f6b3a38031b60321252c1f0f1892d3b5a596942df084a",
+    "tests/player_live_settings_contract.py": "7e29e4db82c49e6d8ff37d1b911e89d3e222d5fa418b820e21e8f2a086051ad8",
+    "tests/player_preferences_gameplay_contract.py": "f08bdf0208a6153676dcb405b46e0b6f31826ccfd28e670b58a1472e58db062b",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1"
+  },
+  "totals": {
+    "selected_regression_executions": 70,
+    "registered_test_executions": 9,
+    "compiled_preference_rpc_count": 1556,
+    "preserved_original_rpc_count": 206,
+    "readbacks": 26
+  }
+}

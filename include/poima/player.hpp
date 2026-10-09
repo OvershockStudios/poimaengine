@@ -38,12 +38,16 @@ struct PlayerControlResult {
     RuntimeControlIntent intent=RuntimeControlIntent::none;
     bool save_serviced=false;
 };
+struct PlayerReport;
 // Owner-thread adapter. advance commits exactly one tick, then services owner
 // requests; it may replace the Runtime before returning. Queries own their data
 // and no borrowed Runtime reference crosses that boundary.
 class PlayerSession {
 public:
     virtual ~PlayerSession()=default;
+    // Cached value observations only; called outside compiled callbacks, never
+    // reenters a device or changes preferences. Used by negotiated gameplay reads.
+    virtual void preference_observation(const PlayerReport&) noexcept {}
     virtual std::string identity() const=0;
     virtual std::uint64_t tick() const=0;
     virtual bool controller_valid(const std::string& entity) const=0;

@@ -16,6 +16,7 @@
 namespace poima {
 namespace jobs { class Executor; }
 struct ModelAsset;
+class GameplayPlayerPreferences;
 struct RuntimeTransform {
     std::array<double,3> position{0,0,0};
     std::array<double,4> rotation{0,0,0,1};
@@ -334,6 +335,13 @@ public:
     // this runtime. Direct runtimes start with saving disabled. Pending intents
     // are part of whole-batch rollback; storage is serviced only by the owner.
     void gameplay_save_host(GameplaySaveEpoch epoch,const GameplaySaveLedger* ledger);
+    // Weak owner attachment: committed player preferences and ticket receipts
+    // are outside gameplay checkpoints. Callback patches stage through one
+    // complete Control/step boundary; the host must flush before servicing saves.
+    void gameplay_player_preferences_host(std::shared_ptr<GameplayPlayerPreferences> host);
+    // No device work or allocation. False means no accepted publication; the
+    // serialized host must prevent another boundary before resolving a stage.
+    bool commit_gameplay_player_preferences() noexcept;
     GameplaySaveQueue& gameplay_saves();
     const GameplaySaveQueue& gameplay_saves() const;
     std::uint64_t gameplay_revision() const;

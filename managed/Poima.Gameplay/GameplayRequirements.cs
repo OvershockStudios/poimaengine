@@ -2,7 +2,7 @@
 using System.Text.Json;
 namespace Poima;
 
-[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16 }
+[Flags] internal enum GameplayRequiredFeatures : uint { None=0,InertialAnimation=1,MaskedAnimation=2,CharacterInput=4,Navigation=8,HierarchicalInstances=16,PlayerPreferences=32 }
 internal static unsafe class GameplayRequirements
 {
     internal const string Baseline="{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":176,\"features\":[\"baseline_v7\"]}";
@@ -17,10 +17,11 @@ internal static unsafe class GameplayRequirements
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character)=>Features(inertial,masked)|(character ? GameplayRequiredFeatures.CharacterInput : GameplayRequiredFeatures.None);
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation)=>Features(inertial,masked,character)|(navigation ? GameplayRequiredFeatures.Navigation : GameplayRequiredFeatures.None);
     internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances)=>Features(inertial,masked,character,navigation)|(instances ? GameplayRequiredFeatures.HierarchicalInstances : GameplayRequiredFeatures.None);
+    internal static GameplayRequiredFeatures Features(bool inertial,bool masked,bool character,bool navigation,bool instances,bool preferences)=>Features(inertial,masked,character,navigation,instances)|(preferences ? GameplayRequiredFeatures.PlayerPreferences : GameplayRequiredFeatures.None);
     internal static string Json(GameplayRequiredFeatures features)
     {
         ValidateRequired(features);
-        if((features & (GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances))!=0)
+        if((features & (GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences))!=0)
         {
             // Known names only; avoid reflection-based JSON serialization in AOT.
             var names=new List<string>();
@@ -30,7 +31,8 @@ internal static unsafe class GameplayRequirements
             if((features & GameplayRequiredFeatures.CharacterInput)!=0)names.Add("character_input_v1");
             if((features & GameplayRequiredFeatures.HierarchicalInstances)!=0)names.Add("hierarchical_instances_v1");
             if((features & GameplayRequiredFeatures.Navigation)!=0)names.Add("navigation_query_v1");
-            return "{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":"+((features & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? "232" : "224")+",\"features\":["+string.Join(",",names.Select(name=>"\""+name+"\""))+"]}";
+            if((features & GameplayRequiredFeatures.PlayerPreferences)!=0)names.Add("player_preferences_v1");
+            return "{\"call_version\":1,\"call_bytes\":80,\"services_version\":7,\"services_bytes\":"+((features & GameplayRequiredFeatures.PlayerPreferences)!=0 ? "256" : (features & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? "232" : "224")+",\"features\":["+string.Join(",",names.Select(name=>"\""+name+"\""))+"]}";
         }
         if((features & GameplayRequiredFeatures.CharacterInput)!=0)
             return (features & GameplayRequiredFeatures.MaskedAnimation)!=0 ? MaskedCharacter :
@@ -39,7 +41,7 @@ internal static unsafe class GameplayRequirements
     }
     private static void ValidateRequired(GameplayRequiredFeatures required)
     {
-        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances))!=0 ||
+        if((required & ~(GameplayRequiredFeatures.InertialAnimation|GameplayRequiredFeatures.MaskedAnimation|GameplayRequiredFeatures.CharacterInput|GameplayRequiredFeatures.Navigation|GameplayRequiredFeatures.HierarchicalInstances|GameplayRequiredFeatures.PlayerPreferences))!=0 ||
             ((required & GameplayRequiredFeatures.MaskedAnimation)!=0 && (required & GameplayRequiredFeatures.InertialAnimation)==0))
             throw new ArgumentException("Invalid gameplay required features.");
     }
@@ -55,7 +57,7 @@ internal static unsafe class GameplayRequirements
                 throw new ArgumentException("Invalid or duplicate generated gameplay requirement field.");
         if(keys.Count!=5 || Integer(value,"call_version")!=1 || Integer(value,"call_bytes")!=80 || Integer(value,"services_version")!=ServiceAbi.Epoch)
             throw new ArgumentException("Invalid generated gameplay requirement ABI.");
-        if(!value.TryGetProperty("features",out var array) || array.ValueKind!=JsonValueKind.Array || array.GetArrayLength() is <1 or >6)
+        if(!value.TryGetProperty("features",out var array) || array.ValueKind!=JsonValueKind.Array || array.GetArrayLength() is <1 or >7)
             throw new ArgumentException("Invalid generated gameplay required features.");
         var names=new HashSet<string>(StringComparer.Ordinal);GameplayRequiredFeatures result=GameplayRequiredFeatures.None;
         foreach(var feature in array.EnumerateArray())
@@ -69,11 +71,13 @@ internal static unsafe class GameplayRequirements
                 case "character_input_v1":result|=GameplayRequiredFeatures.CharacterInput;break;
                 case "navigation_query_v1":result|=GameplayRequiredFeatures.Navigation;break;
                 case "hierarchical_instances_v1":result|=GameplayRequiredFeatures.HierarchicalInstances;break;
+                case "player_preferences_v1":result|=GameplayRequiredFeatures.PlayerPreferences;break;
                 default:throw new ArgumentException("Unknown generated gameplay required feature.");
             }
         }
         ValidateRequired(result);
-        uint bytes=(result & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? InstanceServiceAbi.RequiredBytes :
+        uint bytes=(result & GameplayRequiredFeatures.PlayerPreferences)!=0 ? PlayerPreferenceServiceAbi.RequiredBytes :
+            (result & GameplayRequiredFeatures.HierarchicalInstances)!=0 ? InstanceServiceAbi.RequiredBytes :
             (result & GameplayRequiredFeatures.Navigation)!=0 ? NavigationServiceAbi.RequiredBytes :
             (result & GameplayRequiredFeatures.CharacterInput)!=0 ? CharacterInputServiceAbi.RequiredBytes :
             (result & GameplayRequiredFeatures.MaskedAnimation)!=0 ? AnimationLayerServiceAbi.RequiredBytes :
@@ -128,6 +132,9 @@ internal static unsafe class GameplayRequirements
         if((required & GameplayRequiredFeatures.HierarchicalInstances)!=0 &&
             (Integer(host,"services_bytes")<InstanceServiceAbi.RequiredBytes || !features.Contains("hierarchical_instances_v1")))
             throw new ArgumentException("Gameplay host lacks hierarchical_instances_v1 with at least 232 service bytes.");
+        if((required & GameplayRequiredFeatures.PlayerPreferences)!=0 &&
+            (Integer(host,"services_bytes")<PlayerPreferenceServiceAbi.RequiredBytes || !features.Contains("player_preferences_v1")))
+            throw new ArgumentException("Gameplay host lacks player_preferences_v1 with at least 256 service bytes.");
         // Unknown, well-formed available host features are intentionally ignored:
         // a later same-epoch host may append unrelated services safely.
     }
@@ -145,5 +152,6 @@ internal static unsafe class GameplayRequirements
         if((required & GameplayRequiredFeatures.CharacterInput)!=0)_=CharacterInputServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.Navigation)!=0)_=NavigationServiceAbi.Validate(services);
         if((required & GameplayRequiredFeatures.HierarchicalInstances)!=0)_=InstanceServiceAbi.Validate(services);
+        if((required & GameplayRequiredFeatures.PlayerPreferences)!=0)_=PlayerPreferenceServiceAbi.Validate(services);
     }
 }

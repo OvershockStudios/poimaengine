@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.81
+
+- Add independently negotiated [compiled player preferences](docs/COMPILED_PLAYER_SETTINGS.md) to C# Tick/Control: typed snapshots, guarded staging and bounded acceptance tickets over the existing native owner.
+- Publish one patch only after the whole native step or Control boundary succeeds. Roll back failed batches without consuming preference revisions/tickets, and flush accepted intent before queued save/load replacement.
+- Preserve services epoch 7 and all earlier prefixes; advertise the new named 256-byte extension in gameplay, discovery and installed-runtime metadata. Keep preferences outside world and gameplay-save authority.
+- Add a rendered native settings-menu fixture for FOV, pointer tuning, UI scale, output gain, sparse reset and next-launch graphics. Qualify Windows CoreCLR/Native AOT on both GPUs, Linux headless callbacks and retained original compiled consumers. [Evidence](docs/evidence/m2-compiled-player-settings.json).
+- Publish the API, menu playbook, recovery reference and inspected capture; compile the guide example against the matching SDK and connect the shared documentation index and coverage inventory.
+
 ## 0.0.80
 
 - Add a shared native [live player-preference owner](docs/PLAYER_SETTINGS.md), guarded inspection/patches, preview/reset, independent revisions and retry recovery.
