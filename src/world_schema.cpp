@@ -128,7 +128,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 65}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 66}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -283,6 +283,20 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     play["properties"]["settings_overrides"]=player_settings::values_schema();
     play["properties"]["gamepad"]=object_schema({{"mode",{{"enum",{"disabled","only_connected","explicit"}}}},{"id",{{"type","integer"},{"minimum",1},{"maximum",4294967295ULL}}}},{"mode"});
     methods["runtime.play"]=play;
+    auto player_start=play;
+    player_start["properties"]["expected_generation"]=rev;
+    player_start["properties"]["initially_paused"]={{"type","boolean"},{"default",false}};
+    player_start["required"].push_back("expected_generation");
+    player_start["description"]="Start an owner-pumped native player in a shared headless host. Acknowledgement precedes graphics initialization; inspect readiness/completion separately. Outside authoring-core v1.";
+    methods["player.start"]=std::move(player_start);
+    methods["player.inspect"]=object_schema({{"player_id",id}});
+    methods["player.control"]=object_schema({{"player_id",id},{"request_id",id},{"expected_control_revision",rev},
+        {"action",{{"enum",{"pause","resume","stop"}}}}},{"player_id","request_id","expected_control_revision","action"});
+    methods["player.capture"]=object_schema({{"player_id",id},{"request_id",id},{"expected_control_revision",rev},
+        {"session_id",id},{"tick",rev},{"expected_structure_revision",rev},{"expected_ui_revision",rev},
+        {"path",{{"type","string"},{"minLength",1},{"description","New BMP output in an existing directory; captures the live player's graphics context without advancing simulation."}}}},
+        {"player_id","request_id","expected_control_revision","session_id","tick","path"});
+    result["invariants"].push_back("player.start/control/capture require the shared headless owner pump. Start acknowledges deferred initialization; player.inspect reports current readiness and the latest owned partial/final report. Generation, player identity and control revisions guard lifecycle commands; 32 process-local receipts replay acknowledged commands without reapplying them. Stop closes presentation and retains runtime state. Running players reject external simulation mutations; paused interactive players accept guarded edits. Replay rejects intervening runtime edits. Replacement invalidates input and pauses interactive playback. Captures use the same live graphics context and current committed tick with exclusive new output; they do not simulate.");
     methods["settings.describe"]=object_schema({});
     methods["settings.inspect"]=object_schema({{"path",input_path}},{"path"});
     const auto settings_properties=player_settings::values_schema().at("properties");
@@ -553,7 +567,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"components",recipe_components},{"references","Entity references in recipes are literal IDs; liveness is deferred until spawning. Template IDs are a separate namespace and are never live EntityIds."},
         {"save_guard","save.write/load require expected_structure_revision after any structural transaction; stopped restore accepts absent or null."},
         {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"gameplay_reads","Committed tick membership; reserved births support Set before publication, and template component defaults are read explicitly."},{"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# Tick can reserve, initialize and remove root props; RPC tick scheduling remains unavailable."}};
-    for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play"})
+    for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play","player.start"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
     result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");
     result["runtime_available"]=Runtime::available();

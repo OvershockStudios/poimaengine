@@ -81,6 +81,15 @@ The initial focused-discovery checkpoint qualified Linux protocol and in-process
 
 Schema revision 21 added `runtime.status` and scope-aware shared-session discovery. Schema revision 20 added `world.history`, `world.undo` and `world.redo`. Undo/redo use `request_id` and `base_revision`, advance the revision, preserve known entity identities and store durable retry receipts. History is session-local, capped at 32 edits and 16 MiB of compact serialized entity snapshots. A new committed edit clears redo. Failed edits/previews preserve history. See the [history contract and native API](EDITOR.md#shared-service-and-history) for limits and restart behavior.
 
+## Live native player
+
+Schema revision 66 adds owner-pumped `player.start`, `player.inspect`,
+`player.control` and `player.capture`. A shared headless host acknowledges
+launch separately from graphics readiness and continues servicing clients
+between native frames. Pause before external simulation edits; capture current
+state through the same live context. See the [task playbook](LIVE_PLAYER.md) for
+identity/revision guards, retries, replay restrictions and runtime replacement.
+
 ## Player preference profiles
 
 `settings.describe`, `settings.inspect` and `settings.transact` manage eight typed sparse player preferences with independent revisions and retry receipts. Schema revision 65 adds the profile and override fields to `runtime.play`. Inspect stored intent separately from resolved launch outcomes; see [the player-settings task and reference](PLAYER_SETTINGS.md) for commands, precedence, units and recovery. These settings do not mutate authored worlds, input-profile files or saved gameplay state.

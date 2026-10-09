@@ -47,6 +47,10 @@ These guides provide operations to compose into your own workflow. Supply the
 project, entity IDs, revisions and assets they require; they do not build a
 complete game for you.
 
+Use the [coverage inventory](DOCUMENTATION_COVERAGE.md) to see which manual,
+reference, task and human workflow pieces exist for a supported mechanism and
+which still need documentation. A task index is not a completeness claim.
+
 | Task | Guide and prerequisites | Check the result |
 | --- | --- | --- |
 | Edit a session already open in an editor or headless host | [Shared sessions](SHARED_SESSIONS.md) and [Python connection/recovery](PYTHON_CLIENT.md#share-an-editor-or-headless-host); running host, endpoint name and matching native bridge executable | Read the current revision, submit guarded edits and inspect their result. Detaching a client leaves the owner running. |
@@ -56,6 +60,7 @@ complete game for you.
 | Bake and apply a procedural material | [Procedural materials](PROCEDURAL_MATERIALS.md#generate-inspect-and-apply) and [original recipes](../examples/materials/README.md); writable world, supported recipe and target geometry with suitable UVs/tangents | Poll the actual terminal job result, apply returned bindings through a guarded transaction and inspect the effective material. Observe a render when checking appearance. |
 | Find authored users of an asset | [Asset references](ASSET_REFERENCES.md#query); current world and asset or owner identity | Follow every page at the observed revision. This reports authored bindings; use dependency validation separately to establish that resources resolve. |
 | Investigate native execution cost | [Profiler](PROFILER.md#command-service) and [native jobs](JOBS.md#profiling); matching build and reproducible workload | Run the workload between recording start/stop, inspect the sealed capture and export it. Account for waits, overlapping intervals and dropped records. |
+| Observe, pause, edit and capture a live native game | [Live player](LIVE_PLAYER.md); Windows native shared headless host, simulation, Vulkan rendering, authored Camera and new capture outputs. Replay additionally needs a CharacterController. | Separate launch acknowledgement from readiness, inspect identity/tick, make guarded paused edits, capture without advancing simulation and retain the terminal report on stop. |
 | Configure portable player preferences and launch a game | [Player settings](PLAYER_SETTINGS.md); supporting native build, writable profile parent directory, authored camera and optional existing input profile. Visible checks need Windows Vulkan; export needs a matching runtime. | Preview and commit a guarded sparse patch, inspect its receipt, launch with the observed settings revision and check effective values, sources and presentation outcomes. Preferences and authored/save state remain separate. |
 | Package a project with a native runtime | [Projects and export](PROJECTS.md#install-a-runtime-and-export); valid project manifest, cooked dependencies, installed feature-compatible runtime and exact matching engine version | Inspect the exported bundle and use the documented launch/verification workflow. Compiled gameplay requires the matching native artifact; saves use external mutable storage. |
 

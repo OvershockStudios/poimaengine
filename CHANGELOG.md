@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.77
+
+- Add a [live shared native player](docs/LIVE_PLAYER.md): deferred launch, readiness inspection, guarded pause/resume/stop and fresh captures through the existing graphics context without advancing simulation.
+- Share a frame-driven native lifecycle with blocking playback. Finish accepted client batches before each frame; guard runtime ownership and replay, retain retry outcomes, and reconcile save replacement without stale input or borrowed runtime pointers.
+- Prepare player readback on demand, retain terminal reports and release graphics resources on completion. Qualify both laptop GPUs, compiled Native AOT UI/save callbacks, independent runtime/image continuation and preserved player/game contracts. [Evidence](docs/evidence/m2-live-player.json).
+- Publish a runnable observation playbook and a [documentation coverage inventory](docs/DOCUMENTATION_COVERAGE.md) for the manual, API reference, task guides and compact agent skills.
+
 ## 0.0.76
 
 - Add [portable native player settings](docs/PLAYER_SETTINGS.md) for FOV, pointer sensitivity/inversion, absolute UI scale, MSAA and outstanding graphics frames. Keep sparse preferences separate from authored worlds, input bindings and saves.

@@ -39,6 +39,7 @@
 #include <random>
 #include <set>
 #include <functional>
+#include <exception>
 #include <type_traits>
 
 namespace poima {
@@ -845,6 +846,13 @@ class World {
         exists_ = true;
     }
 public:
+    struct PlayerOwner;
+    // Latest owner retained for terminal metadata only; its GPU lifetime retires promptly.
+    std::unique_ptr<PlayerOwner> player_owner_;
+    std::uint64_t player_generation_=0,player_control_revision_=0;
+    struct PlayerReceipt;
+    std::array<std::unique_ptr<PlayerReceipt>,32> player_receipts_;
+    std::size_t player_receipt_next_=0;
     void require_registered_custom_type(const std::string& type) const {
         const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(type));
     }
@@ -1146,6 +1154,7 @@ public:
             try { return materials_.dispatch(method,params,asset_directory()); }
             catch(const materials::Error& error) { throw Error(error.code,error.what()); }
         }
+        if(method.starts_with("player."))return player_dispatch(method,params);
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
         if(method.starts_with("settings."))return settings_dispatch(method,params);
@@ -2414,129 +2423,26 @@ public:
         result["current_session_id"]=runtime_id_;const auto stats=stream->stats();result["tick"]=runtime_->inspect().tick;result["stream"]={{"frames",stats.frames},{"blocks",stats.blocks},{"voices_started",stats.voices_started},{"path_updates",stats.path_updates},{"peak",stats.peak},{"over_range_samples",stats.over_range_samples},{"dsp_ms",stats.dsp_ms}};
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
+#include "world_player_service.inc"
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides"},
-            {"session_id","request_id","expected_tick","camera","mode"});
-        identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
-        auto normalized=params; normalized["method"]="runtime.play";
-        for(const auto& receipt:playback_receipts_) if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
+        validate_player_parameters(params);
+        identifier(params.at("session_id"));identifier(params.at("request_id"));revision(params.at("expected_tick"));
+        auto normalized=params;normalized["method"]="runtime.play";
+        for(const auto& receipt:playback_receipts_)if(receipt["params"]["session_id"]==params.at("session_id") && receipt["params"]["request_id"]==params.at("request_id")) {
             require(receipt["params"]==normalized,"Runtime request ID reused with different parameters.",-32010);
-            auto result=receipt["result"]; result["replayed"]=true; return result;
+            auto result=receipt["result"];result["replayed"]=true;return result;
         }
-        runtime_guard(params);
-        const auto expected=revision(params.at("expected_tick"));
-        structure_mutation_guard(params);require(expected==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-        require(!params.contains("audio") || params.at("audio").is_boolean(),"audio must be Boolean.");
-        require(!params.value("audio",false) || audio_available(),"Player audio is not built.",-32003);
-        PlayerOptions options;options.audio=params.value("audio",false);
-        if(params.contains("controller"))options.controller=identifier(params.at("controller"));
-        options.camera=identifier(params.at("camera"));
-        require(params.at("mode")=="interactive" || params.at("mode")=="replay","Player mode must be interactive or replay.");
-        options.replay=params.at("mode")=="replay";
-        require(!options.replay || !options.controller.empty(),"Replay requires a CharacterController; interactive menus may omit controller.");
-        Json input_info={{"source","defaults"},{"revision",0},{"content_hash",nullptr},{"applied",!options.replay}};
-        require(!params.contains("input_revision") || params.contains("input_profile"),"input_revision requires input_profile.");
-        if(params.contains("input_profile")) {
-            try {
-                const auto loaded=(read_only_ ? input_profiles::load_read_only(input_profile_path(params.at("input_profile"))) : input_profiles::load(input_profile_path(params.at("input_profile"))));
-                if(params.contains("input_revision"))require(revision(params.at("input_revision"))==loaded.revision,"Input profile revision conflict.",-32009);
-                options.input_profile=std::make_shared<const InputProfile>(loaded.profile);
-                input_info={{"source","profile"},{"revision",loaded.revision},{"content_hash",loaded.content_hash},{"applied",!options.replay}};
-            }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
-        }
-        if(!options.input_profile)options.input_profile=std::make_shared<const InputProfile>(default_gamepad_input_profile());
-        options.gamepad_selection.mode=options.input_profile->gamepad ? "only_connected" : "disabled";
-        if(params.contains("gamepad")) {
-            const auto& choice=params.at("gamepad");fields(choice,{"mode","id"},{"mode"});
-            require(choice.at("mode")=="disabled" || choice.at("mode")=="only_connected" || choice.at("mode")=="explicit","Invalid gamepad selection mode.");
-            options.gamepad_selection.mode=choice.at("mode").get<std::string>();
-            require(choice.contains("id")== (options.gamepad_selection.mode=="explicit"),"Only explicit gamepad selection requires an id.");
-            if(choice.contains("id")) { const auto id=revision(choice.at("id"));require(id>=1 && id<=4294967295ULL,"Gamepad id must be a nonzero uint32.");options.gamepad_selection.id=static_cast<std::uint32_t>(id); }
-        }
-        require(options.gamepad_selection.mode=="disabled" || options.input_profile->gamepad.has_value(),"Gamepad selection requires a v2 profile; copy a v1 profile to a new v2 destination first.");
-        input_info["format"]=options.input_profile->gamepad ? "poima.input.v2" : "poima.input.v1";
-        const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
-            [&](const auto& e){return e.id==options.controller && e.character.has_value() && !e.character->camera.empty();});
-        require(options.controller.empty() || controller!=runtime_definition_.entities.end(),"Player requires a camera-bound CharacterController when controller is supplied.",-32004);
-        try { runtime_->snapshot(options.camera); }
-        catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
-        if(options.replay) {
-            require(!params.contains("max_frames"),"Replay ends with its sequence; max_frames is interactive only.");
-            require(params.contains("sequence") && params.at("sequence").is_array() && !params.at("sequence").empty() && params.at("sequence").size()<=256,
-                "Replay requires 1..256 input segments.");
-            std::uint64_t total=0;
-            for(auto segment:params.at("sequence")) {
-                fields(segment,{"ticks","move","look","jump","use","motions","sounds"},{"ticks"});
-                const auto ticks=revision(segment.at("ticks")); require(ticks>=1 && ticks<=600,"Replay segment must be 1..600 ticks.");
-                total+=ticks; require(total<=36000 && expected+total<=max_revision,"Replay exceeds the tick limit.");
-                auto motions=parse_motions(segment.value("motions",Json::array()));segment.erase("motions");
-                auto sounds=parse_sounds(segment.value("sounds",Json::array()));segment.erase("sounds");
-                segment.erase("ticks"); segment["entity"]=options.controller;
-                options.sequence.push_back({static_cast<std::uint32_t>(ticks),parse_input(segment),std::move(motions),std::move(sounds)});
-            }
-        } else {
-            require(!params.contains("sequence"),"Interactive play takes input from the window, not a replay sequence.");
-            if(params.contains("max_frames")) { const auto n=revision(params.at("max_frames")); require(n<=36000,"max_frames must be 0..36000."); options.max_frames=static_cast<std::uint32_t>(n); }
-        }
-        auto settings_application=apply_player_settings(params,options);
-        options.render.capture_exclusive=read_only_;
-        if(!options.replay && options.gamepad_selection.mode!="disabled") {
-            require(GamepadHost::available(),"Gamepad device host is not built.",-32003);
-            try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();options.gamepad_host=gamepad_host_; }
-            catch(const std::exception& e) { throw Error(-32071,e.what()); }
-        }
-
-        // Reserve the retry slot before entering an operation that may advance
-        // state. A failed/closed player reports its actual tick and is cached too.
-        auto receipts=playback_receipts_; if(receipts.size()==32) receipts.erase(receipts.begin());
+        auto prepared=prepare_player(params);
+        // Reserve the retry slot before any operation that may advance state.
+        auto receipts=playback_receipts_;if(receipts.size()==32)receipts.erase(receipts.begin());
         receipts.push_back({{"params",normalized},{"result",Json::object()}});
-        struct Session final : PlayerSession {
-            World& owner;explicit Session(World& value):owner(value) {}
-            std::string identity() const override { return owner.runtime_id_; }
-            std::uint64_t tick() const override { return owner.runtime_->inspect().tick; }
-            bool controller_valid(const std::string& id) const override {
-                return std::any_of(owner.runtime_definition_.entities.begin(),owner.runtime_definition_.entities.end(),
-                    [&](const auto& entity){return entity.id==id && entity.character && !entity.character->camera.empty();});
-            }
-            SceneSnapshot snapshot(const std::string& camera) const override { return owner.runtime_->snapshot(camera); }
-            PlayerAudioState audio_state(const std::string& listener) const override {
-                return {tick(),owner.runtime_->audio_snapshot(listener),owner.runtime_->sound_state().voices()};
-            }
-            std::shared_ptr<const ui::Presentation> ui_presentation() const override { return owner.runtime_->ui_model().presentation(); }
-            PlayerControlResult control(const std::string& session_id,std::uint64_t ui_revision,const std::string& target) override {
-                const auto result=owner.control_dispatch({{"session_id",session_id},{"request_id",new_id()},
-                    {"expected_tick",tick()},{"expected_ui_revision",ui_revision},
-                    {"expected_control_sequence",owner.runtime_->control_sequence()},
-                    {"expected_gameplay_revision",owner.runtime_->gameplay_revision()},
-                    {"expected_structure_revision",owner.runtime_->structure_revision()},{"id",target}});
-                return {static_cast<RuntimeControlIntent>(result.at("intent").get<std::uint32_t>()),result.at("save_serviced").get<bool>()};
-            }
-            bool advance(const std::vector<RuntimeInput>& inputs,const std::vector<KinematicTarget>& motions,const std::vector<SoundCommand>& sounds) override {
-                return owner.advance_runtime(1,inputs,motions,sounds).save_serviced;
-            }
-        } session(*this);
-        const auto report=run_player(options,session);
+        PlayerSessionAdapter session(*this);
+        const auto report=run_player(prepared.options,session);
         require(report.render.available,report.render.detail,-32003);
-        std::optional<SceneSnapshot> camera;try { camera=runtime_->snapshot(options.camera); }catch(const std::exception&) {}
-        Json result={{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"revision",runtime_definition_.authored_revision},
-            {"previous_tick",report.initial_tick},{"tick",report.final_tick},{"mode",params.at("mode")},{"replayed",false},
-            {"success",report.render.success},{"stop_reason",report.stop_reason},{"detail",report.render.detail},
-            {"frames_presented",report.render.frames_presented},{"swapchain_rebuilds",report.swapchain_rebuilds},
-            {"dropped_wall_seconds",report.dropped_seconds},{"gpu",report.render.gpu_name},{"hardware",report.render.hardware},
-            {"nvrhi_errors",report.render.validation_errors},{"width",report.render.width},{"height",report.render.height},{"samples",report.render.samples},
-            {"capture_written",report.render.capture_written},{"path",options.render.capture.empty() ? Json(nullptr) : Json(options.render.capture)},
-            {"camera",options.camera},{"camera_world",camera ? Json(camera->camera_world) : Json(nullptr)},{"lighting",camera ? lighting_json(camera->lighting) : Json(nullptr)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",build_metadata().version}};
-        result["initial_session_id"]=report.initial_session;result["current_session_id"]=report.final_session;result["runtime_replacements"]=report.runtime_replacements;
-        result["input_profile"]=input_info;result["gamepad"]=Json::parse(report.gamepad_json);
-        if(!settings_application.is_null()) {
-            finish_player_settings(settings_application,options,report,camera);
-            result["settings"]=std::move(settings_application);
-            result["input_profile"]["effective_content_hash"]=content_hash(input_profiles::profile_json(*options.input_profile).dump());
-        }
-        const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
-        receipts.back()["result"]=result; playback_receipts_.swap(receipts);
-        return result;
+        auto result=player_report_json(prepared.options,std::move(prepared.input_info),std::move(prepared.settings_application),report,params.at("mode"));
+        receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
+
 #include "world_ui.inc"
     const components::Schema& runtime_component_schema(const std::string& type) const {
         return authored_schema(runtime_->component_schemas(),type);
@@ -3095,6 +3001,20 @@ struct WorldSession::Impl {
 };
 WorldSession::WorldSession(const std::string& path,WorldOpenMode mode,const std::string& protected_root):impl_(std::make_unique<Impl>(path,mode,protected_root)) {}
 WorldSession::~WorldSession()=default;
+bool WorldSession::poll_player() {
+    require(!closed(),"World session is closed.",-32001);
+    profiling::Binding trace(&impl_->world.profiler(),profiling::Source::player);
+    return impl_->world.poll_player();
+}
+bool WorldSession::player_active() const {
+    return !closed() && impl_->world.player_active();
+}
+void WorldSession::stop_player() {
+    require(!closed(),"World session is closed.",-32001);
+    profiling::Binding trace(&impl_->world.profiler(),profiling::Source::player);
+    impl_->world.stop_player();
+}
+
 bool WorldSession::closed() const { return impl_->closed; }
 profiling::Recorder& WorldSession::profiler() noexcept { return impl_->world.profiler(); }
 WorldProfilerContext WorldSession::profiler_context() const { return impl_->world.profiler_context(); }
@@ -3111,7 +3031,10 @@ WorldTickAdvance WorldSession::advance_tick(const std::string& expected_session,
     const std::vector<RuntimeInput>& inputs) {
     require(!closed(),"World session is closed.",-32001);
     profiling::Binding trace(&impl_->world.profiler());
-    return impl_->world.advance_tick(expected_session,expected_tick,inputs);
+    impl_->world.guard_player_request("runtime.step");
+    const auto result=impl_->world.advance_tick(expected_session,expected_tick,inputs);
+    impl_->world.synchronize_player_request("runtime.step",Json::object());
+    return result;
 }
 WorldAudioState WorldSession::audio_state(const std::string& expected_session,std::uint64_t expected_tick,
     const std::string& listener) const {
@@ -3178,6 +3101,9 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             require(method!="world.capture" && method!="runtime.capture" && method!="asset.animation.capture" && method!="runtime.play",
                     "This operation creates a graphics lifetime; use editor.capture or the editor's runtime controls in a shared editor.",-32080);
         if(method=="host.shutdown")require(scope==WorldRequestScope::shared_headless,"Only a shared headless host supports host.shutdown.",-32080);
+        if(method=="player.start" || method=="player.control" || method=="player.capture")
+            require(scope==WorldRequestScope::shared_headless,"Player service mutations require a pumped shared headless owner.",-32080);
+        impl_->world.guard_player_request(method);
         const bool trace=!method.starts_with("profiler.");
         profiling::Binding trace_binding(trace ? &impl_->world.profiler() : nullptr,profiling::Source::request);
         const auto runtime=trace && profiling::active() ? impl_->world.profiler_context() : WorldProfilerContext{};
@@ -3185,6 +3111,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
         const bool trace_name_safe=std::all_of(method.begin(),method.end(),[](unsigned char c){return c>=32 && c<=126;});
         profiling::Scope trace_request(trace_name_safe ? std::string_view(method) : std::string_view("request.invalid_name"),runtime.tick);
         auto result=impl_->world.dispatch(method=="host.shutdown" ? "session.close" : method,request.value("params",Json::object()));
+        impl_->world.synchronize_player_request(method,result);
         if(method=="world.describe" && shared) {
             result["session_scope"]=scope==WorldRequestScope::shared_editor ? "shared_editor" : "shared_headless";
             result["methods"].erase("session.close");
@@ -3195,6 +3122,8 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
                 result["editor_discovery"]="editor.describe";
             }
         }
+        if(method=="world.describe" && scope!=WorldRequestScope::shared_headless)
+            for(const auto* name:{"player.start","player.control","player.capture"})result["methods"].erase(name);
         // Project only after scope restrictions, so focused discovery cannot
         // advertise an operation hidden from the full session descriptor.
         if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()),

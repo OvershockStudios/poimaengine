@@ -113,3 +113,8 @@ capability/schema discovery and compiled public interfaces so newly supported
 commands, components and package features cannot silently miss documentation.
 Mark coverage gaps explicitly; do not infer a complete manual from the number
 of pages or from the existence of a subsystem guide.
+
+The initial [coverage inventory](DOCUMENTATION_COVERAGE.md) maps supported
+mechanisms to their manual/reference, task, checks and human workflow gaps.
+It is the starting audit list; generated symbol reference, a searchable manual
+and evaluated installable skills are still documentation deliverables.

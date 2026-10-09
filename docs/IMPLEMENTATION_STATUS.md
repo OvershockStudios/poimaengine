@@ -1,8 +1,50 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.76**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.77**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.77 adds a [frame-driven shared native player](LIVE_PLAYER.md).
+`player.start` acknowledges a deferred graphics lifetime; `player.inspect`
+reports readiness separately. Two independent clients can inspect, pause,
+perform guarded edits or steps on an interactive runtime, and request fresh
+captures through the same graphics context. Capture does not advance simulation.
+Generation, identity and control guards protect owner changes; 32 bounded retry
+receipts retain original command outcomes. Replay supports observation,
+pause/resume and cancellation without accepting intervening runtime edits.
+Save load resolves the replacement runtime through the stable owner adapter,
+clears stale input/UI/audio state and pauses interactive presentation.
+Stopping presentation retains the runtime and terminal report. Mutation APIs
+require a shared headless host; standalone and desktop discovery omit them.
+
+The owner finishes its accepted request batch before one player frame, without
+recursive request dispatch inside simulation. The existing blocking player uses
+the same native frame driver. GPU initialization, readback, audio, imports and
+storage can still stall serialized requests; this is not a nonblocking or hard
+latency contract. On-demand captures reserve swapchain transfer capability and
+allocate readback staging lazily; ordinary player frames skip that copy.
+Schema revision is 66; authoring-core v1, protocol 1 and gameplay service epoch 7
+remain unchanged.
+
+Three native builds pass 47 selected authoring, input, shared-session, discovery,
+MCP, lifecycle and metadata regression checks. Two shared-player and two retained
+Windows Native AOT UI cohorts pass 558 RPCs with 14 clean owners. Twenty-two
+Windows Vulkan readbacks across AMD and NVIDIA cover the new lifecycle fixtures
+and runnable observation recipe, including changed pixels after actual stepping
+or compiled UI edits and exact saved/restored images. The separate native fixture
+checks deferred cancellation, replay tick consumption, replacement and device
+failure recovery. Existing blocking replay, targeted window-message, audio,
+settings and runtime-replacement checks pass, as does the preserved 0.0.75 Linux
+Native AOT locomotion game with 5,064 RPCs. Initial capture preparation and mock
+camera failures are retained with their corrections. These are small scripted
+fixtures, not physical-input, response-time or game-scale performance claims.
+[Evidence](evidence/m2-live-player.json).
+
+The [documentation coverage inventory](DOCUMENTATION_COVERAGE.md) maps supported
+mechanisms to manual/reference entries, task recipes and checks. It explicitly
+records missing human workflows, generated native/C# reference, searchable
+versioned documentation and evaluated agent skills. Current documentation is
+not a complete developer manual.
 
 Version 0.0.76 adds [portable player settings](PLAYER_SETTINGS.md): eight
 sparse, typed overrides for vertical FOV, pointer sensitivity/inversion, absolute

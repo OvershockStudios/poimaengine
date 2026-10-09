@@ -26,9 +26,18 @@ int run_shared_world(const std::string& world,const std::string& endpoint) {
     while(!stopping && !session.closed()) {
         for(const auto& request:host.poll())
             host.reply(request.token,session.request(request.payload,WorldRequestScope::shared_headless));
-        if(!stopping && !session.closed())host.wait(100);
+        // Requests and graphics share one owner thread. Finish each accepted
+        // batch before advancing one player frame; never recursively dispatch
+        // requests from inside a simulation tick or a graphics operation.
+        if(!stopping && !session.closed())session.poll_player();
+        if(!stopping && !session.closed())host.wait(session.player_active() ? 1 : 100);
     }
-    if(!session.closed())session.request(R"({"jsonrpc":"2.0","method":"session.close"})");
+    if(!session.closed()) {
+        // A signal closes presentation before releasing its runtime/session.
+        // Normal RPC shutdown requires the caller to stop the player first.
+        session.stop_player();
+        session.request(R"({"jsonrpc":"2.0","method":"session.close"})");
+    }
     // Deliver the shutdown receipt and already queued replies. This bounded
     // grace period does not wait indefinitely for clients that keep stdin open.
     const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(2);

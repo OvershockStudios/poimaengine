@@ -80,6 +80,12 @@ public:
     WorldSession& operator=(const WorldSession&)=delete;
     std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);
     bool closed() const;
+    // Shared-headless owner pump only: one frame per poll, no worker calls or
+    // borrowed Runtime lifetime. The driver pumps after its complete RPC batch.
+    bool poll_player();
+    bool player_active() const;
+    // Owner terminal report/teardown before host shutdown; never disconnect alone.
+    void stop_player();
     // Owner-thread diagnostic recorder; borrowed only within this session lifetime.
     profiling::Recorder& profiler() noexcept;
     WorldProfilerContext profiler_context() const;

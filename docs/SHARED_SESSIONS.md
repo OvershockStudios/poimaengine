@@ -33,6 +33,22 @@ For a headless host:
 
 Windows and Linux endpoints are separate OS facilities. From WSL, use the Windows `poima.exe connect` to reach a Windows editor, with Windows paths in operation parameters. Native Linux `poima connect` reaches a native Linux host.
 
+## Live player without an editor
+
+A Windows rendering/simulation host can run an independently controlled native
+player through `player.start`, `player.inspect`, `player.control` and
+`player.capture`. Start returns before graphics initialization; inspect readiness
+and completion separately. Clients can pause, inspect guarded runtime state,
+edit a paused interactive game and capture its existing graphics context.
+See the [complete task and lifecycle contract](LIVE_PLAYER.md).
+
+The host finishes each accepted request batch before one player frame. Every
+request and frame runs on the same owner thread, without recursive dispatch
+inside simulation. Idle transport waits remain 100 ms; an attached player uses
+a short transport wait between frames. GPU/audio/storage work can still stall
+all clients. Stop the player before stopping/replacing its runtime or shutting
+down the host. Disconnecting a client leaves presentation running.
+
 ## Desktop operations
 
 The current [desktop editor](DESKTOP_EDITOR.md) exposes `desktop.*` methods over this transport:

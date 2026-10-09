@@ -3,6 +3,7 @@
 #include "poima/core.hpp"
 #include "poima/runtime.hpp"
 #include "poima/gamepad.hpp"
+#include <memory>
 
 namespace poima {
 enum class PlayerAction { forward, backward, left, right, jump, use };
@@ -96,6 +97,32 @@ struct PlayerReport {
     double dropped_seconds=0;
     double effective_ui_scale=1; // Absolute player UI scale or actual window density.
     std::string stop_reason;
+};
+// One frame-driven native graphics lifetime. Every call and destruction belongs
+// to the creating thread; session must outlive the window. Initialization is
+// deferred until poll(). Poll commits at most eight interactive ticks (one replay
+// tick), then presents. Device/storage/audio waits retain their existing bounds.
+class PlayerWindow {
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
+public:
+    PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool initially_paused=false);
+    ~PlayerWindow();
+    PlayerWindow(const PlayerWindow&)=delete;
+    PlayerWindow& operator=(const PlayerWindow&)=delete;
+    bool poll(); // False once terminal; terminal report survives until destruction.
+    void pause(bool paused);
+    void request_stop();
+    // Reconcile owner replacement/edits before another host command. No tick is
+    // advanced. Replacement clears input/presentation; replay terminates.
+    void synchronize();
+    bool paused() const;
+    bool finished() const;
+    bool ready() const; // Initialized, with a current successful presentation.
+    PlayerReport report() const; // Owned partial/final CPU state; no graphics drain.
+    // Observe a fresh owner snapshot through this live context, without stepping.
+    // The caller validates the output path; capture_exclusive is honored.
+    RenderReport capture(const std::string& path);
 };
 PlayerReport run_player(const PlayerOptions& options, PlayerSession& session);
 }

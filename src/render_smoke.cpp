@@ -430,7 +430,7 @@ struct Context {
     std::string gpu_name;
     bool swapchain_dirty=false;
     bool shadow_ready=false,skin_pipeline_ready=false,renderer_fault=false;
-    bool editor=false,hosted=false,scene_visible=true,capture_exclusive=false;
+    bool editor=false,hosted=false,player_context=false,scene_visible=true,capture_exclusive=false;
     std::optional<nvrhi::Viewport> scene_viewport;
     std::vector<EditorOverlayVertex> overlay_data;
     nvrhi::ShaderHandle overlay_vs,overlay_ps;
@@ -548,7 +548,7 @@ struct Context {
         require(!source || !source->logical_ui || source->logical_ui->elements.empty(),"This renderer was built without native game UI presentation support.");
 #endif
         if(source && source->ui)validate_ui_frame(*source->ui);
-        scene = source;capture_exclusive=options.capture_exclusive;
+        scene = source;capture_exclusive=options.capture_exclusive;player_context=player;
         deferred=options.deferred;diagnostics.deferred=deferred;
         ambient_occlusion=options.ambient_occlusion;diagnostics.ambient_occlusion=ambient_occlusion;
         require(ambient_occlusion.mode==AmbientOcclusionMode::none || ambient_occlusion.mode==AmbientOcclusionMode::gtao,"Invalid ambient occlusion mode.");
@@ -1700,10 +1700,10 @@ struct Context {
         }
         require(nvrhi_format != nvrhi::Format::UNKNOWN, "No supported 8-bit RGBA/BGRA surface format.");
         format = selected.format;
-        // Editor IPC may request its first screenshot long after startup. Keep
-        // transfer support and one staging image ready without requiring a
-        // configured final-capture path; ordinary frames still skip the copy.
-        const bool capture_enabled=editor || hosted || !options.capture.empty();
+        // Player/editor owners may request a screenshot after startup. Reserve
+        // swapchain transfer capability now; player readback allocation remains
+        // lazy unless a final capture was configured. Ordinary frames skip copies.
+        const bool capture_enabled=editor || hosted || player_context || !options.capture.empty();
         const auto required_usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferDst |
             (capture_enabled ? vk::ImageUsageFlagBits::eTransferSrc : vk::ImageUsageFlags{});
         require((caps.supportedUsageFlags & required_usage) == required_usage, "Surface lacks required render/capture image usage.");
@@ -1713,6 +1713,8 @@ struct Context {
             extent.height = std::clamp(options.height, caps.minImageExtent.height, caps.maxImageExtent.height);
         }
         require(extent.width > 0 && extent.height > 0, "The window has an empty rendering extent.");
+        if(player_context)require(extent.width<=4096 && extent.height<=4096,
+            "Player drawable exceeds the initial 4096-pixel limit.");
         validate_game_ui();
         if(editor || hosted)require(std::uint64_t(extent.width)*extent.height<=128u*1024u*1024u/4u,
             "GUI surface exceeds the 128 MiB RGBA staging budget.");
@@ -1876,11 +1878,7 @@ struct Context {
             }
         }
         for(auto& slot:slots)if(!slot.acquired)slot.acquired=device.createSemaphore({},nullptr,dispatch);
-        if (capture_enabled) {
-            texture_desc.isRenderTarget = false;
-            staging = checked->createStagingTexture(texture_desc, nvrhi::CpuAccessMode::Read);
-            require(static_cast<bool>(staging), "NVRHI capture staging texture creation failed.");
-        }
+        if(editor || hosted || !options.capture.empty())prepare_capture_staging();
         return true;
     }
 
@@ -1970,6 +1968,23 @@ struct Context {
             for(float value:sample.resolved_hdr)require(std::isfinite(value),"Resolved HDR probe is nonfinite.");
         }
         diagnostics.scene_products.probes=std::move(samples_out);
+    }
+    void prepare_capture_staging() {
+        if(staging)return;
+        require(checked && !images.empty(),"Capture requires an initialized swapchain.");
+        const auto& source=images.front()->getDesc();
+        require(source.width==extent.width && source.height==extent.height && source.sampleCount==1,
+            "Capture source must match the single-sample swapchain extent.");
+        require(std::uint64_t(source.width)*source.height<=128u*1024u*1024u/4u,
+            "Capture surface exceeds the 128 MiB RGBA staging budget.");
+        nvrhi::TextureDesc desc;desc.width=source.width;desc.height=source.height;
+        desc.format=source.format;desc.isRenderTarget=false;desc.isShaderResource=false;
+        desc.debugName="Native owner capture staging";
+        // No simulation, swapchain rebuild, history reset or command recording:
+        // this is an owned readback allocation for the current surface only.
+        auto prepared=checked->createStagingTexture(desc,nvrhi::CpuAccessMode::Read);
+        require(bool(prepared),"NVRHI capture staging texture creation failed.");
+        staging=std::move(prepared);
     }
     void capture(const std::string& path) {
         profiling::Scope profile_scope("renderer.capture_readback_write");
@@ -2616,6 +2631,7 @@ struct Context {
             require(bool(slot.skin_readback),"Frame skin readback allocation failed.");
         }
         cluster_readback=slot.cluster_readback;skin_readback=slot.skin_readback;
+        if(capture_frame)prepare_capture_staging();
         prepare_game_ui();prepare_submission_history();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
@@ -2994,244 +3010,388 @@ EditorViewportResources EditorViewport::resources() const {
 }
 #endif
 
-PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
-    profiling::SourceScope player_source(profiling::Source::player);
-    profiling::Scope player_scope("player.run");
+struct PlayerWindow::Impl {
+    PlayerOptions options;
+    PlayerSession& session;
     PlayerReport result;
-    auto& report=result.render;
-    result.initial_tick=session.tick();
-    result.initial_session=result.final_session=session.identity();
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
-    BoundPlayerInput input(options.input_profile ? *options.input_profile : default_gamepad_input_profile());
+    BoundPlayerInput input;
     struct GamepadBinding { GamepadHost* host=nullptr; ~GamepadBinding() { if(host)try { host->stop(); }catch(...) {} } } gamepad_binding;
-    auto* gamepads=options.replay ? nullptr : options.gamepad_host.get();
-    result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
+    GamepadHost* gamepads=nullptr;
     std::unique_ptr<PlayerAudio> audio;
-    try {
+    std::thread::id owner=std::this_thread::get_id();
+    bool initialized=false,done=false,quit=false,owner_paused=false;
+    bool focused=false,captured=false,active=false,ui_ready=false,ui_presented=false;
+    std::size_t segment=0;
+    std::uint32_t offset=0;
+    std::uint64_t previous=0;
+    explicit Impl(const PlayerOptions& requested,PlayerSession& value,bool paused)
+        :options(requested),session(value),input(requested.input_profile ? *requested.input_profile : default_gamepad_input_profile()),owner_paused(paused) {
+        result.initial_tick=result.final_tick=session.tick();
+        result.initial_session=result.final_session=session.identity();
+        context.player_ui_scale=options.ui_scale;
+        result.effective_ui_scale=options.ui_scale.value_or(1.f);
+        gamepads=options.replay ? nullptr : options.gamepad_host.get();
+        result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
+        result.render.detail="Native player awaits its first owner poll.";
+    }
+    void check_thread() const {
+        if(std::this_thread::get_id()!=owner)throw std::runtime_error("Player window calls require its creating thread.");
+    }
+    bool ui_modal() const { return snapshot.logical_ui && !snapshot.logical_ui->modal.empty(); }
+    bool ui_available() const { return snapshot.logical_ui && !snapshot.logical_ui->elements.empty(); }
+    void refresh_report() {
+        if(gamepads)result.gamepad_json=gamepads->status_json();
+        if(audio)result.audio=audio->report();
+        result.final_tick=session.tick();result.final_session=session.identity();result.dropped_seconds=clock.dropped_seconds();
+        result.effective_ui_scale=context.effective_game_ui_scale();
+        auto& report=result.render;
+        report.width=context.extent.width;report.height=context.extent.height;report.samples=context.samples;
+        report.hardware=context.hardware;report.gpu_name=context.gpu_name;
+        report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
+    }
+    void initialize() {
         require((options.controller.empty() && !options.replay) || session.controller_valid(options.controller),"Player requires an active CharacterController when selected; replay requires a controller.");
         snapshot=player_snapshot(options,session);
         context.player_ui_scale=options.ui_scale;
         context.initialize(options.render,&snapshot,true,nullptr,options.replay);
+        initialized=true;
         result.effective_ui_scale=context.effective_game_ui_scale();
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio)audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera));
-        bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
-        bool captured=!options.replay && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
-        bool active=!options.replay && focused;
-        bool ui_ready=false,ui_presented=false;
-        auto ui_modal=[&] { return snapshot.logical_ui && !snapshot.logical_ui->modal.empty(); };
-        auto ui_available=[&] { return snapshot.logical_ui && !snapshot.logical_ui->elements.empty(); };
+        focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
+        captured=!owner_paused && !options.replay && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
+        active=!owner_paused && !options.replay && focused;
+        ui_ready=false;ui_presented=false;
         if(gamepads) { gamepad_binding.host=gamepads;gamepads->start(input,options.gamepad_selection);gamepads->activate(active); }
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
-        bool quit=false;
-        std::size_t segment=0;
-        std::uint32_t offset=0;
-        auto previous=SDL_GetTicksNS();
-        auto after_advance=[&](bool save_serviced) {
-            if(save_serviced)previous=SDL_GetTicksNS();
-            const auto current=session.identity();
-            profiling::SessionScope current_session(current);
-            if(current==result.final_session) {
-                if(audio)audio->advance(session.audio_state(options.camera));
-                return false;
-            }
-            result.final_session=current;++result.runtime_replacements;
-            // Runtime ownership changed only after the committed owner advance.
-            // Never reuse catch-up ticks, pending edges or DSP from that timeline.
-            captured=false;active=false;input.clear();
-            ui_ready=false;ui_presented=false;context.reset_game_ui_input();
-            if(gamepads)gamepads->activate(false);
-            require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
-            clock.advance(0,false);previous=SDL_GetTicksNS();
-            if(audio)audio->discard_pending();
-            require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
-            snapshot=player_snapshot(options,session);
-            if(audio)audio->reset(session.audio_state(options.camera));
-            if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
-            else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
-            return true;
-        };
-        auto ui_event=[&](const UiInput& event) {
-            if(!ui_presented || !ui_available())return ui_modal();
-            auto physical=event;
-            if(event.kind==UiInputKind::pointer_move || event.kind==UiInputKind::pointer_down || event.kind==UiInputKind::pointer_up || event.kind==UiInputKind::pointer_wheel) {
-                int logical_width=0,logical_height=0;
-                require(SDL_GetWindowSize(context.window,&logical_width,&logical_height),SDL_GetError());
-                if(logical_width<=0 || logical_height<=0) {context.reset_game_ui_input();ui_ready=false;ui_presented=false;return ui_modal();}
-                physical.x*=static_cast<float>(context.extent.width)/static_cast<float>(logical_width);
-                physical.y*=static_cast<float>(context.extent.height)/static_cast<float>(logical_height);
-            }
-            const auto response=context.dispatch_game_ui_input(physical,ui_ready);
-            if(response.activated) {
-                const auto accepted=session.control(result.final_session,snapshot.logical_ui->revision,*response.activated);
-                const bool replaced=after_advance(accepted.save_serviced);
-                if(!replaced && accepted.intent!=RuntimeControlIntent::none) {
-                    active=accepted.intent==RuntimeControlIntent::resume;
-                    captured=false;input.clear();clock.advance(0,false);previous=SDL_GetTicksNS();
-                    SDL_SetWindowRelativeMouseMode(context.window,false);
-                    if(gamepads)gamepads->activate(active);
-                }
-                snapshot=player_snapshot(options,session);
-                // Same-session queued events still target the visible old UI.
-                // Until redraw, consume its regions without invoking Control.
-                ui_ready=false;context.reset_game_ui_input();
-            }
-            return response.consumed;
-        };
-        while(!quit) {
-            profiling::SessionScope frame_session(result.final_session);
-            profiling::Scope frame_scope("player.frame",static_cast<std::int64_t>(session.tick()));
-            if(!options.replay && ui_modal()) {
-                if(captured)SDL_SetWindowRelativeMouseMode(context.window,false);
-                captured=false;input.clear();
-            }
-            const bool navigable=snapshot.logical_ui && std::any_of(snapshot.logical_ui->elements.begin(),snapshot.logical_ui->elements.end(),
-                [](const auto& row) {return row.eligible && row.element.kind==ui::Kind::button;});
-            if(gamepads)gamepads->ui_active(focused && (ui_modal() || navigable) && !captured);
-            SDL_Event event;
-            while(SDL_PollEvent(&event)) {
-                if(event.type==SDL_EVENT_QUIT || event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) { quit=true; result.stop_reason="window_closed"; }
-                if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_ESCAPE) {
-                    if(!options.replay && ui_modal()) {ui_event({UiInputKind::cancel});continue;}
-                    quit=true; result.stop_reason="escape";
-                }
-                if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
-                    focused=false; captured=false; active=false; input.clear();if(gamepads)gamepads->activate(false);
-                    ui_ready=false;ui_presented=false;context.reset_game_ui_input();if(gamepads)gamepads->ui_active(false);
-                    if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
-                }
-                if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
-                if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-                    context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
-                }
-                if(options.replay) continue;
-                if(gamepads) {
-                    if(event.type==SDL_EVENT_GAMEPAD_ADDED) { gamepads->added(event.gdevice.which);continue; }
-                    if(event.type==SDL_EVENT_GAMEPAD_REMOVED) { gamepads->removed(event.gdevice.which);continue; }
-                    if(event.type==SDL_EVENT_GAMEPAD_REMAPPED) { gamepads->remapped(event.gdevice.which);continue; }
-                    if(event.type==SDL_EVENT_GAMEPAD_AXIS_MOTION) { gamepads->axis(event.gaxis.which,event.gaxis.axis,event.gaxis.value);continue; }
-                    if(event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN || event.type==SDL_EVENT_GAMEPAD_BUTTON_UP) {
-                        if(gamepads->button(event.gbutton.which,event.gbutton.button,event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN) && focused) {
-                            active=!active;input.clear();gamepads->activate(active);
-                            if(!active) { captured=false;SDL_SetWindowRelativeMouseMode(context.window,false); }
-                        }
-                        continue;
-                    }
-                }
-                if(focused && !captured && ui_available()) {
-                    std::optional<UiInput> routed;
-                    if(event.type==SDL_EVENT_MOUSE_MOTION)routed=UiInput{UiInputKind::pointer_move,event.motion.x,event.motion.y};
-                    else if((event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP) && event.button.button==SDL_BUTTON_LEFT)
-                        routed=UiInput{event.type==SDL_EVENT_MOUSE_BUTTON_DOWN ? UiInputKind::pointer_down : UiInputKind::pointer_up,event.button.x,event.button.y};
-                    else if(event.type==SDL_EVENT_MOUSE_WHEEL)routed=UiInput{UiInputKind::pointer_wheel,event.wheel.mouse_x,event.wheel.mouse_y,
-                        std::clamp(event.wheel.direction==SDL_MOUSEWHEEL_FLIPPED ? event.wheel.y : -event.wheel.y,-100.f,100.f)};
-                    else if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
-                        if(event.key.repeat)continue;
-                        routed=UiInput{(event.key.mod & SDL_KMOD_SHIFT) ? UiInputKind::focus_previous : UiInputKind::focus_next};
-                    } else if((event.type==SDL_EVENT_KEY_DOWN || event.type==SDL_EVENT_KEY_UP) && event.key.scancode==SDL_SCANCODE_RETURN) {
-                        if(event.type==SDL_EVENT_KEY_DOWN && event.key.repeat)continue;
-                        routed=UiInput{event.type==SDL_EVENT_KEY_DOWN ? UiInputKind::accept_down : UiInputKind::accept_up};
-                    }
-                    if(routed && ui_event(*routed))continue;
-                    if(ui_modal())continue;
-                }
-                if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
-                    captured=false;active=false;input.clear();if(gamepads)gamepads->activate(false);SDL_SetWindowRelativeMouseMode(context.window,false);
-                }
-                if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured && !options.controller.empty()) {
-                    const bool resuming=!active;require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());captured=true;active=true;
-                    if(resuming) { input.clear();if(gamepads)gamepads->activate(true); }continue;
-                }
-                if(!focused || !active) continue;
-                if(event.type==SDL_EVENT_MOUSE_MOTION && captured) input.motion(event.motion.xrel,event.motion.yrel);
-                if((event.type==SDL_EVENT_KEY_DOWN && !event.key.repeat) || event.type==SDL_EVENT_KEY_UP)
-                    input.control(InputControlKind::keyboard,static_cast<std::uint16_t>(event.key.scancode),event.type==SDL_EVENT_KEY_DOWN);
-                if(captured && (event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP))
-                    input.control(InputControlKind::mouse,event.button.button,event.type==SDL_EVENT_MOUSE_BUTTON_DOWN);
-            }
-            if(gamepads) {
-                const auto batch=gamepads->drain_ui_events();
-                if(batch.reset)context.reset_game_ui_input();
-                for(std::uint32_t i=0;i<batch.count && focused && !captured;++i) {
-                    const auto action=batch.events[i];
-                    const auto kind=action==GamepadUiAction::next ? UiInputKind::focus_next : action==GamepadUiAction::previous ? UiInputKind::focus_previous :
-                        action==GamepadUiAction::accept_down ? UiInputKind::accept_down : action==GamepadUiAction::accept_up ? UiInputKind::accept_up : UiInputKind::cancel;
-                    ui_event({kind});
-                }
-            }
-            if(audio)audio->active(options.replay || (focused && active));
-            if(quit) break;
-            // Occluded FIFO swapchains can return immediately. Keep an idle
-            // editor/player from spinning at thousands of frames per second.
-            if(!options.replay && !(focused && active)) SDL_Delay(16);
-            int width=0,height=0;
-            require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
-            const auto now=SDL_GetTicksNS();
-            const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
-            const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
-            if(!drawable) { clock.advance(0,false); SDL_Delay(10); continue; }
-            require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
-            if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
-                auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
-                if(!context.rebuild(resized)) { clock.advance(0,false); SDL_Delay(10); continue; }
-                ++result.swapchain_rebuilds;
-            }
-            if(options.replay) {
-                if(segment==options.sequence.size()) { result.stop_reason="replay_complete"; break; }
-                auto control=options.sequence[segment].input;
-                if(offset!=0) { control.look={0,0}; control.jump=false;control.use=false; }
-                const bool save_serviced=session.advance({control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{},offset==0 ? options.sequence[segment].sounds : std::vector<SoundCommand>{});
-                if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
-                after_advance(save_serviced);
-            } else {
-                const auto ticks=clock.advance(elapsed,focused && active);
-                for(std::uint32_t tick=0;tick<ticks;++tick) {
-                    const bool save_serviced=session.advance(options.controller.empty() ? std::vector<RuntimeInput>{} : std::vector<RuntimeInput>{input.peek(options.controller)});
-                    if(after_advance(save_serviced))break;
-                    if(!options.controller.empty())input.consume(options.controller);
-                    // A gameplay tick can open a modal during catch-up. Clear
-                    // held input before the next tick, not after all eight.
-                    snapshot.logical_ui=session.ui_presentation();
-                    if(ui_modal()) {
-                        captured=false;input.clear();SDL_SetWindowRelativeMouseMode(context.window,false);
-                        if(gamepads)gamepads->ui_active(focused);
-                    }
-                }
-            }
-            profiling::SessionScope render_session(result.final_session);
-            profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
-            snapshot=player_snapshot(options,session); context.update_scene();
-            ui_ready=context.frame(false);ui_presented=ui_ready;
-            if(ui_ready) ++report.frames_presented;
-            if(!quit && options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
-        }
-        profiling::SessionScope final_session(result.final_session);
-        if(audio)audio->finish(session.audio_state(options.camera));
-        if(!options.render.capture.empty()) {
-            profiling::SessionScope capture_session(result.final_session);
-            profiling::Scope capture_scope("player.final_capture",static_cast<std::int64_t>(session.tick()));
-            // Final artifact observes the exact final tick without simulating an
-            // extra tick. Rebuild once if the surface changed during shutdown.
-            snapshot=player_snapshot(options,session); context.update_scene();
-            bool drawn=context.frame(true);
-            if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
-            require(drawn,"Surface kept changing during final player capture.");
-            ++report.frames_presented; context.capture(options.render.capture); report.capture_written=true;
-        }
-        context.retire_frames(true);
-        report.success=true;
-        report.detail="Continuous native viewport using the fixed-step runtime; bounded Vulkan presentation, no frame-time qualification.";
-    } catch(const std::exception& error) {
-        report.detail=error.what(); result.stop_reason="error";
+        previous=SDL_GetTicksNS();
     }
-    if(gamepads)result.gamepad_json=gamepads->status_json();
-    if(audio)result.audio=audio->report();
-    result.final_tick=session.tick();result.final_session=session.identity(); result.dropped_seconds=clock.dropped_seconds();
-    result.effective_ui_scale=context.effective_game_ui_scale();
-    report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;
-    report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
-    return result;
+    bool after_advance(bool save_serviced) {
+        if(save_serviced)previous=SDL_GetTicksNS();
+        const auto current=session.identity();
+        profiling::SessionScope current_session(current);
+        if(current==result.final_session) {
+            if(audio)audio->advance(session.audio_state(options.camera));
+            return false;
+        }
+        result.final_session=current;++result.runtime_replacements;
+        // Runtime ownership changed only after the committed owner advance.
+        // Never reuse catch-up ticks, pending edges or DSP from that timeline.
+        captured=false;active=false;owner_paused=true;input.clear();
+        ui_ready=false;ui_presented=false;context.reset_game_ui_input();
+        if(gamepads)gamepads->activate(false);
+        require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
+        clock.advance(0,false);previous=SDL_GetTicksNS();
+        if(audio)audio->discard_pending();
+        require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
+        snapshot=player_snapshot(options,session);
+        if(audio)audio->reset(session.audio_state(options.camera));
+        if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
+        else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
+        return true;
+    }
+    bool ui_event(const UiInput& event) {
+        if(!ui_presented || !ui_available())return ui_modal();
+        auto physical=event;
+        if(event.kind==UiInputKind::pointer_move || event.kind==UiInputKind::pointer_down || event.kind==UiInputKind::pointer_up || event.kind==UiInputKind::pointer_wheel) {
+            int logical_width=0,logical_height=0;
+            require(SDL_GetWindowSize(context.window,&logical_width,&logical_height),SDL_GetError());
+            if(logical_width<=0 || logical_height<=0) {context.reset_game_ui_input();ui_ready=false;ui_presented=false;return ui_modal();}
+            physical.x*=static_cast<float>(context.extent.width)/static_cast<float>(logical_width);
+            physical.y*=static_cast<float>(context.extent.height)/static_cast<float>(logical_height);
+        }
+        const auto response=context.dispatch_game_ui_input(physical,ui_ready);
+        if(response.activated) {
+            const auto accepted=session.control(result.final_session,snapshot.logical_ui->revision,*response.activated);
+            const bool replaced=after_advance(accepted.save_serviced);
+            if(!replaced && accepted.intent!=RuntimeControlIntent::none) {
+                owner_paused=accepted.intent!=RuntimeControlIntent::resume;
+                active=!owner_paused && focused;
+                captured=false;input.clear();clock.advance(0,false);previous=SDL_GetTicksNS();
+                SDL_SetWindowRelativeMouseMode(context.window,false);
+                if(gamepads)gamepads->activate(active);
+            }
+            snapshot=player_snapshot(options,session);
+            // Same-session queued events still target the visible old UI.
+            // Until redraw, consume its regions without invoking Control.
+            ui_ready=false;context.reset_game_ui_input();
+        }
+        return response.consumed;
+    }
+    void pause(bool value) {
+        owner_paused=value;captured=false;input.clear();clock.advance(0,false);
+        active=!value && initialized && !options.replay && focused;
+        if(initialized) {
+            previous=SDL_GetTicksNS();
+            require(SDL_SetWindowRelativeMouseMode(context.window,false),SDL_GetError());
+            context.reset_game_ui_input();ui_ready=false;
+        }
+        if(gamepads && gamepad_binding.host)gamepads->activate(active);
+        if(audio)audio->active(!value && (options.replay || (focused && active)));
+    }
+    void synchronize() {
+        if(done)return;
+        const auto identity=session.identity();
+        if(!initialized) {
+            if(identity!=result.final_session) {
+                result.final_session=identity;++result.runtime_replacements;owner_paused=true;
+                if(options.replay) {quit=true;result.stop_reason="runtime_replaced";}
+            }
+            result.final_tick=session.tick();return;
+        }
+        if(identity!=result.final_session)after_advance(false);
+        else if(session.tick()!=result.final_tick) {
+            // Explicit paused stepping belongs to a different input clock.
+            pause(true);ui_presented=false;
+            if(audio)audio->reset(session.audio_state(options.camera));
+            if(options.replay) {quit=true;result.stop_reason="runtime_changed";}
+        }
+        const auto old_ui=snapshot.logical_ui;
+        snapshot=player_snapshot(options,session);
+        if(bool(old_ui)!=bool(snapshot.logical_ui) || (old_ui && snapshot.logical_ui &&
+            old_ui->revision!=snapshot.logical_ui->revision)) {
+            ui_ready=false;ui_presented=false;context.reset_game_ui_input();
+        }
+        result.final_tick=session.tick();
+    }
+    void frame() {
+        profiling::SessionScope frame_session(result.final_session);
+        profiling::Scope frame_scope("player.frame",static_cast<std::int64_t>(session.tick()));
+        if(!options.replay && ui_modal()) {
+            if(captured)SDL_SetWindowRelativeMouseMode(context.window,false);
+            captured=false;input.clear();
+        }
+        const bool navigable=snapshot.logical_ui && std::any_of(snapshot.logical_ui->elements.begin(),snapshot.logical_ui->elements.end(),
+            [](const auto& row) {return row.eligible && row.element.kind==ui::Kind::button;});
+        if(gamepads)gamepads->ui_active(focused && (ui_modal() || navigable) && !captured);
+        SDL_Event event;
+        for(std::uint32_t events=0;events<256 && SDL_PollEvent(&event);++events) {
+            if(event.type==SDL_EVENT_QUIT || event.type==SDL_EVENT_WINDOW_CLOSE_REQUESTED) { quit=true; result.stop_reason="window_closed"; }
+            if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_ESCAPE) {
+                if(!options.replay && ui_modal()) {ui_event({UiInputKind::cancel});continue;}
+                quit=true; result.stop_reason="escape";
+            }
+            if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
+                focused=false; captured=false; active=false; if(!options.replay)owner_paused=true; input.clear();if(gamepads)gamepads->activate(false);
+                ui_ready=false;ui_presented=false;context.reset_game_ui_input();if(gamepads)gamepads->ui_active(false);
+                if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
+            }
+            if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
+            if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
+                context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
+            }
+            if(options.replay) continue;
+            if(gamepads) {
+                if(event.type==SDL_EVENT_GAMEPAD_ADDED) { gamepads->added(event.gdevice.which);continue; }
+                if(event.type==SDL_EVENT_GAMEPAD_REMOVED) { gamepads->removed(event.gdevice.which);continue; }
+                if(event.type==SDL_EVENT_GAMEPAD_REMAPPED) { gamepads->remapped(event.gdevice.which);continue; }
+                if(event.type==SDL_EVENT_GAMEPAD_AXIS_MOTION) { gamepads->axis(event.gaxis.which,event.gaxis.axis,event.gaxis.value);continue; }
+                if(event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN || event.type==SDL_EVENT_GAMEPAD_BUTTON_UP) {
+                    if(gamepads->button(event.gbutton.which,event.gbutton.button,event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN) && focused) {
+                        active=!active;owner_paused=!active;input.clear();gamepads->activate(active);
+                        if(!active) { captured=false;SDL_SetWindowRelativeMouseMode(context.window,false); }
+                    }
+                    continue;
+                }
+            }
+            if(focused && !captured && ui_available()) {
+                std::optional<UiInput> routed;
+                if(event.type==SDL_EVENT_MOUSE_MOTION)routed=UiInput{UiInputKind::pointer_move,event.motion.x,event.motion.y};
+                else if((event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP) && event.button.button==SDL_BUTTON_LEFT)
+                    routed=UiInput{event.type==SDL_EVENT_MOUSE_BUTTON_DOWN ? UiInputKind::pointer_down : UiInputKind::pointer_up,event.button.x,event.button.y};
+                else if(event.type==SDL_EVENT_MOUSE_WHEEL)routed=UiInput{UiInputKind::pointer_wheel,event.wheel.mouse_x,event.wheel.mouse_y,
+                    std::clamp(event.wheel.direction==SDL_MOUSEWHEEL_FLIPPED ? event.wheel.y : -event.wheel.y,-100.f,100.f)};
+                else if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
+                    if(event.key.repeat)continue;
+                    routed=UiInput{(event.key.mod & SDL_KMOD_SHIFT) ? UiInputKind::focus_previous : UiInputKind::focus_next};
+                } else if((event.type==SDL_EVENT_KEY_DOWN || event.type==SDL_EVENT_KEY_UP) && event.key.scancode==SDL_SCANCODE_RETURN) {
+                    if(event.type==SDL_EVENT_KEY_DOWN && event.key.repeat)continue;
+                    routed=UiInput{event.type==SDL_EVENT_KEY_DOWN ? UiInputKind::accept_down : UiInputKind::accept_up};
+                }
+                if(routed && ui_event(*routed))continue;
+                if(ui_modal())continue;
+            }
+            if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
+                captured=false;active=false;owner_paused=true;input.clear();if(gamepads)gamepads->activate(false);SDL_SetWindowRelativeMouseMode(context.window,false);
+            }
+            if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured && !options.controller.empty()) {
+                const bool resuming=!active;require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());captured=true;active=true;owner_paused=false;
+                if(resuming) { input.clear();if(gamepads)gamepads->activate(true); }continue;
+            }
+            if(!focused || !active) continue;
+            if(event.type==SDL_EVENT_MOUSE_MOTION && captured) input.motion(event.motion.xrel,event.motion.yrel);
+            if((event.type==SDL_EVENT_KEY_DOWN && !event.key.repeat) || event.type==SDL_EVENT_KEY_UP)
+                input.control(InputControlKind::keyboard,static_cast<std::uint16_t>(event.key.scancode),event.type==SDL_EVENT_KEY_DOWN);
+            if(captured && (event.type==SDL_EVENT_MOUSE_BUTTON_DOWN || event.type==SDL_EVENT_MOUSE_BUTTON_UP))
+                input.control(InputControlKind::mouse,event.button.button,event.type==SDL_EVENT_MOUSE_BUTTON_DOWN);
+        }
+        if(gamepads) {
+            const auto batch=gamepads->drain_ui_events();
+            if(batch.reset)context.reset_game_ui_input();
+            for(std::uint32_t i=0;i<batch.count && focused && !captured;++i) {
+                const auto action=batch.events[i];
+                const auto kind=action==GamepadUiAction::next ? UiInputKind::focus_next : action==GamepadUiAction::previous ? UiInputKind::focus_previous :
+                    action==GamepadUiAction::accept_down ? UiInputKind::accept_down : action==GamepadUiAction::accept_up ? UiInputKind::accept_up : UiInputKind::cancel;
+                ui_event({kind});
+            }
+        }
+        if(audio)audio->active(!owner_paused && (options.replay || (focused && active)));
+        if(quit) return;
+        // Occluded FIFO swapchains can return immediately. Keep an idle
+        // editor/player from spinning at thousands of frames per second.
+        if(!options.replay && !(focused && active)) SDL_Delay(16);
+        int width=0,height=0;
+        require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
+        const auto now=SDL_GetTicksNS();
+        const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
+        const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
+        if(!drawable) { clock.advance(0,false); SDL_Delay(10); return; }
+        require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
+        if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
+            auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
+            if(!context.rebuild(resized)) { clock.advance(0,false); SDL_Delay(10); return; }
+            ++result.swapchain_rebuilds;
+        }
+        if(options.replay && !owner_paused) {
+            if(segment==options.sequence.size()) { quit=true;result.stop_reason="replay_complete"; return; }
+            auto control=options.sequence[segment].input;
+            if(offset!=0) { control.look={0,0}; control.jump=false;control.use=false; }
+            const bool save_serviced=session.advance({control},offset==0 ? options.sequence[segment].motions : std::vector<KinematicTarget>{},offset==0 ? options.sequence[segment].sounds : std::vector<SoundCommand>{});
+            if(++offset==options.sequence[segment].ticks) { offset=0; ++segment; }
+            after_advance(save_serviced);
+        } else if(!options.replay) {
+            const auto ticks=clock.advance(elapsed,!owner_paused && focused && active);
+            for(std::uint32_t tick=0;tick<ticks;++tick) {
+                const bool save_serviced=session.advance(options.controller.empty() ? std::vector<RuntimeInput>{} : std::vector<RuntimeInput>{input.peek(options.controller)});
+                if(after_advance(save_serviced))break;
+                if(!options.controller.empty())input.consume(options.controller);
+                // A gameplay tick can open a modal during catch-up. Clear
+                // held input before the next tick, not after all eight.
+                snapshot.logical_ui=session.ui_presentation();
+                if(ui_modal()) {
+                    captured=false;input.clear();SDL_SetWindowRelativeMouseMode(context.window,false);
+                    if(gamepads)gamepads->ui_active(focused);
+                }
+            }
+        }
+        profiling::SessionScope render_session(result.final_session);
+        profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
+        snapshot=player_snapshot(options,session); context.update_scene();
+        ui_ready=context.frame(false);ui_presented=ui_ready;
+        if(ui_ready) ++result.render.frames_presented;
+        if(!quit && options.max_frames && result.render.frames_presented>=options.max_frames) { quit=true;result.stop_reason="frame_limit"; }
+    }
+    void finish() {
+        if(done)return;
+        try {
+            profiling::SessionScope final_session(result.final_session);
+            if(initialized && audio)audio->finish(session.audio_state(options.camera));
+            if(initialized && !options.render.capture.empty()) {
+                profiling::SessionScope capture_session(result.final_session);
+                profiling::Scope capture_scope("player.final_capture",static_cast<std::int64_t>(session.tick()));
+                // Final artifact observes the exact final tick without simulating an
+                // extra tick. Rebuild once if the surface changed during shutdown.
+                snapshot=player_snapshot(options,session); context.update_scene();
+                bool drawn=context.frame(true);
+                if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
+                require(drawn,"Surface kept changing during final player capture.");
+                ++result.render.frames_presented; context.capture(options.render.capture); result.render.capture_written=true;
+            }
+            if(context.checked)context.retire_frames(true);
+            result.render.success=true;
+            result.render.detail="Continuous native viewport using the fixed-step runtime; bounded Vulkan presentation, no frame-time qualification.";
+        }catch(const std::exception& error) {
+            result.render.success=false;result.render.detail=error.what();result.stop_reason="error";
+        }
+        done=true;quit=true;active=false;captured=false;input.clear();
+        if(gamepads && gamepad_binding.host)gamepads->activate(false);
+        if(initialized)SDL_SetWindowRelativeMouseMode(context.window,false);
+        refresh_report();
+    }
+    void fail(const std::exception& error) noexcept {
+        // A synchronization fault follows an already committed owner operation;
+        // it must become a terminal player result, not escape as a failed edit.
+        done=true;quit=true;active=false;captured=false;input.clear();result.render.success=false;
+        try {result.render.detail=error.what();result.stop_reason="error";}catch(...) {}
+        try {if(gamepads && gamepad_binding.host)gamepads->activate(false);}catch(...) {}
+        if(initialized)SDL_SetWindowRelativeMouseMode(context.window,false);
+        try {if(audio)audio->active(false);}catch(...) {}
+        // Cleanup/device-report failures cannot hide the committed owner tick.
+        try {result.final_tick=session.tick();}catch(...) {}
+        try {result.final_session=session.identity();}catch(...) {}
+        // Graphics teardown remains the destructor's responsibility on failure;
+        // partial inspection never drains or replays failed work.
+        try {refresh_report();}catch(...) {}
+    }
+};
+PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool initially_paused)
+    :impl_(std::make_unique<Impl>(options,session,initially_paused)) {}
+PlayerWindow::~PlayerWindow()=default;
+bool PlayerWindow::poll() {
+    auto& state=*impl_;state.check_thread();if(state.done)return false;
+    profiling::SourceScope source(profiling::Source::player);
+    try {
+        state.synchronize();
+        if(!state.quit && !state.initialized)state.initialize();
+        if(!state.quit)state.frame();
+        if(state.quit)state.finish();else state.refresh_report();
+    }catch(const std::exception& error) {state.fail(error);}
+    return !state.done;
+}
+void PlayerWindow::pause(bool paused) {
+    auto& state=*impl_;state.check_thread();require(!state.done,"Player window is finished.");state.pause(paused);state.refresh_report();
+}
+void PlayerWindow::request_stop() {
+    auto& state=*impl_;state.check_thread();if(state.done || state.quit)return;
+    state.quit=true;state.result.stop_reason="requested_stop";
+}
+void PlayerWindow::synchronize() {
+    auto& state=*impl_;state.check_thread();if(state.done)return;
+    try {state.synchronize();if(state.quit)state.finish();else state.refresh_report();}
+    catch(const std::exception& error) {state.fail(error);}
+}
+bool PlayerWindow::paused() const {
+    impl_->check_thread();return impl_->owner_paused || (!impl_->options.replay && impl_->initialized && !impl_->active);
+}
+bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
+bool PlayerWindow::ready() const {impl_->check_thread();return impl_->initialized && impl_->ui_presented && !impl_->quit && !impl_->done;}
+PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+RenderReport PlayerWindow::capture(const std::string& path) {
+    auto& state=*impl_;state.check_thread();
+    require(!path.empty() && path.size()<=4096 && path.find('\0')==std::string::npos,"Player capture requires a bounded, nonempty, NUL-free output path.");
+    require(ready(),"Player capture requires a live initialized and presented window.");
+    profiling::SourceScope source(profiling::Source::player);
+    profiling::SessionScope session(state.result.final_session);
+    profiling::Scope scope("player.capture",static_cast<std::int64_t>(state.session.tick()));
+    try {
+        state.synchronize();require(ready(),"Player changed before capture; present the new owner first.");
+        state.snapshot=player_snapshot(state.options,state.session);state.context.update_scene();
+        bool drawn=state.context.frame(true);
+        if(!drawn) {
+            require(state.context.rebuild(state.options.render),"Window is minimized; player capture unavailable.");
+            ++state.result.swapchain_rebuilds;state.context.update_scene();drawn=state.context.frame(true);
+        }
+        require(drawn,"Surface kept changing during player capture.");
+        ++state.result.render.frames_presented;state.context.capture(path);
+        state.ui_ready=true;state.ui_presented=true;state.previous=SDL_GetTicksNS();
+        state.refresh_report();auto report=state.result.render;report.capture_written=true;report.success=true;
+        report.detail="Current native player captured without advancing simulation.";return report;
+    }catch(const std::exception& error) {
+        state.ui_ready=false;state.ui_presented=false;state.previous=SDL_GetTicksNS();
+        if(state.context.renderer_fault)state.fail(error);
+        throw;
+    }catch(...) {
+        state.ui_ready=false;state.ui_presented=false;state.previous=SDL_GetTicksNS();throw;
+    }
+}
+PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
+    profiling::SourceScope source(profiling::Source::player);
+    profiling::Scope scope("player.run");
+    PlayerWindow window(options,session);
+    while(window.poll()) {}
+    return window.report();
 }
 } // namespace poima
