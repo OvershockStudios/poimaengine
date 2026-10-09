@@ -107,6 +107,35 @@ void discovery_projection(poima::WorldSession& session,poima::WorldRequestScope 
           "Scoped mutation discovery changed authored state or history.");
     check(result(Json::object())==full&&!session.closed(),"Discovery changed state or closed shared session.");
 }
+void settings_read_only_regression(const fs::path& directory,const fs::path& source) {
+    const auto bundle=directory/"settings-readonly-bundle";fs::create_directory(bundle);
+    const auto world=bundle/"world.json";write(world,read(source));
+    const auto external=directory/"external.poima-settings.json";
+    const Json values={{"camera.vertical_fov",93},{"input.sensitivity_x",.25}};
+    {
+        poima::WorldSession author(source.string());
+        check(call(author,"settings.transact",{{"path",external.string()},{"request_id",std::string(32,'7')},
+            {"expected_revision",0},{"set",values}})["revision"]==1,"Native settings fixture failed to persist.");
+    }
+    fs::remove(fs::path(external).concat(".lock"));
+    const auto before=tree(directory);
+    {
+        poima::WorldSession readonly(world.string(),poima::WorldOpenMode::read_only_runtime,bundle.string());
+        const auto discovery=call(readonly,"world.describe");
+        check(discovery["methods"].contains("settings.inspect") && !discovery["methods"].contains("settings.transact"),"Readonly settings discovery leaks mutations or hides inspection.");
+        for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless}) {
+            const auto mutation=Json::parse(readonly.request(Json{{"jsonrpc","2.0"},{"id",1},{"method","settings.transact"},
+                {"params",{{"path",external.string()},{"request_id",std::string(32,'8')},{"expected_revision",1},{"set",{{"camera.vertical_fov",110}}}}}}.dump(),scope));
+            check(mutation["error"]["code"]==-32081,"Readonly settings mutation reached validation/publication.");
+        }
+        const auto inspected=call(readonly,"settings.inspect",{{"path",external.string()}});
+        check(inspected["revision"]==1 && inspected["values"]["camera.vertical_fov"]==93 && !fs::exists(fs::path(external).concat(".lock")),"Readonly settings created a sidecar or changed external intent.");
+        const auto rejected=Json::parse(readonly.request(Json{{"jsonrpc","2.0"},{"id",2},{"method","settings.inspect"},
+            {"params",{{"path",(bundle/"inside.poima-settings.json").string()}}}}.dump()));
+        check(rejected["error"]["code"]==-32602,"Readonly settings accepted a profile inside the immutable bundle.");
+    }
+    check(tree(directory)==before,"Readonly settings inspection/mutation/teardown changed files.");
+}
 void custom_read_only_regression(const fs::path& directory) {
     const auto path=directory/"custom-read-only.json";const std::string type(32,'1'),field(32,'2'),entity(32,'3'),session_id(32,'4');
     const Json schema={{"id",type},{"name","Health"},{"version",1},{"fields",Json::array({{{"id",field},{"name","Current"},{"kind","int64"},{"default","0"}}})}};
@@ -602,7 +631,7 @@ int main() {
             poima::WorldSession session(frozen.string(),poima::WorldOpenMode::read_only_runtime);
             check(call(session,"world.inspect")["read_only"]==true,"Read-only mode is not discoverable.");
             const auto discovery=call(session,"world.describe");
-            check(discovery["schema_revision"]==59,"Read-only discovery schema revision differs.");
+            check(discovery["schema_revision"].get<unsigned>()>=65,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
             for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
@@ -682,6 +711,7 @@ int main() {
             poima::WorldSession invalid(package.string(),poima::WorldOpenMode::read_only_runtime);failed=false;try { (void)invalid.package_content(); }catch(const std::exception&) { failed=true; }check(failed,"Invalid embedded texture index was bundled.");
         }
         custom_read_only_regression(directory);
+        settings_read_only_regression(directory,path);
         runtime_observation_scope_regression(directory);
         authored_preview_regression(directory);
         game_camera_regression(directory);

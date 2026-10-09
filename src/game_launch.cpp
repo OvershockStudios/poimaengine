@@ -91,6 +91,22 @@ Reply run_game(const GameLaunchOptions& options) {
         Json params={{"session_id",session},{"request_id",id()},{"expected_tick",0},{"controller",game.controller},{"camera",game.camera},
             {"mode",options.replay.empty() ? "interactive" : "replay"},{"audio",game.audio},{"width",options.render.width},{"height",options.render.height},
             {"samples",options.render.samples},{"culling",options.render.culling},{"profile",options.render.profile}};
+        const bool has_settings=!options.settings_profile.empty() || !options.settings_overrides.empty() || options.settings_revision.has_value();
+        if(has_settings && !options.samples_explicit)params.erase("samples");
+        if(options.frames_in_flight_explicit)params["frames_in_flight"]=options.render.frames_in_flight;
+        if(!options.settings_profile.empty())params["settings_profile"]=text_of(fs::absolute(path_of(options.settings_profile)).lexically_normal());
+        if(options.settings_revision)params["settings_revision"]=*options.settings_revision;
+        if(!options.settings_overrides.empty()) {
+            require(options.settings_overrides.size()<=65536,"Settings overrides exceed 64 KiB.");
+            std::vector<std::set<std::string>> keys;
+            params["settings_overrides"]=Json::parse(options.settings_overrides,[&](int depth,Json::parse_event_t event,Json& value) {
+                require(depth<=16,"Settings overrides exceed the nesting limit.");
+                if(event==Json::parse_event_t::object_start)keys.emplace_back();
+                if(event==Json::parse_event_t::key)require(!keys.empty() && keys.back().insert(value.get<std::string>()).second,"Duplicate settings override ID.");
+                if(event==Json::parse_event_t::object_end)keys.pop_back();
+                return true;
+            });
+        }
         if(options.render.gpu>=0)params["gpu"]=options.render.gpu;
         if(!options.render.capture.empty())params["path"]=text_of(normalized(options.render.capture));
         if(!options.replay.empty())params["sequence"]=std::move(sequence);else params["max_frames"]=options.max_frames;

@@ -50,6 +50,8 @@ Add `input_profile:"personal.poima-input.json"` to `runtime.play`. Optional `inp
 
 Play reports `input_profile` with `source` (`defaults` or `profile`), format, revision, content hash (null for built-in defaults) and `applied`. Interactive play applies bindings. Replay validates an explicitly supplied profile but consumes its existing semantic movement/look/action sequence directly (`applied:false`), with physical gamepads inactive. Changing bindings therefore does not reinterpret a recorded replay. A retried play request returns the original play receipt and profile metadata.
 
+[Player settings](PLAYER_SETTINGS.md) can layer sensitivity and inversion over the loaded input profile for one launch. Bindings, analog processing and persisted profile bytes remain separate. The play report retains the original profile identity and adds `effective_content_hash` for the resolved evaluator. Recorded replay still consumes semantic controls directly.
+
 ## Storage and qualification
 
 Writes use a cooperative lock, bounded validation, flushed staging, a previous valid copy (`.previous`) and atomic file replacement. Failures before publication preserve the current profile. Corrupt/newer-format files are rejected without automatic overwrite or migration; recovery from a backup is manual in this slice. Atomic replacement does not establish universal power-loss durability, and a separate process that ignores the cooperative lock is outside the concurrency guarantee.

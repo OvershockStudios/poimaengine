@@ -317,6 +317,8 @@ struct Context {
     nvrhi::CommandListHandle commands;
     nvrhi::StagingTextureHandle staging;
     const SceneSnapshot* scene = nullptr;
+    // Set only by run_player; captures and editor contexts inherit window DPI.
+    std::optional<float> player_ui_scale;
     std::uint32_t samples = 1;
     nvrhi::TextureHandle depth;
     nvrhi::TextureHandle multisample_color;
@@ -2001,6 +2003,10 @@ struct Context {
         if(!scene->ui->draws.empty())require(format==vk::Format::eB8G8R8A8Srgb || format==vk::Format::eR8G8B8A8Srgb,
             "Game UI requires an sRGB composition attachment; UNORM composition is not supported.");
     }
+    float effective_game_ui_scale() const {
+        if(player_ui_scale)return *player_ui_scale;
+        return window ? std::clamp(SDL_GetWindowDisplayScale(window),.25f,8.f) : 1.f;
+    }
     void resolve_game_ui() {
         game_ui_source=scene ? scene->ui : nullptr;
 #if POIMA_GAME_UI
@@ -2013,7 +2019,7 @@ struct Context {
             static_cast<std::int32_t>(std::ceil(view.maxX)),static_cast<std::int32_t>(std::ceil(view.maxY))};
         if(rect[0]>=rect[2] || rect[1]>=rect[3]) {game_ui_source.reset();return;}
         if(!game_ui_presenter)game_ui_presenter=std::make_unique<UiPresenter>();
-        const float scale=std::clamp(SDL_GetWindowDisplayScale(window),.25f,8.f);
+        const float scale=effective_game_ui_scale();
         const auto layout=game_ui_presenter->frame(scene->logical_ui,static_cast<std::uint32_t>(rect[2]-rect[0]),static_cast<std::uint32_t>(rect[3]-rect[1]),scale);
         const std::array<std::uint32_t,2> target_extent{extent.width,extent.height};
         if(game_ui_layout_frame!=layout || game_ui_layout_rect!=rect || game_ui_layout_extent!=target_extent) {
@@ -3005,8 +3011,10 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
     std::unique_ptr<PlayerAudio> audio;
     try {
         require((options.controller.empty() && !options.replay) || session.controller_valid(options.controller),"Player requires an active CharacterController when selected; replay requires a controller.");
-        snapshot=session.snapshot(options.camera);
+        snapshot=player_snapshot(options,session);
+        context.player_ui_scale=options.ui_scale;
         context.initialize(options.render,&snapshot,true,nullptr,options.replay);
+        result.effective_ui_scale=context.effective_game_ui_scale();
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio)audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera));
         bool focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
@@ -3039,7 +3047,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             clock.advance(0,false);previous=SDL_GetTicksNS();
             if(audio)audio->discard_pending();
             require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
-            snapshot=session.snapshot(options.camera);
+            snapshot=player_snapshot(options,session);
             if(audio)audio->reset(session.audio_state(options.camera));
             if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
             else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
@@ -3065,7 +3073,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
                     SDL_SetWindowRelativeMouseMode(context.window,false);
                     if(gamepads)gamepads->activate(active);
                 }
-                snapshot=session.snapshot(options.camera);
+                snapshot=player_snapshot(options,session);
                 // Same-session queued events still target the visible old UI.
                 // Until redraw, consume its regions without invoking Control.
                 ui_ready=false;context.reset_game_ui_input();
@@ -3194,7 +3202,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             }
             profiling::SessionScope render_session(result.final_session);
             profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
-            snapshot=session.snapshot(options.camera); context.update_scene();
+            snapshot=player_snapshot(options,session); context.update_scene();
             ui_ready=context.frame(false);ui_presented=ui_ready;
             if(ui_ready) ++report.frames_presented;
             if(!quit && options.max_frames && report.frames_presented>=options.max_frames) { result.stop_reason="frame_limit"; break; }
@@ -3206,7 +3214,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
             profiling::Scope capture_scope("player.final_capture",static_cast<std::int64_t>(session.tick()));
             // Final artifact observes the exact final tick without simulating an
             // extra tick. Rebuild once if the surface changed during shutdown.
-            snapshot=session.snapshot(options.camera); context.update_scene();
+            snapshot=player_snapshot(options,session); context.update_scene();
             bool drawn=context.frame(true);
             if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
             require(drawn,"Surface kept changing during final player capture.");
@@ -3221,6 +3229,7 @@ PlayerReport run_player(const PlayerOptions& options, PlayerSession& session) {
     if(gamepads)result.gamepad_json=gamepads->status_json();
     if(audio)result.audio=audio->report();
     result.final_tick=session.tick();result.final_session=session.identity(); result.dropped_seconds=clock.dropped_seconds();
+    result.effective_ui_scale=context.effective_game_ui_scale();
     report.width=context.extent.width; report.height=context.extent.height; report.samples=context.samples;
     report.hardware=context.hardware; report.gpu_name=context.gpu_name; report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
     return result;

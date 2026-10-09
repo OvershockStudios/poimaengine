@@ -1,0 +1,1036 @@
+{
+  "format": "poima.player-settings-qualification",
+  "version": 1,
+  "engine_version": "0.0.76",
+  "date": "2026-10-09",
+  "passed": true,
+  "contracts": {
+    "authoring_core": "v1",
+    "protocol": 1,
+    "schema_revision": 65,
+    "gameplay_services_epoch": 7
+  },
+  "scope": [
+    "Portable sparse launch-time settings independent of world/input/save files.",
+    "Eight existing owners: FOV, pointer sensitivity/inversion, absolute UI scale, MSAA and bounded graphics submissions.",
+    "Windows Vulkan and native Linux headless; no live menu or C# settings ABI."
+  ],
+  "sources": {
+    "CMakeLists.txt": "c28d7b23e9c2c56d713989c9ec08223e24541ba0293a150bd2a492f5a9702cb8",
+    "include/poima/game_launch.hpp": "21f708de4e787fc18b087cdc88a8d1b21559d685f864df5ceb5d977bf82f1b6b",
+    "include/poima/player.hpp": "b3b59e4865183d9f6fd561626c1ff8c834f18970249cf8973e4e501b21cfaaec",
+    "src/core.cpp": "f08328cd9943b84b1bfac15a2790db70d12ebe3a1eadce0cf1bf749b12b154fe",
+    "src/game_launch.cpp": "791c4dca38e5d2274bcc2e7e2f4f0e39a58502b661cadba388e86460fc1ac65f",
+    "src/main.cpp": "afff242ecddfc5c8aa0f8ad36ccf93d722e502e6dc946372aa975c9e503c008d",
+    "src/player.cpp": "b8df4080cdebc9638726e5e317991084b1bedea3e56f6ccacc4a8719d371feff",
+    "src/render_smoke.cpp": "81f2e819ec285d33b8bcd1aad6515de2541bddaf76961bff4b43e9f377e2ce38",
+    "src/world.cpp": "ed1b02b6a005ee5e91c91c1b0a2fc62cce8073ab158e5e52928dd8ab8ae7465d",
+    "src/world_schema.cpp": "892672898fdbf75206c9d37acd85a153a809045de9f4c470e88b752b7b0d094e",
+    "src/player_settings_store.hpp": "e42cd571ed9b2f6da453297ebf21ca8e2d4e5bca6dca3a6b5d823c7623b646a8",
+    "src/player_settings_store.cpp": "ef1ef0ec0178cb3ad947e1c3f92f6ef932b4e08116cecf7316bbae640cbb82fa",
+    "src/world_player_settings.inc": "25adce277b73c377b42dcffbda0f5177f09b00e7936c9f027ad5dd90c97f22e3",
+    "tests/player_preferences_native.cpp": "3f7b57bc04de8670499a5e44b684aba370ad36678c73a656cf91ca46a5671b96",
+    "tests/player_settings_contract.py": "170f3fb8b43e135a3803424a6f63ef468801b4c67313f767ccfb43b5664a772f",
+    "tests/world_session_native.cpp": "aee50285f629971c7152325c1dbc346064e786a84328cbbd25c1f4380dd7fb63",
+    "docs/PLAYER_SETTINGS.md": "66a1eadf4fe2dee9c8b0cea34c5c4f0995b525e8a56b498e4f06fecb3dfe2d2b"
+  },
+  "native_builds": [
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "seconds": 14.76481341500039,
+      "binary_sha256": "62c4757da4efad7cf6b03a03bd06f7ecab0926c3c60bd839489e86d9a4b24ad1",
+      "log_sha256": "64836a3b28b2c98233deefc29f054b3300db81bd1f78977ec0949a3b84e48778"
+    },
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "seconds": 64.26931129500008,
+      "binary_sha256": "41f88bd662af6b68601d8fcb6eb3665d4f4d93552ee2454fd5ee20d24ee7f410",
+      "log_sha256": "aa443664d0865690c8358e5bf06a538a41d2486b20e193a6543c7434dc49ada1"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "seconds": 1.824111724999966,
+      "binary_sha256": "3dfde4fd3711d8fbeab41ec193aa8804a83fe9d3287c06a2cc5324552de75d4c",
+      "log_sha256": "c0769e0b5550b6028e6bdc10a7c15f5c6010078a3745d666cd375d45189c27ff"
+    }
+  ],
+  "cohorts": [
+    {
+      "label": "linux-protocol-final",
+      "evidence_sha256": "6cfd1b606e9ceeb33df37531e90b5e4a5b601129f7fb2be8137053b90da32f66",
+      "binary_sha256": "62c4757da4efad7cf6b03a03bd06f7ecab0926c3c60bd839489e86d9a4b24ad1",
+      "verifier_sha256": "cbf438df67089f5a9feb9dcbc2eaf3c003d95d9c56b26d82e203a502c4a821df",
+      "protocol_tests": 7,
+      "rpc_count": 89,
+      "clean_owners": 58
+    },
+    {
+      "label": "authoring-protocol-final",
+      "evidence_sha256": "cd9c92900342095382abe4c9492c314842d4f6bbb296f7e99ac8e1a71db5926f",
+      "binary_sha256": "3dfde4fd3711d8fbeab41ec193aa8804a83fe9d3287c06a2cc5324552de75d4c",
+      "verifier_sha256": "170f3fb8b43e135a3803424a6f63ef468801b4c67313f767ccfb43b5664a772f",
+      "protocol_tests": 7,
+      "rpc_count": 89,
+      "clean_owners": 58
+    },
+    {
+      "label": "windows-gpu0-release",
+      "evidence_sha256": "2e233f0ed1a35ce463bf83a11372cf577b0177826ad8475ef57c774e56b94179",
+      "binary_sha256": "41f88bd662af6b68601d8fcb6eb3665d4f4d93552ee2454fd5ee20d24ee7f410",
+      "verifier_sha256": "170f3fb8b43e135a3803424a6f63ef468801b4c67313f767ccfb43b5664a772f",
+      "protocol_tests": 7,
+      "rpc_count": 108,
+      "clean_owners": 65,
+      "vulkan": {
+        "passed": true,
+        "gpu": 0,
+        "hardware_name": "AMD Radeon(TM) Graphics",
+        "projection_height_pixels": 54,
+        "independent_expected_height_pixels": 53.33333333333334,
+        "override_projection_height_pixels": 92,
+        "independent_override_expected_height_pixels": 92.37604307034012,
+        "exact_authored_reference_pixels": true,
+        "semantic_replay_unchanged": true,
+        "ui_scale_rendered_bounds": {
+          "1.5": {
+            "independent_expected_bounds": [
+              36.0,
+              78.0,
+              252.0,
+              132.0
+            ],
+            "pixel_bounds": [
+              36,
+              78,
+              252,
+              132
+            ],
+            "native_layout": {
+              "bounds": [
+                36.0,
+                78.0,
+                252.0,
+                132.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                640.0,
+                480.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "000000000000000000000000000001f6",
+              "kind": "button",
+              "visible": true
+            }
+          },
+          "1": {
+            "independent_expected_bounds": [
+              24,
+              52,
+              168,
+              88
+            ],
+            "pixel_bounds": [
+              24,
+              52,
+              168,
+              88
+            ],
+            "native_layout": {
+              "bounds": [
+                24.0,
+                52.0,
+                168.0,
+                88.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                640.0,
+                480.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "000000000000000000000000000001f6",
+              "kind": "button",
+              "visible": true
+            }
+          }
+        },
+        "unscaled_ui_pixels_differ": true,
+        "settings": {
+          "application": "next_player",
+          "fields": {
+            "camera.vertical_fov": {
+              "effective": 90.0,
+              "outcome": "applied",
+              "requested": 90.0,
+              "source": "profile"
+            },
+            "graphics.frames_in_flight": {
+              "effective": 1,
+              "outcome": "applied",
+              "requested": 1,
+              "source": "profile"
+            },
+            "graphics.samples": {
+              "effective": 1,
+              "outcome": "applied",
+              "requested": 1,
+              "source": "profile"
+            },
+            "input.invert_x": {
+              "effective": true,
+              "outcome": "validated_only",
+              "requested": true,
+              "source": "profile"
+            },
+            "input.invert_y": {
+              "effective": false,
+              "outcome": "validated_only",
+              "requested": false,
+              "source": "profile"
+            },
+            "input.sensitivity_x": {
+              "effective": 0.23,
+              "outcome": "validated_only",
+              "requested": 0.23,
+              "source": "profile"
+            },
+            "input.sensitivity_y": {
+              "effective": 0.17,
+              "outcome": "validated_only",
+              "requested": 0.17,
+              "source": "profile"
+            },
+            "ui.scale": {
+              "effective": 1.5,
+              "outcome": "applied",
+              "requested": 1.5,
+              "source": "profile"
+            }
+          },
+          "format": "poima.settings.application.v1",
+          "profile": {
+            "content_hash": "d28611d488f452bad93200594bc4025f9a6293890abb2d84929f111ff285230e",
+            "revision": 1,
+            "source": "profile"
+          }
+        },
+        "explicit_settings": {
+          "application": "next_player",
+          "fields": {
+            "camera.vertical_fov": {
+              "effective": 60.0,
+              "outcome": "applied",
+              "requested": 60.0,
+              "source": "session_override"
+            },
+            "graphics.frames_in_flight": {
+              "effective": 2,
+              "outcome": "applied",
+              "requested": 2,
+              "source": "explicit_option"
+            },
+            "graphics.samples": {
+              "effective": 4,
+              "outcome": "applied",
+              "requested": 4,
+              "source": "explicit_option"
+            },
+            "input.invert_x": {
+              "effective": true,
+              "outcome": "validated_only",
+              "requested": true,
+              "source": "profile"
+            },
+            "input.invert_y": {
+              "effective": false,
+              "outcome": "validated_only",
+              "requested": false,
+              "source": "profile"
+            },
+            "input.sensitivity_x": {
+              "effective": 0.23,
+              "outcome": "validated_only",
+              "requested": 0.23,
+              "source": "profile"
+            },
+            "input.sensitivity_y": {
+              "effective": 0.17,
+              "outcome": "validated_only",
+              "requested": 0.17,
+              "source": "profile"
+            },
+            "ui.scale": {
+              "effective": 1.5,
+              "outcome": "applied",
+              "requested": 1.5,
+              "source": "profile"
+            }
+          },
+          "format": "poima.settings.application.v1",
+          "profile": {
+            "content_hash": "d28611d488f452bad93200594bc4025f9a6293890abb2d84929f111ff285230e",
+            "revision": 1,
+            "source": "profile"
+          }
+        },
+        "images": {
+          "profile.bmp": "363d12dc933f1dbb02ad3fb59aa1da9ea85fa5b6f3aaf41d81548deac76aa368",
+          "reference.bmp": "363d12dc933f1dbb02ad3fb59aa1da9ea85fa5b6f3aaf41d81548deac76aa368",
+          "unscaled-ui.bmp": "a0e69921574299d9e062991386717f15d7453a468cf6e5b3edd22edabcc4415a",
+          "overrides.bmp": "481e43ab8272b54d4fe1a7868445e5a21dc2e8aa5b595ed22cdf889f0dfa43bd"
+        },
+        "limitations": [
+          "Recorded look values are semantic degrees, not physical pointer input",
+          "UI layout hittability is queried virtually; no physical activation test"
+        ]
+      }
+    },
+    {
+      "label": "windows-gpu1-export-final",
+      "evidence_sha256": "94ca8fe52560894837fc076af488e222de46e02f48757a47cd9164bca2c736da",
+      "binary_sha256": "41f88bd662af6b68601d8fcb6eb3665d4f4d93552ee2454fd5ee20d24ee7f410",
+      "verifier_sha256": "170f3fb8b43e135a3803424a6f63ef468801b4c67313f767ccfb43b5664a772f",
+      "protocol_tests": 7,
+      "rpc_count": 108,
+      "clean_owners": 65,
+      "vulkan": {
+        "passed": true,
+        "gpu": 1,
+        "hardware_name": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "projection_height_pixels": 54,
+        "independent_expected_height_pixels": 53.33333333333334,
+        "override_projection_height_pixels": 92,
+        "independent_override_expected_height_pixels": 92.37604307034012,
+        "exact_authored_reference_pixels": true,
+        "semantic_replay_unchanged": true,
+        "ui_scale_rendered_bounds": {
+          "1.5": {
+            "independent_expected_bounds": [
+              36.0,
+              78.0,
+              252.0,
+              132.0
+            ],
+            "pixel_bounds": [
+              36,
+              78,
+              252,
+              132
+            ],
+            "native_layout": {
+              "bounds": [
+                36.0,
+                78.0,
+                252.0,
+                132.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                640.0,
+                480.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "000000000000000000000000000001f6",
+              "kind": "button",
+              "visible": true
+            }
+          },
+          "1": {
+            "independent_expected_bounds": [
+              24,
+              52,
+              168,
+              88
+            ],
+            "pixel_bounds": [
+              24,
+              52,
+              168,
+              88
+            ],
+            "native_layout": {
+              "bounds": [
+                24.0,
+                52.0,
+                168.0,
+                88.0
+              ],
+              "clip": [
+                0.0,
+                0.0,
+                640.0,
+                480.0
+              ],
+              "enabled": true,
+              "focused": false,
+              "hittable": true,
+              "id": "000000000000000000000000000001f6",
+              "kind": "button",
+              "visible": true
+            }
+          }
+        },
+        "unscaled_ui_pixels_differ": true,
+        "settings": {
+          "application": "next_player",
+          "fields": {
+            "camera.vertical_fov": {
+              "effective": 90.0,
+              "outcome": "applied",
+              "requested": 90.0,
+              "source": "profile"
+            },
+            "graphics.frames_in_flight": {
+              "effective": 1,
+              "outcome": "applied",
+              "requested": 1,
+              "source": "profile"
+            },
+            "graphics.samples": {
+              "effective": 1,
+              "outcome": "applied",
+              "requested": 1,
+              "source": "profile"
+            },
+            "input.invert_x": {
+              "effective": true,
+              "outcome": "validated_only",
+              "requested": true,
+              "source": "profile"
+            },
+            "input.invert_y": {
+              "effective": false,
+              "outcome": "validated_only",
+              "requested": false,
+              "source": "profile"
+            },
+            "input.sensitivity_x": {
+              "effective": 0.23,
+              "outcome": "validated_only",
+              "requested": 0.23,
+              "source": "profile"
+            },
+            "input.sensitivity_y": {
+              "effective": 0.17,
+              "outcome": "validated_only",
+              "requested": 0.17,
+              "source": "profile"
+            },
+            "ui.scale": {
+              "effective": 1.5,
+              "outcome": "applied",
+              "requested": 1.5,
+              "source": "profile"
+            }
+          },
+          "format": "poima.settings.application.v1",
+          "profile": {
+            "content_hash": "d28611d488f452bad93200594bc4025f9a6293890abb2d84929f111ff285230e",
+            "revision": 1,
+            "source": "profile"
+          }
+        },
+        "explicit_settings": {
+          "application": "next_player",
+          "fields": {
+            "camera.vertical_fov": {
+              "effective": 60.0,
+              "outcome": "applied",
+              "requested": 60.0,
+              "source": "session_override"
+            },
+            "graphics.frames_in_flight": {
+              "effective": 2,
+              "outcome": "applied",
+              "requested": 2,
+              "source": "explicit_option"
+            },
+            "graphics.samples": {
+              "effective": 4,
+              "outcome": "applied",
+              "requested": 4,
+              "source": "explicit_option"
+            },
+            "input.invert_x": {
+              "effective": true,
+              "outcome": "validated_only",
+              "requested": true,
+              "source": "profile"
+            },
+            "input.invert_y": {
+              "effective": false,
+              "outcome": "validated_only",
+              "requested": false,
+              "source": "profile"
+            },
+            "input.sensitivity_x": {
+              "effective": 0.23,
+              "outcome": "validated_only",
+              "requested": 0.23,
+              "source": "profile"
+            },
+            "input.sensitivity_y": {
+              "effective": 0.17,
+              "outcome": "validated_only",
+              "requested": 0.17,
+              "source": "profile"
+            },
+            "ui.scale": {
+              "effective": 1.5,
+              "outcome": "applied",
+              "requested": 1.5,
+              "source": "profile"
+            }
+          },
+          "format": "poima.settings.application.v1",
+          "profile": {
+            "content_hash": "d28611d488f452bad93200594bc4025f9a6293890abb2d84929f111ff285230e",
+            "revision": 1,
+            "source": "profile"
+          }
+        },
+        "images": {
+          "profile.bmp": "1ca5d10b64c62d12cd13c8dae322e9ea034d050ecb281b150a8da6f9cafb8260",
+          "reference.bmp": "1ca5d10b64c62d12cd13c8dae322e9ea034d050ecb281b150a8da6f9cafb8260",
+          "unscaled-ui.bmp": "4f1e91e49b00867479816c3624ece389fd7f861ad4823104dbc4a95c0c75cb52",
+          "overrides.bmp": "fc4df7db1d2fb3054442634da104c6b62c25fba107631ae15a051bc4408a1dbe"
+        },
+        "limitations": [
+          "Recorded look values are semantic degrees, not physical pointer input",
+          "UI layout hittability is queried virtually; no physical activation test"
+        ]
+      }
+    }
+  ],
+  "regressions": [
+    {
+      "host": "linux",
+      "binary_sha256": "62c4757da4efad7cf6b03a03bd06f7ecab0926c3c60bd839489e86d9a4b24ad1",
+      "evidence_sha256": "34b44e91dd698de2070d3030343bbed0223f640e6a161df81ee8c3d9d3218dc6",
+      "checks": [
+        {
+          "name": "poima-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.06890356500298367,
+          "log_sha256": "79030f5711e362c5aa09f4166d4bd1ade9e819115ec76cb40ef75f27d7c5cd8b"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 3.3286253389997,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 3.979796316001739,
+          "log_sha256": "a9526bea8a3d9460c089cc86c134d03186eaeb00b4d91e269f48d1fa4ff90a1e"
+        },
+        {
+          "name": "poima-input-profile-test",
+          "exit_code": 0,
+          "seconds": 0.027180597000551643,
+          "log_sha256": "9fff6aecaa49ae889f4755f9c84233a905892210a9bd785d7c188850008fe138"
+        },
+        {
+          "name": "poima-player-input-test",
+          "exit_code": 0,
+          "seconds": 0.011434301002736902,
+          "log_sha256": "adf0b77e1912acb4ed5eb7c43cd8aa57b4cd4c3276d782e92acfc51e516f6186"
+        },
+        {
+          "name": "poima-mcp-test",
+          "exit_code": 0,
+          "seconds": 0.06769347099907463,
+          "log_sha256": "442439bd75486b57ade458b15e4ea10c9e5f65f00f8c5b6b7683c8cfc880ea45"
+        },
+        {
+          "name": "authoring_core_conformance.py",
+          "exit_code": 0,
+          "seconds": 1.9227722399991762,
+          "log_sha256": "2e6f0d4d39f82ab0b0e6ac03bfaf780a1d90692eff3dcd2a938b8aaf89f0ae25"
+        },
+        {
+          "name": "authoring_contract_identity.py",
+          "exit_code": 0,
+          "seconds": 0.5683487919995969,
+          "log_sha256": "9136656e1111b55a29ad3be95e580e090eab0964504194c4944094f9c5444994"
+        },
+        {
+          "name": "mcp_contract.py",
+          "exit_code": 0,
+          "seconds": 1.6219180730004155,
+          "log_sha256": "764ce3fe519eb42fd9b3ec4e1afe062199aebbf0101fbae30c18efd59e5b2ce1"
+        },
+        {
+          "name": "input_profile_contract.py",
+          "exit_code": 0,
+          "seconds": 19.3743413480006,
+          "log_sha256": "9130a9fcd732cb3ba10de1f68204b02c8dc5530d469b37eb2191a6297a60d34a"
+        },
+        {
+          "name": "build_metadata_contract.py",
+          "exit_code": 0,
+          "seconds": 2.222790039002575,
+          "log_sha256": "117fabaf018815178af50a1b282fd3dc1f74992a3af2c8e7ef50199644e59ba3"
+        }
+      ]
+    },
+    {
+      "host": "windows",
+      "binary_sha256": "41f88bd662af6b68601d8fcb6eb3665d4f4d93552ee2454fd5ee20d24ee7f410",
+      "evidence_sha256": "bb880b20344349fd58c59417fadad526043b1bea35a61ef7c10b9bed2f18efdd",
+      "checks": [
+        {
+          "name": "poima-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.07100961700052721,
+          "log_sha256": "ff3e409405d51f19406b6364ae1d8b4e90071b515a00d07e3c0b5e00079bc193"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 2.0728782570004114,
+          "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 5.1819633260020055,
+          "log_sha256": "d77021f629a4fdaeb8236080e4e8246334a6bb90e818c9e3ffc783f5264e81c4"
+        },
+        {
+          "name": "poima-input-profile-test",
+          "exit_code": 0,
+          "seconds": 0.06795914900067146,
+          "log_sha256": "b95dd8d48e0d6c88712989d37edb37ab28fea7a89569ec4136ed054a72d96813"
+        },
+        {
+          "name": "poima-player-input-test",
+          "exit_code": 0,
+          "seconds": 0.06887258699862286,
+          "log_sha256": "cf560fba19b93411b26b6c130c2f236a8f4bab5bb323be28c258396b6b268b11"
+        },
+        {
+          "name": "poima-mcp-test",
+          "exit_code": 0,
+          "seconds": 0.11999780500264023,
+          "log_sha256": "91d72a14cbbfbc1a58a580bffd29d4525e43909ed1e348005d2bcd4b6422b229"
+        },
+        {
+          "name": "authoring_core_conformance.py",
+          "exit_code": 0,
+          "seconds": 1.9223733870021533,
+          "log_sha256": "1e2e44c61066e1d79a0dbf4a71fc9903fb4780f5083b941f8e1688bff040f9f3"
+        },
+        {
+          "name": "authoring_contract_identity.py",
+          "exit_code": 0,
+          "seconds": 0.568172016999597,
+          "log_sha256": "6b69a72e782b8adfd98f353ddeb77b02eaed366116ce83896bcfd07227acf807"
+        },
+        {
+          "name": "mcp_contract.py",
+          "exit_code": 0,
+          "seconds": 1.4707924320027814,
+          "log_sha256": "165631cf5596f429399afb558d4ee25d50ea56df2b3afaacc736d5db7773a26b"
+        },
+        {
+          "name": "input_profile_contract.py",
+          "exit_code": 0,
+          "seconds": 7.135608937998768,
+          "log_sha256": "1873ab554ecf3b362ad8cdd12b076f9023bddff24913d62707883e9bbf1d4328"
+        },
+        {
+          "name": "build_metadata_contract.py",
+          "exit_code": 0,
+          "seconds": 3.2260718699981226,
+          "log_sha256": "b2aa5f5a2b7b55b6b8ecd70dc8beeda7127485cfce792d5d828bb42d177eeaef"
+        }
+      ]
+    },
+    {
+      "host": "authoring",
+      "binary_sha256": "3dfde4fd3711d8fbeab41ec193aa8804a83fe9d3287c06a2cc5324552de75d4c",
+      "evidence_sha256": "2f1d221311950155d916feda4ce7dafbf80912ffde11830c5365d7944bf7f473",
+      "checks": [
+        {
+          "name": "poima-player-preferences-test",
+          "exit_code": 0,
+          "seconds": 0.013109678999171592,
+          "log_sha256": "79030f5711e362c5aa09f4166d4bd1ade9e819115ec76cb40ef75f27d7c5cd8b"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 2.2265548429968476,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 3.530661967000924,
+          "log_sha256": "0116336b56afde0c12f633b9b91b8f2de0a42bec9c338f223412e1fc17816035"
+        },
+        {
+          "name": "poima-input-profile-test",
+          "exit_code": 0,
+          "seconds": 0.01339211500089732,
+          "log_sha256": "9fff6aecaa49ae889f4755f9c84233a905892210a9bd785d7c188850008fe138"
+        },
+        {
+          "name": "poima-player-input-test",
+          "exit_code": 0,
+          "seconds": 0.012221732999023516,
+          "log_sha256": "adf0b77e1912acb4ed5eb7c43cd8aa57b4cd4c3276d782e92acfc51e516f6186"
+        },
+        {
+          "name": "poima-mcp-test",
+          "exit_code": 0,
+          "seconds": 0.06980203700004495,
+          "log_sha256": "442439bd75486b57ade458b15e4ea10c9e5f65f00f8c5b6b7683c8cfc880ea45"
+        },
+        {
+          "name": "authoring_core_conformance.py",
+          "exit_code": 0,
+          "seconds": 1.1214518570013752,
+          "log_sha256": "f270681d43ad1c425d755c807faf87255e7440c8f5859e75b01cd969b6033b48"
+        },
+        {
+          "name": "authoring_contract_identity.py",
+          "exit_code": 0,
+          "seconds": 0.4704942750031478,
+          "log_sha256": "5eb0de150e139b4477dbf6dc99785b1fedd1c236475d09abe62562c451f2a7b0"
+        },
+        {
+          "name": "mcp_contract.py",
+          "exit_code": 0,
+          "seconds": 1.1208961560005264,
+          "log_sha256": "edd00949a329d7586d6d4cd7128421ae0d284b906f0883c21c230e742a7acf35"
+        },
+        {
+          "name": "input_profile_contract.py",
+          "exit_code": 0,
+          "seconds": 11.251895584999147,
+          "log_sha256": "4bf4d11442a7ba4bb7b26257cc89f92d7427b81f11580b3f38ea42d340d4dd1b"
+        },
+        {
+          "name": "build_metadata_contract.py",
+          "exit_code": 0,
+          "seconds": 1.5232026160010719,
+          "log_sha256": "66c65c93d8a7cc96cf0d2bb94fb11d50d5e055d225770379c3b8e76d78bb2df8"
+        }
+      ]
+    }
+  ],
+  "ctest": {
+    "passed": true,
+    "checks": [
+      {
+        "host": "linux",
+        "exit_code": 0,
+        "seconds": 12.155938481999328,
+        "log_sha256": "fc74439026e53454c59fd7f1c73a5089c9cfb561bacdb923cfd46bdc0a8ad0ba"
+      },
+      {
+        "host": "windows",
+        "exit_code": 0,
+        "seconds": 7.49430128899985,
+        "log_sha256": "3bdf39bf62833d5c89ededb93b579fd7296e85e04278c092e450d169f4857960"
+      },
+      {
+        "host": "authoring",
+        "exit_code": 0,
+        "seconds": 8.496070204000716,
+        "log_sha256": "a149eed9b45155b82bac411837f2eae85e57104763bebaee73ccd0a2f8d19f11"
+      }
+    ]
+  },
+  "limits": [
+    "Settings manage stored intent; next-player resolution reports current configured values and sources. Applied means some presentation completed, not proof that final post-error owner state was presented.",
+    "Pointer overrides use the existing native evaluator; replay validates them but consumes semantic look/actions without reinterpretation. No physical pointer or controller feel is qualified.",
+    "No independent live control, in-game settings menu, game-defined setting registration, automatic per-user paths, broad presets/audio/display leases or schema migration.",
+    "Cooperative locks, flushed staging/previous copy and atomic replacement do not promise power-loss directory durability or adversarial filesystem-race protection.",
+    "Small scripted scenes and actual renderer readbacks do not establish clean-machine installation, GUI usability or game-scale performance."
+  ],
+  "export": {
+    "passed": true,
+    "source_removed_before_play": true,
+    "settings": {
+      "application": "next_player",
+      "fields": {
+        "camera.vertical_fov": {
+          "effective": 90.0,
+          "outcome": "applied",
+          "requested": 90.0,
+          "source": "profile"
+        },
+        "graphics.frames_in_flight": {
+          "effective": 1,
+          "outcome": "applied",
+          "requested": 1,
+          "source": "profile"
+        },
+        "graphics.samples": {
+          "effective": 1,
+          "outcome": "applied",
+          "requested": 1,
+          "source": "profile"
+        },
+        "input.invert_x": {
+          "effective": true,
+          "outcome": "validated_only",
+          "requested": true,
+          "source": "profile"
+        },
+        "input.invert_y": {
+          "effective": false,
+          "outcome": "validated_only",
+          "requested": false,
+          "source": "profile"
+        },
+        "input.sensitivity_x": {
+          "effective": 0.23,
+          "outcome": "validated_only",
+          "requested": 0.23,
+          "source": "profile"
+        },
+        "input.sensitivity_y": {
+          "effective": 0.17,
+          "outcome": "validated_only",
+          "requested": 0.17,
+          "source": "profile"
+        },
+        "ui.scale": {
+          "effective": 1.5,
+          "outcome": "applied",
+          "requested": 1.5,
+          "source": "profile"
+        }
+      },
+      "format": "poima.settings.application.v1",
+      "profile": {
+        "content_hash": "d28611d488f452bad93200594bc4025f9a6293890abb2d84929f111ff285230e",
+        "revision": 1,
+        "source": "profile"
+      }
+    },
+    "explicit_settings": {
+      "application": "next_player",
+      "fields": {
+        "camera.vertical_fov": {
+          "effective": 80.0,
+          "outcome": "applied",
+          "requested": 80.0,
+          "source": "session_override"
+        },
+        "graphics.frames_in_flight": {
+          "effective": 2,
+          "outcome": "applied",
+          "requested": 2,
+          "source": "explicit_option"
+        },
+        "graphics.samples": {
+          "effective": 4,
+          "outcome": "applied",
+          "requested": 4,
+          "source": "explicit_option"
+        },
+        "input.invert_x": {
+          "effective": true,
+          "outcome": "validated_only",
+          "requested": true,
+          "source": "profile"
+        },
+        "input.invert_y": {
+          "effective": false,
+          "outcome": "validated_only",
+          "requested": false,
+          "source": "profile"
+        },
+        "input.sensitivity_x": {
+          "effective": 0.23,
+          "outcome": "validated_only",
+          "requested": 0.23,
+          "source": "profile"
+        },
+        "input.sensitivity_y": {
+          "effective": 0.17,
+          "outcome": "validated_only",
+          "requested": 0.17,
+          "source": "profile"
+        },
+        "ui.scale": {
+          "effective": 1.5,
+          "outcome": "applied",
+          "requested": 1.5,
+          "source": "profile"
+        }
+      },
+      "format": "poima.settings.application.v1",
+      "profile": {
+        "content_hash": "d28611d488f452bad93200594bc4025f9a6293890abb2d84929f111ff285230e",
+        "revision": 1,
+        "source": "profile"
+      }
+    },
+    "bundle_inventory": {
+      "content/default.poima-input.json": "22c64ca36f251df12d646fb31cf4bb5a86048920b63a53f212d0ffdb30839e97",
+      "content/world.json": "237d323c724b6c3356dd4481500dde0297ecbeec9b552f279af564b099bdd15c",
+      "game.json": "b79731d379e5588a13265dc1dff96c09e0ca18c77fb4ffb155a9b1642aba4995",
+      "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+      "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+      "runtime/bin/poima.exe": "41f88bd662af6b68601d8fcb6eb3665d4f4d93552ee2454fd5ee20d24ee7f410",
+      "runtime/bin/poima_desktop.dll": "21669793869a41268cdb3ac3087e467a33f4d15cc05b8e7fdbe51403157a092a",
+      "runtime/runtime.json": "9ceeee16bd6a0fd38e429e425e7e1fd55939c05435ae773436e583615e608abb",
+      "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/THIRD_PARTY_NOTICES.md": "f010108a5d7e94c7c01ad384c842676cb70e5dd47717fe10aaaf7e0183373553",
+      "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c",
+      "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+      "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+      "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+      "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+      "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+      "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+      "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+      "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+      "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+      "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+      "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+      "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+      "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+      "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+      "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+      "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+      "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+      "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+      "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+      "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+      "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+      "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+      "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+      "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+      "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+      "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+      "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391"
+    },
+    "runtime_descriptor_sha256": "9ceeee16bd6a0fd38e429e425e7e1fd55939c05435ae773436e583615e608abb",
+    "immutable_profile_sidecars": {
+      "player.poima-settings.json": "d884137a52cfd9e67bee386a978c3b0a07e1d6516b38ce7d130ba7d172d15913",
+      "player.poima-settings.json.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "commands": [
+      {
+        "label": "bundle-project-create",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "label": "bundle-export",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "label": "source-free-bundled-settings",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "label": "source-free-bundled-explicit-precedence",
+        "exit_code": 0,
+        "timed_out": false
+      },
+      {
+        "label": "bundle-stale-preference-revision",
+        "exit_code": 4,
+        "timed_out": false
+      },
+      {
+        "label": "bundle-duplicate-json-override-key",
+        "exit_code": 4,
+        "timed_out": false
+      }
+    ]
+  },
+  "preserved_compiled_game": {
+    "sample": "examples/locomotion-yard",
+    "published_checkpoint": "0.0.75",
+    "backend": "native_aot",
+    "evidence_sha256": "eab050cfa8e46e3b9bfda647ce1209d3fa2ab7e6a6c0a81c8ed9b8118c105672",
+    "rpc_count": 5064,
+    "clean_owners": 2,
+    "checks": [
+      "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+      "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+      "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+      "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+      "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+      "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+    ],
+    "hashes": {
+      "binary": "62c4757da4efad7cf6b03a03bd06f7ecab0926c3c60bd839489e86d9a4b24ad1",
+      "manifest": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+      "descriptor": "c5d78d73d21d6a0641e3b8b04f2899b4e241b43c573208cbf7ad3483b75efcc1",
+      "artifact_0": "d200e78a4381236c3a446f57eff10174c5a1aa14b09133070e1846afbcc70738",
+      "artifact_1": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+      "artifact_2": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+      "artifact_3": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+      "artifact_4": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+      "artifact_5": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+      "artifact_6": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "artifact_7": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888"
+    },
+    "continuation_exclusions": [
+      "values.ObservedEpochHigh",
+      "values.ObservedEpochLow"
+    ]
+  },
+  "documented_recipe": {
+    "passed": true,
+    "rpc_count": 6,
+    "tested_json_blocks": "settings.describe/inspect, preview, commit, reset and exact old receipt replay",
+    "limits": [
+      "Conditional runtime.play example requires existing session/entity identities and was not executed verbatim."
+    ]
+  },
+  "totals": {
+    "protocol_tests": 28,
+    "settings_rpc_count": 394,
+    "clean_settings_owners": 246,
+    "vulkan_readbacks": 8,
+    "regression_checks": 33,
+    "ctest_checks": 3,
+    "retained_game_rpc_count": 5064
+  },
+  "review_refinements": [
+    "Refresh inherited FOV reporting from final native camera; unavailable inherited lens reports null.",
+    "Measure UI scale from independent dp bounds and actual rendered opaque pixels, rather than relying on report metadata.",
+    "Reject duplicate/deep/oversized CLI override JSON before player entry.",
+    "Register the persisted settings contract in CTest with repeatable owned temporary output and retained failure evidence."
+  ],
+  "build_policy": "Sequential frozen native cohorts; at most two compiler processes and 900s process-tree deadline per build. Final CTest registration regeneration changed no native binary."
+}

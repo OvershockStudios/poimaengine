@@ -64,7 +64,11 @@ Human play accumulates wall time into fixed 1/60-second updates. Look, jump and 
 
 The window is resizable. Swapchain images, MSAA/depth attachments, semaphores and readback storage are recreated after GPU completion; shared geometry and the pipeline remain alive when the format is unchanged. A zero-sized Vulkan surface during minimize/restore suspends presentation. This explicitly handles the race where the surface becomes empty before SDL's queued minimize notification arrives. Changed surface formats and actual device loss still end the player with a diagnostic.
 
-Rendering remains serialized, with authored lighting, optional [shadow maps](SHADOWS.md) and 1×/4× MSAA. Poima 0.0.9 also draws [imported static geometry and textured PBR materials](ASSETS.md). It waits for the GPU after each frame; this is not a shipping frame-pacing design or a game-performance result. Poima 0.0.14 also runs a loaded [C# gameplay module](MANAGED_GAMEPLAY.md) during play/replay, including use-driven door interactions. Broader glTF support, animation tooling, environmental audio, general UI authoring and the complete gameplay SDK remain unfinished. Native game bundles have separate [packaging qualification](PROJECTS.md).
+Rendering uses authored lighting, optional [shadow maps](SHADOWS.md), imported static geometry/textured PBR materials and animated skinned geometry. [Graphics frame execution](RENDER_DIAGNOSTICS.md) bounds outstanding submissions to one or two; completion and GPU timestamps do not establish scanout or game-scale performance. Loaded [C# gameplay](MANAGED_GAMEPLAY.md) can advance during interactive play and replay. Native game bundles have separate [packaging qualification](PROJECTS.md).
+
+## Launch-time preferences
+
+[Portable player settings](PLAYER_SETTINGS.md) supply sparse FOV, pointer, UI-scale and existing rendering overrides before `runtime.play`. The player preserves authored camera data and reports stored intent separately from resolved values and sources. Settings affect the next launch; the blocking connection does not accept live changes during play. Exported games read external profiles through the same native service.
 
 ## Evidence and limits
 

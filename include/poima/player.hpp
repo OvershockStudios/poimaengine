@@ -66,10 +66,17 @@ struct PlayerOptions {
     GamepadSelection gamepad_selection;
     RenderOptions render;
     std::string camera, controller;
+    // Presentation overrides for this player only; authored/runtime cameras are
+    // unchanged. UI scale is absolute, not multiplied by window density.
+    std::optional<double> vertical_fov;
+    std::optional<float> ui_scale;
     bool replay=false,audio=false;
     std::uint32_t max_frames=0; // Interactive: zero runs until window close/Escape.
     std::vector<PlayerSegment> sequence;
 };
+// Obtain a fresh owner snapshot, validate player presentation preferences, then
+// apply its camera override to the returned copy. No borrowed runtime survives.
+SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session);
 struct PlayerAudioReport {
     bool enabled=false,stream_drained=false;
     std::string driver;
@@ -87,6 +94,7 @@ struct PlayerReport {
     std::uint64_t initial_tick=0, final_tick=0;
     std::uint32_t swapchain_rebuilds=0;
     double dropped_seconds=0;
+    double effective_ui_scale=1; // Absolute player UI scale or actual window density.
     std::string stop_reason;
 };
 PlayerReport run_player(const PlayerOptions& options, PlayerSession& session);

@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.76
+
+- Add [portable native player settings](docs/PLAYER_SETTINGS.md) for FOV, pointer sensitivity/inversion, absolute UI scale, MSAA and outstanding graphics frames. Keep sparse preferences separate from authored worlds, input bindings and saves.
+- Provide independent revisions, preview/reset, persistent retry receipts and guarded file replacement. Resolve preferences at player launch, report their effective values/sources, and preserve semantic replay input.
+- Connect exported-game CLI profiles and overrides, retain explicit option precedence and read external preferences without bundle writes or lock sidecars. Reject stale profiles and duplicate override keys.
+- Qualify three native builds, persisted contracts, eight Vulkan readbacks on both GPUs, source-free relocated game launch and the preserved compiled locomotion sample. Publish a tested settings playbook and add repeatable CTest coverage. [Evidence](docs/evidence/m2-player-settings.json).
+
 ## 0.0.75
 
 - Add [Locomotion Yard](examples/locomotion-yard/README.md), a compiled character game using original separate FBX Idle/Run takes, explicit retargeting, native capsule navigation and controller-derived playback rates.

@@ -8,6 +8,18 @@ namespace poima {
 PlayerControlResult PlayerSession::control(const std::string&,std::uint64_t,const std::string&) {
     throw std::runtime_error("This player owner does not provide native UI controls.");
 }
+SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session) {
+    auto result=session.snapshot(options.camera);
+    if(options.vertical_fov) {
+        const auto value=*options.vertical_fov;
+        if(!std::isfinite(value) || value<5 || value>150)
+            throw std::invalid_argument("Player vertical FOV must be finite and within 5..150 degrees.");
+        result.vertical_fov=value;
+    }
+    if(options.ui_scale && (!std::isfinite(*options.ui_scale) || *options.ui_scale<.25f || *options.ui_scale>8.f))
+        throw std::invalid_argument("Player UI scale must be finite and within 0.25..8.");
+    return result;
+}
 void PlayerInput::button(PlayerAction action, bool down) {
     const auto index=static_cast<std::size_t>(action);
     if(index>=held_.size()) throw std::invalid_argument("Invalid player action.");

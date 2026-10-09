@@ -1,8 +1,35 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.75**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.76**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.76 adds [portable player settings](PLAYER_SETTINGS.md): eight
+sparse, typed overrides for vertical FOV, pointer sensitivity/inversion, absolute
+UI scale, MSAA and outstanding graphics submissions. Profiles have independent
+revisions, preview/reset, persisted retry receipts and guarded file replacement.
+They store intent outside authored worlds, input bindings and saved gameplay.
+Player launch resolves inherited/profile/session/explicit-option precedence,
+applies the existing native owners and reports effective values, sources and
+presentation outcomes. Inherited FOV follows the final native camera; explicit
+FOV does not mutate camera data. Semantic replay validates pointer preferences
+without reinterpreting recorded controls. Packaged games load external profiles
+without writer sidecars; live settings and a C# settings/menu API remain separate
+work. Schema revision is 65; authoring-core v1, protocol 1 and gameplay service
+epoch 7 remain unchanged.
+
+Three native builds pass 33 selected input, world-session, discovery, authoring,
+MCP and metadata regression checks. Four retained settings cohorts pass 28
+protocol groups, 394 RPCs and 246 clean owners; the repeatable CTest protocol
+gate passes in all three builds. Eight Windows Vulkan readbacks across AMD and
+NVIDIA verify independent camera projection, exact authored-reference pixels,
+absolute UI pixel bounds and actual sample/submission limits. A relocated
+source-free Windows game consumes external preferences, honors explicit CLI
+choices and rejects stale revisions and duplicate override keys without changing
+its bundle or profile sidecars. The existing 0.0.75 Linux Native AOT locomotion
+game passes 5,064 RPCs against the new runtime. These fixtures do not qualify
+physical input, live menus, clean-machine installation or game-scale performance.
+[Evidence](evidence/m2-player-settings.json).
 
 Version 0.0.75 adds [Locomotion Yard](../examples/locomotion-yard/README.md),
 a compiled character game using an untouched original CC0 FBX body and separate

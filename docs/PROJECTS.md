@@ -134,7 +134,7 @@ MyRoom-game\runtime\bin\poima.exe game run MyRoom-game\game.json
 
 On Linux use `./MyRoom-game/launch.sh`. The convenience launchers locate their own bundle; direct CLI paths follow the ordinary process working directory. `game inspect` can inspect a foreign-target bundle, and a Linux host can export an installed Windows runtime without executing it. `game run` requires the executable's OS and architecture to match the bundle and requires its simulation/Vulkan player capabilities.
 
-The player reads the bundled world and profile without writer sidecars. Runtime state stays in memory; running does not persist edits into the bundle. The existing player supports keyboard/mouse, the configured gamepad profile and window resizing. Public game-save slots and persistence remain separate future work.
+The player reads the bundled world and profile without writer sidecars. Runtime state stays in memory; running does not persist edits into the bundle. The existing player supports keyboard/mouse, the configured gamepad profile and window resizing. [Game saves](GAMEPLAY_SAVES.md) use separate external storage through `--save-root`; [player preferences](PLAYER_SETTINGS.md) use external `.poima-settings.json` profiles.
 
 | Option | Behavior |
 | --- | --- |
@@ -144,7 +144,11 @@ The player reads the bundled world and profile without writer sidecars. Runtime 
 | `--capture PATH` | Final BMP at an external, previously absent path. |
 | `--report PATH` | Native result JSON at an external, previously absent path. |
 | `--width N`, `--height N` | Each 128–4096; defaults 960×540. |
-| `--samples N` | 1 or 4; default 4. |
+| `--samples N` | 1 or 4; default 4 when no preference supplies it. An explicit flag overrides stored/session settings. |
+| `--frames-in-flight N` | 1 or 2; explicit graphics submission limit, overriding stored/session settings. |
+| `--settings-profile PATH` | Existing portable player profile outside the bundle. |
+| `--settings-revision N` | Require the exact profile revision; needs `--settings-profile`. |
+| `--settings-overrides JSON` | Sparse validated launch-only settings object. [Keys, precedence and outcomes](PLAYER_SETTINGS.md). |
 
 Capture/report parent directories must exist. Their destinations must differ, be outside the bundle and not overlap the replay input. Existing destinations are rejected. The report file contains the result object, including the player report, final runtime state and entry entity states; stdout contains the normal structured reply envelope.
 

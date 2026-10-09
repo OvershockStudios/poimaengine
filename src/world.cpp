@@ -23,6 +23,7 @@
 #include "asset_store.hpp"
 #include "asset_provenance.hpp"
 #include "input_profile_store.hpp"
+#include "player_settings_store.hpp"
 #include "mutation_discovery.hpp"
 #include "asset_references.hpp"
 #include "material_service.hpp"
@@ -688,7 +689,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
 class World {
     profiling::Service profiler_;
     fs::path path_;
@@ -1147,6 +1148,7 @@ public:
         }
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
+        if(method.starts_with("settings."))return settings_dispatch(method,params);
         if (method == "world.describe") {
             (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only C# compilation via explicit executable; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local compile receipts; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner and native job worker threads, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             result["authoring_contract"]=authoring_contract_identity(read_only_);
@@ -1729,25 +1731,33 @@ public:
             }
         }
     }
-    fs::path input_profile_path(const Json& value) const {
-        require(value.is_string(),"Input profile path must be a string.");
+    fs::path preference_profile_path(const Json& value,const std::string& kind) const {
+        require(value.is_string(),kind+" profile path must be a string.");
         const auto text=value.get<std::string>();
-        require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid input profile path.");
+        require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid "+kind+" profile path.");
         auto raw=fs::path(std::u8string(text.begin(),text.end()));if(raw.is_relative())raw=path_.parent_path()/raw;
         for(const auto* suffix:{"", ".lock", ".pending", ".previous", ".previous.pending"})
-            require(!fs::is_symlink(fs::path(raw).concat(suffix)),"Input profile paths cannot be symbolic links.");
+            require(!fs::is_symlink(fs::path(raw).concat(suffix)),kind+" profile paths cannot be symbolic links.");
+        if(kind=="Settings") {
+            for(auto parent=raw.parent_path();!parent.empty();parent=parent.parent_path()) {
+                require(!fs::is_symlink(parent),"Settings profile parent directories cannot be symbolic links.");
+                if(parent==parent.parent_path())break;
+            }
+        }
         const auto output=fs::weakly_canonical(fs::absolute(raw));
+        if(kind=="Settings" && read_only_)require(!save_inside(output,protected_root_),"Player settings must be outside the immutable game bundle.");
         for(const auto* suffix:{"", ".lock", ".pending", ".previous", ".previous.pending"}) {
             const auto candidate=fs::path(output).concat(suffix);
             const auto relative=candidate.lexically_relative(fs::weakly_canonical(asset_directory()));
-            require(relative.empty() || relative.is_absolute() || *relative.begin()=="..","Input profile cannot use the immutable asset store.");
+            require(relative.empty() || relative.is_absolute() || *relative.begin()=="..",kind+" profile cannot use the immutable asset store.");
             for(const auto* reserved:{"", ".lock", ".pending", ".previous", ".previous.pending"}) {
                 const auto world=fs::path(path_).concat(reserved);
-                require(!same_path_name(candidate,world),"Input profile path is reserved by the world service.");
+                require(!same_path_name(candidate,world),kind+" profile path is reserved by the world service.");
             }
         }
         return output;
     }
+    fs::path input_profile_path(const Json& value) const { return preference_profile_path(value,"Input"); }
     Json input_dispatch(const std::string& method,const Json& params) {
         if(method=="input.describe") { fields(params,{});return input_profiles::describe(); }
         if(method=="input.devices") {
@@ -1824,6 +1834,7 @@ public:
             auto operation=params;operation.erase("path");return input_profiles::transact(file,operation);
         }catch(const input_profiles::ProfileError& e) { throw Error(e.code,e.what()); }
     }
+#include "world_player_settings.inc"
     RenderOptions render_options(const Json& params) const {
         RenderOptions options;
         options.frames=2;
@@ -2404,7 +2415,7 @@ public:
         receipts.back()["result"]=result;playback_receipts_.swap(receipts);return result;
     }
     Json play(const Json& params) {
-        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision"},
+        fields(params,{"session_id","request_id","expected_tick","controller","camera","mode","sequence","max_frames","path","width","height","gpu","samples","culling","clustered_lighting","frames_in_flight","scene_debug_view","scene_product_probes","lighting_path","ambient_occlusion","reconstruction","profile","audio","input_profile","input_revision","gamepad","expected_structure_revision","settings_profile","settings_revision","settings_overrides"},
             {"session_id","request_id","expected_tick","camera","mode"});
         identifier(params.at("session_id")); identifier(params.at("request_id"));revision(params.at("expected_tick"));
         auto normalized=params; normalized["method"]="runtime.play";
@@ -2467,7 +2478,8 @@ public:
             require(!params.contains("sequence"),"Interactive play takes input from the window, not a replay sequence.");
             if(params.contains("max_frames")) { const auto n=revision(params.at("max_frames")); require(n<=36000,"max_frames must be 0..36000."); options.max_frames=static_cast<std::uint32_t>(n); }
         }
-        options.render=render_options(params);options.render.capture_exclusive=read_only_;
+        auto settings_application=apply_player_settings(params,options);
+        options.render.capture_exclusive=read_only_;
         if(!options.replay && options.gamepad_selection.mode!="disabled") {
             require(GamepadHost::available(),"Gamepad device host is not built.",-32003);
             try { if(!gamepad_host_)gamepad_host_=std::make_shared<GamepadHost>();options.gamepad_host=gamepad_host_; }
@@ -2516,6 +2528,11 @@ public:
             {"camera",options.camera},{"camera_world",camera ? Json(camera->camera_world) : Json(nullptr)},{"lighting",camera ? lighting_json(camera->lighting) : Json(nullptr)},{"render_diagnostics",render_diagnostics(report.render.diagnostics)},{"build_version",build_metadata().version}};
         result["initial_session_id"]=report.initial_session;result["current_session_id"]=report.final_session;result["runtime_replacements"]=report.runtime_replacements;
         result["input_profile"]=input_info;result["gamepad"]=Json::parse(report.gamepad_json);
+        if(!settings_application.is_null()) {
+            finish_player_settings(settings_application,options,report,camera);
+            result["settings"]=std::move(settings_application);
+            result["input_profile"]["effective_content_hash"]=content_hash(input_profiles::profile_json(*options.input_profile).dump());
+        }
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
         receipts.back()["result"]=result; playback_receipts_.swap(receipts);
         return result;
