@@ -7,10 +7,10 @@
 - [The Character Yard image](docs/evidence/character-yard.png) renders the same unmodified source, attached, placed and animated by Poima, with a lossless BMP-to-PNG conversion. It retains the Cesium attribution and CC BY 4.0 license rather than the engine source's Apache-2.0 notice. The sample's source/license record also supplies exported character credits.
 - The network-free verification runner requires a separately supplied original GLB and embeds no character artwork. Its independently baked reference meshes derive from that licensed source and carry attribution in their metadata and evidence.
 
-## Kenney retargeting documentation image
+## Kenney character documentation images
 
 - [Animated Characters Protagonists](https://kenney.nl/assets/animated-characters-protagonists), by Kenney, is offered under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/). The tested 1.1 archive includes the creator's `License.txt`; exact original source and license fingerprints are recorded in [retargeting evidence](docs/evidence/m2-animation-rotation-retarget.json).
-- [The retargeted character image](docs/evidence/retargeted-character.png) renders the original untextured base body with the original separate Run take, converted by Poima's explicit orientation/reference policy, then losslessly converted from BMP to PNG. It contains no generated artwork. The verifier requires separately supplied original files and does not download or embed the character library.
+- [The retargeted character image](docs/evidence/retargeted-character.png) renders the original untextured base body with the original separate Run take, converted by Poima's explicit orientation/reference policy, then losslessly converted from BMP to PNG. It contains no generated artwork. The verifier requires separately supplied original files and does not download or embed the character library. The [Locomotion Yard capture](docs/evidence/locomotion-yard.png) renders the same original body and Run take in the compiled game, with Poima-authored primitive cover and UI; it is also losslessly converted from a Vulkan BMP readback.
 
 ## Desktop editor
 

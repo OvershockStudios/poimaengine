@@ -1,0 +1,1159 @@
+{
+  "format": "poima.locomotion-game-qualification",
+  "version": 1,
+  "engine_version": "0.0.75",
+  "date": "2026-10-09",
+  "passed": true,
+  "scope": [
+    "Compiled controller-driven original separate FBX Idle/Run, explicit retargeting, movement-derived clocks, midfade persistence and Windows export.",
+    "Windows Vulkan renderer; Linux native headless simulation. Actual imported character, not analytic replacement geometry."
+  ],
+  "sources": {
+    "CMakeLists.txt": "3474afc4b3c60f7fc0720c02814a1786d007efd8f292b1194aeecd09f6fbf75b",
+    "examples/locomotion-yard/LocomotionYardGame.cs": "9bc8d458da7ae509c57adda7dd7ecc6caabf736e3021e3993fad19aff3a0de0f",
+    "examples/locomotion-yard/Poima.LocomotionYardGame.csproj": "a811c325cca3a0c5e635fa396f3293f282407a353b35f8c8a815505765ae067f",
+    "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+    "tests/locomotion_yard_contract.py": "66d0d6cadde4f9d03d918bef5791a410ef134061c2826fdbc6731147df3c9073",
+    "tests/locomotion_yard_bundle.py": "2fbb45ac58b688c637f22b662941cbd646e2232321eb78e566d630345ecb0a89",
+    "scripts/publish_native_gameplay.py": "c95b9bd0020de7e2c433921e6394be26e3886646247d01f43c0e53a6e3b71d57"
+  },
+  "contracts": {
+    "authoring_core": "v1",
+    "protocol": 1,
+    "schema_revision": 64,
+    "gameplay_services_epoch": 7,
+    "minimum_services_bytes": 224
+  },
+  "source_asset": {
+    "title": "Animated Characters Protagonists 1.1",
+    "creator": "Kenney",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "source_url": "https://kenney.nl/assets/animated-characters-protagonists",
+    "archive_sha256": "ec3787de70fa2200256848d74201b10f6b6c3126594e9857bf989753312c2b84",
+    "nodes": 61,
+    "vertices": 1029,
+    "triangles": 1604,
+    "source_modified": false,
+    "original_source_hashes": {
+      "base": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+      "run": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+      "idle": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+      "license": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+    }
+  },
+  "native_builds": [
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "seconds": 3.17977540100037,
+      "binary_sha256": "a6ee1276d250b097b7127ac2e02b1c4b84237b6626f989a3b4d2c8ad1b5842d1",
+      "log_sha256": "8c35b1682f73592d30612d7b0fabdb384fcfff35cb5a076cb48b85b1368aa794"
+    },
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "seconds": 42.15503911199994,
+      "binary_sha256": "be65961bbeb8007815eae1212e00ce9c70419d7ac573bfe07cff34955e78cac7",
+      "log_sha256": "6102e73db6e01f5f73b24296a55cd3098cc9d890a00cf6b75b6db432f42e5277"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "seconds": 77.19535700300185,
+      "binary_sha256": "7dffeb4c952e3fead07e136059a2ba62efc4bb2ad5afb0aae400f7d70e842966",
+      "log_sha256": "c7b47313f686a5a94591cb158180c685aefd64c800f616a5a52aaf3db3dd4f22"
+    }
+  ],
+  "publication": [
+    {
+      "target": "linux",
+      "sdk": "10.0.401",
+      "exit_code": 0,
+      "seconds": 79.57079763399815,
+      "descriptor_sha256": "c5d78d73d21d6a0641e3b8b04f2899b4e241b43c573208cbf7ad3483b75efcc1",
+      "library_sha256": "d200e78a4381236c3a446f57eff10174c5a1aa14b09133070e1846afbcc70738",
+      "state_bytes": 272,
+      "state_fields": 45,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1"
+      ],
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1636200,
+          "sha256": "d200e78a4381236c3a446f57eff10174c5a1aa14b09133070e1846afbcc70738",
+          "role": "library"
+        },
+        {
+          "path": "game.poima-components.json",
+          "size": 1771,
+          "sha256": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 20523,
+          "sha256": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888",
+          "role": "notice"
+        }
+      ]
+    },
+    {
+      "target": "windows",
+      "sdk": "10.0.401",
+      "exit_code": 0,
+      "seconds": 37.58263853800236,
+      "descriptor_sha256": "5f6914220ecf09e9ae04492127d062bbb61820e503c0b4d88d4d7f243f3be194",
+      "library_sha256": "882f84c28995d9232bda40d0347b070760a313cbf47b398c034572d6b8810cb8",
+      "state_bytes": 272,
+      "state_fields": 45,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1"
+      ],
+      "files": [
+        {
+          "path": "game.poima-components.json",
+          "size": 1771,
+          "sha256": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 20523,
+          "sha256": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1381888,
+          "sha256": "882f84c28995d9232bda40d0347b070760a313cbf47b398c034572d6b8810cb8",
+          "role": "library"
+        }
+      ]
+    }
+  ],
+  "cohorts": [
+    {
+      "label": "linux-clr-3",
+      "backend": "coreclr",
+      "evidence_sha256": "31eaeeab0e75e0753acc8dcc65ff1b42419954a9d2d7e8d69e7cf8ff983ae61e",
+      "rpc_count": 5064,
+      "clean_owners": 2,
+      "hashes": {
+        "binary": "a6ee1276d250b097b7127ac2e02b1c4b84237b6626f989a3b4d2c8ad1b5842d1",
+        "manifest": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "assembly": "90749f2f7e6e3f799ffc4ced05eadd0816bdb51bc809be6506e61ebb99b11ec7",
+        "bridge": "e519f2739a8ef53ee152d8cafbd239ac54e68f119681cd46ce4f4ff8a9a78928",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d"
+      },
+      "source_oracle": {
+        "base_model_sha256": "f5b9324cd8d4188b3a68e7e9d0c585e4c4752a207be481f1b29a209f311b0484",
+        "baseline_asset": "bb6d9d0e5c13b65c3bdfe42fedd1fbeeedc1e4f451f78909d9a0cd9079b16948",
+        "geometry_sha256": "7ba7ef5cba168a17e515656eeb298724c3da63485d75b08cd012c3af26ef02ea",
+        "profiles": {
+          "0": {
+            "name": "run",
+            "original_model_sha256": "c3a6fcdb1cde7a04cd003f3b62ed7329dd640ab7888aa6048f34589c548bd740",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 0.6666666865348816,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          },
+          "1": {
+            "name": "idle",
+            "original_model_sha256": "231ab10800d9ae41c8453f58489e2c4db42259a51587bef2e713192fb26fe598",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 1.0666667222976685,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          }
+        },
+        "scope": "Native normalized ORIGINAL reference/motion poses; separate quaternion-chain/FK/weighted skin math with immutable original target geometry/IBMs. Not an independent FBX parser."
+      },
+      "checks": [
+        "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+        "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+        "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+        "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+        "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+        "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+      ],
+      "source_pose_observations": 9,
+      "maximum_joint_matrix_error": 1.3872672191439506e-05,
+      "maximum_weighted_vertex_error_meters": 1.7636300253294906e-07,
+      "minimum_cover_gap_meters": 0.03390361212144921,
+      "rate_changes": 136,
+      "deferred_rate_updates": 11,
+      "animation_transitions": 9,
+      "clip_command_anchor_tick": 168,
+      "command_anchor_observations": [
+        {
+          "tick": 208,
+          "clip": 0,
+          "time": 0.6661111649956816,
+          "speed": 0.9991667474935224,
+          "wrapped": false,
+          "tick_intervals_since_command_anchor": 40
+        },
+        {
+          "tick": 209,
+          "clip": 0,
+          "time": 0.016097257585692026,
+          "speed": 0.9991667474935224,
+          "wrapped": true,
+          "tick_intervals_since_command_anchor": 41
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "captures": []
+    },
+    {
+      "label": "linux-aot-1",
+      "backend": "native_aot",
+      "evidence_sha256": "16d6737d7a1ea6e14679126950942f3965bf2f19149d298b32561dbbe4343f6a",
+      "rpc_count": 5064,
+      "clean_owners": 2,
+      "hashes": {
+        "binary": "a6ee1276d250b097b7127ac2e02b1c4b84237b6626f989a3b4d2c8ad1b5842d1",
+        "manifest": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "descriptor": "c5d78d73d21d6a0641e3b8b04f2899b4e241b43c573208cbf7ad3483b75efcc1",
+        "artifact_0": "d200e78a4381236c3a446f57eff10174c5a1aa14b09133070e1846afbcc70738",
+        "artifact_1": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "artifact_2": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "artifact_3": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "artifact_4": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "artifact_5": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "artifact_6": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "artifact_7": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888"
+      },
+      "source_oracle": {
+        "base_model_sha256": "f5b9324cd8d4188b3a68e7e9d0c585e4c4752a207be481f1b29a209f311b0484",
+        "baseline_asset": "bb6d9d0e5c13b65c3bdfe42fedd1fbeeedc1e4f451f78909d9a0cd9079b16948",
+        "geometry_sha256": "7ba7ef5cba168a17e515656eeb298724c3da63485d75b08cd012c3af26ef02ea",
+        "profiles": {
+          "0": {
+            "name": "run",
+            "original_model_sha256": "c3a6fcdb1cde7a04cd003f3b62ed7329dd640ab7888aa6048f34589c548bd740",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 0.6666666865348816,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          },
+          "1": {
+            "name": "idle",
+            "original_model_sha256": "231ab10800d9ae41c8453f58489e2c4db42259a51587bef2e713192fb26fe598",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 1.0666667222976685,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          }
+        },
+        "scope": "Native normalized ORIGINAL reference/motion poses; separate quaternion-chain/FK/weighted skin math with immutable original target geometry/IBMs. Not an independent FBX parser."
+      },
+      "checks": [
+        "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+        "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+        "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+        "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+        "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+        "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+      ],
+      "source_pose_observations": 9,
+      "maximum_joint_matrix_error": 1.3872672191439506e-05,
+      "maximum_weighted_vertex_error_meters": 1.7636300253294906e-07,
+      "minimum_cover_gap_meters": 0.03390361212144921,
+      "rate_changes": 136,
+      "deferred_rate_updates": 11,
+      "animation_transitions": 9,
+      "clip_command_anchor_tick": 168,
+      "command_anchor_observations": [
+        {
+          "tick": 208,
+          "clip": 0,
+          "time": 0.6661111649956816,
+          "speed": 0.9991667474935224,
+          "wrapped": false,
+          "tick_intervals_since_command_anchor": 40
+        },
+        {
+          "tick": 209,
+          "clip": 0,
+          "time": 0.016097257585692026,
+          "speed": 0.9991667474935224,
+          "wrapped": true,
+          "tick_intervals_since_command_anchor": 41
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "captures": []
+    },
+    {
+      "label": "windows-clr-1",
+      "backend": "coreclr",
+      "evidence_sha256": "54a9d3b3db1333c4cb0126d05969d480c8581ae1a791fc1e8ed92465240f4aa0",
+      "rpc_count": 5070,
+      "clean_owners": 2,
+      "hashes": {
+        "binary": "be65961bbeb8007815eae1212e00ce9c70419d7ac573bfe07cff34955e78cac7",
+        "manifest": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "assembly": "90749f2f7e6e3f799ffc4ced05eadd0816bdb51bc809be6506e61ebb99b11ec7",
+        "bridge": "71002f98da2019b0acc6276e7cd3c910c6348f7e6d5ebc595677fb9f2cff4610",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+      },
+      "source_oracle": {
+        "base_model_sha256": "a720e99995fc0bde155f067b4f5c78b6e8aeb76da7b46b2e0c947e1ba813f7fe",
+        "baseline_asset": "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8",
+        "geometry_sha256": "7ba7ef5cba168a17e515656eeb298724c3da63485d75b08cd012c3af26ef02ea",
+        "profiles": {
+          "0": {
+            "name": "run",
+            "original_model_sha256": "83b8e526d3b19acc0d4b5ef6fac2952156fc10080c38e381cde3632478e02a0d",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 0.6666666865348816,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          },
+          "1": {
+            "name": "idle",
+            "original_model_sha256": "a8e316f2485a51af0a044a6d16e268281899309cd526475ba83a0353b199eb17",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 1.0666667222976685,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          }
+        },
+        "scope": "Native normalized ORIGINAL reference/motion poses; separate quaternion-chain/FK/weighted skin math with immutable original target geometry/IBMs. Not an independent FBX parser."
+      },
+      "checks": [
+        "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+        "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+        "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+        "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+        "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+        "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+      ],
+      "source_pose_observations": 9,
+      "maximum_joint_matrix_error": 1.387267226249378e-05,
+      "maximum_weighted_vertex_error_meters": 1.7636300353623886e-07,
+      "minimum_cover_gap_meters": 0.03390361212144921,
+      "rate_changes": 136,
+      "deferred_rate_updates": 11,
+      "animation_transitions": 9,
+      "clip_command_anchor_tick": 168,
+      "command_anchor_observations": [
+        {
+          "tick": 208,
+          "clip": 0,
+          "time": 0.6661111649956816,
+          "speed": 0.9991667474935224,
+          "wrapped": false,
+          "tick_intervals_since_command_anchor": 40
+        },
+        {
+          "tick": 209,
+          "clip": 0,
+          "time": 0.016097257585692026,
+          "speed": 0.9991667474935224,
+          "wrapped": true,
+          "tick_intervals_since_command_anchor": 41
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "captures": [
+        {
+          "name": "idle",
+          "sha256": "c67c03f122916d3440a8e4ae6cd524c94ca7c639d2bb322f07f89ad5b49986af",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "tick": 76,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        {
+          "name": "run",
+          "sha256": "605509578645e82824ef6365cad731ec55ccb893056e33b87b01aad6c0a580cb",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "tick": 229,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        {
+          "name": "delivered-idle",
+          "sha256": "e0353deb6cb78354c700f78d5a65ebf435874a3ef37fd0a33fee7b684712c1fa",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "tick": 538,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        }
+      ]
+    },
+    {
+      "label": "windows-aot-gpu0-1",
+      "backend": "native_aot",
+      "evidence_sha256": "197d802872f0ddef2dbad0b6daf8cbb598f576bd62b15babe55fee876f9c4dd5",
+      "rpc_count": 5070,
+      "clean_owners": 2,
+      "hashes": {
+        "binary": "be65961bbeb8007815eae1212e00ce9c70419d7ac573bfe07cff34955e78cac7",
+        "manifest": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "descriptor": "5f6914220ecf09e9ae04492127d062bbb61820e503c0b4d88d4d7f243f3be194",
+        "artifact_0": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "artifact_1": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "artifact_2": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "artifact_3": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "artifact_4": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "artifact_5": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "artifact_6": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888",
+        "artifact_7": "882f84c28995d9232bda40d0347b070760a313cbf47b398c034572d6b8810cb8"
+      },
+      "source_oracle": {
+        "base_model_sha256": "a720e99995fc0bde155f067b4f5c78b6e8aeb76da7b46b2e0c947e1ba813f7fe",
+        "baseline_asset": "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8",
+        "geometry_sha256": "7ba7ef5cba168a17e515656eeb298724c3da63485d75b08cd012c3af26ef02ea",
+        "profiles": {
+          "0": {
+            "name": "run",
+            "original_model_sha256": "83b8e526d3b19acc0d4b5ef6fac2952156fc10080c38e381cde3632478e02a0d",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 0.6666666865348816,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          },
+          "1": {
+            "name": "idle",
+            "original_model_sha256": "a8e316f2485a51af0a044a6d16e268281899309cd526475ba83a0353b199eb17",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 1.0666667222976685,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          }
+        },
+        "scope": "Native normalized ORIGINAL reference/motion poses; separate quaternion-chain/FK/weighted skin math with immutable original target geometry/IBMs. Not an independent FBX parser."
+      },
+      "checks": [
+        "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+        "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+        "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+        "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+        "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+        "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+      ],
+      "source_pose_observations": 9,
+      "maximum_joint_matrix_error": 1.387267226249378e-05,
+      "maximum_weighted_vertex_error_meters": 1.7636300353623886e-07,
+      "minimum_cover_gap_meters": 0.03390361212144921,
+      "rate_changes": 136,
+      "deferred_rate_updates": 11,
+      "animation_transitions": 9,
+      "clip_command_anchor_tick": 168,
+      "command_anchor_observations": [
+        {
+          "tick": 208,
+          "clip": 0,
+          "time": 0.6661111649956816,
+          "speed": 0.9991667474935224,
+          "wrapped": false,
+          "tick_intervals_since_command_anchor": 40
+        },
+        {
+          "tick": 209,
+          "clip": 0,
+          "time": 0.016097257585692026,
+          "speed": 0.9991667474935224,
+          "wrapped": true,
+          "tick_intervals_since_command_anchor": 41
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "captures": [
+        {
+          "name": "idle",
+          "sha256": "55d2c62d5ff036207c9930491e0b613013c37f1db34da1c968e276a93af9e04e",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "tick": 76,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        {
+          "name": "run",
+          "sha256": "d07de391f666983fe5eb3b056eafc38db2344d5b7d05dbd9011f5f45c7b20dfb",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "tick": 229,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        {
+          "name": "delivered-idle",
+          "sha256": "daf4c61dd26e163c335e1bbdbd87a989c9123599fa2391fc4068db643f37ab53",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "tick": 538,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        }
+      ]
+    },
+    {
+      "label": "windows-aot-gpu1-1",
+      "backend": "native_aot",
+      "evidence_sha256": "2a025e1260bc60f76ce825d2b1736da85f1f9d3ce6f85425e1e41cfdaefecfc5",
+      "rpc_count": 5070,
+      "clean_owners": 2,
+      "hashes": {
+        "binary": "be65961bbeb8007815eae1212e00ce9c70419d7ac573bfe07cff34955e78cac7",
+        "manifest": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "descriptor": "5f6914220ecf09e9ae04492127d062bbb61820e503c0b4d88d4d7f243f3be194",
+        "artifact_0": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "artifact_1": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "artifact_2": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "artifact_3": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "artifact_4": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "artifact_5": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "artifact_6": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888",
+        "artifact_7": "882f84c28995d9232bda40d0347b070760a313cbf47b398c034572d6b8810cb8"
+      },
+      "source_oracle": {
+        "base_model_sha256": "a720e99995fc0bde155f067b4f5c78b6e8aeb76da7b46b2e0c947e1ba813f7fe",
+        "baseline_asset": "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8",
+        "geometry_sha256": "7ba7ef5cba168a17e515656eeb298724c3da63485d75b08cd012c3af26ef02ea",
+        "profiles": {
+          "0": {
+            "name": "run",
+            "original_model_sha256": "83b8e526d3b19acc0d4b5ef6fac2952156fc10080c38e381cde3632478e02a0d",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 0.6666666865348816,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          },
+          "1": {
+            "name": "idle",
+            "original_model_sha256": "a8e316f2485a51af0a044a6d16e268281899309cd526475ba83a0353b199eb17",
+            "original_motion_clip": 1,
+            "reference_clip": 0,
+            "duration": 1.0666667222976685,
+            "translation_nodes": [
+              4,
+              11
+            ]
+          }
+        },
+        "scope": "Native normalized ORIGINAL reference/motion poses; separate quaternion-chain/FK/weighted skin math with immutable original target geometry/IBMs. Not an independent FBX parser."
+      },
+      "checks": [
+        "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+        "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+        "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+        "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+        "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+        "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+      ],
+      "source_pose_observations": 9,
+      "maximum_joint_matrix_error": 1.387267226249378e-05,
+      "maximum_weighted_vertex_error_meters": 1.7636300353623886e-07,
+      "minimum_cover_gap_meters": 0.03390361212144921,
+      "rate_changes": 136,
+      "deferred_rate_updates": 11,
+      "animation_transitions": 9,
+      "clip_command_anchor_tick": 168,
+      "command_anchor_observations": [
+        {
+          "tick": 208,
+          "clip": 0,
+          "time": 0.6661111649956816,
+          "speed": 0.9991667474935224,
+          "wrapped": false,
+          "tick_intervals_since_command_anchor": 40
+        },
+        {
+          "tick": 209,
+          "clip": 0,
+          "time": 0.016097257585692026,
+          "speed": 0.9991667474935224,
+          "wrapped": true,
+          "tick_intervals_since_command_anchor": 41
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "captures": [
+        {
+          "name": "idle",
+          "sha256": "c67c03f122916d3440a8e4ae6cd524c94ca7c639d2bb322f07f89ad5b49986af",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "tick": 76,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        {
+          "name": "run",
+          "sha256": "605509578645e82824ef6365cad731ec55ccb893056e33b87b01aad6c0a580cb",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "tick": 229,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        {
+          "name": "delivered-idle",
+          "sha256": "e0353deb6cb78354c700f78d5a65ebf435874a3ef37fd0a33fee7b684712c1fa",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "tick": 538,
+          "samples": 4,
+          "size": [
+            960,
+            640
+          ],
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 5,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        }
+      ]
+    }
+  ],
+  "regressions": [
+    {
+      "system": "linux",
+      "script": "authoring_core_conformance.py",
+      "exit_code": 0,
+      "seconds": 1.52090824699917
+    },
+    {
+      "system": "linux",
+      "script": "authoring_contract_identity.py",
+      "exit_code": 0,
+      "seconds": 0.5198970870005724
+    },
+    {
+      "system": "linux",
+      "script": "mcp_contract.py",
+      "exit_code": 0,
+      "seconds": 1.5708334740011196
+    },
+    {
+      "system": "linux",
+      "script": "animation_rotation_retarget.py",
+      "exit_code": 0,
+      "seconds": 6.886083019999205
+    },
+    {
+      "system": "authoring",
+      "script": "authoring_core_conformance.py",
+      "exit_code": 0,
+      "seconds": 1.2199924689994077
+    },
+    {
+      "system": "authoring",
+      "script": "authoring_contract_identity.py",
+      "exit_code": 0,
+      "seconds": 0.46790831300313585
+    },
+    {
+      "system": "authoring",
+      "script": "mcp_contract.py",
+      "exit_code": 0,
+      "seconds": 1.1701303990012093
+    },
+    {
+      "system": "authoring",
+      "script": "animation_rotation_retarget.py",
+      "exit_code": 0,
+      "seconds": 6.335278587001085
+    },
+    {
+      "system": "windows",
+      "script": "authoring_core_conformance.py",
+      "exit_code": 0,
+      "seconds": 1.874269343999913
+    },
+    {
+      "system": "windows",
+      "script": "authoring_contract_identity.py",
+      "exit_code": 0,
+      "seconds": 0.5191432520005037
+    },
+    {
+      "system": "windows",
+      "script": "mcp_contract.py",
+      "exit_code": 0,
+      "seconds": 1.4727884630010522
+    },
+    {
+      "system": "windows",
+      "script": "animation_rotation_retarget.py",
+      "exit_code": 0,
+      "seconds": 8.943671242002893
+    }
+  ],
+  "limits": [
+    "Original FBX decoding and normalized sampling use the native importer; quaternion-chain/FK/weighted geometry expectations are separate math against original target data.",
+    "Weighted vertex oracle calculates deformation from runtime joints, not direct GPU vertex-buffer readback.",
+    "Explicit original pelvis deltas; no automatic bone mapping, foot locking, IK/contact correction, stride fitting, C1 loop repair, root-motion extraction or motion matching.",
+    "Capsule height retains original imported units about3.7647m with radius0.42m; nominal3m/s is authored playback reference, not anatomical calibration.",
+    "Only observed host save-epoch words are excluded from continued fresh-owner equality; immediate checkpoint restoration compares full normalized state. Owner session identifiers are normalized separately.",
+    "No physical-input, GUI usability, clean-machine installation or game-scale performance claim.",
+    "First exported player reports entry controller/camera; native courier joint/clock proof belongs to the subsequent separately reconstructed bundled-runtime contract."
+  ],
+  "export": {
+    "evidence_sha256": "ce846efb267c3d28940ea4b5fed8758dffe4a4f10208a3096758b67326c10435",
+    "source_removed_before_player": true,
+    "first_player_completed_before_reconstruction": true,
+    "clean_authoring_owners": 1,
+    "authoring_rpc_count": 33,
+    "commands": [
+      {
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "stdout_sha256": "5d46dacb13c58534355bd1a14f0192b5c4d80a03f402b5f88e357a1355bec921",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "stdout_sha256": "6ee389975b2173bdc9c3e6399b69497dff5aec3087d816a851b8908f8c5a688b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "stdout_sha256": "bcf0e4b68a1c13bc42971b1f756bee90ededa3984bfed950ae9e9ef7cd8d005f",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "stdout_sha256": "278099ba44bbbd11446f2c945b6d18866b6fbcb4116c7c3023f4a4b5952cead7",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "stdout_sha256": "2f4d1d0a988ed34f74ece893e6d8b3fc3f1c40b44c667004811985a1cd4a927b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "stdout_sha256": "05650d1a6fafbde58c57f6956e6cd324cef6559c117646c87525e6e4fd98f386",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "player": {
+      "ticks": 1400,
+      "success": true,
+      "stop_reason": "replay_complete",
+      "backend": "native_aot",
+      "library_sha256": "882f84c28995d9232bda40d0347b070760a313cbf47b398c034572d6b8810cb8",
+      "native_diagnostics": {
+        "dynamic_code_compiled": false,
+        "dynamic_code_supported": false
+      },
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "draws": {
+        "camera_culled": 0,
+        "camera_draws": 5,
+        "camera_triangles": 1652,
+        "objects": 5,
+        "shadow_candidates": 0,
+        "shadow_culled": 0,
+        "shadow_draws": 0,
+        "shadow_triangles": 0,
+        "shadow_views": 0,
+        "skinned_instances": 1,
+        "skinned_vertices": 1029
+      },
+      "capture_sha256": "b1e0935315e0438713cbce6df6cef14cfe019bcf01521584bed9ba9dadd0cfda",
+      "values": {
+        "Ticks": 1400,
+        "Phase": 2,
+        "Arrivals": 1,
+        "Plans": 1,
+        "Dispatches": 1,
+        "RateChanges": 136,
+        "DeferredRateUpdates": 11,
+        "AnimationTransitions": 9,
+        "PreviousSampleTick": "1399",
+        "PreviousX": 3.9471265671309084,
+        "PreviousZ": 0.057987788241007365,
+        "AnimationClip": 1,
+        "AnimationRate": 1.0
+      }
+    },
+    "separate_headless_contract": {
+      "evidence_sha256": "7fbf349dfde822ccf6663cb6ce4ad71d381065d73086a9599aef61004243d6be",
+      "rpc_count": 5064,
+      "checks": [
+        "Original target geometry/IBMs preserved;61 joint/node worlds and1029 weighted vertices compared against original-source rotation-policy math after fades.",
+        "Idle advances and wraps; real Run clocks preserve cumulative committed playback timing through40/41 fixed ticks and original float-duration wrap.",
+        "Committed native displacement controls playback rate one tick later; active finite fades defer speed-only updates without clock restart.",
+        "Native capsule detours around ray-confirmed cover and arrives within authored speed; visual facing/attachment follow movement.",
+        "Exact midfade disk saves preserve all native/compiled/typed/UI state; same/fresh owners grouped, unequal and single-tick continuations agree.",
+        "Compatible CLR reload or unsupported AOT replacement is verified; actual compiled pause/save/load/resume and redispatch controls run."
+      ],
+      "source_pose_observations": 9,
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "rate_changes": 136,
+      "deferred_rate_updates": 11
+    },
+    "bundle_inventory": {
+      "content/ASSET_CREDITS.txt": "c7b82db303fd45eab55574344480ed5aef25e6152943089d772d70c04ae2cbf8",
+      "content/world.json": "301c3d03710c76626c38e7bba40b9222c7de20addacc90558c2466b09e01802d",
+      "content/world.json.assets/3fa2f178a4175cbc1560f53ea495f075ed2ba029f1db8ebb71bbe78f23f6782b.pnav": "3fa2f178a4175cbc1560f53ea495f075ed2ba029f1db8ebb71bbe78f23f6782b",
+      "content/world.json.assets/44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857.pprov": "44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857",
+      "content/world.json.assets/b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+      "game.json": "d3afc4bb1c65109da3dcc6395d423d79006db7484c08ca77fe7984aae2549068",
+      "gameplay/game.poima-components.json": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+      "gameplay/native-gameplay.json": "5f6914220ecf09e9ae04492127d062bbb61820e503c0b4d88d4d7f243f3be194",
+      "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+      "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+      "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+      "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+      "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888",
+      "gameplay/Poima.NativeGame.dll": "882f84c28995d9232bda40d0347b070760a313cbf47b398c034572d6b8810cb8",
+      "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+      "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+      "runtime/bin/poima.exe": "be65961bbeb8007815eae1212e00ce9c70419d7ac573bfe07cff34955e78cac7",
+      "runtime/bin/poima_desktop.dll": "ed1618d3d70f9b7a34f90841237ba2345d9d7cc90502c1fce54b9763259d6dc7",
+      "runtime/runtime.json": "8e25f8cf4f6114b1811810d9ef6a1a804ec5d1a6c1affae8f6f2610fe26dc920",
+      "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+      "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+      "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+      "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+      "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+      "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+      "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+      "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+      "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+      "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+      "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+      "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+      "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+      "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+      "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+      "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+      "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+      "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+      "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+      "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+      "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+      "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+      "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+      "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+      "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+      "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+      "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+      "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "runtime/share/poima/THIRD_PARTY_NOTICES.md": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888",
+      "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+    },
+    "checks": [
+      "Actual relocated source-free player loads NativeAOT at tick zero with empty initial values, routes and animates its real courier, and arrives without runtime replacement.",
+      "Separate reconstructed worlds use the exact bundled runtime/artifact for original-source joint/geometry/facing oracles, compiled UI saves and exact same/fresh-owner continuation.",
+      "Model/navigation/provenance/credits, runtime/licenses and native artifact inventory remain exact after export, source removal, relocation and both independent executions."
+    ]
+  },
+  "totals": {
+    "cohort_rpc_count": 25338,
+    "cohort_clean_owners": 10,
+    "cohort_vulkan_readbacks": 9,
+    "export_player_ticks": 1400,
+    "bundled_runtime_rpc_count": 5064,
+    "regression_checks": 12
+  },
+  "retained_failures": [
+    {
+      "label": "linux-clr-1",
+      "evidence_sha256": "a51e76d90b483ee2e25633117f60e67d73bb6f4493b15f445a1f68450fc6945a",
+      "rpc_count": 1695,
+      "reason": "Verifier compared canonical int64 string to integer; corrected against actual terminal receipt.",
+      "production_changed": false
+    },
+    {
+      "label": "linux-clr-2",
+      "evidence_sha256": "b1da5c7cd4d0346d81ac7b11b26909c4c3f39489016878291e76b59079c7db7d",
+      "rpc_count": 3159,
+      "reason": "Verifier axis-expanded square rejected positive-clearance rounded corner; corrected to exact rectangle closest-point capsule gap.",
+      "production_changed": false
+    },
+    {
+      "label": "windows-bundle-1",
+      "evidence_sha256": "7e2ca3b86d81c1bda725a0bcdbf96677d4add373c55d8c9d89257f04674a445b",
+      "rpc_count": null,
+      "reason": "Both real player and separate contract passed; local rich evidence exceeded shared16MiB CLI response limit. Added separate128MiB local evidence reader without changing CLI bounds.",
+      "production_changed": false
+    }
+  ],
+  "build_attempts_note": "First native Windows cohort selected the nonexistent poima-desktop target; corrected to poima_desktop and reran sequential final cohort. No production change beyond version marker; original logs retained.",
+  "documentation_image": {
+    "path": "docs/evidence/locomotion-yard.png",
+    "sha256": "bfea011c960f234514c022752d6e7d35a72bcf98c5176fbb2992319dbd211580",
+    "source_bmp_sha256": "605509578645e82824ef6365cad731ec55ccb893056e33b87b01aad6c0a580cb",
+    "conversion": "Lossless BMP-to-PNG format conversion; unmodified actual Vulkan character game readback."
+  }
+}

@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.75
+
+- Add [Locomotion Yard](examples/locomotion-yard/README.md), a compiled character game using original separate FBX Idle/Run takes, explicit retargeting, native capsule navigation and controller-derived playback rates.
+- Keep both loops advancing; preserve cumulative clocks through rate corrections and defer those corrections until active inertial transitions finish. Exercise physical corner slowdown and exact midfade checkpoint continuation.
+- Qualify Windows/Linux CoreCLR and Native AOT, independent original-source joint/skin calculations, nine Windows Vulkan readbacks on both GPUs, and a relocated source-free 1,400-tick Windows player followed by separate bundled-runtime checks. Preserve selected authoring, MCP and retargeting contracts. [Evidence](docs/evidence/m2-locomotion-game.json).
+- Publish the complete character-game task playbook and current licensed capture. Distinguish reusable engine mechanisms from game-specific decisions in the documentation standard; retain contact, stride, loop repair and broader character qualification as separate work.
+
 ## 0.0.74
 
 - Add [guarded original-source inspection and explicit rotation retargeting](docs/ANIMATION_RETARGETING.md). Inspect animation-only donors before cooking; bind original reference/take/node selections to normalized-model fingerprints and reject changed sources.

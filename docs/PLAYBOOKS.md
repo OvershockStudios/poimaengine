@@ -27,6 +27,7 @@ the guide's recorded evidence and the actual installed capabilities together.
 | Run a guard's patrol, investigation and pursuit | [Patrol Room](../examples/managed/PatrolGame/README.md) | Simulation, managed gameplay, game UI, matching CoreCLR bridge/hostfxr, .NET 10 SDK and Python. Interactive play needs Windows Vulkan. | The documented headless verifier checks decision outcomes, wall occlusion, compatible reload and fresh-process checkpoint continuation. |
 | Import a licensed weighted character and inspect its poses | [Imported character](IMPORTED_CHARACTER.md) | Native executable, Python 3.9+, pinned original GLB and a new output directory; runtime poses need simulation, optional images need Windows Vulkan | Compare source-derived transforms and geometry, inspect the converted root and retained skin, and verify source-independent fresh-owner content. |
 | Control an imported character and export its compiled game | [Character Yard](../examples/character-yard/README.md) | Matching 0.0.71 engine/SDK, pinned original GLB, Python and .NET 10 SDK; simulation, navigation and the selected compiled gameplay backend. Windows graphics need Vulkan and game UI; export needs a matching installed runtime and Windows Native AOT artifact. | Independent source-pose and native route checks, reload/rejection policy, same/fresh-owner checkpoints; relocated exported player runs before a separate bundled-runtime contract. |
+| Build and export controller-driven idle/run locomotion from original FBX clips | [Locomotion Yard](../examples/locomotion-yard/README.md) | Matching 0.0.75 engine/SDK, pinned original CC0 FBX body and separate takes, Python and .NET 10 SDK; simulation, navigation and the selected compiled gameplay backend. Windows captures need Vulkan and game UI; export needs a matching installed runtime and Windows Native AOT artifact. | Independent original-source pose/skin and cumulative playback checks, native physical detour, compatible reload and exact midfade save continuation; relocated source-free player runs before separate bundled-runtime qualification. |
 | Author a blockout and capture its appearance | [Courtyard scene](SCENE_CAPTURE.md#try-the-example) | Native authoring executable and new world path; capture additionally needs a Windows Vulkan renderer, display and supported hardware | Inspect the transaction result and capture metadata, then view the saved image. Linux authoring-only builds can create the scene but cannot capture it. |
 
 The game examples use deliberately small fixtures. Scripted input and renderer
@@ -35,7 +36,10 @@ performance. Collection Room's development directory is not an exported game
 bundle; its guide links to the separate native-gameplay and project export
 contracts. Character Yard includes a tested Windows export verifier that removes
 only its owned source project before running the relocated game. Its single
-stationary source take does not supply a locomotion library.
+stationary source take does not supply a locomotion library. Locomotion Yard
+extends the compiled workflow to separate original idle/run clips, explicit
+retargeting and controller-derived playback rates; it does not supply foot
+locking, IK or automatic stride fitting.
 
 ## Continue an existing project
 

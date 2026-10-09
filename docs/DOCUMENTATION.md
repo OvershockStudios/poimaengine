@@ -52,6 +52,12 @@ Recipes must use operations the engine actually supplies. A future capability
 matrix is planning documentation, not a runnable playbook. Long tasks compose
 small guides rather than duplicating a complete manual in every prompt.
 
+Separate engine mechanisms from game design. A weapon, encounter or inventory
+playbook explains how to compose supported services and optional packages into
+gameplay; it does not make one game's rules compulsory in the engine. Show the
+editable decisions, such as controller speed, animation timing and save policy,
+and explain how a developer can inspect and change them.
+
 Each playbook names its tested engine/package versions, required build options,
 platform and toolchain. State whether a path is an input, a new output or a
 directory that can be reused. Show expected observations at meaningful steps,
@@ -70,7 +76,9 @@ workflow; discover the actual installed capabilities before executing it.
 The runnable [guarded scene edit](../examples/guarded-authoring) is an initial
 playbook: discovery, preview, atomic changes, conflict reconciliation, receipt
 replay and fresh-owner persistence. [Collection Room](../examples/collection-game)
-provides a longer compiled-game example with input and save continuation.
+provides a longer compiled-game example with input and save continuation. [Locomotion Yard](../examples/locomotion-yard/README.md)
+composes original character intake, compiled movement/animation, checkpoint
+recovery and exported playback with explicit source and policy limits.
 
 ## Codex and Claude skills
 

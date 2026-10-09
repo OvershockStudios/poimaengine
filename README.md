@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.74.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.75.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -92,7 +92,7 @@ Follow the [Windows editor build and launch guide](docs/DESKTOP_EDITOR.md#build-
 
 [Patrol Room](examples/managed/PatrolGame) demonstrates compiled NPC decisions: a guard patrols, investigates noise, pursues a visible player and loses sight behind solid cover. Native-input checks exercise escape, capture, reload and checkpoint continuation. It uses an authored route and direct steering; arbitrary obstacle pathfinding remains separate work.
 
-[Character Yard](examples/character-yard) connects a licensed imported rig to native capsule movement, compiled navigation, source animation and checkpoints. Its guide includes Windows Native AOT export and relocated playback. The supplied arm-opening motion is not a walk cycle.
+[Locomotion Yard](examples/locomotion-yard) connects an original licensed FBX character and separate idle/run clips to native capsule movement, compiled navigation and checkpoints. Playback rate follows committed controller movement. Its tested playbook includes Windows Native AOT export and relocated playback.
 
 Recorded qualification covers Windows graphics/editor workflows and Linux headless workflows. Linux desktop rendering, clean-machine distribution and consoles remain unqualified; physical input testing is separate from scripted and virtual-device checks.
 
@@ -102,7 +102,7 @@ Recorded qualification covers Windows graphics/editor workflows and Linux headle
 - **Program and automate:** [world service](docs/WORLD_SERVICE.md), [Python client](docs/PYTHON_CLIENT.md), [runtime](docs/RUNTIME.md), [C# gameplay](docs/MANAGED_GAMEPLAY.md), [native gameplay](docs/NATIVE_GAMEPLAY.md), [custom components](docs/CUSTOM_COMPONENTS.md).
 - **Create content:** [assets](docs/ASSETS.md), [asset records](docs/ASSET_PROVENANCE.md), [materials](docs/MATERIAL_AUTHORING.md), [procedural materials](docs/PROCEDURAL_MATERIALS.md), [animation](docs/RUNTIME_ANIMATION.md), [game UI](docs/GAME_UI.md), [audio](docs/AUDIO_EVENTS.md), [input](docs/INPUT_PROFILES.md).
 - **Inspect behavior:** [profiler](docs/PROFILER.md), [native jobs](docs/JOBS.md), [save upgrades](docs/SAVE_UPGRADES.md), [implementation status and evidence](docs/IMPLEMENTATION_STATUS.md).
-- **Follow a task playbook:** [task index](docs/PLAYBOOKS.md), [guarded scene edits and recovery](examples/guarded-authoring), [build a compiled collection game](examples/collection-game), [import, control and export a character](examples/character-yard).
+- **Follow a task playbook:** [task index](docs/PLAYBOOKS.md), [guarded scene edits and recovery](examples/guarded-authoring), [build a compiled collection game](examples/collection-game), [import, animate and export a character game](examples/locomotion-yard).
 
 The [wiki](https://github.com/OvershockStudios/poimaengine/wiki) provides another entry point. Detailed contracts and evidence are versioned with the source. The [documentation standard](docs/DOCUMENTATION.md) defines the manual, API reference, tested task playbooks and agent skills required as capabilities mature.
 

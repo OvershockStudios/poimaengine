@@ -1,8 +1,44 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.74**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.75**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.75 adds [Locomotion Yard](../examples/locomotion-yard/README.md),
+a compiled character game using an untouched original CC0 FBX body and separate
+Idle/Run takes. Explicit rotation retargeting preserves original target geometry,
+rest data and inverse binds, with declared HipsCtrl/Hips position deltas.
+The native capsule owns travel and navigation; a child visual wrapper aligns
+forward axes and standing height without rescaling the source body. Both clips
+advance and loop. Run speed follows horizontal displacement from the previous
+committed tick, divided by an authored 3 m/s playback reference. Physical corner
+slowdown exercises real rate changes. Rate-only corrections preserve the observed
+clock and wait for active inertial fades to complete, because the existing
+playback command replaces the full animation state.
+
+Windows/Linux CoreCLR and Native AOT pass the original-source joint/weighted
+geometry oracle, cumulative playback/wrap checks, native physical detour,
+compiled controls and exact midfade same/fresh-owner checkpoint continuation.
+CoreCLR compatible reload preserves live state; Native AOT replacement retains
+its documented rejection policy. Windows captures observe idle, run and delivered
+idle on both laptop GPUs. A relocated Windows Native AOT player starts at tick
+zero after its owned authoring project is removed; a separate bundled-runtime
+contract then verifies native courier poses, clocks and saves. The first player
+report exposes courier observations through compiled state and renderer counts,
+not direct courier joint/clock output. [Evidence](evidence/m2-locomotion-game.json).
+
+The 3.76 m imported standing height is retained, with a 0.42 m capsule radius.
+The 3 m/s rate reference is sample configuration, not automatic stride fitting.
+The original Run closes its pose but is not velocity-continuous at the seam;
+foot locking, IK, contact correction, loop repair, root-controller extraction,
+motion matching and a broad character-exporter profile remain unfinished.
+The original source decoder is the native importer; the rotation/FK/skin oracle
+is separate math, and weighted vertices are calculated from actual runtime
+joints rather than read directly from GPU buffers. These small fixtures do not
+qualify physical input, editor usability, clean-machine installation or game-scale
+performance. Authoring-core v1, protocol 1, schema revision 64 and gameplay
+service epoch 7 remain unchanged. The new task playbook documents the verified
+profile without changing the historical Character Yard example.
 
 Version 0.0.74 adds [explicit rotation retargeting](ANIMATION_RETARGETING.md)
 for matching named ancestry with differing proportions, reference stances and
@@ -29,8 +65,8 @@ One AMD Idle GPU/CPU pixel has channel error 13. These are bounded readback
 comparisons, not universal rendering tolerances. Existing exact composition,
 frame conversion, discovery, authoring and MCP checks pass, as does the preserved
 0.0.71 Linux Native AOT character game. Automatic bone-name mapping, contact/IK,
-stride and loop repair, root-motion extraction and a compiled FBX locomotion
-game remain unfinished. The source oracle uses original native-normalized
+stride and loop repair and root-motion extraction remain unfinished. The
+compiled FBX locomotion game is qualified separately in 0.0.75. The source oracle uses original native-normalized
 observations with independent retarget/FK/skin math, not an independent FBX
 parser. [Evidence](evidence/m2-animation-rotation-retarget.json).
 
