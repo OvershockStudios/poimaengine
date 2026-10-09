@@ -38,9 +38,7 @@
         }
         require(options.gamepad_selection.mode=="disabled" || options.input_profile->gamepad.has_value(),"Gamepad selection requires a v2 profile; copy a v1 profile to a new v2 destination first.");
         input_info["format"]=options.input_profile->gamepad ? "poima.input.v2" : "poima.input.v1";
-        const auto controller=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
-            [&](const auto& e){return e.id==options.controller && e.character.has_value() && !e.character->camera.empty();});
-        require(options.controller.empty() || controller!=runtime_definition_.entities.end(),"Player requires a camera-bound CharacterController when controller is supplied.",-32004);
+        require(options.controller.empty() || runtime_->is_player_controller(options.controller),"Player requires a camera-bound CharacterController when controller is supplied.",-32004);
         try { runtime_->snapshot(options.camera); }
         catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         if(options.replay) {
@@ -76,8 +74,7 @@
             std::string identity() const override { return owner.runtime_id_; }
             std::uint64_t tick() const override { return owner.runtime_->inspect().tick; }
             bool controller_valid(const std::string& id) const override {
-                return std::any_of(owner.runtime_definition_.entities.begin(),owner.runtime_definition_.entities.end(),
-                    [&](const auto& entity){return entity.id==id && entity.character && !entity.character->camera.empty();});
+                return owner.runtime_->is_player_controller(id);
             }
             SceneSnapshot snapshot(const std::string& camera) const override { return owner.runtime_->snapshot(camera); }
             PlayerAudioState audio_state(const std::string& listener) const override {
@@ -364,7 +361,7 @@
         // Runtime collector performs managed GC/unloading; it is not a pure read.
         constexpr std::array reads{"runtime.status","runtime.inspect","runtime.observe","runtime.entity","runtime.lighting",
             "runtime.raycast","runtime.components","runtime.component.get","runtime.component.query","runtime.gameplay.inspect",
-            "runtime.template.get","runtime.template.query","runtime.ui.inspect","runtime.audio.inspect","runtime.audio.voices",
+            "runtime.template.get","runtime.template.query","runtime.instance","runtime.ui.inspect","runtime.audio.inspect","runtime.audio.voices",
             "runtime.save.status","runtime.save.result"};
         return std::find(reads.begin(),reads.end(),method)==reads.end();
     }

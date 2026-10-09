@@ -44,6 +44,14 @@ struct AudioStream::Impl {
     }
     void synchronize(const AudioSnapshot& next,const std::vector<SoundVoice>& states) {
         if(!same_paths(snapshot,next)) { paths=observe_audio(next);snapshot=next;++stats.path_updates; }
+        // A committed instance removal retires emitter membership. Its delayed
+        // and tail DSP voices cannot keep borrowing a now absent propagation
+        // path; other emitters and their presentation state remain untouched.
+        std::erase_if(voices,[&](const auto& item) {
+            return std::none_of(paths.paths.begin(),paths.paths.end(),[&](const AudioPath& value) {
+                return value.entity==item.second->state.emitter;
+            });
+        });
         for(const auto& state:states) {
             if(auto found=voices.find(state.id);found!=voices.end()) { found->second->state=state;continue; }
             if(state.id<=seen)continue;

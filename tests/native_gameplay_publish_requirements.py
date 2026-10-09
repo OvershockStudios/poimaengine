@@ -53,6 +53,24 @@ class Requirements(unittest.TestCase):
             with self.subTest(features=features),self.assertRaises(ValueError):
                 self.read(dict(self.baseline,services_bytes=224,features=features))
 
+    def test_instance_independence_and_combinations(self):
+        for navigation in [False,True]:
+            for character in [False,True]:
+                for animation in [[],['animation_inertial_v1'],['animation_inertial_v1','animation_layers_v1']]:
+                    features=sorted(['baseline_v7','hierarchical_instances_v1']+animation+
+                                    (['navigation_query_v1'] if navigation else [])+(['character_input_v1'] if character else []))
+                    required=dict(self.baseline,services_bytes=232,features=features)
+                    with self.subTest(features=features):self.assertEqual(self.read(required),required)
+                    for extent in [176,192,208,216,224,231,233,256]:
+                        with self.subTest(features=features,extent=extent),self.assertRaises(ValueError):
+                            self.read(dict(required,services_bytes=extent))
+        for features in [['baseline_v7'],['hierarchical_instances_v1'],
+                         ['baseline_v7','hierarchical_instances_v1','hierarchical_instances_v1'],
+                         ['baseline_v7','hierarchical_instances_v1','animation_layers_v1'],
+                         ['baseline_v7','hierarchical_instances_v1','future_feature_v1']]:
+            with self.subTest(features=features),self.assertRaises(ValueError):
+                self.read(dict(self.baseline,services_bytes=232,features=features))
+
     def test_layer_dependency_and_named_prefix(self):
         features=['baseline_v7','animation_inertial_v1','animation_layers_v1']
         for extent in [176,192,200,207,209,240]:

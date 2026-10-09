@@ -75,11 +75,13 @@
             require(self.control_intent==RuntimeControlIntent::none || self.control_intent==next,"Conflicting playback intents in one Control callback.");self.control_intent=next;
         });
     }
-    PoimaGameNavigationServicesV1 services() {
-        return {{{{{7,sizeof(PoimaGameNavigationServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
+    PoimaGameInstanceServicesV1 services() {
+        PoimaGameInstanceServicesV1 result{};
+        result.navigation={{{{{7,sizeof(PoimaGameInstanceServicesV1),this,&get_entity,&cast_ray,&move_body,&sound_event,&get_animation,&set_animation,
             &save_info,&save_request,&save_result,&component_query,&component_get,&component_set,&entity_alive,
             &spawn_entity,&despawn_entity,&template_component_get,&get_ui,&edit_ui,&get_control,&request_control},
             &get_animation_extended,&set_animation_extended},&get_animation_layer,&set_animation_layer},&set_character_input},&query_navigation};
+        result.instance_node=&resolve_instance_node;return result;
     }
     std::shared_ptr<ui::Model> prepare_ui_commands() const {
         if(ui_commands.empty() && !ui_modal)return {};
@@ -99,7 +101,7 @@
         const auto numeric=gameplay_id(id);control_event.element={numeric.high,numeric.low};control_event.sequence=control_sequence+1;
         control_event.action_bytes=static_cast<uint32_t>(definition.action.size());std::copy(definition.action.begin(),definition.action.end(),control_event.action);
         try {
-            game_phase=GamePhase::control;const auto api=services();game->control(api.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
+            game_phase=GamePhase::control;const auto api=services();game->control(api.navigation.character.animation.animation.baseline,tick);game_phase=GamePhase::idle;
             game->validate_entity_references([](void* context,PoimaEntityId entity){return static_cast<RuntimeComponents*>(context)->alive(entity);},components.get());
             auto candidate=prepare_ui_commands();
             require(!save_queue.pending() || save_queue.commit(tick),"Cannot commit Control save intent.");

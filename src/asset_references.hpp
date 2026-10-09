@@ -9,7 +9,7 @@
 #include <vector>
 
 namespace poima::asset_references {
-inline constexpr std::size_t max_entities=10000,max_templates=256,max_edges=101537;
+inline constexpr std::size_t max_entities=10000,max_templates=256,max_edges=101537+4096*10;
 inline constexpr std::uint32_t max_page=256;
 inline constexpr std::size_t max_result_bytes=1048576;
 struct Error : std::runtime_error {

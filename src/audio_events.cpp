@@ -111,6 +111,11 @@ void SoundState::stop(std::uint64_t voice,std::uint64_t tick) {
     if(found==voices_.end())throw std::runtime_error("Sound voice is unknown or its finished record expired.");
     if(!found->stop_sample)found->stop_sample=tick*audio_tick_frames;
 }
+void SoundState::retire_emitters(std::span<const std::string> emitters) noexcept {
+    std::erase_if(voices_,[&](const SoundVoice& voice) {
+        return std::find(emitters.begin(),emitters.end(),voice.emitter)!=emitters.end();
+    });
+}
 std::string SoundState::save_state(std::uint64_t tick) const {
     check(tick<=safe_integer,"Sound save tick exceeds the supported range.");
     Json value={{"format","poima.sound-state"},{"version",1},{"tick",tick},{"next_voice_id",next_},{"voices",Json::array()}};

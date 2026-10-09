@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.78
+
+- Add [complete runtime hierarchy instances](docs/RUNTIME_INSTANCES.md): frozen local graphs, fresh member IDs, local-reference remapping and atomic character, camera, rig/skin, lighting and audio membership.
+- Preserve surviving simulation and animation state through births, cancellations and whole-instance removal. Repair incoming references before deletion; retain complete instance maps and allocator history in exact version-6 checkpoints.
+- Add an independently negotiated 232-byte C# node-resolution extension while preserving older service profiles. Carry nested asset closure through dependency queries and export, and advertise the feature in installed runtime metadata.
+- Qualify Windows/Linux CoreCLR and Native AOT with two original imported characters, independent pose/geometry checks, rollback and save continuation. Check generated player cameras and relocated compiled playback on both GPUs, preserving earlier compiled artifacts. [Evidence](docs/evidence/m2-runtime-instances.json).
+- Publish the runnable recipe, compiled fixture instructions and recovery/compatibility reference. Hierarchical schema upgrades and desktop prefab authoring remain separate work.
+
 ## 0.0.77
 
 - Add a [live shared native player](docs/LIVE_PLAYER.md): deferred launch, readiness inspection, guarded pause/resume/stop and fresh captures through the existing graphics context without advancing simulation.

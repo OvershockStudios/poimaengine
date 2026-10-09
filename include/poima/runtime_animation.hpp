@@ -4,6 +4,7 @@
 #include "poima/animation.hpp"
 #include <functional>
 #include <map>
+#include <utility>
 
 namespace poima {
 struct RuntimeAnimationPose { std::string entity;RuntimeTransform local; };
@@ -25,6 +26,14 @@ class RuntimeAnimations {
         std::vector<NodePose> baseline;
         std::vector<std::string> nodes;
         std::vector<LayerDefinition> layers;
+        std::vector<std::pair<std::string,std::string>> parents;
+        std::map<std::string,std::uint32_t> skins;
+        std::map<std::string,std::shared_ptr<const MeshAsset>> skin_geometry;
+    };
+    struct Membership {
+        std::vector<Rig> rigs;
+        std::map<std::string,std::size_t> indices;
+        std::map<std::string,RuntimeSkinnedMesh> skins;
     };
 public:
     struct InertialNode {
@@ -59,13 +68,15 @@ public:
     struct Checkpoint {
         std::vector<Clock> bases;
         std::vector<std::vector<LayerPlayback>> layers;
+        // Opaque immutable definitions, owned across structural rollback.
+        std::shared_ptr<const Membership> membership;
         const Clock& operator[](std::size_t index) const { return bases[index]; }
     };
 private:
     std::shared_ptr<jobs::Executor> executor_;
-    std::vector<Rig> rigs_;
-    std::map<std::string,std::size_t> indices_;
-    std::map<std::string,RuntimeSkinnedMesh> skins_;
+    std::shared_ptr<const Membership> membership_;
+    RuntimeAnimations(const RuntimeDefinition&,std::shared_ptr<jobs::Executor>,
+        std::uint64_t tick,const Membership* compiled_cache);
     std::vector<Clock> clocks_;
     std::vector<std::vector<LayerPlayback>> layers_;
     ModelPose evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const;
@@ -78,13 +89,17 @@ public:
     explicit RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
     std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick,bool include_layers=false) const;
     std::optional<RuntimeAnimationLayerState> layer_state(const std::string& entity,std::uint32_t slot,std::uint64_t tick) const;
+    // Owner boundary only, after sample has joined its jobs. Surviving rig
+    // definitions/bindings are immutable; their entire live playback survives.
+    // Added rigs begin at tick, removed rigs disappear atomically.
+    void rebind(const RuntimeDefinition& definition,std::uint64_t tick);
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
     std::vector<RuntimeAnimationPose> sample(std::uint64_t tick);
     // Bounded diagnostic state only; caller binds the exact definition/assets.
     std::string save_state(std::uint64_t tick) const;
     void load_state(const std::string& state,std::uint64_t tick);
-    Checkpoint checkpoint() const { return {clocks_,layers_}; }
-    void restore(Checkpoint& checkpoint) noexcept { clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers); }
+    Checkpoint checkpoint() const { return {clocks_,layers_,membership_}; }
+    void restore(Checkpoint& checkpoint) noexcept { membership_.swap(checkpoint.membership);clocks_.swap(checkpoint.bases);layers_.swap(checkpoint.layers); }
     std::shared_ptr<const SkinPose> skin(const std::string& entity,const std::function<const Matrix4&(const std::string&)>& world) const;
 };
 }

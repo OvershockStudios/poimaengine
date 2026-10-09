@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <utility>
 
 namespace poima {
 namespace jobs { class Executor; }
@@ -127,7 +128,7 @@ struct RuntimeEntityDefinition {
 };
 inline constexpr std::size_t max_runtime_spawn_templates=256;
 inline constexpr std::size_t max_runtime_template_payload_bytes=2*1024*1024;
-// Standalone frozen root-prop recipe, not an entity or a view of live state.
+// Frozen legacy root-prop or complete local hierarchy, not a view of live state.
 // Scalar values and custom payloads are owned; presentation assets are shared
 // immutable values. Template IDs occupy a separate namespace from entity IDs.
 struct RuntimeSpawnTemplate {
@@ -136,6 +137,18 @@ struct RuntimeSpawnTemplate {
     std::optional<BoxCollider> collider;
     std::optional<RuntimeMesh> mesh;
     std::map<std::string,components::Payload> components;
+    // Hierarchical recipes use a complete local entity graph instead of the
+    // legacy single-root fields above. root is a local identity in entities.
+    // Immutable assets are shared; references to local nodes remap on birth.
+    std::string root;
+    std::vector<RuntimeEntityDefinition> entities;
+};
+inline constexpr std::size_t max_runtime_template_entities=1024;
+inline constexpr std::size_t max_runtime_template_total_entities=4096;
+struct RuntimeSpawnInstance {
+    std::string root,template_id;
+    RuntimeTransform initial;
+    std::map<std::string,std::string> nodes; // Frozen local node -> allocated entity.
 };
 struct RuntimeNavigationDefinition {
     std::string asset,source_fingerprint;
@@ -159,6 +172,14 @@ void validate_runtime_mesh_colliders(const RuntimeDefinition& definition);
 void validate_runtime_templates(const RuntimeDefinition& definition);
 // Check an instance override against an already validated immutable recipe.
 void validate_runtime_spawn_transform(const RuntimeSpawnTemplate&,const RuntimeTransform&);
+// Local root first, then other local IDs in canonical lexical order. Legacy
+// single-root recipes use the recipe ID as their one local node identity.
+std::vector<std::string> runtime_template_members(const RuntimeSpawnTemplate&);
+// Owned expanded definitions. Internal parents and native/custom entity fields
+// remap through the complete identity map; external custom references stay exact.
+std::vector<RuntimeEntityDefinition> runtime_template_entities(const RuntimeSpawnTemplate&,
+    const std::map<std::string,std::string>& nodes,const RuntimeTransform& root_transform,
+    const std::vector<components::Schema>& schemas);
 struct RuntimeInput {
     std::string entity;
     std::array<float,2> move{0,0}; // right, forward; diagonal magnitude clamped to one
@@ -249,11 +270,17 @@ public:
     Runtime& operator=(const Runtime&)=delete;
     RuntimeSummary inspect() const;
     const std::string& presentation_source_id() const;
-    // Atomic paused-boundary prototype. Removal currently accepts spawned root
-    // props only. No RPC/C# exposure until coordinated tick/save support lands.
+    // Atomic boundary operation. Removing an instance root removes its complete
+    // membership; references from survivors must be repaired in the same batch.
     RuntimeStructureResult change_structure(std::uint64_t expected_revision,
         const std::vector<RuntimeSpawnRequest>& spawns,const std::vector<std::string>& despawns);
     std::uint64_t structure_revision() const;
+    RuntimeSpawnInstance instance(const std::string& root) const;
+    std::string instance_node(const std::string& root,const std::string& local) const;
+    bool is_player_controller(const std::string& id) const;
+    std::vector<std::pair<std::string,std::string>> player_controllers() const;
+    std::vector<std::string> camera_ids() const;
+    const RuntimeDefinition& live_definition() const;
 
     RuntimeEntityState entity(const std::string& id) const;
     // Portable, bounded logical checkpoint. The trusted host supplies the SHA-256

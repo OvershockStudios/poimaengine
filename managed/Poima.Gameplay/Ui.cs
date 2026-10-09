@@ -59,7 +59,7 @@ public readonly unsafe ref partial struct GameContext
     }
 }
 /// <summary>A semantic action at unchanged simulation time. Mutable gameplay state still belongs in TState.</summary>
-public readonly unsafe ref struct ControlContext
+public readonly unsafe ref partial struct ControlContext
 {
     private readonly NativeServices* services;
     private readonly GameContext context;
@@ -67,9 +67,10 @@ public readonly unsafe ref struct ControlContext
     public ulong Sequence { get; }
     public UiId Element { get; }
     public string Action { get; }
-    internal ControlContext(NativeServices* services,ulong tick)
+    internal ControlContext(NativeServices* services,ulong tick):this(services,tick,GameplayRequiredFeatures.None) { }
+    internal ControlContext(NativeServices* services,ulong tick,GameplayRequiredFeatures requiredFeatures)
     {
-        this.services=services;context=new(services,null,0,tick);NativeUiControlEvent e=default;NativeError error=default;
+        this.services=services;context=new(services,null,0,tick,requiredFeatures);NativeUiControlEvent e=default;NativeError error=default;
         Check(services->ControlInfo(services->Context,&e,&error),&error);
         if(e.Reserved!=0 || e.ActionBytes is <1 or >128 || e.Sequence is <1 or >9007199254740991UL || e.Element==default)throw new InvalidOperationException("Invalid native control event.");
         for(uint i=0;i<e.ActionBytes;++i) {byte c=e.Action[i];if(!((c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_' || c=='.' || c=='-'))throw new InvalidOperationException("Invalid native action token.");}

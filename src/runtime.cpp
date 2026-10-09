@@ -122,9 +122,12 @@ struct Runtime::Impl {
     JPH::TempAllocatorImplWithMallocFallback allocator{16*1024*1024};
     JPH::JobSystemSingleThreaded jobs{JPH::cMaxPhysicsJobs};
     entt::registry registry;
-    struct SpawnOrigin { std::string template_id;RuntimeTransform initial; };
+    using SpawnOrigin=RuntimeSpawnInstance;
     struct Topology {
         std::map<std::string,SpawnOrigin> spawned;
+        std::map<std::string,RuntimeEntityDefinition> definitions;
+        RuntimeDefinition live;
+        std::vector<AcousticGeometry> acoustic_geometry;
 
         std::map<std::string,entt::entity> identities;
         std::vector<entt::entity> order,hierarchy,characters,kinematics;
@@ -156,7 +159,10 @@ struct Runtime::Impl {
     GameplaySaveQueue save_queue;
     const GameplaySaveLedger* save_ledger=nullptr;
     std::vector<KinematicTarget> game_commands;
-    struct PendingSpawn { PoimaEntityId id;RuntimeSpawnRequest request;bool canceled=false; };
+    struct PendingSpawn {
+        PoimaEntityId id;RuntimeSpawnRequest request;RuntimeSpawnInstance instance;
+        std::vector<RuntimeEntityDefinition> entities;bool canceled=false;
+    };
     std::vector<PendingSpawn> game_spawns;
     std::vector<std::string> game_despawns;
     std::size_t game_structure_calls=0,scheduled_structure_calls=0;
@@ -166,7 +172,6 @@ struct Runtime::Impl {
     std::vector<AnimationCommand> game_animation_commands;
     std::vector<RuntimeInput> game_character_inputs;
     SoundState sounds;
-    std::vector<AcousticGeometry> acoustic_geometry;
     std::uint32_t game_sound_calls=0,game_navigation_calls=0;
     std::optional<RuntimeNavigationDefinition> navigation_binding;
     std::array<std::uint64_t,4> navigation_asset{};
@@ -177,7 +182,7 @@ struct Runtime::Impl {
     ~Impl() {
         for (auto e : owned_entities) {
             if (auto* c=registry.try_get<Controller>(e); c && c->character) {
-                if(physics.GetBodyInterface().IsAdded(c->character->GetBodyID()))c->character->RemoveFromPhysicsSystem();
+                if(!c->character->GetBodyID().IsInvalid() && physics.GetBodyInterface().IsAdded(c->character->GetBodyID()))c->character->RemoveFromPhysicsSystem();
                 c->character=nullptr;
             }
             if (auto* b=registry.try_get<Body>(e); b && !b->id.IsInvalid()) {
@@ -224,10 +229,138 @@ struct Runtime::Impl {
         world_matrices();
     }
 #include "runtime_navigation.inc"
+    void create_entity(const RuntimeEntityDefinition& d,Topology& candidate) {
+        require(!candidate.identities.contains(d.id),"Duplicate runtime entity ID.");
+        auto e=registry.create();owned_entities.push_back(e);
+        candidate.definitions.emplace(d.id,d);
+        candidate.identities.emplace(d.id,e);candidate.order.push_back(e);
+        registry.emplace<Node>(e, d.id,d.parent,d.transform,d.transform);
+        if (d.camera) registry.emplace<RuntimeCamera>(e,*d.camera);
+        if (d.mesh) registry.emplace<RuntimeMesh>(e,*d.mesh);
+        if(d.light) { validate_light(*d.light);registry.emplace<Light>(e,*d.light); }
+        if(d.environment) { validate_environment(*d.environment);registry.emplace<LightingEnvironment>(e,*d.environment); }
+        if(d.emitter)registry.emplace<AudioEmitter>(e,*d.emitter);
+        if(d.acoustics && d.acoustics->enabled) {
+            AcousticGeometry g;g.entity=d.id;g.material=*d.acoustics;
+            if(d.collider)for(std::size_t k=0;k<3;++k)g.world[k*5]=2*d.collider->half_extents[k];
+            else if(d.mesh)g.mesh=d.mesh->mesh;
+            else throw std::runtime_error("Acoustic material needs runtime geometry.");
+            candidate.acoustic_geometry.push_back(std::move(g));
+        }
+        require(int(bool(d.collider))+int(bool(d.character))+int(bool(d.mesh_collider))<=1,"An entity cannot combine BoxCollider, MeshCollider and CharacterController.");
+    }
+    void create_physics(const RuntimeEntityDefinition& d,Topology& candidate,bool bootstrap,
+        const std::set<std::string>& moving_roots,std::set<std::string>& controlled_cameras) {
+        auto e=find(d.id); const auto& node=registry.get<Node>(e);
+        if(d.mesh_collider) {
+            const auto& collider=*d.mesh_collider;
+            for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
+                require(!moving_roots.contains(parent),"MeshCollider cannot inherit a moving body/controller.");
+            const auto p=pose(node.world);
+            // Fill default settings directly: the list-taking constructors
+            // silently sanitize geometry. Create instead reports degenerate
+            // triangles, including degeneracy after Jolt's quantization.
+            JPH::MeshShapeSettings mesh_settings;mesh_settings.mPerTriangleUserData=true;
+            const auto& mesh=*collider.mesh;
+            mesh_settings.mTriangleVertices.reserve(mesh.vertices.size());
+            for(const auto& vertex:mesh.vertices) {
+                std::array<float,3> point;
+                for(std::size_t k=0;k<3;++k) {
+                    const double value=vertex.position[k]*p.scale[k];
+                    require(std::isfinite(value) && std::abs(value)<=10000,"Scaled MeshCollider vertices must be within +/-10000 meters.");
+                    point[k]=static_cast<float>(value);
+                }
+                mesh_settings.mTriangleVertices.emplace_back(point[0],point[1],point[2]);
+            }
+            mesh_settings.mIndexedTriangles.reserve(mesh.indices.size()/3);
+            for(std::size_t i=0;i<mesh.indices.size();i+=3)
+                mesh_settings.mIndexedTriangles.emplace_back(mesh.indices[i],mesh.indices[i+1],mesh.indices[i+2],0,static_cast<JPH::uint32>(i/3));
+            auto shape=mesh_settings.Create();
+            if(shape.HasError())throw std::runtime_error("MeshCollider '"+d.id+"': "+shape.GetError().c_str());
+            JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,JPH::EMotionType::Static,0);
+            settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
+            auto& body=registry.emplace<Body>(e);
+            auto& bodies=physics.GetBodyInterface();
+            auto* native=bootstrap ? bodies.CreateBody(settings) : bodies.CreateBodyWithID(body_ids.allocate(),settings);
+            require(native!=nullptr,"Jolt mesh body allocation failed.");body.id=native->GetID();
+            if(bootstrap)bodies.AddBody(body.id,JPH::EActivation::DontActivate);
+            require(!body.id.IsInvalid(),"Jolt mesh body allocation failed.");
+            candidate.body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
+            candidate.mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),static_cast<const JPH::MeshShape*>(shape.Get().GetPtr()));
+        }
+        if (d.collider) {
+            const auto& collider=*d.collider;
+            require(std::isfinite(collider.mass) && collider.mass>0 && collider.mass<=1e6f &&
+                std::isfinite(collider.friction) && collider.friction>=0 && collider.friction<=2 &&
+                std::isfinite(collider.restitution) && collider.restitution>=0 && collider.restitution<=1,"Invalid physics material or mass.");
+            require(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Invalid body motion kind.");
+            require(collider.motion==BodyMotion::Static || d.parent.empty(),"Dynamic and kinematic bodies must be hierarchy roots.");
+            for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
+                require(!moving_roots.contains(parent),"Static colliders cannot inherit a moving body/controller; use a separate kinematic root.");
+            const auto p=pose(node.world);
+            float extent[3];
+            for(std::size_t k=0;k<3;++k) {
+                const double value=collider.half_extents[k]*p.scale[k];
+                require(std::isfinite(value) && value>=0.001 && value<=10000,"Scaled collider half extent must be 0.001..10000 meters.");
+                extent[k]=static_cast<float>(value);
+            }
+            const float bevel=std::min(0.05f,0.1f*std::min({extent[0],extent[1],extent[2]}));
+            auto shape=JPH::BoxShapeSettings(JPH::Vec3(extent[0],extent[1],extent[2]),bevel).Create();
+            require(!shape.HasError(),"Jolt box shape creation failed.");
+            JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,
+                collider.motion==BodyMotion::Dynamic ? JPH::EMotionType::Dynamic : collider.motion==BodyMotion::Kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,collider.motion==BodyMotion::Static ? 0 : 1);
+            settings.mFriction=collider.friction; settings.mRestitution=collider.restitution;
+            settings.mOverrideMassProperties=JPH::EOverrideMassProperties::CalculateInertia;
+            settings.mMassPropertiesOverride.mMass=collider.mass;
+            settings.mMotionQuality=collider.motion==BodyMotion::Dynamic ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
+            auto& body=registry.emplace<Body>(e);
+            body.motion=collider.motion;
+            auto& bodies=physics.GetBodyInterface();
+            auto* native=bootstrap ? bodies.CreateBody(settings) : bodies.CreateBodyWithID(body_ids.allocate(),settings);
+            require(native!=nullptr,"Jolt body allocation failed.");body.id=native->GetID();
+            if(bootstrap)bodies.AddBody(body.id,collider.motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
+            require(!body.id.IsInvalid(),"Jolt body allocation failed.");
+            candidate.body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
+            if(body.motion==BodyMotion::Kinematic)candidate.kinematics.push_back(e);
+        }
+        if (d.character) {
+            require(d.parent.empty() && rigid_transform(node.world),"CharacterController requires an unscaled hierarchy root.");
+            require(std::abs(node.world[4])<1e-6 && std::abs(node.world[5]-1)<1e-6 && std::abs(node.world[6])<1e-6,"CharacterController can only rotate around Y.");
+            require(candidate.characters.size()<32,"Runtime character limit exceeded.");
+            const auto& settings=*d.character;
+            require(std::isfinite(settings.radius) && settings.radius>=0.05f && settings.radius<=2 &&
+                std::isfinite(settings.height) && settings.height>2*settings.radius && settings.height<=4,"Invalid character capsule dimensions.");
+            require(std::isfinite(settings.speed) && settings.speed>0 && settings.speed<=30 &&
+                std::isfinite(settings.jump_speed) && settings.jump_speed>=0 && settings.jump_speed<=20,"Invalid controller speed.");
+            if(!settings.camera.empty()) {
+                const auto camera=find(settings.camera);
+                require(registry.all_of<RuntimeCamera>(camera) && registry.get<Node>(camera).parent==d.id,"Character camera must be a direct child with Camera component.");
+                require(controlled_cameras.insert(settings.camera).second,"A camera cannot be controlled by multiple characters.");
+            }
+            auto capsule=JPH::CapsuleShapeSettings(settings.height/2-settings.radius,settings.radius).Create();
+            require(!capsule.HasError(),"Jolt capsule shape creation failed.");
+            auto shape=JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0,settings.height/2,0),JPH::Quat::sIdentity(),capsule.Get()).Create();
+            require(!shape.HasError(),"Jolt foot-origin shape creation failed.");
+            JPH::CharacterSettings config;
+            config.mLayer=1; config.mShape=shape.Get(); config.mFriction=0; config.mMaxSlopeAngle=45.0f*static_cast<float>(radians);
+            config.mSupportingVolume=JPH::Plane(JPH::Vec3::sAxisY(),-settings.radius);
+            const auto p=pose(node.world);
+            auto& controller=registry.emplace<Controller>(e);
+            controller.settings=settings;
+            controller.yaw=JPH::ATan2(static_cast<float>(node.world[8]),static_cast<float>(node.world[0]))/radians;
+            controller.character=bootstrap ? new JPH::Character(&config,p.position,p.rotation,0,&physics)
+                : new JPH::Character(&config,p.position,p.rotation,0,&physics,body_ids.allocate());
+            require(!controller.character->GetBodyID().IsInvalid(),"Jolt character body allocation failed.");
+            if(bootstrap)controller.character->AddToPhysicsSystem();
+            physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
+            candidate.characters.push_back(e);
+            candidate.body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
+        }
+    }
     void initialize(const RuntimeDefinition& definition) {
         // Construction is private to this Runtime; helpers read the same root
         // while only this local builder may mutate its indices.
-        auto candidate=std::make_shared<Topology>();topology=candidate;
+        auto candidate=std::make_shared<Topology>();candidate->live=definition;topology=candidate;
         world_id=definition.world_id; revision=definition.authored_revision;
         initialize_navigation(definition.navigation);
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
@@ -242,24 +375,8 @@ struct Runtime::Impl {
         owned_entities.reserve(definitions.size());
         std::size_t body_count=0;
         for (const auto& d : definitions) {
-            require(!candidate->identities.contains(d.id),"Duplicate runtime entity ID.");
-            auto e=registry.create();owned_entities.push_back(e);
-            candidate->identities.emplace(d.id,e);candidate->order.push_back(e);
-            registry.emplace<Node>(e, d.id,d.parent,d.transform,d.transform);
-            if (d.camera) registry.emplace<RuntimeCamera>(e,*d.camera);
-            if (d.mesh) registry.emplace<RuntimeMesh>(e,*d.mesh);
-            if(d.light) { validate_light(*d.light);registry.emplace<Light>(e,*d.light); }
-            if(d.environment) { validate_environment(*d.environment);registry.emplace<LightingEnvironment>(e,*d.environment); }
-            if(d.emitter)registry.emplace<AudioEmitter>(e,*d.emitter);
-            if(d.acoustics && d.acoustics->enabled) {
-                AcousticGeometry g;g.entity=d.id;g.material=*d.acoustics;
-                if(d.collider)for(std::size_t k=0;k<3;++k)g.world[k*5]=2*d.collider->half_extents[k];
-                else if(d.mesh)g.mesh=d.mesh->mesh;
-                else throw std::runtime_error("Acoustic material needs runtime geometry.");
-                acoustic_geometry.push_back(std::move(g));
-            }
-            if (d.collider || d.character || d.mesh_collider) ++body_count;
-            require(int(bool(d.collider))+int(bool(d.character))+int(bool(d.mesh_collider))<=1,"An entity cannot combine BoxCollider, MeshCollider and CharacterController.");
+            create_entity(d,*candidate);
+            if(d.collider || d.character || d.mesh_collider)++body_count;
         }
         std::size_t lights=0,environments=0,shadow_count=0;std::uint32_t shadow_resolution=1024;
         for(const auto& d:definitions) {
@@ -295,105 +412,7 @@ struct Runtime::Impl {
         animation_locals();world_matrices();
         std::set<std::string> controlled_cameras,moving_roots;
         for(const auto& d:definitions)if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(d.id);
-        for (const auto& d : definitions) {
-            auto e=find(d.id); const auto& node=registry.get<Node>(e);
-            if(d.mesh_collider) {
-                const auto& collider=*d.mesh_collider;
-                for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
-                    require(!moving_roots.contains(parent),"MeshCollider cannot inherit a moving body/controller.");
-                const auto p=pose(node.world);
-                // Fill default settings directly: the list-taking constructors
-                // silently sanitize geometry. Create instead reports degenerate
-                // triangles, including degeneracy after Jolt's quantization.
-                JPH::MeshShapeSettings mesh_settings;mesh_settings.mPerTriangleUserData=true;
-                const auto& mesh=*collider.mesh;
-                mesh_settings.mTriangleVertices.reserve(mesh.vertices.size());
-                for(const auto& vertex:mesh.vertices) {
-                    std::array<float,3> point;
-                    for(std::size_t k=0;k<3;++k) {
-                        const double value=vertex.position[k]*p.scale[k];
-                        require(std::isfinite(value) && std::abs(value)<=10000,"Scaled MeshCollider vertices must be within +/-10000 meters.");
-                        point[k]=static_cast<float>(value);
-                    }
-                    mesh_settings.mTriangleVertices.emplace_back(point[0],point[1],point[2]);
-                }
-                mesh_settings.mIndexedTriangles.reserve(mesh.indices.size()/3);
-                for(std::size_t i=0;i<mesh.indices.size();i+=3)
-                    mesh_settings.mIndexedTriangles.emplace_back(mesh.indices[i],mesh.indices[i+1],mesh.indices[i+2],0,static_cast<JPH::uint32>(i/3));
-                auto shape=mesh_settings.Create();
-                if(shape.HasError())throw std::runtime_error("MeshCollider '"+d.id+"': "+shape.GetError().c_str());
-                JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,JPH::EMotionType::Static,0);
-                settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
-                auto& body=registry.emplace<Body>(e);
-                body.id=physics.GetBodyInterface().CreateAndAddBody(settings,JPH::EActivation::DontActivate);
-                require(!body.id.IsInvalid(),"Jolt mesh body allocation failed.");
-                candidate->body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
-                candidate->mesh_shapes.emplace(body.id.GetIndexAndSequenceNumber(),static_cast<const JPH::MeshShape*>(shape.Get().GetPtr()));
-            }
-            if (d.collider) {
-                const auto& collider=*d.collider;
-                require(std::isfinite(collider.mass) && collider.mass>0 && collider.mass<=1e6f &&
-                    std::isfinite(collider.friction) && collider.friction>=0 && collider.friction<=2 &&
-                    std::isfinite(collider.restitution) && collider.restitution>=0 && collider.restitution<=1,"Invalid physics material or mass.");
-                require(collider.motion==BodyMotion::Static || collider.motion==BodyMotion::Dynamic || collider.motion==BodyMotion::Kinematic,"Invalid body motion kind.");
-                require(collider.motion==BodyMotion::Static || d.parent.empty(),"Dynamic and kinematic bodies must be hierarchy roots.");
-                for(auto parent=d.parent;!parent.empty();parent=registry.get<Node>(find(parent)).parent)
-                    require(!moving_roots.contains(parent),"Static colliders cannot inherit a moving body/controller; use a separate kinematic root.");
-                const auto p=pose(node.world);
-                float extent[3];
-                for(std::size_t k=0;k<3;++k) {
-                    const double value=collider.half_extents[k]*p.scale[k];
-                    require(std::isfinite(value) && value>=0.001 && value<=10000,"Scaled collider half extent must be 0.001..10000 meters.");
-                    extent[k]=static_cast<float>(value);
-                }
-                const float bevel=std::min(0.05f,0.1f*std::min({extent[0],extent[1],extent[2]}));
-                auto shape=JPH::BoxShapeSettings(JPH::Vec3(extent[0],extent[1],extent[2]),bevel).Create();
-                require(!shape.HasError(),"Jolt box shape creation failed.");
-                JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,
-                    collider.motion==BodyMotion::Dynamic ? JPH::EMotionType::Dynamic : collider.motion==BodyMotion::Kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,collider.motion==BodyMotion::Static ? 0 : 1);
-                settings.mFriction=collider.friction; settings.mRestitution=collider.restitution;
-                settings.mOverrideMassProperties=JPH::EOverrideMassProperties::CalculateInertia;
-                settings.mMassPropertiesOverride.mMass=collider.mass;
-                settings.mMotionQuality=collider.motion==BodyMotion::Dynamic ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
-                auto& body=registry.emplace<Body>(e);
-                body.motion=collider.motion;
-                body.id=physics.GetBodyInterface().CreateAndAddBody(settings,collider.motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
-                require(!body.id.IsInvalid(),"Jolt body allocation failed.");
-                candidate->body_names.emplace(body.id.GetIndexAndSequenceNumber(),d.id);
-                if(body.motion==BodyMotion::Kinematic)candidate->kinematics.push_back(e);
-            }
-            if (d.character) {
-                require(d.parent.empty() && rigid_transform(node.world),"CharacterController requires an unscaled hierarchy root.");
-                require(std::abs(node.world[4])<1e-6 && std::abs(node.world[5]-1)<1e-6 && std::abs(node.world[6])<1e-6,"CharacterController can only rotate around Y.");
-                require(candidate->characters.size()<32,"Runtime character limit exceeded.");
-                const auto& settings=*d.character;
-                require(std::isfinite(settings.radius) && settings.radius>=0.05f && settings.radius<=2 &&
-                    std::isfinite(settings.height) && settings.height>2*settings.radius && settings.height<=4,"Invalid character capsule dimensions.");
-                require(std::isfinite(settings.speed) && settings.speed>0 && settings.speed<=30 &&
-                    std::isfinite(settings.jump_speed) && settings.jump_speed>=0 && settings.jump_speed<=20,"Invalid controller speed.");
-                if(!settings.camera.empty()) {
-                    const auto camera=find(settings.camera);
-                    require(registry.all_of<RuntimeCamera>(camera) && registry.get<Node>(camera).parent==d.id,"Character camera must be a direct child with Camera component.");
-                    require(controlled_cameras.insert(settings.camera).second,"A camera cannot be controlled by multiple characters.");
-                }
-                auto capsule=JPH::CapsuleShapeSettings(settings.height/2-settings.radius,settings.radius).Create();
-                require(!capsule.HasError(),"Jolt capsule shape creation failed.");
-                auto shape=JPH::RotatedTranslatedShapeSettings(JPH::Vec3(0,settings.height/2,0),JPH::Quat::sIdentity(),capsule.Get()).Create();
-                require(!shape.HasError(),"Jolt foot-origin shape creation failed.");
-                JPH::CharacterSettings config;
-                config.mLayer=1; config.mShape=shape.Get(); config.mFriction=0; config.mMaxSlopeAngle=45.0f*static_cast<float>(radians);
-                config.mSupportingVolume=JPH::Plane(JPH::Vec3::sAxisY(),-settings.radius);
-                const auto p=pose(node.world);
-                auto& controller=registry.emplace<Controller>(e);
-                controller.settings=settings;
-                controller.yaw=JPH::ATan2(static_cast<float>(node.world[8]),static_cast<float>(node.world[0]))/radians;
-                controller.character=new JPH::Character(&config,p.position,p.rotation,0,&physics);
-                controller.character->AddToPhysicsSystem();
-                physics.GetBodyInterface().SetMotionQuality(controller.character->GetBodyID(),JPH::EMotionQuality::LinearCast);
-                candidate->characters.push_back(e);
-                candidate->body_names.emplace(controller.character->GetBodyID().GetIndexAndSequenceNumber(),d.id);
-            }
-        }
+        for(const auto& d:definitions)create_physics(d,*candidate,true,moving_roots,controlled_cameras);
         // Character constructors allocate their own Jolt IDs. Finish all bootstrap
         // creation before inventorying slots; subsequent structural creation must
         // use explicit IDs so a failed batch cannot consume Jolt sequence numbers.
@@ -475,49 +494,105 @@ struct Runtime::Impl {
             [](const auto& recipe,const auto& key){return recipe.id<key;});
         require(found!=templates.end() && found->id==id,"Runtime spawn template does not exist.");return *found;
     }
+    static const RuntimeTransform& spawn_root_transform(const RuntimeSpawnTemplate& recipe) {
+        if(recipe.entities.empty())return recipe.transform;
+        const auto root=std::find_if(recipe.entities.begin(),recipe.entities.end(),[&](const auto& entity){return entity.id==recipe.root;});
+        require(root!=recipe.entities.end(),"Runtime template root does not exist.");return root->transform;
+    }
     void validate_spawn(const RuntimeSpawnRequest& request) const {
         const auto& recipe=spawn_template(request.template_id);
-        if(game)for(const auto& [type,payload]:recipe.components) {
-            (void)payload;const auto& declarations=game->component_schemas();
-            require(std::any_of(declarations.begin(),declarations.end(),[&](const auto& schema){return schema.id==type;}),
-                "Gameplay module does not declare a spawned component type.");
-        }
-        validate_runtime_spawn_transform(recipe,request.transform ? *request.transform : recipe.transform);
+        auto check_components=[&](const auto& values) {
+            if(!game)return;
+            const auto& declarations=game->component_schemas();
+            for(const auto& [type,payload]:values) {
+                (void)payload;
+                require(std::any_of(declarations.begin(),declarations.end(),[&](const auto& schema){return schema.id==type;}),
+                    "Gameplay module does not declare a spawned component type.");
+            }
+        };
+        if(recipe.entities.empty())check_components(recipe.components);
+        else for(const auto& entity:recipe.entities)check_components(entity.components);
+        validate_runtime_spawn_transform(recipe,request.transform ? *request.transform : spawn_root_transform(recipe));
+    }
+    PendingSpawn prepare_spawn(const RuntimeSpawnRequest& request,RuntimeEntityIds& cursor) const {
+        validate_spawn(request);const auto& recipe=spawn_template(request.template_id);
+        PendingSpawn pending;pending.request=request;pending.instance.template_id=recipe.id;
+        pending.instance.initial=request.transform ? *request.transform : spawn_root_transform(recipe);
+        const auto members=runtime_template_members(recipe);
+        for(const auto& local:members)pending.instance.nodes.emplace(local,gameplay_id(cursor.allocate()));
+        pending.instance.root=pending.instance.nodes.at(members.front());pending.id=gameplay_id(pending.instance.root);
+        pending.entities=runtime_template_entities(recipe,pending.instance.nodes,pending.instance.initial,components->schemas());
+        return pending;
+    }
+    const RuntimeEntityDefinition* pending_entity(const std::string& id) const {
+        if(game_phase!=GamePhase::tick)return nullptr;
+        for(const auto& pending:game_spawns)if(!pending.canceled)
+            for(const auto& entity:pending.entities)if(entity.id==id)return &entity;
+        return nullptr;
+    }
+    RuntimeSpawnInstance instance(const std::string& root) const {
+        const auto found=topology->spawned.find(root);
+        require(found!=topology->spawned.end(),"Runtime instance root does not exist.");return found->second;
+    }
+    std::string instance_node(const std::string& root,const std::string& local) const {
+        const auto found=topology->spawned.find(root);
+        require(found!=topology->spawned.end(),"Runtime instance root does not exist.");
+        const auto node=found->second.nodes.find(local);
+        require(node!=found->second.nodes.end(),"Runtime instance local node does not exist.");return node->second;
+    }
+    static int32_t POIMA_CALL resolve_instance_node(void* context,const PoimaEntityId* root,const PoimaEntityId* local,PoimaEntityId* output,PoimaGameError* error) {
+        if(output)*output={};
+        return callback(error,[&] {
+            require(context && root && local && output,"Instance resolution pointers are absent.");
+            require((root->high || root->low) && (local->high || local->low),"Instance root/local identities cannot be zero.");
+            const auto& self=*static_cast<Impl*>(context);
+            require(self.game_phase==GamePhase::tick || self.game_phase==GamePhase::control,"Instance resolution requires Tick or Control.");
+            const auto root_id=gameplay_id(*root),local_id=gameplay_id(*local);
+            if(self.game_phase==GamePhase::tick)for(const auto& pending:self.game_spawns)if(pending.instance.root==root_id) {
+                require(!pending.canceled,"Instance birth is canceled.");const auto found=pending.instance.nodes.find(local_id);
+                require(found!=pending.instance.nodes.end(),"Reserved instance local node does not exist.");*output=gameplay_id(found->second);return;
+            }
+            *output=gameplay_id(self.instance_node(root_id,local_id));
+        });
     }
     static int32_t POIMA_CALL spawn_entity(void* context,const PoimaTemplateId* source,const PoimaGameTransform* transform,PoimaEntityId* output,PoimaGameError* error) {
+        if(output)*output={};
         return callback(error,[&] {
-            require(source && output,"Spawn template/output is absent.");*output={};auto& self=*static_cast<Impl*>(context);self.require_tick();
+            require(context && source && output,"Spawn template/output is absent.");auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_structure_calls+self.scheduled_structure_calls<4096,"Combined structural command budget exceeded.");
             RuntimeSpawnRequest request;request.template_id=gameplay_id(PoimaEntityId{source->high,source->low});
             if(transform) {
                 RuntimeTransform value;std::copy_n(transform->position,3,value.position.begin());
                 std::copy_n(transform->rotation,4,value.rotation.begin());std::copy_n(transform->scale,3,value.scale.begin());request.transform=value;
             }
-            self.validate_spawn(request);
-            auto cursor=*self.entity_ids;const auto id=cursor.allocate();
-            PendingSpawn pending{id,std::move(request),false};
-            // Reserve all fallible storage before the component registration.
-            // Successful registration is followed only by nonthrowing moves.
+            auto cursor=*self.entity_ids;auto pending=self.prepare_spawn(request,cursor);
+            std::vector<ComponentSpawn> cells;cells.reserve(pending.entities.size());
+            for(const auto& entity:pending.entities)cells.push_back({gameplay_id(entity.id),entt::null,&entity.components});
             if(self.game_spawns.size()==self.game_spawns.capacity())
                 self.game_spawns.reserve(std::min<std::size_t>(4096,std::max<std::size_t>(16,self.game_spawns.capacity()*2)));
-            self.components->reserve_birth(id,self.spawn_template(pending.request.template_id).components);
+            self.components->reserve_births(cells);
             static_assert(std::is_nothrow_move_constructible_v<PendingSpawn>);
-            self.game_spawns.push_back(std::move(pending));*self.entity_ids=std::move(cursor);
+            const auto id=pending.id;self.game_spawns.push_back(std::move(pending));*self.entity_ids=std::move(cursor);
             ++self.game_structure_calls;*output=id;
         });
     }
     static int32_t POIMA_CALL despawn_entity(void* context,const PoimaEntityId* source,PoimaGameError* error) {
         return callback(error,[&] {
-            require(source,"Despawn entity is absent.");auto& self=*static_cast<Impl*>(context);self.require_tick();
+            require(context && source,"Despawn entity is absent.");auto& self=*static_cast<Impl*>(context);self.require_tick();
             require(self.game_structure_calls+self.scheduled_structure_calls<4096,"Combined structural command budget exceeded.");
             const auto pending=std::find_if(self.game_spawns.begin(),self.game_spawns.end(),[&](const auto& birth){return birth.id.high==source->high && birth.id.low==source->low;});
             if(pending!=self.game_spawns.end()) {
-                require(!pending->canceled,"Pending birth is already canceled.");const auto id=gameplay_id(*source);
-                self.components->cancel_birth(*source);pending->canceled=true;
-                std::erase_if(self.game_commands,[&](const auto& motion){return motion.entity==id;});
+                require(!pending->canceled,"Pending birth is already canceled.");
+                std::vector<PoimaEntityId> ids;ids.reserve(pending->entities.size());
+                for(const auto& entity:pending->entities)ids.push_back(gameplay_id(entity.id));
+                self.components->cancel_births(ids);pending->canceled=true;
+                auto member=[&](const std::string& id) {return std::any_of(pending->entities.begin(),pending->entities.end(),[&](const auto& entity){return entity.id==id;});};
+                std::erase_if(self.game_commands,[&](const auto& command){return member(command.entity);});
+                std::erase_if(self.game_animation_commands,[&](const auto& command){return member(command.entity);});
+                std::erase_if(self.game_character_inputs,[&](const auto& command){return member(command.entity);});
             } else {
                 auto id=gameplay_id(*source);
-                require(self.topology->spawned.contains(id),"Despawn requires a live spawned root prop.");
+                require(self.topology->spawned.contains(id),"Despawn requires a live spawned instance root.");
                 require(std::find(self.game_despawns.begin(),self.game_despawns.end(),id)==self.game_despawns.end(),"Duplicate despawn in one tick.");
                 self.game_despawns.push_back(std::move(id));
             }
@@ -534,7 +609,12 @@ struct Runtime::Impl {
             require(binding->reserved==0 && binding->bytes==schema->bytes() && bytes==binding->bytes &&
                 std::equal(schema->fingerprint.begin(),schema->fingerprint.end(),binding->fingerprint),"Template component descriptor differs from frozen schema.");
             const auto& recipe=self.spawn_template(gameplay_id(PoimaEntityId{source->high,source->low}));
-            if(const auto found=recipe.components.find(type_id);found!=recipe.components.end()) {
+            const auto* values=&recipe.components;
+            if(!recipe.entities.empty()) {
+                const auto root=std::find_if(recipe.entities.begin(),recipe.entities.end(),[&](const auto& entity){return entity.id==recipe.root;});
+                require(root!=recipe.entities.end(),"Template root does not exist.");values=&root->components;
+            }
+            if(const auto found=values->find(type_id);found!=values->end()) {
                 std::memcpy(output,found->second.data(),bytes);*present=1;
             }
         });
@@ -632,6 +712,7 @@ struct Runtime::Impl {
         require_tick();require(game_animation_commands.size()<64,"Gameplay exceeded 64 animation commands in one tick.");
         require(source.clip>=-1 && source.loop<=1 && source.playing<=1,"Invalid gameplay animation command encoding.");
         AnimationCommand command;command.entity=gameplay_id(source.entity);
+        if(const auto* pending=pending_entity(command.entity))require(pending->animation_rig.has_value(),"Reserved animation target needs an AnimationRig.");
         if(source.clip>=0)command.clip=static_cast<std::uint32_t>(source.clip);
         command.time=source.time;command.speed=source.speed;command.loop=source.loop!=0;command.playing=source.playing!=0;command.blend_ticks=source.blend_ticks;command.transition_mode=mode;
         command.layer=layer;command.weight=weight;command.weight_blend_ticks=weight_blend_ticks;
@@ -705,8 +786,9 @@ struct Runtime::Impl {
             for(float value:source->move)require(std::isfinite(value) && std::abs(value)<=1,"Character move input must be in [-1,1].");
             for(float value:source->look)require(std::isfinite(value) && std::abs(value)<=180,"Character look input must be in [-180,180] degrees.");
             auto& self=*static_cast<Impl*>(context);self.require_tick();
-            const auto id=gameplay_id(source->entity);const auto entity=self.find(id);
-            require(self.registry.all_of<Controller>(entity),"Character input target needs a live CharacterController.");
+            const auto id=gameplay_id(source->entity);
+            if(const auto* pending=self.pending_entity(id))require(pending->character.has_value(),"Reserved character input target needs a CharacterController.");
+            else require(self.registry.all_of<Controller>(self.find(id)),"Character input target needs a live CharacterController.");
             require(self.game_character_inputs.size()<32,"Gameplay exceeded 32 character input commands in one tick.");
             require(std::none_of(self.game_character_inputs.begin(),self.game_character_inputs.end(),[&](const auto& item){return item.entity==id;}),"Duplicate gameplay character input target in one tick.");
             RuntimeInput command;command.entity=id;std::copy_n(source->move,2,command.move.begin());std::copy_n(source->look,2,command.look.begin());command.jump=(source->flags&1u)!=0;
@@ -748,6 +830,12 @@ struct Runtime::Impl {
     StructureCheckpoint checkpoint_structure() const { return {topology,owned_entities.size(),*entity_ids,body_ids,structure_revision}; }
     void destroy_prop_owner(entt::entity e,bool release_id) {
         auto& bodies=physics.GetBodyInterface();
+        if(auto* controller=registry.try_get<Controller>(e);controller && controller->character) {
+            const auto id=controller->character->GetBodyID();
+            if(!id.IsInvalid() && bodies.IsAdded(id))controller->character->RemoveFromPhysicsSystem();
+            controller->character=nullptr;
+            if(release_id && !id.IsInvalid())body_ids.release(id);
+        }
         if(const auto* body=registry.try_get<Body>(e);body && !body->id.IsInvalid()) {
             if(bodies.IsAdded(body->id))bodies.RemoveBody(body->id);
             bodies.DestroyBody(body->id);if(release_id)body_ids.release(body->id);
@@ -776,97 +864,156 @@ struct Runtime::Impl {
             destroy_prop_owner(e,true);return true;
         });
     }
+    RuntimeDefinition live_definition(const Topology& candidate) const {
+        RuntimeDefinition result=candidate.live;result.entities.clear();result.entities.reserve(candidate.definitions.size());
+        for(const auto& [id,entity]:candidate.definitions) {(void)id;result.entities.push_back(entity);}
+        return result;
+    }
+    void rebuild_hierarchy(Topology& candidate) {
+        candidate.hierarchy.clear();candidate.hierarchy.reserve(candidate.order.size());
+        std::set<entt::entity> done;
+        for(const auto e:candidate.order) {
+            std::vector<entt::entity> chain;std::set<entt::entity> visiting;auto current=e;
+            while(!done.contains(current)) {
+                require(visiting.insert(current).second,"Runtime hierarchy cycle.");chain.push_back(current);
+                const auto& parent=registry.get<Node>(current).parent;if(parent.empty())break;
+                const auto found=candidate.identities.find(parent);require(found!=candidate.identities.end(),"Runtime hierarchy parent is absent.");current=found->second;
+            }
+            for(auto it=chain.rbegin();it!=chain.rend();++it) {candidate.hierarchy.push_back(*it);done.insert(*it);}
+        }
+    }
+    void validate_scene_membership(const Topology& candidate) const {
+        std::size_t lights=0,environments=0,shadows=0,bodies=0,emitters=0;std::uint32_t resolution=1024;
+        for(const auto& [id,d]:candidate.definitions) {
+            (void)id;
+            if(d.collider || d.character || d.mesh_collider)++bodies;
+            if(d.emitter && d.emitter->enabled)++emitters;
+            if(d.light && d.light->enabled)++lights;
+            if(d.light)shadows+=shadow_view_count(*d.light);
+            if(d.environment) {
+                ++environments;resolution=d.environment->shadow_resolution;
+                if(!d.environment->sky.sun.empty()) {
+                    const auto found=candidate.definitions.find(d.environment->sky.sun);
+                    require(found!=candidate.definitions.end() && found->second.light && found->second.light->kind==LightKind::directional,
+                        "Runtime sky sun must reference a live directional Light.");
+                }
+            }
+        }
+        require(lights<=max_scene_lights && environments<=1,"Runtime exceeds light/environment limits.");
+        require(emitters<=max_audio_sources,"Runtime audio source limit exceeded.");
+        require(bodies<=RuntimeBodyIds::capacity,"Runtime physics body limit exceeded.");
+        validate_shadow_budget(shadows,resolution);
+    }
     RuntimeStructureResult publish_structure(std::uint64_t expected_revision,
         const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals,
-        std::span<const PoimaEntityId> assigned={},bool canceled_births=false) {
+        std::span<const RuntimeSpawnInstance> assigned={},bool canceled_births=false) {
         require(expected_revision==structure_revision,"Stale runtime structure revision.");
         require(!requests.empty() || !removals.empty() || canceled_births,"Structural transaction is empty.");
-        require(assigned.size()<=requests.size(),"Assigned spawn identity count exceeds requests.");
+        require(assigned.size()<=requests.size(),"Assigned instance count exceeds requests.");
         require(requests.size()+removals.size()<=4096,"Structural command budget exceeded.");
         require(structure_revision<9007199254740991ULL,"Runtime structure revision exhausted.");
         auto candidate=std::make_shared<Topology>(*topology);
-        std::vector<entt::entity> retired;retired.reserve(removals.size());
-        std::vector<PoimaEntityId> removed;removed.reserve(removals.size());
-        for(const auto& id:removals) {
-            require(candidate->spawned.erase(id)==1,"Removal needs a unique live spawned root prop.");
-            const auto e=candidate->identities.at(id);candidate->identities.erase(id);
-            retired.push_back(e);removed.push_back(gameplay_id(id));
-            std::erase(candidate->order,e);std::erase(candidate->hierarchy,e);std::erase(candidate->kinematics,e);
-            if(const auto* body=registry.try_get<Body>(e))candidate->body_names.erase(body->id.GetIndexAndSequenceNumber());
-        }
-        require(candidate->identities.size()+requests.size()<=10000,"Runtime live entity budget exceeded.");
-        RuntimeDefinition recipes;recipes.component_schemas=components->schemas();
-        std::size_t payload_bytes=0;
-        // Validate overrides using the same rules as frozen native recipes.
-        for(const auto& request:requests) {
-            validate_spawn(request);const auto& source=spawn_template(request.template_id);
-            for(const auto& [type_id,payload]:source.components) {
-                (void)type_id;
-                require(payload.size()<=components::max_command_bytes-payload_bytes,"Spawn payload command budget exceeded.");
-                payload_bytes+=payload.size();
+        std::vector<entt::entity> retired;std::vector<PoimaEntityId> removed;std::vector<std::string> removed_names;
+        for(const auto& root:removals) {
+            const auto found=candidate->spawned.find(root);
+            require(found!=candidate->spawned.end(),"Removal needs a unique live spawned instance root.");
+            for(const auto& [local,id]:found->second.nodes) {
+                (void)local;const auto e=candidate->identities.at(id);
+                require(removed.size()<4096,"Instance removal exceeds structural node budget.");
+                retired.push_back(e);removed.push_back(gameplay_id(id));removed_names.push_back(id);
+                candidate->identities.erase(id);candidate->definitions.erase(id);
+                std::erase(candidate->order,e);std::erase(candidate->hierarchy,e);std::erase(candidate->kinematics,e);std::erase(candidate->characters,e);
+                if(const auto* body=registry.try_get<Body>(e)) {
+                    candidate->body_names.erase(body->id.GetIndexAndSequenceNumber());candidate->mesh_shapes.erase(body->id.GetIndexAndSequenceNumber());
+                }
+                if(const auto* character=registry.try_get<Controller>(e))candidate->body_names.erase(character->character->GetBodyID().GetIndexAndSequenceNumber());
+                std::erase_if(candidate->acoustic_geometry,[&](const AcousticGeometry& geometry){return geometry.entity==id;});
             }
-            auto recipe=source;if(request.transform)recipe.transform=*request.transform;
-            recipes.templates.push_back(std::move(recipe));
+            candidate->spawned.erase(found);
         }
-        std::vector<entt::entity> born;born.reserve(requests.size());
-        std::vector<ComponentSpawn> cells;cells.reserve(requests.size());
+        std::vector<PendingSpawn> prepared;prepared.reserve(requests.size());
+        auto cursor=*entity_ids;std::size_t node_count=0,payload_bytes=0,new_bodies=0;
+        for(std::size_t index=0;index<requests.size();++index) {
+            validate_spawn(requests[index]);PendingSpawn birth;
+            if(index<assigned.size()) {
+                const auto& recipe=spawn_template(requests[index].template_id);
+                birth.request=requests[index];birth.instance=assigned[index];birth.id=gameplay_id(birth.instance.root);
+                require(birth.instance.template_id==recipe.id,"Assigned instance recipe differs from request.");
+                const auto initial=requests[index].transform ? *requests[index].transform : spawn_root_transform(recipe);
+                require(initial.position==birth.instance.initial.position && initial.rotation==birth.instance.initial.rotation && initial.scale==birth.instance.initial.scale,
+                    "Assigned instance transform differs from request.");
+                birth.entities=runtime_template_entities(recipe,birth.instance.nodes,initial,components->schemas());
+            }else birth=prepare_spawn(requests[index],cursor);
+            require(birth.entities.size()<=4096-node_count-removed.size(),"Instance births exceed structural node budget.");node_count+=birth.entities.size();
+            for(const auto& entity:birth.entities) {
+                require(cursor.allocated(gameplay_id(entity.id)),"Spawn identity was not reserved by this runtime.");
+                if(entity.collider || entity.character || entity.mesh_collider)++new_bodies;
+                for(const auto& [type_id,payload]:entity.components) {
+                    (void)type_id;require(payload.size()<=components::max_command_bytes-payload_bytes,"Spawn payload command budget exceeded.");payload_bytes+=payload.size();
+                }
+            }
+            prepared.push_back(std::move(birth));
+        }
+        require(candidate->identities.size()+node_count<=10000,"Runtime live entity budget exceeded.");
+        require(node_count<=RuntimeComponents::max_retained_entities-owned_entities.size(),"Runtime retained owner budget exceeded.");
+        require(new_bodies<=body_ids.available(),"Runtime retained physics body budget exceeded.");
+        owned_entities.reserve(owned_entities.size()+node_count);
+        std::vector<entt::entity> born;born.reserve(node_count);
+        std::vector<ComponentSpawn> cells;cells.reserve(node_count);
         RuntimeStructureResult result;result.revision=structure_revision+1;result.spawned.reserve(requests.size());
-        require(requests.size()<=RuntimeComponents::max_retained_entities-owned_entities.size(),"Runtime retained owner budget exceeded.");
-        owned_entities.reserve(owned_entities.size()+requests.size());
-        auto& bodies=physics.GetBodyInterface();
-        std::size_t recipe_index=0;
-        for(const auto& recipe:recipes.templates) {
-            const auto numeric=recipe_index<assigned.size() ? assigned[recipe_index] : entity_ids->allocate();++recipe_index;
-            require(entity_ids->allocated(numeric),"Spawn identity was not reserved by this runtime.");const auto id=gameplay_id(numeric);
-            const auto e=registry.create();owned_entities.push_back(e);born.push_back(e);
-            auto& node=registry.emplace<Node>(e,id,std::string{},recipe.transform,recipe.transform);
-            node.world=local_matrix(node.local.position,node.local.rotation,node.local.scale);
-            if(recipe.mesh)registry.emplace<RuntimeMesh>(e,*recipe.mesh);
-            if(recipe.collider) {
-                const auto& collider=*recipe.collider;const auto p=pose(node.world);
-                JPH::Vec3 extents(static_cast<float>(collider.half_extents[0]*p.scale[0]),
-                    static_cast<float>(collider.half_extents[1]*p.scale[1]),static_cast<float>(collider.half_extents[2]*p.scale[2]));
-                const auto bevel=std::min(.05f,.1f*std::min({extents.GetX(),extents.GetY(),extents.GetZ()}));
-                auto shape=JPH::BoxShapeSettings(extents,bevel).Create();require(!shape.HasError(),"Jolt spawn shape creation failed.");
-                JPH::BodyCreationSettings settings(shape.Get(),p.position,p.rotation,
-                    collider.motion==BodyMotion::Dynamic ? JPH::EMotionType::Dynamic : collider.motion==BodyMotion::Kinematic ? JPH::EMotionType::Kinematic : JPH::EMotionType::Static,
-                    collider.motion==BodyMotion::Static ? 0 : 1);
-                settings.mFriction=collider.friction;settings.mRestitution=collider.restitution;
-                settings.mOverrideMassProperties=JPH::EOverrideMassProperties::CalculateInertia;settings.mMassPropertiesOverride.mMass=collider.mass;
-                settings.mMotionQuality=collider.motion==BodyMotion::Dynamic ? JPH::EMotionQuality::LinearCast : JPH::EMotionQuality::Discrete;
-                auto& body=registry.emplace<Body>(e);body.motion=collider.motion;
-                const auto id_body=body_ids.allocate();auto* native=bodies.CreateBodyWithID(id_body,settings);
-                require(native!=nullptr,"Jolt spawn body allocation failed.");body.id=id_body;
-                candidate->body_names.emplace(id_body.GetIndexAndSequenceNumber(),id);
-                if(body.motion==BodyMotion::Kinematic)candidate->kinematics.push_back(e);
+        for(const auto& birth:prepared) {
+            require(candidate->spawned.emplace(birth.instance.root,birth.instance).second,"Spawn instance root is already live.");
+            for(const auto& entity:birth.entities) {
+                create_entity(entity,*candidate);const auto e=candidate->identities.at(entity.id);born.push_back(e);
+                cells.push_back({gameplay_id(entity.id),e,&entity.components});
             }
-            candidate->identities.emplace(id,e);candidate->order.push_back(e);candidate->hierarchy.push_back(e);
-            candidate->spawned.emplace(id,SpawnOrigin{recipe.id,recipe.transform});
-            cells.push_back({numeric,e,&recipe.components});result.spawned.push_back(id);
+            result.spawned.push_back(birth.instance.root);
         }
-        // Native iteration and snapshot ordering stays canonical.
+        *entity_ids=std::move(cursor);
         auto by_id=[&](auto a,auto b){return registry.get<Node>(a).id<registry.get<Node>(b).id;};
-        std::sort(candidate->order.begin(),candidate->order.end(),by_id);
+        std::sort(candidate->order.begin(),candidate->order.end(),by_id);rebuild_hierarchy(*candidate);
+        validate_scene_membership(*candidate);
+        candidate->live=live_definition(*candidate);const auto& definition=candidate->live;
+        validate_runtime_mesh_colliders(definition);
+        // Private candidate binding lets existing helpers resolve the complete
+        // hierarchy. Outer tick/structure checkpoints restore it on any failure.
+        topology=candidate;animations->rebind(definition,tick);animation_locals();world_matrices();
+        std::set<std::string> moving_roots,controlled_cameras;
+        for(const auto& [id,d]:candidate->definitions) {
+            if(d.character || (d.collider && d.collider->motion!=BodyMotion::Static))moving_roots.insert(id);
+        }
+        for(const auto e:candidate->characters) {
+            const auto& camera=registry.get<Controller>(e).settings.camera;if(!camera.empty())controlled_cameras.insert(camera);
+        }
+        for(const auto& birth:prepared)for(const auto& entity:birth.entities)create_physics(entity,*candidate,false,moving_roots,controlled_cameras);
         std::sort(candidate->kinematics.begin(),candidate->kinematics.end(),by_id);
+        std::sort(candidate->characters.begin(),candidate->characters.end(),by_id);
         components->prepare_tick(cells,removed);
         if(game)game->validate_entity_references([](void* context,PoimaEntityId id) {
             return static_cast<RuntimeComponents*>(context)->candidate_alive(id);
         },components.get());
-        // All allocating preparation and reference checks precede physics publication.
-        for(auto e:retired)if(const auto* body=registry.try_get<Body>(e))bodies.RemoveBody(body->id);
-        for(auto e:born)if(const auto* body=registry.try_get<Body>(e))
-            bodies.AddBody(body->id,body->motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
-        components->publish_tick();topology=candidate;
-        for(auto e:topology->characters)registry.get<Controller>(e).character->PostSimulation(0.05f);
-        sync();
-        structure_revision=result.revision;
-        return result;
+        auto& bodies=physics.GetBodyInterface();
+        // All allocating preparation and reference checks precede publication.
+        for(const auto e:retired) {
+            if(const auto* body=registry.try_get<Body>(e))bodies.RemoveBody(body->id);
+            if(const auto* character=registry.try_get<Controller>(e))character->character->RemoveFromPhysicsSystem();
+        }
+        for(const auto e:born) {
+            if(const auto* body=registry.try_get<Body>(e))bodies.AddBody(body->id,body->motion==BodyMotion::Static ? JPH::EActivation::DontActivate : JPH::EActivation::Activate);
+            if(const auto* character=registry.try_get<Controller>(e))character->character->AddToPhysicsSystem();
+        }
+        sounds.retire_emitters(removed_names);components->publish_tick();
+        for(const auto e:topology->characters)registry.get<Controller>(e).character->PostSimulation(0.05f);
+        sync();structure_revision=result.revision;return result;
     }
     RuntimeStructureResult change_structure(std::uint64_t expected_revision,
         const std::vector<RuntimeSpawnRequest>& requests,const std::vector<std::string>& removals) {
         require(expected_revision==structure_revision,"Stale runtime structure revision.");
         require(!save_queue.pending(),"Resolve pending gameplay save intent before structural edits.");
-        const auto saved=checkpoint_structure();
+        const auto saved=checkpoint_structure();auto animation_checkpoint=animations->checkpoint();
+        auto sound_checkpoint=sounds;
+        std::vector<std::pair<entt::entity,RuntimeTransform>> local_checkpoint;local_checkpoint.reserve(topology->order.size());
+        for(const auto e:topology->order)local_checkpoint.emplace_back(e,registry.get<Node>(e).local);
         JPH::StateRecorderImpl checkpoint;physics.SaveState(checkpoint);
         for(auto e:topology->characters)registry.get<Controller>(e).character->SaveState(checkpoint);
         require(!checkpoint.IsFailed(),"Cannot checkpoint physics for structural edit.");
@@ -875,7 +1022,9 @@ struct Runtime::Impl {
             auto result=publish_structure(expected_revision,requests,removals);
             components->commit_batch();commit_structure(saved);return result;
         } catch(...) {
-            components->rollback_batch();rollback_structure(saved);
+            components->rollback_batch();rollback_structure(saved);animations->restore(animation_checkpoint);
+            for(const auto& [e,local]:local_checkpoint)registry.get<Node>(e).local=local;
+            sounds=std::move(sound_checkpoint);
             checkpoint.Rewind();require(physics.RestoreState(checkpoint),"Structural physics rollback failed.");
             for(auto e:topology->characters)registry.get<Controller>(e).character->RestoreState(checkpoint);
             require(!checkpoint.IsFailed(),"Structural character rollback failed.");sync();
@@ -944,14 +1093,15 @@ struct Runtime::Impl {
                 if(game) {
                     game_sound_calls=0;game_navigation_calls=0;sync();game_commands.clear();game_animation_commands.clear();std::array<PoimaGameInput,32> frame_inputs{};std::size_t input_count=0;
                     for(const auto& [e,source]:controls) {
-                        (void)e;PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
+                        if(!topology->identities.contains(source->entity))continue;
+                        PoimaGameInput input{};input.entity=gameplay_id(source->entity);std::copy(source->move.begin(),source->move.end(),input.move);
                         if(frame==0) { std::copy(source->look.begin(),source->look.end(),input.look);input.buttons=(source->jump ? 1u : 0u)|(source->use ? 2u : 0u); }
                         frame_inputs[input_count++]=input;
                     }
                     clear_ui_commands();game_phase=GamePhase::tick;const auto api=services();
                     {
                         profiling::Scope gameplay_profile("runtime.gameplay.tick");
-                        game->tick(api.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
+                        game->tick(api.navigation.character.animation.animation.baseline,std::span<const PoimaGameInput>(frame_inputs.data(),input_count),tick);
                         game_phase=GamePhase::idle;
                     }
                     if(auto candidate=prepare_ui_commands())ui_model.swap(candidate);
@@ -961,22 +1111,30 @@ struct Runtime::Impl {
                     for(const auto& command:game_animation_commands)
                         require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& explicit_command) { return explicit_command.entity==command.entity && explicit_command.layer==command.layer; }),
                             "Gameplay and caller targeted the same animation rig in one tick.");
-                    if(!game_animation_commands.empty()) {
-                        animations->apply(game_animation_commands,tick);animation_locals();sync();
-                    }
-                    game_animation_commands.clear();
+
                 }
                 if(scheduled || game_structure_calls) {
-                    std::vector<RuntimeSpawnRequest> births;std::vector<PoimaEntityId> assigned;
+                    std::vector<RuntimeSpawnRequest> births;std::vector<RuntimeSpawnInstance> assigned;
                     births.reserve(game_spawns.size()+(scheduled ? scheduled->spawns.size() : 0));assigned.reserve(game_spawns.size());
-                    for(const auto& birth:game_spawns)if(!birth.canceled) { births.push_back(birth.request);assigned.push_back(birth.id); }
+                    for(const auto& birth:game_spawns)if(!birth.canceled) { births.push_back(birth.request);assigned.push_back(birth.instance); }
                     auto removals=game_despawns;
                     if(scheduled) { births.insert(births.end(),scheduled->spawns.begin(),scheduled->spawns.end());removals.insert(removals.end(),scheduled->despawns.begin(),scheduled->despawns.end()); }
-                    for(const auto& id:removals) {
-                        require(frame!=0 || std::none_of(motions.begin(),motions.end(),[&](const auto& m){return m.entity==id;}),
-                            "Caller motion and removal target the same entity in one tick.");
-                        require(std::none_of(game_commands.begin(),game_commands.end(),[&](const auto& m){return m.entity==id;}),
-                            "Gameplay motion and removal target the same entity in one tick.");
+                    for(const auto& root:removals) {
+                        const auto instance=topology->spawned.find(root);
+                        require(instance!=topology->spawned.end(),"Removal needs a live spawned instance root.");
+                        for(const auto& [local,id]:instance->second.nodes) {
+                            (void)local;
+                            require(frame!=0 || std::none_of(motions.begin(),motions.end(),[&](const auto& m){return m.entity==id;}),
+                                "Caller motion and removal target the same instance in one tick.");
+                            require(std::none_of(game_commands.begin(),game_commands.end(),[&](const auto& m){return m.entity==id;}),
+                                "Gameplay motion and removal target the same instance in one tick.");
+                            require(frame!=0 || std::none_of(animation_commands.begin(),animation_commands.end(),[&](const auto& m){return m.entity==id;}),
+                                "Caller animation and removal target the same instance in one tick.");
+                            require(std::none_of(game_animation_commands.begin(),game_animation_commands.end(),[&](const auto& m){return m.entity==id;}),
+                                "Gameplay animation and removal target the same instance in one tick.");
+                            require(std::none_of(game_character_inputs.begin(),game_character_inputs.end(),[&](const auto& input){return input.entity==id;}),
+                                "Gameplay character input and removal target the same instance in one tick.");
+                        }
                     }
                     auto result=publish_structure(structure_revision,births,removals,assigned,game_structure_calls!=0);
                     if(scheduled) {
@@ -991,6 +1149,10 @@ struct Runtime::Impl {
                     },components.get());
                     components->publish_tick();
                 }
+                if(!game_animation_commands.empty()) {
+                    animations->apply(game_animation_commands,tick);animation_locals();sync();
+                }
+                game_animation_commands.clear();
                 // Membership has now published. Newly born kinematic bodies can
                 // receive their first movement before this tick's physics step.
                 if(game) {
@@ -1072,6 +1234,27 @@ Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Execu
 }
 Runtime::~Runtime()=default;
 const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const {return impl_->templates;}
+RuntimeSpawnInstance Runtime::instance(const std::string& root) const {return impl_->instance(root);}
+std::string Runtime::instance_node(const std::string& root,const std::string& local) const {return impl_->instance_node(root,local);}
+const RuntimeDefinition& Runtime::live_definition() const {return impl_->topology->live;}
+std::vector<std::string> Runtime::camera_ids() const {
+    std::vector<std::string> result;
+    for(const auto e:impl_->topology->order)if(impl_->registry.all_of<RuntimeCamera>(e))result.push_back(impl_->registry.get<Node>(e).id);
+    return result;
+}
+std::vector<std::pair<std::string,std::string>> Runtime::player_controllers() const {
+    std::vector<std::pair<std::string,std::string>> result;
+    for(const auto e:impl_->topology->characters) {
+        const auto& camera=impl_->registry.get<Controller>(e).settings.camera;
+        if(!camera.empty())result.emplace_back(impl_->registry.get<Node>(e).id,camera);
+    }
+    return result;
+}
+bool Runtime::is_player_controller(const std::string& id) const {
+    const auto found=impl_->topology->identities.find(id);if(found==impl_->topology->identities.end())return false;
+    const auto* controller=impl_->registry.try_get<Controller>(found->second);
+    return controller && !controller->settings.camera.empty();
+}
 RuntimeSummary Runtime::inspect() const { return {impl_->tick,impl_->topology->order.size(),impl_->topology->body_names.size(),impl_->topology->characters.size()}; }
 RuntimeEntityState Runtime::entity(const std::string& id) const {
     const auto e=impl_->find(id); const auto& node=impl_->registry.get<Node>(e);
@@ -1195,7 +1378,7 @@ void Runtime::component_edit(const std::string& type,const std::string& entity,c
 const SoundState& Runtime::sound_state() const { return impl_->sounds; }
 AudioSnapshot Runtime::audio_snapshot(const std::string& listener) const {
     AudioSnapshot result;result.listener=impl_->registry.get<Node>(impl_->find(listener)).world;
-    for(const auto& source:impl_->acoustic_geometry) {
+    for(const auto& source:impl_->topology->acoustic_geometry) {
         auto g=source;g.world=multiply(impl_->registry.get<Node>(impl_->find(g.entity)).world,g.world);result.geometry.push_back(std::move(g));
     }
     for(auto e:impl_->topology->order)if(auto* emitter=impl_->registry.try_get<AudioEmitter>(e);emitter && emitter->enabled) {

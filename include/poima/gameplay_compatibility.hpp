@@ -24,6 +24,8 @@ inline constexpr const char* character_input_feature="character_input_v1";
 inline constexpr std::uint32_t character_services_bytes=216;
 inline constexpr const char* navigation_feature="navigation_query_v1";
 inline constexpr std::uint32_t navigation_services_bytes=224;
+inline constexpr const char* instances_feature="hierarchical_instances_v1";
+inline constexpr std::uint32_t instances_services_bytes=232;
 
 // In a requirement, services_bytes is the minimum readable prefix. In an
 // availability declaration it is the provided extent. Epochs describe callback
@@ -39,7 +41,8 @@ struct Contract {
 inline Contract available_contract(bool navigation_bound=true) {
     Contract result;result.services_bytes=character_services_bytes;
     result.features.push_back(persistence_feature);result.features.push_back(collections_feature);result.features.push_back(animation_feature);result.features.push_back(animation_layers_feature);result.features.push_back(character_input_feature);
-    if(navigation_bound && runtime_navigation_available()) {result.services_bytes=navigation_services_bytes;result.features.push_back(navigation_feature);}
+    if(navigation_bound && runtime_navigation_available())result.features.push_back(navigation_feature);
+    result.services_bytes=instances_services_bytes;result.features.push_back(instances_feature);
     return result;
 }
 
@@ -78,9 +81,10 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
     const bool layers_required=std::find(required.features.begin(),required.features.end(),animation_layers_feature)!=required.features.end();
     const bool character_required=std::find(required.features.begin(),required.features.end(),character_input_feature)!=required.features.end();
     const bool navigation_required=std::find(required.features.begin(),required.features.end(),navigation_feature)!=required.features.end();
+    const bool instances_required=std::find(required.features.begin(),required.features.end(),instances_feature)!=required.features.end();
     if(layers_required && !animation_required)return "Gameplay animation_layers_v1 also requires animation_inertial_v1.";
-    if(required.services_bytes!=(navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
-        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224-byte extensions.";
+    if(required.services_bytes!=(instances_required ? instances_services_bytes : navigation_required ? navigation_services_bytes : character_required ? character_services_bytes : layers_required ? animation_layers_services_bytes : animation_required ? animation_services_bytes : services_bytes))
+        return "Gameplay must declare the 176-byte baseline or named 192/208/216/224/232-byte extensions.";
     if(std::find(available.features.begin(),available.features.end(),animation_feature)!=available.features.end() && available.services_bytes<animation_services_bytes)
         return "Runtime animation_inertial_v1 requires a 192-byte service allocation.";
     if(std::find(required.features.begin(),required.features.end(),animation_feature)!=required.features.end() && required.services_bytes<animation_services_bytes)
@@ -93,9 +97,11 @@ inline std::string compatibility_error(const Contract& required,const Contract& 
         return "Runtime character_input_v1 requires a 216-byte service allocation.";
     if(std::find(available.features.begin(),available.features.end(),navigation_feature)!=available.features.end() && available.services_bytes<navigation_services_bytes)
         return "Runtime navigation_query_v1 requires a 224-byte service allocation.";
+    if(std::find(available.features.begin(),available.features.end(),instances_feature)!=available.features.end() && available.services_bytes<instances_services_bytes)
+        return "Runtime hierarchical_instances_v1 requires a 232-byte service allocation.";
     for(std::size_t i=0;i<required.features.size();++i) {
         const auto& feature=required.features[i];
-        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature)return "Unknown required gameplay feature: "+feature;
+        if(feature!=baseline_feature && feature!=persistence_feature && feature!=collections_feature && feature!=animation_feature && feature!=animation_layers_feature && feature!=character_input_feature && feature!=navigation_feature && feature!=instances_feature)return "Unknown required gameplay feature: "+feature;
         const auto prefix_end=required.features.begin()+static_cast<std::vector<std::string>::difference_type>(i);
         if(std::find(required.features.begin(),prefix_end,feature)!=prefix_end)
             return "Duplicate required gameplay feature: "+feature;

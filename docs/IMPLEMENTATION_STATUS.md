@@ -1,8 +1,50 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.77**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.78**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.78 adds [hierarchical runtime instances](RUNTIME_INSTANCES.md).
+Frozen recipes contain complete local entity graphs; each spawn allocates fresh
+IDs and remaps local native references and registered custom entity/array fields.
+Characters, cameras, imported rigs/skins, lights and audio join atomic membership
+publication. Whole-root removal requires surviving reference repairs. Failed
+batches restore membership, physics, animation, sound, typed gameplay and ID
+allocation; successful canceled births consume their reservations. Version 6
+checkpoints retain complete instance maps and allocator history. Exact restoration
+is supported; the existing explicit schema-upgrade pipeline does not yet support
+hierarchy recipes or version-6 saves.
+
+The independent `hierarchical_instances_v1` extension uses a 232-byte service
+prefix at epoch 7. C# `TemplateNodeId` and `ResolveNode` distinguish local recipe
+identities from live handles. Tick can resolve reserved members and stage supported
+commands; ordinary reads still see committed membership. Control resolves only
+committed members. Older 176–224-byte profiles remain supported. Schema revision
+is 67; authoring-core v1 and protocol 1 remain unchanged.
+
+Three native builds pass 56 selected regression checks, including complete
+membership, animation rebind, rollback, references, saves, nested asset closure
+and simulation-disabled authoring. Both managed ABI cohorts pass 75 checks each.
+Four real compiled original-FBX instance cohorts pass 8,944 RPCs with eight clean
+owners under Windows/Linux CoreCLR and Native AOT. Independent quaternion-chain,
+joint-transform and weighted-geometry calculations check two physically moving
+actors with different playback rates; save continuation, cancellation, failure,
+reference repair, deletion and reload policy are also checked. Original source
+sampling uses the native FBX importer; this is not an independent FBX decoder.
+
+Generated player controller/camera admission passes on both laptop GPUs. A
+relocated Windows Native AOT game runs after removing its owned source project,
+spawns two complete characters from its compiled first Tick and submits 2,058
+weighted vertices. Its readbacks match exactly with a separate
+source-free runtime using the same compiled artifact. This comparison is separate
+from the original-source pose oracle. Retained 176-byte Windows UI/save and
+224-byte Linux locomotion artifacts still pass on the new host. Initial fixture,
+build-path and missing UI-guard failures are retained with their corrections.
+These are bounded correctness and scripted graphics checks, not crowd,
+physical-input, GUI, clean-machine or game-scale performance qualification.
+[Evidence](evidence/m2-runtime-instances.json). The [fixture instructions](../tests/managed_instance_gameplay/README.md)
+provide reproducible compiled and exported checks; desktop prefab/variant authoring
+and arbitrary child or authored-entity deletion remain separate work.
 
 Version 0.0.77 adds a [frame-driven shared native player](LIVE_PLAYER.md).
 `player.start` acknowledges a deferred graphics lifetime; `player.inspect`

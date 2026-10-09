@@ -20,6 +20,8 @@ FetchContent_Declare(jolt
     URL_HASH SHA256=4427d6ce190e049b186bb88dbfb8692c2373a7fc042c984b5f15396194aac958
     SOURCE_SUBDIR Build DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
 FetchContent_MakeAvailable(jolt)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/jolt_character_ids.cmake")
+poima_patch_jolt_character_ids("${jolt_SOURCE_DIR}")
 if(MINGW)
     # Jolt 5.4 relies on a transitive type_traits include removed by newer
     # libc++. Supply the standard header without modifying the pinned source.

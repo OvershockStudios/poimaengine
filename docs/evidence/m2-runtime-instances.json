@@ -1,0 +1,1624 @@
+{
+  "format": "poima.runtime-instances-qualification",
+  "version": 1,
+  "engine_version": "0.0.78",
+  "date": "2026-10-09",
+  "passed": true,
+  "contracts": {
+    "authoring_core": "v1",
+    "protocol": 1,
+    "schema_revision": 67,
+    "gameplay_services_epoch": 7,
+    "hierarchical_instances_required_prefix": 232,
+    "supported_older_prefixes": [
+      176,
+      192,
+      208,
+      216,
+      224
+    ]
+  },
+  "scope": [
+    "Complete frozen hierarchical templates, native/custom local-to-live remapping, atomic character/physics/rig/skin/light/audio membership and whole-instance removal.",
+    "Same/fresh-owner exact v6 snapshots, native rollback, staged compiled birth initialization and independent original-source pose/weighted-geometry checks.",
+    "Windows generated-player controller/camera admission and source-free relocated NativeAOT actor birth/playback with separate same-artifact runtime image correspondence."
+  ],
+  "sources": {
+    "CHANGELOG.md": "e9ec4eee3604f670083d8b654292ddb9042e0e279b518875db19c13fe9a74956",
+    "CMakeLists.txt": "858ac02f0f2301f4043ebe1de9a4ef116db50abeaeb6ded8c1f05aee374a3b07",
+    "README.md": "c6c8d819b63689ca5db0658910e9239a6f5d9ac10b21caafbace3614a05b769e",
+    "THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+    "cmake/jolt_character_ids.cmake": "984af312e512a43656168ed9686eca5921832820db2bf58bfabd6ab3f6866efa",
+    "cmake/simulation.cmake": "9d2317f474c3c3b31f6529545820ed69cf0907c7a387ab7b6d37ae5ee2dc6e74",
+    "docs/DOCUMENTATION_COVERAGE.md": "af383bf0e4a80103fed05b2dbb116f3ac4a2f6e13b8610b78dcc4f3ea6602da9",
+    "docs/GAMEPLAY_LIFECYCLE.md": "00ecfaa6cdc87d9e162c3f75784ac56c3372e531f60df47c83c1994e3e9817b3",
+    "docs/IMPLEMENTATION_STATUS.md": "12791535e72409b8795c37ab6fc52dfae6ee151344ff5b6b0e3e1e982acebb29",
+    "docs/MANAGED_GAMEPLAY.md": "f3417749e1a605d41ab272fcf683abc73b813f202c6012e5969bdf8e3214386d",
+    "docs/NATIVE_GAMEPLAY.md": "29c5e54c25d11d3b7142323f5f4c6cd635d30398ba99270946cc7023b3c64ebb",
+    "docs/PLAYBOOKS.md": "32c1ff76f8c621840c264aee5db0abcdcaef4992823be4155e6d9fc8c59b7e31",
+    "docs/RUNTIME.md": "540665177e389c882ad4eb340a81de97b1694ee2ed7f9c12676a47d263279526",
+    "docs/RUNTIME_INSTANCES.md": "5e29a6d12008110493ef72e303d6e633724e3a47736e7fae9d554c797ddc4b42",
+    "docs/evidence/runtime-instances.png": "08e3458f1aef534688a41c6b1abe0a0a97ec9fb6107d51aa54ef46dc12702349",
+    "include/poima/audio.hpp": "3612080f5134dfb2ae6c69453eb3e182f9a75c53eae8c8ca77e0b65db15558d4",
+    "include/poima/gameplay_abi.h": "a8c2399d91acb71a0677385782b44003e8faa729b638e59e0437a4b0ea56eb3a",
+    "include/poima/gameplay_compatibility.hpp": "ed3a6180de9cf536810e3c9f8c48ce9c70e041a8cb0ec42fc4967d1ff35ff318",
+    "include/poima/runtime.hpp": "4df3653f8ca19a9f37b32b0f59c52d194fc374978a7b978bf52a133dee14fb59",
+    "include/poima/runtime_animation.hpp": "d7a9c1e5f555381563f020809f9c70a7750d0e711269615229c1515551cfc718",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "3c391bbcfa843339e5b71a209a62ac9ef67fbe65d603f761d1cd7827b7ab2f21",
+    "managed/Poima.Gameplay/Instances.cs": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7",
+    "managed/Poima.Gameplay/Ui.cs": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c",
+    "managed/Poima.ManagedBridge/Entry.cs": "44f8e3fdde43df992dbb8f90be071cd7087b425da403fa760761ef53e84d470d",
+    "managed/Poima.NativeGame.Generator/Program.cs": "36df1e4e3f5e2ddb11e02df30411ce673306aa90e29cc01672b00c2eadeb8d84",
+    "managed/Poima.NativeGame/Entry.cs": "59c7ad4c577c605c10797730993e620ee0a506e1d3cf91453c1076cf2cb27849",
+    "scripts/publish_native_gameplay.py": "401f0ccfa0f6538ae55bf2db615c76be74191183b72216be60d37c5da5c72b21",
+    "src/asset_references.cpp": "750cb5b018951c228cd3b71ef9f2a0d281a8ba91726249494431dc5704ebfca0",
+    "src/asset_references.hpp": "7e7bd10378a8264aa6c0cb97f436f4c5beac9cf34bf5608a1d6d8d9dee3baf75",
+    "src/audio_events.cpp": "5270fe5d42b7787af9489ee3812623f638ad07bfce3fa6c886154c0370fe50ac",
+    "src/audio_stream.cpp": "905f82822fba025592e33ca5507c9db1c61d51fa3a19893b23503576b9b608f1",
+    "src/gameplay.cpp": "00b5cfdcd1c4935feac0cb6d7c06fff2da01eac633d6d60a6d94bb97903b0564",
+    "src/runtime.cpp": "884b11590fa824857fa00790da4bd1385860227bf8ec899c43a27eb5c313e231",
+    "src/runtime_animation.cpp": "96462d482306c3be712be9204aa76a8db332ff4bddc2dc795cd1440ee6763488",
+    "src/runtime_components.cpp": "b6154273ee277ac8098eb77f616a3f1416639e335d053c13167cc8bd3e888404",
+    "src/runtime_components.hpp": "6e548040172c6b29cd4c5ddc800160388e0abc12452491825deba53edcf50741",
+    "src/runtime_disabled.cpp": "b43c90f1371b7e03438ef427f25563f86c74618d52b248f82966b9bd33cd04bd",
+    "src/runtime_save.inc": "2dfb4930dcf82873c1d4d73118077345699b5fe200980f832231fa43e8d9bc88",
+    "src/runtime_templates.cpp": "a4411c054c996b95d763758832c40368fa1b4e1cfcba6d18af356bb81c869cdd",
+    "src/runtime_ui.inc": "c382213c346960e169dbddd95134d3c43147404652bf8ccbd40029d40a7c1e11",
+    "src/world.cpp": "13e1585fc87f8b7e8779c648eb777cb05ae0a6b09abfe0bd27466e7483adf7d4",
+    "src/world_player_service.inc": "66cacf5f6a005e589d75efb7ccb5b469ad9a997962b1a0c3973e425b6e98e69b",
+    "src/world_schema.cpp": "d977b71bae8ff5ac9cc927bdbcebbd9ee04bda694bf454525278402e78b6def0",
+    "tests/gameplay_compatibility_native.cpp": "4e210890903cde408050a216beef6358ddaeb380640786deab6afac7a9a5d24e",
+    "tests/instance_player_contract.py": "6049657238a50bcd66b05c97ef6b1fcb0eba929b11bff716c016bc7e7eebebe1",
+    "tests/jolt_character_patch.py": "82f623d7d1ee3c4086e8847f370f35060311936ef9d145eb8c459fba8ac925dc",
+    "tests/managed_instance_gameplay/ManagedInstanceGame.cs": "fb77d3fe649add5d739e47dae972bfa8867e1266b32ed28558ab7a986670961f",
+    "tests/managed_instance_gameplay/Poima.ManagedInstanceGame.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+    "tests/managed_instance_gameplay/README.md": "57bdc3aa2bc1a35c1df9f79d4ec17e3f20eb51f17004963df7a1ea8c4ebb2178",
+    "tests/managed_instances_contract.py": "7e20faf7c6930bf47f7b7bb0bf79fdcd90b45913282214c0cfcb6974b8b89470",
+    "tests/managed_service_abi/InstanceExtension.cs": "856130074041af14ac379375485de56111df1917040ea65129c2c670b1d5910d",
+    "tests/managed_service_abi/Program.cs": "8ad48d252f6927cc937495839f48b6ed4ce2e150e8d93bf8a77e2ef94403ce5a",
+    "tests/native_gameplay_publish_requirements.py": "9fef78584331fd4a51660c4df23aacf35559e4f7f2ce8dded4c11c31f21b3c1d",
+    "tests/runtime_animation_membership_native.cpp": "d90e5b6d3278cb03769ada4e3264c1b3ce1594f7957e6091ca8c226fec8a563e",
+    "tests/runtime_instances_bundle.py": "fee6b70476aa296b5eaf4f6e62b262e2aca57df1ce082f2ccb9f4e532fd73dbd",
+    "tests/runtime_instances_native.cpp": "bb1dc8fb8fb566f64d75d7c21263e09b486b1e2e7003f97247b2bc7c01d0e648",
+    "tests/world_components_contract.py": "09b41370d28563539fdbe36b7d2ffd491de7a99dda715c714533e31980b2c2a3",
+    "tests/world_instances_contract.py": "c2f6076be44779b7633431e508b784aee9029a9647c418f6f9b9b299aceebe74",
+    "tests/world_templates_contract.py": "916a18b49ae2b2bb813d9b2dd0d90433b31c4a9bf730ce67040fed4647bf310d"
+  },
+  "native_builds": [
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "seconds": 212.50296632800018,
+      "binary_sha256": "06f99b9f9271b72fe13775439ec15abd7153cae863c8b4e0bee98fa157fa4271",
+      "log_sha256": "608a2448dd7337f0b8d520a8959d83eec5f91880d004ca1ac5fa73e65dc9e054",
+      "frozen_build_report_sha256": "f435eb432222886552f2ca553f8bb47c8144797307245ba1326a731c96aaa7c9"
+    },
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "seconds": 423.227902755003,
+      "binary_sha256": "5a01d22f3c83febb4afd32d2df12b452e84ce047d1930973c302b501fb319f42",
+      "log_sha256": "4252e75de7d6dcc1e5f7aca716fc6607c3d5cd9cdbc453242419541b84a06281",
+      "frozen_build_report_sha256": "f435eb432222886552f2ca553f8bb47c8144797307245ba1326a731c96aaa7c9"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "seconds": 305.5362091889983,
+      "binary_sha256": "5113ca0e5598cd6f56218f89638d1df8f609ed97e5f571427afb9842fd0e0d26",
+      "log_sha256": "3055b73ac95ef725c8b47c08ba69a1a3dab8a5f80acae80181744f8d3ad9c756",
+      "frozen_build_report_sha256": "f435eb432222886552f2ca553f8bb47c8144797307245ba1326a731c96aaa7c9"
+    }
+  ],
+  "installed_runtime": {
+    "services_bytes": 232,
+    "metadata_sha256": "52ef830017d658f7ea41d5a0dcd2249348130a579532b4d79b89fdf571b7bd9e",
+    "metadata_regeneration_report_sha256": "e9ddcec7ffd2390aa2f42af0314e41b44bbf66183cc1d7953667c5dac8c3ffcc"
+  },
+  "selected_regression_checks": [
+    {
+      "host": "linux",
+      "passed_checks": 22,
+      "checks": [
+        {
+          "name": "poima-runtime-animation-membership-test",
+          "exit_code": 0,
+          "log_sha256": "d867066d69b1305818d5611e5e931b545a131622be34cc833f9f348fa5a4c31b"
+        },
+        {
+          "name": "poima-runtime-templates-test",
+          "exit_code": 0,
+          "log_sha256": "b3c4d6b59cc41f59ed689291703a12c4aa26f5068eeb7da855d99cd291632546"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "log_sha256": "f5df21ad0a288a81603e82e28708a263159b78f8cf1695b87a41dc1a830352e9"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "log_sha256": "e5d6cbf6e75f418ffea8739597cf2e81c15c00169122b23d607608bf214f4fc4"
+        },
+        {
+          "name": "poima-runtime-instances-test",
+          "exit_code": 0,
+          "log_sha256": "6750495835823d800342d69fd7153b57d5f4747f65131a97bb17fe71a78273d7"
+        },
+        {
+          "name": "poima-runtime-test",
+          "exit_code": 0,
+          "log_sha256": "56bd299ed6443f36487c02a641693c5b1153e70cea9737bd7e07cc8d9f534eef"
+        },
+        {
+          "name": "poima-runtime-save-test",
+          "exit_code": 0,
+          "log_sha256": "5f3b9b686b818b89e26b0ff272f94352a808489df5f5ad65e225564c446a1f91"
+        },
+        {
+          "name": "poima-runtime-components-test",
+          "exit_code": 0,
+          "log_sha256": "8c297a358b7142fcc5839040822fd4e63da1538e28baf8975c668a86b8d4cdd8"
+        },
+        {
+          "name": "poima-runtime-topology-test",
+          "exit_code": 0,
+          "log_sha256": "49471248535ac539029c06bfc4be515a7e8b3d6c32b9058555294eabd94f4f73"
+        },
+        {
+          "name": "poima-runtime-animation-test",
+          "exit_code": 0,
+          "log_sha256": "2a3876cb56bf94c73b94b9223f27940e57412f6d676cbc11f0398b281cdfa1c8"
+        },
+        {
+          "name": "poima-runtime-animation-layers-test",
+          "exit_code": 0,
+          "log_sha256": "7afadd0d3d0a9d47021086e4ac8169e94da07647a60eaa56622d6134a3de060c"
+        },
+        {
+          "name": "poima-runtime-mesh-test",
+          "exit_code": 0,
+          "log_sha256": "e179e01dc4bc47969f1ad90f5661d9951bb2544eadaa17546d772daa3b166824"
+        },
+        {
+          "name": "poima-player-window-test",
+          "exit_code": 0,
+          "log_sha256": "55391c38a382aed12f3186b80d7415f402da4b746efcd897ef49b1121e6d4f87"
+        },
+        {
+          "name": "world_templates_contract",
+          "exit_code": 0,
+          "log_sha256": "95238b895f5b029617ffc10f5a928a804d80913eb830b33a7dd06435c343661d"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "log_sha256": "f09a7de067d49e6405a0d1b0c650f32ff549ff2e2dd9401f8ae1cbd303ff0915"
+        },
+        {
+          "name": "world_components_contract",
+          "exit_code": 0,
+          "log_sha256": "d3b20b7370e12c4814c62cd59bf17e3eb2f141dc3224e165ce4336326c58cf8e"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "log_sha256": "957dc67d86d6cebad3504578035724168f948fdf8e98801c4144f1b4e8666bea"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "log_sha256": "6604b17175ad13d5dffb4791b5cde3db984beb289ae8c62d16cc05871612e203"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "log_sha256": "aae1a80ca2803e912705f2d598fce16363a6823960361871072440e9be19a40f"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "log_sha256": "dc4e058242ddbddab40e87b9b35565c55b2f80875b5aa92af0151e56331dbd33"
+        },
+        {
+          "name": "jolt_character_patch",
+          "exit_code": 0,
+          "log_sha256": "8a650bf3311cbd3f36771eb117bdf77a65b429c2dacc27a984e096dde1b97d70"
+        }
+      ],
+      "retained_report_sha256": [
+        "d02ad1e183b6b0d666eedaae16fbeecf380006864ae6beb67f6585af9d22dbef",
+        "56f1eb65fb5a9860d31d8b006be5d1d947ae7d3d6dd3466b9d1ccbdce7158ff1"
+      ]
+    },
+    {
+      "host": "windows",
+      "passed_checks": 22,
+      "checks": [
+        {
+          "name": "poima-runtime-animation-membership-test",
+          "exit_code": 0,
+          "log_sha256": "128de2e4168967c7f049c7c8869fa119af7e9b12bd46b6559e58b4dfebb94a7e"
+        },
+        {
+          "name": "poima-runtime-templates-test",
+          "exit_code": 0,
+          "log_sha256": "4f1b061d3c89ae373dc7ec25b28db67ed47425c5546126a273f66eae1fc3c7cd"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "log_sha256": "093cd89e26b78caeafdd2a7bbb7c51dd26b48f2b20d60bb0dadf7e0b69526478"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "log_sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        },
+        {
+          "name": "poima-runtime-instances-test",
+          "exit_code": 0,
+          "log_sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        },
+        {
+          "name": "poima-runtime-test",
+          "exit_code": 0,
+          "log_sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        },
+        {
+          "name": "poima-runtime-save-test",
+          "exit_code": 0,
+          "log_sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        {
+          "name": "poima-runtime-components-test",
+          "exit_code": 0,
+          "log_sha256": "b081efa87e8becb2a62c8c31dc17161ef7830d9c8bac66e9fcf0aa061d4b4735"
+        },
+        {
+          "name": "poima-runtime-topology-test",
+          "exit_code": 0,
+          "log_sha256": "096d010996e57fbbf170ff9c54decfe1425afe242347b3436d1c3a5f182794c7"
+        },
+        {
+          "name": "poima-runtime-animation-test",
+          "exit_code": 0,
+          "log_sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        },
+        {
+          "name": "poima-runtime-animation-layers-test",
+          "exit_code": 0,
+          "log_sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        },
+        {
+          "name": "poima-runtime-mesh-test",
+          "exit_code": 0,
+          "log_sha256": "c712c123ffb736188606cbca3cf3ae689834b423489a3f248720185a9a4988fa"
+        },
+        {
+          "name": "poima-player-window-test",
+          "exit_code": 0,
+          "log_sha256": "6464d1a8472f746a8b85851c952071ba97df11bc43d23f4f24e991d497002319"
+        },
+        {
+          "name": "world_templates_contract",
+          "exit_code": 0,
+          "log_sha256": "ab72369f4efb4f9cf76522a8877ddfdee2db34675be839da3108d30744d6029a"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "log_sha256": "24ef976c4e92f6935d7946fa58832a5e76f722afd6506525923233eb100a1166"
+        },
+        {
+          "name": "world_components_contract",
+          "exit_code": 0,
+          "log_sha256": "cc913406cf7eb963f53d085eb7b1f75d366bb2c3e5f4c4ee1c278cfdfdd253d8"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "log_sha256": "40941e9b03223b5710def187731b739b26ae9f727f0cebb4338bc63749136fbe"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "log_sha256": "5d7c0dbb70beed546a00249d3152bf58631821c434ac5c68e5769ac90a6d78eb"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "log_sha256": "dbbfea435f8b108557f45564ca488fa0c2bd80917179bc19e9c6bfa313f67582"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "log_sha256": "b9a6765de479333febcee21eb88f94cf2c7388174e6f6ff778b1ab6ca71542f6"
+        },
+        {
+          "name": "jolt_character_patch",
+          "exit_code": 0,
+          "log_sha256": "8a650bf3311cbd3f36771eb117bdf77a65b429c2dacc27a984e096dde1b97d70"
+        }
+      ],
+      "retained_report_sha256": [
+        "0d8dbfd524b99b100f5c0b17ac5daaec457205b9119ebf508c6870fa113e60ba"
+      ]
+    },
+    {
+      "host": "authoring",
+      "passed_checks": 12,
+      "checks": [
+        {
+          "name": "poima-runtime-animation-membership-test",
+          "exit_code": 0,
+          "log_sha256": "d867066d69b1305818d5611e5e931b545a131622be34cc833f9f348fa5a4c31b"
+        },
+        {
+          "name": "poima-runtime-templates-test",
+          "exit_code": 0,
+          "log_sha256": "b3c4d6b59cc41f59ed689291703a12c4aa26f5068eeb7da855d99cd291632546"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "log_sha256": "698cc5fd3cb9c6ca3ad404de7bd252f99d719db724b774779fe47b5c283d296e"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "log_sha256": "e5d6cbf6e75f418ffea8739597cf2e81c15c00169122b23d607608bf214f4fc4"
+        },
+        {
+          "name": "world_templates_contract",
+          "exit_code": 0,
+          "log_sha256": "f883a867542c525d10ddc1de80572083655353e3691af2aebc5a63068f0ab4cd"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "log_sha256": "7c621d71c491e0de6bc693f605ea99da8e0a3f2b7682bdaba8b85732d14bb7f7"
+        },
+        {
+          "name": "world_components_contract",
+          "exit_code": 0,
+          "log_sha256": "2e78946149cc2941cae6c2c6b98283512da306f6aeb88b4bbe6b6937c5573fc5"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "log_sha256": "f875a4de91029bf74a54c1e85ffcd3787744e92854134fb2ef40509955c24370"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "log_sha256": "19a72d9dd4d585c7fd38de548bd3337cadb3fc11d24ef993cb5202a0736663cd"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "log_sha256": "c9caf15d9392264229a984b9b33b7f2fd876c59567cf9e63f7922cf48b231cff"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "log_sha256": "6dd5fa77fc3879b1f3ffb33ad9ab4cb5ab3fa4b9f36cfbe256bb1dfac3bd2aca"
+        }
+      ],
+      "retained_report_sha256": [
+        "b013358ca20a845fd18a36f5771abdf2fad643aa32ed49b3eb83ce59cece586f"
+      ]
+    }
+  ],
+  "world_contracts": [
+    {
+      "host": "linux",
+      "tests": 5,
+      "skipped": 0,
+      "rpc_count": 86,
+      "clean_process_owners": 8,
+      "binary_sha256": "06f99b9f9271b72fe13775439ec15abd7153cae863c8b4e0bee98fa157fa4271",
+      "verifier_sha256": "c2f6076be44779b7633431e508b784aee9029a9647c418f6f9b9b299aceebe74",
+      "retained_report_sha256": "47ecb5e9b7bd345a65b82eb26e92c779a5eea4a24fa943b67f098588fced2ddf"
+    },
+    {
+      "host": "windows",
+      "tests": 5,
+      "skipped": 0,
+      "rpc_count": 86,
+      "clean_process_owners": 8,
+      "binary_sha256": "5a01d22f3c83febb4afd32d2df12b452e84ce047d1930973c302b501fb319f42",
+      "verifier_sha256": "c2f6076be44779b7633431e508b784aee9029a9647c418f6f9b9b299aceebe74",
+      "retained_report_sha256": "4e21cc054bbf8ece16a0d1b51da7e8ee6a387739c6ee2ee7adac2443a438c137"
+    },
+    {
+      "host": "authoring",
+      "tests": 5,
+      "skipped": 2,
+      "rpc_count": 41,
+      "clean_process_owners": 5,
+      "binary_sha256": "5113ca0e5598cd6f56218f89638d1df8f609ed97e5f571427afb9842fd0e0d26",
+      "verifier_sha256": "c2f6076be44779b7633431e508b784aee9029a9647c418f6f9b9b299aceebe74",
+      "retained_report_sha256": "8ad290bc7cacd27697ca8d01411043244c5fa0fbe9892f2eb2c7b533ba660ef7"
+    }
+  ],
+  "managed_abi": [
+    {
+      "host": "linux",
+      "passed_checks": 75,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 3/64 rejected before Tick",
+        "services 3/88 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 4/87 rejected before Tick",
+        "services 4/88 rejected before Tick",
+        "services 4/120 rejected before Tick",
+        "services 5/88 rejected before Tick",
+        "services 5/119 rejected before Tick",
+        "services 5/120 rejected before Tick",
+        "services 5/121 rejected before Tick",
+        "services 6/120 rejected before Tick",
+        "services 6/136 rejected before Tick",
+        "services 6/143 rejected before Tick",
+        "services 6/144 rejected before Tick",
+        "services 6/145 rejected before Tick",
+        "services 7/144 rejected before Tick",
+        "services 7/175 rejected before Tick",
+        "services 8/176 rejected before Tick",
+        "services 6/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "null entity callback rejected",
+        "null ray callback rejected",
+        "null motion callback rejected",
+        "null save info rejected",
+        "null save request rejected",
+        "null save result rejected",
+        "null component query rejected",
+        "null component get rejected",
+        "null component set rejected",
+        "null entity alive rejected",
+        "null spawn rejected",
+        "null despawn rejected",
+        "null template component get rejected",
+        "null UI read rejected",
+        "null UI edit rejected",
+        "null control info rejected",
+        "null control request rejected",
+        "matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation",
+        "lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors",
+        "100 additional generated-code module lifetimes invoke and retire without retained Type caches",
+        "CoreCLR bridge: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too",
+        "TemplateId remains distinct from persisted EntityId state fields",
+        "generated component and animation fixture collectible context released",
+        "linked production NativeGame entry: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "marked CoreCLR loads reject missing/short/wrong/duplicate host contracts before constructor; valid192 negotiation reaches constructor sentinel; failed contexts collected",
+        "marked Tick/Control reject actual176/184 guarded allocations before extension reads and reject either null tail callback before game execution",
+        "real bridge marked192 Tick/Control transfers independent64/136 PODs, both transition modes, nullable active mode/progress, rest clip, old getter and seven-argument setter; invalid enum never reaches callback",
+        "SDK rejects14 malformed mock extended-state responses, transfers mock native error, and later executes valid Tick; extension contexts retired",
+        "unmarked game remains legacy-compatible at load and safely rejects extended helper on176 baseline; no load-time IL capability claim",
+        "masked CoreCLR marker rejects missing/short/unnamed/dependency-incomplete hosts before constructor;208 positive sentinel executes",
+        "masked Tick/Control reject176/192/200 real guarded allocations and either missing layer callback before game execution",
+        "independent80/200 mock PODs transfer additive metadata, active clip inertia and weight fade, canonical missing slots and complete layer command; invalid public arguments do not invoke callbacks",
+        "SDK rejects34 independently malformed mock layer replies and transfers native error; valid subsequent Tick and collectible cleanup pass",
+        "unmarked SDK layer helper rejects its actual176 guarded baseline without reading the208 tail",
+        "character marker rejects absent, short, unnamed, wrong-epoch and duplicate hosts before constructor;216 and larger available prefixes reach positive sentinel",
+        "character Tick/Control reject actual176/192/208 guarded allocations and missing own callback before execution",
+        "independent48-byte character commands transfer explicit and neutral defaults;12 invalid arguments never call native; character-only216/224 tolerates poisoned unrequested animation pointers while all four animation helpers deny access",
+        "mock character callback error preserves diagnostic and gameplay state; subsequent Tick and collectible cleanup succeed",
+        "character+inertial and character+masked profiles transfer through requested callbacks only; absent requested callbacks reject before game, unrequested layer nulls remain valid",
+        "unmarked compiled character helper rejects before reading an actual176 guarded baseline tail",
+        "navigation marker rejects missing, unnamed, short, wrong-epoch and duplicate host features before constructor;224/larger valid hosts reach sentinel",
+        "actual176/192/208/216 guarded tables and absent own callback reject Tick/Control without reading ungranted tail",
+        "six typed routes include single-corner complete, canonical missing projection, partial and exhausted budgets;17 invalid arguments avoid callback; unrequested40-byte tails poisoned and five helpers deny access",
+        "25 malformed result/header/status/flags/count/projection/corner replies plus native failure reject with destination span unchanged; native error/recovery and collectible cleanup pass",
+        "all five navigation/animation/character combinations retain exact sorted required names; missing each requested callback rejects before game while unrequested callbacks may be null",
+        "unmarked navigation helper rejects actual guarded176 table before extension read",
+        "instance-only named232 and larger hosts admit before constructor; absent feature/old extents/wrong epoch reject before construction; local IDs parse distinctly",
+        "Tick/Control guard actual176..224 allocations; poison all unrequested extension callbacks; exact ID transfer, local argument denial, native failure and malformed zero success reject safely",
+        "independent instance plus character profile retains exact names and validates each opted-in callback only",
+        "unmarked Tick/Control deny resolver before protected tail access; template-local identity is not silently serialized as a live entity"
+      ],
+      "retained_report_sha256": "1f563cd10aae25dd1bbcaadfc68edbac1d560057ac797ffaefbc0fd006b06ea8"
+    },
+    {
+      "host": "windows",
+      "passed_checks": 75,
+      "checks": [
+        "null services rejected before Tick",
+        "services 2/48 rejected before Tick",
+        "services 3/64 rejected before Tick",
+        "services 3/88 rejected before Tick",
+        "services 4/64 rejected before Tick",
+        "services 4/87 rejected before Tick",
+        "services 4/88 rejected before Tick",
+        "services 4/120 rejected before Tick",
+        "services 5/88 rejected before Tick",
+        "services 5/119 rejected before Tick",
+        "services 5/120 rejected before Tick",
+        "services 5/121 rejected before Tick",
+        "services 6/120 rejected before Tick",
+        "services 6/136 rejected before Tick",
+        "services 6/143 rejected before Tick",
+        "services 6/144 rejected before Tick",
+        "services 6/145 rejected before Tick",
+        "services 7/144 rejected before Tick",
+        "services 7/175 rejected before Tick",
+        "services 8/176 rejected before Tick",
+        "services 6/0 rejected before Tick",
+        "null animation get rejected",
+        "null animation set rejected",
+        "null prefix callback rejected",
+        "null entity callback rejected",
+        "null ray callback rejected",
+        "null motion callback rejected",
+        "null save info rejected",
+        "null save request rejected",
+        "null save result rejected",
+        "null component query rejected",
+        "null component get rejected",
+        "null component set rejected",
+        "null entity alive rejected",
+        "null spawn rejected",
+        "null despawn rejected",
+        "null template component get rejected",
+        "null UI read rejected",
+        "null UI edit rejected",
+        "null control info rejected",
+        "null control request rejected",
+        "matching v7 transfers animation, saves and generated components: all five scalar kinds, sorted cursor, missing presence, exact fingerprint, zero padding, positive zero and finite validation",
+        "lifecycle callbacks transfer typed template IDs, optional complete transforms, reserved IDs, cancellation, frozen component defaults, presence and native errors",
+        "100 additional generated-code module lifetimes invoke and retire without retained Type caches",
+        "CoreCLR bridge: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "op6 transfers UI event/read/patch/modal/Resume/Pause without invoking Tick; Tick can write UI too",
+        "TemplateId remains distinct from persisted EntityId state fields",
+        "generated component and animation fixture collectible context released",
+        "linked production NativeGame entry: Tick and Control accept 176/177/192/256-byte epoch-7 prefixes with poisoned opaque tails; guarded short headers, null/missing callbacks, wrong epochs and invalid input/call layouts rejected",
+        "marked CoreCLR loads reject missing/short/wrong/duplicate host contracts before constructor; valid192 negotiation reaches constructor sentinel; failed contexts collected",
+        "marked Tick/Control reject actual176/184 guarded allocations before extension reads and reject either null tail callback before game execution",
+        "real bridge marked192 Tick/Control transfers independent64/136 PODs, both transition modes, nullable active mode/progress, rest clip, old getter and seven-argument setter; invalid enum never reaches callback",
+        "SDK rejects14 malformed mock extended-state responses, transfers mock native error, and later executes valid Tick; extension contexts retired",
+        "unmarked game remains legacy-compatible at load and safely rejects extended helper on176 baseline; no load-time IL capability claim",
+        "masked CoreCLR marker rejects missing/short/unnamed/dependency-incomplete hosts before constructor;208 positive sentinel executes",
+        "masked Tick/Control reject176/192/200 real guarded allocations and either missing layer callback before game execution",
+        "independent80/200 mock PODs transfer additive metadata, active clip inertia and weight fade, canonical missing slots and complete layer command; invalid public arguments do not invoke callbacks",
+        "SDK rejects34 independently malformed mock layer replies and transfers native error; valid subsequent Tick and collectible cleanup pass",
+        "unmarked SDK layer helper rejects its actual176 guarded baseline without reading the208 tail",
+        "character marker rejects absent, short, unnamed, wrong-epoch and duplicate hosts before constructor;216 and larger available prefixes reach positive sentinel",
+        "character Tick/Control reject actual176/192/208 guarded allocations and missing own callback before execution",
+        "independent48-byte character commands transfer explicit and neutral defaults;12 invalid arguments never call native; character-only216/224 tolerates poisoned unrequested animation pointers while all four animation helpers deny access",
+        "mock character callback error preserves diagnostic and gameplay state; subsequent Tick and collectible cleanup succeed",
+        "character+inertial and character+masked profiles transfer through requested callbacks only; absent requested callbacks reject before game, unrequested layer nulls remain valid",
+        "unmarked compiled character helper rejects before reading an actual176 guarded baseline tail",
+        "navigation marker rejects missing, unnamed, short, wrong-epoch and duplicate host features before constructor;224/larger valid hosts reach sentinel",
+        "actual176/192/208/216 guarded tables and absent own callback reject Tick/Control without reading ungranted tail",
+        "six typed routes include single-corner complete, canonical missing projection, partial and exhausted budgets;17 invalid arguments avoid callback; unrequested40-byte tails poisoned and five helpers deny access",
+        "25 malformed result/header/status/flags/count/projection/corner replies plus native failure reject with destination span unchanged; native error/recovery and collectible cleanup pass",
+        "all five navigation/animation/character combinations retain exact sorted required names; missing each requested callback rejects before game while unrequested callbacks may be null",
+        "unmarked navigation helper rejects actual guarded176 table before extension read",
+        "instance-only named232 and larger hosts admit before constructor; absent feature/old extents/wrong epoch reject before construction; local IDs parse distinctly",
+        "Tick/Control guard actual176..224 allocations; poison all unrequested extension callbacks; exact ID transfer, local argument denial, native failure and malformed zero success reject safely",
+        "independent instance plus character profile retains exact names and validates each opted-in callback only",
+        "unmarked Tick/Control deny resolver before protected tail access; template-local identity is not silently serialized as a live entity"
+      ],
+      "retained_report_sha256": "18af5588881f022cd2244933d454159e430f07c88fb0a61b0cd9a88a356120bc"
+    }
+  ],
+  "native_publications": [
+    {
+      "host": "linux",
+      "sdk": "10.0.401",
+      "exit_code": 0,
+      "seconds": 69.83623386399995,
+      "descriptor_sha256": "58b95477448722e67f4ccbef2adabd8715a50be1defba564afdfb954f1938145",
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "character_input_v1",
+        "hierarchical_instances_v1"
+      ],
+      "inventory": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1628056,
+          "sha256": "49cc562fafa7f0bf0cc69e8dd7e186667523aad814f5b227c7c00a96ba2eaac6",
+          "role": "library"
+        },
+        {
+          "path": "game.poima-components.json",
+          "size": 704,
+          "sha256": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        }
+      ],
+      "retained_report_sha256": "ec8618e5c6cc70426ae78e979e411462d71cafb9aeb98a38c01e5525cd4c096c"
+    },
+    {
+      "host": "windows",
+      "sdk": "10.0.401",
+      "exit_code": 0,
+      "seconds": 26.244244800007436,
+      "descriptor_sha256": "994fa2b872a0938f9633cc69c532980b9a37c78770decb8ea823ac34157a3c96",
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "character_input_v1",
+        "hierarchical_instances_v1"
+      ],
+      "inventory": [
+        {
+          "path": "game.poima-components.json",
+          "size": 704,
+          "sha256": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1376768,
+          "sha256": "2e0add5cc6edb3d00c527866d99028fee647ed6f16f7ead2a1ca80abc8ce29d8",
+          "role": "library"
+        }
+      ],
+      "retained_report_sha256": "7435985a37ca7d7248a29f5feb357790845a611fcc639b93cb606c78784ce0e7"
+    }
+  ],
+  "compiled_consumers": [
+    {
+      "host": "linux",
+      "backend": "coreclr",
+      "rpc_count": 2236,
+      "clean_process_owners": 2,
+      "checks": [
+        "Original imported graph instanced twice with disjoint native IDs and remapped scalar/array references.",
+        "Actual compiled232-byte resolver, reserved read denial, independent speeds and physical controllers.",
+        "Reserved cancellation, whole-batch throw and incoming-reference rejection preserve membership, native clocks and typed state.",
+        "Repaired whole deletion retires all descendants; surviving IDs persist and retired IDs are not reused.",
+        "Exact v6 same/fresh owner checkpoints and unequal fixed-tick continuation retain original-source poses and typed state.",
+        "Compatible CoreCLR reload or explicit AOT reload rejection leaves instance membership/clocks intact."
+      ],
+      "input_sha256": {
+        "binary": "06f99b9f9271b72fe13775439ec15abd7153cae863c8b4e0bee98fa157fa4271",
+        "manifest": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+        "assembly": "733b5d1594343de74512766cf5a006d9e42ae6d0c56f8968cd98f28555fba671",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d",
+        "bridge": "6b7cd5ec043f82c8971f6a22101e795aeb375eac277e3c1750e5b7356d2f2bea"
+      },
+      "verifier_sources": {
+        "tests/managed_instances_contract.py": "7e20faf7c6930bf47f7b7bb0bf79fdcd90b45913282214c0cfcb6974b8b89470",
+        "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+        "tests/managed_instance_gameplay/ManagedInstanceGame.cs": "fb77d3fe649add5d739e47dae972bfa8867e1266b32ed28558ab7a986670961f",
+        "tests/managed_instance_gameplay/Poima.ManagedInstanceGame.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+        "tests/locomotion_yard_contract.py": "66d0d6cadde4f9d03d918bef5791a410ef134061c2826fdbc6731147df3c9073",
+        "tests/animation_rotation_retarget.py": "f7de7f9e5f50848fe233f2807a29d99f65fd764575074ccfc44550e647b37c4f",
+        "tests/animation_rotation_retarget_capture.py": "b124239b8adfd3ac7617a2e77571e0b37acad9ebfdf516e60f744e2b705e0c81",
+        "tests/rotation_retarget_fixture.py": "310abdf5cecacb85696db202296c1e01145c18e10cecb4e723e6fc0e62e8207c",
+        "tests/frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+        "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+        "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+        "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+        "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+        "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+        "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+        "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+        "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+        "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+      },
+      "original_source_sha256": {
+        "Model/characterMedium.fbx": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+        "Animations/run.fbx": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+        "Animations/idle.fbx": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+        "License.txt": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "pose_observations": [
+        {
+          "actor": "First",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.3333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.1760626767498561e-05,
+          "maximum_weighted_vertex_error": 1.6342574754012012e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.6666666666666666,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2451333525120845e-05,
+          "maximum_weighted_vertex_error": 1.6347844493503927e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144772390226e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712728112084e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144772390226e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712728112084e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        }
+      ],
+      "retained_report_sha256": "d5654e666d000de82098bd45853bcd1b1ce181f1dc9413a39a55128914d9da3f"
+    },
+    {
+      "host": "linux",
+      "backend": "aot",
+      "rpc_count": 2236,
+      "clean_process_owners": 2,
+      "checks": [
+        "Original imported graph instanced twice with disjoint native IDs and remapped scalar/array references.",
+        "Actual compiled232-byte resolver, reserved read denial, independent speeds and physical controllers.",
+        "Reserved cancellation, whole-batch throw and incoming-reference rejection preserve membership, native clocks and typed state.",
+        "Repaired whole deletion retires all descendants; surviving IDs persist and retired IDs are not reused.",
+        "Exact v6 same/fresh owner checkpoints and unequal fixed-tick continuation retain original-source poses and typed state.",
+        "Compatible CoreCLR reload or explicit AOT reload rejection leaves instance membership/clocks intact."
+      ],
+      "input_sha256": {
+        "binary": "06f99b9f9271b72fe13775439ec15abd7153cae863c8b4e0bee98fa157fa4271",
+        "manifest": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+        "descriptor": "58b95477448722e67f4ccbef2adabd8715a50be1defba564afdfb954f1938145",
+        "artifact_0": "49cc562fafa7f0bf0cc69e8dd7e186667523aad814f5b227c7c00a96ba2eaac6",
+        "artifact_1": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+        "artifact_2": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "artifact_3": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "artifact_4": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "artifact_5": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "artifact_6": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "artifact_7": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+      },
+      "verifier_sources": {
+        "tests/managed_instances_contract.py": "7e20faf7c6930bf47f7b7bb0bf79fdcd90b45913282214c0cfcb6974b8b89470",
+        "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+        "tests/managed_instance_gameplay/ManagedInstanceGame.cs": "fb77d3fe649add5d739e47dae972bfa8867e1266b32ed28558ab7a986670961f",
+        "tests/managed_instance_gameplay/Poima.ManagedInstanceGame.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+        "tests/locomotion_yard_contract.py": "66d0d6cadde4f9d03d918bef5791a410ef134061c2826fdbc6731147df3c9073",
+        "tests/animation_rotation_retarget.py": "f7de7f9e5f50848fe233f2807a29d99f65fd764575074ccfc44550e647b37c4f",
+        "tests/animation_rotation_retarget_capture.py": "b124239b8adfd3ac7617a2e77571e0b37acad9ebfdf516e60f744e2b705e0c81",
+        "tests/rotation_retarget_fixture.py": "310abdf5cecacb85696db202296c1e01145c18e10cecb4e723e6fc0e62e8207c",
+        "tests/frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+        "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+        "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+        "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+        "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+        "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+        "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+        "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+        "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+        "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+      },
+      "original_source_sha256": {
+        "Model/characterMedium.fbx": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+        "Animations/run.fbx": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+        "Animations/idle.fbx": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+        "License.txt": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "pose_observations": [
+        {
+          "actor": "First",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.3333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.1760626767498561e-05,
+          "maximum_weighted_vertex_error": 1.6342574754012012e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.6666666666666666,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2451333525120845e-05,
+          "maximum_weighted_vertex_error": 1.6347844493503927e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144772390226e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712728112084e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144772390226e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712728112084e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        }
+      ],
+      "retained_report_sha256": "ada8aeb9b1858cd6948a0b45007ac36ae0e9535db7b11756cc1e0d24ace5a7ba"
+    },
+    {
+      "host": "windows",
+      "backend": "coreclr",
+      "rpc_count": 2236,
+      "clean_process_owners": 2,
+      "checks": [
+        "Original imported graph instanced twice with disjoint native IDs and remapped scalar/array references.",
+        "Actual compiled232-byte resolver, reserved read denial, independent speeds and physical controllers.",
+        "Reserved cancellation, whole-batch throw and incoming-reference rejection preserve membership, native clocks and typed state.",
+        "Repaired whole deletion retires all descendants; surviving IDs persist and retired IDs are not reused.",
+        "Exact v6 same/fresh owner checkpoints and unequal fixed-tick continuation retain original-source poses and typed state.",
+        "Compatible CoreCLR reload or explicit AOT reload rejection leaves instance membership/clocks intact."
+      ],
+      "input_sha256": {
+        "binary": "5a01d22f3c83febb4afd32d2df12b452e84ce047d1930973c302b501fb319f42",
+        "manifest": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+        "assembly": "ee481be4290d63273169547cf4bae9ea59ff908ae1edef7540b46233151bdbf8",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c",
+        "bridge": "b39f67800884edf204e200698843c5a11e9d6b55cd5a49f20802261bf310b68f"
+      },
+      "verifier_sources": {
+        "tests/managed_instances_contract.py": "7e20faf7c6930bf47f7b7bb0bf79fdcd90b45913282214c0cfcb6974b8b89470",
+        "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+        "tests/managed_instance_gameplay/ManagedInstanceGame.cs": "fb77d3fe649add5d739e47dae972bfa8867e1266b32ed28558ab7a986670961f",
+        "tests/managed_instance_gameplay/Poima.ManagedInstanceGame.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+        "tests/locomotion_yard_contract.py": "66d0d6cadde4f9d03d918bef5791a410ef134061c2826fdbc6731147df3c9073",
+        "tests/animation_rotation_retarget.py": "f7de7f9e5f50848fe233f2807a29d99f65fd764575074ccfc44550e647b37c4f",
+        "tests/animation_rotation_retarget_capture.py": "b124239b8adfd3ac7617a2e77571e0b37acad9ebfdf516e60f744e2b705e0c81",
+        "tests/rotation_retarget_fixture.py": "310abdf5cecacb85696db202296c1e01145c18e10cecb4e723e6fc0e62e8207c",
+        "tests/frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+        "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+        "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+        "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+        "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+        "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+        "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+        "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+        "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+        "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+      },
+      "original_source_sha256": {
+        "Model/characterMedium.fbx": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+        "Animations/run.fbx": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+        "Animations/idle.fbx": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+        "License.txt": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "pose_observations": [
+        {
+          "actor": "First",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.3333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.1760626759116377e-05,
+          "maximum_weighted_vertex_error": 1.6342574754012012e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.6666666666666666,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2451333493146421e-05,
+          "maximum_weighted_vertex_error": 1.6347844493503927e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144807917362e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712681038628e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144807917362e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712681038628e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        }
+      ],
+      "retained_report_sha256": "f88e4abdc169c559941088e30b23cb9c4eda17f515e2d14b3222678a59bb5345"
+    },
+    {
+      "host": "windows",
+      "backend": "aot",
+      "rpc_count": 2236,
+      "clean_process_owners": 2,
+      "checks": [
+        "Original imported graph instanced twice with disjoint native IDs and remapped scalar/array references.",
+        "Actual compiled232-byte resolver, reserved read denial, independent speeds and physical controllers.",
+        "Reserved cancellation, whole-batch throw and incoming-reference rejection preserve membership, native clocks and typed state.",
+        "Repaired whole deletion retires all descendants; surviving IDs persist and retired IDs are not reused.",
+        "Exact v6 same/fresh owner checkpoints and unequal fixed-tick continuation retain original-source poses and typed state.",
+        "Compatible CoreCLR reload or explicit AOT reload rejection leaves instance membership/clocks intact."
+      ],
+      "input_sha256": {
+        "binary": "5a01d22f3c83febb4afd32d2df12b452e84ce047d1930973c302b501fb319f42",
+        "manifest": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+        "descriptor": "994fa2b872a0938f9633cc69c532980b9a37c78770decb8ea823ac34157a3c96",
+        "artifact_0": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+        "artifact_1": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "artifact_2": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "artifact_3": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "artifact_4": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "artifact_5": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "artifact_6": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "artifact_7": "2e0add5cc6edb3d00c527866d99028fee647ed6f16f7ead2a1ca80abc8ce29d8"
+      },
+      "verifier_sources": {
+        "tests/managed_instances_contract.py": "7e20faf7c6930bf47f7b7bb0bf79fdcd90b45913282214c0cfcb6974b8b89470",
+        "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+        "tests/managed_instance_gameplay/ManagedInstanceGame.cs": "fb77d3fe649add5d739e47dae972bfa8867e1266b32ed28558ab7a986670961f",
+        "tests/managed_instance_gameplay/Poima.ManagedInstanceGame.csproj": "098e20218fbd219d7a946b7c1ed397023da55f539c02ace4e70592e855bb61cc",
+        "tests/locomotion_yard_contract.py": "66d0d6cadde4f9d03d918bef5791a410ef134061c2826fdbc6731147df3c9073",
+        "tests/animation_rotation_retarget.py": "f7de7f9e5f50848fe233f2807a29d99f65fd764575074ccfc44550e647b37c4f",
+        "tests/animation_rotation_retarget_capture.py": "b124239b8adfd3ac7617a2e77571e0b37acad9ebfdf516e60f744e2b705e0c81",
+        "tests/rotation_retarget_fixture.py": "310abdf5cecacb85696db202296c1e01145c18e10cecb4e723e6fc0e62e8207c",
+        "tests/frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+        "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+        "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+        "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+        "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+        "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+        "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+        "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+        "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+        "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+      },
+      "original_source_sha256": {
+        "Model/characterMedium.fbx": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+        "Animations/run.fbx": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+        "Animations/idle.fbx": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+        "License.txt": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "pose_observations": [
+        {
+          "actor": "First",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.3333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.1760626759116377e-05,
+          "maximum_weighted_vertex_error": 1.6342574754012012e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 81,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.6666666666666666,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2451333493146421e-05,
+          "maximum_weighted_vertex_error": 1.6347844493503927e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144807917362e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712681038628e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        },
+        {
+          "actor": "First",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.6333333333333333,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2916144807917362e-05,
+          "maximum_weighted_vertex_error": 1.632107065581071e-07
+        },
+        {
+          "actor": "Second",
+          "tick": 99,
+          "clock": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 2.0,
+            "time": 0.599999980131785,
+            "transition": null
+          },
+          "maximum_joint_matrix_error": 1.2683712681038628e-05,
+          "maximum_weighted_vertex_error": 1.629316370946411e-07
+        }
+      ],
+      "retained_report_sha256": "583f929f4cd6568ea3bb048605f862af5b311753c28ee771e3fbf51a7dbe7be2"
+    }
+  ],
+  "generated_player": [
+    {
+      "gpu": 0,
+      "rpc_count": 45,
+      "clean_process_owners": 3,
+      "checks": {
+        "generated_controller_camera": true,
+        "paused_semantic_input": true,
+        "captures_do_not_advance": true,
+        "independent_pixels_equal": true,
+        "whole_instance_retired": true,
+        "stale_handles_rejected_without_generation": true,
+        "authored_bytes_unchanged": true
+      },
+      "sources": {
+        "tests/instance_player_contract.py": "6049657238a50bcd66b05c97ef6b1fcb0eba929b11bff716c016bc7e7eebebe1",
+        "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+        "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1"
+      },
+      "captures": {
+        "initial": {
+          "sha256": "3ed3fe542ff6c8b35c23333d050eaeb0bfba3f5b235d04cde8fe2c1b80eb1474",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480
+        },
+        "stepped": {
+          "sha256": "a383eb2e29b0c11ae40fa0ae16f08915605a648d27ed7e7089ed3a6a2117ad52",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480
+        }
+      },
+      "independent_capture": {
+        "sha256": "a383eb2e29b0c11ae40fa0ae16f08915605a648d27ed7e7089ed3a6a2117ad52",
+        "bytes": 1228938,
+        "width": 640,
+        "height": 480
+      },
+      "retained_report_sha256": "c8c5295b79846a8db79ba008f15b163072d82beb8f75d2e6de0283f25c87db28"
+    },
+    {
+      "gpu": 1,
+      "rpc_count": 45,
+      "clean_process_owners": 3,
+      "checks": {
+        "generated_controller_camera": true,
+        "paused_semantic_input": true,
+        "captures_do_not_advance": true,
+        "independent_pixels_equal": true,
+        "whole_instance_retired": true,
+        "stale_handles_rejected_without_generation": true,
+        "authored_bytes_unchanged": true
+      },
+      "sources": {
+        "tests/instance_player_contract.py": "6049657238a50bcd66b05c97ef6b1fcb0eba929b11bff716c016bc7e7eebebe1",
+        "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+        "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1"
+      },
+      "captures": {
+        "initial": {
+          "sha256": "3ed3fe542ff6c8b35c23333d050eaeb0bfba3f5b235d04cde8fe2c1b80eb1474",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480
+        },
+        "stepped": {
+          "sha256": "a383eb2e29b0c11ae40fa0ae16f08915605a648d27ed7e7089ed3a6a2117ad52",
+          "bytes": 1228938,
+          "width": 640,
+          "height": 480
+        }
+      },
+      "independent_capture": {
+        "sha256": "a383eb2e29b0c11ae40fa0ae16f08915605a648d27ed7e7089ed3a6a2117ad52",
+        "bytes": 1228938,
+        "width": 640,
+        "height": 480
+      },
+      "retained_report_sha256": "0d35af2991d21f9882dbf96837f66b24f283e6fc1c83ab8cc64a25e7db93b4d7"
+    }
+  ],
+  "retained_older_artifacts": [
+    {
+      "required_prefix": 176,
+      "host": "windows",
+      "gpu": 0,
+      "rpc_count": 130,
+      "clean_process_owners": 3,
+      "retained_report_sha256": "e5e4d435522bb3a1b1d64d0c7483e0b756001c93187d27685955cde535543248"
+    },
+    {
+      "required_prefix": 176,
+      "host": "windows",
+      "gpu": 1,
+      "rpc_count": 130,
+      "clean_process_owners": 3,
+      "retained_report_sha256": "fcbeefd9241674a00667479120ea92b86ba456688effff0ce235bc4bfe46e2d2"
+    },
+    {
+      "required_prefix": 224,
+      "host": "linux",
+      "rpc_count": 5064,
+      "clean_process_owners": 2,
+      "retained_report_sha256": "cca8230a18b8242ff5a2409e04c56541498786ad236f2b2e581e0959e79f9247"
+    }
+  ],
+  "relocated_export": {
+    "rpc_count": 19,
+    "clean_process_owners": 2,
+    "source_removed_before_player": true,
+    "source_free_players_completed_before_reconstruction": true,
+    "input_sha256": {
+      "binary_sha256": "5a01d22f3c83febb4afd32d2df12b452e84ce047d1930973c302b501fb319f42",
+      "world_sha256": "1f454a00224f294828eaa77bce20d1de792c3217729120af89291673cb965d6f",
+      "artifact_sha256": "994fa2b872a0938f9633cc69c532980b9a37c78770decb8ea823ac34157a3c96",
+      "runtime_sha256": "52ef830017d658f7ea41d5a0dcd2249348130a579532b4d79b89fdf571b7bd9e"
+    },
+    "verifier_sources": {
+      "tests\\runtime_instances_bundle.py": "fee6b70476aa296b5eaf4f6e62b262e2aca57df1ce082f2ccb9f4e532fd73dbd",
+      "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+      "tests/collection_gameplay_contract.py": "0d4bbb6a576fcc8ee12e9e69a2f4276b372c3c28e47b41b9b6549cd440afcfad",
+      "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+      "tools\\python\\poima_client\\__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+      "tools\\python\\poima_client\\client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+      "tools\\python\\poima_client\\errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+      "tools\\python\\poima_client\\responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+      "tools\\python\\poima_client\\transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+    },
+    "checks": [
+      "Actual Mode1 NativeAOT first Tick births two complete original imported actors; no static authored actor substitution.",
+      "Owned source project removed, bundle relocated, ordinary PATH and unrelated working directory before actual Vulkan playback.",
+      "Both compiled actor movement, two skin dispatches2058vertices, complete native maps/links and speed1/2 clocks observed.",
+      "Completed source-free player readbacks compared with separately reconstructed same-artifact native runtime captures."
+    ],
+    "bundle_inventory": {
+      "content/world.json": "4a9bd3cab9e2d469add795e5950006550b98d03ea4e705518acf4834e94dd5a7",
+      "content/world.json.assets/b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+      "game.json": "29e7fd757f8003140c754d7be7f302ddec5792e36693de96eaf94215ead190a5",
+      "gameplay/game.poima-components.json": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b",
+      "gameplay/native-gameplay.json": "994fa2b872a0938f9633cc69c532980b9a37c78770decb8ea823ac34157a3c96",
+      "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+      "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+      "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+      "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+      "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+      "gameplay/Poima.NativeGame.dll": "2e0add5cc6edb3d00c527866d99028fee647ed6f16f7ead2a1ca80abc8ce29d8",
+      "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+      "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+      "runtime/bin/poima.exe": "5a01d22f3c83febb4afd32d2df12b452e84ce047d1930973c302b501fb319f42",
+      "runtime/bin/poima_desktop.dll": "8d5aad826c2518f23e3fb98eae3622596eaa25c703dab171584c2314f21ae19e",
+      "runtime/runtime.json": "52ef830017d658f7ea41d5a0dcd2249348130a579532b4d79b89fdf571b7bd9e",
+      "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+      "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+      "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+      "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+      "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+      "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+      "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+      "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+      "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+      "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+      "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+      "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+      "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+      "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+      "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+      "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+      "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+      "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+      "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+      "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+      "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+      "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+      "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+      "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+      "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+      "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+      "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+      "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+      "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+      "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+      "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+      "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+    },
+    "players": [
+      {
+        "gpu": 0,
+        "tick": 90,
+        "backend": "native_aot",
+        "gameplay_type": "Poima.Tests.ManagedInstanceGame",
+        "draws": {
+          "camera_culled": 0,
+          "camera_draws": 2,
+          "camera_triangles": 3208,
+          "objects": 2,
+          "shadow_candidates": 0,
+          "shadow_culled": 0,
+          "shadow_draws": 0,
+          "shadow_triangles": 0,
+          "shadow_views": 0,
+          "skinned_instances": 2,
+          "skinned_vertices": 2058
+        },
+        "capture_sha256": "97029b4db3390356e2e967521437d88d3be1e1daa95fe6415d1787fef61fe966",
+        "nvrhi_errors": 0
+      },
+      {
+        "gpu": 1,
+        "tick": 90,
+        "backend": "native_aot",
+        "gameplay_type": "Poima.Tests.ManagedInstanceGame",
+        "draws": {
+          "camera_culled": 0,
+          "camera_draws": 2,
+          "camera_triangles": 3208,
+          "objects": 2,
+          "shadow_candidates": 0,
+          "shadow_culled": 0,
+          "shadow_draws": 0,
+          "shadow_triangles": 0,
+          "shadow_views": 0,
+          "skinned_instances": 2,
+          "skinned_vertices": 2058
+        },
+        "capture_sha256": "c1371fc24c0bfdeb3f6cb99cf16e47e7914c3582bed956041a40ffc48d9b84c7",
+        "nvrhi_errors": 0
+      }
+    ],
+    "capture_comparisons": [
+      {
+        "gpu": 0,
+        "maximum_rgb_difference": 0,
+        "changed_pixels": 0,
+        "pixels_over_two": 0,
+        "runtime_capture_sha256": "97029b4db3390356e2e967521437d88d3be1e1daa95fe6415d1787fef61fe966"
+      },
+      {
+        "gpu": 1,
+        "maximum_rgb_difference": 0,
+        "changed_pixels": 0,
+        "pixels_over_two": 0,
+        "runtime_capture_sha256": "c1371fc24c0bfdeb3f6cb99cf16e47e7914c3582bed956041a40ffc48d9b84c7"
+      }
+    ],
+    "retained_report_sha256": "ae5654b453bd08a4cf0e9680304e31f08edb0dab87b8f6585ceb423d3c05040b"
+  },
+  "documentation": {
+    "minimal_python_recipe": "Executed against simulation-enabled Linux .78, without GPU, .NET or model files.",
+    "guide": "docs/RUNTIME_INSTANCES.md",
+    "compiled_instructions": "tests/managed_instance_gameplay/README.md",
+    "image": {
+      "path": "docs/evidence/runtime-instances.png",
+      "sha256": "08e3458f1aef534688a41c6b1abe0a0a97ec9fb6107d51aa54ef46dc12702349",
+      "source_bmp_sha256": "c1371fc24c0bfdeb3f6cb99cf16e47e7914c3582bed956041a40ffc48d9b84c7",
+      "encoding": "Unmodified rendered RGB pixels encoded as PNG.",
+      "content": "Original Kenney Animated Characters: Protagonists 1.1 (CC0-1.0)."
+    }
+  },
+  "retained_failures": [
+    {
+      "issue": "New native test fixture mixed-auto compilation, then schema-version/forward-motion fixture corrections and an actual recipe-root default-transform fix.",
+      "report_sha256": "872a295b785d60a1f4e9b695b1d7b7a8a20ebf9575f0a167b92c79ebe52f2bdc"
+    },
+    {
+      "issue": "Legacy exact whole-schema assertion required additive minimum-version correction.",
+      "report_sha256": "d02ad1e183b6b0d666eedaae16fbeecf380006864ae6beb67f6585af9d22dbef"
+    },
+    {
+      "issue": "Windows ABI fixture bridge path under vcvars Platform=x64; explicit bridge output/global hint path corrected staging without SDK changes.",
+      "report_sha256": "29dccbcdb90b548d330ac442efa66c723a8739639d68a66c000f220293c9097c"
+    },
+    {
+      "issue": "Separate exported-game runtime capture omitted its observed UI revision; native guard correctly rejected. Corrected public verifier passed.",
+      "report_sha256": "e0a2862d8e0b3a747e5b80b849452fe452df1ae5ac060191abe9bcf659c72f2d"
+    }
+  ],
+  "limitations": [
+    "Original-source FBX pose sampling uses native normalized intake; separate quaternion/FK/weighted-geometry math is not an independent FBX decoder.",
+    "Automatic recipe-default reference remapping is independently native-tested; compiled consumer writes resolved scalar/array links explicitly.",
+    "Export/player image comparisons use the same compiled artifact and native renderer in separate owners; they are not original-source independent image oracles.",
+    "Exact v6 restoration does not qualify the existing explicit schema-upgrade pipeline for hierarchical recipes or version-6 saves.",
+    "No desktop prefab/variant editor, arbitrary child/authored-entity removal, physical-input, GUI, clean-machine, crowd, game-scale performance, Linux graphics, web, console or multiplayer qualification."
+  ]
+}

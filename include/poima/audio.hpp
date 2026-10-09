@@ -75,6 +75,9 @@ class SoundState {
 public:
     std::uint64_t play(const std::string& emitter,const AudioEmitter& sound,std::uint64_t tick,float gain);
     void stop(std::uint64_t voice,std::uint64_t tick);
+    // Removing emitter membership retires its logical records immediately;
+    // surviving voice identities and allocation history remain unchanged.
+    void retire_emitters(std::span<const std::string> emitters) noexcept;
     const std::vector<SoundVoice>& voices() const { return voices_; }
     std::uint64_t next_id() const { return next_; }
     // Portable logical state only; presentation must reset its DSP after restore.

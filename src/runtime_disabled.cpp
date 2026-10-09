@@ -10,6 +10,12 @@ const std::string& Runtime::presentation_source_id() const { throw std::runtime_
 const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeStructureResult Runtime::change_structure(std::uint64_t,const std::vector<RuntimeSpawnRequest>&,const std::vector<std::string>&) { throw std::runtime_error("Simulation is not built."); }
 std::uint64_t Runtime::structure_revision() const { throw std::runtime_error("Simulation is not built."); }
+RuntimeSpawnInstance Runtime::instance(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
+std::string Runtime::instance_node(const std::string&,const std::string&) const { throw std::runtime_error("Simulation is not built."); }
+bool Runtime::is_player_controller(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
+std::vector<std::pair<std::string,std::string>> Runtime::player_controllers() const { throw std::runtime_error("Simulation is not built."); }
+std::vector<std::string> Runtime::camera_ids() const { throw std::runtime_error("Simulation is not built."); }
+const RuntimeDefinition& Runtime::live_definition() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeSummary Runtime::inspect() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeEntityState Runtime::entity(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::save_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }

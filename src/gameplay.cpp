@@ -74,7 +74,7 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
         }) && names.insert(feature).second,"Offered gameplay feature is malformed or duplicated.");
         const bool known=feature==gameplay_abi::baseline_feature || feature==gameplay_abi::persistence_feature ||
             feature==gameplay_abi::collections_feature || feature==gameplay_abi::animation_feature ||
-            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature;
+            feature==gameplay_abi::animation_layers_feature || feature==gameplay_abi::character_input_feature || feature==gameplay_abi::navigation_feature || feature==gameplay_abi::instances_feature;
         check(!known || std::find(actual.features.begin(),actual.features.end(),feature)!=actual.features.end(),
             "Offered gameplay feature is unavailable in the compiled runtime.");
     }
@@ -82,6 +82,23 @@ void validate_offered_contract(const gameplay_abi::Contract& offered,const gamep
     if(!invalid.empty())throw std::runtime_error("Offered gameplay availability is invalid: "+invalid);
 }
 template<class F>void with_service_view(const gameplay_abi::Contract& required,const PoimaGameServices& provided,F&& callback) {
+    if(std::find(required.features.begin(),required.features.end(),gameplay_abi::instances_feature)!=required.features.end()) {
+        check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameInstanceServicesV1),
+            "Gameplay requires services epoch 7 and the 232-byte hierarchical instances extension.");
+        PoimaGameInstanceServicesV1 extended{};
+        std::memcpy(&extended,&provided,sizeof(extended));
+        extended.navigation.character.animation.animation.baseline.bytes=sizeof(extended);
+        check(extended.instance_node,"Gameplay hierarchical instance resolver callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::navigation_feature)!=required.features.end())
+            check(extended.navigation.navigation_path,"Gameplay navigation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::character_input_feature)!=required.features.end())
+            check(extended.navigation.character.character_input,"Gameplay character input extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_feature)!=required.features.end())
+            check(extended.navigation.character.animation.animation.animation_get_extended && extended.navigation.character.animation.animation.animation_set_extended,"Gameplay animation extension callback is absent.");
+        if(std::find(required.features.begin(),required.features.end(),gameplay_abi::animation_layers_feature)!=required.features.end())
+            check(extended.navigation.character.animation.animation_layer_get && extended.navigation.character.animation.animation_layer_set,"Gameplay animation layer extension callback is absent.");
+        callback(&extended.navigation.character.animation.animation.baseline);return;
+    }
     if(std::find(required.features.begin(),required.features.end(),gameplay_abi::navigation_feature)!=required.features.end()) {
         check(provided.version==gameplay_abi::services_version && provided.bytes>=sizeof(PoimaGameNavigationServicesV1),
             "Gameplay requires services epoch 7 and the 224-byte navigation extension.");

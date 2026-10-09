@@ -113,12 +113,17 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     };
     const Json texture_paths={{"enum",{"/base_color/asset","/emissive/asset","/metallic_roughness/asset","/normal/asset","/occlusion/asset"}}};
     const Json texture_type={{"const","PbrTextures"}},direct_path={{"const","/asset"}};
-    const Json reference_cursor={{"oneOf",Json::array({
+    Json reference_cursor={{"oneOf",Json::array({
         reference_cursor_variant("entity",{{"enum",{"AnimationRig","AudioEmitter","MeshCollider","SkinnedMesh","StaticMesh"}}},direct_path),
         reference_cursor_variant("entity",texture_type,texture_paths),
         reference_cursor_variant("template",{{"const","StaticMesh"}},direct_path),
         reference_cursor_variant("template",texture_type,texture_paths),
         reference_cursor_variant("world",{{"const","navigation"}},direct_path)})}};
+    for(const auto* type:{"AnimationRig","AudioEmitter","MeshCollider","PbrTextures","SkinnedMesh","StaticMesh"}) {
+        const std::string suffix=std::string(type)=="PbrTextures" ? "/(base_color|emissive|metallic_roughness|normal|occlusion)/asset" : "/asset";
+        reference_cursor["oneOf"].push_back(reference_cursor_variant("template",{{"const",type}},
+            {{"type","string"},{"pattern","^/entities/(?!0{32}/)[0-9a-f]{32}/components/"+std::string(type)+suffix+"$"}}));
+    }
     auto references_schema=object_schema({{"revision",rev},{"asset",asset_id},{"owner",reference_owner},{"after",reference_cursor},
         {"limit",{{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}}}});
     references_schema["allOf"]=Json::array();
@@ -128,7 +133,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 66}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 67}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -506,6 +511,14 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     Json recipe_properties=Json::object();for(const auto* type:{"Transform","BoxCollider","MeshRenderer","StaticMesh","PbrMaterial","PbrTextures"})recipe_properties[type]=components.at(type);
     auto recipe_components=object_schema(recipe_properties,{"Transform"});recipe_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
     mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},{"components",recipe_components}},{"op","id","name","components"}));
+    auto member_components=object_schema(components,{"Transform"});
+    member_components["patternProperties"]={{"^game:[0-9a-f]{32}$",custom_values}};
+    const auto template_member=object_schema({{"name",name},{"parent",{{"anyOf",Json::array({stable_type,Json{{"type","null"}}})}}},
+        {"components",member_components}},{"name","parent","components"});
+    const Json template_entities={{"type","object"},{"minProperties",1},{"maxProperties",max_runtime_template_entities},
+        {"propertyNames",stable_type},{"additionalProperties",template_member}};
+    mutations.push_back(object_schema({{"op",{{"const","template.set"}}},{"id",stable_type},{"name",name},
+        {"root",stable_type},{"entities",template_entities}},{"op","id","name","root","entities"}));
     mutations.push_back(object_schema({{"op",{{"const","template.remove"}}},{"id",stable_type}},{"op","id"}));
     const Json template_page_limit={{"type","integer"},{"minimum",1},{"maximum",256},{"default",64}};
     const auto ui_kind_schema=[&](const char* kind,const Json& text,const Json& action) {
@@ -555,6 +568,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["template.query"]=object_schema({{"revision",rev},{"after",stable_type},{"limit",template_page_limit}});
     methods["runtime.template.get"]=object_schema({{"session_id",id},{"tick",rev},{"revision",rev},{"id",stable_type}},{"session_id","tick","id"});
     methods["runtime.template.query"]=object_schema({{"session_id",id},{"tick",rev},{"revision",rev},{"after",stable_type},{"limit",template_page_limit}},{"session_id","tick"});
+    methods["runtime.instance"]=object_schema({{"session_id",id},{"id",stable_type},{"tick",rev},
+        {"expected_structure_revision",rev}},{"session_id","id","tick"});
     methods["runtime.structure.transact"]=object_schema({{"session_id",id},{"request_id",id},{"expected_tick",rev},{"expected_structure_revision",rev},
         {"spawns",{{"type","array"},{"maxItems",4096},{"items",object_schema({{"template_id",stable_type},{"transform",components.at("Transform")}},{"template_id"})}}},
         {"despawns",{{"type","array"},{"maxItems",4096},{"items",stable_type}}}},
@@ -563,10 +578,10 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     methods["save.load"]["properties"]["expected_structure_revision"]={{"anyOf",Json::array({rev,Json{{"type","null"}}})}};
     for(const auto* method:{"runtime.entity","runtime.component.get","runtime.component.query"})
         methods[method]["properties"]["structure_revision"]=rev;
-    result["spawn_templates"]={{"authored_version",3},{"max_templates",max_runtime_spawn_templates},{"max_custom_payload_bytes",max_runtime_template_payload_bytes},
-        {"components",recipe_components},{"references","Entity references in recipes are literal IDs; liveness is deferred until spawning. Template IDs are a separate namespace and are never live EntityIds."},
+    result["spawn_templates"]={{"authored_version",3},{"max_templates",max_runtime_spawn_templates},{"max_custom_payload_bytes",max_runtime_template_payload_bytes},{"max_entities_per_template",max_runtime_template_entities},{"max_total_template_entities",max_runtime_template_total_entities},
+        {"components",recipe_components},{"hierarchy",template_entities},{"references","Legacy root-prop references remain literal world IDs. Hierarchical native references are local; custom handles matching local IDs remap within the instance, other handles remain external and are validated against final live membership. Template/local IDs are separate namespaces, not live EntityIds."},
         {"save_guard","save.write/load require expected_structure_revision after any structural transaction; stopped restore accepts absent or null."},
-        {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"gameplay_reads","Committed tick membership; reserved births support Set before publication, and template component defaults are read explicitly."},{"runtime","Frozen standalone recipe catalog; runtime.structure.transact creates root props and removes previously spawned props at paused boundaries. C# Tick can reserve, initialize and remove root props; RPC tick scheduling remains unavailable."}};
+        {"gameplay_services_abi",7},{"gameplay_services_bytes",176},{"hierarchical_services_bytes",232},{"gameplay_reads","Committed membership; reserved births support custom initializers and local-member resolution. Template defaults are read explicitly."},{"runtime","Frozen root-prop or connected hierarchical recipes; atomic spawn and whole-instance despawn. runtime.instance returns canonical local-to-live member handles. Existing transform/physics/rig ownership and aggregate budgets apply to expanded membership; RPC tick scheduling remains unavailable."}};
     for(const auto* method:{"runtime.step","runtime.component.edit","runtime.gameplay.edit","runtime.gameplay.load","runtime.gameplay.load_native","runtime.audio.replay","runtime.play","player.start"})
         methods[method]["properties"]["expected_structure_revision"]=rev;
     result["invariants"].push_back("Runtime mutations guarded by expected_tick also require expected_structure_revision after any structural transaction. Retained retries use the original guard and return their committed result. Before structural edits the field is optional, but a supplied guard is always checked.");

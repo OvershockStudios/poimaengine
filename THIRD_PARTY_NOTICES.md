@@ -75,6 +75,7 @@ Original Poima source is licensed under Apache-2.0; see [LICENSE](LICENSE).
 - Archive SHA-256: `4427d6ce190e049b186bb88dbfb8692c2373a7fc042c984b5f15396194aac958`.
 - License: MIT; original `LICENSE` is installed. Upstream sample applications/assets are not shipped.
 - Use: native collision, rigid bodies, capsules and internal state checkpoints. Double positions, deterministic build option, SSE2 baseline, static library, no LTO/debug renderer/object-stream serialization. The build supplies the standard `<type_traits>` header for LLVM-MinGW compatibility without changing upstream source.
+- Poima applies a hash-guarded [character ownership extension](cmake/jolt_character_ids.cmake) to the pinned source: an additional constructor accepts an explicit body ID, and destruction skips an invalid ID after failed allocation. The original constructor remains available. These changes are identified separately from upstream; its copyright and MIT license are retained.
 
 ## EnTT (optional runtime)
 

@@ -571,6 +571,55 @@ void upgrade_ui(Json& doc) {
 bool template_component(const std::string& type) {
     return type=="Transform" || type=="BoxCollider" || type=="MeshRenderer" || type=="StaticMesh" || type=="PbrMaterial" || type=="PbrTextures" || custom_component(type);
 }
+void validate(const Json& doc);
+Json template_document(const Json& document,const Json& entities) {
+    return {{"format","poima.authored-world"},{"version",2},{"world_id",document.at("world_id")},
+        {"revision",document.at("revision")},{"entities",entities},{"retired_ids",Json::array()},
+        {"receipts",Json::array()},{"component_schemas",document.value("component_schemas",Json::object())},
+        {"retired_component_schemas",Json::array()}};
+}
+void validate_template_graph(const Json& document,const Json& recipe,
+    const std::vector<components::Schema>& schemas,std::size_t& payload_bytes) {
+    fields(recipe,{"name","root","entities"},{"name","root","entities"});validate_name(recipe.at("name"));
+    const auto root=identifier(recipe.at("root"));require(root!=std::string(32,'0'),"Template root cannot be zero.");
+    const auto& members=recipe.at("entities");
+    require(members.is_object() && !members.empty() && members.size()<=max_runtime_template_entities,
+        "Hierarchical template requires 1..1024 local entities.");
+    require(members.contains(root),"Template root does not name a local entity.");
+    auto validation=members;
+    for(const auto& [id,member]:members.items()) {
+        require(identifier(id)!=std::string(32,'0'),"Template local identity cannot be zero.");
+        fields(member,{"name","parent","components"},{"name","parent","components"});
+        require(id==root ? member.at("parent").is_null() : !member.at("parent").is_null(),
+            "Template requires exactly one connected root.");
+        if(!member.at("parent").is_null())require(members.contains(identifier(member.at("parent"))),"Template parent must be local.");
+        const auto& bag=member.at("components");require(bag.is_object(),"Template member components must be an object.");
+        for(const auto& [type,value]:bag.items())if(!custom_component(type))validate_component(type,value);
+        auto local_reference=[&](const Json& target,const char* expected) {
+            if(target.is_null())return;
+            const auto value=identifier(target);require(members.contains(value),"Template native entity reference must be local.");
+            require(members.at(value).at("components").contains(expected),"Template native reference targets the wrong component.");
+        };
+        if(bag.contains("CharacterController"))local_reference(bag.at("CharacterController").at("camera"),"Camera");
+        if(bag.contains("RigNode"))local_reference(bag.at("RigNode").at("rig"),"AnimationRig");
+        if(bag.contains("SkinnedMesh"))local_reference(bag.at("SkinnedMesh").at("rig"),"AnimationRig");
+        if(bag.contains("LightingEnvironment") && bag.at("LightingEnvironment").contains("sky"))
+            local_reference(bag.at("LightingEnvironment").at("sky").at("sun"),"Light");
+        for(const auto& [type,value]:bag.items())if(custom_component(type)) {
+            const auto& schema=authored_schema(schemas,custom_type(type));
+            const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
+            require(payload.size()<=max_runtime_template_payload_bytes-payload_bytes,"Template custom payload budget exceeded.");
+            payload_bytes+=payload.size();
+            // Native graph validation must not apply world liveness to local
+            // or explicitly preserved external custom handles. Final candidate
+            // liveness belongs to atomic instantiation, as with legacy recipes.
+            validation[id]["components"].erase(type);
+        }
+    }
+    // Reuses ordinary structural/native component validation without recursive
+    // catalogs, borrowed definitions or collision between world and local IDs.
+    validate(template_document(document,validation));
+}
 void validate(const Json& doc) {
     require(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Unsupported world format/version.");
     const bool user_interface=doc.at("version")==4,catalog=user_interface || doc.at("version")==3,custom=catalog || doc.at("version")==2;
@@ -601,9 +650,15 @@ void validate(const Json& doc) {
         const auto& templates=doc.at("templates");require(templates.is_object() && templates.size()<=max_runtime_spawn_templates,"Invalid template catalog or recipe count.");
         require(doc.at("retired_template_ids").is_array(),"Invalid retired template identities.");std::set<std::string> retired;
         for(const auto& value:doc.at("retired_template_ids")) {const auto id=identifier(value);require(id!=std::string(32,'0') && !templates.contains(id) && retired.insert(id).second,"Reused or duplicate retired template identity.");}
-        std::size_t bytes=0;
+        std::size_t bytes=0,members=0;
         for(const auto& [id,recipe]:templates.items()) {
-            require(identifier(id)!=std::string(32,'0'),"Template identity cannot be zero.");fields(recipe,{"name","components"},{"name","components"});validate_name(recipe.at("name"));
+            require(identifier(id)!=std::string(32,'0'),"Template identity cannot be zero.");
+            const auto count=recipe.contains("entities") ? recipe.at("entities").size():1;
+            require(count<=max_runtime_template_total_entities-members,"Template catalog exceeds 4096 local entities.");members+=count;
+            if(recipe.contains("entities") || recipe.contains("root")) {
+                validate_template_graph(doc,recipe,schemas,bytes);continue;
+            }
+            fields(recipe,{"name","components"},{"name","components"});validate_name(recipe.at("name"));
             const auto& bag=recipe.at("components");require(bag.is_object() && bag.contains("Transform"),"Template requires components with Transform.");
             require(!(bag.contains("StaticMesh") && bag.contains("MeshRenderer")),"Template permits one mesh component.");
             require(!(bag.contains("PbrMaterial") || bag.contains("PbrTextures")) || bag.contains("StaticMesh") || bag.contains("MeshRenderer"),"Template material requires a mesh component.");
@@ -913,7 +968,10 @@ public:
             }
         };
         for(const auto& entity:source.at("entities"))collect_components(entity.at("components"));
-        if(source.contains("templates"))for(const auto& recipe:source.at("templates"))collect_components(recipe.at("components"));
+        if(source.contains("templates"))for(const auto& recipe:source.at("templates")) {
+            if(recipe.contains("entities"))for(const auto& member:recipe.at("entities"))collect_components(member.at("components"));
+            else collect_components(recipe.at("components"));
+        }
         // Includes mesh/UV/material compatibility, complete rig ownership,
         // weighted primitive bindings and enabled-audio aggregate limits.
         auto definition=runtime_definition(false,&source,false,&assets,&audio);
@@ -965,9 +1023,9 @@ public:
         require(bool(runtime_),"No runtime is active.",-32030);
         require(expected_session==runtime_id_,"Runtime session conflict.",-32031);
         require(expected_tick==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
-        const auto camera=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+        const auto camera=std::find_if(runtime_->live_definition().entities.begin(),runtime_->live_definition().entities.end(),
             [&](const auto& entity){return entity.id==listener && entity.camera.has_value();});
-        require(camera!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
+        require(camera!=runtime_->live_definition().entities.end(),"Runtime camera entity/component does not exist.",-32004);
         require(rigid_transform(runtime_->entity(listener).world),"Audio listener camera hierarchy must not scale or shear.");
         return {runtime_id_,listener,expected_tick,runtime_->audio_snapshot(listener),runtime_->sound_state().voices()};
     }
@@ -1029,7 +1087,7 @@ public:
         std::vector<WorldControllerInfo> result;
         if(live) {
             require(bool(runtime_),"No runtime is active for controller enumeration.",-32030);
-            for(const auto& entity:runtime_definition_.entities)if(entity.character && !entity.character->camera.empty())result.push_back({entity.id,entity.character->camera});
+            for(const auto& entity:runtime_->live_definition().entities)if(entity.character && !entity.character->camera.empty())result.push_back({entity.id,entity.character->camera});
         } else {
             for(const auto& [id,entity]:doc_.at("entities").items())if(entity.at("components").contains("CharacterController")) {
                 const auto& camera=entity.at("components").at("CharacterController").at("camera");
@@ -1042,7 +1100,7 @@ public:
         std::vector<WorldCameraInfo> result;
         if(live) {
             require(bool(runtime_),"No runtime is active for camera enumeration.",-32030);
-            for(const auto& entity:runtime_definition_.entities)if(entity.camera) {
+            for(const auto& entity:runtime_->live_definition().entities)if(entity.camera) {
                 const auto& lens=*entity.camera;
                 result.push_back({entity.id,lens.vertical_fov,lens.near_plane,lens.far_plane});
             }
@@ -1059,9 +1117,9 @@ public:
         identifier(id);
         if(live) {
             require(bool(runtime_),"No runtime is active for the camera snapshot.",-32030);
-            const auto found=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+            const auto found=std::find_if(runtime_->live_definition().entities.begin(),runtime_->live_definition().entities.end(),
                 [&](const auto& entity){return entity.id==id&&entity.camera.has_value();});
-            require(found!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
+            require(found!=runtime_->live_definition().entities.end(),"Runtime camera entity/component does not exist.",-32004);
             try { return runtime_->snapshot(id); }
             catch(const std::runtime_error& error) { throw Error(-32602,error.what()); }
         }
@@ -1966,9 +2024,9 @@ public:
         }
         const auto camera_id = identifier(params.at("camera"));
         if(live) {
-            const auto found=std::find_if(runtime_definition_.entities.begin(),runtime_definition_.entities.end(),
+            const auto found=std::find_if(runtime_->live_definition().entities.begin(),runtime_->live_definition().entities.end(),
                 [&](const auto& e){return e.id==camera_id && e.camera.has_value();});
-            require(found!=runtime_definition_.entities.end(),"Runtime camera entity/component does not exist.",-32004);
+            require(found!=runtime_->live_definition().entities.end(),"Runtime camera entity/component does not exist.",-32004);
         }
         if(!live) require(doc_.at("entities").contains(camera_id) && doc_.at("entities").at(camera_id).at("components").contains("Camera"), "Camera entity/component does not exist.", -32004);
         const auto options=render_options(params);
@@ -2090,7 +2148,7 @@ public:
         try {
             AudioSnapshot snapshot;RuntimeDefinition definition;std::map<std::string,Matrix4> matrices;
             if(!live) { definition=runtime_definition(true);matrices=world_matrices(doc_.at("entities")); }
-            const auto& source_definition=live ? runtime_definition_ : definition;
+            const auto& source_definition=live ? runtime_->live_definition() : definition;
             auto pose=[&](const std::string& id) { return live ? runtime_->entity(id).world : matrices.at(id); };
             require(std::any_of(source_definition.entities.begin(),source_definition.entities.end(),[&](const auto& e){return e.id==listener;}),"Audio listener entity does not exist.",-32004);
             snapshot.listener=pose(listener);
@@ -2144,15 +2202,27 @@ public:
         for(const auto& [id,recipe]:catalog.items()) {
             if(id<=after)continue;
             if(rows.size()==limit) {next=rows.back().at("id");break;}
-            Json types=Json::array();for(const auto& [type,value]:recipe.at("components").items()) {(void)value;types.push_back(type);}
-            rows.push_back({{"id",id},{"name",recipe.at("name")},{"components",types}});
+            const auto& bag=recipe.contains("entities") ? recipe.at("entities").at(recipe.at("root").get<std::string>()).at("components"):recipe.at("components");
+            Json types=Json::array();for(const auto& [type,value]:bag.items()) {(void)value;types.push_back(type);}
+            Json row={{"id",id},{"name",recipe.at("name")},{"components",types}};
+            if(recipe.contains("entities")) {row["root"]=recipe.at("root");row["entity_count"]=recipe.at("entities").size();}
+            rows.push_back(std::move(row));
         }
         result["templates"]=std::move(rows);result["next_after"]=next;return result;
     }
-    std::vector<RuntimeSpawnTemplate> template_definitions(const Json& document,ModelCache& cache,const std::vector<components::Schema>& schemas) const {
+    std::vector<RuntimeSpawnTemplate> template_definitions(const Json& document,ModelCache& cache,const std::vector<components::Schema>& schemas,AudioCache* supplied_audio=nullptr) const {
         std::vector<RuntimeSpawnTemplate> result;if(!document.contains("templates"))return result;
         for(const auto& [id,recipe]:document.at("templates").items()) {
-            RuntimeSpawnTemplate value;value.id=id;value.name=recipe.at("name");const auto& bag=recipe.at("components");const auto& t=bag.at("Transform");
+            RuntimeSpawnTemplate value;value.id=id;value.name=recipe.at("name");
+            if(recipe.contains("entities")) {
+                auto mini=template_document(document,recipe.at("entities"));
+                auto parsed=runtime_definition(false,&mini,false,&cache,supplied_audio);
+                value.root=identifier(recipe.at("root"));value.entities=std::move(parsed.entities);
+                const auto root=std::find_if(value.entities.begin(),value.entities.end(),[&](const auto& e){return e.id==value.root;});
+                require(root!=value.entities.end(),"Template root does not exist.");value.transform=root->transform;
+                result.push_back(std::move(value));continue;
+            }
+            const auto& bag=recipe.at("components");const auto& t=bag.at("Transform");
             value.transform={t.at("position").get<std::array<double,3>>(),t.at("rotation").get<std::array<double,4>>(),t.at("scale").get<std::array<double,3>>()};
             if(bag.contains("BoxCollider")) {const auto& c=bag.at("BoxCollider");value.collider=BoxCollider{c.at("half_extents").get<std::array<float,3>>(),c.at("motion")=="dynamic" ? BodyMotion::Dynamic : c.at("motion")=="kinematic" ? BodyMotion::Kinematic : BodyMotion::Static,c.at("mass"),c.at("friction"),c.at("restitution")};}
             value.mesh=mesh_component(bag,cache);
@@ -2249,7 +2319,7 @@ public:
             result.entities.push_back(std::move(value));
         }
         if(!animation_only && !audio_only) {
-            result.templates=template_definitions(document,cache,result.component_schemas);
+            result.templates=template_definitions(document,cache,result.component_schemas,&audio_cache);
             result.ui=component_checked([&]{return ui::parse_definition(document.value("ui",Json::object()).dump());});
         }
         try { validate_runtime_animation(result);if(!animation_only && !audio_only) {validate_runtime_mesh_colliders(result);validate_runtime_templates(result);} }
@@ -2624,6 +2694,17 @@ public:
         if(params.is_object() && params.contains("session_id") && params.contains("request_id"))
             for(const auto& receipt:structure_receipts_)if(receipt && receipt->params.at("session_id")==params.at("session_id") && receipt->params.at("request_id")==params.at("request_id"))
                 throw Error(-32010,"Runtime request ID already belongs to a structural transaction.");
+        if(method=="runtime.instance") {
+            fields(params,{"session_id","id","tick","expected_structure_revision"},{"session_id","id","tick"});
+            runtime_guard(params);require(revision(params.at("tick"))==runtime_->inspect().tick,"Runtime tick conflict.",-32009);
+            if(params.contains("expected_structure_revision"))require(revision(params.at("expected_structure_revision"))==runtime_->structure_revision(),"Runtime structure revision conflict.",-32009);
+            try {
+                const auto instance=runtime_->instance(identifier(params.at("id")));const auto& t=instance.initial;
+                return {{"session_id",runtime_id_},{"tick",runtime_->inspect().tick},{"structure_revision",runtime_->structure_revision()},
+                    {"root",instance.root},{"template_id",instance.template_id},
+                    {"initial_transform",{{"position",t.position},{"rotation",t.rotation},{"scale",t.scale}}},{"nodes",instance.nodes}};
+            }catch(const Error&) {throw;}catch(const std::exception& error) {throw Error(-32004,error.what());}
+        }
         if(method=="runtime.template.get" || method=="runtime.template.query") {
             if(method=="runtime.template.get")fields(params,{"session_id","tick","revision","id"},{"session_id","tick","id"});
             else fields(params,{"session_id","tick","revision","after","limit"},{"session_id","tick"});
@@ -2881,20 +2962,33 @@ public:
                 changed_ui.insert(id);continue;
             }
             if(name=="template.set" || name=="template.remove") {
-                if(name=="template.set")fields(op,{"op","id","name","components"},{"op","id","name","components"});
+                if(name=="template.set")fields(op,{"op","id","name","components","root","entities"},{"op","id","name"});
                 else fields(op,{"op","id"},{"op","id"});
                 const auto id=identifier(op.at("id"));require(id!=std::string(32,'0'),"Template identity cannot be zero.");upgrade_templates(staged);
                 if(name=="template.remove") {
                     fields(op,{"op","id"},{"op","id"});require(staged["templates"].erase(id)==1,"Template does not exist.",-32004);staged["retired_template_ids"].push_back(id);
                 }else {
-                    fields(op,{"op","id","name","components"},{"op","id","name","components"});
+                    const bool tree=op.contains("root") || op.contains("entities");
+                    require(tree ? op.contains("root") && op.contains("entities") && !op.contains("components") : op.contains("components"),
+                        "Template requires either components or root/entities, exclusively.");
                     const auto& retired=staged.at("retired_template_ids");require(std::find(retired.begin(),retired.end(),id)==retired.end(),"Template identity was retired and cannot be reused.");
-                    auto bag=op.at("components");require(bag.is_object(),"Template components must be an object.");const auto schemas=authored_component_schemas(staged);
-                    for(auto& [type,value]:bag.items())if(custom_component(type)) {
-                        const auto type_id=custom_type(type);const auto& schema=authored_schema(schemas,type_id);const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
-                        value=Json::parse(components::values_json(schema,payload));
+                    const auto schemas=authored_component_schemas(staged);
+                    auto canonicalize=[&](Json& bag) {
+                        require(bag.is_object(),"Template components must be an object.");
+                        for(auto& [type,value]:bag.items())if(custom_component(type)) {
+                            const auto& schema=authored_schema(schemas,custom_type(type));
+                            const auto payload=component_checked([&]{return components::parse_values(schema,value.dump());});
+                            value=Json::parse(components::values_json(schema,payload));
+                        }
+                    };
+                    if(tree) {
+                        auto members=op.at("entities");require(members.is_object(),"Template entities must be an object.");
+                        for(auto& member:members) {require(member.is_object() && member.contains("components"),"Template member requires components.");canonicalize(member["components"]);}
+                        staged["templates"][id]={{"name",op.at("name")},{"root",op.at("root")},{"entities",std::move(members)}};
+                    }else {
+                        auto bag=op.at("components");canonicalize(bag);
+                        staged["templates"][id]={{"name",op.at("name")},{"components",std::move(bag)}};
                     }
-                    staged["templates"][id]={{"name",op.at("name")},{"components",std::move(bag)}};
                 }
                 changed_templates.insert(id);continue;
             }

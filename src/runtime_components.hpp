@@ -98,7 +98,11 @@ public:
     void stage_pending_checked(const PoimaGameComponentType&,PoimaEntityId,std::span<const std::byte>);
     // Borrowed immutable recipe must outlive this tick's publication/cancellation.
     void reserve_birth(PoimaEntityId,const std::map<std::string,components::Payload>& initial);
+    // Atomic admission for a whole instance; borrowed maps remain owned by its
+    // pending immutable expanded definitions until publication/cancellation.
+    void reserve_births(std::span<const ComponentSpawn>);
     void cancel_birth(PoimaEntityId);
+    void cancel_births(std::span<const PoimaEntityId>);
     void edit(const std::string&,const std::string&,const components::Payload&);
     void validate_module(const std::vector<components::Schema>&) const;
     void begin_batch();

@@ -176,6 +176,15 @@ typedef struct PoimaGameNavigationServicesV1 {
     int32_t (POIMA_CALL *navigation_path)(void*,const PoimaGameNavigationRequestV1*,
         PoimaGameNavigationPointV1*,uint32_t,PoimaGameNavigationResultV1*,PoimaGameError*);
 } PoimaGameNavigationServicesV1;
+// Independent opt-in: hierarchical_instances_v1. The preceding callbacks are
+// granted only by their own named features, not by this larger allocation.
+typedef struct PoimaGameInstanceServicesV1 {
+    PoimaGameNavigationServicesV1 navigation;
+    // Tick: committed instances and noncanceled reserved births. Control:
+    // committed instances only. Local IDs are nonzero recipe-node identities.
+    // Output is cleared before validation; failure never returns a live handle.
+    int32_t (POIMA_CALL *instance_node)(void*,const PoimaEntityId*,const PoimaEntityId*,PoimaEntityId*,PoimaGameError*);
+} PoimaGameInstanceServicesV1;
 // operation6 invokes Control at unchanged tick; inputs/count must be null/zero.
 typedef struct PoimaGameCall {
     uint32_t version,operation; uint64_t handle;
@@ -192,6 +201,7 @@ static_assert(sizeof(PoimaGameNavigationResultV1)==128 && alignof(PoimaGameNavig
 static_assert(offsetof(PoimaGameNavigationResultV1,asset)==8 && offsetof(PoimaGameNavigationResultV1,status)==40 && offsetof(PoimaGameNavigationResultV1,flags)==44 && offsetof(PoimaGameNavigationResultV1,corner_count)==48 && offsetof(PoimaGameNavigationResultV1,polygons)==52);
 static_assert(offsetof(PoimaGameNavigationResultV1,requested_start)==56 && offsetof(PoimaGameNavigationResultV1,projected_start)==68 && offsetof(PoimaGameNavigationResultV1,projected_end)==80 && offsetof(PoimaGameNavigationResultV1,reachable_end)==92);
 static_assert(offsetof(PoimaGameNavigationResultV1,start_projection_distance)==104 && offsetof(PoimaGameNavigationResultV1,end_projection_distance)==112 && offsetof(PoimaGameNavigationResultV1,reserved)==120);
+static_assert(sizeof(PoimaGameInstanceServicesV1)==232 && offsetof(PoimaGameInstanceServicesV1,navigation)==0 && offsetof(PoimaGameInstanceServicesV1,instance_node)==224);
 static_assert(sizeof(PoimaGameNavigationServicesV1)==224 && offsetof(PoimaGameNavigationServicesV1,character)==0 && offsetof(PoimaGameNavigationServicesV1,navigation_path)==216);
 static_assert(sizeof(PoimaGameCharacterInputV1)==48 && offsetof(PoimaGameCharacterInputV1,entity)==8 && offsetof(PoimaGameCharacterInputV1,move)==24 && offsetof(PoimaGameCharacterInputV1,look)==32 && offsetof(PoimaGameCharacterInputV1,flags)==40 && offsetof(PoimaGameCharacterInputV1,reserved)==44);
 static_assert(sizeof(PoimaGameCharacterServicesV1)==216 && offsetof(PoimaGameCharacterServicesV1,animation)==0 && offsetof(PoimaGameCharacterServicesV1,character_input)==208);

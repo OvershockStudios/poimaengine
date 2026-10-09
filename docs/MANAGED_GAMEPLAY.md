@@ -2,7 +2,7 @@
 
 Poima can load handwritten C# into its native EnTT/Jolt runtime, inspect and edit typed gameplay fields, and replace game code while retaining compatible state. The example uses the same native collider queries and kinematic motion as the CLI: press **E** while looking at the sliding door to open it. Agents can submit the same `use` action through headless steps or Vulkan replay.
 
-This is the first integrated gameplay SDK subset: one `Game<TState>` module per runtime, with input, entity observation, raycasts, kinematic movement, sound events, animation control, opt-in [character movement](CHARACTER_INPUT.md) and [static NPC navigation](NAVIGATION.md). C++20 remains the engine language. CoreCLR supplies JIT compilation and garbage collection during development. A bounded [Native AOT distribution route](NATIVE_GAMEPLAY.md) compiles the same game source for Linux and Windows. [Custom scalar components](CUSTOM_COMPONENTS.md) provide native-owned per-entity data with generated C# accessors. Production deployment qualification and the complete SDK remain unfinished.
+The integrated gameplay SDK supplies one `Game<TState>` module per runtime, with input, entity observation, raycasts, kinematic movement, sound events, animation control, opt-in [character movement](CHARACTER_INPUT.md), [static NPC navigation](NAVIGATION.md) and [hierarchical instance resolution](RUNTIME_INSTANCES.md). C++20 remains the engine language. CoreCLR supplies JIT compilation and garbage collection during development. A bounded [Native AOT distribution route](NATIVE_GAMEPLAY.md) compiles the same game source for Linux and Windows. [Custom components](CUSTOM_COMPONENTS.md) provide native-owned per-entity data with generated C# accessors, including supported [bounded collections](COMPONENT_COLLECTIONS.md). Production deployment qualification and the complete SDK remain unfinished.
 
 Opt-in [persistent field metadata](GAMEPLAY_PERSISTENCE.md) assigns stable IDs and literal defaults to global state without changing normal initialization or the current exact-save restore rules.
 
@@ -83,6 +83,7 @@ public sealed class CounterGame : Game<CounterState>
 | `GetAnimationLayer(entity, slot)` | Copy one configured slot, including playback, immutable mode/mask count and weight ramp; requires `IMaskedAnimationGame`. |
 | `SetAnimationLayer(entity, slot, clip, weight, ...)` | Queue complete playback and target weight for a configured slot; requires `IMaskedAnimationGame`. |
 | `FindNavigationPath(agent, goal, corners, extents, maxPolygons, maxNodes)` | Copy a bounded route from the live character foot position; Tick-only and requires `INavigationGame`. |
+| `ResolveNode(instanceRoot, templateNode)` | Resolve a `TemplateNodeId` to a live or noncanceled reserved member ID; requires `IHierarchicalInstancesGame`. Resolution does not publish a reserved entity or enable committed reads. |
 
 Controller look is applied before C# runs, so a use action in the same tick sees the new camera direction. Gameplay then runs before physics advances. Queued motions are validated together before application, with at most 128 per tick. Duplicate targets, invalid bodies and exceeding native speed/duration limits fail the batch. Explicit caller motion and gameplay may not target the same body on the first tick of a batch. Movement is held for a step/replay segment; look, jump and use apply only on its first tick. Read-only entity queries during gameplay see the current state, not the eventual result of queued motion.
 
@@ -135,7 +136,7 @@ Invalid commands, failed curve samples and managed exceptions restore animation 
 
 The native service compatibility baseline remains epoch 7 (176 bytes), including the [gameplay save](GAMEPLAY_SAVES.md), [component](CUSTOM_COMPONENTS.md), [lifecycle](GAMEPLAY_LIFECYCLE.md) and [UI control](GAME_UI.md) extensions. Inertial-only marked games additionally require `animation_inertial_v1` and a 192-byte service prefix with separate versioned animation callbacks. Masked games require both animation features and the 208-byte prefix described below. Unmarked games retain the exact 176-byte view; existing callback structures and signatures do not grow. The bridge and SDK remain a matched pair.
 
-With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, and 224 named navigation; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Graph APIs, IK, retargeting and root motion remain unfinished.
+With a matched SDK/bridge, load-time negotiation checks the marker before game construction and `Initialize`. An unavailable extension rejects the marked game; arbitrary assembly/module initialization and native-library loader side effects remain outside that guarantee. Callback entry revalidates the required prefix before reading the extension. Requirements stay outside the game-state schema and save fingerprint. Supported required profiles are 176 baseline, 192 named inertial, 208 named masked layers plus inertial, 216 named character input, 224 named navigation, and 232 named hierarchical instances; combined games declare every required feature. A later compatible host may advertise additional available services while preserving these prefixes. See the [artifact contract](NATIVE_GAMEPLAY.md#artifact-contents) and historical [0.0.56 qualification](evidence/m2-managed-inertial.json). Animation graphs, IK and controller root motion remain unfinished. Explicit [import-time rotation retargeting](ANIMATION_RETARGETING.md) is separate from runtime playback.
 
 ## Control masked layers from C#
 
@@ -248,7 +249,7 @@ For the animation extension, run `scripts/verify_gameplay_animation.py` with the
 | --- | --- |
 | ![Closed door](evidence/m2-csharp-door-closed.png) | ![Open door](evidence/m2-csharp-door-open.png) |
 
-These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. Generated scalar component bindings and template-based root-prop spawning/removal are implemented. Arbitrary component membership changes, general events/jobs, removal of originally authored entities, animation graphs, complete audio/environmental controls, VFX, UI, automatic source watching and concurrent authoring while a player window owns the connection remain unfinished. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
+These are small integration fixtures. They do not qualify full-game frame times, large SDK builds, allocation-free gameplay, arbitrary cross-platform deterministic C#, production AOT/console deployment or the whole engine. Generated component bindings, template-based root-prop spawning/removal and complete [hierarchical instances](RUNTIME_INSTANCES.md) are implemented. Arbitrary component membership changes, general events/jobs, removal of originally authored entities, animation graphs, complete audio/environmental controls, general VFX/UI tooling and automatic source watching remain unfinished. The [shared live player](LIVE_PLAYER.md) permits guarded observation and supported paused runtime edits; its owner and mutation restrictions apply while attached. The [independent AOT lab](MANAGED_SHIPPING_LAB.md) does not make this CoreCLR integration shipping-ready.
 
 Sound callbacks are retained in the service-table prefix. Animation, save, component, lifecycle and UI control callbacks extend the table to ABI version 7 (176 bytes); the outer call remains version 1 (80 bytes). Changing the service compatibility epoch requires coordinated artifacts; compatible tail additions do not change existing callback layouts or meanings. Native voices survive compatible game reloads; failed tick batches roll back their handles and state.
 
@@ -256,6 +257,31 @@ Sound callbacks are retained in the service-table prefix. Animation, save, compo
 
 The same bounded `Game<TState>` source can be compiled into a native shared library through the [Native AOT artifact route](NATIVE_GAMEPLAY.md). That route statically binds its game/state types, uses the same native services and rollback state, and packages through project/game manifest v2. Native library replacement requires restarting the player process; compatible collectible reload remains a CoreCLR development feature. Native AOT still includes runtime services such as garbage collection.
 
-## Create and remove runtime props
+## Create and remove runtime instances
 
-The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) adds typed template handles, immediate ID reservation, same-Tick component initialization, frozen default inspection and spawned-prop removal. It uses the services-7 baseline (176 bytes); moving from earlier epochs requires a coordinated rebuild. Reads retain committed membership; all births, writes, removals and save intentions participate in outer-batch rollback.
+The [C# lifecycle API](GAMEPLAY_LIFECYCLE.md) supplies typed template handles, immediate ID reservation, same-Tick component initialization, frozen root-default inspection and whole spawned-instance removal. These callbacks remain in the services-7 baseline (176 bytes); moving from earlier epochs requires a coordinated rebuild. Frozen recipes can contain a standalone root or a complete connected hierarchy, including validated imported animation and native controller bindings. Reads retain committed membership; all births, writes, removals and save intentions participate in outer-batch rollback.
+
+Declare `IHierarchicalInstancesGame` to add `hierarchical_instances_v1` and its
+232-byte prefix. This marker is independent of character input, navigation and
+animation extensions; declare each feature your game calls. `TemplateNodeId`
+selects a nonzero canonical node within a recipe and is distinct from `EntityId`.
+It is not a supported persisted gameplay-state field kind.
+
+`GameContext.ResolveNode(EntityId instanceRoot, TemplateNodeId node)` resolves
+committed members or a noncanceled reservation made during the current Tick.
+`ControlContext.ResolveNode` resolves committed members only, without advancing
+simulation. Unknown roots/nodes and canceled reservations throw. The marker is
+checked before reading the native `InstanceNode` callback at offset 224.
+
+Resolution does not change read visibility: `Get`, `IsAlive`, component queries,
+component reads and animation reads still use committed membership. Tick may
+stage component initialization, animation commands and separately declared
+character input for valid reserved members. Removing a root removes its whole
+instance; repair surviving scalar/array and gameplay-state references in that
+Tick. Same-Tick cancellation discards all member initializers and commands.
+
+Follow [runtime instances](RUNTIME_INSTANCES.md) for a runnable authoring task,
+full imported-rig prerequisites, receipt/revision recovery, reference remapping
+and exact version-6 saves. Existing schema-upgrade transforms do not support
+hierarchy recipes or these snapshots. Compatible CoreCLR reload retains the
+frozen catalog and live handles; it does not adopt edited recipes.

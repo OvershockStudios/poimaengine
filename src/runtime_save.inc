@@ -126,6 +126,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     const bool custom=!s.components->schemas().empty();
     const bool structural=s.structure_revision!=0;
     const bool logical_ui=!s.ui_model->definition().empty();
+    const bool hierarchical=structural && std::any_of(s.templates.begin(),s.templates.end(),[](const auto& recipe){return !recipe.entities.empty();});
     if(custom || structural || logical_ui)payload["components"]=SaveJson::parse(s.components->save());
     if(logical_ui) {
         payload["ui"]=SaveJson::parse(s.ui_model->save());
@@ -134,13 +135,17 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
     }
     if(structural) {
         SaveJson spawned=SaveJson::array();
-        for(const auto& [id,origin]:s.topology->spawned)
-            spawned.push_back({{"id",id},{"template_id",origin.template_id},{"initial_transform",save_local(origin.initial)}});
+        for(const auto& [id,origin]:s.topology->spawned) {
+            SaveJson row={{"id",id},{"template_id",origin.template_id},{"initial_transform",save_local(origin.initial)}};
+            if(hierarchical)row["nodes"]=origin.nodes;
+            spawned.push_back(std::move(row));
+        }
         const auto cursor=s.entity_ids->cursor();
         payload["structure"]={{"revision",s.structure_revision},{"next_entity_id",gameplay_id(cursor.next)},
             {"exhausted",cursor.exhausted},{"spawned",std::move(spawned)}};
     }
-    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
+    if(hierarchical && !logical_ui) {payload["ui"]=nullptr;payload["control_sequence"]=s.control_sequence;}
+    const SaveJson envelope={{"format","poima.runtime-snapshot"},{"version",hierarchical ? 6 : logical_ui ? 5 : structural ? 3 : custom ? 2 : 1},{"sha256",save_hash(payload.dump())},{"payload",payload}};
     std::size_t tokens=0;save_budget(envelope,0,tokens);const auto result=envelope.dump();
     require(result.size()<=snapshot_bytes_limit,"Runtime snapshot exceeds 64 MiB.");return result;
 }
@@ -153,15 +158,16 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     const bool logical_ui=!definition.ui.empty();
     const auto version=save_integer(envelope.at("version"));
     require(envelope.at("format")=="poima.runtime-snapshot" &&
-        (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u))),"Unsupported runtime snapshot format/version for this definition.");
+        (version==6 || (logical_ui ? (version==4 || version==5) : (version==3 || version==(custom ? 2u : 1u)))),"Unsupported runtime snapshot format/version for this definition.");
     const auto& data=envelope.at("payload");const auto digest=save_text(envelope.at("sha256"),64);
     require(save_digest(digest) && digest==save_hash(data.dump()),"Runtime snapshot checksum mismatch.");
-    if(version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
+    if(version==6 || version==5)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui","control_sequence"});
     else if(logical_ui)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure","ui"});
     else if(version==3)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components","structure"});
     else if(custom)save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay","components"});
     else save_fields(data,{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"});
-    const bool structural=version==3 || (logical_ui && !data.at("structure").is_null());
+    const bool structural=version==6 || version==3 || (logical_ui && !data.at("structure").is_null());
+    if(version==6)require(data.at("ui").is_null()==!logical_ui,"Snapshot UI membership differs from frozen content.");
     require(data.at("content_sha256")==content_sha256 && save_text(data.at("world_id"))==definition.world_id && save_integer(data.at("authored_revision"))==definition.authored_revision,
         "Runtime snapshot does not match the frozen world content/revision.");
     const auto tick=save_integer(data.at("tick")),game_revision=save_integer(data.at("gameplay_revision"));
@@ -197,25 +203,43 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
             }
         };
         for(const auto& entity:definition.entities)account_components(entity.components);
-        expanded=definition;std::string previous_birth;
+        expanded=definition;std::string previous_birth;std::set<std::string> live_ids=authored;
         for(const auto& birth:births) {
-            save_fields(birth,{"id","template_id","initial_transform"});const auto id=save_text(birth.at("id"),32);
+            if(version==6)save_fields(birth,{"id","template_id","initial_transform","nodes"});
+            else save_fields(birth,{"id","template_id","initial_transform"});
+            const auto id=save_text(birth.at("id"),32);
             require(id.size()==32 && id.find_first_not_of("0123456789abcdef")==std::string::npos && (previous_birth.empty() || previous_birth<id),
                 "Spawned snapshot identities must be canonical, unique and sorted.");previous_birth=id;
-            require(!authored.contains(id) && restored_ids->allocated(gameplay_id(id)),"Saved spawned identity is outside its allocator lineage.");
             const auto template_id=save_text(birth.at("template_id"),32);
             const auto found=std::find_if(definition.templates.begin(),definition.templates.end(),[&](const auto& recipe){return recipe.id==template_id;});
             require(found!=definition.templates.end(),"Saved spawn template does not exist in frozen content.");
-            account_components(found->components);
+            require(version==6 || found->entities.empty(),"Legacy snapshot cannot reconstruct a hierarchical recipe.");
             const auto initial=save_transform(birth.at("initial_transform"));
-            // Frozen assets and payload schemas were validated once above.
-            // Only the saved transform and its collider scaling are variable.
-            RuntimeDefinition validation;
-            validation.templates.push_back({found->id,found->name,initial,found->collider,std::nullopt,{}});
-            validate_runtime_templates(validation);
-            RuntimeEntityDefinition entity;entity.id=id;entity.transform=initial;entity.collider=found->collider;
-            entity.mesh=found->mesh;entity.components=found->components;expanded->entities.push_back(std::move(entity));
-            origins.emplace(id,Impl::SpawnOrigin{template_id,initial});
+            validate_runtime_spawn_transform(*found,initial);
+            RuntimeSpawnInstance origin;origin.root=id;origin.template_id=template_id;origin.initial=initial;
+            const auto members=runtime_template_members(*found);
+            if(version==6) {
+                const auto& nodes=birth.at("nodes");require(nodes.is_object() && nodes.size()==members.size(),"Saved instance node membership differs from frozen recipe.");
+                for(const auto& local:members) {
+                    require(nodes.contains(local),"Saved instance is missing a frozen local node.");
+                    const auto live=save_text(nodes.at(local),32);
+                    require(live.size()==32 && live.find_first_not_of("0123456789abcdef")==std::string::npos,
+                        "Saved instance node identity is not canonical.");
+                    origin.nodes.emplace(local,live);
+                }
+            }else origin.nodes.emplace(found->id,id);
+            require(origin.nodes.at(members.front())==id,"Saved instance root differs from its node map.");
+            RuntimeEntityIds sequential(exclusions,RuntimeEntityIds::Cursor{gameplay_id(id),false});
+            for(const auto& local:members)require(gameplay_id(sequential.allocate())==origin.nodes.at(local),
+                "Saved instance identities differ from root-first allocation order.");
+            for(const auto& [local,live]:origin.nodes) {
+                (void)local;require(restored_ids->allocated(gameplay_id(live)) && live_ids.insert(live).second,
+                    "Saved instance identity aliases another entity or is outside its allocator lineage.");
+            }
+            auto entities=runtime_template_entities(*found,origin.nodes,initial,definition.component_schemas);
+            require(entities.size()<=10000-expanded->entities.size(),"Snapshot instance node budget exceeded.");
+            for(auto& entity:entities) {account_components(entity.components);expanded->entities.push_back(std::move(entity));}
+            require(origins.emplace(id,std::move(origin)).second,"Duplicate saved instance root.");
         }
         // Validate complete saved membership against trusted layouts, then use
         // saved payloads for construction. Old defaults can reference an entity
@@ -258,7 +282,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     }
     if(custom || structural || logical_ui)s.components->load(data.at("components").dump());
     if(logical_ui)s.ui_model->load(data.at("ui").dump());
-    if(version==5)s.control_sequence=save_integer(data.at("control_sequence"));
+    if(version==6 || version==5)s.control_sequence=save_integer(data.at("control_sequence"));
     if(!data.at("gameplay").is_null()) {
         const auto& source_game=data.at("gameplay");save_game_values(source_game,s.topology->identities);
         const auto& schema=source_game.at("schema");

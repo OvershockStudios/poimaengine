@@ -112,18 +112,39 @@ std::uint32_t RuntimeComponents::query(const PoimaGameComponentType& binding,Poi
     std::uint32_t written=0;for(;it!=rows.end() && written<output.size();++it)output[written++]=it->id;return written;
 }
 void RuntimeComponents::reserve_birth(PoimaEntityId id,const std::map<std::string,components::Payload>& initial) {
+    const ComponentSpawn birth{id,entt::null,&initial};reserve_births(std::span(&birth,1));
+}
+void RuntimeComponents::reserve_births(std::span<const ComponentSpawn> births) {
     check(batch_ && !prepared_,"Birth reservation requires an active unprepared runtime tick.");
-    check(id.high || id.low,"Pending birth cannot use the zero entity ID.");
-    check(pending_births_.size()<components::max_commands,"Pending birth command budget exceeded.");
-    check(std::none_of(owned_entities_.begin(),owned_entities_.end(),[&](const Entity& e){return equal_id(e.id,id);}),"Pending birth reuses an existing or retained entity ID.");
-    check(std::none_of(pending_births_.begin(),pending_births_.end(),[&](const PendingBirth& e){return equal_id(e.id,id);}),"Duplicate pending birth identity.");
+    check(!births.empty() && births.size()<=components::max_commands-pending_births_.size(),"Pending birth command budget exceeded.");
     std::size_t bytes=0;
-    for(const auto& [type_id,payload]:initial) {
-        const auto& t=type(parse_id(type_id));components::validate_payload(schemas_[t.schema],payload);
-        check(payload.size()<=components::max_command_bytes-staged_bytes_-pending_bytes_-bytes,"Pending birth payload budget exceeded.");bytes+=payload.size();
+    for(std::size_t index=0;index<births.size();++index) {
+        const auto& birth=births[index];const auto id=birth.id;
+        check((id.high || id.low) && birth.initial,"Pending birth needs a nonzero identity and owned initial values.");
+        check(std::none_of(owned_entities_.begin(),owned_entities_.end(),[&](const Entity& e){return equal_id(e.id,id);}),"Pending birth reuses an existing or retained entity ID.");
+        check(std::none_of(pending_births_.begin(),pending_births_.end(),[&](const PendingBirth& e){return equal_id(e.id,id);}),"Duplicate pending birth identity.");
+        for(std::size_t previous=0;previous<index;++previous)check(!equal_id(births[previous].id,id),"Duplicate instance birth identity.");
+        for(const auto& [type_id,payload]:*birth.initial) {
+            const auto& t=type(parse_id(type_id));components::validate_payload(schemas_[t.schema],payload);
+            check(payload.size()<=components::max_command_bytes-staged_bytes_-pending_bytes_-bytes,"Pending birth payload budget exceeded.");bytes+=payload.size();
+        }
     }
-    // The only mutation is a strong-guarantee vector append; the recipe is not copied.
-    pending_births_.push_back({id,&initial,bytes});pending_bytes_+=bytes;
+    // Validate every member and reserve storage before changing registration.
+    pending_births_.reserve(pending_births_.size()+births.size());
+    for(const auto& birth:births) {
+        std::size_t member_bytes=0;for(const auto& [type_id,payload]:*birth.initial) {(void)type_id;member_bytes+=payload.size();}
+        pending_births_.push_back({birth.id,birth.initial,member_bytes});
+    }
+    pending_bytes_+=bytes;
+}
+void RuntimeComponents::cancel_births(std::span<const PoimaEntityId> ids) {
+    check(batch_ && !prepared_,"Birth cancellation requires an active unprepared runtime tick.");
+    for(std::size_t index=0;index<ids.size();++index) {
+        check(std::any_of(pending_births_.begin(),pending_births_.end(),[&](const PendingBirth& birth){return equal_id(birth.id,ids[index]);}),"Pending birth does not exist.");
+        for(std::size_t previous=0;previous<index;++previous)check(!equal_id(ids[previous],ids[index]),"Duplicate canceled birth identity.");
+    }
+    // The individual removals perform only nonallocating bounded erases.
+    for(const auto id:ids)cancel_birth(id);
 }
 void RuntimeComponents::cancel_birth(PoimaEntityId id) {
     check(batch_ && !prepared_,"Birth cancellation requires an active unprepared runtime tick.");
