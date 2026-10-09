@@ -146,6 +146,50 @@ std::uint64_t revision(const Json& value) {
     require(value.is_number_integer() && value >= 0 && value <= max_revision, "Revision must be a safe nonnegative JSON integer.");
     return value.get<std::uint64_t>();
 }
+AnimationReferencePose animation_reference_pose(const Json& value) {
+    fields(value,{"kind","clip","time"},{"kind"});
+    require(value.at("kind").is_string(),"Reference pose kind must be rest or sample.");
+    const auto kind=value.at("kind").get<std::string>();
+    AnimationReferencePose result;
+    if(kind=="rest") {
+        fields(value,{"kind"},{"kind"});return result;
+    }
+    require(kind=="sample","Reference pose kind must be rest or sample.");
+    fields(value,{"kind","clip","time"},{"kind","clip","time"});
+    const auto index=revision(value.at("clip"));require(index<256,"Reference take index must be 0..255.");
+    const auto& time=value.at("time");
+    require(time.is_number() && std::isfinite(time.get<double>()) && time>=0 && time<=3600,
+        "Reference time must be finite and within 0..3600 seconds.");
+    result.clip=static_cast<std::uint32_t>(index);result.time=time.get<double>();return result;
+}
+AnimationFrameTransfer animation_frame_transfer(const Json& value) {
+    fields(value,{"policy","source_pose","target_pose","alignment"},{"policy","source_pose","target_pose"});
+    require(value.at("policy")=="reference-frame-v1","Unknown animation frame transfer policy.");
+    AnimationFrameTransfer result;
+    result.source_reference=animation_reference_pose(value.at("source_pose"));
+    result.target_reference=animation_reference_pose(value.at("target_pose"));
+    if(value.contains("alignment")) {
+        const auto& alignment=value.at("alignment");fields(alignment,{"position","rotation"},{"position","rotation"});
+        const auto& position=alignment.at("position");const auto& rotation=alignment.at("rotation");
+        require(position.is_array() && position.size()==3 && rotation.is_array() && rotation.size()==4,
+            "Frame alignment requires position XYZ and rotation XYZW arrays.");
+        for(std::size_t i=0;i<3;++i) {
+            const auto& number=position[i];
+            require(number.is_number() && std::isfinite(number.get<double>()) && std::abs(number.get<double>())<=1e9,
+                "Frame alignment position must be finite within +/-1e9 metres.");
+            result.alignment_position[i]=number.get<double>();
+        }
+        double norm=0;
+        for(std::size_t i=0;i<4;++i) {
+            const auto& number=rotation[i];
+            require(number.is_number() && std::isfinite(number.get<double>()) && number>=-1 && number<=1,
+                "Frame alignment rotation components must be finite within [-1,1].");
+            result.alignment_rotation[i]=number.get<double>();norm+=result.alignment_rotation[i]*result.alignment_rotation[i];
+        }
+        require(std::abs(norm-1)<=1e-6,"Frame alignment must be a normalized XYZW quaternion.");
+    }
+    return result;
+}
 void validate_name(const Json& value) {
     require(value.is_string() && !value.get_ref<const std::string&>().empty() &&
         value.get_ref<const std::string&>().size() <= 256, "Name must contain 1..256 UTF-8 bytes.");
@@ -1441,12 +1485,13 @@ public:
                     for(const auto& file:files) {
                         ModelAnimationSource selected;std::string value;
                         if(file.is_object()) {
-                            fields(file,{"source","clip","name"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
+                            fields(file,{"source","clip","name","frame_transfer"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
                             if(file.contains("clip")) {const auto index=revision(file.at("clip"));require(index<256,"Animation take index must be 0..255.");selected.clip=static_cast<std::uint32_t>(index);}
                             if(file.contains("name")) {
                                 require(file.at("name").is_string(),"Animation take name must be a string.");selected.name=file.at("name").get<std::string>();
                                 require(!selected.name.empty() && selected.name.size()<=256 && selected.name.find('\0')==std::string::npos,"Animation take name must be 1..256 bytes without NUL.");
                             }
+                            if(file.contains("frame_transfer"))selected.frame_transfer=animation_frame_transfer(file.at("frame_transfer"));
                         }else {require(file.is_string(),"Animation source must be a path or a selection object.");value=file.get<std::string>();}
                         require(!value.empty() && value.find('\0')==std::string::npos,"Invalid animation source path.");
                         auto path=fs::path(std::u8string(value.begin(),value.end()));if(path.is_relative())path=path_.parent_path()/path;

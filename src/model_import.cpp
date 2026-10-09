@@ -4,9 +4,12 @@
 #include "poima/animation.hpp"
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
+#include <locale>
 #include <map>
 #include <numbers>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 
 namespace poima {
@@ -63,6 +66,51 @@ AnimationCompositionIssue frame_difference(const ModelNode& a,const ModelNode& b
     result.rotation_degrees=2*std::acos(normalized_dot)*180/std::numbers::pi;
     return result;
 }
+using Quaternion=std::array<double,4>;
+using Vector3=std::array<double,3>;
+Quaternion normalized(Quaternion q) {
+    double norm=0;for(const auto x:q)norm+=x*x;
+    require(std::isfinite(norm) && norm>0,"Reference-frame transfer quaternion is not finite/nonzero.");
+    for(auto& x:q)x/=std::sqrt(norm);
+    return q;
+}
+Quaternion product(const Quaternion& a,const Quaternion& b) {
+    return {a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1],
+        a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0],
+        a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3],
+        a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2]};
+}
+Quaternion conjugate(Quaternion q) { for(std::size_t k=0;k<3;++k)q[k]=-q[k];return q; }
+Vector3 rotated(const Quaternion& q,const Vector3& v) {
+    const auto matrix=local_matrix({0,0,0},q,{1,1,1});Vector3 out{};
+    for(std::size_t row=0;row<3;++row)for(std::size_t column=0;column<3;++column)out[row]+=matrix[column*4+row]*v[column];
+    return out;
+}
+std::string decimal(double value) {
+    std::ostringstream out;out.imbue(std::locale::classic());out<<std::setprecision(17)<<value;return out.str();
+}
+std::string fingerprint(const ModelAsset& model) {
+    const auto bytes=encode_model(model);return sha256(std::as_bytes(std::span(bytes.data(),bytes.size())));
+}
+ModelPose reference_pose(const ModelAsset& model,const AnimationReferencePose& selector,const char* role) {
+    const auto prefix=std::string("Reference-frame transfer ")+role+" reference: ";
+    if(!std::isfinite(selector.time) || selector.time<0 || selector.time>3600)
+        throw std::runtime_error(prefix+"time must be finite and within 0..3600 seconds.");
+    if(!selector.clip) {
+        if(selector.time!=0)throw std::runtime_error(prefix+"imported rest requires time zero.");
+    }else {
+        if(*selector.clip>=model.animations.size())throw std::runtime_error(prefix+"clip index is out of range.");
+        if(selector.time>model.animations[*selector.clip].duration)
+            throw std::runtime_error(prefix+"time "+decimal(selector.time)+" exceeds clip duration "+decimal(model.animations[*selector.clip].duration)+".");
+    }
+    return sample_model(model,selector.clip,selector.time,false);
+}
+std::string selector_text(const AnimationReferencePose& selector) {
+    return selector.clip ? "clip:"+std::to_string(*selector.clip) : "rest";
+}
+std::shared_ptr<const ModelAsset> transfer_frames(const ModelAsset& base,const ModelAsset& donor,
+    const ModelPose& source_reference,const ModelPose& target_reference,const Vector3& alignment_position,
+    const Quaternion& alignment_rotation,const std::vector<std::string>& provenance);
 }
 ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention) {
     auto extension=source.extension().string();
@@ -72,10 +120,21 @@ ImportedModel import_model(const std::filesystem::path& source,FbxNormalConventi
     // user-chosen name has no standard extension. FBX dispatch is explicit.
     return {import_gltf(source),{}};
 }
-ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNormalConvention convention) {
+ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNormalConvention convention,const ModelAsset* base) {
     auto imported=import_model(source.source,convention);
     require(!imported.model->animations.empty(),"Animation source contains no takes.");
     require(source.name.size()<=256 && source.name.find('\0')==std::string::npos,"Invalid animation take name.");
+    std::optional<ModelPose> source_reference,target_reference;
+    std::vector<std::string> provenance;
+    if(source.frame_transfer) {
+        require(base!=nullptr,"Reference-frame transfer requires the immutable base model.");
+        const auto& policy=*source.frame_transfer;
+        source_reference=reference_pose(*imported.model,policy.source_reference,"source");
+        target_reference=reference_pose(*base,policy.target_reference,"target");
+        provenance.push_back("reference-frame-v1 source_reference="+selector_text(policy.source_reference)+" source_time="+decimal(policy.source_reference.time)+
+            " target_reference="+selector_text(policy.target_reference)+" target_time="+decimal(policy.target_reference.time));
+        provenance.push_back("reference-frame-v1 source_model_sha256="+fingerprint(*imported.model)+" target_model_sha256="+fingerprint(*base));
+    }
     auto selected=std::make_shared<ModelAsset>(*imported.model);
     if(source.clip) {
         require(*source.clip<selected->animations.size(),"Selected animation take index is out of range.");
@@ -88,7 +147,12 @@ ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNorm
         selected->diagnostics.push_back("Selected take "+std::to_string(source.clip.value_or(0))+" '"+original+"' as '"+source.name+"'.");
     }else if(source.clip)selected->diagnostics.push_back("Selected source take "+std::to_string(*source.clip)+" '"+selected->animations.front().name+"'.");
     selected->diagnostics.push_back("Animation source importer: "+(imported.importer.empty() ? std::string("cgltf-1.15/poima-animation-reference-1") : imported.importer));
-    validate_animation_data(*selected);imported.model=std::move(selected);return imported;
+    validate_animation_data(*selected);
+    if(source.frame_transfer) {
+        const auto& policy=*source.frame_transfer;
+        imported.model=transfer_frames(*base,*selected,*source_reference,*target_reference,policy.alignment_position,policy.alignment_rotation,provenance);
+    }else imported.model=std::move(selected);
+    return imported;
 }
 std::size_t retained_model_import_bytes(const ModelAsset& model) {
     constexpr std::size_t cap=128*1024*1024;std::size_t total=sizeof(ModelAsset);
@@ -114,6 +178,223 @@ std::size_t retained_model_import_bytes(const ModelAsset& model) {
     }
     for(const auto& text:model.diagnostics)add(text.capacity());
     return total;
+}
+namespace {
+// Recompute FK from validated local values. The supplied world array is
+// checked for consistency, never used to admit a fabricated reference frame.
+std::vector<Matrix4> reference_world(const ModelAsset& model,const ModelPose& pose,const char* role) {
+    const auto prefix=std::string("Reference-frame transfer ")+role+" reference: ";
+    auto check=[&](bool value,const char* message) { if(!value)throw std::runtime_error(prefix+message); };
+    check(std::isfinite(pose.time) && pose.time>=0 && pose.time<=3600,"invalid pose time.");
+    check(pose.local.size()==model.nodes.size() && pose.world.size()==model.nodes.size(),"pose node counts differ from the original model.");
+    std::vector<std::vector<std::uint32_t>> children(model.nodes.size());std::vector<std::uint32_t> pending;
+    for(std::uint32_t i=0;i<model.nodes.size();++i) {
+        const auto& node=pose.local[i];
+        for(const auto x:node.position)check(std::isfinite(x) && std::abs(x)<=1e9,"invalid local position.");
+        for(const auto x:node.scale)check(std::isfinite(x) && x>0 && x<=1e9,"invalid local scale.");
+        double norm=0;for(const auto x:node.rotation)norm+=x*x;
+        // A provided sampled/reference orientation can originate in a valid
+        // near-unit animation key (the curve limit is 1e-4, unlike imported
+        // defaults' 1e-6). local_matrix normalizes it for derived FK.
+        check(std::isfinite(norm) && std::abs(norm-1)<1e-4,"invalid local quaternion.");
+        const auto parent=model.nodes[i].parent;
+        if(parent<0)pending.push_back(i);else children.at(static_cast<std::size_t>(parent)).push_back(i);
+    }
+    std::vector<Matrix4> result(model.nodes.size());
+    while(!pending.empty()) {
+        const auto index=pending.back();pending.pop_back();const auto& local=pose.local[index];
+        auto matrix=local_matrix(local.position,local.rotation,local.scale);const auto parent=model.nodes[index].parent;
+        if(parent>=0)matrix=multiply(result[static_cast<std::size_t>(parent)],matrix);
+        for(std::size_t k=0;k<16;++k) {
+            check(std::isfinite(matrix[k]) && std::isfinite(pose.world[index][k]),"nonfinite global matrix.");
+            check(std::abs(matrix[k]-pose.world[index][k])<=1e-8*(1+std::abs(matrix[k])),"world matrices disagree with local FK.");
+        }
+        result[index]=matrix;for(const auto child:children[index])pending.push_back(child);
+    }
+    return result;
+}
+Quaternion basis_rotation(const Matrix4& m) {
+    Quaternion q{};const auto trace=m[0]+m[5]+m[10];
+    if(trace>0) {
+        const auto s=std::sqrt(trace+1)*2;q={(m[6]-m[9])/s,(m[8]-m[2])/s,(m[1]-m[4])/s,s/4};
+    }else if(m[0]>m[5] && m[0]>m[10]) {
+        const auto s=std::sqrt(1+m[0]-m[5]-m[10])*2;q={s/4,(m[4]+m[1])/s,(m[8]+m[2])/s,(m[6]-m[9])/s};
+    }else if(m[5]>m[10]) {
+        const auto s=std::sqrt(1+m[5]-m[0]-m[10])*2;q={(m[4]+m[1])/s,s/4,(m[9]+m[6])/s,(m[8]-m[2])/s};
+    }else {
+        const auto s=std::sqrt(1+m[10]-m[0]-m[5])*2;q={(m[8]+m[2])/s,(m[9]+m[6])/s,s/4,(m[1]-m[4])/s};
+    }
+    return normalized(q);
+}
+bool identity_rotation(const Quaternion& q) {
+    return q[0]==0 && q[1]==0 && q[2]==0 && (q[3]==1 || q[3]==-1);
+}
+bool same_rotation(const Quaternion& a,const Quaternion& b) {
+    const auto x=normalized(a),y=normalized(b);double direct=0,opposite=0;
+    for(std::size_t k=0;k<4;++k) { direct=std::max(direct,std::abs(x[k]-y[k]));opposite=std::max(opposite,std::abs(x[k]+y[k])); }
+    return std::min(direct,opposite)<=1e-12;
+}
+std::shared_ptr<const ModelAsset> transfer_frames(const ModelAsset& base,const ModelAsset& donor,
+    const ModelPose& source_reference,const ModelPose& target_reference,const Vector3& alignment_position,
+    const Quaternion& alignment_rotation,const std::vector<std::string>& provenance) {
+    validate_animation_data(base);validate_animation_data(donor);
+    require(!base.skins.empty(),"Reference-frame transfer requires a skinned base model.");
+    require(!donor.animations.empty(),"Reference-frame transfer requires selected source clips.");
+    for(const auto x:alignment_position)require(std::isfinite(x) && std::abs(x)<=1e9,"Reference-frame alignment position is outside the finite meter range.");
+    double alignment_norm=0;for(const auto x:alignment_rotation)alignment_norm+=x*x;
+    require(std::isfinite(alignment_norm) && std::abs(alignment_norm-1)<1e-6,"Reference-frame alignment must have a normalized rigid quaternion.");
+    const auto alignment_q=normalized(alignment_rotation);
+    const auto alignment=local_matrix(alignment_position,alignment_q,{1,1,1});
+    const auto source_world=reference_world(donor,source_reference,"source"),target_world=reference_world(base,target_reference,"target");
+    const auto source_hierarchy=hierarchy(donor),target_hierarchy=hierarchy(base);
+    std::map<std::uint32_t,std::uint32_t> mapping;
+    std::set<std::uint32_t> required;
+    for(const auto& skin:base.skins)for(const auto joint:skin.joints)
+        for(int node=static_cast<int>(joint);node>=0;node=base.nodes[static_cast<std::size_t>(node)].parent)required.insert(static_cast<std::uint32_t>(node));
+    for(const auto node:required) {
+        const auto found=source_hierarchy.indices.find(target_hierarchy.paths[node]);
+        if(found==source_hierarchy.indices.end())throw std::runtime_error("Reference-frame transfer is missing base joint/ancestor node "+std::to_string(node)+" '"+base.nodes[node].name+"'.");
+        mapping.emplace(found->second,node);
+    }
+    for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)
+        for(int node=static_cast<int>(channel.node);node>=0;node=donor.nodes[static_cast<std::size_t>(node)].parent) {
+            const auto index=static_cast<std::uint32_t>(node);
+            const auto found=target_hierarchy.indices.find(source_hierarchy.paths[index]);
+            if(found==target_hierarchy.indices.end())throw std::runtime_error("Reference-frame transfer has no target for source node "+std::to_string(index)+" '"+donor.nodes[index].name+"'.");
+            mapping.emplace(index,found->second);
+        }
+    auto failure=[&](std::uint32_t source,const std::string& reason) {
+        const auto target=mapping.at(source);
+        throw std::runtime_error("Reference-frame transfer source node "+std::to_string(source)+" '"+donor.nodes[source].name+"', base node "+std::to_string(target)+" '"+base.nodes[target].name+"': "+reason);
+    };
+    auto uniform=[&](std::uint32_t node,const Vector3& scale,const char* role) {
+        if(scale[0]!=scale[1] || scale[0]!=scale[2])failure(node,std::string(role)+" scale must be exactly uniform; XYZ="+decimal(scale[0])+","+decimal(scale[1])+","+decimal(scale[2])+".");
+    };
+    std::vector<Quaternion> corrections(donor.nodes.size(),{0,0,0,1});
+    double max_origin=0,max_rotation=0;
+    for(const auto& [source,target]:mapping) {
+        uniform(source,source_reference.local[source].scale,"source reference");uniform(source,target_reference.local[target].scale,"target reference");
+        uniform(source,donor.nodes[source].scale,"source imported default");uniform(source,base.nodes[target].scale,"target imported default");
+        const auto aligned=multiply(alignment,source_world[source]);double squared_origin=0;
+        for(std::size_t k=0;k<3;++k) { const auto d=aligned[12+k]-target_world[target][12+k];squared_origin+=d*d; }
+        const auto origin=std::sqrt(squared_origin);max_origin=std::max(max_origin,origin);
+        if(!std::isfinite(origin) || origin>animation_composition_translation_tolerance)
+            failure(source,"reference global origins differ by "+decimal(origin)+" meters (maximum 1e-5); changed stance/proportions are not frame-only transfer.");
+        Matrix4 correction{};
+        try { correction=multiply(inverse_affine(aligned),target_world[target]); }
+        catch(const std::exception&) { failure(source,"reference frame is not invertible."); }
+        double residual=0;
+        for(std::size_t a=0;a<3;++a)for(std::size_t b=a;b<3;++b) {
+            double dot=0;for(std::size_t row=0;row<3;++row)dot+=correction[a*4+row]*correction[b*4+row];
+            residual=std::max(residual,std::abs(dot-(a==b ? 1.0 : 0.0)));
+        }
+        const auto determinant=correction[0]*(correction[5]*correction[10]-correction[9]*correction[6])-
+            correction[4]*(correction[1]*correction[10]-correction[9]*correction[2])+correction[8]*(correction[1]*correction[6]-correction[5]*correction[2]);
+        residual=std::max(residual,std::abs(determinant-1));
+        for(const auto x:correction)if(!std::isfinite(x))failure(source,"reference basis contains nonfinite values.");
+        max_rotation=std::max(max_rotation,residual);
+        if(determinant<=0 || residual>animation_composition_scale_tolerance)
+            failure(source,"reference basis is not a proper unit rotation; rotation/scale residual="+decimal(residual)+" (maximum 1e-6).");
+        // Tiny origin/orthogonality residuals are reported numerical admission
+        // tolerances, not a guarantee for arbitrary animated scale or motion.
+        // The separable first profile re-expresses the proper rotation only.
+        double identity_error=0;for(std::size_t column=0;column<3;++column)for(std::size_t row=0;row<3;++row)
+            identity_error=std::max(identity_error,std::abs(correction[column*4+row]-(column==row ? 1.0 : 0.0)));
+        corrections[source]=identity_error<=1e-12 ? Quaternion{0,0,0,1} : basis_rotation(correction);
+    }
+    for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)if(channel.path==AnimationPath::scale)
+        for(const auto& value:channel.values)if(value[0]!=value[1] || value[0]!=value[2])
+            failure(channel.node,"source scale values and cubic tangents must be exactly uniform.");
+    auto out=std::make_shared<ModelAsset>(donor);std::size_t total_channels=0,total_keys=0,synthesized=0;
+    for(const auto& clip:out->animations) {total_channels+=clip.channels.size();for(const auto& channel:clip.channels)total_keys+=channel.times.size();}
+    auto left_rotation=[&](std::uint32_t source) {
+        const auto parent=donor.nodes[source].parent;
+        return parent<0 ? alignment_q : conjugate(corrections.at(static_cast<std::size_t>(parent)));
+    };
+    auto transformed_position=[&](std::uint32_t source,const Vector3& value,bool tangent) {
+        auto result=rotated(left_rotation(source),value);
+        if(donor.nodes[source].parent<0 && !tangent)for(std::size_t k=0;k<3;++k)result[k]+=alignment_position[k];
+        return result;
+    };
+    auto transformed_rotation=[&](std::uint32_t source,const Quaternion& value) {
+        return product(product(left_rotation(source),value),corrections[source]);
+    };
+    auto as_float=[&](std::uint32_t source,const Quaternion& value) {
+        std::array<float,4> result{};
+        for(std::size_t k=0;k<4;++k) {
+            if(!std::isfinite(value[k]) || std::abs(value[k])>1e9)failure(source,"converted curve exceeds the finite value range.");
+            result[k]=static_cast<float>(value[k]);
+        }
+        return result;
+    };
+    for(auto& clip:out->animations) {
+        std::set<std::pair<std::uint32_t,AnimationPath>> animated;
+        for(auto& channel:clip.channels) {
+            animated.emplace(channel.node,channel.path);const auto left=left_rotation(channel.node),right=corrections[channel.node];
+            const bool identity_left=identity_rotation(left);
+            if(channel.path==AnimationPath::scale)continue;
+            // Identity gauge preserves original float bytes, including cubic
+            // tangents and antipodal rotation key representations.
+            if(channel.path==AnimationPath::rotation && identity_left && identity_rotation(right))continue;
+            if(channel.path==AnimationPath::translation && identity_left &&
+                (donor.nodes[channel.node].parent>=0 || alignment_position==Vector3{0,0,0}))continue;
+            for(std::size_t index=0;index<channel.values.size();++index) {
+                const bool tangent=channel.interpolation==AnimationInterpolation::cubic && index%3!=1;
+                auto& value=channel.values[index];Quaternion converted{};
+                if(channel.path==AnimationPath::translation) {
+                    const auto xyz=transformed_position(channel.node,{value[0],value[1],value[2]},tangent);
+                    std::copy(xyz.begin(),xyz.end(),converted.begin());
+                }else {
+                    // Apply the same linear map to raw rotation values and
+                    // tangents. Normalizing values alone changes cubic Hermite
+                    // motion and the raw-dot SLERP of valid near-unit keys.
+                    converted=transformed_rotation(channel.node,{value[0],value[1],value[2],value[3]});
+                }
+                value=as_float(channel.node,converted);
+            }
+        }
+        auto add_constant=[&](std::uint32_t source,AnimationPath path,const Quaternion& value) {
+            if(animated.contains({source,path}))return;
+            require(total_channels<max_animation_channels,"Reference-frame transfer synthesized channel budget exceeded.");
+            require(total_keys<max_animation_keys,"Reference-frame transfer synthesized key budget exceeded.");
+            AnimationChannel channel;channel.node=source;channel.path=path;channel.times={0};channel.values={as_float(source,value)};
+            clip.channels.push_back(std::move(channel));++total_channels;++total_keys;++synthesized;
+        };
+        for(const auto& [source,target]:mapping) {
+            const auto& original=donor.nodes[source];const auto& desired=base.nodes[target];
+            const auto position=transformed_position(source,original.position,false);
+            if(position!=desired.position)add_constant(source,AnimationPath::translation,{position[0],position[1],position[2],0});
+            const auto rotation=normalized(transformed_rotation(source,original.rotation));
+            if(!same_rotation(rotation,desired.rotation))add_constant(source,AnimationPath::rotation,rotation);
+            if(original.scale!=desired.scale)add_constant(source,AnimationPath::scale,{original.scale[0],original.scale[1],original.scale[2],0});
+        }
+    }
+    for(const auto& [source,target]:mapping) {
+        out->nodes[source].position=base.nodes[target].position;out->nodes[source].rotation=base.nodes[target].rotation;out->nodes[source].scale=base.nodes[target].scale;
+    }
+    auto diagnostic=[&](std::string text) {
+        require(text.size()<=1024 && out->diagnostics.size()<10001,"Reference-frame transfer diagnostic budget exceeded.");out->diagnostics.push_back(std::move(text));
+    };
+    for(const auto& text:provenance)diagnostic(text);
+    diagnostic("reference-frame-v1 alignment_position_meters="+decimal(alignment_position[0])+","+decimal(alignment_position[1])+","+decimal(alignment_position[2])+
+        " alignment_rotation_xyzw="+decimal(alignment_rotation[0])+","+decimal(alignment_rotation[1])+","+decimal(alignment_rotation[2])+","+decimal(alignment_rotation[3]));
+    diagnostic("reference-frame-v1 mapped_nodes="+std::to_string(mapping.size())+" max_origin_residual_meters="+decimal(max_origin)+
+        " max_rotation_residual="+decimal(max_rotation)+" synthesized_channels="+std::to_string(synthesized));
+    diagnostic("reference-frame-v1 origin_policy=coincident-with-numerical-residual origin_tolerance_meters=1e-5 rotation_scale_tolerance=1e-6 uniform_scale=required root_policy=declared-rigid-alignment");
+    std::size_t records=0;for(const auto& [source,target]:mapping) {
+        if(records++>=64)break;
+        diagnostic("reference-frame-v1 source_node="+std::to_string(source)+" '"+donor.nodes[source].name+"' target_node="+std::to_string(target)+" '"+base.nodes[target].name+"'");
+    }
+    if(mapping.size()>64)diagnostic("reference-frame-v1 omitted_mapping_records="+std::to_string(mapping.size()-64));
+    validate_animation_data(*out);retained_model_import_bytes(*out);return out;
+}
+}
+std::shared_ptr<const ModelAsset> transfer_animation_frames(const ModelAsset& base,const ModelAsset& selected_donor,
+    const ModelPose& source_reference,const ModelPose& target_reference,const Vector3& alignment_position,const Quaternion& alignment_rotation) {
+    const std::vector<std::string> provenance{
+        "reference-frame-v1 source_reference=provided-pose source_time="+decimal(source_reference.time)+" target_reference=provided-pose target_time="+decimal(target_reference.time),
+        "reference-frame-v1 source_model_sha256="+fingerprint(selected_donor)+" target_model_sha256="+fingerprint(base)};
+    return transfer_frames(base,selected_donor,source_reference,target_reference,alignment_position,alignment_rotation,provenance);
 }
 std::shared_ptr<const ModelAsset> compose_model_animations(const ModelAsset& base,
     const std::vector<std::shared_ptr<const ModelAsset>>& donors) {

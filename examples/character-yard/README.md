@@ -24,6 +24,21 @@ Interactive Windows play also needs the Vulkan renderer and
 that artifact route does not require hostfxr or the managed bridge.
 Linux headless verification is a separate route from Windows graphical play.
 
+These reproduction commands describe the historical 0.0.71 checkpoint. Create
+a separate checkout before running them, then run all build, publication and
+export commands from that checkout:
+
+```sh
+git worktree add --detach ../poima-character-yard-0.0.71 86549b9
+cd ../poima-character-yard-0.0.71
+```
+
+The sibling destination must be new. Building current `main` produces its
+current engine version; changing a publication's version label does not make
+that build compatible with a 0.0.71 export. For a newer engine, rebuild and
+publish against its matching SDK and version, then verify that complete bundle
+separately.
+
 The module requires services epoch **7**, a **224-byte** prefix, and the named
 features `baseline_v7`, `component_collections_v1`, `animation_inertial_v1`,
 `character_input_v1` and `navigation_query_v1`. Discover the actual build's

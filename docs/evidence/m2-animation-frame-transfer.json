@@ -1,0 +1,350 @@
+{
+  "format": "poima.animation-frame-transfer-evidence",
+  "version": 1,
+  "engine_version": "0.0.73",
+  "recorded_date": "2026-10-09",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 63,
+  "authoring_contract": "poima.authoring-core v1",
+  "native_gameplay_services_abi": 7,
+  "scope": "Explicit same-topology, coincident-reference-origin bone-axis conversion with original curve/skin oracles and actual Vulkan consumers; not general retargeting or locomotion qualification.",
+  "source_sha256": {
+    "CMakeLists.txt": "ec276972a2f9dfa8d105a3b4a40a1303719f7cdb0c22da06e407cd1d7dd7bb4f",
+    "src/model_import.hpp": "add25b1e987026177a3917f18b23b0119fec00064a852240e9db1f46670d3f22",
+    "src/model_import.cpp": "50ecd320d112d5ee06e86ff569a6c34924afbacab586644db7483d6f5248e4c3",
+    "src/asset_store.hpp": "4c2e8455129797a79bb9bbd9f6e6cbd7f7084dab7a6256c92acfd52e8b8203c8",
+    "src/world.cpp": "c7b19f30f6fe24f26e6a93c4191e5a0916b1d0fc1a0beaf0aef4c9af0e5ca83b",
+    "src/world_schema.cpp": "45862c52fe648dfdfc62ac5f009749f719fbaf3c3b75b9782436bab050fb866c",
+    "tests/animation_frame_transfer.cpp": "7c0b11e139a351ee94d71f79f60cdfb33d3c388ba3b06cac68f388a49d53c61f",
+    "tests/animation_frame_transfer.py": "3637d71eb134bedb133ba04d3efa2c0c783bcba1b997937807069bb3d5636b4f",
+    "tests/animation_frame_transfer_capture.py": "a3b15200c82f2a6120c8131e739c4fa99dd037ad146fbe09f5843e489a982174",
+    "tests/frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+    "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+    "tests/fbx_capture.py": "350bde4f2005d0bd2051e35ea034a787880ed42ce9863132feb6ae69c163ef4a",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+    "tests/animation_composition_diagnostics.cpp": "33b18f5524ee005a8afb0baec5c6625719dc624134fc77734263e51ba5f03b39",
+    "tests/animation_composition_diagnostics.py": "d459368a4b1672f845e13679a8fb62b9ea724c792c8a8eeac641979df0cb3271",
+    "tests/fbx_contract.py": "b3cf3b9c64b25908b3e99ad9a7a62e6e1e85b1a29ad83c8c9caa2ba34322434f",
+    "tests/authoring_core_conformance.py": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "tests/authoring_contract_identity.py": "32e6ed2e2d9427115f883b77dd0a4e1182b5b6650737c7aa7269202ed96ad44c",
+    "tests/mcp_contract.py": "51cdb589f6fc1476cf2bb1500be12a507f4e75ea1fb3fc497ec64c3d5398992f",
+    "docs/ANIMATION_FRAME_TRANSFER.md": "97ade0b23f411643604eb3d0a61e81090fa780eda2d5cc5ef1e5f700f7e01085",
+    "docs/DOCUMENTATION.md": "a7f72f817b488381d003508868d63b4b82d88f676a9ff5ec0211bafefdbb3151",
+    "docs/PLAYBOOKS.md": "ff9f9b01cffb4ac1538524a8a51f73414e990fa0e014d0788385ac9f806d513a",
+    "docs/FBX_IMPORT.md": "bdf097d49056669faf4ea0baebd4db74de80d8f2fad06ed1c5d9dfc1869ea7c1",
+    "examples/character-yard/README.md": "a0b1dfe5466ac6235357a280dbed2047336f0b88dcec52f830895107700b6c70"
+  },
+  "builds": {
+    "linux": {
+      "passed": true,
+      "binary_sha256": "95ba32759c634801383c9fab944686d205c8d5788b15b89c2f1adb457435b96c",
+      "build_log_sha256": "6ab871db856d92502b563a56b034e710d358a1d31b08f8d731d44d924962c79d",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_and_gameplay_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    },
+    "windows": {
+      "passed": true,
+      "binary_sha256": "e7c9ea7d30f4e9c50c973da3520f17e7d3c8b97a649f450831b258a98baea596",
+      "build_log_sha256": "4cc575d64895b9c29ad657d4b613fccc620c3d347a5952257f6cf75d6c259fd1",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_and_gameplay_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    },
+    "authoring": {
+      "passed": true,
+      "binary_sha256": "7fa82119efc48c5bace986547ca3d5b6ef9aaa6e31b617cc6ce9b6219ea3be68",
+      "build_log_sha256": "86b31fb0f8eb61c6ffa72bb60189c03b979cb7738e0ecd8d105cdd63b8e5c692",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_and_gameplay_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    }
+  },
+  "native_checks": {
+    "passed": true,
+    "groups_per_host": 8,
+    "hosts": [
+      "linux-runtime",
+      "native-windows-runtime",
+      "linux-authoring-no-simulation"
+    ],
+    "cases": [
+      "Independent row-major FK/quaternion and original weighted skin oracle; permuted source IDs and nonjoint parents",
+      "Noncommuting parent/child bases and rigid root alignment",
+      "LINEAR, STEP, antipodal SLERP, cubic translation/rotation and uniform scale",
+      "Near-unit raw cubic values with unchanged original tangents; independent de Casteljau comparison",
+      "Sparse original defaults distinct from sampled source/target references",
+      "Identity basis byte preservation and repeated full cooked encoding",
+      "Unsupported topology, ambiguous names, nonfinite/inconsistent FK, nonuniform default/reference/key/tangent scales and bounded synthesis rejection",
+      "Global metre origin residual under a common root scale of 1000; input immutability and unpublished failure"
+    ],
+    "linux_log_sha256": "1f041b029e5352053ab57a550ce423bbd2956f7bfbf4bd4cb406dfe1bb8ac4fe",
+    "windows_log_sha256": "b222c2f047fbfc1b6b8bcc1ef7708e41e7f8591a69893bd81c703eb8ae98d4c2",
+    "authoring_log_sha256": "1f041b029e5352053ab57a550ce423bbd2956f7bfbf4bd4cb406dfe1bb8ac4fe"
+  },
+  "protocol_checks": {
+    "linux": {
+      "passed": true,
+      "tests": 5,
+      "rpc_count": 190,
+      "clean_owners": 6,
+      "source_hashes_unchanged": true,
+      "maximum_joint_matrix_error": 2.0626280572422218e-07,
+      "maximum_original_skin_error": 2.1286682438947935e-07,
+      "report_sha256": "abd4130dc808b7145ab907fcfb2839490618eca1bc7fe9db68d18603675c80c6"
+    },
+    "windows": {
+      "passed": true,
+      "tests": 5,
+      "rpc_count": 190,
+      "clean_owners": 6,
+      "source_hashes_unchanged": true,
+      "maximum_joint_matrix_error": 2.0626280572422218e-07,
+      "maximum_original_skin_error": 2.1286682438947935e-07,
+      "report_sha256": "729e43542ae90c77a362009a1f7caf029c5c25ad4b0a7c9f358faeb2377eb075"
+    },
+    "authoring": {
+      "passed": true,
+      "tests": 5,
+      "rpc_count": 190,
+      "clean_owners": 6,
+      "source_hashes_unchanged": true,
+      "maximum_joint_matrix_error": 2.0626280572422218e-07,
+      "maximum_original_skin_error": 2.1286682438947935e-07,
+      "report_sha256": "9920f7602b28669de7f2eb69e85e1c897f038889f7f8c543a3d7960f272cd3c7"
+    },
+    "total": {
+      "tests": 15,
+      "rpc_count": 570,
+      "clean_owners": 18
+    }
+  },
+  "vulkan_checks": {
+    "0": {
+      "passed": true,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "samples": 4,
+      "readbacks": 8,
+      "rpc_count": 31,
+      "clean_owners": 2,
+      "runtime_ticks": 30,
+      "source_files_removed_before_fresh_owner": true,
+      "authored_state_history_store_unchanged": true,
+      "maximum_pixel_channel_error": 0,
+      "nvrhi_errors": 0,
+      "independent_maximum_joint_matrix_error": 2.18673728014096e-08,
+      "independent_maximum_skin_position_error": 4.4508010055288594e-08,
+      "independent_maximum_skin_normal_error": 2.3291138684378154e-08,
+      "report_sha256": "33aae014909c5e5789749d46f62736af5672b2264b71ccd3a80e5555790f4953",
+      "captures": {
+        "initial-gpu": "4a11848fe9e4a1152d2097b70ab414f749d39a0d6a40368939988fd77b3de411",
+        "initial-cpu": "4a11848fe9e4a1152d2097b70ab414f749d39a0d6a40368939988fd77b3de411",
+        "posed-gpu": "de0eb96aa554c28454a9df9a16ae812a5bee9d3a61f1fe3feb5c469bb9bd7d93",
+        "posed-cpu": "de0eb96aa554c28454a9df9a16ae812a5bee9d3a61f1fe3feb5c469bb9bd7d93",
+        "posed-unculled": "de0eb96aa554c28454a9df9a16ae812a5bee9d3a61f1fe3feb5c469bb9bd7d93",
+        "independent": "de0eb96aa554c28454a9df9a16ae812a5bee9d3a61f1fe3feb5c469bb9bd7d93",
+        "independent-unculled": "de0eb96aa554c28454a9df9a16ae812a5bee9d3a61f1fe3feb5c469bb9bd7d93",
+        "runtime": "de0eb96aa554c28454a9df9a16ae812a5bee9d3a61f1fe3feb5c469bb9bd7d93"
+      }
+    },
+    "1": {
+      "passed": true,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "readbacks": 8,
+      "rpc_count": 31,
+      "clean_owners": 2,
+      "runtime_ticks": 30,
+      "source_files_removed_before_fresh_owner": true,
+      "authored_state_history_store_unchanged": true,
+      "maximum_pixel_channel_error": 0,
+      "nvrhi_errors": 0,
+      "independent_maximum_joint_matrix_error": 2.18673728014096e-08,
+      "independent_maximum_skin_position_error": 4.4508010055288594e-08,
+      "independent_maximum_skin_normal_error": 2.3291138684378154e-08,
+      "report_sha256": "7fba8a3a0762e60012a15f582fb2621d22b5fa38baea4db10d7f37419c4f0114",
+      "captures": {
+        "initial-gpu": "4a11848fe9e4a1152d2097b70ab414f749d39a0d6a40368939988fd77b3de411",
+        "initial-cpu": "4a11848fe9e4a1152d2097b70ab414f749d39a0d6a40368939988fd77b3de411",
+        "posed-gpu": "95464981969b21a0b28fc43fe335d6dc0f3b81c2ea4d30a72872b6ab7454e227",
+        "posed-cpu": "95464981969b21a0b28fc43fe335d6dc0f3b81c2ea4d30a72872b6ab7454e227",
+        "posed-unculled": "95464981969b21a0b28fc43fe335d6dc0f3b81c2ea4d30a72872b6ab7454e227",
+        "independent": "95464981969b21a0b28fc43fe335d6dc0f3b81c2ea4d30a72872b6ab7454e227",
+        "independent-unculled": "95464981969b21a0b28fc43fe335d6dc0f3b81c2ea4d30a72872b6ab7454e227",
+        "runtime": "95464981969b21a0b28fc43fe335d6dc0f3b81c2ea4d30a72872b6ab7454e227"
+      }
+    }
+  },
+  "regression": {
+    "exact-diagnostics-linux": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "report_sha256": "b071028373a08563b894723c2a6472ac2ba0e6b852e430dcae14d1bd802826f0"
+    },
+    "native-exact-diagnostics-linux": {
+      "passed": true,
+      "log_sha256": "a15ab697ebd16c6b444ef5cbe3d3e72010e550a1c02cb1567174e69cf0be288f",
+      "groups": 8
+    },
+    "native-fbx-linux": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "native-fbx-binary-linux": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "scoped-discovery-linux": {
+      "passed": true,
+      "log_sha256": "0e044266ce746c8ee6e1d503c3faabb1d9637a5d5fab215a0b76918e175d8f89",
+      "owner_scopes": 6,
+      "responses": 1073,
+      "state_history_files_unchanged": true
+    },
+    "fbx-protocol-linux": {
+      "passed": true,
+      "tests": 7,
+      "skipped": 0,
+      "rpc_count": 194,
+      "clean_owners": 9,
+      "report_sha256": "fa20cb03ddf2673486ce7788e13325963fd893da5652a14336fc9b4d76104ad4"
+    },
+    "authoring-core-linux": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "88cf6e601147f578732ee9e33b5527501272679404a9f06b1791948994e3b77a"
+    },
+    "exact-diagnostics-windows": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "report_sha256": "06450b5573872e4bd4e25f5c48e183606cd1fe5b932125eb5e8ab3f6ee595fca"
+    },
+    "native-exact-diagnostics-windows": {
+      "passed": true,
+      "log_sha256": "c27b31dadab951c4df58bfc916378b33f3b0e95fcfbbf0e0b48a1e9948501a03",
+      "groups": 8
+    },
+    "native-fbx-windows": {
+      "passed": true,
+      "log_sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+    },
+    "native-fbx-binary-windows": {
+      "passed": true,
+      "log_sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+    },
+    "scoped-discovery-windows": {
+      "passed": true,
+      "log_sha256": "53069d4415f7304a144e8245c2582743509744412314f1285d86bd0fa16f804b",
+      "owner_scopes": 6,
+      "responses": 1073,
+      "state_history_files_unchanged": true
+    },
+    "fbx-protocol-windows": {
+      "passed": true,
+      "tests": 7,
+      "skipped": 1,
+      "rpc_count": 183,
+      "clean_owners": 8,
+      "report_sha256": "4efc68eee41fc37fbe2338c51acf9fc59d3fe216633a95ed5e873f4f86d53fcf"
+    },
+    "authoring-core-windows": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "8581208a55abec0e3fafd42f9609c96592aa9f7e69c249d652ba4149e70e5146"
+    },
+    "exact-diagnostics-authoring": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "report_sha256": "bbbd6e8278c151f9e4aab3d64e648deecf63c09aea5acda6ddeb8230f68d50b6"
+    },
+    "native-exact-diagnostics-authoring": {
+      "passed": true,
+      "log_sha256": "a15ab697ebd16c6b444ef5cbe3d3e72010e550a1c02cb1567174e69cf0be288f",
+      "groups": 8
+    },
+    "native-fbx-authoring": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "native-fbx-binary-authoring": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "scoped-discovery-authoring": {
+      "passed": true,
+      "log_sha256": "bec145e87ceb1e9e274c842b4dfd2f2a4562f3201d54342fc1f331f9e7af8d5a",
+      "owner_scopes": 6,
+      "responses": 1067,
+      "state_history_files_unchanged": true
+    },
+    "fbx-protocol-authoring": {
+      "passed": true,
+      "tests": 7,
+      "skipped": 0,
+      "rpc_count": 194,
+      "clean_owners": 9,
+      "report_sha256": "eb18e4224978692e19e1d04df169ba197aa7548ef9a6de4f2d233023d953c7ae"
+    },
+    "authoring-core-authoring": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "9287c6f72410c0d91cd8b844e2e985c571ea5b378092d13f0b68a915f4e7dfe5"
+    },
+    "mcp-linux": {
+      "passed": true,
+      "log_sha256": "6c697515ca62e55501070e57cc2ac9d62798b6514a3fff1e786a8ea79d7f5974",
+      "tests": 8
+    },
+    "identity-linux": {
+      "passed": true,
+      "log_sha256": "ae4528e6e121aceb75e8424d4e5340944d376acb7de977e233b718eb37aa8f35",
+      "tests": 2
+    },
+    "mcp-windows": {
+      "passed": true,
+      "log_sha256": "5b5db5c5aeb3ac7f924507fa69dbb91c422942f9352ea06f76a18cb71d3d2e89",
+      "tests": 8
+    },
+    "identity-windows": {
+      "passed": true,
+      "log_sha256": "6999e03321fcf808d30f4bad4df359fe1e6ae2d3dbcc356e58f9b85fe918955d",
+      "tests": 2
+    }
+  },
+  "preserved_compiled_game": {
+    "passed": true,
+    "scope": "Existing 0.0.71 Linux Native AOT Character Yard artifact on 0.0.73 runtime; compiled artifact bytes retained.",
+    "rpc_count": 1550,
+    "check_groups": 8,
+    "clean_owners": 2,
+    "native_artifact_descriptor_sha256": "1cc7662253806664dc968edc997061260e76d9b238f1c7069b851f7326e32298",
+    "report_sha256": "ec588bf2ae8be4c7176e3ecf9ccda9995573f6851593333788df9f24b9394449"
+  },
+  "development_corrections": [
+    "Review identified quaternion key normalization would alter valid cubic motion; values and tangents receive the same linear frame map, with independent raw-control regression before frozen compilation.",
+    "An initial API verifier sorted vertices by floating coordinates and mispaired equal-X source vertices after a sub-ULP basis residual. The final verifier uses original triangle vertex indices and unchanged geometric tolerances; native sources were unchanged after the frozen build. Failed initial evidence was retained."
+  ],
+  "limits": [
+    "Only same named topology with coincident reference joint origins and exactly uniform mapped scales; no proportion/contact/stance retargeting.",
+    "Reference origin and rigidity thresholds are admission tolerances, not universal numerical-error bounds for arbitrary motion or animated scale.",
+    "Selected curves retain original timing/interpolation, including original importer baking; the converter does not improve source animation.",
+    "Converted root motion remains in the visual rig; no controller extraction or locomotion-library qualification.",
+    "GPU proof uses one original analytic weighted triangle, not a representative character or game-scale performance benchmark.",
+    "Hardware readbacks are not OS screenshots or physical mouse/controller checks.",
+    "No new C# gameplay ABI, editor conversion controls, package or platform qualification."
+  ]
+}

@@ -58,6 +58,13 @@ animation channels are appended. Unavailable donor textures can therefore
 prevent import. The base and donor data remain immutable, and a rejected import
 does not publish a partial model or change authored state.
 
+Different bone axes at the same reference joint locations can use the explicit
+[reference-frame conversion](ANIMATION_FRAME_TRANSFER.md). Its opt-in policy
+requires chosen original reference poses, matching named ancestry and exactly
+uniform mapped scales. It preserves target geometry and inverse binds; it
+does not adapt different body proportions or solve contacts. Omit that policy
+to retain the exact-skeleton behavior described above.
+
 ## Inspect a composition failure
 
 An incompatible skeleton still returns `-32050`. In 0.0.72, that rejection also

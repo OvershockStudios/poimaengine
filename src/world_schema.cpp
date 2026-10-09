@@ -127,7 +127,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 62}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 63}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -319,12 +319,25 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Procedural brick/plaster recipes bake compiled CPU work without world changes or worker file I/O. One active material bake and eight retained records per service; explicit polling publishes immutable image packages and a recipe descriptor. Cancellation before publication vetoes even completed CPU results. Jobs are authoring-only; runtime closure contains referenced baked images. These evolving methods are outside authoring-core v1.");
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
+    const Json reference_pose={{"oneOf",Json::array({
+        object_schema({{"kind",{{"const","rest"}}}},{"kind"}),
+        object_schema({{"kind",{{"const","sample"}}},{"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},
+            {"time",{{"type","number"},{"minimum",0},{"maximum",3600}}}},{"kind","clip","time"})})}};
+    const auto frame_alignment=object_schema({
+        {"position",vector(Json{{"type","number"},{"minimum",-1e9},{"maximum",1e9}},3)},
+        {"rotation",vector(Json{{"type","number"},{"minimum",-1},{"maximum",1}},4)}},{"position","rotation"});
+    auto frame_transfer=object_schema({{"policy",{{"const","reference-frame-v1"}}},
+        {"source_pose",reference_pose},{"target_pose",reference_pose},{"alignment",frame_alignment}},
+        {"policy","source_pose","target_pose"});
+    frame_transfer["description"]="Explicit same-origin rigid bone-frame conversion. References sample original unfiltered source/base takes; rest uses imported defaults. Alignment defaults to identity and requires normalized XYZW rotation. Different origins/proportions and nonuniform scale reject. Target rest/geometry/inverse binds and runtime actor ownership remain unchanged.";
     const auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},
-        {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}}},{"source"});
+        {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
+        {"frame_transfer",frame_transfer}},{"source"});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
         {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
-    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching, no retargeting. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
+    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching by default; explicitly requested reference-frame-v1 converts rigid bone bases at matching joint origins, without proportion retargeting. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
+    result["invariants"].push_back("Animation frame_transfer is opt-in reference-frame-v1: explicit imported-rest or sampled source/target references, source sampling before selected-take filtering, and optional rigid alignment. Same named topology and coincident global origins are required; mapped scales and scale curves must be uniform. Conversion preserves curve interpolation and includes transformed sparse defaults; target geometry/rest/inverse binds are unchanged. It does not infer bind poses, remove root motion or move runtime controllers. Failures publish no partial model.");
     const Json composition_identity={{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",9999}},Json{{"type","null"}}})}};
     const Json composition_name={{"anyOf",Json::array({Json{{"type","string"},{"minLength",1},{"maxLength",256}},Json{{"type","null"}}})}};
     const Json nonnegative_metric={{"type","number"},{"minimum",0}};

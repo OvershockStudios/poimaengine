@@ -18,6 +18,11 @@ Quickstarts lead to an actual playable, exported result. Examples use licensed
 or original content with reproducible setup. Screenshots and captures identify
 the workflow they show and are refreshed when that workflow changes.
 
+Supported editor workflows also need human instructions: where to find the
+controls, how to perform the edit and what to inspect afterward. A passing
+headless test alone does not document the editor. Provide a searchable task and
+concept index, cross-links and a locally usable copy of the manual.
+
 ## API and package reference
 
 Generate reference facts from authoritative schemas and compiled APIs where
@@ -94,3 +99,9 @@ coverage; an index entry alone does not establish completeness. Examples and
 reference must also explain interactions between systems, not just isolated
 features. Publish the support/version matrix with the matching release so a
 reader can distinguish documented support from a planned capability.
+
+Keep that coverage inventory beside the release checks. Compare it with live
+capability/schema discovery and compiled public interfaces so newly supported
+commands, components and package features cannot silently miss documentation.
+Mark coverage gaps explicitly; do not infer a complete manual from the number
+of pages or from the existence of a subsystem guide.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/assets.hpp"
+#include "poima/animation.hpp"
 #include "fbx.hpp"
 #include <optional>
 #include <stdexcept>
@@ -12,10 +13,20 @@ struct ImportedModel {
     // Empty selects the unchanged legacy glTF encoder identity.
     std::string importer;
 };
+struct AnimationReferencePose {
+    std::optional<std::uint32_t> clip;
+    double time=0;
+};
+struct AnimationFrameTransfer {
+    AnimationReferencePose source_reference,target_reference;
+    std::array<double,3> alignment_position{0,0,0};
+    std::array<double,4> alignment_rotation{0,0,0,1};
+};
 struct ModelAnimationSource {
     std::filesystem::path source;
     std::optional<std::uint32_t> clip;
     std::string name;
+    std::optional<AnimationFrameTransfer> frame_transfer;
 };
 enum class AnimationCompositionIssueKind {
     missing_joint_or_ancestor, missing_animation_target, rest_frame
@@ -49,7 +60,13 @@ private:
     AnimationCompositionReport report_;
 };
 ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention=FbxNormalConvention::opengl);
-ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNormalConvention convention);
+ImportedModel import_animation_source(const ModelAnimationSource& source,FbxNormalConvention convention,const ModelAsset* base=nullptr);
+// Explicit, same-topology change of reference coordinate frames. Does not
+// alter base rest geometry or inverse binds, adapt proportions, or infer poses.
+std::shared_ptr<const ModelAsset> transfer_animation_frames(const ModelAsset& base,const ModelAsset& selected_donor,
+    const ModelPose& source_reference,const ModelPose& target_reference,
+    const std::array<double,3>& alignment_position={0,0,0},
+    const std::array<double,4>& alignment_rotation={0,0,0,1});
 std::size_t retained_model_import_bytes(const ModelAsset& model);
 std::string encode_model_with_importer(const ModelAsset& model,const std::string& importer);
 // Exact hierarchy/rest-frame composition, not humanoid retargeting. Returns a

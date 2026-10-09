@@ -1,8 +1,32 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.72**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.73**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.73 adds opt-in [reference-pose bone-frame conversion](ANIMATION_FRAME_TRANSFER.md)
+for separate clips with matching named ancestry, coincident reference joint
+origins and exactly uniform mapped scales. Choose original rest or sampled
+reference poses and an optional rigid component alignment. The converter
+re-expresses translation/rotation curves and cubic tangents, synthesizes missing
+constant properties where needed, and preserves target geometry, hierarchy,
+rest transforms and inverse binds. Default exact-skeleton composition stays
+unchanged. Focused discovery reports schema revision 63; authoring-core v1,
+protocol 1 and native gameplay services epoch 7 remain unchanged.
+
+Each of the three builds passes eight independent native conversion groups
+and five API tests. The combined 570 RPCs and 18 clean owners compare known
+joint matrices and original skin weights, check original reference selections
+before take filtering, reject unsupported conversions without publication and
+reopen cooked motion without source files. Windows Vulkan checks pass 16
+readbacks across AMD and NVIDIA: GPU/CPU preview, independently calculated
+geometry/normals and 30-tick runtime playback agree exactly in this analytic
+triangle fixture. Existing exact-composition diagnostics, ASCII/binary FBX,
+focused discovery, stable authoring and MCP contracts pass. The existing 0.0.71
+Linux Native AOT Character Yard artifact also passes against the new runtime.
+Different proportions, contact/stance retargeting and a representative locomotion
+library remain unfinished; these checks do not establish game-scale performance
+or physical input. [Evidence](evidence/m2-animation-frame-transfer.json).
 
 Version 0.0.72 gives exact-skeleton animation-composition failures structured
 `error.data`: the first incompatible donor, source-local node identities,

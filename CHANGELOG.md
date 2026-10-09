@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.73
+
+- Add explicit [reference-pose bone-frame conversion](docs/ANIMATION_FRAME_TRANSFER.md) for compatible named hierarchies with coincident joint origins and exactly uniform mapped scales. Retain target geometry and inverse binds; choose original reference takes independently of selected motion and declare component alignment when needed.
+- Preserve interpolation, key times, raw quaternion norms and cubic tangents; add constant channels for transformed source defaults absent from selected clips. Keep default exact-skeleton composition and failed-import publication behavior unchanged.
+- Qualify three native builds, independent joint/skin motion and recovery checks, 16 Windows Vulkan readbacks across both GPUs, and the existing compiled character game. Preserve authoring and MCP contracts. [Evidence](docs/evidence/m2-animation-frame-transfer.json).
+- Link the conversion playbook, document its runnable checks and limits, clarify historical Character Yard version setup, and require human workflow instructions and a capability-based documentation coverage inventory.
+
 ## 0.0.72
 
 - Return versioned, bounded node and local-frame reports when exact-skeleton clip composition rejects an incompatible donor. Include missing-node roles, translation/scale differences, rotation diagnostics and complete issue counts. Keep existing admission thresholds and compatible cooked output.
