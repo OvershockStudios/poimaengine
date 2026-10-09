@@ -1,6 +1,6 @@
 # Author, edit and observe a 3D scene
 
-Poima 0.0.4 connects its persistent world service to a native Vulkan/NVRHI forward preview. Agents can create a hierarchy, assign box geometry and a camera, edit it, and capture the resulting image without a GUI editor. Rendering consumes an immutable native snapshot of the current authored revision. It does not modify the world document or its transaction revision.
+The persistent world service connects to a native Vulkan/NVRHI forward preview. Agents can create a hierarchy, assign box geometry and a camera, edit it, and capture the resulting image without a GUI editor. Rendering consumes an immutable native snapshot of the current authored revision. It does not modify the world document or its transaction revision.
 
 ![Courtyard authored through JSON-RPC](evidence/m2-courtyard.png)
 
@@ -27,7 +27,7 @@ That build explicitly returns `-32003` for a valid capture request because it ha
 
 ## Discoverable components
 
-These scene components were introduced in schema revision 2; `world.describe` currently reports revision 11, including runtime/play operations, materials and authored lights. Entity creation supplies a Transform; add or replace optional components using `component.set` and remove them using `component.remove`. The mandatory Transform cannot be removed. Component queries and inspection expose the same data used by the renderer.
+Use `world.describe` to discover the installed build's schema revision and available operations. The following components provide the basic box-and-camera path; [assets](ASSETS.md), [lighting](LIGHTING.md) and [runtime](RUNTIME.md) document the additional paths. Entity creation supplies a Transform; add or replace optional components using `component.set` and remove them using `component.remove`. The mandatory Transform cannot be removed. Component queries and inspection expose the same data used by the renderer.
 
 | Component | Data and meaning |
 | --- | --- |
@@ -39,7 +39,7 @@ Camera capture requires an orthonormal world basis: a scaled or sheared camera h
 
 `entity.world_transform` accepts an entity ID and optional revision guard, returning a column-major 4×4 world matrix. It preserves shear rather than forcing a lossy decomposition into rotation and scale. `entity.get` can retrieve any built-in component. `entity.query` accepts a component-type filter alongside its existing parent, revision and pagination options.
 
-Saved documents retain format version 1 and gain optional component types. Documents with only Transform still load. Older binaries reject documents containing component types they do not understand; there is no backward-compatibility promise for prerelease component schemas.
+This basic scene uses document format version 1. [Custom component schemas](CUSTOM_COMPONENTS.md) upgrade a document to version 2. Documents with only Transform still load. Older binaries reject documents containing component types they do not understand; use the [authoring compatibility contract](AUTHORING_API_COMPATIBILITY.md) when choosing matching tools.
 
 ## Capture contract
 
@@ -51,7 +51,7 @@ The preview shares unit-box geometry, uploads per-object transform/material cons
 
 Stale revisions fail with `-32009`; a missing camera/component with `-32004`; invalid settings, camera transforms or reserved/existing output paths with `-32602`; an unbuilt renderer with `-32003`; and renderer failure with `-32020`. Rendering failure does not mutate the world. A filesystem error during BMP writing can leave an incomplete output file; discard artifacts from failed requests. Existing-file protection is a preflight check, not a lock against unrelated concurrent writers.
 
-Each capture currently creates and destroys its own graphics context, serializes GPU work and presents two frames. This proves the authoring-to-image path, not player frame times or viewport iteration latency. Resize/device-loss recovery, Khronos validation layers, persistent GPU caches, asynchronous captures, object picking, auxiliary render views and a render graph remain future work.
+Each capture creates and destroys its own graphics context, serializes GPU work and presents two frames. This proves the authoring-to-image path, not player frame times or viewport iteration latency. Full device-loss recovery, Khronos validation, persistent GPU caches, asynchronous captures and a production render graph remain unfinished. The [desktop editor](DESKTOP_EDITOR.md) separately provides persistent Scene/Game panels, camera controls and CPU geometry picking.
 
 Poima 0.0.12 adds independent camera/shadow frustum rejection and a `render_diagnostics` result. Optional Boolean `culling` (default true) and `profile` (default false) enable comparison and CPU/GPU intervals. See [the diagnostics contract](RENDER_DIAGNOSTICS.md) for counter definitions and timing boundaries.
 

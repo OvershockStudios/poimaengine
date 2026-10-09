@@ -15,12 +15,13 @@ python3 scripts/bootstrap_tools.py --only dotnet
 .cache/toolchains/dotnet-10.0.401/dotnet build managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj -c Release
 .cache/toolchains/dotnet-10.0.401/dotnet build examples/managed/DoorGame/Poima.DoorGame.csproj -c Release
 cmake --preset runtime-headless -DPOIMA_ENABLE_MANAGED_GAMEPLAY=ON \
+  -DPOIMA_ENABLE_GAME_UI=ON \
   -DPOIMA_DOTNET_HOST_HEADERS="$PWD/.cache/toolchains/dotnet-10.0.401/packs/Microsoft.NETCore.App.Host.linux-x64/10.0.12/runtimes/linux-x64/native"
 cmake --build --preset runtime-headless
 ctest --preset runtime-headless
 ```
 
-For the Windows player, configure and build `windows-runtime` with the same two `-D` options after completing the [Windows toolchain setup](BUILD.md). The host headers contain conditional Windows/Linux definitions and were used for both tested builds. These paths identify the measured SDK; another SDK requires its matching header path and separate qualification. The CMake presets leave managed gameplay off by default, and the authoring-only `headless` build needs no .NET installation.
+For the Windows player, configure and build `windows-runtime` with the same `-D` options after completing the [Windows toolchain setup](BUILD.md). The host headers contain conditional Windows/Linux definitions and were used for both tested builds. These paths identify the measured SDK; another SDK requires its matching header path and separate qualification. The CMake presets leave managed gameplay and game UI off by default, and the authoring-only `headless` build needs no .NET installation. Enable the UI option for samples that author native panels or controls, including Collection Room and Patrol Room.
 
 Keep the bridge's output directory together, including `Poima.Gameplay.dll`, its dependency metadata and `Poima.ManagedBridge.runtimeconfig.json`. The game assembly is portable IL; the native executable must load a CoreCLR installation for its own operating system. Tested installations:
 

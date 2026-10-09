@@ -12,7 +12,7 @@ From the repository root, using .NET 10:
 dotnet build examples/collection-game/Poima.CollectionGame.csproj -c Release --artifacts-path build/sample-collection/dotnet-artifacts -o build/sample-collection/managed
 ```
 
-Use a matching Poima executable with simulation, managed gameplay and native game UI enabled, plus the matching managed bridge. Windows example (replace the hostfxr version/path with your installed runtime):
+Follow the [managed runtime and bridge setup](../../docs/MANAGED_GAMEPLAY.md#build), enabling `POIMA_ENABLE_MANAGED_GAMEPLAY` and `POIMA_ENABLE_GAME_UI` as well as simulation. Keep the matching bridge output together. The launcher requires Python and the native executable to run on the same operating system; it does not translate WSL filesystem paths for a Windows process. Run this Windows example from native Windows PowerShell (replace the hostfxr version/path with your installed runtime):
 
 ```powershell
 python examples/collection-game/run.py `

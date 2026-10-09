@@ -8,20 +8,23 @@ A small first-person stealth encounter driven by compiled C# decisions and nativ
 
 The guard is a camera-free CharacterController. Its movement uses `ICharacterInputGame` and `SetCharacterInput`; it never changes transforms or feeds fabricated NPC player inputs. Remembered position, decision mode, timers, waypoint, alerts and outcome live in registered `PatrolState`, so compatible reloads and native saves retain decisions. Same-tick entity reads observe prepared pre-physics state, rather than the staged movement command.
 
-Build the sample from the repository root with a .NET 10 SDK:
+First follow the [managed runtime and bridge setup](../../../docs/MANAGED_GAMEPLAY.md#build), including the `POIMA_ENABLE_MANAGED_GAMEPLAY` and `POIMA_ENABLE_GAME_UI` options. Keep the matching bridge output together. Build the sample from the repository root with the pinned .NET 10 SDK:
 
 ```sh
-dotnet build examples/managed/PatrolGame/Poima.PatrolGame.csproj -c Release --disable-build-servers
+.cache/toolchains/dotnet-10.0.401/dotnet build examples/managed/PatrolGame/Poima.PatrolGame.csproj -c Release --disable-build-servers
 ```
 
 Supply your built native engine, CoreCLR host library, matching managed bridge and sample assembly. The launcher creates a new output directory, world and save store. Use a different output directory to retry a new match.
 
+From WSL, using the Windows Vulkan runtime and its Windows CoreCLR installation:
+
 ```sh
 python3 examples/managed/PatrolGame/run.py \
-  --binary build/runtime/poima \
-  --hostfxr /path/to/libhostfxr.so \
-  --bridge /path/to/Poima.ManagedBridge.dll \
+  --binary build/windows-runtime/poima.exe \
+  --hostfxr '/mnt/c/Program Files/dotnet/host/fxr/10.0.12/hostfxr.dll' \
+  --bridge managed/Poima.ManagedBridge/bin/Release/net10.0/Poima.ManagedBridge.dll \
   --assembly examples/managed/PatrolGame/bin/Release/net10.0/Poima.PatrolGame.dll \
+  --windows-interop \
   --output build/patrol-play
 ```
 
@@ -33,7 +36,7 @@ For headless independent qualification:
 
 ```sh
 python3 tests/patrol_game_contract.py \
-  --binary build/runtime/poima \
+  --binary build/runtime-headless/poima \
   --hostfxr /path/to/libhostfxr.so \
   --bridge /path/to/Poima.ManagedBridge.dll \
   --assembly examples/managed/PatrolGame/bin/Release/net10.0/Poima.PatrolGame.dll \

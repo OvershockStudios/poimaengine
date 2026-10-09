@@ -47,6 +47,17 @@ Recipes must use operations the engine actually supplies. A future capability
 matrix is planning documentation, not a runnable playbook. Long tasks compose
 small guides rather than duplicating a complete manual in every prompt.
 
+Each playbook names its tested engine/package versions, required build options,
+platform and toolchain. State whether a path is an input, a new output or a
+directory that can be reused. Show expected observations at meaningful steps,
+not just the command to run. Separate a request's acknowledgement from its
+completed result, and explain what survives reload, restart and export.
+
+Provide focused paths for different readers: a concept guide for learning, a
+recipe for completing a task, and a reference for resolving an exact field or
+error. Agents should retrieve the relevant task and schema section as needed;
+ordinary edits must not require loading the complete manual into context.
+
 The [task index](PLAYBOOKS.md) lists runnable examples and focused guides with
 their build prerequisites and completion checks. Start there when choosing a
 workflow; discover the actual installed capabilities before executing it.
@@ -76,3 +87,10 @@ test migrations, errors and exported-game setup where those are documented.
 Keep observed results and limitations available without repeating development
 boilerplate on every page. A broken core tutorial, missing supported API
 reference or undocumented required setup blocks the corresponding release gate.
+
+Track coverage against supported capabilities and public APIs. For each, record
+its manual/reference entry, task example, troubleshooting and verification
+coverage; an index entry alone does not establish completeness. Examples and
+reference must also explain interactions between systems, not just isolated
+features. Publish the support/version matrix with the matching release so a
+reader can distinguish documented support from a planned capability.

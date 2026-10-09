@@ -5,6 +5,19 @@ repository root. Discover the current build's capabilities and focused schemas
 before making changes. A checked-in example does not enable features missing
 from your executable.
 
+For a small context budget, select one task, request capability discovery and
+then retrieve only its relevant method, mutation and component schemas. Read
+the linked subsystem invariants before changing state; load deeper reference
+when a prerequisite, error or observation calls for it. Follow the
+[focused discovery guide](WORLD_SERVICE.md) rather than repeatedly sending the
+complete command catalogue to an agent.
+
+Compatibility has several separate parts: the engine build version, the
+[authoring-core contract](AUTHORING_API_COMPATIBILITY.md), the required gameplay
+service prefix/features and cooked asset formats. A matching authoring contract
+does not establish that a gameplay artifact or renderer is compatible. Use
+the guide's recorded evidence and the actual installed capabilities together.
+
 ## Start with a complete example
 
 | Result | Guide | Prerequisites | Completion check |
