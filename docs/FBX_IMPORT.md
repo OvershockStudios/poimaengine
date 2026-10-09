@@ -58,6 +58,81 @@ animation channels are appended. Unavailable donor textures can therefore
 prevent import. The base and donor data remain immutable, and a rejected import
 does not publish a partial model or change authored state.
 
+## Inspect a composition failure
+
+An incompatible skeleton still returns `-32050`. In 0.0.72, that rejection also
+supplies `error.data` with `type: "animation_composition"`, `version: 1` and
+`policy: "exact-skeleton-v1"`. Retrieve the record schema through focused
+`world.describe` discovery for `asset.import`, under
+`x-error-data.animation_composition`. Other import errors can have no data.
+
+`donor_index` identifies the first incompatible entry in your `animations`
+array. The report compares **normalized local rest transforms**, not inferred
+bind poses or the first animated frame. It checks required skin joints and
+their ancestors, plus every selected animation target and its ancestors.
+Unreferenced nonskeletal nodes do not become required merely by existing.
+
+| Issue kind | Meaning |
+| --- | --- |
+| `missing_joint_or_ancestor` | A required base skeleton path is absent from the donor. The base node is identified; donor identity/name are null. |
+| `missing_animation_target` | A selected donor target or ancestor has no matching base path. The donor node is identified; base identity/name are null. |
+| `rest_frame` | The named paths match, but at least one local translation, rotation or scale comparison fails. Both source-local node IDs and names are reported. |
+
+Existing-node records state whether the node belongs to the required skeleton,
+the animated ancestry, or both. A missing donor node cannot be classified by
+donor animation membership. Node IDs are indices in the respective imported
+models; they are not instantiated entity IDs. Names are display information,
+with invalid UTF-8 repaired for the response. Identity matching uses the original
+unambiguous hierarchy paths, which are not included in the compact response.
+
+Frame issues report component mismatch flags and these measurements:
+
+- Maximum absolute local translation difference, in the normalized local metre
+  coordinates **before parent transforms**; this is not world displacement.
+- Maximum absolute local scale difference.
+- Raw absolute quaternion dot used by admission, and the separately normalized
+  orientation difference in degrees. Equivalent `q` and `-q` rotations agree.
+
+The unchanged admission limits are translation at most `1e-5`, scale at most
+`1e-6`, and raw absolute quaternion dot at least `1 - 1e-10`. The normalized
+angle is diagnostic; it is not a replacement acceptance threshold.
+
+`required_base_nodes`, `checked_source_nodes` and `matched_nodes` count the
+required base closure, unique examined donor nodes, and donor nodes passing
+both path and frame checks. `issue_count` includes all failures for that donor,
+including absent required base nodes. `issues` retains at most 64 records in
+deterministic order; `truncated` explicitly identifies omitted details. The
+report does not compare later donor files after the first failed composition.
+
+The [MCP interface](MCP.md) preserves the full native error in its text and
+structured tool result with `isError: true`. The [Python client](PYTHON_CLIENT.md)
+preserves this payload in `RpcError.data`:
+
+```python
+try:
+    result = client.call("asset.import", {
+        "source": character_path,
+        "animations": [{"source": walk_path, "clip": 0, "name": "Walk"}],
+    })
+except RpcError as error:
+    report = error.data
+    if (error.code == -32050 and isinstance(report, dict)
+            and report.get("type") == "animation_composition"
+            and report.get("version") == 1):
+        print(report["donor_index"], report["issue_count"], report["truncated"])
+        for issue in report["issues"]:
+            print(issue["kind"], issue["base_node"], issue["donor_node"])
+    else:
+        raise
+```
+
+Supply an open client and your actual source paths, and import `RpcError` from
+`poima_client`. Inspect the source rig/export settings or choose compatible
+clips before submitting a new import. The rejected operation leaves world
+state and model publication unchanged; retrying the same incompatible files
+does not correct their frames. Reference-pose transfer and general retargeting
+require explicit policies and remain separate work.
+
 ## Supported import profile
 
 - ASCII and binary FBX; triangulated static or linear/rigid-skinned geometry.
@@ -142,13 +217,32 @@ controller, collision body or retargeted rig has been created.
 After a [headless build](BUILD.md), run the registered import tests:
 
 ```sh
-ctest --test-dir build/headless -R '^fbx_' --output-on-failure
+ctest --test-dir build/headless \
+  -R '^(fbx_|animation_composition_diagnostics_native$)' --output-on-failure
 ```
 
 The fixtures are original analytic geometry and takes, generated locally in
 both ASCII and binary encodings. The checks cover independent pose/material
 expectations, composition, rejected inputs and owner recovery. They do not
 download character art.
+
+Run the structured-error protocol checks through the Python client with Python
+3.10+, choosing a new output directory:
+
+```sh
+python3 tests/animation_composition_diagnostics.py \
+  --binary build/headless/poima --output build/composition-diagnostics-example
+```
+
+Without an optional external source directory, five tests run and one original
+character-source check is skipped. The locally generated fixtures verify known
+translation, rotation and scale differences, missing nodes, error discovery,
+Unicode names and same/fresh-owner recovery. Success ends with `OK (skipped=1)`
+and records `passed: true` in the output's `evidence.json`. The native test also
+checks threshold boundaries, deterministic truncation and unchanged successful
+cooked output. Neither command downloads assets or performs retargeting.
+The [0.0.72 evidence](evidence/m2-animation-composition-diagnostics.json) records
+the qualified configurations and additional original-source checks.
 
 For the Windows Vulkan path from WSL, use a fresh output directory:
 

@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.72
+
+- Return versioned, bounded node and local-frame reports when exact-skeleton clip composition rejects an incompatible donor. Include missing-node roles, translation/scale differences, rotation diagnostics and complete issue counts. Keep existing admission thresholds and compatible cooked output.
+- Expose the report schema through focused `asset.import` discovery and verify full payload preservation through the Python client and MCP. Document deliberate recovery and add the workflow to the [task playbooks](docs/PLAYBOOKS.md).
+- Qualify native Windows, Linux runtime and simulation-disabled authoring, including analytic numerical checks, bounded reports, unchanged failed-import state and same/fresh-owner recovery. Preserve existing FBX and authoring contracts and run the previous compiled Character Yard artifact against the new runtime. [Evidence](docs/evidence/m2-animation-composition-diagnostics.json).
+
 ## 0.0.71
 
 - Add [Character Yard](examples/character-yard/README.md), a compiled imported-character game with native capsule routing, source animation, dispatch controls and durable checkpoints. Preserve the source rig and align its visual wrapper with the controller; the supplied arm-opening take is not locomotion.

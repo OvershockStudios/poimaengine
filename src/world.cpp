@@ -47,7 +47,9 @@ using namespace world_detail;
 constexpr std::uint64_t max_revision = 9007199254740991ULL;
 struct Error : std::runtime_error {
     int code;
-    Error(int value, const std::string& message) : std::runtime_error(message), code(value) {}
+    Json data;
+    Error(int value, const std::string& message, Json details = Json())
+        : std::runtime_error(message), code(value), data(std::move(details)) {}
 };
 void require(bool test, const std::string& message, int code = -32602) {
     if (!test) throw Error(code, message);
@@ -1490,6 +1492,39 @@ public:
             }
             return result;
         } catch(const Error&) { throw; }
+        catch(const AnimationCompositionError& error) {
+            const auto& report=error.report();
+            Json issues=Json::array();
+            auto diagnostic_name=[](const std::string& value) {
+                return Json::parse(Json(value).dump(-1,' ',false,Json::error_handler_t::replace));
+            };
+            for(const auto& issue:report.issues) {
+                const auto kind=issue.kind==AnimationCompositionIssueKind::rest_frame ? "rest_frame" :
+                    issue.kind==AnimationCompositionIssueKind::missing_joint_or_ancestor ? "missing_joint_or_ancestor" : "missing_animation_target";
+                Json row={{"kind",kind},{"base_node",issue.base_node ? Json(*issue.base_node) : Json(nullptr)},
+                    {"donor_node",issue.donor_node ? Json(*issue.donor_node) : Json(nullptr)},
+                    {"base_name",issue.base_node ? diagnostic_name(issue.base_name) : Json(nullptr)},
+                    {"donor_name",issue.donor_node ? diagnostic_name(issue.donor_name) : Json(nullptr)},
+                    {"required_skeleton",issue.required_skeleton},{"animated_ancestry",issue.animated_ancestry}};
+                if(issue.kind==AnimationCompositionIssueKind::rest_frame) {
+                    row["metrics"]={{"max_translation_meters",issue.max_translation_meters},
+                        {"max_scale_absolute",issue.max_scale_absolute},{"absolute_quaternion_dot",issue.absolute_quaternion_dot},
+                        {"rotation_degrees",issue.rotation_degrees}};
+                    row["mismatches"]={{"translation",issue.translation_mismatch},{"rotation",issue.rotation_mismatch},{"scale",issue.scale_mismatch}};
+                }
+                issues.push_back(std::move(row));
+            }
+            throw Error(-32050,asset_diagnostic(error.what()),
+                {{"type","animation_composition"},{"version",1},{"policy","exact-skeleton-v1"},
+                 {"comparison","normalized_local_rest"},{"donor_index",report.donor_index},
+                 {"required_base_nodes",report.required_base_nodes},{"checked_source_nodes",report.checked_source_nodes},
+                 {"matched_nodes",report.matched_nodes},{"issue_count",report.issue_count},
+                 {"limit",animation_composition_issue_limit},{"truncated",report.truncated},
+                 {"thresholds",{{"translation_meters",animation_composition_translation_tolerance},
+                     {"scale_absolute",animation_composition_scale_tolerance},
+                     {"absolute_quaternion_dot_min",animation_composition_quaternion_dot_min}}},
+                 {"issues",std::move(issues)}});
+        }
         catch(const std::exception& error) { throw Error(-32050,asset_diagnostic(error.what())); }
     }
     void instantiate_asset(Json& staged,const Json& op,std::set<std::string>& changed) const {
@@ -2985,6 +3020,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
         if(method=="session.close" || method=="host.shutdown")impl_->closed=true;
     }catch(const Error& error) {
         response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",error.code},{"message",error.what()}}}};
+        if(!error.data.is_null())response["error"]["data"]=error.data;
     }catch(const Json::exception&) {
         response={{"jsonrpc","2.0"},{"id",id},{"error",{{"code",-32602},{"message","Invalid operation parameters."}}}};
     }catch(const std::exception& error) {

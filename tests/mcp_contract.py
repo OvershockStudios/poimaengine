@@ -2,6 +2,7 @@
 """Real stdio MCP authoring/persistence and shared-host checks; no GPU qualification."""
 # SPDX-License-Identifier: Apache-2.0
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import queue
@@ -223,6 +224,81 @@ class McpContract(unittest.TestCase):
         client.world(method, {'revision': 0}, error=-32009)
         self.assertEqual((client.world('world.inspect'), client.world('world.history'),
                           self.path.read_bytes()), before)
+
+    def test_animation_composition_error_data_is_preserved_and_atomic(self):
+        from fbx_fixture import write_ascii_fixtures
+        sources = write_ascii_fixtures(Path(self.temp.name) / 'sources')
+        base, donor, valid = (sources / name for name in
+                              ('skin.fbx', 'rest_mismatch.fbx', 'move_donor.fbx'))
+        def digest(path):
+            return hashlib.sha256(path.read_bytes()).hexdigest()
+        source_hashes = {path: digest(path) for path in (base, donor, valid)}
+        client = self.client()
+        client.world('world.transact', {'request_id': uuid.uuid4().hex, 'base_revision': 0,
+                     'ops': [{'op': 'entity.create', 'id': uuid.uuid4().hex,
+                              'name': 'Retained MCP authoring'}]})
+        imported = client.world('asset.import', {'source': native(base)})
+        nodes = client.world('asset.inspect', {'asset': imported['asset'], 'section': 'nodes'})['items']
+        child = next(node for node in nodes if node['name'] == 'Child')
+        def state():
+            store = Path(str(self.path) + '.assets')
+            return (client.world('world.inspect'), client.world('world.history'),
+                    self.path.read_bytes(), {path.relative_to(store).as_posix(): digest(path)
+                    for path in sorted(store.rglob('*')) if path.is_file()})
+        before = state()
+        focused = client.tool('poima_discover', {'view': 'method', 'name': 'asset.import'})
+        self.assertEqual(set(focused['methods']), {'asset.import'})
+        schema = focused['methods']['asset.import']['x-error-data']['animation_composition']
+        self.assertIs(schema['additionalProperties'], False)
+        self.assertEqual(schema['properties']['type']['const'], 'animation_composition')
+        self.assertEqual(schema['properties']['policy']['const'], 'exact-skeleton-v1')
+        self.assertEqual(schema['properties']['issues']['maxItems'], 64)
+        params = {'source': native(base), 'animations': [native(donor)]}
+        # Client.tool verifies MCP isError and equality of the COMPLETE JSON
+        # structuredContent with decoded text content on each rejected call.
+        error = client.world('asset.import', params, error=-32050)
+        self.assertEqual(set(error), {'code', 'message', 'data'})
+        report = error['data']
+        self.assertEqual(report['type'], 'animation_composition')
+        self.assertEqual(report['version'], 1)
+        self.assertEqual(report['policy'], 'exact-skeleton-v1')
+        self.assertEqual(report['comparison'], 'normalized_local_rest')
+        self.assertEqual((report['donor_index'], report['required_base_nodes'],
+                          report['checked_source_nodes'], report['matched_nodes'],
+                          report['issue_count'], report['limit']), (0, 3, 3, 2, 1, 64))
+        self.assertIs(report['truncated'], False)
+        self.assertEqual(report['thresholds'], {'translation_meters': 1e-5,
+                         'scale_absolute': 1e-6, 'absolute_quaternion_dot_min': 1-1e-10})
+        self.assertEqual(len(report['issues']), 1)
+        issue = report['issues'][0]
+        self.assertEqual(set(issue), {'kind', 'base_node', 'donor_node', 'base_name',
+                                     'donor_name', 'required_skeleton', 'animated_ancestry',
+                                     'metrics', 'mismatches'})
+        self.assertEqual(issue['kind'], 'rest_frame')
+        self.assertIs(type(issue['base_node']), int)
+        self.assertIs(type(issue['donor_node']), int)
+        self.assertEqual(issue['base_node'], child['index'])
+        self.assertEqual(issue['donor_node'], child['index'])
+        self.assertEqual((issue['base_name'], issue['donor_name']), ('Child', 'Child'))
+        self.assertIs(issue['required_skeleton'], True)
+        self.assertIs(issue['animated_ancestry'], True)
+        self.assertEqual(set(issue['metrics']), {'max_translation_meters', 'max_scale_absolute',
+                                               'absolute_quaternion_dot', 'rotation_degrees'})
+        self.assertAlmostEqual(issue['metrics']['max_translation_meters'], .01, delta=1e-10)
+        self.assertEqual(issue['metrics']['max_scale_absolute'], 0)
+        self.assertEqual(issue['metrics']['absolute_quaternion_dot'], 1)
+        self.assertEqual(issue['metrics']['rotation_degrees'], 0)
+        self.assertEqual(issue['mismatches'], {'translation': True, 'rotation': False, 'scale': False})
+        self.assertEqual(state(), before)
+        self.assertEqual(client.world('asset.import', params, error=-32050), error)
+        self.assertEqual(state(), before)
+        generic = client.world('asset.import', {'source': native(sources / 'truncated.fbx')}, error=-32050)
+        self.assertNotIn('data', generic, 'Generic import failure fabricated composition metrics')
+        self.assertEqual(state(), before)
+        accepted = client.world('asset.import', {'source': native(base), 'animations': [native(valid)]})
+        self.assertEqual(accepted['animations'], 1)
+        self.assertEqual(state()[:3], before[:3])
+        self.assertEqual({path: digest(path) for path in source_hashes}, source_hashes)
 
     def test_shared_endpoint_receipts_conflicts_and_detach(self):
         endpoint = 'mcp-' + uuid.uuid4().hex

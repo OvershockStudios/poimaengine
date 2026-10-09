@@ -1,0 +1,244 @@
+{
+  "format": "poima.animation-composition-diagnostics-evidence",
+  "version": 1,
+  "engine_version": "0.0.72",
+  "recorded_date": "2026-10-09",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 62,
+  "authoring_contract": "poima.authoring-core v1",
+  "native_gameplay_services_abi": 7,
+  "scope": "Bounded exact-skeleton local-rest rejection diagnostics, agent-facing error preservation and atomic import recovery; no retargeting or graphics qualification.",
+  "source_sha256": {
+    "CMakeLists.txt": "64bc7de452085a61fc479b5ee4766ca1e2c5bc9b685ce3ec7f125b742bead52a",
+    "src/model_import.hpp": "40bf547bef9b47a154a1108c4a6cbe435feedf737b74b8298ce17789c0eb668d",
+    "src/model_import.cpp": "d1fd558b2e53a106e2bb5be2928ae81bc46892e954539460844560b702bea3a1",
+    "src/world.cpp": "8b834553c5aed74645b256cfa3e5c82c0593fc693b8233295763b025c4faac81",
+    "src/world_schema.cpp": "873d2f798641c2270c0abc60fec22d09d2d2fb16b754874324a9c07cba26bd19",
+    "tests/animation_composition_diagnostics.cpp": "33b18f5524ee005a8afb0baec5c6625719dc624134fc77734263e51ba5f03b39",
+    "tests/animation_composition_diagnostics.py": "d459368a4b1672f845e13679a8fb62b9ea724c792c8a8eeac641979df0cb3271",
+    "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+    "tests/fbx_contract.py": "b3cf3b9c64b25908b3e99ad9a7a62e6e1e85b1a29ad83c8c9caa2ba34322434f",
+    "tests/mcp_contract.py": "51cdb589f6fc1476cf2bb1500be12a507f4e75ea1fb3fc497ec64c3d5398992f",
+    "tests/authoring_core_conformance.py": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "tests/authoring_contract_identity.py": "32e6ed2e2d9427115f883b77dd0a4e1182b5b6650737c7aa7269202ed96ad44c",
+    "docs/FBX_IMPORT.md": "1644dca1d1a533dfcabb83a7f2fbcd6a4b318a226b33adbf1820a95df939f60d",
+    "docs/DOCUMENTATION.md": "3d643ef7af80a2cd20a66a677bdc036f61c0daf6703b9ddb20ba7f14d751baa8",
+    "docs/PLAYBOOKS.md": "a03f1003121ffc49e0e4f9706b7c30b4bd689dd88a9bc50c8f2445d9d7c62153"
+  },
+  "builds": {
+    "linux": {
+      "passed": true,
+      "binary_sha256": "ca66bef711b564515e0211ec8381f1cbd93fb16028203cadc909dfe1036bf02b",
+      "build_log_sha256": "a3564680a1160049f860ca12cb022bf758f6420df218564b564a452a2b7639e2",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    },
+    "windows": {
+      "passed": true,
+      "binary_sha256": "c86e828aa79f7b5c0a965bb8d94f9e7a39434ad5fe51af5beea41a9046ac3681",
+      "build_log_sha256": "abd2f3374f3afd23a9f8b616ee4cfa5e87323d154684ed496ce40cac282098b9",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    },
+    "authoring": {
+      "passed": true,
+      "binary_sha256": "b20866008fa9e4bbb99250b8b02a204d8550fbeb54d17972662a99b37157c982",
+      "build_log_sha256": "ca5b88b2e0ac139dcad1a980f7e8075657ab6af989888663ce6a7597aa446ac9",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    }
+  },
+  "native_checks": {
+    "passed": true,
+    "groups_per_host": 8,
+    "hosts": [
+      "linux-runtime",
+      "native-windows-runtime",
+      "linux-authoring-no-simulation"
+    ],
+    "test_sha256": "33b18f5524ee005a8afb0baec5c6625719dc624134fc77734263e51ba5f03b39",
+    "authoring_log_sha256": "a15ab697ebd16c6b444ef5cbe3d3e72010e550a1c02cb1567174e69cf0be288f",
+    "cases": [
+      "Inclusive and next-representable translation, scale and raw-dot boundaries",
+      "q/-q equivalence, source-local node permutations and unchanged successful cooked bytes",
+      "Independent analytic local TRS measurements, including 120-degree rotation",
+      "Required skin ancestry and selected animated ancestry; each node checked once",
+      "Missing joints, ancestors and animation targets with explicit nullable identities",
+      "First incompatible donor after a compatible donor",
+      "70 unique issues: complete totals, 64 records and deterministic truncation",
+      "Input immutability, no published partial composition and preserved generic validation guards",
+      "Near-unit quaternion residual: unchanged raw-dot rejection and separately normalized zero angle"
+    ]
+  },
+  "protocol_checks": {
+    "linux": {
+      "passed": true,
+      "tests": 6,
+      "skipped": 0,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "source_hashes_unchanged": true,
+      "report_sha256": "f5708972ba0ea8a1c837f8e7a0ba82ec13502c1c9657bd643dc0defb775258c1"
+    },
+    "windows": {
+      "passed": true,
+      "tests": 6,
+      "skipped": 0,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "source_hashes_unchanged": true,
+      "report_sha256": "5e289a4edac767192c366334eb25ab2a9c9324ee6b206e8d002ce5c95cf6ddf8"
+    },
+    "authoring": {
+      "passed": true,
+      "tests": 6,
+      "skipped": 0,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "source_hashes_unchanged": true,
+      "report_sha256": "275c6cc8bd152f56f740c0c6f28d29f062b180e72230e94bc45fcb3e012dbb29"
+    },
+    "total": {
+      "tests": 18,
+      "rpc_count": 306,
+      "clean_owners": 21,
+      "checks": [
+        "Original analytic FBX inputs with independently specified translation/rotation/scale differences",
+        "Python RpcError preserves full native error.data without message parsing",
+        "Strict bounded focused asset.import error schema and generic import errors without fabricated metrics",
+        "Repeated identical rejection and same-owner successful recovery",
+        "Exact failed-import world state/history/document/populated-store preservation",
+        "Fresh owner preserves persisted world/store and explicitly starts empty session-local history",
+        "Read-only original licensed character donors receive exact-rest reports; these are native observations, not independent original-donor numerical oracles",
+        "Unicode node names retained; invalid input rejected without publication"
+      ]
+    }
+  },
+  "regression": {
+    "fbx-linux": {
+      "passed": true,
+      "completed_tests": 7,
+      "skipped": 0,
+      "rpc_count": 194,
+      "clean_owners": 9,
+      "report_sha256": "4b4706c011235373ed6e6ea87f744dd37a9347f2e80790e11950ec812d28c010"
+    },
+    "fbx-windows": {
+      "passed": true,
+      "completed_tests": 6,
+      "skipped": 1,
+      "rpc_count": 183,
+      "clean_owners": 8,
+      "report_sha256": "8112ff00d64b9c7b1497307e9220c6e06cb98cf1a62ca2aabef27cf9a36e1564"
+    },
+    "fbx-authoring": {
+      "passed": true,
+      "completed_tests": 7,
+      "skipped": 0,
+      "rpc_count": 194,
+      "clean_owners": 9,
+      "report_sha256": "e7a98f523c10589e51814450ef8726068ca754b8a8dd242b960574963063a04d"
+    },
+    "fbx-total": {
+      "completed_tests": 20,
+      "rpc_count": 571,
+      "clean_owners": 26,
+      "skipped": 1
+    },
+    "fbx-skipped-scope": "One Windows POSIX invalid-byte filename check",
+    "native-fbx": {
+      "passed": true,
+      "ascii_and_binary_all_three_hosts": true,
+      "cases": "Independent geometry/poses, bind cancellation, take selection, separate clips, codec and rejection guards"
+    },
+    "scoped-discovery": {
+      "passed": true,
+      "owner_scopes_per_build": 6,
+      "authoring_responses": 1067,
+      "authoring_log_sha256": "bec145e87ceb1e9e274c842b4dfd2f2a4562f3201d54342fc1f331f9e7af8d5a",
+      "linux_and_windows_native_checks_passed": true,
+      "state_history_files_unchanged": true
+    },
+    "authoring-core-linux": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "b8343b35086d087201172d9ba9e694c54cb903b49abfa535b57de02000851c83"
+    },
+    "authoring-core-windows": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "08f411271bfb49222969b849f47434175d327d07537225ef36623ba760ba546e"
+    },
+    "authoring-core-authoring": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "0ba4a913a06386c42baffcf49ca373f31fa5e5c109f9df91cb1039a03f7f2b38"
+    },
+    "identity-linux": {
+      "passed": true,
+      "tests": 2,
+      "log_sha256": "e2b66718d49c07e0ac37033471d01e9a773725c3d6c4e0069752c505723ab421",
+      "scope": "Standalone and actual shared-headless stable identity"
+    },
+    "mcp-linux": {
+      "passed": true,
+      "tests": 8,
+      "log_sha256": "3814d218110b2789fe2a111f18555618a64a54dc7df89e541bf98b02f6c7d8c5",
+      "new_check": "Real stdio MCP preserves complete structured/text error data, precise independent 0.01m mismatch, atomic rejection and same-owner recovery"
+    },
+    "identity-windows": {
+      "passed": true,
+      "tests": 2,
+      "log_sha256": "2778c104a63d53da9a416eb06bdc7b3d33f532ef5875587d72d3efb1e6c44d8a",
+      "scope": "Standalone and actual shared-headless stable identity"
+    },
+    "mcp-windows": {
+      "passed": true,
+      "tests": 8,
+      "log_sha256": "c97dd1d667047205f1a08f99d1d0cc4f08321412103a91f9f000b829f2e5630e",
+      "new_check": "Real stdio MCP preserves complete structured/text error data, precise independent 0.01m mismatch, atomic rejection and same-owner recovery"
+    }
+  },
+  "documented_verifier": {
+    "passed": true,
+    "completed_tests": 5,
+    "skipped": 1,
+    "skipped_scope": "Optional external character sources not supplied",
+    "no_network_or_asset_download": true,
+    "report_sha256": "f04cfcb5bed5910e182ccf2e3a0f28077637c19cfc0e2538ee8be59cf912b76a",
+    "command": "python3 tests/animation_composition_diagnostics.py --binary build/headless/poima --output NEW_DIRECTORY",
+    "ctest_selection": "fbx_fixture, fbx_native, animation_composition_diagnostics_native, fbx_native_binary, fbx_contract"
+  },
+  "preserved_compiled_game": {
+    "passed": true,
+    "scope": "Existing 0.0.71 Linux Native AOT Character Yard artifact on 0.0.72 runtime; artifact bytes retained, no gameplay rebuild",
+    "rpc_count": 1550,
+    "check_groups": 8,
+    "clean_owners": 2,
+    "native_artifact_descriptor_sha256": "1cc7662253806664dc968edc997061260e76d9b238f1c7069b851f7326e32298",
+    "report_sha256": "5217c5a7a820e2b656826a035737eae09a7a11aab505f5b87af211302a467f71",
+    "captures": 0
+  },
+  "recorded_development_corrections": [
+    "An initial build rejected a nested schema initializer. The initializer was corrected before the complete frozen three-host cohort.",
+    "An initial verifier incorrectly compared history across owner restart. It now checks exact persisted world/store separately and requires explicitly empty fresh session-local history; same-owner failure assertions remain exact."
+  ],
+  "limits": [
+    "The exact matching policy and numerical admission thresholds are unchanged.",
+    "Only the first incompatible donor is diagnosed; issues beyond 64 retain totals but omit details.",
+    "Comparison uses normalized local rest transforms, not inferred bind/reference/first-animation poses.",
+    "Normalized rotation angle is diagnostic; raw quaternion dot remains the acceptance predicate.",
+    "Successful cooked model identities, stable authoring-core v1 and native gameplay services ABI7 remain unchanged.",
+    "No locomotion transfer, generalized retargeting, new GUI controls, physical input, GPU observations or production performance are qualified here."
+  ]
+}

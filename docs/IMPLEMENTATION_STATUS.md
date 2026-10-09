@@ -1,8 +1,30 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.71**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.72**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.72 gives exact-skeleton animation-composition failures structured
+`error.data`: the first incompatible donor, source-local node identities,
+missing-node roles, component mismatch flags and local TRS measurements. The
+report keeps complete counts and at most 64 issue records. Focused discovery
+publishes its strict schema at revision 62, and the Python client preserves
+the native payload. The [recovery guide](FBX_IMPORT.md#inspect-a-composition-failure)
+explains the existing thresholds, normalized local-rest comparison and safe
+next steps. It does not infer bind poses or retarget clips.
+
+Linux runtime, native Windows runtime and simulation-disabled authoring each
+pass eight native diagnostic check groups and six protocol tests. The combined
+306 RPCs and 21 clean owners cover original analytic TRS inputs, missing nodes,
+bounded records, same-owner recovery and fresh-owner persisted state. Failed
+imports preserve authored state, history and the populated asset store.
+Successful cooked composition remains unchanged. Existing ASCII/binary FBX,
+scoped discovery and stable authoring-contract checks also pass. Preserved
+0.0.71 Linux Native AOT Character Yard gameplay passes against the new runtime.
+Eight real stdio MCP tests on each OS verify complete text/structured error
+payloads, atomic rejection and same-owner recovery alongside existing contracts.
+This checkpoint does not add locomotion clips or qualify retargeting, new GUI
+controls or graphics performance. [Evidence](evidence/m2-animation-composition-diagnostics.json).
 
 Version 0.0.71 adds [Character Yard](../examples/character-yard/README.md), a
 compiled C# game using the original imported figure. Its camera-free capsule

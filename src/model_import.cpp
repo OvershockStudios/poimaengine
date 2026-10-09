@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <numbers>
 #include <set>
 #include <stdexcept>
 
@@ -38,14 +39,29 @@ Hierarchy hierarchy(const ModelAsset& model) {
     }
     return result;
 }
-bool equal_frame(const ModelNode& a,const ModelNode& b) {
+AnimationCompositionIssue frame_difference(const ModelNode& a,const ModelNode& b) {
+    AnimationCompositionIssue result;
     for(std::size_t k=0;k<3;++k) {
-        if(std::abs(a.position[k]-b.position[k])>1e-5)return false;
-        if(std::abs(a.scale[k]-b.scale[k])>1e-6)return false;
+        const auto translation=std::abs(a.position[k]-b.position[k]);
+        const auto scale=std::abs(a.scale[k]-b.scale[k]);
+        result.max_translation_meters=std::max(result.max_translation_meters,translation);
+        result.max_scale_absolute=std::max(result.max_scale_absolute,scale);
+        result.translation_mismatch=result.translation_mismatch || translation>animation_composition_translation_tolerance;
+        result.scale_mismatch=result.scale_mismatch || scale>animation_composition_scale_tolerance;
     }
-    // q and -q describe the same rotation; avoid a false bind-frame mismatch.
-    double dot=0;for(std::size_t k=0;k<4;++k)dot+=a.rotation[k]*b.rotation[k];
-    return std::abs(dot)>=1-1e-10;
+    // q and -q describe the same rotation; avoid a false local-rest orientation mismatch.
+    double dot=0,norm_a=0,norm_b=0;
+    for(std::size_t k=0;k<4;++k) {
+        dot+=a.rotation[k]*b.rotation[k];
+        norm_a+=a.rotation[k]*a.rotation[k];norm_b+=b.rotation[k]*b.rotation[k];
+    }
+    result.absolute_quaternion_dot=std::abs(dot);
+    result.rotation_mismatch=!(result.absolute_quaternion_dot>=animation_composition_quaternion_dot_min);
+    // Orientation diagnostics normalize the comparison, while admission keeps
+    // the existing raw absolute dot and its exact threshold above.
+    const auto normalized_dot=std::clamp(result.absolute_quaternion_dot/std::sqrt(norm_a*norm_b),0.0,1.0);
+    result.rotation_degrees=2*std::acos(normalized_dot)*180/std::numbers::pi;
+    return result;
 }
 }
 ImportedModel import_model(const std::filesystem::path& source,FbxNormalConvention convention) {
@@ -120,15 +136,68 @@ std::shared_ptr<const ModelAsset> compose_model_animations(const ModelAsset& bas
         require(bool(donors[donor_index]),"Null animation donor.");const auto& donor=*donors[donor_index];
         validate_animation_data(donor);require(!donor.animations.empty(),"Animation donor contains no clips.");
         const auto donor_hierarchy=hierarchy(donor);std::map<std::uint32_t,std::uint32_t> mapping;
-        auto bind=[&](std::uint32_t donor_node) {
+        AnimationCompositionReport report;report.donor_index=donor_index;report.required_base_nodes=required.size();report.issues.reserve(animation_composition_issue_limit);
+        std::set<std::uint32_t> required_source,animated_ancestry;
+        for(const auto base_node:required) {
+            const auto found=donor_hierarchy.indices.find(base_hierarchy.paths[base_node]);
+            if(found!=donor_hierarchy.indices.end())required_source.insert(found->second);
+        }
+        for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)
+            for(int node=static_cast<int>(channel.node);node>=0;node=donor.nodes[static_cast<std::size_t>(node)].parent)
+                animated_ancestry.insert(static_cast<std::uint32_t>(node));
+        enum class Match { unchecked,missing,rest_frame,matched };
+        std::vector<Match> matches(donor.nodes.size(),Match::unchecked);
+        auto issue=[&](AnimationCompositionIssue value) {
+            ++report.issue_count;
+            if(report.issues.size()<animation_composition_issue_limit)report.issues.push_back(std::move(value));
+            else report.truncated=true;
+        };
+        auto inspect_node=[&](std::uint32_t donor_node) {
+            if(matches[donor_node]!=Match::unchecked)return;
+            ++report.checked_source_nodes;
             const auto found=base_hierarchy.indices.find(donor_hierarchy.paths[donor_node]);
-            require(found!=base_hierarchy.indices.end(),"Animation donor hierarchy differs from the base; exact-skeleton composition cannot retarget it.");
-            require(equal_frame(base.nodes[found->second],donor.nodes[donor_node]),"Animation donor rest frame differs from the base; retargeting is required.");
-            mapping.emplace(donor_node,found->second);
+            AnimationCompositionIssue value;
+            if(found==base_hierarchy.indices.end()) {
+                matches[donor_node]=Match::missing;value.kind=AnimationCompositionIssueKind::missing_animation_target;
+            }else {
+                value=frame_difference(base.nodes[found->second],donor.nodes[donor_node]);
+                if(!value.translation_mismatch && !value.scale_mismatch && !value.rotation_mismatch) {
+                    matches[donor_node]=Match::matched;mapping.emplace(donor_node,found->second);++report.matched_nodes;return;
+                }
+                matches[donor_node]=Match::rest_frame;value.base_node=found->second;value.base_name=base.nodes[found->second].name;
+            }
+            value.donor_node=donor_node;value.donor_name=donor.nodes[donor_node].name;
+            value.required_skeleton=required_source.contains(donor_node);value.animated_ancestry=animated_ancestry.contains(donor_node);
+            issue(std::move(value));
+        };
+        // Gather the complete bounded report before rejection. Required base
+        // nodes retain their prior sorted order; animated closure uses stable
+        // clip/channel/ancestor traversal, comparing each source node once.
+        for(const auto base_node:required) {
+            const auto found=donor_hierarchy.indices.find(base_hierarchy.paths[base_node]);
+            if(found!=donor_hierarchy.indices.end())inspect_node(found->second);
+            else {
+                AnimationCompositionIssue value;value.kind=AnimationCompositionIssueKind::missing_joint_or_ancestor;
+                value.base_node=base_node;value.base_name=base.nodes[base_node].name;value.required_skeleton=true;
+                issue(std::move(value));
+            }
+        }
+        for(const auto& clip:donor.animations)for(const auto& channel:clip.channels)
+            for(int node=static_cast<int>(channel.node);node>=0;node=donor.nodes[static_cast<std::size_t>(node)].parent)
+                inspect_node(static_cast<std::uint32_t>(node));
+        // Preserve existing validation/error precedence and successful output
+        // ordering. Cached matches avoid repeating frame comparisons here.
+        auto bind=[&](std::uint32_t donor_node) {
+            if(matches[donor_node]==Match::missing)
+                throw AnimationCompositionError("Animation donor hierarchy differs from the base; exact-skeleton composition cannot retarget it.",std::move(report));
+            if(matches[donor_node]==Match::rest_frame)
+                throw AnimationCompositionError("Animation donor rest frame differs from the base; retargeting is required.",std::move(report));
         };
         for(const auto base_node:required) {
             const auto found=donor_hierarchy.indices.find(base_hierarchy.paths[base_node]);
-            require(found!=donor_hierarchy.indices.end(),"Animation donor is missing a base skeleton joint/ancestor.");bind(found->second);
+            if(found==donor_hierarchy.indices.end())
+                throw AnimationCompositionError("Animation donor is missing a base skeleton joint/ancestor.",std::move(report));
+            bind(found->second);
         }
         for(const auto& clip:donor.animations) {
             require(!clip.name.empty() && clip_names.insert(clip.name).second,"Duplicate/empty donor clip name; rename takes before combining them.");

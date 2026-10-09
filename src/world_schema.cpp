@@ -6,6 +6,7 @@
 #include "material_service.hpp"
 #include "navigation_schema.hpp"
 #include "asset_provenance.hpp"
+#include "model_import.hpp"
 #include "ui_authoring_schema.hpp"
 #include <nlohmann/json.hpp>
 #include <string_view>
@@ -126,7 +127,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 61}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 62}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -324,6 +325,40 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
         {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
     methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching, no retargeting. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
+    const Json composition_identity={{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",9999}},Json{{"type","null"}}})}};
+    const Json composition_name={{"anyOf",Json::array({Json{{"type","string"},{"minLength",1},{"maxLength",256}},Json{{"type","null"}}})}};
+    const Json nonnegative_metric={{"type","number"},{"minimum",0}};
+    auto composition_issue=object_schema({
+        {"kind",{{"enum",{"missing_joint_or_ancestor","missing_animation_target","rest_frame"}}}},
+        {"base_node",composition_identity},{"donor_node",composition_identity},
+        {"base_name",composition_name},{"donor_name",composition_name},
+        {"required_skeleton",{{"type","boolean"}}},{"animated_ancestry",{{"type","boolean"}}},
+        {"metrics",object_schema({{"max_translation_meters",nonnegative_metric},{"max_scale_absolute",nonnegative_metric},
+            {"absolute_quaternion_dot",nonnegative_metric},{"rotation_degrees",{{"type","number"},{"minimum",0},{"maximum",180}}}},
+            {"max_translation_meters","max_scale_absolute","absolute_quaternion_dot","rotation_degrees"})},
+        {"mismatches",object_schema({{"translation",{{"type","boolean"}}},{"rotation",{{"type","boolean"}}},{"scale",{{"type","boolean"}}}},
+            {"translation","rotation","scale"})}},
+        {"kind","base_node","donor_node","base_name","donor_name","required_skeleton","animated_ancestry"});
+    Json composition_fields;
+    composition_fields["if"]["properties"]["kind"]["const"]="rest_frame";
+    composition_fields["then"]["required"]={"metrics","mismatches"};
+    composition_fields["else"]["not"]["anyOf"]=Json::array({
+        Json{{"required",Json::array({"metrics"})}},Json{{"required",Json::array({"mismatches"})}}});
+    composition_issue["allOf"]=Json::array({composition_fields});
+    methods["asset.import"]["x-error-data"]["animation_composition"]=object_schema({
+        {"type",{{"const","animation_composition"}}},{"version",{{"const",1}}},
+        {"policy",{{"const","exact-skeleton-v1"}}},{"comparison",{{"const","normalized_local_rest"}}},
+        {"donor_index",{{"type","integer"},{"minimum",0},{"maximum",31}}},
+        {"required_base_nodes",rev},{"checked_source_nodes",rev},{"matched_nodes",rev},{"issue_count",rev},
+        {"limit",{{"const",animation_composition_issue_limit}}},{"truncated",{{"type","boolean"}}},
+        {"thresholds",object_schema({{"translation_meters",{{"const",animation_composition_translation_tolerance}}},
+            {"scale_absolute",{{"const",animation_composition_scale_tolerance}}},
+            {"absolute_quaternion_dot_min",{{"const",animation_composition_quaternion_dot_min}}}},
+            {"translation_meters","scale_absolute","absolute_quaternion_dot_min"})},
+        {"issues",{{"type","array"},{"minItems",1},{"maxItems",animation_composition_issue_limit},{"items",composition_issue}}}},
+        {"type","version","policy","comparison","donor_index","required_base_nodes","checked_source_nodes","matched_nodes",
+         "issue_count","limit","truncated","thresholds","issues"});
+    result["invariants"].push_back("An exact-skeleton composition failure returns asset.import error -32050 with versioned animation_composition data: first incompatible donor, complete issue counts and at most 64 node records. It compares normalized local rest transforms, not recovered bind poses. No partial model is published. Other import failures may have no data.");
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
     const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};
