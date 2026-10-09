@@ -1,0 +1,695 @@
+{
+  "format": "poima.character-workflow-qualification",
+  "version": 1,
+  "engine_version": "0.0.71",
+  "date": "2026-10-09",
+  "passed": true,
+  "scope": [
+    "Compiled imported-character game, original source-pose checks, typed routing, checkpoints and Windows native export.",
+    "Windows Vulkan presentation; Linux native headless gameplay. Native UI layout checks require a presentation-enabled build.",
+    "This sample has one stationary arm-opening take, not locomotion clips, motion matching, IK or retargeting."
+  ],
+  "sources": {
+    "CMakeLists.txt": "6ad53d734e7a5ee9d80f01ccc1e37d8d1e2b5f63134f8089fef048bc1fe7cf6e",
+    "examples/character-yard/CharacterYardGame.cs": "c258703e581fe3d7620d5ed586fb678f2853fdf47029c005ad6005c055b181c3",
+    "examples/character-yard/Poima.CharacterYardGame.csproj": "a811c325cca3a0c5e635fa396f3293f282407a353b35f8c8a815505765ae067f",
+    "examples/character-yard/run.py": "06c526d07d70c86d8f8207d3bbfb7e6b83b1bfccf98f33962342bcbd12e13cce",
+    "tests/character_yard_contract.py": "59bb4afae0dcd21ebddaf12cf7d3e785c3f085f0c9d08ac289b6c65f696258b6",
+    "tests/character_yard_bundle.py": "146e4dc5b98e03d4018737dab6181fe2b51232e6f6db31fd82c7a301f576f299",
+    "tests/imported_character_contract.py": "038190fba749b5cda6d7dd5f2fb682fdb7c9ad1b945715085d7144ee5e6c39f1",
+    "scripts/publish_native_gameplay.py": "c95b9bd0020de7e2c433921e6394be26e3886646247d01f43c0e53a6e3b71d57"
+  },
+  "source_asset": {
+    "title": "Rigged Figure",
+    "creator": "Cesium",
+    "copyright": 2017,
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "source_url": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/RiggedFigure/glTF-Binary/RiggedFigure.glb",
+    "sha256": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+    "bytes": 50116,
+    "nodes": 22,
+    "joints": 19,
+    "vertices": 370,
+    "triangles": 256,
+    "clips": 1,
+    "duration_seconds": 1.25,
+    "source_modified": false
+  },
+  "native_builds": [
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "seconds": 76.04476347499985,
+      "binary_sha256": "87f1389ab3e329e4e830e36a77e676ab751034af47e47a8fc64cafd3826b72c6"
+    },
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "seconds": 83.33363141399968,
+      "binary_sha256": "fffce161d8b49bd226fb74cbde75c0bceb6534d3aa3b4f1f30ef78df5ce9fbb5"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "seconds": 67.7291043639998,
+      "binary_sha256": "3be94fb39c726e83ba6659921fe8c0aed5cd120d265abf6e06651a37be76d378"
+    }
+  ],
+  "publication": [
+    {
+      "target": "linux",
+      "sdk": "10.0.401",
+      "exit_code": 0,
+      "seconds": 79.1288467000013,
+      "descriptor_sha256": "1cc7662253806664dc968edc997061260e76d9b238f1c7069b851f7326e32298",
+      "library_sha256": "aa6090229869d933cd1e192cafcb244618de055580f9c801cb0ba724cc0b3115",
+      "metadata_sha256": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+      "state_bytes": 240,
+      "state_fields": 41,
+      "services_version": 7,
+      "minimum_services_bytes": 224,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1"
+      ],
+      "payload_files": 8,
+      "native_header_verified": true
+    },
+    {
+      "target": "windows",
+      "sdk": "10.0.401",
+      "exit_code": 0,
+      "seconds": 33.94134637100069,
+      "descriptor_sha256": "2fe73d3e7a58c4b6e4727de0d97e8c8cb0a0b3abca726b3669f3f4422e5f6eed",
+      "library_sha256": "243393cbe537a5eeb8b0ae05cf0fde8085a5d41242cf7287db79f94e5d062bab",
+      "metadata_sha256": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+      "state_bytes": 240,
+      "state_fields": 41,
+      "services_version": 7,
+      "minimum_services_bytes": 224,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1"
+      ],
+      "payload_files": 8,
+      "native_header_verified": true
+    }
+  ],
+  "gameplay": [
+    {
+      "name": "final-styled-linux-clr-2",
+      "evidence_sha256": "a33351eacff95f815039f90e7408e530e0ad89acc543869172d55269ca2cd8b8",
+      "backend": "coreclr",
+      "rpc_count": 1550,
+      "checks": 8,
+      "input_sha256": {
+        "binary": "87f1389ab3e329e4e830e36a77e676ab751034af47e47a8fc64cafd3826b72c6",
+        "source": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+        "manifest": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "assembly": "bfdba433e11af1b3f30ebcf3fb32bd6f37418b2552547fb7353c4225581d0ac4",
+        "bridge": "e519f2739a8ef53ee152d8cafbd239ac54e68f119681cd46ce4f4ff8a9a78928",
+        "hostfxr": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d"
+      },
+      "stable_source_pose_observations": 21,
+      "maximum_joint_matrix_error": 1.0647112996808872e-08,
+      "maximum_attachment_matrix_error": 0.0,
+      "maximum_feet_root_height_error": 5.943502216523474e-08,
+      "minimum_forward_alignment": 0.9995091002212562,
+      "route_position_count": 211,
+      "delivered_position": [
+        3.9682950638234615,
+        -5.960464477539063e-08,
+        0.033098401385359466
+      ],
+      "owners": [
+        {
+          "label": "yard",
+          "exit_code": 0
+        },
+        {
+          "label": "fresh",
+          "exit_code": 0
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "checks_detail": [
+        "All seven logical runtime controls are eligible; native layout/hittability explicitly skipped because this build reports presentation unavailable and rejects layout.",
+        "Imported source rig follows camera-free native character root, typed complete navigation route and blocked direct ray; no game state was patched.",
+        "Actual unchanged-assembly CoreCLR reload preserves complete native, imported-joint, typed route/visual and gameplay/UI state.",
+        "Immediate exact disk restore is complete;42-tick grouped and unequal partitions agree except newly allocated host save-epoch identity.",
+        "Actual compiled pause/save/status/resume/load controls produce terminal native receipts, matching disk bytes, immediate exact restoration and honest save/load HUD.",
+        "Same and fresh owner immediate exact checkpoint,42 grouped/unequally partitioned/single ticks and real UI re-dispatch retain complete stable state; only host save-epoch identities differ after Tick.",
+        "Every independently observed native tick stays outside solid cover, respects movement speed and reaches delivery; imported source motion stops at its nonloop endpoint.",
+        "Gesture replays the original arm-opening source once without capsule movement; delivered courier can dispatch a compiled return route."
+      ],
+      "native_ui_layout_available": false,
+      "native_ui_viewports": [],
+      "captures": []
+    },
+    {
+      "name": "final-styled-linux-aot",
+      "evidence_sha256": "1186dbcbfa04376433419f93a8a366f33c36c2ad0c148a56dbdccef7b7bc8055",
+      "backend": "native_aot",
+      "rpc_count": 1550,
+      "checks": 8,
+      "input_sha256": {
+        "binary": "87f1389ab3e329e4e830e36a77e676ab751034af47e47a8fc64cafd3826b72c6",
+        "source": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+        "manifest": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "descriptor": "1cc7662253806664dc968edc997061260e76d9b238f1c7069b851f7326e32298",
+        "native_artifact_0": "aa6090229869d933cd1e192cafcb244618de055580f9c801cb0ba724cc0b3115",
+        "native_artifact_1": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "native_artifact_2": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "native_artifact_3": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "native_artifact_4": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+        "native_artifact_5": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+        "native_artifact_6": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "native_artifact_7": "739a396ccc192203a0993de7631e10b313f0f19dbb8e083043283ddb8d77d4bc"
+      },
+      "stable_source_pose_observations": 21,
+      "maximum_joint_matrix_error": 1.0647112996808872e-08,
+      "maximum_attachment_matrix_error": 0.0,
+      "maximum_feet_root_height_error": 5.943502216523474e-08,
+      "minimum_forward_alignment": 0.9995091002212562,
+      "route_position_count": 211,
+      "delivered_position": [
+        3.9682950638234615,
+        -5.960464477539063e-08,
+        0.033098401385359466
+      ],
+      "owners": [
+        {
+          "label": "yard",
+          "exit_code": 0
+        },
+        {
+          "label": "fresh",
+          "exit_code": 0
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "checks_detail": [
+        "All seven logical runtime controls are eligible; native layout/hittability explicitly skipped because this build reports presentation unavailable and rejects layout.",
+        "Imported source rig follows camera-free native character root, typed complete navigation route and blocked direct ray; no game state was patched.",
+        "NativeAOT replacement rejects atomically without altering compiled/native/typed/UI state.",
+        "Immediate exact disk restore is complete;42-tick grouped and unequal partitions agree except newly allocated host save-epoch identity.",
+        "Actual compiled pause/save/status/resume/load controls produce terminal native receipts, matching disk bytes, immediate exact restoration and honest save/load HUD.",
+        "Same and fresh owner immediate exact checkpoint,42 grouped/unequally partitioned/single ticks and real UI re-dispatch retain complete stable state; only host save-epoch identities differ after Tick.",
+        "Every independently observed native tick stays outside solid cover, respects movement speed and reaches delivery; imported source motion stops at its nonloop endpoint.",
+        "Gesture replays the original arm-opening source once without capsule movement; delivered courier can dispatch a compiled return route."
+      ],
+      "native_ui_layout_available": false,
+      "native_ui_viewports": [],
+      "captures": []
+    },
+    {
+      "name": "final-styled-windows-clr",
+      "evidence_sha256": "57f28a25529b62f93c74a84a1664c1df35d1c611b187af59967fc8e6a1754c35",
+      "backend": "coreclr",
+      "rpc_count": 1552,
+      "checks": 8,
+      "input_sha256": {
+        "binary": "fffce161d8b49bd226fb74cbde75c0bceb6534d3aa3b4f1f30ef78df5ce9fbb5",
+        "source": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+        "manifest": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "assembly": "bfdba433e11af1b3f30ebcf3fb32bd6f37418b2552547fb7353c4225581d0ac4",
+        "bridge": "71002f98da2019b0acc6276e7cd3c910c6348f7e6d5ebc595677fb9f2cff4610",
+        "hostfxr": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+      },
+      "stable_source_pose_observations": 21,
+      "maximum_joint_matrix_error": 1.0647112996808872e-08,
+      "maximum_attachment_matrix_error": 0.0,
+      "maximum_feet_root_height_error": 5.943502216523474e-08,
+      "minimum_forward_alignment": 0.9995091002212562,
+      "route_position_count": 211,
+      "delivered_position": [
+        3.9682950638234615,
+        -5.960464477539063e-08,
+        0.033098401385359466
+      ],
+      "owners": [
+        {
+          "label": "yard",
+          "exit_code": 0
+        },
+        {
+          "label": "fresh",
+          "exit_code": 0
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "checks_detail": [
+        "All seven authored native buttons fit without overlap and are hittable at960x640 and512x288, with actual runtime actions eligible; no physical input claim.",
+        "Imported source rig follows camera-free native character root, typed complete navigation route and blocked direct ray; no game state was patched.",
+        "Actual unchanged-assembly CoreCLR reload preserves complete native, imported-joint, typed route/visual and gameplay/UI state.",
+        "Immediate exact disk restore is complete;42-tick grouped and unequal partitions agree except newly allocated host save-epoch identity.",
+        "Actual compiled pause/save/status/resume/load controls produce terminal native receipts, matching disk bytes, immediate exact restoration and honest save/load HUD.",
+        "Same and fresh owner immediate exact checkpoint,42 grouped/unequally partitioned/single ticks and real UI re-dispatch retain complete stable state; only host save-epoch identities differ after Tick.",
+        "Every independently observed native tick stays outside solid cover, respects movement speed and reaches delivery; imported source motion stops at its nonloop endpoint.",
+        "Gesture replays the original arm-opening source once without capsule movement; delivered courier can dispatch a compiled return route."
+      ],
+      "native_ui_layout_available": true,
+      "native_ui_viewports": [
+        {
+          "width": 960,
+          "height": 640,
+          "action_count": 7
+        },
+        {
+          "width": 512,
+          "height": 288,
+          "action_count": 7
+        }
+      ],
+      "captures": []
+    },
+    {
+      "name": "final-styled-windows-aot-gpu1",
+      "evidence_sha256": "50e364d899aef204ace22b6a0cc9e58607f6472a6b16300be1a473bb3dc5429b",
+      "backend": "native_aot",
+      "rpc_count": 1560,
+      "checks": 8,
+      "input_sha256": {
+        "binary": "fffce161d8b49bd226fb74cbde75c0bceb6534d3aa3b4f1f30ef78df5ce9fbb5",
+        "source": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+        "manifest": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "descriptor": "2fe73d3e7a58c4b6e4727de0d97e8c8cb0a0b3abca726b3669f3f4422e5f6eed",
+        "native_artifact_0": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "native_artifact_1": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "native_artifact_2": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "native_artifact_3": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "native_artifact_4": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "native_artifact_5": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "native_artifact_6": "739a396ccc192203a0993de7631e10b313f0f19dbb8e083043283ddb8d77d4bc",
+        "native_artifact_7": "243393cbe537a5eeb8b0ae05cf0fde8085a5d41242cf7287db79f94e5d062bab"
+      },
+      "stable_source_pose_observations": 21,
+      "maximum_joint_matrix_error": 1.0647112996808872e-08,
+      "maximum_attachment_matrix_error": 0.0,
+      "maximum_feet_root_height_error": 5.943502216523474e-08,
+      "minimum_forward_alignment": 0.9995091002212562,
+      "route_position_count": 211,
+      "delivered_position": [
+        3.9682950638234615,
+        -5.960464477539063e-08,
+        0.033098401385359466
+      ],
+      "owners": [
+        {
+          "label": "yard",
+          "exit_code": 0
+        },
+        {
+          "label": "fresh",
+          "exit_code": 0
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "checks_detail": [
+        "All seven authored native buttons fit without overlap and are hittable at960x640 and512x288, with actual runtime actions eligible; no physical input claim.",
+        "Imported source rig follows camera-free native character root, typed complete navigation route and blocked direct ray; no game state was patched.",
+        "NativeAOT replacement rejects atomically without altering compiled/native/typed/UI state.",
+        "Immediate exact disk restore is complete;42-tick grouped and unequal partitions agree except newly allocated host save-epoch identity.",
+        "Actual compiled pause/save/status/resume/load controls produce terminal native receipts, matching disk bytes, immediate exact restoration and honest save/load HUD.",
+        "Same and fresh owner immediate exact checkpoint,42 grouped/unequally partitioned/single ticks and real UI re-dispatch retain complete stable state; only host save-epoch identities differ after Tick.",
+        "Every independently observed native tick stays outside solid cover, respects movement speed and reaches delivery; imported source motion stops at its nonloop endpoint.",
+        "Gesture replays the original arm-opening source once without capsule movement; delivered courier can dispatch a compiled return route."
+      ],
+      "native_ui_layout_available": true,
+      "native_ui_viewports": [
+        {
+          "width": 960,
+          "height": 640,
+          "action_count": 7
+        },
+        {
+          "width": 512,
+          "height": 288,
+          "action_count": 7
+        }
+      ],
+      "captures": [
+        {
+          "name": "ready",
+          "sha256": "f70a8effa1d19c55202f9505d6909b86644b13c9456ec96f0b88d86482e52385",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 76,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        },
+        {
+          "name": "midroute",
+          "sha256": "429fa78507145709eb018d0cd56d90b230a5d54ab3fe6e73f524dc3e562dad74",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 196,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        },
+        {
+          "name": "delivered",
+          "sha256": "401ee3fad1e316238c8f6850aea9ba34ede6bc557eccba1aa6ddccbc2b65f414",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 441,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        },
+        {
+          "name": "gesture",
+          "sha256": "5363e091954ae77b41914c9c3ac192d0dbbca34cb9627539cf23cdeee9c15e84",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 465,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        }
+      ]
+    },
+    {
+      "name": "final-styled-windows-aot-gpu0",
+      "evidence_sha256": "0ac2be0c0aaca52e77fbed8d8e052d07a7c00e92926ed86cb91bdb8df57c37ad",
+      "backend": "native_aot",
+      "rpc_count": 1560,
+      "checks": 8,
+      "input_sha256": {
+        "binary": "fffce161d8b49bd226fb74cbde75c0bceb6534d3aa3b4f1f30ef78df5ce9fbb5",
+        "source": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+        "manifest": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "descriptor": "2fe73d3e7a58c4b6e4727de0d97e8c8cb0a0b3abca726b3669f3f4422e5f6eed",
+        "native_artifact_0": "4f27bc9b924ea85194f57c4ab0b91b6e0afa43470ea11760d307ef0be1b74969",
+        "native_artifact_1": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "native_artifact_2": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "native_artifact_3": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "native_artifact_4": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "native_artifact_5": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "native_artifact_6": "739a396ccc192203a0993de7631e10b313f0f19dbb8e083043283ddb8d77d4bc",
+        "native_artifact_7": "243393cbe537a5eeb8b0ae05cf0fde8085a5d41242cf7287db79f94e5d062bab"
+      },
+      "stable_source_pose_observations": 21,
+      "maximum_joint_matrix_error": 1.0647112996808872e-08,
+      "maximum_attachment_matrix_error": 0.0,
+      "maximum_feet_root_height_error": 5.943502216523474e-08,
+      "minimum_forward_alignment": 0.9995091002212562,
+      "route_position_count": 211,
+      "delivered_position": [
+        3.9682950638234615,
+        -5.960464477539063e-08,
+        0.033098401385359466
+      ],
+      "owners": [
+        {
+          "label": "yard",
+          "exit_code": 0
+        },
+        {
+          "label": "fresh",
+          "exit_code": 0
+        }
+      ],
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ],
+      "checks_detail": [
+        "All seven authored native buttons fit without overlap and are hittable at960x640 and512x288, with actual runtime actions eligible; no physical input claim.",
+        "Imported source rig follows camera-free native character root, typed complete navigation route and blocked direct ray; no game state was patched.",
+        "NativeAOT replacement rejects atomically without altering compiled/native/typed/UI state.",
+        "Immediate exact disk restore is complete;42-tick grouped and unequal partitions agree except newly allocated host save-epoch identity.",
+        "Actual compiled pause/save/status/resume/load controls produce terminal native receipts, matching disk bytes, immediate exact restoration and honest save/load HUD.",
+        "Same and fresh owner immediate exact checkpoint,42 grouped/unequally partitioned/single ticks and real UI re-dispatch retain complete stable state; only host save-epoch identities differ after Tick.",
+        "Every independently observed native tick stays outside solid cover, respects movement speed and reaches delivery; imported source motion stops at its nonloop endpoint.",
+        "Gesture replays the original arm-opening source once without capsule movement; delivered courier can dispatch a compiled return route."
+      ],
+      "native_ui_layout_available": true,
+      "native_ui_viewports": [
+        {
+          "width": 960,
+          "height": 640,
+          "action_count": 7
+        },
+        {
+          "width": 512,
+          "height": 288,
+          "action_count": 7
+        }
+      ],
+      "captures": [
+        {
+          "name": "ready",
+          "sha256": "c81069de3192be296a01ed3926e0c899978d136f16d82f4432ee4decee3f3f3e",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 76,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        },
+        {
+          "name": "midroute",
+          "sha256": "2e4524b170b17b25499e29db7dd8d501b4ba2e92b50abef4d43e235ce24e67ba",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 196,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        },
+        {
+          "name": "delivered",
+          "sha256": "c8df8d69c662ad9a4f2dd15bfcb028e6588420e48a0a7bc8c143120f2c2c3529",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 441,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        },
+        {
+          "name": "gesture",
+          "sha256": "4842544a546274f5a3c99193c46d42d6aeae9f23ee4838ff2a0459089b896023",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "width": 960,
+          "height": 640,
+          "samples": 4,
+          "tick": 465,
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "skinned_instances": 1,
+          "skinned_vertices": 370
+        }
+      ]
+    }
+  ],
+  "total_gameplay_rpc_count": 7772,
+  "total_gameplay_owners": 10,
+  "raw_evidence_sha256": {
+    "cohort": "9ebff362a54ac456945a022bbfdd58c01cb1850a337c9696270857a29f9dcc32",
+    "publication": "56a314a49627029d0a111859c55d26c701c036e538c3d8aa06631acc761cc738",
+    "headers": "e65bb9b04d8c273266043215cb69ebd0ed55092b48566183a3ff7f10880010b2",
+    "gameplay_summary": "c031bae328633a6acf4b79d12e6408343dc09afcc0ace7aa4ef6273bb8b3012d",
+    "bundle": "8f5cddfa949b9941a833e4a5cbcf6a1d3ecfc1f1f9dbd5a2d7ca3c762464a2fb"
+  },
+  "limits": [
+    "Small flat static yard, one capsule courier and one first-person observer; no game-scale crowd, terrain, performance or physical input qualification.",
+    "Stable source poses are compared after inertial transitions finish. Transient native joint state still participates in exact checkpoint/continuation comparisons.",
+    "Immediate checkpoint snapshots exclude only session IDs; continued comparisons additionally exclude two explicitly named host save-epoch identity fields.",
+    "Virtual native UI bounds/hittability and logical eligibility are separate from physical pointer/controller or desktop-editor usability.",
+    "Renderer readbacks are actual gameplay observations, not OS screenshots or a real-time authoring video.",
+    "Relocation and isolated environment use the development Windows host, which has .NET installed; this is not a clean-machine deployment test.",
+    "Source-free player runs before a separate reconstructed-world pose/save contract; the latter deliberately imports the preserved caller source into its own world.",
+    "General save/schema migration, imported locomotion-library compatibility and broader FPS character pipeline remain open."
+  ],
+  "native_source_freeze": {
+    "files": 206,
+    "all_current_sources_matched": true,
+    "sha256": "dc21ff6265130b0cc6313c0bc2358c08adc93c0bee11bd6d105d1b89dfff8a53"
+  },
+  "windows_bundle": {
+    "evidence_sha256": "8f5cddfa949b9941a833e4a5cbcf6a1d3ecfc1f1f9dbd5a2d7ca3c762464a2fb",
+    "binary_sha256": "fffce161d8b49bd226fb74cbde75c0bceb6534d3aa3b4f1f30ef78df5ce9fbb5",
+    "artifact_sha256": "2fe73d3e7a58c4b6e4727de0d97e8c8cb0a0b3abca726b3669f3f4422e5f6eed",
+    "runtime_descriptor_sha256": "cabbc079ada6de8cb154d2ac707315142e879a8ce415d238ba661540aaa013fb",
+    "source_project_removed": true,
+    "relocated_outside_checkout": true,
+    "unrelated_working_directory": true,
+    "isolated_environment": true,
+    "source_free_player_before_reconstruction": true,
+    "source_preserved": true,
+    "shipping_history_cleared_only": [
+      "receipts",
+      "retired_ids",
+      "retired_component_schemas",
+      "retired_template_ids",
+      "retired_ui_ids"
+    ],
+    "bundle_files": 61,
+    "runtime_files": 45,
+    "bundle_inventory_sha256": "3a902efad256a552c94cd55cc99b00779636be6e81dcc3187155a7c83d328582",
+    "commands": [
+      {
+        "operation": "version",
+        "exit_code": 0,
+        "forced_cleanup": false
+      },
+      {
+        "operation": "project inspect",
+        "exit_code": 0,
+        "forced_cleanup": false
+      },
+      {
+        "operation": "project build",
+        "exit_code": 0,
+        "forced_cleanup": false
+      },
+      {
+        "operation": "game inspect",
+        "exit_code": 0,
+        "forced_cleanup": false
+      },
+      {
+        "operation": "game run",
+        "exit_code": 0,
+        "forced_cleanup": false
+      },
+      {
+        "operation": "independent bundled-runtime contract",
+        "exit_code": 0,
+        "forced_cleanup": false
+      }
+    ],
+    "authoring_rpc_count": 7,
+    "owners": [
+      {
+        "label": "authoring",
+        "calls": 7,
+        "exit_code": 0
+      }
+    ],
+    "player": {
+      "ticks": 1400,
+      "backend": "native_aot",
+      "initial_gameplay_values": {},
+      "plans": 1,
+      "arrivals": 1,
+      "animation_changes": 10,
+      "nvrhi_errors": 0,
+      "runtime_replacements": 0,
+      "capture_sha256": "b51e4edb495ce9305f82716da620420fbf8987af24bc3b411432869587a48b65"
+    },
+    "separate_bundled_runtime_contract": {
+      "evidence_sha256": "f1cca6ae0129c40dc4f9545af2eb436a128de8f7354260bcf94c7c948057fb6f",
+      "rpc_count": 1552,
+      "checks": [
+        "All seven authored native buttons fit without overlap and are hittable at960x640 and512x288, with actual runtime actions eligible; no physical input claim.",
+        "Imported source rig follows camera-free native character root, typed complete navigation route and blocked direct ray; no game state was patched.",
+        "NativeAOT replacement rejects atomically without altering compiled/native/typed/UI state.",
+        "Immediate exact disk restore is complete;42-tick grouped and unequal partitions agree except newly allocated host save-epoch identity.",
+        "Actual compiled pause/save/status/resume/load controls produce terminal native receipts, matching disk bytes, immediate exact restoration and honest save/load HUD.",
+        "Same and fresh owner immediate exact checkpoint,42 grouped/unequally partitioned/single ticks and real UI re-dispatch retain complete stable state; only host save-epoch identities differ after Tick.",
+        "Every independently observed native tick stays outside solid cover, respects movement speed and reaches delivery; imported source motion stops at its nonloop endpoint.",
+        "Gesture replays the original arm-opening source once without capsule movement; delivered courier can dispatch a compiled return route."
+      ],
+      "owners": [
+        {
+          "label": "yard",
+          "calls": 508,
+          "exit_code": 0
+        },
+        {
+          "label": "fresh",
+          "calls": 1044,
+          "exit_code": 0
+        }
+      ],
+      "source_pose_observations": 21,
+      "continuation_exclusions": [
+        "values.ObservedEpochHigh",
+        "values.ObservedEpochLow"
+      ]
+    },
+    "checks": [
+      "Actual relocated source-free player loads NativeAOT at tick zero with empty initial values, routes and animates its real courier, and arrives without runtime replacement.",
+      "Separate reconstructed worlds use the exact bundled runtime/artifact for original-source joint/geometry/facing/feet oracles, compiled UI saves and exact same/fresh-owner continuation.",
+      "Model/navigation/provenance/credits, runtime/licenses and native artifact inventory remain exact after export, source removal, relocation and both independent executions."
+    ]
+  },
+  "retained_failed_attempts": [
+    {
+      "stage": "CoreCLR preflight",
+      "reason": "Selected older bridge lacked navigation marker; matching bridge used in subsequent runs."
+    },
+    {
+      "stage": "Verifier preflight",
+      "reason": "An int64 generation is decimal text on the wire; corrected assertion."
+    },
+    {
+      "stage": "Visual review",
+      "reason": "Default menu obscured courier and wrapped labels; replaced with explicitly authored compact footer."
+    },
+    {
+      "stage": "Native layout preflight",
+      "reason": "Linux logical-UI build has no native presenter; capability-aware check records unavailable presentation rather than assuming it."
+    },
+    {
+      "stage": "Bundle attempt one",
+      "reason": "Shipping deliberately clears exactly five authoring-history arrays; verifier now compares every other field unchanged."
+    },
+    {
+      "stage": "Bundle attempt two",
+      "reason": "Native Windows relative source keys use backslashes; verifier now performs exact canonical-path and hash matching."
+    }
+  ],
+  "documentation_image": {
+    "path": "docs/evidence/character-yard.png",
+    "sha256": "099c5c78852b0e5308b18d823a27fee87e5915521db317ee63e0a5400f263a4b",
+    "source_capture_sha256": "5363e091954ae77b41914c9c3ac192d0dbbca34cb9627539cf23cdeee9c15e84",
+    "conversion": "Lossless BMP-to-PNG; actual reviewed Vulkan readback",
+    "attribution": "Rigged Figure, copyright2017 Cesium, CC-BY-4.0; source imported unchanged and posed/placed by Poima."
+  }
+}

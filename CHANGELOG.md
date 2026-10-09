@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.71
+
+- Add [Character Yard](examples/character-yard/README.md), a compiled imported-character game with native capsule routing, source animation, dispatch controls and durable checkpoints. Preserve the source rig and align its visual wrapper with the controller; the supplied arm-opening take is not locomotion.
+- Author a compact wine-styled runtime HUD and check all seven controls at small and larger virtual viewports. Save/load labels follow native terminal results rather than request acknowledgements.
+- Qualify independent source poses, per-tick physical detours, reload policy and exact same/fresh-owner checkpoint continuation across Windows/Linux CoreCLR and Native AOT. Run eight Vulkan observations across both laptop GPUs. [Evidence](docs/evidence/m2-character-game.json).
+- Publish and export an actual Windows Native AOT game, then run its relocated player for 1,400 ticks after removing the owned source project. Verify the bundled runtime separately and retain character attribution, dependency notices and exact bundle inventory.
+- Link the complete character workflow through the task playbooks and documentation, with build options, source licensing, expected results and recovery instructions.
+
 ## 0.0.70
 
 - Decompose supported static glTF node matrices into editable local TRS while preserving hierarchy, skin joints and inverse binds. Reject unsupported transforms and matrix/TRS animation conflicts under explicit numerical bounds. [Transform policy](docs/ASSETS.md#matrix-authored-transforms).

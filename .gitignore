@@ -12,6 +12,8 @@ __pycache__/
 /managed/**/obj/
 /examples/managed/**/bin/
 /examples/managed/**/obj/
+/examples/character-yard/bin/
+/examples/character-yard/obj/
 
 /tests/fixtures/**/bin/
 /tests/fixtures/**/obj/

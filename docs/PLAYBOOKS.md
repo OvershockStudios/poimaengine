@@ -26,13 +26,16 @@ the guide's recorded evidence and the actual installed capabilities together.
 | Play a first-person collection game and continue a checkpoint | [Collection Room](../examples/collection-game/README.md) | Simulation, game UI and the matching compiled C# gameplay backend; .NET 10 SDK to build gameplay; Python for the launcher. CoreCLR also needs the matching bridge and hostfxr. Interactive play needs Windows Vulkan. | `--verify` checks collection through native input/raycast and continuation in a fresh process. Optional captures need a renderer and chosen GPU. |
 | Run a guard's patrol, investigation and pursuit | [Patrol Room](../examples/managed/PatrolGame/README.md) | Simulation, managed gameplay, game UI, matching CoreCLR bridge/hostfxr, .NET 10 SDK and Python. Interactive play needs Windows Vulkan. | The documented headless verifier checks decision outcomes, wall occlusion, compatible reload and fresh-process checkpoint continuation. |
 | Import a licensed weighted character and inspect its poses | [Imported character](IMPORTED_CHARACTER.md) | Native executable, Python 3.9+, pinned original GLB and a new output directory; runtime poses need simulation, optional images need Windows Vulkan | Compare source-derived transforms and geometry, inspect the converted root and retained skin, and verify source-independent fresh-owner content. |
+| Control an imported character and export its compiled game | [Character Yard](../examples/character-yard/README.md) | Matching 0.0.71 engine/SDK, pinned original GLB, Python and .NET 10 SDK; simulation, navigation and the selected compiled gameplay backend. Windows graphics need Vulkan and game UI; export needs a matching installed runtime and Windows Native AOT artifact. | Independent source-pose and native route checks, reload/rejection policy, same/fresh-owner checkpoints; relocated exported player runs before a separate bundled-runtime contract. |
 | Author a blockout and capture its appearance | [Courtyard scene](SCENE_CAPTURE.md#try-the-example) | Native authoring executable and new world path; capture additionally needs a Windows Vulkan renderer, display and supported hardware | Inspect the transaction result and capture metadata, then view the saved image. Linux authoring-only builds can create the scene but cannot capture it. |
 
 The game examples use deliberately small fixtures. Scripted input and renderer
 readbacks do not establish physical mouse/controller behavior or game-scale
 performance. Collection Room's development directory is not an exported game
 bundle; its guide links to the separate native-gameplay and project export
-contracts.
+contracts. Character Yard includes a tested Windows export verifier that removes
+only its owned source project before running the relocated game. Its single
+stationary source take does not supply a locomotion library.
 
 ## Continue an existing project
 

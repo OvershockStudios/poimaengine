@@ -19,7 +19,7 @@ entry criteria. Alpha 1 is an intermediate usable-game milestone.
 | --- | --- | --- |
 | Agent authoring | Three recorded Codex/Claude game exercises; focused discovery, transactions, revision guards, retries, observations and replay. [Workflows](AGENT_CLIENTS.md). | Repeat complete create → import → author → compile → playtest → repair → export workflows from fresh projects. Report failed attempts and recovery, not only successful final runs. Every operation used must have documented machine-readable results and actionable errors. |
 | Contracts and persistence | Selected [authoring-core v1](AUTHORING_API_COMPATIBILITY.md) is stable; C# components, reload, saves and bounded upgrades have recorded qualification. | Publish the supported alpha gameplay/content/save boundary, compatibility policy and runnable examples. Exercise supported schema upgrades on real games and retained saves; clearly identify experimental APIs. Alpha does not freeze every engine API. |
-| Content and characters | glTF/GLB, images, WAV, cooked assets, provenance, crossfades, inertial transitions and masked layers work within documented limits. | Qualify native FBX character intake and separate compatible animation clips, then use an imported animated character in a compiled game. Verify source-independent packages and export. Unsupported rigs/materials must produce specific diagnostics. |
+| Content and characters | Bounded FBX/glTF intake, images, WAV, cooked assets, provenance and native animation have evidence. [Character Yard](../examples/character-yard/README.md) qualifies an original weighted GLB in a compiled game, checkpoints and relocated Windows export. | Qualify representative FBX characters with separate compatible locomotion clips and unsupported-rig/material diagnostics. Extend the compiled-game path beyond the single stationary take; verify the supported character profile in source-independent packages. |
 | Playable systems | Physics, character controls, static navigation, keyboard/mouse/gamepad profiles, styled game UI, audio, checkpoints and compiled callbacks exist. | Exercise these together in a complete small game with menus, settings, save/load and game completion. Close blocking focus, input, text/layout and lifecycle defects; verify physical mouse/keyboard/controller interaction on Windows. |
 | Observation and editor | Vulkan captures, CPU/GPU profiling, independent Scene/Game panels and typed inspection have evidence. | Keep visual observations and semantic state aligned through edits, Play, reload and recovery. Close blocking scene selection/navigation/docking defects; provide legible defaults and the agreed wine branding. Editor polish must support the workflow without replacing core work. |
 | Performance and delivery | Windows rendering and Linux headless fixtures run on the development laptop. Native bundle workflows have bounded qualification. | Publish representative scene/game frame-time, memory and edit-to-play measurements with workload/settings/hardware identified. Verify a fresh installation and relocated exported game, complete dependency notices, reproducible instructions and a full alpha regression run. Tiny fixtures alone do not pass this gate. |
@@ -62,7 +62,8 @@ need an explicit technical reason and updated acceptance criteria.
 
 ## Implementation order
 
-1. Complete native character/content intake and its compiled-game consumer.
+1. Extend the qualified character/content consumer to representative imported
+   locomotion and the supported rig/clip profile.
 2. Close the practical agent/gameplay gaps revealed by that game, including
    UI, settings, audio and save continuation.
 3. Qualify repeated fresh-project agent workflows and define the supported

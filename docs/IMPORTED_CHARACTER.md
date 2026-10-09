@@ -2,7 +2,8 @@
 
 This playbook imports an unchanged, licensed character and checks its hierarchy,
 skin and source-authored motion. It covers asset intake and observation. Follow
-the [compiled-game examples](PLAYBOOKS.md) separately for gameplay; this guide
+[Character Yard](../examples/character-yard/README.md) for compiled movement,
+animation, checkpoints and Windows export; this intake guide
 does not supply locomotion clips, retargeting, IK or a character controller.
 
 ![Imported Rigged Figure at 0.625 seconds](evidence/rigged-figure-import.png)
@@ -110,4 +111,6 @@ other character exporters or animation libraries.
 
 This small stylized character establishes a bounded asset path. It is not
 evidence of realistic character shading, a locomotion system, game-scale crowds,
-physical input, clean-machine deployment or a completed imported-character game.
+physical input or clean-machine deployment. Character Yard has separate
+[compiled-game qualification](evidence/m2-character-game.json); the intake
+observations above do not establish those results.

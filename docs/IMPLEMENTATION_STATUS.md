@@ -1,8 +1,45 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.70**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.71**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.71 adds [Character Yard](../examples/character-yard/README.md), a
+compiled C# game using the original imported figure. Its camera-free capsule
+plans around solid cover with native navigation; the attached rig retains all
+22 source nodes and 19 joints. An explicit wrapper aligns the model's forward
+axis with the controller. Movement advances the single source take, while
+Gesture replays it once in place. The source motion opens the arms; it is not
+a locomotion clip. Pause/resume, dispatch and save/load use real compiled
+callbacks and native results. The sample authors a compact wine-styled footer.
+
+Five matching-version cohorts pass on Linux CoreCLR/Native AOT and Windows
+CoreCLR/Native AOT, with both laptop GPUs used for the native Windows captures:
+7,772 RPCs, 40 check groups, ten clean owners and eight Vulkan readbacks.
+Each cohort observes 21 stable source poses, with maximum joint-matrix error
+1.065e-8 against an independent GLB calculation. Per-tick physics checks verify
+detour, speed and arrival. Immediate checkpoints, grouped/unequally partitioned
+ticks and fresh-owner continuation retain complete compared native, typed,
+gameplay and UI state. Continued comparisons exclude only two named host
+save-epoch identity fields in addition to session IDs. Compatible unchanged-DLL
+reload passes; Native AOT replacement rejects without altering state.
+
+Native UI layout checks establish all seven buttons' bounds and hittability at
+960×640 and 512×288 in presenter-enabled Windows builds. Linux headless builds
+exercise logical controls without claiming presentation. These are virtual
+layout and scripted command checks, not physical mouse/controller qualification.
+
+A separately published Windows Native AOT artifact runs from a relocated
+61-file exported bundle after its owned source project is removed. The player
+starts with empty gameplay values and completes delivery over 1,400 ticks on
+the NVIDIA GPU, with no reported NVRHI errors or runtime replacements. Its
+source-free run precedes a separate 1,552-RPC pose/save contract using the bundled
+runtime and newly authored content. The six bundle-verifier commands and three
+owned native processes exit cleanly; bundle bytes and source attribution remain
+intact. The host has .NET installed, so environment isolation and relocation do
+not establish clean-machine distribution. This small flat yard does not qualify
+locomotion libraries, retargeting, general save migrations or game-scale
+performance. [Source, hashes and scope](evidence/m2-character-game.json).
 
 Version 0.0.70 accepts bounded matrix-authored glTF nodes by decomposing them
 into the existing positive-scale TRS profile. It preserves hierarchy and inverse

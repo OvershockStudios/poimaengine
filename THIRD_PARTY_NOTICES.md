@@ -1,9 +1,10 @@
 # Third-party notices
 
-## Rigged Figure documentation image
+## Rigged Figure documentation images
 
 - [Rigged Figure](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/RiggedFigure), copyright © 2017 Cesium, is licensed under [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/). Its [source license notice](https://github.com/KhronosGroup/glTF-Sample-Assets/blob/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/RiggedFigure/LICENSE.md) identifies the model and associated files.
 - [The documentation image](docs/evidence/rigged-figure-import.png) is a Poima Vulkan rendering of the unmodified source at 0.625 seconds, converted to PNG. It retains the source attribution and license; this image is not covered by the engine source's Apache-2.0 notice.
+- [The Character Yard image](docs/evidence/character-yard.png) renders the same unmodified source, attached, placed and animated by Poima, with a lossless BMP-to-PNG conversion. It retains the Cesium attribution and CC BY 4.0 license rather than the engine source's Apache-2.0 notice. The sample's source/license record also supplies exported character credits.
 - The network-free verification runner requires a separately supplied original GLB and embeds no character artwork. Its independently baked reference meshes derive from that licensed source and carry attribution in their metadata and evidence.
 
 ## Desktop editor
