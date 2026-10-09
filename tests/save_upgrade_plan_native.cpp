@@ -36,7 +36,7 @@ int main() {try {
     auto invalid=[&](const std::function<void(Json&)>& edit) {auto c=j;edit(c);rejects([&]{(void)parse(c);});};
     for(const auto* key:{"format","version","id","source","target","global","components"})invalid([&](auto& c){c.erase(key);});
     invalid([](auto& c){c["path"]="executable";});invalid([](auto& c){c["version"]=1.0;});
-    invalid([](auto& c){c["version"]=2;});invalid([](auto& c){c["id"]=std::string(32,'0');});
+    invalid([](auto& c){c["version"]=3;});invalid([](auto& c){c["id"]=std::string(32,'0');});
     invalid([](auto& c){c["id"]=std::string(32,'A');});invalid([](auto& c){c["global"]["preserve"]={id('1'),id('1')};});
     invalid([](auto& c){c["global"]["default"]={id('1')};});invalid([](auto& c){c["global"]["preserve"]={id('2'),id('1')};});
     invalid([](auto& c){c["global"]["default"]=nullptr;});invalid([](auto& c){c["global"]["callback"]="run";});
@@ -70,5 +70,53 @@ int main() {try {
     const auto row=bounded["components"][0];bounded["components"]=Json::array();
     for(unsigned n=1;n<=64;++n){auto next=row;next["id"]=numbered(n);bounded["components"].push_back(next);}
     check(parse(bounded).components.size()==64);auto extra=row;extra["id"]=numbered(65);bounded["components"].push_back(extra);rejects([&]{parse(bounded);});
+    // Version2 retains the old mapping dialect unless explicit capacity rows
+    // are present; version1 cannot opt into resizing even with an empty list.
+    auto v2=j;v2["version"]=2;
+    check(Json::parse(parse(v2).components[0].mapping)==mapping);
+    const Json authorization={{"id",id('1')},{"source_capacity",2},{"target_capacity",4},{"overflow","reject"}};
+    v2["components"][0]["array_capacity"]=Json::array({authorization});
+    auto capacity_mapping=mapping;capacity_mapping["array_capacity"]=Json::array({authorization});
+    check(Json::parse(parse(v2).components[0].mapping)==capacity_mapping);
+    auto shrink=v2;shrink["components"][0]["array_capacity"][0]["source_capacity"]=4;
+    shrink["components"][0]["array_capacity"][0]["target_capacity"]=2;
+    check(Json::parse(parse(shrink).components[0].mapping)["array_capacity"][0]["overflow"]=="reject");
+    auto v2_invalid=[&](const std::function<void(Json&)>& edit) {auto c=v2;edit(c);rejects([&]{(void)parse(c);});};
+    v2_invalid([](auto& c){c["version"]=1;});
+    v2_invalid([](auto& c){c["version"]=1;c["components"][0]["array_capacity"]=Json::array();});
+    v2_invalid([](auto& c){c["global"]["array_capacity"]=Json::array();});
+    v2_invalid([](auto& c){c["array_capacity"]=Json::array();});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"]=nullptr;});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]=Json::array();});
+    for(auto key:{"id","source_capacity","target_capacity","overflow"})
+        v2_invalid([&](auto& c){c["components"][0]["array_capacity"][0].erase(key);});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["field_id"]=id('1');});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["id"]=id('2');});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["id"]=id('3');});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["id"]=id('9');});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["id"]=std::string(32,'0');});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["overflow"]="truncate";});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["overflow"]=false;});
+    v2_invalid([](auto& c){c["components"][0]["array_capacity"][0]["target_capacity"]=2;});
+    for(auto key:{"source_capacity","target_capacity"})for(const Json& bad:std::vector<Json>{0,32,-1,true,2.0,"2",nullptr})
+        v2_invalid([&](auto& c){c["components"][0]["array_capacity"][0][key]=bad;});
+    v2_invalid([](auto& c){auto& a=c["components"][0]["array_capacity"];a.push_back(a[0]);});
+    auto ordered=v2;ordered["components"][0]["preserve"]={id('1'),id('4')};
+    auto second=authorization;second["id"]=id('4');second["source_capacity"]=31;second["target_capacity"]=1;
+    ordered["components"][0]["array_capacity"].push_back(second);
+    check(parse(ordered).components.size()==1);
+    std::swap(ordered["components"][0]["array_capacity"][0],ordered["components"][0]["array_capacity"][1]);
+    rejects([&]{(void)parse(ordered);});
+    auto full=j;full["version"]=2;full["components"][0]["preserve"]=list(32);
+    full["components"][0]["retire"]=Json::array();full["components"][0]["default"]=Json::array();
+    full["components"][0]["array_capacity"]=Json::array();
+    for(unsigned n=1;n<=32;++n){auto a=authorization;a["id"]=numbered(n);full["components"][0]["array_capacity"].push_back(a);}
+    check(Json::parse(parse(full).components[0].mapping)["array_capacity"].size()==32);
+    auto extra_capacity=authorization;extra_capacity["id"]=numbered(33);
+    full["components"][0]["array_capacity"].push_back(extra_capacity);rejects([&]{(void)parse(full);});
+    auto duplicate_capacity=v2.dump();const auto cap_at=duplicate_capacity.find("\"source_capacity\":2");
+    check(cap_at!=std::string::npos);duplicate_capacity.insert(cap_at,"\"source_capacity\":1,");
+    rejects([&]{(void)parse_plan(duplicate_capacity,hash(duplicate_capacity));});
+    check(parse(j).sha256==result.sha256 && Json::parse(parse(v2).components[0].mapping)==capacity_mapping);
     std::cout<<"Save upgrade plan guards passed: "<<rejected<<" rejected cases; exact identities, byte digest and normalized mappings.\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}

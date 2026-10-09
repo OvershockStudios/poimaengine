@@ -70,15 +70,15 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
     check(actual_source.world_id==actual_target.world_id && actual_source.backend==actual_target.backend &&
         actual_source.module_identity==actual_target.module_identity && actual_source.type==actual_target.type,"Snapshot upgrade changes world/backend/module/type.");
     auto envelope=parse(original,limit);fields(envelope,{"format","version","sha256","payload"});
-    const auto version=integer(envelope.at("version"));check(envelope.at("format")=="poima.runtime-snapshot" && version>=1 && version<=5,"Unsupported runtime snapshot format/version.");
+    const auto version=integer(envelope.at("version"));check(envelope.at("format")=="poima.runtime-snapshot" && version>=1 && version<=6,"Unsupported runtime snapshot format/version.");
     auto& data=envelope.at("payload");check(digest(envelope.at("sha256"))==hash(data.dump()),"Original runtime snapshot checksum mismatch.");
     std::vector<std::string> payload_fields{"content_sha256","world_id","authored_revision","tick","gameplay_revision","entities","animation","sound","gameplay"};
     if(version>=2)payload_fields.push_back("components");
     if(version>=3)payload_fields.push_back("structure");
     if(version>=4)payload_fields.push_back("ui");
-    if(version==5)payload_fields.push_back("control_sequence");
+    if(version>=5)payload_fields.push_back("control_sequence");
     fields(data,payload_fields);(void)integer(data.at("authored_revision"));(void)integer(data.at("tick"));check(integer(data.at("gameplay_revision"))>0,"Upgrade requires a saved gameplay module.");
-    if(version==5)(void)integer(data.at("control_sequence"));
+    if(version>=5)(void)integer(data.at("control_sequence"));
     fields(data.at("gameplay"),{"backend","assembly_sha256","type","schema","values"});
     auto replacement=parse(target_gameplay,2*1024*1024);fields(replacement,{"backend","assembly_sha256","type","schema"});
     const auto source_identity=identity(data.at("gameplay"),text(data.at("world_id"),256),digest(data.at("content_sha256")));
@@ -98,7 +98,7 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
         check((previous.empty() || previous<item.id) && old.contains(item.id) && next.contains(item.id),"Snapshot component plan is duplicate, unsorted or names an absent type.");previous=item.id;
         const auto& from=old.at(item.id);const auto& to=next.at(item.id);
         check(item.source_fingerprint==components::fingerprint_hex(from) && item.target_fingerprint==components::fingerprint_hex(to),"Snapshot component plan fingerprint mismatch.");
-        const auto mapped=map_component_scalars(components::schema_json(from),components::schema_json(to),components::values_json(from,components::defaults(from)),item.mapping);
+        const auto mapped=map_component_fields(components::schema_json(from),components::schema_json(to),components::values_json(from,components::defaults(from)),item.mapping);
         plans.emplace(item.id,&item);result.components.push_back({item.id,0,mapped.preserved.size(),mapped.retired.size(),mapped.defaulted.size()});
     }
     for(const auto& [key,schema]:old)if(!plans.contains(key))check(components::schema_json(schema)==components::schema_json(next.at(key)),"Unplanned snapshot component schema changed.");
@@ -122,7 +122,7 @@ SnapshotMappingResult transform_runtime_snapshot(const std::string& original,con
                 fields(instance,{"entity","values"});const auto entity=id(instance.at("entity"));
                 check((prior.empty() || prior<entity) && entities.contains(entity),"Snapshot component instance membership/order is invalid.");prior=entity;
                 if(plans.contains(key)){
-                    const auto mapped=map_component_scalars(components::schema_json(from),components::schema_json(to),instance.at("values").dump(),plans.at(key)->mapping,ComponentValueEncoding::compact);
+                    const auto mapped=map_component_fields(components::schema_json(from),components::schema_json(to),instance.at("values").dump(),plans.at(key)->mapping,ComponentValueEncoding::compact);
                     instance["values"]=Json::parse(mapped.target_compact_values);
                     const auto report=std::lower_bound(result.components.begin(),result.components.end(),key,[](const auto& entry,const auto& value){return entry.id<value;});++report->instances;
                 }else components::validate_payload(from,components::parse_values(from,instance.at("values").dump(),true));

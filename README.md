@@ -10,7 +10,7 @@ Poima is an open-source 3D engine with a native **C++20** core, **Vulkan** graph
 
 *Desktop editor with independent Scene and Game views.*
 
-> **0.0.78.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
+> **0.0.79.** See the [implementation status](docs/IMPLEMENTATION_STATUS.md) for tested workflows and known limits.
 
 ## Built for iteration
 
@@ -46,7 +46,7 @@ Read the [Codex/Claude setup guide](docs/AGENT_CLIENTS.md), [world API](docs/WOR
 | Graphics | Vulkan PBR, HDR composition, clustered direct lights and shadows, procedural sky, MSAA, GPU skinning and render inspection. Optional [deferred opaque lighting](docs/DEFERRED_RENDERING.md) and experimental [FSR reconstruction](docs/RECONSTRUCTION.md). |
 | Gameplay | Fixed-step Jolt physics, player and [compiled NPC character controls](docs/CHARACTER_INPUT.md), [static NPC pathfinding](docs/NAVIGATION.md), static triangle-mesh collision, raycasts, [complete hierarchy instances](docs/RUNTIME_INSTANCES.md) and [crossfades, inertial transitions and masked animation layers](docs/RUNTIME_ANIMATION.md). |
 | Execution | Shared [native jobs](docs/JOBS.md) for parallel animation sampling and procedural material baking, separate frame/background budgets, cancellation and actual worker-thread profiling. Physics and C# callbacks remain on the owner thread. |
-| C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. [Opt-in C# inertial transitions and masked layers](docs/MANAGED_GAMEPLAY.md#control-masked-layers-from-c) pass Windows/Linux CoreCLR and Native AOT fixtures while preserving older animation calls. Bounded collections have Windows/Linux CoreCLR development qualification and a relocated Windows Native AOT fixture; explicit scalar save upgrades retain separate Linux qualification. |
+| C# and persistence | Native-owned custom components, generated accessors, compatible reload, Native AOT bundles, durable save slots and corruption recovery. [Opt-in C# inertial transitions and masked layers](docs/MANAGED_GAMEPLAY.md#control-masked-layers-from-c) pass Windows/Linux CoreCLR and Native AOT fixtures while preserving older animation calls. Bounded collections and [explicit hierarchy/collection save upgrades](docs/SAVE_UPGRADES.md) preserve retained fields, instance identities and allocator history; collection resizing requires an approved plan and rejects overflow. |
 | Player systems | Typed [portable player preferences](docs/PLAYER_SETTINGS.md) for FOV, pointer controls, UI scale and existing rendering options; keyboard, mouse and gamepad profiles; typed [HUD/menu layout and styling](docs/GAME_UI.md#authored-layout-and-styling), native UI controls and C# callbacks; optional Vulkan UI presentation and Steam Audio integration. |
 | Content and tools | glTF/GLB and bounded [FBX model and separate-clip import](docs/FBX_IMPORT.md), [guarded source inspection and explicit retargeting](docs/ANIMATION_RETARGETING.md), PNG/JPEG and WAV import; immutable [asset records and exported credits](docs/ASSET_PROVENANCE.md); native [procedural brick/plaster materials](docs/PROCEDURAL_MATERIALS.md); optional [navigation baking, world binding and compiled queries](docs/NAVIGATION.md); project manifests, validated native bundles, CPU profiling, GPU duration samples and trace export. |
 

@@ -59,8 +59,9 @@ declared character input can be staged for the birth Tick. Native rejection
 clears the resolver output, and the SDK rejects errors or a zero-success result.
 Follow [runtime instances](RUNTIME_INSTANCES.md) for complete imported graph
 constraints, remapped references, cancellation, whole-instance deletion and
-exact version-6 restoration. Existing explicit schema-upgrade transforms do not
-support hierarchy recipes or version-6 snapshots. The extension does not add
+exact version-6 restoration. The external host can also select an
+[explicit save upgrade](SAVE_UPGRADES.md) preserving the native graph and
+authorizing custom field/default/capacity changes. The extension does not add
 native-library reload or a visual prefab authoring tool.
 
 Descriptor version 1 remains supported for the known 0.0.39 call-1/services-7 baseline. Current native calls provide the exact 176-byte view expected by those older compiled consumers, retaining callback pointers and context while excluding any host tail. New bridge/native entry code accepts at least that prefix and never reads unknown tail fields. This is a bounded service contract, not compatibility with all historical SDK versions or arbitrary changes to public C# APIs.

@@ -269,12 +269,25 @@ content. It uses saved component payloads before constructing the candidate, so
 repaired external references do not revert to old recipe defaults. Old supported
 root-prop snapshot formats retain their separate reconstruction paths.
 
-This is exact-content/module restoration. The existing explicit schema-upgrade
-pipeline does not yet support hierarchy recipes or version-6 snapshots; do not
-use it to migrate these saves. Changing a recipe, component schema or module
-identity needs a separately supported migration path. Save operations need the
-current tick and applicable structure, component, gameplay, UI and control
-guards; consult [gameplay saves](GAMEPLAY_SAVES.md).
+Ordinary restoration remains exact-content/module. The external host can select
+an [explicit save upgrade](SAVE_UPGRADES.md) for hierarchical recipes and
+version-6 snapshots. It may approve custom scalar/array field preservation,
+retirement and new defaults; version-2 plans additionally require exact
+permissions for changed preserved array capacities, with overflow rejected.
+Recipe roots/local member IDs, topology, names, native components and assets
+stay unchanged. Recipe-local handles remain local; saved arrays retain their
+actual ordered live handles. This is not recipe rebasing or a module-identity
+change.
+
+The complete trusted source runtime is validated before retirement or mapping,
+including incoming references in removed fields. Target restoration validates
+the mapped component payloads against the reconstructed instance graph. Root
+maps, initial transforms, allocator lineage, animation history and other native
+checkpoint state remain preserved. Follow the
+[retained hierarchy upgrade task](SAVE_UPGRADES.md#task-upgrade-a-retained-hierarchical-game)
+for exact artifacts, guards, process separation and continuation checks. Save
+operations need the current tick and applicable structure, component, gameplay,
+UI and control guards; consult [gameplay saves](GAMEPLAY_SAVES.md).
 Compatible CoreCLR reload preserves registered instance handles and state when
 its existing compatibility checks pass. It does not adopt edits to the frozen
 recipe catalog. Native AOT replacement is a separate trusted artifact boundary.
@@ -293,6 +306,9 @@ Version 0.0.78 qualification covers Windows/Linux headless compiled gameplay and
 Windows Vulkan observations on both laptop GPUs. The minimal Python recipe above
 was executed on the simulation-enabled Linux build. See [implementation status](IMPLEMENTATION_STATUS.md)
 and [recorded evidence](evidence/m2-runtime-instances.json) for exact scope and limits.
+That record covers exact restoration; explicit schema evolution has its own
+[retained source/target fixture](../tests/fixtures/instance_save_evolution/README.md)
+and qualification scope.
 
 Humans can inspect and author these recipes through the CLI or Python client,
 then inspect member IDs, playback and rendered results through the native

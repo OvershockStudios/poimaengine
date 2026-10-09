@@ -2,6 +2,8 @@
 #include "poima/save_upgrade.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
+#include <bit>
+#include <cstdint>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -130,6 +132,135 @@ void component_mapping() {
     check(map_component_scalars(source.dump(),target.dump(),values.dump(),plan.dump()).target_payload==expected_payload,"Component failures changed later valid mapping.");
 }
 
+Json array_field(char stable,const std::string& kind,unsigned capacity) {
+    return {{"id",id(stable)},{"name","List"+std::string(1,stable)},{"kind","array"},
+        {"element_kind",kind},{"capacity",capacity},{"default",Json::array()},{"unit","items"}};
+}
+Json capacity_record(char stable,unsigned from,unsigned to) {
+    return {{"id",id(stable)},{"source_capacity",from},{"target_capacity",to},{"overflow","reject"}};
+}
+void component_fields_mapping() {
+    using poima::components::Payload;
+    // Independently authored little-endian cells, including canonical padding.
+    auto word=[](Payload& bytes,std::size_t offset,std::uint64_t value,unsigned width) {
+        for(unsigned n=0;n<width;++n)bytes[offset+n]=std::byte((value>>(8u*n))&255u);
+    };
+    const std::string zero(32,'0'),entity(32,'f');
+    const std::vector<std::string> kinds={"int32","int64","float32","float64","entity"};
+    const std::vector<Json> samples={Json::array({-2147483648,2147483647}),
+        Json::array({"-9223372036854775808","9223372036854775807"}),
+        Json::array({-1.25,2.5}),Json::array({-2.5,1.25}),Json::array({entity,zero})};
+    for(std::size_t k=0;k<kinds.size();++k) {
+        auto source=component_schema({{'1',"Before","int32",0},{'4',"After","int64","0"}},"Source");
+        source["version"]=2;source["fields"].push_back(array_field('2',kinds[k],3));
+        auto target=source;target["name"]="Target";target["fields"].erase(0);
+        target["fields"][1]["capacity"]=5;target["fields"][1]["name"]="RenamedList";
+        target["fields"].push_back(array_field('3',"entity",1));
+        Json values={{id('1'),19},{id('2'),samples[k]},{id('4'),"-9223372036854775808"}};
+        Json plan={{"preserve",{id('2'),id('4')}},{"retire",{id('1')}},{"default",{id('3')}},
+            {"array_capacity",Json::array({capacity_record('2',3,5)})}};
+        // Target list2 starts at0, empty list3 at96, scalar4 at128.
+        Payload expected(144);word(expected,0,2,4);
+        for(unsigned element=0;element<2;++element) {
+            const auto offset=std::size_t(element+1)*16;
+            if(k==0)word(expected,offset,element==0?0x80000000u:0x7fffffffu,4);
+            if(k==1)word(expected,offset,element==0?0x8000000000000000ULL:0x7fffffffffffffffULL,8);
+            if(k==2)word(expected,offset,std::bit_cast<std::uint32_t>(element==0?-1.25f:2.5f),4);
+            if(k==3)word(expected,offset,std::bit_cast<std::uint64_t>(element==0?-2.5:1.25),8);
+            if(k==4 && element==0)std::fill_n(expected.begin()+static_cast<Payload::difference_type>(offset),16,std::byte{255});
+        }
+        word(expected,128,0x8000000000000000ULL,8);
+        const auto mapped=map_component_fields(source.dump(),target.dump(),values.dump(),plan.dump());
+        auto expected_values=values;expected_values.erase(id('1'));expected_values[id('3')]=Json::array();
+        check(mapped.target_payload==expected,"Array mapper differs from independent byte/layout oracle.");
+        check(Json::parse(mapped.target_values)==expected_values,"Array typed ordering/defaults changed.");
+        check(Json::parse(mapped.target_compact_values)==Json::array({samples[k],Json::array(),"-9223372036854775808"}),"Target compact collection order changed.");
+        check(mapped.preserved[0].source_name=="List2" && mapped.preserved[0].target_name=="RenamedList","Array report lost rename identity.");
+        const auto compact=Json::array({19,samples[k],"-9223372036854775808"}).dump();
+        for(unsigned order=0;order<3;++order) {
+            std::rotate(source["fields"].begin(),source["fields"].begin()+1,source["fields"].end());
+            std::rotate(target["fields"].begin(),target["fields"].begin()+1,target["fields"].end());
+            check(map_component_fields(source.dump(),target.dump(),compact,plan.dump(),ComponentValueEncoding::compact).target_payload==expected,"Collection compact input used authored rather than canonical order.");
+        }
+        auto reject=[&](const Json& a,const Json& b,const Json& v,const Json& p) {
+            bool failed=false;try{(void)map_component_fields(a.dump(),b.dump(),v.dump(),p.dump());}catch(const std::exception&){failed=true;}
+            check(failed,"Invalid collection mapping accepted.");++failures;
+        };
+        auto field=[](Json& schema,char stable)->Json& {
+            for(auto& f:schema["fields"])if(f["id"]==id(stable))return f;
+            throw std::runtime_error("Fixture field absent.");
+        };
+        auto shrink=target;field(shrink,'2')["capacity"]=2;
+        auto shrink_plan=plan;shrink_plan["array_capacity"][0]=capacity_record('2',3,2);
+        check(Json::parse(map_component_fields(source.dump(),shrink.dump(),values.dump(),shrink_plan.dump()).target_values)==expected_values,"Authorized fitting shrink changed values.");
+        field(shrink,'2')["capacity"]=1;shrink_plan["array_capacity"][0]=capacity_record('2',3,1);
+        reject(source,shrink,values,shrink_plan);
+        auto same=target;field(same,'2')["capacity"]=3;auto no_capacity=plan;no_capacity.erase("array_capacity");
+        check(Json::parse(map_component_fields(source.dump(),same.dump(),values.dump(),no_capacity.dump()).target_values)==expected_values,"Same capacity incorrectly needs authorization.");
+        reject(source,target,values,no_capacity);reject(source,same,values,plan);
+        auto bad=plan;bad["array_capacity"][0]["source_capacity"]=2;reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["target_capacity"]=4;reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["overflow"]="truncate";reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["id"]=id('4');reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["id"]=id('3');reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["id"]=id('9');reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"].push_back(bad["array_capacity"][0]);reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["extra"]=true;reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["source_capacity"]=true;reject(source,target,values,bad);
+        bad=plan;bad["array_capacity"][0]["target_capacity"]=5.0;reject(source,target,values,bad);
+        auto changed=target;field(changed,'2')["element_kind"]=k==4?"int32":"entity";reject(source,changed,values,plan);
+        changed=target;field(changed,'2')["unit"]="different";reject(source,changed,values,plan);
+        auto invalid=values;invalid[id('2')].push_back(samples[k][0]);invalid[id('2')].push_back(samples[k][0]);reject(source,target,invalid,plan);
+        invalid=values;invalid[id('2')][0]=nullptr;reject(source,target,invalid,plan);
+        // Retiring a whole array still validates every source element.
+        auto scalar_target=component_schema({{'4',"After","int64","0"}},"Scalar target");
+        Json retire={{"preserve",{id('4')}},{"retire",{id('1'),id('2')}},{"default",Json::array()}};
+        check(Json::parse(map_component_fields(source.dump(),scalar_target.dump(),values.dump(),retire.dump()).target_values)==Json{{id('4'),"-9223372036854775808"}},"Retiring last array did not map schema2 to1.");
+        reject(source,scalar_target,invalid,retire);
+        bool scalar_failed=false;try{(void)map_component_scalars(source.dump(),target.dump(),values.dump(),plan.dump());}catch(const std::exception&){scalar_failed=true;}
+        check(scalar_failed,"Legacy scalar wrapper admitted schema2.");++failures;
+        check(map_component_fields(source.dump(),target.dump(),values.dump(),plan.dump()).target_payload==expected,"Rejected collection attempts altered later mapping.");
+    }
+    // Schema1→2 adds an empty array and shifts a retained scalar to offset48.
+    auto scalar=component_schema({{'4',"After","int64","0"}},"Scalar");auto added=scalar;added["version"]=2;added["fields"].push_back(array_field('2',"int64",2));
+    Json addition={{"preserve",{id('4')}},{"retire",Json::array()},{"default",{id('2')}}};
+    const Json scalar_values={{id('4'),"9223372036854775807"}};
+    Payload added_expected(64);word(added_expected,48,0x7fffffffffffffffULL,8);
+    check(map_component_fields(scalar.dump(),added.dump(),scalar_values.dump(),addition.dump()).target_payload==added_expected,"Added empty collection incorrectly initialized/moved scalar.");
+    auto scalar_plan=addition;scalar_plan["default"]=Json::array();scalar_plan["array_capacity"]=Json::array();
+    bool wrapper_failed=false;try{(void)map_component_scalars(scalar.dump(),scalar.dump(),scalar_values.dump(),scalar_plan.dump());}catch(const std::exception&){wrapper_failed=true;}
+    check(wrapper_failed,"Legacy scalar wrapper admitted capacity key.");++failures;
+    // Retiring an earlier array moves a later array and scalar by their full
+    // byte extents, independently of original authored field order.
+    auto multi=scalar;multi["version"]=2;multi["fields"].push_back(array_field('1',"int32",3));
+    multi["fields"].push_back(array_field('2',"entity",2));
+    auto reduced=multi;reduced["fields"].erase(1);
+    Json multi_values={{id('1'),Json::array({17,18,19})},{id('2'),Json::array({entity,zero})},{id('4'),"9223372036854775807"}};
+    Json multi_plan={{"preserve",{id('2'),id('4')}},{"retire",{id('1')}},{"default",Json::array()}};
+    Payload multi_expected(64);word(multi_expected,0,2,4);std::fill_n(multi_expected.begin()+16,16,std::byte{255});
+    word(multi_expected,48,0x7fffffffffffffffULL,8);
+    check(map_component_fields(multi.dump(),reduced.dump(),multi_values.dump(),multi_plan.dump()).target_payload==multi_expected,"Retired array extent corrupted subsequent array/scalar offsets.");
+    auto invalid_retired=multi_values;invalid_retired[id('1')][2]=true;
+    bool retired_failed=false;try{(void)map_component_fields(multi.dump(),reduced.dump(),invalid_retired.dump(),multi_plan.dump());}catch(const std::exception&){retired_failed=true;}
+    check(retired_failed,"Retired source array skipped complete element validation.");++failures;
+    auto wrong_kind=reduced;wrong_kind["fields"][1]={{"id",id('2')},{"name","List2"},{"kind","entity"},{"default",zero},{"unit","items"}};wrong_kind["version"]=1;
+    bool kind_failed=false;try{(void)map_component_fields(multi.dump(),wrong_kind.dump(),multi_values.dump(),multi_plan.dump());}catch(const std::exception&){kind_failed=true;}
+    check(kind_failed,"Retained array silently became scalar.");++failures;
+    // Capacity31 is the complete512-byte component budget; grow to it from1.
+    auto small=scalar;small["version"]=2;small["fields"]=Json::array({array_field('2',"entity",1)});
+    auto large=small;large["fields"][0]["capacity"]=31;
+    Json wide_plan={{"preserve",{id('2')}},{"retire",Json::array()},{"default",Json::array()},
+        {"array_capacity",Json::array({capacity_record('2',1,31)})}};
+    const auto wide=map_component_fields(small.dump(),large.dump(),Json{{id('2'),Json::array({entity})}}.dump(),wide_plan.dump());
+    Payload wide_expected(512);word(wide_expected,0,1,4);std::fill_n(wide_expected.begin()+16,16,std::byte{255});
+    check(wide.target_payload==wide_expected,"Maximum-capacity growth has incorrect zero extent.");
+    // Entity handles remain opaque to this pure mapper and reach owner liveness checks.
+    const auto large_schema=poima::components::parse_schema(large.dump());
+    bool dead_rejected=false;try{poima::components::validate_payload(large_schema,wide.target_payload,
+        [](void*,PoimaEntityId) {return false;},nullptr);}catch(const std::exception&){dead_rejected=true;}
+    check(dead_rejected,"Array handles were lost before outer-owner liveness validation.");
+}
+
 }
 int main() {
     try {
@@ -208,6 +339,7 @@ int main() {
         raw_reject(source.dump(),target.dump(),values.dump(),std::string(1024*1024+1,' '));
         check(map_global_scalars(source.dump(),target.dump(),values.dump(),plan.dump()).target_values==result.target_values,"Failed plans changed subsequent mapping results.");
         component_mapping();
-        std::cout<<"Pure global/component scalar mapping passed rename/reorder/add/retire, canonical component order/padding, legacy explicit IDs, typed scalar preservation and "<<failures<<" invalid cases. No whole-save migration claim.\n";return 0;
+        component_fields_mapping();
+        std::cout<<"Pure global/component field mapping passed scalar compatibility, five typed arrays, explicit capacity changes, canonical offsets/padding, rename/add/retire and "<<failures<<" invalid cases. No whole-save migration claim.\n";return 0;
     }catch(const std::exception& error) {std::cerr<<error.what()<<'\n';return 1;}
 }

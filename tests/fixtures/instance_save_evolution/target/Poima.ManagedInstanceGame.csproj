@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../../../managed/Directory.Build.props" />
+  <PropertyGroup Condition="'$(InstanceEvolutionShrink)' == 'true'">
+    <DefineConstants>$(DefineConstants);INSTANCE_EVOLUTION_SHRINK</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup><ProjectReference Include="../../../../managed/Poima.Gameplay/Poima.Gameplay.csproj" /></ItemGroup>
+  <Import Project="../../../../managed/Poima.Components.targets" />
+</Project>

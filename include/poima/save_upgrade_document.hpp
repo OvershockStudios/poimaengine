@@ -16,7 +16,10 @@ struct DocumentMappingResult {
 // Pure compatibility check/transformation of already validated FROZEN authored
 // documents (freeze_content output). Receipts/retired-ID arrays must be empty;
 // no history is discarded here. Only root revision, explicitly planned schemas
-// and mapped custom scalar values may differ. Full schema comparison includes
+// and explicitly mapped custom scalar/bounded-array values may differ. Frozen
+// root-prop and local hierarchical recipes are traversed without rebasing IDs;
+// membership, root, topology, native components and asset references stay exact.
+// Full schema comparison includes
 // names/units, which the component fingerprint deliberately excludes.
 //
 // The owner must validate/freeze both original documents and their asset closure,

@@ -62,4 +62,17 @@ ComponentMappingResult map_component_scalars(const std::string& source_schema,
     const std::string& target_schema,const std::string& source_values,
     const std::string& plan,ComponentValueEncoding encoding=ComponentValueEncoding::field_ids);
 
+// Collection-aware counterpart supporting component schema versions 1 and 2.
+// Uses each field's derived byte offset/extent, not its field ordinal. Arrays
+// retain element kind, unit, ordered active values and entity handles; added
+// arrays are empty and inactive storage is zero. Capacity changes require an
+// explicit sorted array_capacity list of {id,source_capacity,target_capacity,
+// overflow:"reject"} records in the mapping. Every record must exactly match a
+// preserved array whose capacity changes. Shrink rejects excess live elements;
+// growth never invents elements. All source fields, including retired arrays,
+// are validated before mapping. Entity liveness remains an outer-owner check.
+ComponentMappingResult map_component_fields(const std::string& source_schema,
+    const std::string& target_schema,const std::string& source_values,
+    const std::string& plan,ComponentValueEncoding encoding=ComponentValueEncoding::field_ids);
+
 }

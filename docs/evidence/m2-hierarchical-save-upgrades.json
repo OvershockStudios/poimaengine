@@ -1,0 +1,2034 @@
+{
+  "format": "poima.hierarchical-save-upgrades-qualification",
+  "version": 1,
+  "engine_version": "0.0.79",
+  "date": "2026-10-09",
+  "passed": true,
+  "contracts": {
+    "authoring_core": "v1",
+    "protocol": 1,
+    "schema_revision": 68,
+    "gameplay_services_epoch": 7,
+    "gameplay_call_epoch": 1,
+    "required_instance_prefix_bytes": 232,
+    "sdk_or_abi_changed": false,
+    "plan_versions": [
+      1,
+      2
+    ],
+    "snapshot_adapter_versions": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "component_schema_versions": [
+      1,
+      2
+    ],
+    "capacity_bounds": [
+      1,
+      31
+    ],
+    "capacity_change_policy": "Explicit plan-v2 preserved-array permissions; overflow rejects, never truncates."
+  },
+  "native_builds": [
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "binary_sha256": "638328fe4df22f2780b3aa1c73fb3a2d82fd3300349d22ccd88259c72c800505",
+      "initial_seconds": 356.3802418830019,
+      "initial_log_sha256": "ef30b51391755424fd69ca531f1bc6329ad6a5f99ded5c4e337082d123d3c5c7",
+      "snapshot_only_seconds": 39.901756619998196,
+      "snapshot_only_log_sha256": "990a9c0c8563a9fd0679ee6687290402bec2d895d92c525c53d07b6b5ebea278",
+      "engine_binary_changed_by_test_refinement": false
+    },
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "binary_sha256": "532a87441eb5ddb05dec23bd857a583f927f581f2a24642c4376f3094cbb851e",
+      "initial_seconds": 236.86184392200084,
+      "initial_log_sha256": "dce7a02c6c35c7d96051903dc6da76ea6ba79fd8e646ee574b926bc27f4e2907",
+      "snapshot_only_seconds": 35.28322398800083,
+      "snapshot_only_log_sha256": "d4ec66197915bd21e9b8c8de1333f855e2645ee2d438431186894b0e7c13c62a",
+      "engine_binary_changed_by_test_refinement": false
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "binary_sha256": "5bded627c14b7461e0e76eae9565a0b46258fd788752c394f6ceec80017622fa",
+      "initial_seconds": 239.73800403199857,
+      "initial_log_sha256": "5d0dde9f543f74ff0a00516a9a2bf40628246912b6718a948abde66366d16025",
+      "snapshot_only_seconds": 25.432531906000804,
+      "snapshot_only_log_sha256": "990a9c0c8563a9fd0679ee6687290402bec2d895d92c525c53d07b6b5ebea278",
+      "engine_binary_changed_by_test_refinement": false
+    }
+  ],
+  "selected_regression_checks": [
+    {
+      "host": "linux",
+      "passed_checks": 27,
+      "checks": [
+        {
+          "name": "poima-runtime-animation-membership-test",
+          "exit_code": 0,
+          "seconds": 0.07064885200088611,
+          "log_sha256": "d867066d69b1305818d5611e5e931b545a131622be34cc833f9f348fa5a4c31b"
+        },
+        {
+          "name": "poima-runtime-templates-test",
+          "exit_code": 0,
+          "seconds": 0.11890472799859708,
+          "log_sha256": "b3c4d6b59cc41f59ed689291703a12c4aa26f5068eeb7da855d99cd291632546"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 5.037047068006359,
+          "log_sha256": "f5df21ad0a288a81603e82e28708a263159b78f8cf1695b87a41dc1a830352e9"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 3.530220521002775,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "seconds": 0.06948082300368696,
+          "log_sha256": "e5d6cbf6e75f418ffea8739597cf2e81c15c00169122b23d607608bf214f4fc4"
+        },
+        {
+          "name": "poima-components-test",
+          "exit_code": 0,
+          "seconds": 0.06915516199660487,
+          "log_sha256": "b4cad7e32c4780b7cc7d42dbf0eb982cc224f7e36ec0473b06b30670a8f74bc7"
+        },
+        {
+          "name": "poima-save-upgrade-test",
+          "exit_code": 0,
+          "seconds": 0.11890890400536591,
+          "log_sha256": "928188247db93518baf968d7048e281b2590d0a0a3fc797a10a050ce89831b80"
+        },
+        {
+          "name": "poima-save-upgrade-plan-test",
+          "exit_code": 0,
+          "seconds": 0.06881949099624762,
+          "log_sha256": "afce00e6484e60b2dde65881a9e16320ec5aebc5dd29576a6ef8b35b1dc24595"
+        },
+        {
+          "name": "poima-save-upgrade-document-test",
+          "exit_code": 0,
+          "seconds": 0.47040935000404716,
+          "log_sha256": "44868cf4ccd76361104d31ef4b0225d1ac61383b191d269d5014faa0763fa27e"
+        },
+        {
+          "name": "poima-save-upgrade-snapshot-test",
+          "exit_code": 0,
+          "seconds": 0.12010483899939572,
+          "log_sha256": "344fd528a4bf0088a9d6df45b0b85c1bea78b58bc7f95cea6f25c7a1be948888"
+        },
+        {
+          "name": "poima-runtime-instances-test",
+          "exit_code": 0,
+          "seconds": 0.11921775399969192,
+          "log_sha256": "6750495835823d800342d69fd7153b57d5f4747f65131a97bb17fe71a78273d7"
+        },
+        {
+          "name": "poima-runtime-test",
+          "exit_code": 0,
+          "seconds": 0.31981550099590095,
+          "log_sha256": "56bd299ed6443f36487c02a641693c5b1153e70cea9737bd7e07cc8d9f534eef"
+        },
+        {
+          "name": "poima-runtime-save-test",
+          "exit_code": 0,
+          "seconds": 0.2705626810056856,
+          "log_sha256": "5f3b9b686b818b89e26b0ff272f94352a808489df5f5ad65e225564c446a1f91"
+        },
+        {
+          "name": "poima-runtime-components-test",
+          "exit_code": 0,
+          "seconds": 0.36941124399891123,
+          "log_sha256": "8c297a358b7142fcc5839040822fd4e63da1538e28baf8975c668a86b8d4cdd8"
+        },
+        {
+          "name": "poima-runtime-topology-test",
+          "exit_code": 0,
+          "seconds": 0.08876902200427139,
+          "log_sha256": "49471248535ac539029c06bfc4be515a7e8b3d6c32b9058555294eabd94f4f73"
+        },
+        {
+          "name": "poima-runtime-animation-test",
+          "exit_code": 0,
+          "seconds": 0.219218591999379,
+          "log_sha256": "2a3876cb56bf94c73b94b9223f27940e57412f6d676cbc11f0398b281cdfa1c8"
+        },
+        {
+          "name": "poima-runtime-animation-layers-test",
+          "exit_code": 0,
+          "seconds": 0.16900025799986906,
+          "log_sha256": "7afadd0d3d0a9d47021086e4ac8169e94da07647a60eaa56622d6134a3de060c"
+        },
+        {
+          "name": "poima-runtime-mesh-test",
+          "exit_code": 0,
+          "seconds": 0.26932000600208994,
+          "log_sha256": "e179e01dc4bc47969f1ad90f5661d9951bb2544eadaa17546d772daa3b166824"
+        },
+        {
+          "name": "poima-player-window-test",
+          "exit_code": 0,
+          "seconds": 0.06857544299418805,
+          "log_sha256": "55391c38a382aed12f3186b80d7415f402da4b746efcd897ef49b1121e6d4f87"
+        },
+        {
+          "name": "world_templates_contract",
+          "exit_code": 0,
+          "seconds": 2.3733186009994824,
+          "log_sha256": "39317c60cb2c81669dbd8893721057f5690940002253275ce49606caae221720"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 5.43163242200535,
+          "log_sha256": "97c0b57f4b3b75302708447d8fd79f6607896164ee329cd88fe2d64f4eabbfdc"
+        },
+        {
+          "name": "world_components_contract",
+          "exit_code": 0,
+          "seconds": 1.5714533330028644,
+          "log_sha256": "776ed6d009c384bf43531e85f32ac69e989cbfbfc6c96b00c071f01e76314938"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "seconds": 3.577896866001538,
+          "log_sha256": "17e48ded348033c9bfd12a4f98e9c5627b744b74b9a8b9e65f94f7c6ade9b26d"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.5214219019981101,
+          "log_sha256": "001bc58ac0c6306f741a13a884eac883e6b7a3593cadcde4a427c1478d6698c5"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.6684704450017307,
+          "log_sha256": "b588dd095d3e70fb5ecbea561e9de590bfbb74e83233aabab2b474242b12a045"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.274156048995792,
+          "log_sha256": "64bb005b394a5da66919a2a844126380c1895d09d4b5242a08c114d5f742587c"
+        },
+        {
+          "name": "jolt_character_patch",
+          "exit_code": 0,
+          "seconds": 0.31736941899725934,
+          "log_sha256": "8a650bf3311cbd3f36771eb117bdf77a65b429c2dacc27a984e096dde1b97d70"
+        }
+      ],
+      "raw_report_sha256": "475a404159cbe01ba453628d1a3c8539ebcb5efcd4198fe28238c82a44353d40"
+    },
+    {
+      "host": "windows",
+      "passed_checks": 27,
+      "checks": [
+        {
+          "name": "poima-runtime-animation-membership-test",
+          "exit_code": 0,
+          "seconds": 0.12126722500397591,
+          "log_sha256": "128de2e4168967c7f049c7c8869fa119af7e9b12bd46b6559e58b4dfebb94a7e"
+        },
+        {
+          "name": "poima-runtime-templates-test",
+          "exit_code": 0,
+          "seconds": 0.12076614300167421,
+          "log_sha256": "4f1b061d3c89ae373dc7ec25b28db67ed47425c5546126a273f66eae1fc3c7cd"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 5.943604448999395,
+          "log_sha256": "093cd89e26b78caeafdd2a7bbb7c51dd26b48f2b20d60bb0dadf7e0b69526478"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 2.177120634005405,
+          "log_sha256": "9eb6225132271b608b9fc99079936d3425bfcd22f1fd87325e0b6203613f50a6"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "seconds": 0.12051248799980385,
+          "log_sha256": "25b643e36f8a546be9a0d887a1a832436a97a6330d516aa0acdfb20a3bf4321c"
+        },
+        {
+          "name": "poima-components-test",
+          "exit_code": 0,
+          "seconds": 0.11971618399547879,
+          "log_sha256": "fdfa7ccaaab4519ec4d78e102d75d6a04075bbf3430cdd779a9c91f0afdaecfd"
+        },
+        {
+          "name": "poima-save-upgrade-test",
+          "exit_code": 0,
+          "seconds": 0.11987751600099728,
+          "log_sha256": "4b41397389fdc4451aba3a003ee2b6acc6aac70ccb110c1cc084100c7752a1db"
+        },
+        {
+          "name": "poima-save-upgrade-plan-test",
+          "exit_code": 0,
+          "seconds": 0.11995342700538458,
+          "log_sha256": "199250b5706b1999b3bbea43c7b1094e88f889d14615845e25fe813ee0f9e612"
+        },
+        {
+          "name": "poima-save-upgrade-document-test",
+          "exit_code": 0,
+          "seconds": 0.6263101299991831,
+          "log_sha256": "047314b0ab27315a0c55c08d7f3f32e055068de360e189c1537286f2ef5ec643"
+        },
+        {
+          "name": "poima-save-upgrade-snapshot-test",
+          "exit_code": 0,
+          "seconds": 0.17565000300237443,
+          "log_sha256": "d76ffe26332f414226e8e8c816b5473cf2a4eb2ff5857dee5eaa426d62820b9f"
+        },
+        {
+          "name": "poima-runtime-instances-test",
+          "exit_code": 0,
+          "seconds": 0.11931626000296092,
+          "log_sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        },
+        {
+          "name": "poima-runtime-test",
+          "exit_code": 0,
+          "seconds": 0.22011093699984485,
+          "log_sha256": "69640105a464440c5ffaea76f9ff9890e0b93f7fa777835a0b4baef94af7aae7"
+        },
+        {
+          "name": "poima-runtime-save-test",
+          "exit_code": 0,
+          "seconds": 0.2219634099965333,
+          "log_sha256": "982db674627bfd582fcbefa9bbf99da0c50f45d4540f77e31eda8a804f7c4372"
+        },
+        {
+          "name": "poima-runtime-components-test",
+          "exit_code": 0,
+          "seconds": 0.4282896479999181,
+          "log_sha256": "b081efa87e8becb2a62c8c31dc17161ef7830d9c8bac66e9fcf0aa061d4b4735"
+        },
+        {
+          "name": "poima-runtime-topology-test",
+          "exit_code": 0,
+          "seconds": 0.15105726399633568,
+          "log_sha256": "096d010996e57fbbf170ff9c54decfe1425afe242347b3436d1c3a5f182794c7"
+        },
+        {
+          "name": "poima-runtime-animation-test",
+          "exit_code": 0,
+          "seconds": 0.1260370430027251,
+          "log_sha256": "b09196ad6f323570be3926f2623bba74cc1e19b95bd64d37263b4b4670cbbbf8"
+        },
+        {
+          "name": "poima-runtime-animation-layers-test",
+          "exit_code": 0,
+          "seconds": 0.17106726100610103,
+          "log_sha256": "bfb0e45883d772e6355da382746084f670ed1b81b6d9a5a4d68277dda9942732"
+        },
+        {
+          "name": "poima-runtime-mesh-test",
+          "exit_code": 0,
+          "seconds": 0.271496864996152,
+          "log_sha256": "c712c123ffb736188606cbca3cf3ae689834b423489a3f248720185a9a4988fa"
+        },
+        {
+          "name": "poima-player-window-test",
+          "exit_code": 0,
+          "seconds": 0.12328137700387742,
+          "log_sha256": "6464d1a8472f746a8b85851c952071ba97df11bc43d23f4f24e991d497002319"
+        },
+        {
+          "name": "world_templates_contract",
+          "exit_code": 0,
+          "seconds": 1.5724895959938294,
+          "log_sha256": "4197928364fea0dd3ce243513d3d61d477078d79f1653e73a7594810d0c7401e"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 4.231750726998143,
+          "log_sha256": "0dfd11030378fd1a1feeb0ae944155d566f02f477829f210396b94d914c7051b"
+        },
+        {
+          "name": "world_components_contract",
+          "exit_code": 0,
+          "seconds": 1.1714002329972573,
+          "log_sha256": "503110eb68c12691835ad3c40593477d5b0d9309461982beaab234eefdc5dc1c"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "seconds": 3.6305416469986085,
+          "log_sha256": "b9c60ecdc116eb063b201405283074a91a5df320ff463caf521b41e1e05688c5"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.7230528539948864,
+          "log_sha256": "107a1ab39f4d0f3f5c77d8184e6a1ddb09a3120820c95698a07274d1cd8402e6"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5692187559980084,
+          "log_sha256": "b063f09aeef553b6a44a3b7fae09d872794fd42ab615e02ad9fb637ee7a01945"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.9982915240034345,
+          "log_sha256": "25b8208bd7b361071f908ddfebc6a509a1314ce54b506ddca44223af302d109a"
+        },
+        {
+          "name": "jolt_character_patch",
+          "exit_code": 0,
+          "seconds": 0.31868390800082125,
+          "log_sha256": "8a650bf3311cbd3f36771eb117bdf77a65b429c2dacc27a984e096dde1b97d70"
+        }
+      ],
+      "raw_report_sha256": "508f2989bb9be6dad380609583aafd3560460e5880021978b2061d3264c52e73"
+    },
+    {
+      "host": "authoring",
+      "passed_checks": 17,
+      "checks": [
+        {
+          "name": "poima-runtime-animation-membership-test",
+          "exit_code": 0,
+          "seconds": 0.03647743100009393,
+          "log_sha256": "d867066d69b1305818d5611e5e931b545a131622be34cc833f9f348fa5a4c31b"
+        },
+        {
+          "name": "poima-runtime-templates-test",
+          "exit_code": 0,
+          "seconds": 0.06896817700180691,
+          "log_sha256": "b3c4d6b59cc41f59ed689291703a12c4aa26f5068eeb7da855d99cd291632546"
+        },
+        {
+          "name": "poima-world-schema-test",
+          "exit_code": 0,
+          "seconds": 4.834692097996594,
+          "log_sha256": "698cc5fd3cb9c6ca3ad404de7bd252f99d719db724b774779fe47b5c283d296e"
+        },
+        {
+          "name": "poima-world-session-test",
+          "exit_code": 0,
+          "seconds": 2.5765860819956288,
+          "log_sha256": "9111e23fd2ef7d5587d4ba7c23b89d329f9a44b1518e93d37c41bbe99169a657"
+        },
+        {
+          "name": "poima-gameplay-compatibility-test",
+          "exit_code": 0,
+          "seconds": 0.020303821002016775,
+          "log_sha256": "e5d6cbf6e75f418ffea8739597cf2e81c15c00169122b23d607608bf214f4fc4"
+        },
+        {
+          "name": "poima-components-test",
+          "exit_code": 0,
+          "seconds": 0.020139330998063087,
+          "log_sha256": "b4cad7e32c4780b7cc7d42dbf0eb982cc224f7e36ec0473b06b30670a8f74bc7"
+        },
+        {
+          "name": "poima-save-upgrade-test",
+          "exit_code": 0,
+          "seconds": 0.06821329500235151,
+          "log_sha256": "928188247db93518baf968d7048e281b2590d0a0a3fc797a10a050ce89831b80"
+        },
+        {
+          "name": "poima-save-upgrade-plan-test",
+          "exit_code": 0,
+          "seconds": 0.03651489500043681,
+          "log_sha256": "afce00e6484e60b2dde65881a9e16320ec5aebc5dd29576a6ef8b35b1dc24595"
+        },
+        {
+          "name": "poima-save-upgrade-document-test",
+          "exit_code": 0,
+          "seconds": 0.5199801440030569,
+          "log_sha256": "44868cf4ccd76361104d31ef4b0225d1ac61383b191d269d5014faa0763fa27e"
+        },
+        {
+          "name": "poima-save-upgrade-snapshot-test",
+          "exit_code": 0,
+          "seconds": 0.036171407999063376,
+          "log_sha256": "afb4463b62e4a0d6cd7810eecd9ca83256289173be71e4ac32478575ef188539"
+        },
+        {
+          "name": "world_templates_contract",
+          "exit_code": 0,
+          "seconds": 1.1202516020057374,
+          "log_sha256": "089b5f4d87668a340cd6bf82d10957ab9bad811cdaa1112a4bac1fb46a242340"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 0.9695234009996057,
+          "log_sha256": "52df60277058b85743420de0b3bb6a4bd998d9a05ed7ae58d39365019792569c"
+        },
+        {
+          "name": "world_components_contract",
+          "exit_code": 0,
+          "seconds": 0.8187702870054636,
+          "log_sha256": "119edd088d6ceabdfdfd592efc2c46446aeeb269446a53b744ce81ac53db35b8"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "seconds": 1.9739439300028607,
+          "log_sha256": "9ad8cef69fea30fd1ba8bf3b12eea92fa03c50abd3c2948d7c7596c18345316e"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.2204395459993975,
+          "log_sha256": "a18aff25366a2c5a7fcd155b1f503156d1a768ac77375fb0475b28dcffbd99c4"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5183192120020976,
+          "log_sha256": "c179ec3b4f00577f29d370b63512d197521c256f93d996d449c2cd323f9b0bf8"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.6215978139953222,
+          "log_sha256": "e571429fb1f91b81acac9c4bef232b3adf5956a7d58418cf53efbce7191ca4ca"
+        }
+      ],
+      "raw_report_sha256": "dfb0874d4df24197b9d83e420aca4d3b29377e2da243018480a5fb939e6c9ab0"
+    }
+  ],
+  "refined_snapshot_tests": {
+    "passed": true,
+    "tests": [
+      {
+        "host": "linux",
+        "exit_code": 0,
+        "binary_sha256": "5afe633a9bbcb08325c1928ee01036c4bfba8c46ae52537eed2753fd3ec67a13",
+        "output": "Snapshot adapter passed global/component mapping, complete frozen catalogs, spawned/retired allocator and UI preservation, explicit write allowlist and 28 rejections; source/target native validation=1. No executable migration claim.\nHierarchical v6 collections passed live/root/child mapping, retired allocator history, exact native-state allowlist, growth, fitting shrink, runtime-only overflow and preserved trailing int64; native validation=1.\n",
+        "seconds": 0.6352106010017451
+      },
+      {
+        "host": "windows",
+        "exit_code": 0,
+        "binary_sha256": "8dd7e626a2346799494c9659413c40aefe2154310c3148bba9f395c2b7308045",
+        "output": "Snapshot adapter passed global/component mapping, complete frozen catalogs, spawned/retired allocator and UI preservation, explicit write allowlist and 28 rejections; source/target native validation=1. No executable migration claim.\nHierarchical v6 collections passed live/root/child mapping, retired allocator history, exact native-state allowlist, growth, fitting shrink, runtime-only overflow and preserved trailing int64; native validation=1.\n",
+        "seconds": 1.04865440899448
+      },
+      {
+        "host": "authoring",
+        "exit_code": 0,
+        "binary_sha256": "3cd03e6a370f4a8392b31a5133e0f74530b1a93e308d3a449a5b74622a18c539",
+        "output": "Snapshot adapter passed global/component mapping, complete frozen catalogs, spawned/retired allocator and UI preservation, explicit write allowlist and 27 rejections; source/target native validation=0. No executable migration claim.\nHierarchical v6 collections passed live/root/child mapping, retired allocator history, exact native-state allowlist, growth, fitting shrink, runtime-only overflow and preserved trailing int64; native validation=0.\n",
+        "seconds": 0.14825826800370123
+      }
+    ],
+    "source_sha256": "874ae2835cd2855fe7e23a4262d0a6a936d01bf137f3dac4c5500dfe3522fa79"
+  },
+  "native_coverage": {
+    "component_mapper_rejection_cases": 184,
+    "plan_rejection_cases": 96,
+    "authored_document_rejection_cases": 78,
+    "component_array_element_kinds": [
+      "int32",
+      "int64",
+      "float32",
+      "float64",
+      "entity"
+    ],
+    "source_validation": "Every source cell is checked before retirement; ordinary Runtime validation checks world references before transformation.",
+    "capacity_cases": [
+      "unchanged",
+      "explicit growth",
+      "fitting shrink",
+      "overflow rejection",
+      "missing or mismatched permission"
+    ],
+    "runtime_only_overflow": "Native v6 fixture: valid source length3/cap4, authored recipe length2 fits target cap2; saved runtime mapping rejects overflow.",
+    "v6_allowlist": "Complete entity/native/physics/animation/sound/UI/control/structure/member maps and allocator lineage unchanged.",
+    "envelope_scope": "Stripped v1-5 fixtures prove adapter grammar; native source/target validation exercises v5 and v6. This is not full historical executable qualification for every format."
+  },
+  "managed_builds": [
+    {
+      "host": "linux",
+      "sdk": "10.0.401",
+      "frozen_source_count": 49,
+      "source_inventory_sha256": "0f2e4954e0b76ae6ce8c451a9f83dca178c36c9014705cc78a7dfa9f6bed599b",
+      "raw_report_sha256": "68fdce74296b6b0c5cff03e6d67d96c25250001a9d1c92b67240f500c91ac57d",
+      "commands": [
+        {
+          "name": "generator-build",
+          "exit_code": 0,
+          "seconds": 24.355864953999117,
+          "log_sha256": "afb99bb046843e7d5e679f218cf445e35ea5cdf50cccf3f8500398352989c5f4"
+        },
+        {
+          "name": "game-build",
+          "exit_code": 0,
+          "seconds": 17.4875837590007,
+          "log_sha256": "fa631b516485e72abdac9e32d49e7494f905f1d061eb9f8c886535ecc34c745f"
+        },
+        {
+          "name": "manifest",
+          "exit_code": 0,
+          "seconds": 0.3764726680019521,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "-shrinkgame-build",
+          "exit_code": 0,
+          "seconds": 12.51927706499555,
+          "log_sha256": "a309c89fa1131c425aa36ba5f815ed28eab30df04a9729a4570471dd3f924ba4"
+        },
+        {
+          "name": "-shrinkmanifest",
+          "exit_code": 0,
+          "seconds": 0.7287451879965374,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "main_manifest_sha256": "6db29f7eb9ce8c81d509220b1ea4d6158e15a6bc2f33e8f9ccf9f365c6babd55",
+      "shrink_manifest_sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+    },
+    {
+      "host": "windows",
+      "sdk": "10.0.401",
+      "frozen_source_count": 49,
+      "source_inventory_sha256": "0f2e4954e0b76ae6ce8c451a9f83dca178c36c9014705cc78a7dfa9f6bed599b",
+      "raw_report_sha256": "701c9733825dc7a96f472f499c5e21f0496137e72ab65c42fdcca258641cca6d",
+      "commands": [
+        {
+          "name": "generator-build",
+          "exit_code": 0,
+          "seconds": 6.240304499980994,
+          "log_sha256": "fe7b72963395328fb7c24ba9b684e7263aac914a60fe73347fba9064ed6ef0e8"
+        },
+        {
+          "name": "game-build",
+          "exit_code": 0,
+          "seconds": 5.164886300015496,
+          "log_sha256": "97a686e0a1f60ace9427a3c3a9a9c2787adf567968b25e83e040136158fecfb0"
+        },
+        {
+          "name": "manifest",
+          "exit_code": 0,
+          "seconds": 0.16718180000316352,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "-shrinkgame-build",
+          "exit_code": 0,
+          "seconds": 3.3207863999996334,
+          "log_sha256": "7416d9a930a8a64d07d3c1cc227cd659b6c9b37675314dccbfe329f91c61684a"
+        },
+        {
+          "name": "-shrinkmanifest",
+          "exit_code": 0,
+          "seconds": 0.10374180000508204,
+          "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "main_manifest_sha256": "6db29f7eb9ce8c81d509220b1ea4d6158e15a6bc2f33e8f9ccf9f365c6babd55",
+      "shrink_manifest_sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+    }
+  ],
+  "native_aot_publication": [
+    {
+      "host": "linux",
+      "capacity_profile": 4,
+      "publisher_exit_code": 0,
+      "seconds": 72.660737531005,
+      "log_sha256": "df46c8d7f09cd8b1b82b584fb728b3f4d14338b48834023b60a8e80f883e79c6",
+      "raw_report_sha256": "9f131e1872d37e406761d00c5d07cab76a73a1e18007b510a5a3b8114dbf84b8",
+      "descriptor_sha256": "2f80c7c7bd3180349de9236d435cf85699b45440a2d853610fe5cd91fd700d1f",
+      "required_features": [
+        "baseline_v7",
+        "gameplay_persistence_v1",
+        "component_collections_v1",
+        "character_input_v1",
+        "hierarchical_instances_v1"
+      ],
+      "minimum_services_bytes": 232,
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1628008,
+          "sha256": "f3fb9f670126ff9b599da238a582d7412357efe19d43d5988b2cb4a377303cf0",
+          "role": "library"
+        },
+        {
+          "path": "game.poima-components.json",
+          "size": 829,
+          "sha256": "6db29f7eb9ce8c81d509220b1ea4d6158e15a6bc2f33e8f9ccf9f365c6babd55",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "capacity_profile": 1,
+      "publisher_exit_code": 0,
+      "seconds": 64.48483808899618,
+      "log_sha256": "f940e739c7ac7eb6fe391604ef027ca8760d6be42466ac8c3e74500a7ac503a5",
+      "raw_report_sha256": "c26931ebf8cf78dec89062a7981e8495e922d8092a1d8daa04febe8c45f7cd44",
+      "descriptor_sha256": "6509040b5fc5ea69e1ebae19ad5ae05fed751310bb5402a8b7ea266409d985df",
+      "required_features": [
+        "baseline_v7",
+        "gameplay_persistence_v1",
+        "component_collections_v1",
+        "character_input_v1",
+        "hierarchical_instances_v1"
+      ],
+      "minimum_services_bytes": 232,
+      "files": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1628008,
+          "sha256": "9db9b0cd74ed08a08aebdd7a9aeb612658045b807c33ce33db9b638c7aad5aff",
+          "role": "library"
+        },
+        {
+          "path": "game.poima-components.json",
+          "size": 829,
+          "sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        }
+      ]
+    },
+    {
+      "host": "windows",
+      "capacity_profile": 4,
+      "publisher_exit_code": 0,
+      "seconds": 29.33427250001114,
+      "log_sha256": "7398b3a3840779433123e1b7529480abb6308c4e47cc3a583aa080f33b9c48c2",
+      "raw_report_sha256": "cf84833dcc719f56583a810da4305aed3bc27992b57ba3f5107ce6a28d43394c",
+      "descriptor_sha256": "7b1dd1c69f4fec1a3b15849fc153ab660f1fb8325618d29ba1fc7ff8f8037210",
+      "required_features": [
+        "baseline_v7",
+        "gameplay_persistence_v1",
+        "component_collections_v1",
+        "character_input_v1",
+        "hierarchical_instances_v1"
+      ],
+      "minimum_services_bytes": 232,
+      "files": [
+        {
+          "path": "game.poima-components.json",
+          "size": 829,
+          "sha256": "6db29f7eb9ce8c81d509220b1ea4d6158e15a6bc2f33e8f9ccf9f365c6babd55",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1377792,
+          "sha256": "6d1b68513e24ccc3d84c46d2d95b7723b7d28518fc3a5c000381270a7427fa33",
+          "role": "library"
+        }
+      ]
+    },
+    {
+      "host": "windows",
+      "capacity_profile": 1,
+      "publisher_exit_code": 0,
+      "seconds": 19.159808399999747,
+      "log_sha256": "7f17f95a4a9db082ba1cd2857db18732368db6962a45138b299de6cdc28e821f",
+      "raw_report_sha256": "41232de239150811b8f9e83d26107b227776f01940d54700af0d3139c2f96e69",
+      "descriptor_sha256": "db9b9b7cfb15e27fbba379ed034fb0fc6c0f5b71e20e97d7f5c4dcd96fe17075",
+      "required_features": [
+        "baseline_v7",
+        "gameplay_persistence_v1",
+        "component_collections_v1",
+        "character_input_v1",
+        "hierarchical_instances_v1"
+      ],
+      "minimum_services_bytes": 232,
+      "files": [
+        {
+          "path": "game.poima-components.json",
+          "size": 829,
+          "sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1377792,
+          "sha256": "f01f8f0f8f759e8668f8932aaff5309d207a2f3cd29c6d4f539bf56c069028ed",
+          "role": "library"
+        }
+      ]
+    }
+  ],
+  "compiled_consumers": [
+    {
+      "host": "linux",
+      "backend": "coreclr",
+      "passed": true,
+      "rpc_count": 257,
+      "clean_owners": 7,
+      "raw_report_sha256": "d6193ed07f704bd9c856fae84ace98bb94b1ff5ea4e8243accd84f3691eac9bb",
+      "runner_sha256": "2d29f9e738470e800ce34fe882535a857dc8c06965a4838842d28959c1850a1c",
+      "checks": [
+        "Actual retained v6 source restore",
+        "Explicit approved graph/global/collection mapping",
+        "Positive Initialize guard",
+        "Exact and malformed edge rejection without publication",
+        "Immediate native snapshot preservation allowlist",
+        "Removed-plan retry recovery",
+        "Compiled grown collection mutation and controller/rig continuation",
+        "Same/fresh exact target saves and arbitrary tick partitions",
+        "Whole-root retirement/rebirth preserves frontier",
+        "Retirement cannot hide an invalid original entity reference"
+      ],
+      "source_identity": {
+        "world_id": "9819a74d1836ca61d3cbde75fa268a70",
+        "content_sha256": "619f0f854fdccfae73024df2a09a951ea9a68e72aa5833dd4491f5116808ba1d",
+        "backend": "coreclr",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "733b5d1594343de74512766cf5a006d9e42ae6d0c56f8968cd98f28555fba671",
+        "schema_sha256": "4ebc41080f47bce0db9e07e03541367a91ec0958bc39a74022c8b6293244ccbc"
+      },
+      "target_identity": {
+        "world_id": "9819a74d1836ca61d3cbde75fa268a70",
+        "content_sha256": "0a466208d5d593bd3093db5d5fe835fcca2f15964dac865e0c827377af9ab39f",
+        "backend": "coreclr",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "647d0517dc5e9f05287d331b1d4464a7cd0cbb2b3ebdf535f8f9fb306c150aaa",
+        "schema_sha256": "4f67efbce84c6a7f38e8ec75f69f53ec19e259bef8103be7205fc79093dc5099"
+      },
+      "compiled_files": {
+        "source": [
+          {
+            "file": "libhostfxr.so",
+            "sha256": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "8720cdad6a573b6ccf7ac47d320ea9fc63a891a48131e2f951d94823d6e0c37e"
+          },
+          {
+            "file": "Poima.ManagedInstanceGame.dll",
+            "sha256": "733b5d1594343de74512766cf5a006d9e42ae6d0c56f8968cd98f28555fba671"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "8720cdad6a573b6ccf7ac47d320ea9fc63a891a48131e2f951d94823d6e0c37e"
+          },
+          {
+            "file": "Poima.ManagedBridge.dll",
+            "sha256": "6b7cd5ec043f82c8971f6a22101e795aeb375eac277e3c1750e5b7356d2f2bea"
+          }
+        ],
+        "target": [
+          {
+            "file": "libhostfxr.so",
+            "sha256": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "8720cdad6a573b6ccf7ac47d320ea9fc63a891a48131e2f951d94823d6e0c37e"
+          },
+          {
+            "file": "Poima.ManagedBridge.dll",
+            "sha256": "6b7cd5ec043f82c8971f6a22101e795aeb375eac277e3c1750e5b7356d2f2bea"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "f8e438a298481ae38fb2af328cb69204ae6134d13c1e09c08f5b48387c67295e"
+          },
+          {
+            "file": "Poima.ManagedInstanceGame.dll",
+            "sha256": "647d0517dc5e9f05287d331b1d4464a7cd0cbb2b3ebdf535f8f9fb306c150aaa"
+          }
+        ]
+      },
+      "retained_source": {
+        "world_sha256": "d203731f21b70b67e2e93427d14432f0627975a3de3fb5c0aae097493343833b",
+        "payload_sha256": "b8932f016d2457682a5e428452ac9cac313d8f6b9051a4747b3ccd15f9eb3273",
+        "entry": {
+          "bytes": 88625,
+          "file": "p-84b56daf60c9db476a99a0d6ffeee44e.bin",
+          "generation": 1,
+          "sha256": "b8932f016d2457682a5e428452ac9cac313d8f6b9051a4747b3ccd15f9eb3273"
+        },
+        "snapshot_version": 6,
+        "tick": 82,
+        "closure": {
+          "bb6d9d0e5c13b65c3bdfe42fedd1fbeeedc1e4f451f78909d9a0cd9079b16948.pmodel": {
+            "bytes": 130034,
+            "sha256": "bb6d9d0e5c13b65c3bdfe42fedd1fbeeedc1e4f451f78909d9a0cd9079b16948"
+          },
+          "e1e3908ba527bc5b73a6275a5ce11b1e20dc4ca80d86f96fa703e3d3ba24c62c.pmodel": {
+            "bytes": 247696,
+            "sha256": "e1e3908ba527bc5b73a6275a5ce11b1e20dc4ca80d86f96fa703e3d3ba24c62c"
+          }
+        },
+        "saved_document_sha256": "e9e6b1330baaa92c3ed2a445d64b9b2e5afbd7a7d78fc53659bdfa55af4ebf08"
+      },
+      "original_files_unchanged": true,
+      "initialize_guard": {
+        "positive_control": true,
+        "error": {
+          "code": -32060,
+          "message": "C# gameplay: Initialize forbidden during instance save upgrade.",
+          "data": null
+        }
+      },
+      "plan_version": 2,
+      "plan_canonical_sha256": "346c015f69c209f814a181c564c56f8d22f32ed79d2a2297ad8a738ff286d35d",
+      "unchanged_native_sections": [
+        "animation",
+        "control_sequence",
+        "entities",
+        "gameplay_revision",
+        "sound",
+        "structure",
+        "tick",
+        "ui",
+        "world_id"
+      ],
+      "continuation_exclusions": [
+        "gameplay.values.ObservedEpochHigh",
+        "gameplay.values.ObservedEpochLow"
+      ],
+      "snapshot_canonical_sha256": {
+        "retained-source-exact-retained": "45669bfee7aa890ddd2cebc8722f40ea6fe88081c3765220cb6f96011529ce4f",
+        "target-upgrade-before-rejections": "9729c438eac726701d897521908dbc9d4132ef8363a1b57afc11e0b3f4150b60",
+        "target-upgrade-after-exact-rejection": "9729c438eac726701d897521908dbc9d4132ef8363a1b57afc11e0b3f4150b60",
+        "target-upgrade-after-wrong-image": "9729c438eac726701d897521908dbc9d4132ef8363a1b57afc11e0b3f4150b60",
+        "target-upgrade-after-wrong-capacity-declaration": "9729c438eac726701d897521908dbc9d4132ef8363a1b57afc11e0b3f4150b60",
+        "target-upgrade-immediate-upgrade": "1081b463f9383499cd4a93aac1ef988f17537b6ca770d94a61e530694b25841c",
+        "target-upgrade-after-removed-plan-retry": "1081b463f9383499cd4a93aac1ef988f17537b6ca770d94a61e530694b25841c",
+        "target-upgrade-compiled-first-tick": "f009cfbde006560df8c3b27e9c4654742317c41a0ce9cd3b70688957c721e83c",
+        "target-upgrade-live-after-wrong-edge": "f009cfbde006560df8c3b27e9c4654742317c41a0ce9cd3b70688957c721e83c",
+        "target-upgrade-live-after-stale-guard": "f009cfbde006560df8c3b27e9c4654742317c41a0ce9cd3b70688957c721e83c",
+        "target-upgrade-grouped-17": "514c14888ba6a6f85022e7369beede8d1d900ce255a66e936efc249909a22a46",
+        "target-upgrade-same-owner-restored": "f009cfbde006560df8c3b27e9c4654742317c41a0ce9cd3b70688957c721e83c",
+        "target-upgrade-unequal-17": "63b14ede778cc8efab080517d842b4ef9c9557cbff4240e16f0e5793b0e84563",
+        "target-upgrade-retired-first": "7f91f8ec9543b61712e199910f0d6a9610c69683f6baa22db92df54800968f33",
+        "target-upgrade-reborn-first": "7f3d16eabba8b5cf7bc11f12bb3c4470955ff7842df70a68f7feea1cad3a6c41",
+        "target-upgrade-reborn-continued": "fbafddf642311d315be14da0db8582ec96c02cb25d2b17e8bf4e79ad9b498b9c",
+        "fresh-target-fresh-restored": "f009cfbde006560df8c3b27e9c4654742317c41a0ce9cd3b70688957c721e83c",
+        "fresh-target-single-17": "bda3bf05e69862182e65b73c3b6236d10264ae26159b4508b55ce2bc228d6126",
+        "fresh-target-fresh-reborn": "37b27be5a3ddd9849dd9ad580ec8db8a858aeb5825fb0acbfd7a7cb8fc386bcd",
+        "invalid-retired-source-reference-before-invalid-source": "9729c438eac726701d897521908dbc9d4132ef8363a1b57afc11e0b3f4150b60",
+        "invalid-retired-source-reference-after-invalid-source": "9729c438eac726701d897521908dbc9d4132ef8363a1b57afc11e0b3f4150b60",
+        "overflow-rejection-before-overflow": "d6df01226ebac269f530a05aaa8db95d323b497fc144ad014396f0edbd96a71d",
+        "overflow-rejection-after-overflow": "d6df01226ebac269f530a05aaa8db95d323b497fc144ad014396f0edbd96a71d"
+      },
+      "rejections": {
+        "wrong-image": {
+          "code": -32070,
+          "message": "Save upgrade target image differs.",
+          "data": null
+        },
+        "wrong-capacity-declaration": {
+          "code": -32070,
+          "message": "Array capacity authorization differs from declared capacities.",
+          "data": null
+        }
+      },
+      "invalid_retired_reference": {
+        "error": {
+          "code": -32070,
+          "message": "Component entity reference does not resolve in this world.",
+          "data": null
+        },
+        "negative_payload_sha256": "21f54a19f229fe50c304b90b2099ccccc1a17d0e5ed09ee436445530c34dc6e6",
+        "field": "retired InstanceLink.Target",
+        "phase": "source validation before mapping"
+      },
+      "overflow_rejection": {
+        "error": {
+          "code": -32070,
+          "message": "Preserved array exceeds target capacity; truncation is forbidden.",
+          "data": null
+        },
+        "rejection_stage": "source authored recipe Members length2 cannot fit target capacity1; snapshot mapping not reached",
+        "manifest_sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+      },
+      "overflow_compiled_files": [
+        {
+          "file": "libhostfxr.so",
+          "sha256": "2420322efa34abb54e37f27ec39060cf90e3bb135fae5f91c644aac1216d8f1d"
+        },
+        {
+          "file": "Poima.Gameplay.dll",
+          "sha256": "8720cdad6a573b6ccf7ac47d320ea9fc63a891a48131e2f951d94823d6e0c37e"
+        },
+        {
+          "file": "Poima.ManagedBridge.dll",
+          "sha256": "6b7cd5ec043f82c8971f6a22101e795aeb375eac277e3c1750e5b7356d2f2bea"
+        },
+        {
+          "file": "Poima.Gameplay.dll",
+          "sha256": "f8e438a298481ae38fb2af328cb69204ae6134d13c1e09c08f5b48387c67295e"
+        },
+        {
+          "file": "Poima.ManagedInstanceGame.dll",
+          "sha256": "47a7a2f9971735c54ce33ec79c8f61bdefabee81136b82459ef701eea0c6171b"
+        }
+      ]
+    },
+    {
+      "host": "windows",
+      "backend": "coreclr",
+      "passed": true,
+      "rpc_count": 263,
+      "clean_owners": 7,
+      "raw_report_sha256": "06149d0255bc12aa9ab3256c674957309d47335644b5fd962e1cca3acb2ba929",
+      "runner_sha256": "2d29f9e738470e800ce34fe882535a857dc8c06965a4838842d28959c1850a1c",
+      "checks": [
+        "Actual retained v6 source restore",
+        "Explicit approved graph/global/collection mapping",
+        "Positive Initialize guard",
+        "Exact and malformed edge rejection without publication",
+        "Immediate native snapshot preservation allowlist",
+        "Removed-plan retry recovery",
+        "Compiled grown collection mutation and controller/rig continuation",
+        "Same/fresh exact target saves and arbitrary tick partitions",
+        "Whole-root retirement/rebirth preserves frontier",
+        "Retirement cannot hide an invalid original entity reference"
+      ],
+      "source_identity": {
+        "world_id": "f3bc8d0df71d31d2c00e0f3537627eed",
+        "content_sha256": "310206668460784d9cbe691287c2f49e1ec473e123b9b2b53112ebd904d9e1a2",
+        "backend": "coreclr",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "ee481be4290d63273169547cf4bae9ea59ff908ae1edef7540b46233151bdbf8",
+        "schema_sha256": "4ebc41080f47bce0db9e07e03541367a91ec0958bc39a74022c8b6293244ccbc"
+      },
+      "target_identity": {
+        "world_id": "f3bc8d0df71d31d2c00e0f3537627eed",
+        "content_sha256": "c8fdf42fddb04432cbf4bfefba9f339d5c40d9bb70e140706732fdcd284ecc49",
+        "backend": "coreclr",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "c815dd7a6f366a2302653b16d1f18f1aa0b11dbd0dc1a0f7aa29ac4ad15fd049",
+        "schema_sha256": "4f67efbce84c6a7f38e8ec75f69f53ec19e259bef8103be7205fc79093dc5099"
+      },
+      "compiled_files": {
+        "source": [
+          {
+            "file": "hostfxr.dll",
+            "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "f2e11035451ac4fadc5ba0f49d69796c43db28112e60a1b9db5999e06385b301"
+          },
+          {
+            "file": "Poima.ManagedBridge.dll",
+            "sha256": "b39f67800884edf204e200698843c5a11e9d6b55cd5a49f20802261bf310b68f"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "f2e11035451ac4fadc5ba0f49d69796c43db28112e60a1b9db5999e06385b301"
+          },
+          {
+            "file": "Poima.ManagedInstanceGame.dll",
+            "sha256": "ee481be4290d63273169547cf4bae9ea59ff908ae1edef7540b46233151bdbf8"
+          }
+        ],
+        "target": [
+          {
+            "file": "hostfxr.dll",
+            "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "f2e11035451ac4fadc5ba0f49d69796c43db28112e60a1b9db5999e06385b301"
+          },
+          {
+            "file": "Poima.ManagedBridge.dll",
+            "sha256": "b39f67800884edf204e200698843c5a11e9d6b55cd5a49f20802261bf310b68f"
+          },
+          {
+            "file": "Poima.Gameplay.dll",
+            "sha256": "968ae3a4003a0b15488d38481fe0edd9b0d31fbc56ee9f584456de8b1b70c33a"
+          },
+          {
+            "file": "Poima.ManagedInstanceGame.dll",
+            "sha256": "c815dd7a6f366a2302653b16d1f18f1aa0b11dbd0dc1a0f7aa29ac4ad15fd049"
+          }
+        ]
+      },
+      "retained_source": {
+        "world_sha256": "d710c00a39850f56e72b886ebee426a8ce33c25a53f9b300e3dd408f9ae7cbf8",
+        "payload_sha256": "9facdb10d3a368c18b50f3d0b63eed49180d10313d1bdd3ad6bb186680e680ec",
+        "entry": {
+          "bytes": 88625,
+          "file": "p-1b2cfdc1b11ff5b4b74e11b53cd1a7bb.bin",
+          "generation": 1,
+          "sha256": "9facdb10d3a368c18b50f3d0b63eed49180d10313d1bdd3ad6bb186680e680ec"
+        },
+        "snapshot_version": 6,
+        "tick": 82,
+        "closure": {
+          "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8.pmodel": {
+            "bytes": 130033,
+            "sha256": "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8"
+          },
+          "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": {
+            "bytes": 247696,
+            "sha256": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b"
+          }
+        },
+        "saved_document_sha256": "7d50199052c3b17793720527d0319f7f613aea1ae5fd2810c3dd358fc3c49c84"
+      },
+      "original_files_unchanged": true,
+      "initialize_guard": {
+        "positive_control": true,
+        "error": {
+          "code": -32060,
+          "message": "C# gameplay: Initialize forbidden during instance save upgrade.",
+          "data": null
+        }
+      },
+      "plan_version": 2,
+      "plan_canonical_sha256": "aa5d435ebd2341663f0fb43cc51552d149dadb735af556bd2a76afbc419ea3dc",
+      "unchanged_native_sections": [
+        "animation",
+        "control_sequence",
+        "entities",
+        "gameplay_revision",
+        "sound",
+        "structure",
+        "tick",
+        "ui",
+        "world_id"
+      ],
+      "continuation_exclusions": [
+        "gameplay.values.ObservedEpochHigh",
+        "gameplay.values.ObservedEpochLow"
+      ],
+      "snapshot_canonical_sha256": {
+        "retained-source-exact-retained": "0b0d35ad34b8de40c5bf16f26a15238b052bfc6130ca124f37400e7cc64ca0c3",
+        "target-upgrade-before-rejections": "181d90d60cb833aa0e184b5b3746a89585b3112f9667a5b574e4237417b1d8d0",
+        "target-upgrade-after-exact-rejection": "181d90d60cb833aa0e184b5b3746a89585b3112f9667a5b574e4237417b1d8d0",
+        "target-upgrade-after-wrong-image": "181d90d60cb833aa0e184b5b3746a89585b3112f9667a5b574e4237417b1d8d0",
+        "target-upgrade-after-wrong-capacity-declaration": "181d90d60cb833aa0e184b5b3746a89585b3112f9667a5b574e4237417b1d8d0",
+        "target-upgrade-immediate-upgrade": "e882f9bd08061db34f19dfce5be65939593b1ea701fdd3728bc2fc84ab0ffbec",
+        "target-upgrade-after-removed-plan-retry": "e882f9bd08061db34f19dfce5be65939593b1ea701fdd3728bc2fc84ab0ffbec",
+        "target-upgrade-compiled-first-tick": "9aff9cb2694ba23d54754d2a6ff6143c35766988960333dbea47e756280f7ebd",
+        "target-upgrade-live-after-wrong-edge": "9aff9cb2694ba23d54754d2a6ff6143c35766988960333dbea47e756280f7ebd",
+        "target-upgrade-live-after-stale-guard": "9aff9cb2694ba23d54754d2a6ff6143c35766988960333dbea47e756280f7ebd",
+        "target-upgrade-grouped-17": "c14397f28739cce2569844a9dcd350bccb94a4aed9059822032d44ab27ffd281",
+        "target-upgrade-same-owner-restored": "9aff9cb2694ba23d54754d2a6ff6143c35766988960333dbea47e756280f7ebd",
+        "target-upgrade-unequal-17": "00a968af2f1351f5bebe5e615dcc880a9b52d14e8c3347331646a8c636f47b02",
+        "target-upgrade-retired-first": "a6274aa729f62d55e6caaf356fd877c7d0fa281690c7bc1f5e728ceb6664755d",
+        "target-upgrade-reborn-first": "e6e090d1411e57ccb337117dbd993493b90e0d60f77ff6ab5b5126957ea44667",
+        "target-upgrade-reborn-continued": "62af5c4407f675fdc3d166adc5d3db517a835d61afeb89aa9939198fccd96794",
+        "fresh-target-fresh-restored": "9aff9cb2694ba23d54754d2a6ff6143c35766988960333dbea47e756280f7ebd",
+        "fresh-target-single-17": "fe0524b22ec1a7aa917d8d947dfc9f8d13c55c584babb167bf34cd1e663084bb",
+        "fresh-target-fresh-reborn": "fd9a37ea2dc26e019813f9f9d572a93a473c290cf5f2dcd2a75e4b732d50262e",
+        "invalid-retired-source-reference-before-invalid-source": "181d90d60cb833aa0e184b5b3746a89585b3112f9667a5b574e4237417b1d8d0",
+        "invalid-retired-source-reference-after-invalid-source": "181d90d60cb833aa0e184b5b3746a89585b3112f9667a5b574e4237417b1d8d0",
+        "overflow-rejection-before-overflow": "0825f84a66569dd5199760610fefbb4c8c50a345be325c80627348f45539c389",
+        "overflow-rejection-after-overflow": "0825f84a66569dd5199760610fefbb4c8c50a345be325c80627348f45539c389"
+      },
+      "rejections": {
+        "wrong-image": {
+          "code": -32070,
+          "message": "Save upgrade target image differs.",
+          "data": null
+        },
+        "wrong-capacity-declaration": {
+          "code": -32070,
+          "message": "Array capacity authorization differs from declared capacities.",
+          "data": null
+        }
+      },
+      "invalid_retired_reference": {
+        "error": {
+          "code": -32070,
+          "message": "Component entity reference does not resolve in this world.",
+          "data": null
+        },
+        "negative_payload_sha256": "fb172481daf2fd72c118565a89722eeaf811cf15db85ae342d24a79d34521a44",
+        "field": "retired InstanceLink.Target",
+        "phase": "source validation before mapping"
+      },
+      "overflow_rejection": {
+        "error": {
+          "code": -32070,
+          "message": "Preserved array exceeds target capacity; truncation is forbidden.",
+          "data": null
+        },
+        "rejection_stage": "source authored recipe Members length2 cannot fit target capacity1; snapshot mapping not reached",
+        "manifest_sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+      },
+      "overflow_compiled_files": [
+        {
+          "file": "hostfxr.dll",
+          "sha256": "838591885c5396fb0588a3aedc2f3e841d3afc67570868b1bce615264005a44c"
+        },
+        {
+          "file": "Poima.Gameplay.dll",
+          "sha256": "f2e11035451ac4fadc5ba0f49d69796c43db28112e60a1b9db5999e06385b301"
+        },
+        {
+          "file": "Poima.ManagedBridge.dll",
+          "sha256": "b39f67800884edf204e200698843c5a11e9d6b55cd5a49f20802261bf310b68f"
+        },
+        {
+          "file": "Poima.Gameplay.dll",
+          "sha256": "968ae3a4003a0b15488d38481fe0edd9b0d31fbc56ee9f584456de8b1b70c33a"
+        },
+        {
+          "file": "Poima.ManagedInstanceGame.dll",
+          "sha256": "2731bedb677153cbbb26bdf2939db2e97fe9aa01491c8f37b36132bfff075ab2"
+        }
+      ],
+      "same_tick_pixel_comparison": {
+        "exact": true,
+        "source_sha256": "9015ac54a3533bc3f5a4812d24511068c82f635126dc2ec3f5636818d7b8d1f2",
+        "target_sha256": "9015ac54a3533bc3f5a4812d24511068c82f635126dc2ec3f5636818d7b8d1f2",
+        "source_draws": {
+          "camera_draws": 0,
+          "camera_triangles": 0,
+          "skinned_instances": 0,
+          "skinned_vertices": 0
+        },
+        "target_draws": {
+          "camera_draws": 0,
+          "camera_triangles": 0,
+          "skinned_instances": 0,
+          "skinned_vertices": 0
+        },
+        "actor_visual_preservation_qualified": false,
+        "scope": "Same-tick Vulkan capture/context/output preservation; no independent character visibility oracle.",
+        "observation": "Both captures draw zero meshes and zero skinned instances."
+      },
+      "readbacks": [
+        {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "tick": 82,
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "sha256": "9015ac54a3533bc3f5a4812d24511068c82f635126dc2ec3f5636818d7b8d1f2"
+        },
+        {
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "tick": 82,
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "sha256": "9015ac54a3533bc3f5a4812d24511068c82f635126dc2ec3f5636818d7b8d1f2"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "backend": "native_aot",
+      "passed": true,
+      "rpc_count": 257,
+      "clean_owners": 7,
+      "raw_report_sha256": "1af508ce531c6a9e3eaf99046699a6cbbe6eb3881281b45a023177928e8c3010",
+      "runner_sha256": "2d29f9e738470e800ce34fe882535a857dc8c06965a4838842d28959c1850a1c",
+      "checks": [
+        "Actual retained v6 source restore",
+        "Explicit approved graph/global/collection mapping",
+        "Positive Initialize guard",
+        "Exact and malformed edge rejection without publication",
+        "Immediate native snapshot preservation allowlist",
+        "Removed-plan retry recovery",
+        "Compiled grown collection mutation and controller/rig continuation",
+        "Same/fresh exact target saves and arbitrary tick partitions",
+        "Whole-root retirement/rebirth preserves frontier",
+        "Retirement cannot hide an invalid original entity reference"
+      ],
+      "source_identity": {
+        "world_id": "79b9e68ac05b35a430bc2cc96b17f4ab",
+        "content_sha256": "73ab12cc66d0a3d155f9969e17c57be00d634b0d5eb069829848c25657d4aa65",
+        "backend": "native_aot",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "49cc562fafa7f0bf0cc69e8dd7e186667523aad814f5b227c7c00a96ba2eaac6",
+        "schema_sha256": "4ebc41080f47bce0db9e07e03541367a91ec0958bc39a74022c8b6293244ccbc"
+      },
+      "target_identity": {
+        "world_id": "79b9e68ac05b35a430bc2cc96b17f4ab",
+        "content_sha256": "1dde794c2d0b6883620a60a6617e73f12c6e6a750e53d074f2d0d13c16c6eecb",
+        "backend": "native_aot",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "f3fb9f670126ff9b599da238a582d7412357efe19d43d5988b2cb4a377303cf0",
+        "schema_sha256": "4f67efbce84c6a7f38e8ec75f69f53ec19e259bef8103be7205fc79093dc5099"
+      },
+      "compiled_files": {
+        "source": [
+          {
+            "file": "Poima.NativeGame.so",
+            "sha256": "49cc562fafa7f0bf0cc69e8dd7e186667523aad814f5b227c7c00a96ba2eaac6"
+          },
+          {
+            "file": "game.poima-components.json",
+            "sha256": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b"
+          },
+          {
+            "file": "native-gameplay.json",
+            "sha256": "58b95477448722e67f4ccbef2adabd8715a50be1defba564afdfb954f1938145"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+            "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+            "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+          },
+          {
+            "file": "POIMA-LICENSE.txt",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "file": "POIMA-THIRD-PARTY-NOTICES.md",
+            "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          }
+        ],
+        "target": [
+          {
+            "file": "Poima.NativeGame.so",
+            "sha256": "f3fb9f670126ff9b599da238a582d7412357efe19d43d5988b2cb4a377303cf0"
+          },
+          {
+            "file": "game.poima-components.json",
+            "sha256": "6db29f7eb9ce8c81d509220b1ea4d6158e15a6bc2f33e8f9ccf9f365c6babd55"
+          },
+          {
+            "file": "native-gameplay.json",
+            "sha256": "2f80c7c7bd3180349de9236d435cf85699b45440a2d853610fe5cd91fd700d1f"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+            "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+            "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+          },
+          {
+            "file": "POIMA-LICENSE.txt",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "file": "POIMA-THIRD-PARTY-NOTICES.md",
+            "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          }
+        ]
+      },
+      "retained_source": {
+        "world_sha256": "4721b6a5634e344153e2d945b0046586b9df8d748627d460a5d16801d08b0ebf",
+        "payload_sha256": "dd96688b66cafef908bf3f8d950c6d8d5e209bff3aab13aa73a5582a1682752d",
+        "entry": {
+          "bytes": 88626,
+          "file": "p-348b4d0e5527e6f597c447e741433791.bin",
+          "generation": 1,
+          "sha256": "dd96688b66cafef908bf3f8d950c6d8d5e209bff3aab13aa73a5582a1682752d"
+        },
+        "snapshot_version": 6,
+        "tick": 82,
+        "closure": {
+          "bb6d9d0e5c13b65c3bdfe42fedd1fbeeedc1e4f451f78909d9a0cd9079b16948.pmodel": {
+            "bytes": 130034,
+            "sha256": "bb6d9d0e5c13b65c3bdfe42fedd1fbeeedc1e4f451f78909d9a0cd9079b16948"
+          },
+          "e1e3908ba527bc5b73a6275a5ce11b1e20dc4ca80d86f96fa703e3d3ba24c62c.pmodel": {
+            "bytes": 247696,
+            "sha256": "e1e3908ba527bc5b73a6275a5ce11b1e20dc4ca80d86f96fa703e3d3ba24c62c"
+          }
+        },
+        "saved_document_sha256": "03685c834986110bc33a83f3a16a788df45fdda810a91ef4b59697c040bc990f"
+      },
+      "original_files_unchanged": true,
+      "initialize_guard": {
+        "positive_control": true,
+        "error": {
+          "code": -32060,
+          "message": "C# gameplay: Initialize forbidden during instance save upgrade.",
+          "data": null
+        }
+      },
+      "plan_version": 2,
+      "plan_canonical_sha256": "f53a6833bda731e27e1c9a27630a2ff600bcbadae0c3d467fa93c373230bd312",
+      "unchanged_native_sections": [
+        "animation",
+        "control_sequence",
+        "entities",
+        "gameplay_revision",
+        "sound",
+        "structure",
+        "tick",
+        "ui",
+        "world_id"
+      ],
+      "continuation_exclusions": [
+        "gameplay.values.ObservedEpochHigh",
+        "gameplay.values.ObservedEpochLow"
+      ],
+      "snapshot_canonical_sha256": {
+        "retained-source-exact-retained": "540caa9c8b91c49c087aceb52df2a76768eaa86316626dc465c39210fa228c21",
+        "target-upgrade-before-rejections": "72db14d78e92fce6814b36ebed99fd3270bacc8c940b87d6d8324f8dfc0ab7e7",
+        "target-upgrade-after-exact-rejection": "72db14d78e92fce6814b36ebed99fd3270bacc8c940b87d6d8324f8dfc0ab7e7",
+        "target-upgrade-after-wrong-image": "72db14d78e92fce6814b36ebed99fd3270bacc8c940b87d6d8324f8dfc0ab7e7",
+        "target-upgrade-after-wrong-capacity-declaration": "72db14d78e92fce6814b36ebed99fd3270bacc8c940b87d6d8324f8dfc0ab7e7",
+        "target-upgrade-immediate-upgrade": "e20a90956b4b561ad79f83c772eefdaf165c253268cdb00a2d29e3f483f6a525",
+        "target-upgrade-after-removed-plan-retry": "e20a90956b4b561ad79f83c772eefdaf165c253268cdb00a2d29e3f483f6a525",
+        "target-upgrade-compiled-first-tick": "1d70608ccc70317ede082e901cc43ef08330dd5926e5c666d5b055cb16485b07",
+        "target-upgrade-live-after-wrong-edge": "1d70608ccc70317ede082e901cc43ef08330dd5926e5c666d5b055cb16485b07",
+        "target-upgrade-live-after-stale-guard": "1d70608ccc70317ede082e901cc43ef08330dd5926e5c666d5b055cb16485b07",
+        "target-upgrade-grouped-17": "40795f04f73aaf97ec931a481e35069eb8a909e04194709ecffcd69b2b9e2a35",
+        "target-upgrade-same-owner-restored": "1d70608ccc70317ede082e901cc43ef08330dd5926e5c666d5b055cb16485b07",
+        "target-upgrade-unequal-17": "0e80fd7cdaa14695245eab40daba34284c9232fe47d9d334551415821546fae7",
+        "target-upgrade-retired-first": "e490a7b766f78ef1964977c5b548bc6e9bdb2a6b2bde98813bec19ebcb8eeea3",
+        "target-upgrade-reborn-first": "a3c321cba6ace6226cd160439b4f4ef73006fc6b5a1b414e5e2d2e94c7e33922",
+        "target-upgrade-reborn-continued": "02b36e35b7b460c49991a79b4dce9f0424b51ba75950477314ae759d6cb51459",
+        "fresh-target-fresh-restored": "1d70608ccc70317ede082e901cc43ef08330dd5926e5c666d5b055cb16485b07",
+        "fresh-target-single-17": "d3b7d17c9c0430a17721b0c84f3574b043a8696359cf77e66d4a63994d2e7bfb",
+        "fresh-target-fresh-reborn": "f8d0dedd3711010ff4b3b145d6f3452f79507bdcd56cedbdc6792fac583ba8e1",
+        "invalid-retired-source-reference-before-invalid-source": "72db14d78e92fce6814b36ebed99fd3270bacc8c940b87d6d8324f8dfc0ab7e7",
+        "invalid-retired-source-reference-after-invalid-source": "72db14d78e92fce6814b36ebed99fd3270bacc8c940b87d6d8324f8dfc0ab7e7",
+        "overflow-rejection-before-overflow": "5816b84957cfac175e5359ade3eca1ff8107a248f790d90d983920d584057444",
+        "overflow-rejection-after-overflow": "5816b84957cfac175e5359ade3eca1ff8107a248f790d90d983920d584057444"
+      },
+      "rejections": {
+        "wrong-image": {
+          "code": -32070,
+          "message": "Save upgrade target image differs.",
+          "data": null
+        },
+        "wrong-capacity-declaration": {
+          "code": -32070,
+          "message": "Array capacity authorization differs from declared capacities.",
+          "data": null
+        }
+      },
+      "invalid_retired_reference": {
+        "error": {
+          "code": -32070,
+          "message": "Component entity reference does not resolve in this world.",
+          "data": null
+        },
+        "negative_payload_sha256": "8027d2a086f5098713d8995f9823ce96ac046398f95d78e105fb4aaa80736e5a",
+        "field": "retired InstanceLink.Target",
+        "phase": "source validation before mapping"
+      },
+      "overflow_rejection": {
+        "error": {
+          "code": -32070,
+          "message": "Preserved array exceeds target capacity; truncation is forbidden.",
+          "data": null
+        },
+        "rejection_stage": "source authored recipe Members length2 cannot fit target capacity1; snapshot mapping not reached",
+        "manifest_sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+      },
+      "overflow_compiled_files": [
+        {
+          "file": "Poima.NativeGame.so",
+          "sha256": "9db9b0cd74ed08a08aebdd7a9aeb612658045b807c33ce33db9b638c7aad5aff"
+        },
+        {
+          "file": "game.poima-components.json",
+          "sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+        },
+        {
+          "file": "native-gameplay.json",
+          "sha256": "6509040b5fc5ea69e1ebae19ad5ae05fed751310bb5402a8b7ea266409d985df"
+        },
+        {
+          "file": "DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+        },
+        {
+          "file": "DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+        },
+        {
+          "file": "DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+        },
+        {
+          "file": "DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54"
+        },
+        {
+          "file": "POIMA-LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "POIMA-THIRD-PARTY-NOTICES.md",
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+        }
+      ]
+    },
+    {
+      "host": "windows",
+      "backend": "native_aot",
+      "passed": true,
+      "rpc_count": 263,
+      "clean_owners": 7,
+      "raw_report_sha256": "7e95e6c0fcd2dc93966d21d1e4c4187ba91093ecc364cc63ce6f9df505cf7f63",
+      "runner_sha256": "2d29f9e738470e800ce34fe882535a857dc8c06965a4838842d28959c1850a1c",
+      "checks": [
+        "Actual retained v6 source restore",
+        "Explicit approved graph/global/collection mapping",
+        "Positive Initialize guard",
+        "Exact and malformed edge rejection without publication",
+        "Immediate native snapshot preservation allowlist",
+        "Removed-plan retry recovery",
+        "Compiled grown collection mutation and controller/rig continuation",
+        "Same/fresh exact target saves and arbitrary tick partitions",
+        "Whole-root retirement/rebirth preserves frontier",
+        "Retirement cannot hide an invalid original entity reference"
+      ],
+      "source_identity": {
+        "world_id": "88e6bd756431290cf595edf4fcff63b1",
+        "content_sha256": "583aeb562e760cf28736225455bb832d75c987ffd1bfc2b4e47cca08633ebd74",
+        "backend": "native_aot",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "2e0add5cc6edb3d00c527866d99028fee647ed6f16f7ead2a1ca80abc8ce29d8",
+        "schema_sha256": "4ebc41080f47bce0db9e07e03541367a91ec0958bc39a74022c8b6293244ccbc"
+      },
+      "target_identity": {
+        "world_id": "88e6bd756431290cf595edf4fcff63b1",
+        "content_sha256": "3c7b8283a9c785cfe4e9df95193a070a961347de8cc28a040c4594055b07b34c",
+        "backend": "native_aot",
+        "module_identity": "poima.test.managed-instances",
+        "type": "Poima.Tests.ManagedInstanceGame",
+        "image_sha256": "6d1b68513e24ccc3d84c46d2d95b7723b7d28518fc3a5c000381270a7427fa33",
+        "schema_sha256": "4f67efbce84c6a7f38e8ec75f69f53ec19e259bef8103be7205fc79093dc5099"
+      },
+      "compiled_files": {
+        "source": [
+          {
+            "file": "Poima.NativeGame.dll",
+            "sha256": "2e0add5cc6edb3d00c527866d99028fee647ed6f16f7ead2a1ca80abc8ce29d8"
+          },
+          {
+            "file": "game.poima-components.json",
+            "sha256": "7499aada1c85e1855ae1f46bdd8c8b1e969baef46bb9a60bc62a44a6e678fa4b"
+          },
+          {
+            "file": "native-gameplay.json",
+            "sha256": "994fa2b872a0938f9633cc69c532980b9a37c78770decb8ea823ac34157a3c96"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+          },
+          {
+            "file": "POIMA-LICENSE.txt",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "file": "POIMA-THIRD-PARTY-NOTICES.md",
+            "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          }
+        ],
+        "target": [
+          {
+            "file": "Poima.NativeGame.dll",
+            "sha256": "6d1b68513e24ccc3d84c46d2d95b7723b7d28518fc3a5c000381270a7427fa33"
+          },
+          {
+            "file": "game.poima-components.json",
+            "sha256": "6db29f7eb9ce8c81d509220b1ea4d6158e15a6bc2f33e8f9ccf9f365c6babd55"
+          },
+          {
+            "file": "native-gameplay.json",
+            "sha256": "7b1dd1c69f4fec1a3b15849fc153ab660f1fb8325618d29ba1fc7ff8f8037210"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          },
+          {
+            "file": "DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+            "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+          },
+          {
+            "file": "DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+            "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+          },
+          {
+            "file": "POIMA-LICENSE.txt",
+            "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+          },
+          {
+            "file": "POIMA-THIRD-PARTY-NOTICES.md",
+            "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          }
+        ]
+      },
+      "retained_source": {
+        "world_sha256": "1f454a00224f294828eaa77bce20d1de792c3217729120af89291673cb965d6f",
+        "payload_sha256": "cf638d85778a579ebf8e64c28f18303fac2797f258389c778a463775c8e1ffe8",
+        "entry": {
+          "bytes": 88627,
+          "file": "p-6c93bf16d62ec7c6bab528cc187bcc18.bin",
+          "generation": 1,
+          "sha256": "cf638d85778a579ebf8e64c28f18303fac2797f258389c778a463775c8e1ffe8"
+        },
+        "snapshot_version": 6,
+        "tick": 82,
+        "closure": {
+          "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8.pmodel": {
+            "bytes": 130033,
+            "sha256": "48ec1f76f9a044c807493ff6f8cc48a6595523a51a82f0f47784cdf19701d2a8"
+          },
+          "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": {
+            "bytes": 247696,
+            "sha256": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b"
+          }
+        },
+        "saved_document_sha256": "5913137aba0d7d2c624ddfea368f050e05faae83e616dfa76caee8972227c84e"
+      },
+      "original_files_unchanged": true,
+      "initialize_guard": {
+        "positive_control": true,
+        "error": {
+          "code": -32060,
+          "message": "C# gameplay: Initialize forbidden during instance save upgrade.",
+          "data": null
+        }
+      },
+      "plan_version": 2,
+      "plan_canonical_sha256": "539d3695a5154c70455465e2f039eb34a2571697202fbc92a8c93f6a22e6bb37",
+      "unchanged_native_sections": [
+        "animation",
+        "control_sequence",
+        "entities",
+        "gameplay_revision",
+        "sound",
+        "structure",
+        "tick",
+        "ui",
+        "world_id"
+      ],
+      "continuation_exclusions": [
+        "gameplay.values.ObservedEpochHigh",
+        "gameplay.values.ObservedEpochLow"
+      ],
+      "snapshot_canonical_sha256": {
+        "retained-source-exact-retained": "a30f575bfa5760a8bd26595e01719d42926711ad641493bb3df6b14b09da8142",
+        "target-upgrade-before-rejections": "d3212d51b6bb3b69514a3b14e52a55f9c2af14f6c2bd761a28d59daa0718a1e9",
+        "target-upgrade-after-exact-rejection": "d3212d51b6bb3b69514a3b14e52a55f9c2af14f6c2bd761a28d59daa0718a1e9",
+        "target-upgrade-after-wrong-image": "d3212d51b6bb3b69514a3b14e52a55f9c2af14f6c2bd761a28d59daa0718a1e9",
+        "target-upgrade-after-wrong-capacity-declaration": "d3212d51b6bb3b69514a3b14e52a55f9c2af14f6c2bd761a28d59daa0718a1e9",
+        "target-upgrade-immediate-upgrade": "8e01170fa164af7e8b269a2634178ca0f133da5d48536a0c66090e50853c0693",
+        "target-upgrade-after-removed-plan-retry": "8e01170fa164af7e8b269a2634178ca0f133da5d48536a0c66090e50853c0693",
+        "target-upgrade-compiled-first-tick": "bd850f839eebb5acc747de501381ef99e32f0e742095fbd6b8a60e1ff93a812d",
+        "target-upgrade-live-after-wrong-edge": "bd850f839eebb5acc747de501381ef99e32f0e742095fbd6b8a60e1ff93a812d",
+        "target-upgrade-live-after-stale-guard": "bd850f839eebb5acc747de501381ef99e32f0e742095fbd6b8a60e1ff93a812d",
+        "target-upgrade-grouped-17": "a3ffcb946c23b49ece8d914c749d10f4061622e9be92e7f0f7669d38665f7f62",
+        "target-upgrade-same-owner-restored": "bd850f839eebb5acc747de501381ef99e32f0e742095fbd6b8a60e1ff93a812d",
+        "target-upgrade-unequal-17": "704671aa1f4fdf26d7cf1633e5e87311320eb4b5243b0566a1a8fe6d9e62ecb9",
+        "target-upgrade-retired-first": "8ce2344046b77d9d5719f8b46210b76cb2633d477f57c022aca9a34b76f0521b",
+        "target-upgrade-reborn-first": "583b670e6dcb80333927c4eac76ee8d38065560ee1e5904ac3e2478f27257013",
+        "target-upgrade-reborn-continued": "c9b6ded959bd66395b55d72e6f01d3cfbab7d87986bf644ff85532c365f33eac",
+        "fresh-target-fresh-restored": "bd850f839eebb5acc747de501381ef99e32f0e742095fbd6b8a60e1ff93a812d",
+        "fresh-target-single-17": "6a0d1624080c26a267bededa72a90a77447f5c057a221985a9d99dc92b2aa85c",
+        "fresh-target-fresh-reborn": "0643f6833385d06b8c1f7566a245a53bd3853ecf9ecc48810aa9fa4246855c0d",
+        "invalid-retired-source-reference-before-invalid-source": "d3212d51b6bb3b69514a3b14e52a55f9c2af14f6c2bd761a28d59daa0718a1e9",
+        "invalid-retired-source-reference-after-invalid-source": "d3212d51b6bb3b69514a3b14e52a55f9c2af14f6c2bd761a28d59daa0718a1e9",
+        "overflow-rejection-before-overflow": "2a6f279092ade6b7a2baf8940433d27115d169a657c1dadf6883c5d1c753baba",
+        "overflow-rejection-after-overflow": "2a6f279092ade6b7a2baf8940433d27115d169a657c1dadf6883c5d1c753baba"
+      },
+      "rejections": {
+        "wrong-image": {
+          "code": -32070,
+          "message": "Save upgrade target image differs.",
+          "data": null
+        },
+        "wrong-capacity-declaration": {
+          "code": -32070,
+          "message": "Array capacity authorization differs from declared capacities.",
+          "data": null
+        }
+      },
+      "invalid_retired_reference": {
+        "error": {
+          "code": -32070,
+          "message": "Component entity reference does not resolve in this world.",
+          "data": null
+        },
+        "negative_payload_sha256": "ba065b22abeae9b1909e7ebfb2ff077c063870fbaa1198f0b2cd1124c9c4111e",
+        "field": "retired InstanceLink.Target",
+        "phase": "source validation before mapping"
+      },
+      "overflow_rejection": {
+        "error": {
+          "code": -32070,
+          "message": "Preserved array exceeds target capacity; truncation is forbidden.",
+          "data": null
+        },
+        "rejection_stage": "source authored recipe Members length2 cannot fit target capacity1; snapshot mapping not reached",
+        "manifest_sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+      },
+      "overflow_compiled_files": [
+        {
+          "file": "Poima.NativeGame.dll",
+          "sha256": "f01f8f0f8f759e8668f8932aaff5309d207a2f3cd29c6d4f539bf56c069028ed"
+        },
+        {
+          "file": "game.poima-components.json",
+          "sha256": "af603525ab6c40c32406f6514709ef8b504b44f300b24c3c9810fec6bfa80ea3"
+        },
+        {
+          "file": "native-gameplay.json",
+          "sha256": "db9b9b7cfb15e27fbba379ed034fb0fc6c0f5b71e20e97d7f5c4dcd96fe17075"
+        },
+        {
+          "file": "DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+        },
+        {
+          "file": "DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+        },
+        {
+          "file": "DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b"
+        },
+        {
+          "file": "DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21"
+        },
+        {
+          "file": "POIMA-LICENSE.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "file": "POIMA-THIRD-PARTY-NOTICES.md",
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+        }
+      ],
+      "same_tick_pixel_comparison": {
+        "exact": true,
+        "source_sha256": "a5be943371aed293729f251d0ac51c6053245190974064683afff40872cfdd78",
+        "target_sha256": "a5be943371aed293729f251d0ac51c6053245190974064683afff40872cfdd78",
+        "source_draws": {
+          "camera_draws": 0,
+          "camera_triangles": 0,
+          "skinned_instances": 0,
+          "skinned_vertices": 0
+        },
+        "target_draws": {
+          "camera_draws": 0,
+          "camera_triangles": 0,
+          "skinned_instances": 0,
+          "skinned_vertices": 0
+        },
+        "actor_visual_preservation_qualified": false,
+        "scope": "Same-tick Vulkan capture/context/output preservation; no independent character visibility oracle.",
+        "observation": "Both captures draw zero meshes and zero skinned instances."
+      },
+      "readbacks": [
+        {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "tick": 82,
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "sha256": "a5be943371aed293729f251d0ac51c6053245190974064683afff40872cfdd78"
+        },
+        {
+          "gpu": "AMD Radeon(TM) Graphics",
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "tick": 82,
+          "width": 960,
+          "height": 540,
+          "samples": 4,
+          "sha256": "a5be943371aed293729f251d0ac51c6053245190974064683afff40872cfdd78"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Explicit identity-bound one-edge updates only; ordinary exact restore remains default.",
+    "No numeric kind/unit conversion, automatic migration chains, backend conversion, native-world rebasing or new component membership.",
+    "Actual compiled collection evolution covers entity and int32 arrays; other element kinds are native-helper qualification.",
+    "Compiled capacity-one negative rejects original authored recipe overflow; native snapshot fixture separately covers saved-runtime overflow.",
+    "Native AOT source and target images run in separate processes; CoreCLR metadata constructors/static effects are outside rollback.",
+    "Optional same-tick Vulkan views draw zero character geometry; image equality qualifies capture/context/output only, not character visual preservation.",
+    "Saved transforms/maps/animation and unchanged cooked model closure preserve character state; no independent raw FBX decoder.",
+    "Two imported actors are bounded correctness fixtures, not game/crowd-scale performance, physical input, GUI or exported upgraded-game qualification.",
+    "Storage remains synchronous; gameplay/editor automatic upgrade selection, a complete searchable manual and evaluated provider skills remain future work."
+  ],
+  "compiled_totals": {
+    "rpc_count": 1040,
+    "clean_owners": 28
+  },
+  "preserved_legacy_scalar_consumer": {
+    "host": "linux",
+    "backend": "coreclr",
+    "passed": true,
+    "rpc_count": 49,
+    "raw_report_sha256": "11ddcbb27675fb0779b12c3b67ec4b29fc6f2026b9981c930f08ccdda31f222e",
+    "scope": "Original separately compiled scalar source/target artifacts and version-1 plan retained."
+  },
+  "retained_failures": [
+    {
+      "kind": "verifier checksum reconstruction",
+      "rpc_count": 152,
+      "clean_owners": 3,
+      "raw_report_sha256": "372a8535538f47a107940f84c97bc0be8dafbd61847c0e1076004439fad3b75f",
+      "diagnosis_sha256": "4f9bc1c9a3163d403b73e91fb17a59a35cdba502010bc27a427bd17f7721553f",
+      "resolution": "Hash original native-written payload token bytes; preserve floating-point spelling and exact state comparisons. Engine/storage checksum code unchanged."
+    },
+    {
+      "kind": "post-publication wrapper feature expectation",
+      "raw_report_sha256": "9f131e1872d37e406761d00c5d07cab76a73a1e18007b510a5a3b8114dbf84b8",
+      "validation_sha256": "efa73dd4f54b22f8dd2fee53110957ad5b65d14367c521ef2e3b1cf0a966cc3b",
+      "publisher_exit_code": 0,
+      "resolution": "Wrapper expected set omitted gameplay_persistence_v1. Independently validated existing correct artifact and all source/inventory pins; no rebuild or feature relaxation."
+    }
+  ],
+  "source_pins": {
+    "CHANGELOG.md": "db55e56184a18ef00c21a8742b63b3407a058504928dfecc920dd5a566774426",
+    "CMakeLists.txt": "bbfdc0592a2ea9209f9fabd676cc99916788f5e20e5785d1c710401ad8dc9f67",
+    "README.md": "b0389aaa6868bc156c52f4a8303fd2f90673ad010f0e5610283eaebcd4e4729b",
+    "docs/COMPONENT_COLLECTIONS.md": "fd387d5c009cd07e1b2e34bde5d1c8404e50017d52cfac747587b36591eef458",
+    "docs/DOCUMENTATION.md": "149000a139ea587d47d9f3056358cd73f42f1d70a4d40d4420ab66476072aab4",
+    "docs/DOCUMENTATION_COVERAGE.md": "54023879e5cc8a2c39c2f670faf9b526f031e96e54d7179a9be19076e668b5e5",
+    "docs/GAMEPLAY_SAVES.md": "93e53e6ddbee29944e2c08f3a5618e05d24bd1e9bce0d51750ac1472d353d666",
+    "docs/IMPLEMENTATION_STATUS.md": "6f88b337b66d8a5de2375f1d838aaeea1bd668e73d1ea5b761aa09967a9dbf28",
+    "docs/NATIVE_GAMEPLAY.md": "1706ab5638cb5b54d7f495a8ea08f817c09da9a21db1e3a2cc16f4ecd7e4f7c2",
+    "docs/PLAYBOOKS.md": "d73745dea0d4a310930f08da3baec7c559b56f4712ee91616c46a1cff1d6085d",
+    "docs/RUNTIME.md": "ad1ef325556098bba6b209f29e8ee80ec98426fa4e0273cd2b1a0ba3a982bbb3",
+    "docs/RUNTIME_INSTANCES.md": "e8d41a249c94adb83ceefc3f0452e0f06d24145baf6ee6a42b580617b13d5d41",
+    "docs/SAVE_UPGRADES.md": "d5b644b616e2e8453abc516d62d9f3d37d93718b957307c31e3bb90d78f7f5fa",
+    "include/poima/components.hpp": "5494fa87959c2ed03ae82317fee9b4e7a8132cc0f4510da9dba11828a6b3b95b",
+    "include/poima/save_upgrade.hpp": "d84dd33ee52c3cbb7c7c5b96a1c7d4ffa5f78f8af37699ac13c9b298e6107539",
+    "include/poima/save_upgrade_document.hpp": "18ae156243c4064dda6b9fead3848f74d0a170971d74f63ebb8268990eaead82",
+    "include/poima/save_upgrade_plan.hpp": "f9b1b94ee447686c738d0180b1d0d44b989eed0fea4b4f99e93e773c8d623031",
+    "include/poima/save_upgrade_snapshot.hpp": "ce3b6ce1eac0820148f739ee8ff622e376235f65a8536b7eea38960cd4fccd35",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "3c391bbcfa843339e5b71a209a62ac9ef67fbe65d603f761d1cd7827b7ab2f21",
+    "managed/Poima.ManagedBridge/Entry.cs": "44f8e3fdde43df992dbb8f90be071cd7087b425da403fa760761ef53e84d470d",
+    "managed/Poima.NativeGame.Generator/Program.cs": "36df1e4e3f5e2ddb11e02df30411ce673306aa90e29cc01672b00c2eadeb8d84",
+    "managed/Poima.NativeGame/Entry.cs": "59c7ad4c577c605c10797730993e620ee0a506e1d3cf91453c1076cf2cb27849",
+    "scripts/publish_native_gameplay.py": "401f0ccfa0f6538ae55bf2db615c76be74191183b72216be60d37c5da5c72b21",
+    "src/components.cpp": "6033b59d8905ff2202a87fc13d1258b728b018bd8fdaa0b63a1be03c9d0865f2",
+    "src/runtime_components.cpp": "b6154273ee277ac8098eb77f616a3f1416639e335d053c13167cc8bd3e888404",
+    "src/runtime_save.inc": "2dfb4930dcf82873c1d4d73118077345699b5fe200980f832231fa43e8d9bc88",
+    "src/save_upgrade.cpp": "5ea88fc5f9f125e0b1cab238941ed9ff44facc0e880d97fb40f2ea71ba43bde4",
+    "src/save_upgrade_document.cpp": "f83740f87aa13b9b47c62d49a6b2692f3da40d6832fb4fd10a3598d30a331d85",
+    "src/save_upgrade_plan.cpp": "4ee3e5b2589efd2f6aeab91923fa817347e7f87dae04d46174df89c0b434282b",
+    "src/save_upgrade_snapshot.cpp": "af0a822f2364c64584ce52c0b71999150ac0c6f93a2958c8f6f0a0c8f85effdf",
+    "src/world_save_upgrade.inc": "5cc2d35ccc9130621d5d217c141ee8698b652054ec985ecf6df7919f2d8669d3",
+    "src/world_schema.cpp": "b75ac6c5b9f606db5a7a32c8867cb6dfd0881d6e310fade458daddb45c045828",
+    "tests/fixtures/instance_save_evolution/README.md": "2e6f12d3f626d2d3e6b76e209ab17f914ece4f20b930e91187fd95ca102c3c35",
+    "tests/fixtures/instance_save_evolution/target/ManagedInstanceGame.cs": "040a69d6c370b9313576596099bf7728b69476b1723d5eddb7b39ade61d0d4fe",
+    "tests/fixtures/instance_save_evolution/target/Poima.ManagedInstanceGame.csproj": "ca1603ebab642f5659a653326db8429762fe378ecbf08f5af507d348e59678f4",
+    "tests/instance_save_evolution.py": "2d29f9e738470e800ce34fe882535a857dc8c06965a4838842d28959c1850a1c",
+    "tests/save_upgrade_document_native.cpp": "a58335bce5f036a172cb6efe40f5dc055f26f6eb7ab9c4a173fb082685156934",
+    "tests/save_upgrade_native.cpp": "29e9f52f7879d9912f06a5fa967fc7269b9ff2b06cc1584d673710eac959ab28",
+    "tests/save_upgrade_plan_native.cpp": "4146d627ffa76700b3bb612622ea1374a9d2383fef409ae6e82e354570f517ed",
+    "tests/save_upgrade_snapshot_native.cpp": "874ae2835cd2855fe7e23a4262d0a6a936d01bf137f3dac4c5500dfe3522fa79"
+  }
+}

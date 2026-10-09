@@ -133,7 +133,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 67}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 68}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -461,7 +461,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"guards","Configuration generation, slot generation, runtime session/tick/gameplay revision. Restore always uses a fresh session ID and preserves authoring. Pause desktop playback before configure/write/load."},
         {"retry","Write receipts persist per slot; configure/load retain the latest32 session-local receipts. Exact retries do not repeat mutations. Forgotten IDs beyond retention are new requests subject to guards."},
         {"recovery","Inspect reports verified previous-generation fallback. Load requires allow_recovery:true; writes after payload fallback require acknowledge_recovery:true. Manifest recovery permits reads only."},
-        {"limitations","Synchronous bounded64MiB save; exact restore by default. Explicit scalar upgrades require a host-selected plan and target gameplay, unchanged world membership and approved component edits. No automatic/general migrations, autosave scheduler, platform/cloud adapters or power-loss qualification."}};
+        {"upgrades",{{"plan_versions",{1,2}},{"snapshot_versions",{1,2,3,4,5,6}},
+            {"globals","Explicit stable scalar IDs or complete legacy-name mapping."},
+            {"components","Stable type/field IDs; scalar and bounded array values. Retained kinds, element kinds and units stay exact."},
+            {"array_capacity","Plan v2 explicitly authorizes changed capacities with overflow=reject. Never truncate; all authored, recipe and saved instances must fit."},
+            {"hierarchy","Preserve local/live maps, native membership, allocation history and topology; map every recipe member and existing component instance."}}},
+        {"limitations","Synchronous bounded64MiB save; exact restore by default. Explicit upgrades require a host-selected plan and target gameplay, unchanged world membership and approved component edits. No automatic/general migrations, autosave scheduler, platform/cloud adapters or power-loss qualification."}};
     result["gameplay_saves"]={
         {"services_abi",7},{"kinds",{{"none",0},{"save",1},{"load",2}}},
         {"states",{{"expired",0},{"queued",1},{"resolving",2},{"succeeded",3},{"failed",4}}},

@@ -119,7 +119,7 @@ void run(){
     }
     auto bad=[&](const std::function<void(Json&)>& edit){auto value=original;edit(value);rejects([&]{transform(seal(value),plan,target_game,before,after);});};
     auto corrupt=original;corrupt["payload"]["tick"]=9;rejects([&]{transform(corrupt.dump(),plan,target_game,before,after);});
-    bad([](auto& x){x["version"]=6;});bad([](auto& x){x["payload"]["extra"]=true;});
+    bad([](auto& x){x["version"]=7;});bad([](auto& x){x["payload"]["extra"]=true;});
     bad([](auto& x){x["payload"]["content_sha256"]=std::string(64,'f');});bad([](auto& x){x["payload"]["world_id"]="other";});
     bad([](auto& x){x["payload"]["gameplay_revision"]=0;});bad([](auto& x){x["payload"]["gameplay"]["assembly_sha256"]=std::string(64,'f');});
     bad([](auto& x){x["payload"]["gameplay"]["type"]="Other";});bad([](auto& x){x["payload"]["gameplay"]["schema"]["identity"]="other";});
@@ -143,5 +143,111 @@ void run(){
     check(transform(bytes,plan,target_game,before,after).snapshot==result.snapshot,"Rejected transformations changed subsequent output");
     std::cout<<"Snapshot adapter passed global/component mapping, complete frozen catalogs, spawned/retired allocator and UI preservation, explicit write allowlist and "<<rejected<<" rejections; source/target native validation="<<Runtime::available()<<". No executable migration claim.\n";
 }
+void hierarchical_collections(){
+    // This independent original graph puts collections on an authored entity,
+    // two live roots and their children. Retire an earlier graph before saving
+    // to make preservation of allocation history observable.
+    auto make_schema=[](bool target){
+        Json fields=Json::array({
+            {{"id",id('1')},{"name",target?"Parts":"Members"},{"kind","array"},{"element_kind","entity"},{"capacity",target?4:2},{"default",Json::array()}},
+            {{"id",id('2')},{"name",target?"Renamed":"Count"},{"kind","int64"},{"default",target?"99":"0"}},
+            {{"id",id(target?'4':'3')},{"name",target?"NewDefault":"Retired"},{"kind","int32"},{"default",target?37:12}}});
+        return components::parse_schema(Json{{"id",id('a')},{"name","Hierarchy state"},{"version",2},{"fields",fields}}.dump());
+    };
+    const auto before=make_schema(false),after=make_schema(true);
+    auto value=[&](const std::string& root,const std::string& child){return components::parse_values(before,
+        Json{{id('1'),Json::array({root,child})},{id('2'),"-9223372036854775808"},{id('3'),12}}.dump());};
+    RuntimeDefinition definition;definition.world_id="hierarchy-upgrade";definition.authored_revision=7;definition.component_schemas={before};
+    RuntimeEntityDefinition anchor;anchor.id=id('1');anchor.components[before.id]=value(anchor.id,anchor.id);definition.entities={anchor};
+    RuntimeSpawnTemplate recipe;recipe.id=id('c');recipe.name="Original hierarchy";recipe.root=id('d');
+    RuntimeEntityDefinition root;root.id=recipe.root;root.components[before.id]=value(root.id,id('e'));
+    RuntimeEntityDefinition child;child.id=id('e');child.parent=root.id;child.components[before.id]=value(child.id,root.id);
+    recipe.entities={child,root};definition.templates={recipe};
+    const std::string old_hash(64,'a'),new_hash(64,'b');Json snapshot;
+    if(Runtime::available()){
+        Runtime runtime(definition);
+        const auto first=runtime.change_structure(0,{{recipe.id,{}}},{}).spawned.at(0);
+        runtime.change_structure(1,{}, {first});
+        runtime.change_structure(2,{{recipe.id,{}},{recipe.id,{}}},{});runtime.step(17,{});
+        snapshot=Json::parse(runtime.save_snapshot(old_hash));
+        check(snapshot.at("version")==6 && snapshot["payload"]["ui"].is_null(),"Real hierarchy source is not a UI-free v6 snapshot");
+    }else{
+        // Authoring-only builds verify the pure mapper grammar, not physics.
+        Json instances=Json::array({{{"entity",anchor.id},{"values",Json::parse(components::values_json(before,anchor.components.at(before.id),true))}}});
+        snapshot={{"format","poima.runtime-snapshot"},{"version",6},{"payload",{
+            {"content_sha256",old_hash},{"world_id",definition.world_id},{"authored_revision",7},{"tick",17},{"gameplay_revision",0},
+            {"entities",Json::array({{{"id",anchor.id}}})},{"animation",Json::object()},{"sound",Json::object()},{"gameplay",nullptr},
+            {"components",{{"revision",3},{"types",Json::array({{{"id",before.id},{"fingerprint",components::fingerprint_hex(before)},{"instances",instances}}})}}},
+            {"structure",{{"revision",3},{"next_entity_id",id('8')},{"exhausted",false},{"spawned",Json::array()}}},
+            {"ui",nullptr},{"control_sequence",11}}}};
+    }
+    const auto old_schema=globals(false,{before}),new_schema=globals(true,{after});
+    Json old_game={{"backend","coreclr"},{"assembly_sha256",std::string(64,'c')},{"type","Fixture.Game"},{"schema",old_schema},{"values",{{"Count",17},{"Ref",anchor.id}}}};
+    Json new_game={{"backend","coreclr"},{"assembly_sha256",std::string(64,'d')},{"type","Fixture.Game"},{"schema",new_schema}};
+    snapshot["payload"]["gameplay"]=old_game;snapshot["payload"]["gameplay_revision"]=1;
+    const auto original=seal(snapshot);snapshot=Json::parse(original);
+    if(Runtime::available())Runtime::validate_snapshot(definition,old_hash,original);
+    const Identity source{definition.world_id,old_hash,"coreclr","poima.test.snapshot-upgrade","Fixture.Game",std::string(64,'c'),hash(old_schema.dump())};
+    const Identity target{definition.world_id,new_hash,"coreclr","poima.test.snapshot-upgrade","Fixture.Game",std::string(64,'d'),hash(new_schema.dump())};
+    const Json gm={{"preserve",{id('1'),id('2')}},{"retire",Json::array()},{"default",{id('3')}},
+        {"legacy_global_ids",Json::array({{{"id",id('1')},{"name","Count"}},{{"id",id('2')},{"name","Ref"}}})}};
+    const Json cm={{"preserve",{id('1'),id('2')}},{"retire",{id('3')}},{"default",{id('4')}},
+        {"array_capacity",Json::array({{{"id",id('1')},{"source_capacity",2},{"target_capacity",4},{"overflow","reject"}}})}};
+    Plan plan;plan.source=source;plan.target=target;plan.global_mapping=gm.dump();
+    plan.components.push_back({before.id,components::fingerprint_hex(before),components::fingerprint_hex(after),cm.dump()});
+    auto map=[&](const Json& input,const Plan& selected){return transform_runtime_snapshot(seal(input),source,target,new_game.dump(),8,selected,{before},{after});};
+    const auto result=map(snapshot,plan);const auto mapped=Json::parse(result.snapshot);
+    const auto& from=snapshot.at("payload");const auto& to=mapped.at("payload");
+    check(mapped.at("version")==6 && to.at("ui").is_null() && to.at("control_sequence")==from.at("control_sequence"),"v6 version/control/null UI changed");
+    check(to.at("structure")==from.at("structure") && to.at("entities")==from.at("entities") && to.at("animation")==from.at("animation") && to.at("sound")==from.at("sound"),"v6 native state or complete lineage changed");
+    const auto& old_instances=from.at("components").at("types")[0].at("instances");
+    const auto& new_instances=to.at("components").at("types")[0].at("instances");
+    check(result.components[0].instances==old_instances.size() && new_instances.size()==old_instances.size(),"Hierarchy component membership changed");
+    for(std::size_t i=0;i<old_instances.size();++i){
+        check(new_instances[i].at("entity")==old_instances[i].at("entity"),"Mapped instance identity changed");
+        check(new_instances[i].at("values")==Json::array({old_instances[i].at("values")[0],"-9223372036854775808",37}),"Collection order/live IDs or trailing scalar/default changed");
+    }
+    if(Runtime::available()){
+        auto converted=definition;converted.authored_revision=8;converted.component_schemas={after};
+        auto rewrite=[&](RuntimeEntityDefinition& entity){entity.components[before.id]=map_component_fields(components::schema_json(before),components::schema_json(after),components::values_json(before,entity.components.at(before.id)),cm.dump()).target_payload;};
+        for(auto& entity:converted.entities)rewrite(entity);
+        for(auto& entity:converted.templates[0].entities)rewrite(entity);
+        Runtime::validate_snapshot(converted,new_hash,result.snapshot);
+    }
+    auto missing=plan;auto unsupported=cm;unsupported.erase("array_capacity");missing.components[0].mapping=unsupported.dump();rejects([&]{map(snapshot,missing);});
+    auto bad=snapshot;bad["payload"].erase("control_sequence");rejects([&]{map(bad,plan);});
+    bad=snapshot;bad["payload"]["components"]["types"][0]["instances"][0]["values"][0]=Json::array({anchor.id,anchor.id,anchor.id});rejects([&]{map(bad,plan);});
+    // A second approved edge can shrink 4->2: every frozen recipe still has
+    // two entries, while a saved runtime instance may have grown to three.
+    // Validate that source first, then prove snapshot mapping rejects overflow.
+    auto narrow_json=Json::parse(components::schema_json(after));narrow_json.erase("fingerprint");
+    narrow_json["fields"][0]["capacity"]=2;const auto narrow=components::parse_schema(narrow_json.dump());
+    auto narrow_game=new_game;narrow_game["schema"]=globals(true,{narrow});narrow_game["assembly_sha256"]=std::string(64,'e');
+    const Identity narrow_target{definition.world_id,std::string(64,'f'),"coreclr","poima.test.snapshot-upgrade","Fixture.Game",std::string(64,'e'),hash(narrow_game.at("schema").dump())};
+    const Json shrink_mapping={{"preserve",{id('1'),id('2'),id('4')}},{"retire",Json::array()},{"default",Json::array()},
+        {"array_capacity",Json::array({{{"id",id('1')},{"source_capacity",4},{"target_capacity",2},{"overflow","reject"}}})}};
+    Plan shrink;shrink.source=target;shrink.target=narrow_target;
+    shrink.global_mapping=Json{{"preserve",{id('1'),id('2'),id('3')}},{"retire",Json::array()},{"default",Json::array()}}.dump();
+    shrink.components.push_back({after.id,components::fingerprint_hex(after),components::fingerprint_hex(narrow),shrink_mapping.dump()});
+    auto shrink_snapshot=[&](const Json& input){return transform_runtime_snapshot(seal(input),target,narrow_target,narrow_game.dump(),9,shrink,{after},{narrow});};
+    const auto fitting=shrink_snapshot(mapped);const auto fitting_json=Json::parse(fitting.snapshot);
+    check(fitting_json["payload"]["components"]["types"][0]["instances"][0]["values"]==new_instances[0]["values"],"Fitting snapshot shrink changed logical values");
+    auto longer=mapped;longer["payload"]["components"]["types"][0]["instances"][0]["values"][0].push_back(anchor.id);
+    if(Runtime::available()){
+        auto source_definition=definition;source_definition.authored_revision=8;source_definition.component_schemas={after};
+        for(auto& entity:source_definition.entities)entity.components[before.id]=map_component_fields(components::schema_json(before),components::schema_json(after),components::values_json(before,entity.components.at(before.id)),cm.dump()).target_payload;
+        for(auto& entity:source_definition.templates[0].entities)entity.components[before.id]=map_component_fields(components::schema_json(before),components::schema_json(after),components::values_json(before,entity.components.at(before.id)),cm.dump()).target_payload;
+        Runtime::validate_snapshot(source_definition,new_hash,seal(longer));
+        auto narrow_definition=source_definition;narrow_definition.authored_revision=9;narrow_definition.component_schemas={narrow};
+        auto rewrite=[&](RuntimeEntityDefinition& entity){entity.components[after.id]=map_component_fields(components::schema_json(after),components::schema_json(narrow),components::values_json(after,entity.components.at(after.id)),shrink_mapping.dump()).target_payload;};
+        for(auto& entity:narrow_definition.entities)rewrite(entity);
+        for(auto& entity:narrow_definition.templates[0].entities)rewrite(entity);
+        Runtime::validate_snapshot(narrow_definition,narrow_target.content_sha256,fitting.snapshot);
+    }
+    rejects([&]{shrink_snapshot(longer);});
+    check(shrink_snapshot(mapped).snapshot==fitting.snapshot,"Runtime-only overflow altered later fitting shrink");
+    check(map(snapshot,plan).snapshot==result.snapshot,"Failed mapping changed later v6 result");
+    std::cout<<"Hierarchical v6 collections passed live/root/child mapping, retired allocator history, exact native-state allowlist, growth, fitting shrink, runtime-only overflow and preserved trailing int64; native validation="<<Runtime::available()<<".\n";
 }
-int main(){try{run();return 0;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}
+}
+int main(){try{run();hierarchical_collections();return 0;}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}}

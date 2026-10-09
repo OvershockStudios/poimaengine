@@ -108,29 +108,62 @@ GlobalMappingResult map_global_scalars(const std::string& source_schema,const st
     require(mapped.size()==target.at("fields").size(),"Mapped global values are incomplete.");
     result.target_values=validate_gameplay_values(target_schema,mapped.dump());return result;
 }
-ComponentMappingResult map_component_scalars(const std::string& source_schema,const std::string& target_schema,
+ComponentMappingResult map_component_fields(const std::string& source_schema,const std::string& target_schema,
     const std::string& source_values,const std::string& plan_bytes,ComponentValueEncoding encoding) {
     require(encoding==ComponentValueEncoding::field_ids || encoding==ComponentValueEncoding::compact,"Unknown component value encoding.");
     const auto source=components::parse_schema(source_schema),target=components::parse_schema(target_schema);
-    require(source.version==1 && target.version==1,"Scalar save mapping does not support collection schemas.");
     require(source.id==target.id,"Component save mapping requires the same stable type ID.");
     const auto payload=components::parse_values(source,source_values,encoding==ComponentValueEncoding::compact);
     components::validate_payload(source,payload);
-    const auto plan=parse(plan_bytes);fields(plan,{"preserve","retire","default"},{"preserve","retire","default"});
+    const auto plan=parse(plan_bytes);fields(plan,{"preserve","retire","default","array_capacity"},{"preserve","retire","default"});
     const auto preserve=ids(plan.at("preserve"),components::max_fields),retire=ids(plan.at("retire"),components::max_fields),
         defaults=ids(plan.at("default"),components::max_fields);
     std::map<std::string,std::size_t> old,next;
     for(std::size_t i=0;i<source.fields.size();++i)old.emplace(source.fields[i].id,i);
     for(std::size_t i=0;i<target.fields.size();++i)next.emplace(target.fields[i].id,i);
+    struct Capacity {std::uint32_t source,target;};
+    std::map<std::string,Capacity> capacities;
+    if(plan.contains("array_capacity")) {
+        const auto& rows=plan.at("array_capacity");
+        require(rows.is_array() && rows.size()<=components::max_fields,"Array capacity authorization exceeds field budget.");
+        std::string previous;
+        for(const auto& row:rows) {
+            fields(row,{"id","source_capacity","target_capacity","overflow"},{"id","source_capacity","target_capacity","overflow"});
+            const auto key=id(row.at("id"));
+            require(previous.empty() || previous<key,"Array capacity records must be sorted and unique.");previous=key;
+            auto capacity=[](const Json& value) {
+                require(value.is_number_integer() && value>=1 && value<=31,"Array capacity authorization requires integer capacity 1..31.");
+                return value.get<std::uint32_t>();
+            };
+            const auto from=capacity(row.at("source_capacity")),to=capacity(row.at("target_capacity"));
+            require(row.at("overflow")=="reject","Array capacity authorization cannot truncate values.");
+            require(from!=to,"Array capacity authorization must change capacity.");
+            require(preserve.contains(key) && old.contains(key) && next.contains(key),"Array capacity authorization must name a preserved field.");
+            const auto& old_field=source.fields[old.at(key)];const auto& new_field=target.fields[next.at(key)];
+            require(old_field.kind==components::Kind::array && new_field.kind==components::Kind::array,"Array capacity authorization requires array fields.");
+            require(old_field.capacity==from && new_field.capacity==to,"Array capacity authorization differs from declared capacities.");
+            capacities.emplace(key,Capacity{from,to});
+        }
+    }
     ComponentMappingResult result;result.target_payload.resize(target.bytes());
     for(const auto& key:preserve) {
         require(!retire.contains(key) && !defaults.contains(key),"Component mapping operations overlap.");
         require(old.contains(key) && next.contains(key),"Preserved component field must exist in both schemas.");
         const auto& from=source.fields[old.at(key)];const auto& to=target.fields[next.at(key)];
-        require(from.kind==to.kind,"Preserved component field cannot change scalar kind.");
+        require(from.kind==to.kind,"Preserved component field cannot change kind.");
         require(from.unit==to.unit,"Preserved component field cannot change unit without conversion authorization.");
-        std::copy_n(payload.data()+old.at(key)*components::cell_bytes,components::cell_bytes,
-            result.target_payload.data()+next.at(key)*components::cell_bytes);
+        std::size_t copied=from.bytes();
+        if(from.kind==components::Kind::array) {
+            require(from.element_kind==to.element_kind,"Preserved array cannot change element kind.");
+            require(from.capacity==to.capacity || capacities.contains(key),"Array capacity change requires explicit authorization.");
+            // Canonical validated payloads encode a little-endian uint32 length.
+            std::uint32_t count=0;
+            for(unsigned byte=0;byte<4;++byte)
+                count|=std::uint32_t(std::to_integer<unsigned char>(payload[from.offset+byte]))<<(8u*byte);
+            require(count<=to.capacity,"Preserved array exceeds target capacity; truncation is forbidden.");
+            copied=(std::size_t(count)+1)*components::cell_bytes;
+        }
+        std::copy_n(payload.data()+from.offset,copied,result.target_payload.data()+to.offset);
         result.preserved.push_back({key,from.name,to.name});
     }
     for(const auto& key:retire) {
@@ -141,7 +174,8 @@ ComponentMappingResult map_component_scalars(const std::string& source_schema,co
     for(const auto& key:defaults) {
         require(next.contains(key) && !old.contains(key),"Component default may initialize only a target-only field.");
         const auto& field=target.fields[next.at(key)];
-        std::copy(field.initial.begin(),field.initial.end(),result.target_payload.data()+next.at(key)*components::cell_bytes);
+        if(field.kind!=components::Kind::array)
+            std::copy(field.initial.begin(),field.initial.end(),result.target_payload.data()+field.offset);
         result.defaulted.push_back({key,{},field.name});
     }
     require(preserve.size()+retire.size()==old.size(),"Component mapping leaves source fields unaccounted for.");
@@ -149,6 +183,15 @@ ComponentMappingResult map_component_scalars(const std::string& source_schema,co
     components::validate_payload(target,result.target_payload);
     result.target_values=components::values_json(target,result.target_payload);
     result.target_compact_values=components::values_json(target,result.target_payload,true);return result;
+}
+
+ComponentMappingResult map_component_scalars(const std::string& source_schema,const std::string& target_schema,
+    const std::string& source_values,const std::string& plan_bytes,ComponentValueEncoding encoding) {
+    const auto source=components::parse_schema(source_schema),target=components::parse_schema(target_schema);
+    require(source.version==1 && target.version==1,"Scalar save mapping does not support collection schemas.");
+    const auto plan=parse(plan_bytes);
+    fields(plan,{"preserve","retire","default"},{"preserve","retire","default"});
+    return map_component_fields(source_schema,target_schema,source_values,plan_bytes,encoding);
 }
 
 }

@@ -1,8 +1,50 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.78**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.79**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.79 extends [explicit save upgrades](SAVE_UPGRADES.md) to complete
+hierarchy recipes, version-6 runtime snapshots and bounded collection fields.
+Stable field IDs preserve saved values across renames and layout changes;
+retired fields and added scalar/empty-array defaults require a complete approval
+plan. Plan version 2 can explicitly change retained array capacity, preserving
+length/order and rejecting overflow rather than truncating. Plan version 1 and
+the scalar-only helper retain their strict existing contracts.
+
+The mapper visits authored, template root/child and live-instance fields.
+Ordinary source validation checks every saved field and entity reference before
+retirement; approved transformation and normal target restoration finish before
+publication. Native physics, animation, sound, UI, complete local-to-live maps,
+structure revisions and allocator history remain unchanged. Exact loads remain
+the default; upgrade plans are host-selected, identity-bound one-edge approvals.
+Schema revision is 68; authoring-core v1, protocol 1 and gameplay service epoch 7
+are unchanged. No gameplay SDK or service layout change is required.
+
+Three native configurations pass 71 selected regression checks. Refined
+snapshot tests also check growth, fitting shrink and runtime-only overflow with
+valid source/target native reconstruction on Windows/Linux simulation builds;
+the authoring-only build checks mapping without simulation. Four separately
+compiled retained-save cohorts pass 1,040 RPCs with 28 clean owners under
+Windows/Linux CoreCLR and Native AOT. They verify legacy-global ID binding,
+renamed/reordered component fields, changed defaults, entity-array growth,
+compiled callbacks, same/fresh-owner continuation, whole-root retirement/rebirth,
+retry recovery and rejection isolation. A real compiled capacity-one target
+rejects authored-recipe overflow; the native fixture separately covers saved
+runtime overflow. The original source slots, artifacts and cooked assets remain
+unchanged. An earlier scalar compiled consumer still passes 49 RPCs.
+
+Optional readbacks on both laptop GPUs match source/target output at the same
+tick, but their retained origin camera draws zero character geometry. They
+qualify capture/context/output preservation, not character visual preservation.
+Exact saved transforms, instance maps, animation and unchanged cooked geometry
+provide separate state checks. Retained verifier failures document raw-native
+JSON checksum handling and a corrected publisher-wrapper feature expectation;
+no engine checksum or compatibility check was weakened. These are bounded
+correctness fixtures, not automatic migrations, game-scale performance,
+physical-input, GUI or an exported upgraded-game qualification.
+[Evidence](evidence/m2-hierarchical-save-upgrades.json) and
+[compiled fixture instructions](../tests/fixtures/instance_save_evolution/README.md).
 
 Version 0.0.78 adds [hierarchical runtime instances](RUNTIME_INSTANCES.md).
 Frozen recipes contain complete local entity graphs; each spawn allocates fresh
@@ -12,8 +54,7 @@ publication. Whole-root removal requires surviving reference repairs. Failed
 batches restore membership, physics, animation, sound, typed gameplay and ID
 allocation; successful canceled births consume their reservations. Version 6
 checkpoints retain complete instance maps and allocator history. Exact restoration
-is supported; the existing explicit schema-upgrade pipeline does not yet support
-hierarchy recipes or version-6 saves.
+and the explicit schema upgrades described above preserve that graph state.
 
 The independent `hierarchical_instances_v1` extension uses a 232-byte service
 prefix at epoch 7. C# `TemplateNodeId` and `ResolveNode` distinguish local recipe
@@ -774,7 +815,7 @@ The development renderer now uses bounded one- or two-frame submission with per-
 
 The development [scene HDR composition path](HDR_COMPOSITION.md) now passes a full Windows build, 174 scene captures and eight UI/player/native-viewport integration groups across both laptop GPUs. Floating-point scene color resolves MSAA before one exposure/output transform; UI remains independent of exposure. This is bounded correctness evidence, not performance qualification. HDR monitor output, GI and post-processing effects remain unfinished. [Evidence](evidence/m2-hdr-composition.json).
 
-[Explicit scalar save upgrades](SAVE_UPGRADES.md) now connect stable-ID mapping, authored-content validation and snapshot transformation to guarded external `save.load` in development. Linux CoreCLR integration tests cover real old-save/new-game continuation, component changes, rejection isolation, retry and recovery; Windows and Native AOT integration qualification remains pending. Automatic gameplay/editor upgrade selection is unfinished. Ordinary restores remain exact. The earlier cross-platform [primitive evidence](evidence/m2-save-upgrade-primitives.json) covers mapping/plan guards only.
+[Explicit save upgrades](SAVE_UPGRADES.md) connect stable-ID mapping, authored-content validation and snapshot transformation to guarded external `save.load`. The earlier scalar checkpoint qualified Linux CoreCLR continuation, component changes, rejection isolation and recovery; its [integration record](evidence/m2-save-upgrade-integration.json) retains that scope. Hierarchical and collection evolution has separate 0.0.79 qualification above. Automatic gameplay/editor upgrade selection remains unfinished; ordinary restores remain exact. The earlier cross-platform [primitive evidence](evidence/m2-save-upgrade-primitives.json) covers mapping/plan guards only.
 
 The latest development [C# lifecycle checkpoint](GAMEPLAY_LIFECYCLE.md) passes five compiled integration groups under both CoreCLR and Native AOT on Linux and Windows. Agent-service tests cover guarded births, durable restoration and continued gameplay; the CoreCLR path also verifies compatible reload with spawned entities. This is root-prop support, not general entity/component lifecycle. [Qualification evidence](evidence/m2-managed-lifecycle.json).
 

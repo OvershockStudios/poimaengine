@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.79
+
+- Extend [explicit save upgrades](docs/SAVE_UPGRADES.md) to complete hierarchy recipes, version-6 checkpoints and bounded component collections while preserving native graph state and allocator history.
+- Preserve fields by stable ID across renames and layout changes; require explicit retirement and added defaults. Add version-2 capacity approvals that retain array order and reject overflow. Keep version-1 plans and scalar-only mapping compatible.
+- Validate the complete source before retiring fields, reconstruct the mapped target before publication, and preserve ordinary exact restores and guarded retry recovery.
+- Qualify separately compiled Windows/Linux CoreCLR and Native AOT retained-save consumers, continued collection edits, hierarchy retirement/rebirth and rejection isolation. Preserve old scalar workflows and original artifacts. [Evidence](docs/evidence/m2-hierarchical-save-upgrades.json).
+- Add a retained-game upgrade playbook with prerequisites, verification and recovery; reconcile related save, instance and collection reference pages.
+
 ## 0.0.78
 
 - Add [complete runtime hierarchy instances](docs/RUNTIME_INSTANCES.md): frozen local graphs, fresh member IDs, local-reference remapping and atomic character, camera, rig/skin, lighting and audio membership.

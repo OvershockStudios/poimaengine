@@ -2,7 +2,7 @@
 
 C# gameplay can request native checkpoints through `GameContext`. CoreCLR development and compiled Native AOT games use the same owner, storage and restoration code as the editor Save/Load window. Requests execute after a successful simulation batch; they never perform file I/O inside `Tick`.
 
-This extension requires **services ABI 7 (176 bytes)**. Rebuild the gameplay SDK, managed bridge and game assemblies together; republish native game libraries. Older service tables and native descriptors reject. Saves still require their exact original module image and schema: rebuilding gameplay is not a save migration. Keep matching runtime/module builds for existing checkpoints.
+This extension requires the **176-byte save-services prefix of services epoch 7**. Later additive prefixes retain that negotiated view; games declaring other extensions also need their required prefix/features. Use a matching gameplay SDK/bridge or published native artifact. Saves still require their exact original module image and schema: rebuilding gameplay is not a save migration. Keep matching runtime/module builds for existing checkpoints.
 
 ## Configure storage
 
@@ -78,8 +78,12 @@ The owner retains 32 advance receipts across load, stop and restart. An exact re
 
 ## Limits
 
-Storage and snapshot work are synchronous and may hitch. The host excludes serviced storage time from subsequent simulation catch-up; this does not make file I/O asynchronous. Supported spawned root props and their scalar components persist in snapshots. Automatic user-storage selection, background workers, autosave policy, arbitrary object serialization and gameplay-selected migration policy remain unfinished. The external service has a development [explicit scalar upgrade path](SAVE_UPGRADES.md); C# load requests remain exact. The existing 64 MiB snapshot limit, exact external-asset binding, reconstructed physics/audio state and storage durability limits still apply. Gameplay can opt into loading a verified prior payload; acknowledging a recovery write remains an explicit host/editor operation.
+Storage and snapshot work are synchronous and may hitch. The host excludes serviced storage time from subsequent simulation catch-up; this does not make file I/O asynchronous. Supported spawned root props and [complete hierarchical instances](RUNTIME_INSTANCES.md#save-and-reload-boundaries), including their typed bounded component arrays, persist in checkpoints. This is registered native/typed state, not arbitrary C# object serialization.
+
+The external service supports [explicit source-to-target upgrades](SAVE_UPGRADES.md), including hierarchical snapshots and approved bounded-array capacity changes. The host chooses the trusted target and plan; **C# load requests remain exact**. Automatic user-storage selection, asynchronous storage, autosave policy and gameplay-selected upgrades remain unfinished. The existing 64 MiB snapshot limit, exact asset binding, reconstructed physics/audio state and storage durability limits still apply. Gameplay can opt into loading a verified prior payload; acknowledging a recovery write remains an explicit host/editor operation.
 
 ## Qualification
 
 [Recorded evidence](evidence/m2-gameplay-save-requests.json) binds source and binary hashes to real CoreCLR/Native AOT requests on Linux and Windows, a native-only Linux engine, final packaged editor checks and a relocated compiled game. It also records player replacement on both laptop GPUs, 100 compatible C# reloads, and 42 runtime/34 authoring-only Linux suites. The Windows session was locked; synthetic input and semantic GUI checks do not establish physical-input or OS-screenshot qualification.
+
+That record describes its original save-request checkpoint. Later [hierarchical instance evidence](evidence/m2-runtime-instances.json) covers exact version-6 instance restoration. Use the [upgrade task](SAVE_UPGRADES.md#task-upgrade-a-retained-hierarchical-game) and current [implementation status](IMPLEMENTATION_STATUS.md) for the explicit schema-evolution contract and its separately qualified backends.

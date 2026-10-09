@@ -32,6 +32,54 @@ void identifier(const std::string& value,bool nonzero=false) {
     check(value.size()==32 && value.find_first_not_of("0123456789abcdef")==std::string::npos && (!nonzero || value!=std::string(32,'0')),"Invalid authored document identity.");
 }
 using Registry=std::map<std::string,components::Schema>;
+void name(const Json& value) {
+    check(value.is_string() && !value.get_ref<const std::string&>().empty() &&
+        value.get_ref<const std::string&>().size()<=256,"Authored name requires 1..256 bytes.");
+}
+void graph_parents(const Json& rows,const std::string& root={}) {
+    if(!root.empty())check(rows.contains(root),"Hierarchical template root is absent.");
+    for(const auto& [id,entity]:rows.items()) {
+        const auto& parent=entity.at("parent");
+        if(!root.empty())check((id==root)==parent.is_null(),"Hierarchical template needs exactly one unparented root.");
+        if(!parent.is_null()) {
+            check(parent.is_string(),"Authored parent must be an identity.");
+            identifier(parent.get<std::string>(),!root.empty());
+            check(rows.contains(parent.get<std::string>()),"Authored parent missing.");
+        }
+    }
+    std::set<std::string> done;
+    for(const auto& [id,entity]:rows.items()) {
+        (void)entity;std::set<std::string> visiting;auto current=id;
+        while(!done.contains(current)) {
+            check(visiting.insert(current).second,"Authored hierarchy contains a parent cycle.");
+            const auto& parent=rows.at(current).at("parent");if(parent.is_null())break;
+            current=parent.get<std::string>();
+        }
+        done.insert(visiting.begin(),visiting.end());
+    }
+}
+void graph_references(const Json& rows) {
+    for(const auto& [id,entity]:rows.items()) {
+        const auto& bag=entity.at("components");
+        auto local=[&](const Json& target,const char* component,bool nullable=false) {
+            if(nullable && target.is_null())return std::string{};
+            check(target.is_string(),"Template native entity reference must be a local identity.");
+            const auto value=target.get<std::string>();identifier(value,true);
+            check(rows.contains(value) && rows.at(value).at("components").contains(component),"Template native reference targets an absent local component.");
+            return value;
+        };
+        if(bag.contains("CharacterController")) {
+            const auto camera=local(bag.at("CharacterController").at("camera"),"Camera",true);
+            if(!camera.empty())check(rows.at(camera).at("parent")==id,"Template controller camera must be a direct child.");
+        }
+        if(bag.contains("RigNode"))local(bag.at("RigNode").at("rig"),"AnimationRig");
+        if(bag.contains("SkinnedMesh"))local(bag.at("SkinnedMesh").at("rig"),"AnimationRig");
+        if(bag.contains("LightingEnvironment") && bag.at("LightingEnvironment").contains("sky") && !bag.at("LightingEnvironment").at("sky").is_null()) {
+            const auto sun=local(bag.at("LightingEnvironment").at("sky").at("sun"),"Light",true);
+            if(!sun.empty())check(rows.at(sun).at("components").at("Light").at("kind")=="directional","Template sky requires a local directional sun.");
+        }
+    }
+}
 Registry normalize(Json& doc) {
     check(doc.is_object() && doc.contains("version") && doc.at("version").is_number_integer(),"Missing authored document version.");
     const auto version=doc.at("version");check(version>=1 && version<=4,"Unsupported authored document version.");
@@ -64,13 +112,12 @@ Registry normalize(Json& doc) {
         for(auto& schema:components::parse_manifest(manifest.dump())) {registry[schema.id]=Json::parse(components::schema_json(schema));schemas.emplace(schema.id,std::move(schema));}
     }
     std::size_t count=0,bytes=0,template_bytes=0;
-    auto instances=[&](Json& rows,bool templates) {
-        check(rows.is_object() && rows.size()<=(templates?max_runtime_spawn_templates:10000),"Authored entity/template budget exceeded.");
+    auto instances=[&](Json& rows,bool templates,bool hierarchy=false) {
+        check(rows.is_object() && rows.size()<=(hierarchy?max_runtime_template_entities:templates?max_runtime_spawn_templates:10000),"Authored entity/template budget exceeded.");
         for(auto& [id,entity]:rows.items()) {
             identifier(id,templates || !schemas.empty());
-            if(templates)keys(entity,{"name","components"});else keys(entity,{"name","parent","components"});
-            check(entity.at("name").is_string(),"Authored name must be text.");
-            if(!templates && !entity.at("parent").is_null()) {check(entity.at("parent").is_string(),"Authored parent must be an identity.");identifier(entity.at("parent").get<std::string>());check(rows.contains(entity.at("parent").get<std::string>()),"Authored parent missing.");}
+            if(templates && !hierarchy)keys(entity,{"name","components"});else keys(entity,{"name","parent","components"});
+            name(entity.at("name"));
             auto& bag=entity.at("components");check(bag.is_object() && bag.contains("Transform"),"Authored components require Transform.");
             for(auto& [type,value]:bag.items())if(type.starts_with("game:")) {
                 const auto stable=type.substr(5);check(schemas.contains(stable),"Unregistered authored component type.");
@@ -81,7 +128,25 @@ Registry normalize(Json& doc) {
             }
         }
     };
-    instances(doc.at("entities"),false);if(doc.contains("templates"))instances(doc.at("templates"),true);
+    instances(doc.at("entities"),false);graph_parents(doc.at("entities"));
+    if(doc.contains("templates")) {
+        auto& recipes=doc.at("templates");check(recipes.is_object() && recipes.size()<=max_runtime_spawn_templates,"Authored template catalog budget exceeded.");
+        std::size_t total_nodes=0;
+        for(auto& [id,recipe]:recipes.items()) {
+            identifier(id,true);name(recipe.at("name"));
+            if(recipe.contains("entities")) {
+                keys(recipe,{"name","root","entities"});
+                check(recipe.at("root").is_string(),"Template root must be an identity.");
+                const auto root=recipe.at("root").get<std::string>();identifier(root,true);
+                auto& nodes=recipe.at("entities");check(nodes.is_object() && !nodes.empty() && nodes.size()<=max_runtime_template_entities,"Hierarchical template requires 1..1024 members.");
+                check(nodes.size()<=max_runtime_template_total_entities-total_nodes,"Expanded template catalog exceeds 4096 members.");total_nodes+=nodes.size();
+                instances(nodes,true,true);graph_parents(nodes,root);graph_references(nodes);
+            }else {
+                check(total_nodes<max_runtime_template_total_entities,"Expanded template catalog exceeds 4096 members.");++total_nodes;
+                Json legacy={{id,recipe}};instances(legacy,true);recipe=std::move(legacy.at(id));
+            }
+        }
+    }
     return schemas;
 }
 }
@@ -100,22 +165,25 @@ DocumentMappingResult map_authored_document(const std::string& source_document,c
         const auto& a=old.at(row.id);const auto& b=next.at(row.id);
         check(components::fingerprint_hex(a)==row.source_fingerprint && components::fingerprint_hex(b)==row.target_fingerprint,"Upgrade component fingerprint differs.");
         // Even an unused declaration needs complete field partition validation.
-        (void)map_component_scalars(components::schema_json(a),components::schema_json(b),components::values_json(a,components::defaults(a)),row.mapping);
+        (void)map_component_fields(components::schema_json(a),components::schema_json(b),components::values_json(a,components::defaults(a)),row.mapping);
         approved.emplace(row.id,&row);result.components.push_back({row.id,0,0});
         source["component_schemas"][row.id]=target.at("component_schemas").at(row.id);
     }
     for(const auto& [id,schema]:old)if(!approved.contains(id))
         check(components::schema_json(schema)==components::schema_json(next.at(id)),"Unplanned component schema changed (including names/units/defaults).");
-    auto map_instances=[&](const char* key,bool templates) {
-        if(!source.contains(key))return;
-        for(auto& entity:source.at(key))for(auto& [type,value]:entity.at("components").items())if(type.starts_with("game:") && approved.contains(type.substr(5))) {
+    auto map_bag=[&](Json& bag,bool templates) {
+        for(auto& [type,value]:bag.items())if(type.starts_with("game:") && approved.contains(type.substr(5))) {
             const auto id=type.substr(5);const auto& row=*approved.at(id);
-            value=Json::parse(map_component_scalars(components::schema_json(old.at(id)),components::schema_json(next.at(id)),value.dump(),row.mapping).target_values);
+            value=Json::parse(map_component_fields(components::schema_json(old.at(id)),components::schema_json(next.at(id)),value.dump(),row.mapping).target_values);
             const auto at=std::lower_bound(result.components.begin(),result.components.end(),id,[](const auto& entry,const auto& stable){return entry.id<stable;});
             if(templates)++at->template_instances;else ++at->authored_instances;
         }
     };
-    map_instances("entities",false);map_instances("templates",true);
+    for(auto& entity:source.at("entities"))map_bag(entity.at("components"),false);
+    if(source.contains("templates"))for(auto& recipe:source.at("templates")) {
+        if(recipe.contains("entities"))for(auto& entity:recipe.at("entities"))map_bag(entity.at("components"),true);
+        else map_bag(recipe.at("components"),true);
+    }
     source["revision"]=target.at("revision");
     // dump() comparison retains JSON scalar kinds and exact int64 strings;
     // only previously validated custom cells/schemas were canonicalized.

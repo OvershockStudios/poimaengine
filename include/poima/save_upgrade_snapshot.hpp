@@ -29,6 +29,10 @@ struct SnapshotMappingResult {
 // maps globals and every existing compact component instance, and changes only
 // content hash, authored revision, gameplay descriptor/values, component values/
 // fingerprints and the envelope checksum. All other checkpoint fields survive.
+// Versions 1..6 retain their original envelope version. Hierarchical v6 node
+// maps, allocator history, native state and control/UI state are not rebased.
+// Planned schema-2 collections use explicit capacity policy; global state is
+// still the scalar persistence model.
 // No IO, code execution, schema/type/instance creation, or persistence writes.
 SnapshotMappingResult transform_runtime_snapshot(const std::string& original,
     const Identity& actual_source,const Identity& actual_target,
