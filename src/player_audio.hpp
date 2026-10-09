@@ -6,6 +6,7 @@
 #include "poima/profiler.hpp"
 #include <SDL3/SDL.h>
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 namespace poima {
 class PlayerAudio {
@@ -40,13 +41,28 @@ class PlayerAudio {
         if(!started_ && queued()>=2048*8) { check(SDL_ResumeAudioStreamDevice(device_));started_=true;paused_=false; }
     }
 public:
-    explicit PlayerAudio(const PlayerAudioState& state):mixer_(std::make_unique<AudioStream>(state.tick,state.snapshot)) {
+    explicit PlayerAudio(const PlayerAudioState& state,double master_gain=1):mixer_(std::make_unique<AudioStream>(state.tick,state.snapshot)) {
+        if(!std::isfinite(master_gain) || master_gain<0 || master_gain>1)
+            throw std::invalid_argument("Player master gain must be finite and within 0..1.");
         check(SDL_InitSubSystem(SDL_INIT_AUDIO));SDL_AudioSpec spec{SDL_AUDIO_F32,2,static_cast<int>(audio_rate)};
         device_=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
         if(!device_) { const std::string error=SDL_GetError();SDL_QuitSubSystem(SDL_INIT_AUDIO);throw std::runtime_error(error); }
-        report_.enabled=true;const auto* driver=SDL_GetCurrentAudioDriver();report_.driver=driver ? driver : "unknown";
+        try {
+            report_.enabled=true;const auto* driver=SDL_GetCurrentAudioDriver();report_.driver=driver ? driver : "unknown";
+            set_master_gain(master_gain);
+        }catch(...) {SDL_DestroyAudioStream(device_);device_=nullptr;SDL_QuitSubSystem(SDL_INIT_AUDIO);throw;}
     }
     ~PlayerAudio() { if(device_)SDL_DestroyAudioStream(device_);SDL_QuitSubSystem(SDL_INIT_AUDIO); }
+    void set_master_gain(double gain) {
+        if(!std::isfinite(gain) || gain<0 || gain>1)
+            throw std::invalid_argument("Player master gain must be finite and within 0..1.");
+        const auto native=static_cast<float>(gain);
+        check(SDL_SetAudioStreamGain(device_,native));
+        const auto observed=SDL_GetAudioStreamGain(device_);
+        if(!std::isfinite(observed) || observed!=native)
+            throw std::runtime_error("SDL output stream gain differs from the requested player gain.");
+        report_.master_gain=observed;report_.master_gain_applied=true;
+    }
     void active(bool active) {
         if(!started_)return;
         if(active && paused_) { check(SDL_ResumeAudioStreamDevice(device_));paused_=false; }
@@ -90,6 +106,10 @@ public:
     }
     PlayerAudioReport report() const {
         auto result=report_;result.stream=mixer_->stats();
+        const auto gain=SDL_GetAudioStreamGain(device_);
+        if(!std::isfinite(gain) || gain<0 || gain>1)
+            throw std::runtime_error("SDL output stream gain query failed.");
+        result.master_gain=gain;
         result.stream.frames+=retired_.frames;result.stream.blocks+=retired_.blocks;
         result.stream.voices_started+=retired_.voices_started;result.stream.path_updates+=retired_.path_updates;
         result.stream.peak=std::max(result.stream.peak,retired_.peak);result.stream.dsp_ms+=retired_.dsp_ms;

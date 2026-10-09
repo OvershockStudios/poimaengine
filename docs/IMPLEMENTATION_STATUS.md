@@ -1,8 +1,53 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.79**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.80**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.80 adds a shared native [live player-preference owner](PLAYER_SETTINGS.md).
+`player.settings.inspect` and guarded `player.settings.transact` support preview,
+set/reset, revision conflicts and process-local retry receipts. FOV, pointer
+sensitivity/inversion, absolute UI scale and master output gain apply to the
+current interactive player. Inspection distinguishes accepted configuration,
+native application and successful presentation. Queued semantic look and held
+input survive pointer tuning; scaled UI invalidates old gestures/hit regions
+until redraw. Graphics samples/frame slots remain explicit next-player intent.
+
+Stored profiles now admit nine keys, including output gain. Profile persistence
+is independent of live edits: changing a file does not alter a running window,
+and gameplay save/load does not replace its preferences. Historical launch-report
+outcomes remain compatible; the live channel supplies separate revision and
+next-player observations. Protocol 1, authoring-core v1 and gameplay services
+epoch 7 remain unchanged; discovery schema revision is 69. No gameplay SDK or
+compiled settings-menu extension is added in this checkpoint.
+
+Three native configurations pass 67 selected regression checks; both new CTest
+registrations also pass on all three. Live fixtures on both laptop GPUs pass
+268 recorded RPCs with six clean owners and 18 readbacks. Independent perspective
+and UI-bound calculations check actual FOV/scale changes. Preview/rejection,
+reset, profile relaunch, same-window restore and semantic replay are checked;
+a deferred player's invalid combined graphics/UI patch preserves state and pixels.
+Actual SDL streams verify numeric gain, including mute and timeline replacement.
+Both live fixtures observe an accepted change while genuinely unpaused; this is
+not physical input or audible-output qualification.
+
+Preserved shared-player tests pass 277 RPCs with eight clean owners. Stored/launch
+fixtures pass 224 RPCs with 138 clean owners, independent projection/reference
+images and zero-frame failure outcomes. Separately compiled original hierarchical
+games pass 206 RPCs with four clean owners under Windows Native AOT and CoreCLR.
+Each births two imported characters, submits 2,058 weighted vertices, continues
+native movement/animation and restores exact version-6 state and same-tick output
+with current preferences intact. Original worlds, cooked content and artifacts
+remain unchanged. Draw submission and same-owner output equality do not provide
+an independent raw-FBX/visibility pixel oracle.
+
+The documented native Python task also executes with the checked-out client,
+producing independently checked before/after images without advancing simulation
+or authored revision. All these are bounded fixtures, not a full game, performance
+benchmark or GUI qualification. Post-acceptance device-failure recovery is
+source-reviewed, without forced device-failure injection. Retained failures cover
+test include/setup/guard errors, initial SDL surface settling and the corrected
+legacy launch-outcome regression. [Evidence](evidence/m2-live-player-settings.json).
 
 Version 0.0.79 extends [explicit save upgrades](SAVE_UPGRADES.md) to complete
 hierarchy recipes, version-6 runtime snapshots and bounded collection fields.

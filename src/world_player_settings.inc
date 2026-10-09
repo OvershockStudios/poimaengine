@@ -13,7 +13,15 @@
     Json apply_player_settings(const Json& params,PlayerOptions& options) const {
         const bool requested=params.contains("settings_profile") || params.contains("settings_overrides") || params.contains("settings_revision");
         require(!params.contains("settings_revision") || params.contains("settings_profile"),"settings_revision requires settings_profile.");
-        if(!requested) { options.render=render_options(params);return nullptr; }
+        PlayerPreferences::Values inherited;
+        inherited.sensitivity_x=options.input_profile->sensitivity_x;
+        inherited.sensitivity_y=options.input_profile->sensitivity_y;
+        inherited.invert_x=options.input_profile->invert_x;
+        inherited.invert_y=options.input_profile->invert_y;
+        // Explicit launch graphics options are the baseline for a reset. The
+        // final combined profile/override renderer is validated below.
+        inherited.samples=params.value("samples",4u);
+        inherited.frames_in_flight=params.value("frames_in_flight",2u);
         Json values=Json::object(),sources=Json::object();
         Json profile={{"source","none"},{"revision",0},{"content_hash",nullptr}};
         try {
@@ -51,24 +59,70 @@
         if(values.contains("input.invert_y"))input.invert_y=values.at("input.invert_y").get<bool>();
         validate_input_profile(input);
         options.input_profile=std::make_shared<const InputProfile>(std::move(input));
-        const auto camera=runtime_->snapshot(options.camera);
         if(values.contains("camera.vertical_fov"))options.vertical_fov=values.at("camera.vertical_fov").get<double>();
         if(values.contains("ui.scale"))options.ui_scale=values.at("ui.scale").get<float>();
+        try { options.preferences=std::make_shared<PlayerPreferences>(inherited,values.dump(),sources.dump(),profile.dump()); }
+        catch(const PlayerPreferences::Error& error) { throw Error(error.code,error.what()); }
+        if(!requested)return nullptr;
+        const auto camera=runtime_->snapshot(options.camera);
         Json effective={{"camera.vertical_fov",options.vertical_fov.value_or(camera.vertical_fov)},
             {"input.sensitivity_x",options.input_profile->sensitivity_x},{"input.sensitivity_y",options.input_profile->sensitivity_y},
             {"input.invert_x",options.input_profile->invert_x},{"input.invert_y",options.input_profile->invert_y},
             {"ui.scale",options.ui_scale ? Json(*options.ui_scale) : Json(nullptr)},
-            {"graphics.samples",options.render.samples},{"graphics.frames_in_flight",options.render.frames_in_flight}};
+            {"graphics.samples",options.render.samples},{"graphics.frames_in_flight",options.render.frames_in_flight},
+            {"audio.master_gain",options.preferences->snapshot()->values.master_gain}};
         Json rows=Json::object();
         for(auto it=effective.begin();it!=effective.end();++it) {
             const auto& key=it.key();
-            const std::string inherited=key.starts_with("input.") ? "input_profile" : key=="camera.vertical_fov" ? "authored_camera" : key=="ui.scale" ? "window_density" : "engine_default";
+            const std::string inherited_source=key.starts_with("input.") ? "input_profile" : key=="camera.vertical_fov" ? "authored_camera" : key=="ui.scale" ? "window_density" : "engine_default";
             rows[key]={{"requested",values.contains(key) ? values.at(key) : Json(nullptr)},
-                {"effective",it.value()},{"source",sources.contains(key) ? sources.at(key) : Json(inherited)},{"outcome","not_presented"}};
+                {"effective",it.value()},{"source",sources.contains(key) ? sources.at(key) : Json(inherited_source)},{"outcome","not_presented"}};
         }
         return {{"format","poima.settings.application.v1"},{"application","next_player"},{"profile",profile},{"fields",rows}};
     }
+    static Json player_live_settings(const PlayerOptions& options,const PlayerReport& report,
+        const std::optional<SceneSnapshot>& final_camera) {
+        if(!options.preferences)return nullptr;
+        auto result=Json::parse(options.preferences->inspect());
+        const auto state=options.preferences->snapshot();
+        const auto& observed=report.preferences;
+        auto optional=[](const auto& value) -> Json { return value ? Json(*value) : Json(nullptr); };
+        result["fields"]["camera.vertical_fov"]["effective"]=state->values.vertical_fov ? Json(*state->values.vertical_fov) :
+            final_camera ? Json(final_camera->vertical_fov) : Json(nullptr);
+        result["fields"]["ui.scale"]["effective"]=state->values.ui_scale ? Json(*state->values.ui_scale) :
+            observed.applied_revision ? Json(report.effective_ui_scale) : Json(nullptr);
+        result["application"]={{"observed_revision",optional(observed.observed_revision)},
+            {"applied_revision",optional(observed.applied_revision)},{"presented_revision",optional(observed.presented_revision)},
+            {"effective_vertical_fov",optional(observed.effective_vertical_fov)},
+            {"effective_ui_scale",observed.applied_revision ? Json(report.effective_ui_scale) : Json(nullptr)},
+            {"sensitivity_x",observed.sensitivity_x},{"sensitivity_y",observed.sensitivity_y},
+            {"invert_x",observed.invert_x},{"invert_y",observed.invert_y},
+            {"requested_master_gain",observed.requested_master_gain},{"sink_gain",optional(observed.sink_gain)},
+            {"audio_outcome",observed.audio_outcome}};
+        const bool presented=observed.presented_revision && *observed.presented_revision==state->revision;
+        for(auto& field:result["fields"].items()) {
+            auto& row=field.value();const auto& key=field.key();
+            row["outcome"]=key.starts_with("graphics.") ? (row.at("requires_next_player").get<bool>() ? "requires_next_player" : "unchanged") :
+                key=="audio.master_gain" ? observed.audio_outcome :
+                options.replay && key.starts_with("input.") ? "validated_only" : presented ? "applied" : "awaiting_presentation";
+        }
+        return result;
+    }
     static void finish_player_settings(Json& application,const PlayerOptions& options,const PlayerReport& report,const std::optional<SceneSnapshot>& final_camera) {
+        if(options.preferences) {
+            const auto current=player_live_settings(options,report,final_camera);
+            application["fields"]=current.at("fields");
+            if(options.preferences->snapshot()->revision) application["application"]="live_player";
+            else {
+                // Preserve the existing launch application report. The live
+                // channel has separate next-player/application observations;
+                // adding it must not change older successful-launch outcomes.
+                for(auto& field:application["fields"].items())if(field.key()!="audio.master_gain")
+                    field.value()["outcome"]=options.replay && field.key().starts_with("input.") ? "validated_only" :
+                        report.render.frames_presented>0 ? "applied" : "not_presented";
+            }
+            return;
+        }
         // Report final configured owner state; an error may have prevented its
         // last presentation. Never retain a replaced camera's initial lens.
         application["fields"]["camera.vertical_fov"]["effective"]=options.vertical_fov ? Json(*options.vertical_fov) : final_camera ? Json(final_camera->vertical_fov) : Json(nullptr);

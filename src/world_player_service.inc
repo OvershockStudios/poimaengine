@@ -110,8 +110,17 @@
         if(!settings_application.is_null()) {
             finish_player_settings(settings_application,options,report,camera);
             result["settings"]=std::move(settings_application);
-            result["input_profile"]["effective_content_hash"]=content_hash(input_profiles::profile_json(*options.input_profile).dump());
         }
+        if(options.preferences || !result.value("settings",Json(nullptr)).is_null()) {
+            auto effective_input=*options.input_profile;
+            if(options.preferences) {
+                const auto& values=options.preferences->snapshot()->values;
+                effective_input.sensitivity_x=values.sensitivity_x;effective_input.sensitivity_y=values.sensitivity_y;
+                effective_input.invert_x=values.invert_x;effective_input.invert_y=values.invert_y;
+            }
+            result["input_profile"]["effective_content_hash"]=content_hash(input_profiles::profile_json(effective_input).dump());
+        }
+        result["live_settings"]=player_live_settings(options,report,camera);
         const auto& audio=report.audio;result["audio"]={{"enabled",audio.enabled},{"driver",audio.driver},{"submitted_frames",audio.submitted_frames},{"max_queued_frames",audio.max_queued_frames},{"empty_queue_observations",audio.empty_queue_observations},{"backpressure_ms",audio.backpressure_ms},{"stream_drained",audio.stream_drained},{"timeline_resets",audio.timeline_resets},{"voices_started",audio.stream.voices_started},{"peak",audio.stream.peak},{"over_range_samples",audio.stream.over_range_samples},{"dsp_ms",audio.stream.dsp_ms}};
         return result;
     }
@@ -248,7 +257,103 @@
         require(player_active(),"The retained player is finished.",-32004);
         require(player_control_revision_<max_revision,"Player control revision exhausted.",-32009);
     }
+    Json player_settings_info() const {
+        require(player_owner_ && player_owner_->prepared.options.preferences,"No retained native player settings owner.",-32004);
+        const auto& player=*player_owner_;
+        auto settings=Json::parse(player.prepared.options.preferences->inspect());
+        if(player.cached_report.contains("live_settings") && !player.cached_report.at("live_settings").is_null() &&
+            player.cached_report.at("live_settings").at("revision")==settings.at("revision"))
+            settings=player.cached_report.at("live_settings");
+        else settings=player_live_settings(player.prepared.options,
+            player.window ? player.window->report() : PlayerReport{},std::nullopt);
+        return {{"player_id",player.id},{"session_id",player_active() ? runtime_id_ : player.observed_session},
+            {"control_revision",player_control_revision_},{"settings",std::move(settings)}};
+    }
+    static void validate_next_player_preferences(const PlayerOptions& options,const PlayerPreferences::State& candidate) {
+        const auto rows=Json::parse(candidate.fields_json);
+        const auto samples=rows.at("graphics.samples").at("next_effective").get<std::uint32_t>();
+        const auto& render=options.render;
+        require(!render.deferred || samples==1,"Next-player deferred lighting requires samples=1.");
+        require(render.ambient_occlusion.mode==AmbientOcclusionMode::none || (render.deferred && samples==1),
+            "Next-player ambient occlusion requires deferred single-sample lighting.");
+        require(render.scene_debug_view==SceneDebugView::color || samples==1,"Next-player scene debug views require samples=1.");
+        require(render.reconstruction==ReconstructionMode::none || (samples==1 && render.scene_debug_view==SceneDebugView::color),
+            "Next-player reconstruction requires single-sample color output.");
+    }
     Json player_dispatch(const std::string& method,const Json& params) {
+        if(method=="player.settings.inspect") {
+            fields(params,{"player_id"});
+            if(params.contains("player_id"))require(player_owner_ && identifier(params.at("player_id"))==player_owner_->id,
+                "Player identity is not retained.",-32004);
+            return player_settings_info();
+        }
+        if(method=="player.settings.transact") {
+            fields(params,{"player_id","request_id","expected_control_revision","expected_settings_revision","set","reset","preview"},
+                {"player_id","request_id","expected_control_revision","expected_settings_revision"});
+            identifier(params.at("player_id"));identifier(params.at("request_id"));revision(params.at("expected_control_revision"));
+            const auto expected=revision(params.at("expected_settings_revision"));
+            require(!params.contains("preview") || params.at("preview").is_boolean(),"Settings preview must be Boolean.");
+            const bool preview=params.value("preview",false);
+            Json values;
+            try { values=player_settings::validate_values(params.value("set",Json::object())); }
+            catch(const player_settings::SettingsError& error) { throw Error(error.code,error.what()); }
+            const auto resets=params.value("reset",Json::array());
+            const auto known=player_settings::values_schema().at("properties");
+            require(resets.is_array() && resets.size()<=known.size(),"Player settings reset exceeds its ID budget.");
+            std::set<std::string> reset;
+            for(const auto& entry:resets) {
+                require(entry.is_string() && known.contains(entry.get<std::string>()),"Unknown player settings reset ID.");
+                const auto key=entry.get<std::string>();
+                require(reset.insert(key).second && !values.contains(key),"Player settings resets must be unique and disjoint from set.");
+            }
+            auto normalized=params;normalized["method"]=method;normalized["set"]=values;normalized["reset"]=reset;normalized["preview"]=preview;
+            if(auto retry=player_retry(normalized))return *retry;
+            player_control_guard(params);
+            require(!player_owner_->prepared.options.replay,"Recorded replay rejects intervening preference changes.",-32080);
+            auto preferences=player_owner_->prepared.options.preferences;
+            require(bool(preferences),"Native player preferences are unavailable.",-32003);
+            std::shared_ptr<const PlayerPreferences::State> candidate;
+            try { candidate=preferences->prepare(Json{{"expected_revision",expected},{"set",values},{"reset",reset}}.dump()); }
+            catch(const PlayerPreferences::Error& error) { throw Error(error.code,error.what()); }
+            validate_next_player_preferences(player_owner_->prepared.options,*candidate);
+            const auto before=preferences->snapshot();
+            auto projected=player_settings_info();
+            projected["settings"]["revision"]=candidate->revision;
+            projected["settings"]["values"]=Json::parse(candidate->requested_json);
+            projected["settings"]["sources"]=Json::parse(candidate->sources_json);
+            projected["settings"]["fields"]=Json::parse(candidate->fields_json);
+            projected["previous_settings_revision"]=before->revision;
+            projected["preview"]=preview;
+            projected["changed"]=before->requested_json!=candidate->requested_json;
+            projected["replayed"]=false;
+            // Preview projects the candidate while retaining the actual current
+            // application report. It publishes no state and retains no receipt.
+            if(preview)return projected;
+            projected["control_revision"]=player_control_revision_+1;
+            projected["accepted"]=true;
+            auto prepared=reserve_player_receipt(normalized);prepared->result=std::move(projected);prepared->committed=true;
+            auto& receipt=publish_player_receipt(std::move(prepared));
+            // The complete configuration and receipt exist before device work.
+            // GPU attachments are not recreated. Native application can fail;
+            // the accepted intent remains inspectable and the retry is bounded.
+            preferences->publish(std::move(candidate));invalidate_player_control();
+            try {
+                player_owner_->window->synchronize();
+                const auto native=player_owner_->window->report();
+                const bool failed=player_owner_->window->finished() && !native.render.success;
+                reconcile_player();
+                if(failed)throw Error(-32020,native.render.detail);
+                auto observed=player_settings_info();
+                observed["previous_settings_revision"]=before->revision;observed["preview"]=false;
+                observed["changed"]=receipt.result.at("changed");observed["replayed"]=false;observed["accepted"]=true;
+                receipt.result=std::move(observed);
+            }catch(const std::exception& error) {
+                const auto detail=std::string(error.what()).substr(0,1024);
+                receipt.failure=std::make_exception_ptr(Error(-32020,"Player preferences accepted; native application failed: "+detail,
+                    {{"accepted",true},{"settings_revision",preferences->snapshot()->revision},{"control_revision",player_control_revision_}}));
+            }
+            return player_receipt_json(receipt,false);
+        }
         if(method=="player.inspect") {
             fields(params,{"player_id"});
             if(params.contains("player_id")) {

@@ -184,6 +184,15 @@ void BoundPlayerInput::motion(double dx,double dy) {
     input_.look(dx*profile_.sensitivity_x*(profile_.invert_x ? 1 : -1),
         dy*profile_.sensitivity_y*(profile_.invert_y ? 1 : -1));
 }
+void BoundPlayerInput::tune(double sensitivity_x,double sensitivity_y,bool invert_x,bool invert_y) {
+    for(const auto value:{sensitivity_x,sensitivity_y})
+        if(!std::isfinite(value) || value<0 || value>10)
+            throw std::invalid_argument("Mouse sensitivity must be finite and between 0 and 10 degrees per relative unit.");
+    profile_.sensitivity_x=sensitivity_x;
+    profile_.sensitivity_y=sensitivity_y;
+    profile_.invert_x=invert_x;
+    profile_.invert_y=invert_y;
+}
 void BoundPlayerInput::clear() {
     for(auto& action:bindings_)for(auto& binding:action)binding.held=false;
     edges_={};input_.clear();gamepad_clear();

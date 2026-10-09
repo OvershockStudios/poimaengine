@@ -64,6 +64,9 @@ public:
     // Unknown/unbound controls are ignored; device numbers match the catalog.
     void control(InputControlKind kind, std::uint16_t code, bool down);
     void motion(double dx, double dy);
+    // Apply validated mouse tuning in place. Existing semantic look, held
+    // controls, press edges and gamepad state retain their original meaning.
+    void tune(double sensitivity_x,double sensitivity_y,bool invert_x,bool invert_y);
     void clear();
     void gamepad_connect(std::array<std::int16_t,6> axes={},std::uint32_t held_buttons=0);
     void gamepad_disconnect();

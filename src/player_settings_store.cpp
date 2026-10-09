@@ -14,9 +14,9 @@ namespace poima::player_settings {
 namespace {
 constexpr std::uint64_t max_revision=9007199254740991ULL;
 constexpr std::size_t max_bytes=64*1024,max_receipts=32;
-constexpr std::array<const char*,8> ids{
+constexpr std::array<const char*,9> ids{
     "camera.vertical_fov","input.sensitivity_x","input.sensitivity_y",
-    "input.invert_x","input.invert_y","ui.scale","graphics.samples","graphics.frames_in_flight"};
+    "input.invert_x","input.invert_y","ui.scale","graphics.samples","graphics.frames_in_flight","audio.master_gain"};
 constexpr std::array<const char*,5> suffixes{"",".lock",".pending",".previous",".previous.pending"};
 void require(bool condition,const char* message,int code=-32602) {
     if(!condition)throw SettingsError(code,message);
@@ -58,7 +58,7 @@ Json normalized_params(const Json& source) {
     std::set<std::string> reset;
     if(source.contains("reset")) {
         const auto& input=source.at("reset");
-        require(input.is_array() && input.size()<=ids.size(),"Settings reset must contain at most eight IDs.");
+        require(input.is_array() && input.size()<=ids.size(),"Settings reset exceeds the registry ID count.");
         for(const auto& item:input) {
             require(item.is_string(),"Settings reset IDs must be strings.");
             const auto& id=item.get_ref<const std::string&>();
@@ -226,7 +226,7 @@ Loaded loaded(const Document& doc) {
 }
 
 Json validate_values(const Json& values) {
-    require(values.is_object() && values.size()<=ids.size(),"Settings values must be a sparse object with at most eight IDs.");
+    require(values.is_object() && values.size()<=ids.size(),"Settings values must be a sparse object bounded by the registry ID count.");
     Json result=Json::object();
     for(const auto& item:values.items()) {
         const auto& id=item.key();const auto& value=item.value();
@@ -239,10 +239,10 @@ Json validate_values(const Json& values) {
             require(value==1 || value==alternate,"Unsupported graphics setting enumerant.");
             result[id]=value==1 ? 1 : alternate;
         } else {
-            require(value.is_number(),"FOV, sensitivity and UI scale settings must be numeric.");
+            require(value.is_number(),"FOV, sensitivity, UI scale and master gain settings must be numeric.");
             const auto number=value.get<double>();
             const double minimum=id=="camera.vertical_fov" ? 5 : id=="ui.scale" ? .25 : 0;
-            const double maximum=id=="camera.vertical_fov" ? 150 : id=="ui.scale" ? 8 : 10;
+            const double maximum=id=="camera.vertical_fov" ? 150 : id=="ui.scale" ? 8 : id=="audio.master_gain" ? 1 : 10;
             require(std::isfinite(number) && number>=minimum && number<=maximum,"Numeric player setting is nonfinite or outside its bounds.");
             result[id]=number==0 ? 0.0 : number;
         }
@@ -257,12 +257,13 @@ Json values_schema() {
     properties["ui.scale"]={{"type","number"},{"minimum",.25},{"maximum",8}};
     properties["graphics.samples"]={{"type","integer"},{"enum",{1,4}}};
     properties["graphics.frames_in_flight"]={{"type","integer"},{"enum",{1,2}}};
+    properties["audio.master_gain"]={{"type","number"},{"minimum",0},{"maximum",1}};
     return {{"type","object"},{"additionalProperties",false},{"maxProperties",ids.size()},{"properties",properties}};
 }
 Json describe() {
     const auto schema=values_schema();
     const Json defaults={{"camera.vertical_fov",60.0},{"input.sensitivity_x",.1},{"input.sensitivity_y",.1},
-        {"input.invert_x",false},{"input.invert_y",false},{"ui.scale",1.0},{"graphics.samples",4},{"graphics.frames_in_flight",2}};
+        {"input.invert_x",false},{"input.invert_y",false},{"ui.scale",1.0},{"graphics.samples",4},{"graphics.frames_in_flight",2},{"audio.master_gain",1.0}};
     Json settings=Json::array();
     for(const auto* id:ids) {
         const std::string_view name(id);
@@ -270,6 +271,10 @@ Json describe() {
         const auto unit=name=="camera.vertical_fov" ? "degrees" : name.starts_with("input.sensitivity_") ? "degrees per relative mouse unit" : name=="ui.scale" ? "physical pixels per logical UI pixel" : "dimensionless";
         settings.push_back({{"id",id},{"version",1},{"schema",schema.at("properties").at(id)},
             {"default",defaults.at(id)},{"default_source",source},{"units",unit},{"application","next_player"}});
+        if(name=="audio.master_gain") {
+            settings.back()["live_application"]="output_sink_only";
+            settings.back()["scope"]="Player output master gain; does not change emitters, propagation, mixer state or saves.";
+        }
     }
     return {{"format","poima.settings.v1"},{"values_schema",schema},{"settings",settings},{"defaults",defaults},
         {"application","next_player"},{"state","stored_intent"},

@@ -133,7 +133,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 68}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 69}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -307,9 +307,23 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     const auto settings_properties=player_settings::values_schema().at("properties");
     Json settings_ids=Json::array();for(auto it=settings_properties.begin();it!=settings_properties.end();++it)settings_ids.push_back(it.key());
     methods["settings.transact"]=object_schema({{"path",input_path},{"request_id",id},{"expected_revision",rev},
-        {"set",player_settings::values_schema()},{"reset",{{"type","array"},{"uniqueItems",true},{"maxItems",8},{"items",{{"enum",settings_ids}}}}},
+        {"set",player_settings::values_schema()},{"reset",{{"type","array"},{"uniqueItems",true},{"maxItems",settings_ids.size()},{"items",{{"enum",settings_ids}}}}},
         {"preview",{{"type","boolean"},{"default",false}}}},{"path","request_id","expected_revision"});
-    result["invariants"].push_back("Sparse portable player settings have independent revisions and next_player application. Inspect reports stored intent; runtime.play reports resolved sources/effective values. Explicit existing launch options override profile/session settings. Replay validates pointer preferences without reinterpreting semantic input. Profiles stay outside packaged games; live settings/C# menus are separate work.");
+    methods["player.settings.inspect"]=object_schema({{"player_id",id}});
+    methods["player.settings.transact"]=object_schema({{"player_id",id},{"request_id",id},{"expected_control_revision",rev},
+        {"expected_settings_revision",rev},{"set",player_settings::values_schema()},
+        {"reset",{{"type","array"},{"uniqueItems",true},{"maxItems",settings_ids.size()},{"items",{{"enum",settings_ids}}}}},
+        {"preview",{{"type","boolean"},{"default",false}}}},
+        {"player_id","request_id","expected_control_revision","expected_settings_revision"});
+    result["live_player_settings"]={{"schema",player_settings::values_schema()},
+        {"lifetime","Native presentation owner, separate from authored worlds, runtime checkpoints and stored profiles."},
+        {"live",{"camera.vertical_fov","input.sensitivity_x","input.sensitivity_y","input.invert_x","input.invert_y","ui.scale","audio.master_gain"}},
+        {"next_player",{"graphics.samples","graphics.frames_in_flight"}},
+        {"revisions","Configuration revisions guard acceptance; native applied/presented revisions report the live subset separately. Control revisions also invalidate stale captures."},
+        {"persistence","Session changes do not write profiles. Explicit settings.transact remains independently guarded; changing storage does not change an active player."},
+        {"audio","Verified output-sink gain when enabled; no emitter/mixer/save or offline PCM changes, and no audible-output guarantee."},
+        {"limitations","No C# settings service/menu yet. No live GPU sample/frame-slot transition. Physical-device input qualification remains separate."}};
+    result["invariants"].push_back("Sparse stored player settings have independent revisions and next_player application. Native player.settings.transact changes the current interactive owner's live subset; graphics samples/frame slots retain explicit next-player intent. Shared-headless owner, player/control/configuration guards, validation and receipts protect accepted changes. Preview prepares without publication/receipt. Applying does not step simulation or persist a profile; actual device application/presentation can follow acceptance and is reported separately. Exact retries recover retained outcomes even after replacement or stop. Replay rejects intervening changes. C# menu access remains separate work.");
     result["invariants"].push_back("runtime.play blocks this session until exit; replay requires controller and sequence (at most 36000 total ticks); interactive accepts max_frames (0 means until exit) and may omit controller for menu-only scenes. Play results retain partial progress on window/device failure.");
     result["invariants"].push_back("At most 1024 enabled Light components and one LightingEnvironment. Any authored lighting, including a disabled light, suppresses the preview fallback.");
     result["invariants"].push_back("LightingEnvironment.sky is optional and disabled when absent; when present all sky fields are required. Non-null sun must reference an existing directional Light, including when sky is disabled. Remove or change that light only while clearing/changing the reference in the same transaction. Disabled sun lights hide the disk. Runtime retains frozen sky settings/reference and resolves the sun direction from its live pose.");

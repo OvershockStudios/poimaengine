@@ -68,7 +68,7 @@ Rendering uses authored lighting, optional [shadow maps](SHADOWS.md), imported s
 
 ## Launch-time preferences
 
-[Portable player settings](PLAYER_SETTINGS.md) supply sparse FOV, pointer, UI-scale and existing rendering overrides before `runtime.play`. The player preserves authored camera data and reports stored intent separately from resolved values and sources. Settings affect the next launch; the blocking connection does not accept live changes during play. Exported games read external profiles through the same native service.
+[Portable player settings](PLAYER_SETTINGS.md) supply sparse FOV, pointer, UI-scale and existing rendering overrides before `runtime.play`. The player preserves authored camera data and reports stored intent separately from resolved values and sources. Stored profiles affect the next launch; the blocking connection does not accept live changes during play. The shared [live player](LIVE_PLAYER.md) exposes guarded session changes with [separate application and presentation observations](PLAYER_SETTINGS.md#live-state-and-application-reference). Exported games read external profiles through the same native service.
 
 ## Evidence and limits
 

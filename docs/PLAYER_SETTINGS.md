@@ -1,15 +1,17 @@
 # Player settings
 
-Poima 0.0.76 supplies typed, portable player preferences for eight existing
-player controls. Settings are sparse overrides: an omitted key inherits its
+Poima supplies typed, portable player preferences for nine player controls.
+Settings are sparse overrides: an omitted key inherits its
 authored camera, input profile, window density or renderer default. They are
 separate from world files, input bindings and saved gameplay state.
 
-Discover and edit profiles through the native world service, then select them
-for the next [player](PLAYER.md) launch. Inspection reports **stored intent**;
-the launch result reports resolved values, sources and presentation outcomes.
-There is no live settings channel, C# settings API or generated settings menu
-in this slice. The broader requirements remain in [release roadmap](ROADMAP.md).
+Stored profiles supply the next [player](PLAYER.md) launch. A separate live
+channel changes the current native player's FOV, pointer tuning, UI scale and
+output gain through a shared headless owner. Inspection distinguishes requested
+configuration, native application and completed presentation. The live contract
+described here is introduced in 0.0.80; consult [implementation status](IMPLEMENTATION_STATUS.md)
+for execution qualification. C# settings access and generated in-game menus
+remain separate work in the [release roadmap](ROADMAP.md).
 
 ## Keys and inheritance
 
@@ -26,6 +28,7 @@ outside these bounds are rejected before a batch is published.
 | `ui.scale` | Number, `[0.25,8]` | Physical pixels per logical UI pixel | Actual window display density; fallback metadata is 1. |
 | `graphics.samples` | Integer, `1` or `4` | Samples per pixel | Renderer default, 4. |
 | `graphics.frames_in_flight` | Integer, `1` or `2` | Outstanding graphics submissions | Renderer default, 2. |
+| `audio.master_gain` | Number, `[0,1]` | Linear output gain; 0 is mute | Player output gain, 1. |
 
 FOV is a presentation override: it does not change the authored or runtime
 camera component. UI scale is absolute, rather than multiplied by display
@@ -36,6 +39,12 @@ satisfy the chosen render path's dependencies; for example, a path requiring
 single-sample rendering rejects a combined configuration requesting four
 samples instead of silently changing it.
 
+Live pointer tuning changes only future relative mouse events. Already queued
+semantic look angles, jump/use edges, held bindings and gamepad state survive.
+Master gain applies once at the SDL output stream, without rewriting emitters,
+propagation, mixer state or saved state. It does not alter offline PCM captures.
+An actual stream gain readback verifies the numeric sink setting, not audibility.
+
 ## Discover and inspect
 
 The dependency-free authoring build can manage preferences without opening a
@@ -43,13 +52,16 @@ window. Applying them requires a simulation build with the Windows Vulkan
 player; native game UI additionally requires `POIMA_ENABLE_GAME_UI=ON`.
 Follow [build setup](BUILD.md). Keep engine and packaged-game versions matched.
 
-`world.describe` schema revision **65** exposes these methods:
+`world.describe` schema revision **69** exposes stored and live methods. These
+are outside the limited [authoring-core contract](AUTHORING_API_COMPATIBILITY.md).
 
 | Method | Parameters | Result |
 | --- | --- | --- |
-| `settings.describe` | `{}` | Strict sparse `values_schema`, eight registry entries, fallback defaults, units and persistence/application policies. |
+| `settings.describe` | `{}` | Strict sparse `values_schema`, nine registry entries, fallback defaults, units and persistence/application policies. |
 | `settings.inspect` | `path` | `values`, `revision`, `persisted`, `content_hash`, `application:"next_player"` and `state:"stored_intent"`. |
 | `settings.transact` | `path`, `request_id`, `expected_revision`; optional `set`, `reset`, `preview` | Merged sparse values, revision guards and a retryable result; preview adds `proposed_revision`. |
+| `player.settings.inspect` | Optional `player_id` | Retained native owner, current `control_revision`, and `settings` with configuration revision, sparse values/sources, fields and actual application metadata. No player is created. |
+| `player.settings.transact` | `player_id`, `request_id`, `expected_control_revision`, `expected_settings_revision`; optional `set`, `reset`, `preview` | Guarded live patch or preview. Mutation requires a shared headless host and an active interactive player; recorded replay rejects changes. |
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"settings.describe","params":{}}
@@ -108,7 +120,7 @@ Reset removes an override; it does not write a fallback value into the profile:
 
 This produces revision 2, retaining only the sensitivity and sample overrides.
 The next launch inherits its camera and window density again. Reset allows at
-most eight unique known IDs. A key cannot appear in both `set` and `reset`.
+most nine unique known IDs. A key cannot appear in both `set` and `reset`.
 Omitted `set`, `reset` and `preview` normalize to `{}`, `[]` and `false`;
 reset order is canonicalized. To clear a profile, reset all currently stored IDs.
 
@@ -160,18 +172,227 @@ camera, or is null if that camera is unavailable; an explicit FOV remains known.
 UI's effective scale comes from the actual renderer's density or explicit scale,
 rather than registry metadata.
 
-`applied` means at least one presentation completed. It does not guarantee that
-the final configured state after an error was presented. `not_presented` reports
-no completed presentation. In semantic replay, pointer
+At initial configuration revision 0, the existing launch application report
+preserves its original outcomes: `applied` means at least one frame completed,
+`not_presented` means none completed, and replay pointer fields are
+`validated_only`. It does not prove that a final state after an error was seen.
+The added output-gain field reports the actual audio-sink outcome separately.
+
+The live report described below identifies the exact observed, applied and
+presented configuration revisions. A field's `applied` presentation outcome
+refers to the current configuration revision; `awaiting_presentation` does not
+claim that revision has been displayed. In semantic replay, pointer
 sensitivity/inversion are `validated_only`: the recorded movement/look/action
 sequence is not reinterpreted as physical input. The ordinary input-profile
-report additionally includes an `effective_content_hash` when settings are
-requested. A retried play returns its original playback receipt.
+report includes an `effective_content_hash` resolved from the current preference
+state. A retried play returns its original playback receipt.
 
-Player preferences are frozen for this call. Editing a profile elsewhere affects
-the next play call; it does not alter the active window. `runtime.play` blocks
-its connection until it returns. No live application or restartless renderer
-reconfiguration is implied.
+In the live channel, an already-matching graphics choice reports `unchanged`,
+and a different future choice reports `requires_next_player`; neither changes
+the legacy successful-launch outcome described above.
+
+Editing a stored profile affects the next launch; it does not alter an active
+window. `runtime.play` blocks its connection until it returns. Use the separate
+shared [live player](LIVE_PLAYER.md) and `player.settings.transact` for concurrent
+native changes. Graphics sample/frame-slot changes remain next-launch intent;
+they do not rebuild a live renderer.
+
+## Live state and application reference
+
+`player.settings.inspect` returns `settings.format:"poima.player-preferences.v1"`.
+Its `revision` guards session configuration independently of world, runtime,
+gameplay and stored-profile revisions. Accepted patches, including no-ops,
+advance configuration and control revisions. They do not advance simulation or
+write a profile. Reset restores the original launch inheritance rather than a
+profile edited afterward; inherited FOV and UI density resolve from the current
+camera/window, including after a save replacement.
+
+Each current field reports `requested`, `effective`, `source`, `application`,
+`requires_next_player` and an outcome. For graphics, `effective` stays at the
+frozen launch value and `next_effective` describes the desired next player.
+Future graphics intent must still satisfy the current path's dependencies;
+invalid combined patches reject before publication. Graphics resets may still
+require a new player when the inherited value differs from this launch.
+
+`settings.application` separates these observations:
+
+| Member | Meaning |
+| --- | --- |
+| `observed_revision` | Latest configuration observed by the native window; null when unavailable. |
+| `applied_revision` | Live subset applied to the current owner; null before native application. Graphics intent is excluded. |
+| `presented_revision` | Revision used by a successful native frame/capture; it can lag application during minimization or before redraw. |
+| `effective_vertical_fov`, `effective_ui_scale` | Native camera-copy/UI-scale observations, distinct from requested field values. |
+| `sensitivity_x`, `sensitivity_y`, `invert_x`, `invert_y` | Pointer interpretation configured in the stable native input evaluator. Replay reports input fields as `validated_only`. |
+| `requested_master_gain`, `sink_gain`, `audio_outcome` | Requested gain, optional actual stream readback and its outcome. Disabled/uninitialized audio has no actual sink gain. |
+
+A UI-scale update resets old hover/press/accept gestures and invalidates the
+visible hit map until redraw, even if the logical UI revision did not change.
+Queued old UI interaction cannot activate an invisible control or fall through
+into gameplay recapture during that interval. Captures need the current player
+readiness and control guard; after changing scale, wait for its new presentation.
+
+Preview validates a complete candidate and reports candidate revision, values,
+sources and fields alongside the **old actual application**. It retains no
+receipt and publishes nothing. Candidate fields do not claim presentation
+outcomes. A committed result has `accepted:true`,
+`previous_settings_revision`, `changed` and `replayed`; acceptance is not an
+atomic hardware guarantee. If native application fails after publication,
+`-32020` includes `data.accepted:true` and the accepted settings/control revisions.
+Inspect the retained terminal owner and recover the exact receipt. Do not send
+a new patch assuming the first one never happened.
+
+The most recent 32 player command receipts are process-local and shared with
+start/control/capture. An exact retained retry returns its historical outcome
+before comparing current guards, including after runtime replacement or player
+stop. Changed parameters under that request ID reject. Unlike stored profile
+receipts, these do not survive host restart.
+
+## Task: adjust and observe a live player
+
+Use a matching 0.0.80 native Windows simulation/rendering build and the installed
+[Python client](PYTHON_CLIENT.md). Start a shared headless host and an initially
+paused interactive player through the setup, `runtime.start`, `player.start`
+and readiness steps in the [live-player recipe](LIVE_PLAYER.md#a-guarded-observation-recipe).
+Leave that owner active; do not run the recipe's concluding stop/shutdown steps
+before this task.
+For this example use forward color rendering with one sample and no AO or
+reconstruction, so four-sample next-launch intent is valid. Supply your own
+existing world/camera/controller and hardware GPU; game UI needs authored
+logical controls to observe scale visually, and real sink gain needs audio
+enabled at launch. This task can inspect a paused player without either feature,
+but must then report those observations as unavailable.
+
+The code attaches to endpoint `live-game`, creates only a new output directory
+and leaves the host/player running. Run with native Windows Python and paths:
+
+```python
+from pathlib import Path
+from time import monotonic, sleep
+from poima_client import WorldClient, new_id
+
+binary = Path("build/windows-runtime/poima.exe").resolve()
+output = Path("build/live-preference-observations").resolve()
+output.mkdir(parents=True, exist_ok=False)
+
+with WorldClient.connect(binary, "live-game", timeout_ms=30000) as engine:
+    for method in ("player.settings.inspect", "player.settings.transact",
+                   "player.inspect", "player.control", "player.capture"):
+        engine.discover("method", method)
+    owner = engine.call("player.inspect")
+    assert owner["active"] and owner["mode"] == "interactive"
+    player_id = owner["player_id"]
+    if not owner["paused"]:
+        engine.call("player.control", {
+            "player_id": player_id, "request_id": new_id(),
+            "expected_control_revision": owner["control_revision"], "action": "pause"})
+
+    def ready(revision=None):
+        deadline = monotonic() + 60
+        while (remaining := deadline - monotonic()) > 0:
+            state = engine.call("player.inspect", {"player_id": player_id},
+                                timeout=min(remaining, 30))
+            if not state["active"]:
+                raise RuntimeError(state["report"])
+            remaining = deadline - monotonic()
+            if remaining <= 0:
+                break
+            settings = engine.call("player.settings.inspect", {"player_id": player_id},
+                                   timeout=min(remaining, 30))
+            presented = settings["settings"]["application"]["presented_revision"]
+            if state["ready"] and (revision is None or presented == revision):
+                assert state["paused"]
+                return state, settings
+            sleep(min(.02, max(0, deadline - monotonic())))
+        raise TimeoutError("Inspect the retained player; do not repeat the mutation")
+
+    def capture(state, name):
+        result = engine.call("player.capture", {
+            "player_id": player_id, "request_id": new_id(),
+            "expected_control_revision": state["control_revision"],
+            "session_id": state["session_id"], "tick": state["tick"],
+            "expected_structure_revision": state["structure_revision"],
+            "expected_ui_revision": state["ui_revision"],
+            "path": str(output / (name + ".bmp"))})
+        assert result["capture"]["capture_written"]
+        return result
+
+    before, observed = ready()
+    world_revision = engine.inspect()["revision"]
+    capture(before, "before")
+    patch = {
+        "player_id": player_id, "request_id": new_id(),
+        "expected_control_revision": observed["control_revision"],
+        "expected_settings_revision": observed["settings"]["revision"],
+        "set": {"camera.vertical_fov": 90, "ui.scale": 1.5,
+                "input.sensitivity_x": 0.25, "audio.master_gain": 0.5,
+                "graphics.samples": 4}}
+    preview = engine.call("player.settings.transact", {**patch, "preview": True})
+    assert preview["preview"] and preview["previous_settings_revision"] == observed["settings"]["revision"]
+    result = engine.call("player.settings.transact", patch)
+    assert result["accepted"] and not result["replayed"]
+    after, current = ready(result["settings"]["revision"])
+    capture(after, "after")
+    assert after["tick"] == before["tick"] and engine.inspect()["revision"] == world_revision
+    assert current["settings"]["fields"]["graphics.samples"]["next_effective"] == 4
+    assert after["report"]["samples"] == before["report"]["samples"] == 1
+    retry = engine.call("player.settings.transact", patch)
+    assert retry["replayed"] and retry["settings"]["revision"] == result["settings"]["revision"]
+    print(current["settings"]["application"])
+```
+
+Inspect both images and application metadata. Camera projection and visible
+logical UI should reflect the new values; the simulation tick and authored
+revision stay unchanged. For enabled audio, compare requested gain with actual
+`sink_gain`; `disabled` is not evidence of volume application. This sequence
+does not test physical mouse feel, audible output or a compiled settings menu.
+
+To persist the choice, separately inspect an external `.poima-settings.json`
+profile and submit `settings.transact` with its **stored** revision and a new
+request ID. Select only the sparse values you intend to keep from
+`current["settings"]["values"]`; reset stored keys deliberately. This writes
+next-launch intent and does not change the current player. Stop/start creates a
+new live owner; it does not automatically retain unsaved session overrides.
+Runtime save/load replacement keeps the existing presentation preferences and
+sink gain while clearing input under its normal replacement rules.
+
+On stale guards, inspect the owner and reconcile the intended change before
+preparing a fresh request. On a transport timeout or accepted platform error,
+retain `patch` unchanged for receipt recovery. Disconnecting a client leaves
+the host/player alive. Resume or stop through guarded `player.control` only
+after reviewing the result; see [live-player recovery](LIVE_PLAYER.md).
+
+## Verification
+
+The live service task has [0.0.80 qualification](evidence/m2-live-player-settings.json)
+on both laptop GPUs, including independent FOV/UI image checks and continuation
+of existing compiled character games. The latter checks native preferences around
+compiled gameplay; it does not provide a C# settings menu.
+
+To repeat the service checks from Linux/WSL with a matching native Windows build
+and a **new** output directory:
+
+```sh
+python3 tests/player_live_settings_contract.py \
+  --binary build/windows-runtime/poima.exe --windows-interop \
+  --capture --gpu 1 --audio --output build/live-settings-check
+```
+
+Omit `--audio` to check a player without an output sink. Select a GPU available
+in your build; an index is not a portable hardware identity. Without `--capture`,
+the test checks discovery and admission without initializing graphics or audio.
+The device-free native/protocol checks are registered with CTest:
+
+```sh
+ctest --test-dir build/runtime-headless \
+  -R '^player_(live_preferences_native|live_settings_contract)$' --output-on-failure
+```
+
+Their source oracles and the separately compiled-game verifier are
+[live service](../tests/player_live_settings_contract.py),
+[native owner](../tests/player_preferences_live_native.cpp),
+[native window](../tests/player_window_native.cpp) and
+[compiled continuation](../tests/player_compiled_preferences_contract.py).
+Only the recorded supported combinations establish execution qualification.
 
 ## Exported-game CLI
 
@@ -206,8 +427,13 @@ Native callers use [`GameLaunchOptions`](../include/poima/game_launch.hpp)
 and `run_game`. Set `samples_explicit` or `frames_in_flight_explicit` when the
 corresponding `render` field is an explicit selection; leaving those flags
 false permits requested preferences to supply it. Direct player callers can
-set [`PlayerOptions.vertical_fov` and `ui_scale`](../include/poima/player.hpp);
-the owner-snapshot adapter applies presentation overrides to a fresh copy.
+set [`PlayerOptions.vertical_fov` and `ui_scale`](../include/poima/player.hpp)
+for a fixed launch, or attach a shared
+[`PlayerPreferences`](../include/poima/player_preferences.hpp) owner. Its frozen
+launch samples/frame slots must match `PlayerOptions.render`; both renderer
+backends reject disagreement before owner/device work. Prepare complete patches
+and publish on the owner thread. The snapshot adapter applies FOV to a fresh
+camera copy; graphics patches do not reconfigure an existing window.
 
 ## Storage, errors and limits
 
@@ -235,9 +461,12 @@ protection against another process ignoring the cooperative lock.
 | `-32010` | Retained request ID reused with different normalized parameters. |
 | `-32070` | Corrupt/unsupported profile, unavailable storage or unsafe file/sidecar. |
 | `-32081` | Attempted settings mutation through a packaged read-only world. |
+| `-32004` | Missing/wrong retained player identity or finished player for a live mutation. |
+| `-32020` | Native application failure; inspect `data.accepted` before deciding whether configuration committed. |
+| `-32080` | Wrong player service scope or intervening settings change during recorded replay. |
 
 This subset does not supply display-mode confirmation, monitor selection,
-resolution/preset management, audio settings, upscaler selection, cloud sync,
+resolution/preset management, audio bus/mixer authoring, upscaler selection, cloud sync,
 automatic schema migration or a general settings menu. It changes no input,
 gameplay or save ABI. Headless persistence observations do not establish physical
 mouse/controller feel, graphical presentation or deployment qualification.
@@ -276,5 +505,10 @@ the relocated export. It never removes a supplied project.
 
 [Recorded qualification](evidence/m2-player-settings.json) covers Windows Vulkan
 on both laptop GPUs and native Linux/Windows authoring checks. These small
-fixtures do not qualify physical pointer/controller feel, live settings menus,
-clean-machine installation or game-scale performance.
+fixtures describe the original 0.0.76 stored/launch checkpoint; they do not
+qualify the newer live channel. The new
+[live contract verifier](../tests/player_live_settings_contract.py) and
+[native owner tests](../tests/player_preferences_live_native.cpp) define its
+checks. Consult implementation status for completed runs. Physical
+pointer/controller feel, audible output, compiled menus, clean-machine
+installation and game-scale performance need separate qualification.

@@ -76,8 +76,12 @@ A build without rendering rejects start without changing its player generation.
 
 The start parameters inherit [player launch options](PLAYER.md), including
 renderer configuration, input profiles, replay sequences and
-[portable preferences](PLAYER_SETTINGS.md). Preferences are resolved at launch;
-this API does not make them live-adjustable or expose a C# settings menu.
+[portable preferences](PLAYER_SETTINGS.md). The shared native player also accepts
+guarded live FOV, pointer, UI-scale and output-gain changes through
+`player.settings.transact`. Inspect accepted, applied and presented revisions
+separately. Stored profiles and next-player graphics choices remain independent;
+see the [live settings task](PLAYER_SETTINGS.md#task-adjust-and-observe-a-live-player).
+A compiled C# settings-menu interface remains separate work.
 
 ## A guarded observation recipe
 

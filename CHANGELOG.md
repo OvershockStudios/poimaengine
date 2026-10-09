@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.80
+
+- Add a shared native [live player-preference owner](docs/PLAYER_SETTINGS.md), guarded inspection/patches, preview/reset, independent revisions and retry recovery.
+- Apply FOV, pointer sensitivity/inversion, UI scale and output gain without changing authored cameras, gameplay snapshots or stored profiles. Preserve held/queued input and invalidate scaled UI hit regions until redraw.
+- Report accepted, applied and presented state separately; retain graphics samples/frame slots as explicit next-player intent and reject invalid combined renderer choices before publication.
+- Preserve existing launch-report outcomes and compiled gameplay interfaces. Qualify both GPUs, real SDL numeric gain, retained Windows Native AOT/CoreCLR character games and same-window save continuation. [Evidence](docs/evidence/m2-live-player-settings.json).
+- Publish and execute the live-settings playbook, update documentation coverage and register device-free native/protocol checks with CTest.
+
 ## 0.0.79
 
 - Extend [explicit save upgrades](docs/SAVE_UPGRADES.md) to complete hierarchy recipes, version-6 checkpoints and bounded component collections while preserving native graph state and allocator history.

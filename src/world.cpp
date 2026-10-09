@@ -12,6 +12,7 @@
 #endif
 #include "world_schema.hpp"
 #include "poima/player.hpp"
+#include "poima/player_preferences.hpp"
 #include "poima/build_metadata.hpp"
 #include "poima/native_gameplay_artifact.hpp"
 #include "poima/save_store.hpp"
@@ -3195,7 +3196,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             require(method!="world.capture" && method!="runtime.capture" && method!="asset.animation.capture" && method!="runtime.play",
                     "This operation creates a graphics lifetime; use editor.capture or the editor's runtime controls in a shared editor.",-32080);
         if(method=="host.shutdown")require(scope==WorldRequestScope::shared_headless,"Only a shared headless host supports host.shutdown.",-32080);
-        if(method=="player.start" || method=="player.control" || method=="player.capture")
+        if(method=="player.start" || method=="player.control" || method=="player.capture" || method=="player.settings.transact")
             require(scope==WorldRequestScope::shared_headless,"Player service mutations require a pumped shared headless owner.",-32080);
         impl_->world.guard_player_request(method);
         const bool trace=!method.starts_with("profiler.");
@@ -3217,7 +3218,7 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
             }
         }
         if(method=="world.describe" && scope!=WorldRequestScope::shared_headless)
-            for(const auto* name:{"player.start","player.control","player.capture"})result["methods"].erase(name);
+            for(const auto* name:{"player.start","player.control","player.capture","player.settings.transact"})result["methods"].erase(name);
         // Project only after scope restrictions, so focused discovery cannot
         // advertise an operation hidden from the full session descriptor.
         if(method=="world.describe")result=project_discovery(std::move(result),request.value("params",Json::object()),

@@ -2,6 +2,7 @@
 #include "poima/core.hpp"
 #include "poima/scene.hpp"
 #include "poima/player.hpp"
+#include "poima/player_preferences.hpp"
 #include "poima/input_profile.hpp"
 #include "poima/assets.hpp"
 #include "poima/animation.hpp"
@@ -3021,9 +3022,12 @@ struct PlayerWindow::Impl {
     struct GamepadBinding { GamepadHost* host=nullptr; ~GamepadBinding() { if(host)try { host->stop(); }catch(...) {} } } gamepad_binding;
     GamepadHost* gamepads=nullptr;
     std::unique_ptr<PlayerAudio> audio;
+    std::shared_ptr<const PlayerPreferences::State> configuration;
     std::thread::id owner=std::this_thread::get_id();
     bool initialized=false,done=false,quit=false,owner_paused=false;
     bool focused=false,captured=false,active=false,ui_ready=false,ui_presented=false;
+    bool ui_scale_pending=false;
+    bool audio_gain_failed=false;
     std::size_t segment=0;
     std::uint32_t offset=0;
     std::uint64_t previous=0;
@@ -3033,6 +3037,11 @@ struct PlayerWindow::Impl {
         result.initial_session=result.final_session=session.identity();
         context.player_ui_scale=options.ui_scale;
         result.effective_ui_scale=options.ui_scale.value_or(1.f);
+        const auto profile=requested.input_profile ? *requested.input_profile : default_gamepad_input_profile();
+        result.preferences.sensitivity_x=profile.sensitivity_x;result.preferences.sensitivity_y=profile.sensitivity_y;
+        result.preferences.invert_x=profile.invert_x;result.preferences.invert_y=profile.invert_y;
+        result.preferences.audio_outcome=options.audio ? "not_initialized" : "disabled";
+        apply_preferences();
         gamepads=options.replay ? nullptr : options.gamepad_host.get();
         result.gamepad_json=options.replay ? "{\"mode\":\"replay\",\"assigned\":null}" : "{\"mode\":\"disabled\",\"assigned\":null}";
         result.render.detail="Native player awaits its first owner poll.";
@@ -3042,25 +3051,72 @@ struct PlayerWindow::Impl {
     }
     bool ui_modal() const { return snapshot.logical_ui && !snapshot.logical_ui->modal.empty(); }
     bool ui_available() const { return snapshot.logical_ui && !snapshot.logical_ui->elements.empty(); }
+    void apply_preferences() {
+        if(!options.preferences)return;
+        const auto latest=options.preferences->snapshot();
+        result.preferences.observed_revision=latest->revision;
+        if(configuration==latest)return;
+        const auto& values=latest->values;
+        // GamepadHost borrows this exact object. Tuning affects future mouse
+        // events only; held controls, edges, semantic look and pad state survive.
+        input.tune(values.sensitivity_x,values.sensitivity_y,values.invert_x,values.invert_y);
+        if(context.player_ui_scale!=values.ui_scale) {
+            context.player_ui_scale=values.ui_scale;
+            context.reset_game_ui_input();ui_ready=false;ui_presented=false;
+            // Before redraw an old click/accept cannot activate an invisible
+            // control or fall through into gameplay recapture.
+            if(initialized)ui_scale_pending=true;
+        }
+        result.effective_ui_scale=context.effective_game_ui_scale();
+        result.preferences.sensitivity_x=values.sensitivity_x;result.preferences.sensitivity_y=values.sensitivity_y;
+        result.preferences.invert_x=values.invert_x;result.preferences.invert_y=values.invert_y;
+        result.preferences.requested_master_gain=values.master_gain;
+        if(audio) {
+            try {
+                audio->set_master_gain(values.master_gain);
+                const auto observed=audio->report();result.preferences.sink_gain=observed.master_gain;
+                audio_gain_failed=false;result.preferences.audio_outcome="sink_gain_verified";
+            }catch(...) {audio_gain_failed=true;result.preferences.audio_outcome="apply_failed";throw;}
+        }
+        configuration=latest;
+    }
+    void fresh_snapshot() {
+        snapshot=player_snapshot(options,session);
+        if(initialized && configuration)result.preferences.applied_revision=configuration->revision;
+    }
+    void presented_preferences() {
+        if(configuration)result.preferences.presented_revision=configuration->revision;
+        ui_scale_pending=false;
+    }
     void refresh_report() {
         if(gamepads)result.gamepad_json=gamepads->status_json();
-        if(audio)result.audio=audio->report();
+        if(audio) {
+            result.audio=audio->report();result.preferences.sink_gain=result.audio.master_gain;
+            if(!audio_gain_failed)result.preferences.audio_outcome="sink_gain_verified";
+        }
         result.final_tick=session.tick();result.final_session=session.identity();result.dropped_seconds=clock.dropped_seconds();
         result.effective_ui_scale=context.effective_game_ui_scale();
+        if(initialized)result.preferences.effective_vertical_fov=snapshot.vertical_fov;
         auto& report=result.render;
         report.width=context.extent.width;report.height=context.extent.height;report.samples=context.samples;
         report.hardware=context.hardware;report.gpu_name=context.gpu_name;
         report.validation_errors=context.messages.errors;report.diagnostics=context.diagnostics;
     }
     void initialize() {
+        apply_preferences();
         require((options.controller.empty() && !options.replay) || session.controller_valid(options.controller),"Player requires an active CharacterController when selected; replay requires a controller.");
-        snapshot=player_snapshot(options,session);
-        context.player_ui_scale=options.ui_scale;
+        fresh_snapshot();
+        context.player_ui_scale=configuration ? configuration->values.ui_scale : options.ui_scale;
         context.initialize(options.render,&snapshot,true,nullptr,options.replay);
         initialized=true;
         result.effective_ui_scale=context.effective_game_ui_scale();
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
-        if(options.audio)audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera));
+        if(options.audio) {
+            try {audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera),result.preferences.requested_master_gain);}
+            catch(...) {result.preferences.audio_outcome="initialization_failed";throw;}
+            result.preferences.sink_gain=audio->report().master_gain;result.preferences.audio_outcome="sink_gain_verified";
+        }
+        if(configuration)result.preferences.applied_revision=configuration->revision;
         focused=(SDL_GetWindowFlags(context.window)&SDL_WINDOW_INPUT_FOCUS)!=0;
         captured=!owner_paused && !options.replay && focused && !options.controller.empty() && (!snapshot.logical_ui || snapshot.logical_ui->modal.empty());
         active=!owner_paused && !options.replay && focused;
@@ -3087,13 +3143,14 @@ struct PlayerWindow::Impl {
         clock.advance(0,false);previous=SDL_GetTicksNS();
         if(audio)audio->discard_pending();
         require(options.controller.empty() || session.controller_valid(options.controller),"Restored runtime no longer has the selected CharacterController; choose a valid player before resuming.");
-        snapshot=player_snapshot(options,session);
+        fresh_snapshot();
         if(audio)audio->reset(session.audio_state(options.camera));
         if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
         else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
         return true;
     }
     bool ui_event(const UiInput& event) {
+        if(ui_scale_pending)return true;
         if(!ui_presented || !ui_available())return ui_modal();
         auto physical=event;
         if(event.kind==UiInputKind::pointer_move || event.kind==UiInputKind::pointer_down || event.kind==UiInputKind::pointer_up || event.kind==UiInputKind::pointer_wheel) {
@@ -3114,7 +3171,7 @@ struct PlayerWindow::Impl {
                 SDL_SetWindowRelativeMouseMode(context.window,false);
                 if(gamepads)gamepads->activate(active);
             }
-            snapshot=player_snapshot(options,session);
+            fresh_snapshot();
             // Same-session queued events still target the visible old UI.
             // Until redraw, consume its regions without invoking Control.
             ui_ready=false;context.reset_game_ui_input();
@@ -3134,6 +3191,7 @@ struct PlayerWindow::Impl {
     }
     void synchronize() {
         if(done)return;
+        apply_preferences();
         const auto identity=session.identity();
         if(!initialized) {
             if(identity!=result.final_session) {
@@ -3150,7 +3208,7 @@ struct PlayerWindow::Impl {
             if(options.replay) {quit=true;result.stop_reason="runtime_changed";}
         }
         const auto old_ui=snapshot.logical_ui;
-        snapshot=player_snapshot(options,session);
+        fresh_snapshot();
         if(bool(old_ui)!=bool(snapshot.logical_ui) || (old_ui && snapshot.logical_ui &&
             old_ui->revision!=snapshot.logical_ui->revision)) {
             ui_ready=false;ui_presented=false;context.reset_game_ui_input();
@@ -3158,6 +3216,7 @@ struct PlayerWindow::Impl {
         result.final_tick=session.tick();
     }
     void frame() {
+        apply_preferences();
         profiling::SessionScope frame_session(result.final_session);
         profiling::Scope frame_scope("player.frame",static_cast<std::int64_t>(session.tick()));
         if(!options.replay && ui_modal()) {
@@ -3279,14 +3338,15 @@ struct PlayerWindow::Impl {
         }
         profiling::SessionScope render_session(result.final_session);
         profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
-        snapshot=player_snapshot(options,session); context.update_scene();
+        fresh_snapshot(); context.update_scene();
         ui_ready=context.frame(false);ui_presented=ui_ready;
-        if(ui_ready) ++result.render.frames_presented;
+        if(ui_ready) {++result.render.frames_presented;presented_preferences();}
         if(!quit && options.max_frames && result.render.frames_presented>=options.max_frames) { quit=true;result.stop_reason="frame_limit"; }
     }
     void finish() {
         if(done)return;
         try {
+            apply_preferences();
             profiling::SessionScope final_session(result.final_session);
             if(initialized && audio)audio->finish(session.audio_state(options.camera));
             if(initialized && !options.render.capture.empty()) {
@@ -3294,11 +3354,12 @@ struct PlayerWindow::Impl {
                 profiling::Scope capture_scope("player.final_capture",static_cast<std::int64_t>(session.tick()));
                 // Final artifact observes the exact final tick without simulating an
                 // extra tick. Rebuild once if the surface changed during shutdown.
-                snapshot=player_snapshot(options,session); context.update_scene();
+                fresh_snapshot(); context.update_scene();
                 bool drawn=context.frame(true);
                 if(!drawn) { require(context.rebuild(options.render),"Window is minimized; final capture unavailable."); ++result.swapchain_rebuilds; context.update_scene(); drawn=context.frame(true); }
                 require(drawn,"Surface kept changing during final player capture.");
                 ++result.render.frames_presented; context.capture(options.render.capture); result.render.capture_written=true;
+                presented_preferences();
             }
             if(context.checked)context.retire_frames(true);
             result.render.success=true;
@@ -3327,8 +3388,10 @@ struct PlayerWindow::Impl {
         try {refresh_report();}catch(...) {}
     }
 };
-PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool initially_paused)
-    :impl_(std::make_unique<Impl>(options,session,initially_paused)) {}
+PlayerWindow::PlayerWindow(const PlayerOptions& options,PlayerSession& session,bool initially_paused) {
+    validate_player_preferences(options);
+    impl_=std::make_unique<Impl>(options,session,initially_paused);
+}
 PlayerWindow::~PlayerWindow()=default;
 bool PlayerWindow::poll() {
     auto& state=*impl_;state.check_thread();if(state.done)return false;
@@ -3368,7 +3431,7 @@ RenderReport PlayerWindow::capture(const std::string& path) {
     profiling::Scope scope("player.capture",static_cast<std::int64_t>(state.session.tick()));
     try {
         state.synchronize();require(ready(),"Player changed before capture; present the new owner first.");
-        state.snapshot=player_snapshot(state.options,state.session);state.context.update_scene();
+        state.fresh_snapshot();state.context.update_scene();
         bool drawn=state.context.frame(true);
         if(!drawn) {
             require(state.context.rebuild(state.options.render),"Window is minimized; player capture unavailable.");
@@ -3377,6 +3440,7 @@ RenderReport PlayerWindow::capture(const std::string& path) {
         require(drawn,"Surface kept changing during player capture.");
         ++state.result.render.frames_presented;state.context.capture(path);
         state.ui_ready=true;state.ui_presented=true;state.previous=SDL_GetTicksNS();
+        state.presented_preferences();
         state.refresh_report();auto report=state.result.render;report.capture_written=true;report.success=true;
         report.detail="Current native player captured without advancing simulation.";return report;
     }catch(const std::exception& error) {

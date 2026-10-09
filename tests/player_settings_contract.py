@@ -26,7 +26,7 @@ from scene_capture import pixels
 ROOT = Path(__file__).resolve().parents[1]
 FIELDS = {'camera.vertical_fov', 'input.sensitivity_x', 'input.sensitivity_y',
           'input.invert_x', 'input.invert_y', 'ui.scale', 'graphics.samples',
-          'graphics.frames_in_flight'}
+          'graphics.frames_in_flight', 'audio.master_gain'}
 SAMPLE = {'camera.vertical_fov': 90, 'input.sensitivity_x': .23,
           'input.sensitivity_y': .17, 'input.invert_x': True,
           'input.invert_y': False, 'ui.scale': 1.5, 'graphics.samples': 1,
@@ -222,7 +222,9 @@ class SettingsContract(unittest.TestCase):
                    ('ui.scale', .249), ('ui.scale', 8.001),
                    ('graphics.samples', 2), ('graphics.samples', True),
                    ('graphics.frames_in_flight', 0), ('graphics.frames_in_flight', 3),
-                   ('graphics.frames_in_flight', 1.5), ('unknown', 1)]
+                   ('graphics.frames_in_flight', 1.5), ('audio.master_gain', -.001),
+                   ('audio.master_gain', 1.001), ('audio.master_gain', True),
+                   ('audio.master_gain', '0.5'), ('unknown', 1)]
         for name, value in invalid:
             error(self.call(transaction(self.profile, 1,
                                         {'camera.vertical_fov': 100, name: value}))[0], -32602)
@@ -447,6 +449,10 @@ def capture_gate():
     assert application['profile']['source'] == 'profile'
     assert application['profile']['revision'] == 1
     assert application['application'] == 'next_player' and set(fields) == FIELDS
+    assert fields['audio.master_gain']['requested'] is None
+    assert fields['audio.master_gain']['effective'] == 1
+    assert fields['audio.master_gain']['source'] == 'engine_default'
+    assert fields['audio.master_gain']['outcome'] == 'disabled'
     for name, value in SAMPLE.items():
         assert fields[name]['effective'] == value, (name, fields[name])
         assert fields[name]['source'] == 'profile'
@@ -529,7 +535,10 @@ def capture_gate():
     failed_report = result(failed[1])
     assert not failed_report['success'] and failed_report['frames_presented'] == 0
     for name, field in failed_report['settings']['fields'].items():
-        assert field['outcome'] == ('validated_only' if name.startswith('input.') else 'not_presented')
+        if name == 'audio.master_gain':
+            assert field['outcome'] == 'disabled'
+        else:
+            assert field['outcome'] == ('validated_only' if name.startswith('input.') else 'not_presented')
     assert result(failed[2])['tick'] == 0 and not (directory/'bad-device.bmp').exists()
     assert world.read_bytes() == original and profile.read_bytes() == profile_bytes
     EVIDENCE['vulkan'] = {'passed': True, 'gpu': ARGS.gpu,

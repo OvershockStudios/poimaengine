@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/player.hpp"
+#include "poima/player_preferences.hpp"
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -8,15 +9,24 @@ namespace poima {
 PlayerControlResult PlayerSession::control(const std::string&,std::uint64_t,const std::string&) {
     throw std::runtime_error("This player owner does not provide native UI controls.");
 }
+void validate_player_preferences(const PlayerOptions& options) {
+    if(!options.preferences)return;
+    const auto state=options.preferences->snapshot();
+    if(state->values.samples!=options.render.samples || state->values.frames_in_flight!=options.render.frames_in_flight)
+        throw std::invalid_argument("Player preferences must match the window's frozen launch sample/frame-slot configuration.");
+}
 SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session) {
     auto result=session.snapshot(options.camera);
-    if(options.vertical_fov) {
-        const auto value=*options.vertical_fov;
+    const auto preferences=options.preferences ? options.preferences->snapshot() : nullptr;
+    const auto fov=preferences ? preferences->values.vertical_fov : options.vertical_fov;
+    const auto scale=preferences ? preferences->values.ui_scale : options.ui_scale;
+    if(fov) {
+        const auto value=*fov;
         if(!std::isfinite(value) || value<5 || value>150)
             throw std::invalid_argument("Player vertical FOV must be finite and within 5..150 degrees.");
         result.vertical_fov=value;
     }
-    if(options.ui_scale && (!std::isfinite(*options.ui_scale) || *options.ui_scale<.25f || *options.ui_scale>8.f))
+    if(scale && (!std::isfinite(*scale) || *scale<.25f || *scale>8.f))
         throw std::invalid_argument("Player UI scale must be finite and within 0.25..8.");
     return result;
 }

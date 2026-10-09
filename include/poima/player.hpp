@@ -61,7 +61,11 @@ public:
         const std::vector<KinematicTarget>& motions={},const std::vector<SoundCommand>& sounds={})=0;
 };
 struct InputProfile;
+class PlayerPreferences;
 struct PlayerOptions {
+    // Shared owner preferences survive Runtime/save replacement. Without this
+    // owner, the legacy fixed launch overrides and input profile remain valid.
+    std::shared_ptr<PlayerPreferences> preferences;
     std::shared_ptr<const InputProfile> input_profile;
     std::shared_ptr<GamepadHost> gamepad_host;
     GamepadSelection gamepad_selection;
@@ -78,13 +82,29 @@ struct PlayerOptions {
 // Obtain a fresh owner snapshot, validate player presentation preferences, then
 // apply its camera override to the returned copy. No borrowed runtime survives.
 SceneSnapshot player_snapshot(const PlayerOptions& options,const PlayerSession& session);
+// A shared preference owner's frozen launch graphics must describe this actual
+// window. Throws before device/owner work on disagreement; no effect without
+// shared preferences. Later graphics patches remain next-launch intent.
+void validate_player_preferences(const PlayerOptions& options);
 struct PlayerAudioReport {
     bool enabled=false,stream_drained=false;
+    bool master_gain_applied=false;
+    double master_gain=1; // Actual SDL output stream gain, not the offline DSP.
     std::string driver;
     std::uint64_t submitted_frames=0,max_queued_frames=0,empty_queue_observations=0;
     double backpressure_ms=0;
     std::uint32_t timeline_resets=0;
     AudioStreamStats stream;
+};
+struct PlayerPreferenceReport {
+    // These revisions describe the live FOV/input/UI/audio subset. Requested
+    // graphics samples/frame slots do not reconfigure an existing window.
+    std::optional<std::uint64_t> observed_revision,applied_revision,presented_revision;
+    std::optional<double> effective_vertical_fov;
+    double sensitivity_x=.1,sensitivity_y=.1,requested_master_gain=1;
+    bool invert_x=false,invert_y=false;
+    std::optional<double> sink_gain;
+    std::string audio_outcome="disabled";
 };
 struct PlayerReport {
     std::string initial_session,final_session;
@@ -96,6 +116,7 @@ struct PlayerReport {
     std::uint32_t swapchain_rebuilds=0;
     double dropped_seconds=0;
     double effective_ui_scale=1; // Absolute player UI scale or actual window density.
+    PlayerPreferenceReport preferences;
     std::string stop_reason;
 };
 // One frame-driven native graphics lifetime. Every call and destruction belongs

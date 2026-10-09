@@ -118,6 +118,38 @@ int main() {
             "Focus reset retained physical state, edges or motion.");
         key(mouse,44);check(mouse.consume("player").jump,"Focus reset retained a stale held alternative.");
 
+        // Tuning is an in-place change of mouse event interpretation, not a
+        // reconstruction of controls or a rescale of queued semantic angles.
+        BoundPlayerInput tuned(default_gamepad_input_profile());
+        tuned.gamepad_connect();tuned.gamepad_axis(0,32767);tuned.gamepad_axis(2,32767);
+        key(tuned,26);key(tuned,44);key(tuned,8);tuned.motion(20,-10);
+        const auto pending_tuning=tuned.peek("player");
+        check(pending_tuning.look==std::array<float,2>{-5,1} && pending_tuning.move==std::array<float,2>{1,1} &&
+            pending_tuning.jump && pending_tuning.use,"Tuning fixture lacked analytic pending input.");
+        reject_allocations=true;tuned.tune(.25,.5,true,false);reject_allocations=false;
+        check(equal(pending_tuning,tuned.peek("player")) && tuned.gamepad_connected() && tuned.gamepad_armed(),
+            "Tuning changed pending motion, held controls, edges or gamepad state.");
+        tuned.motion(4,2);
+        auto tuned_frame=tuned.consume("player");
+        check(tuned_frame.look==std::array<float,2>{-4,0} && tuned_frame.move==std::array<float,2>{1,1} &&
+            tuned_frame.jump && tuned_frame.use,"Old semantic angles and new tuned events did not add independently.");
+        key(tuned,44);key(tuned,8);
+        tuned_frame=tuned.consume("player");
+        check(tuned_frame.look==std::array<float,2>{-3,0} && !tuned_frame.jump && !tuned_frame.use && tuned_frame.move[1]==1,
+            "Tuning retriggered held edges, consumed stick rate or lost movement.");
+        for(const auto bad:{-1.0,10.01,std::numeric_limits<double>::infinity(),std::numeric_limits<double>::quiet_NaN()}) {
+            const auto before=tuned.peek("player");bool first=false,second=false;
+            try {tuned.tune(bad,.5,false,true);}catch(const std::invalid_argument&) {first=true;}
+            try {tuned.tune(.8,bad,false,true);}catch(const std::invalid_argument&) {second=true;}
+            check(first && second && equal(before,tuned.peek("player")),"Invalid tuning partially changed input state.");
+        }
+        tuned.gamepad_disconnect();tuned.motion(4,2);
+        check(tuned.consume("player").look==std::array<float,2>{1,-1},"Rejected tuning partially changed sensitivity or inversion.");
+        tuned.motion(1000,0);tuned.tune(0,0,false,false);
+        check(tuned.consume("player").look[0]==180 && tuned.consume("player").look[0]==70,
+            "Zero sensitivity erased queued semantic look backlog.");
+        tuned.motion(1000,1000);check(tuned.consume("player").look==std::array<float,2>{0,0},"Zero tuning did not affect future events.");
+
         InputProfile empty;validate_input_profile(empty);BoundPlayerInput disabled(empty);
         key(disabled,26);check(disabled.consume("player").move[1]==0,"Explicit empty action enabled a default binding.");
         auto invalid=defaults;invalid.bindings[0]={"key.w","key.w"};rejects(invalid);
