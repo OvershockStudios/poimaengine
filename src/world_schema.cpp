@@ -127,7 +127,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 63}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 64}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -330,14 +330,28 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"source_pose",reference_pose},{"target_pose",reference_pose},{"alignment",frame_alignment}},
         {"policy","source_pose","target_pose"});
     frame_transfer["description"]="Explicit same-origin rigid bone-frame conversion. References sample original unfiltered source/base takes; rest uses imported defaults. Alignment defaults to identity and requires normalized XYZW rotation. Different origins/proportions and nonuniform scale reject. Target rest/geometry/inverse binds and runtime actor ownership remain unchanged.";
-    const auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},
+    const Json retarget_positions={{"oneOf",Json::array({
+        object_schema({{"kind",{{"const","target_reference"}}}},{"kind"}),
+        object_schema({{"kind",{{"const","reference_delta"}}},
+            {"nodes",{{"type","array"},{"minItems",1},{"maxItems",64},{"uniqueItems",true},{"items",{{"type","integer"},{"minimum",0},{"maximum",9999}}}}},
+            {"scale",{{"type","number"},{"exclusiveMinimum",0},{"maximum",100}}}},{"kind","nodes","scale"})})}};
+    auto rotation_retarget=object_schema({{"policy",{{"const","reference-rotation-v1"}}},
+        {"source_pose",reference_pose},{"target_pose",reference_pose},
+        {"alignment_rotation",vector(Json{{"type","number"},{"minimum",-1},{"maximum",1}},4)},
+        {"positions",retarget_positions},{"scales",{{"const","target_reference"}}},
+        {"expected_source_model_sha256",asset_id},{"expected_target_model_sha256",asset_id}},
+        {"policy","source_pose","target_pose","positions","scales","expected_source_model_sha256","expected_target_model_sha256"});
+    rotation_retarget["description"]="Explicit quaternion-chain retargeting with target-reference positions/scales and optional selected source-local position deltas. Original source/base fingerprints from asset.source.inspect are required. Preserves target geometry/defaults/binds, not source affine matrices, contacts or planted feet. Alignment is normalized XYZW; no automatic proportions, root-motion extraction or controller movement.";
+    auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}},
-        {"frame_transfer",frame_transfer}},{"source"});
+        {"frame_transfer",frame_transfer},{"retarget",rotation_retarget}},{"source"});
+    animation_source["allOf"]=Json::array({Json{{"not",{{"required",Json::array({"frame_transfer","retarget"})}}}}});
     methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
         {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
         {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
-    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching by default; explicitly requested reference-frame-v1 converts rigid bone bases at matching joint origins, without proportion retargeting. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
+    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching by default; mutually exclusive frame_transfer and retarget policies provide explicit reference-frame or quaternion-chain conversion. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
     result["invariants"].push_back("Animation frame_transfer is opt-in reference-frame-v1: explicit imported-rest or sampled source/target references, source sampling before selected-take filtering, and optional rigid alignment. Same named topology and coincident global origins are required; mapped scales and scale curves must be uniform. Conversion preserves curve interpolation and includes transformed sparse defaults; target geometry/rest/inverse binds are unchanged. It does not infer bind poses, remove root motion or move runtime controllers. Failures publish no partial model.");
+    result["invariants"].push_back("Animation retarget is opt-in reference-rotation-v1 and mutually exclusive with frame_transfer. Quaternion-chain orientation transfer ignores affine scale; explicit target-reference scale/position policies preserve target geometry and optionally transfer selected local position deltas. Original source/base model fingerprints guard source-local indices and reference takes before filtering. Source scaling and unselected translation tracks are discarded with counts; constant target-reference channels preserve original duration. Shape similarity, contacts, ground placement and loop continuity require separate observation/authoring, not an inferred guarantee.");
     const Json composition_identity={{"anyOf",Json::array({Json{{"type","integer"},{"minimum",0},{"maximum",9999}},Json{{"type","null"}}})}};
     const Json composition_name={{"anyOf",Json::array({Json{{"type","string"},{"minLength",1},{"maxLength",256}},Json{{"type","null"}}})}};
     const Json nonnegative_metric={{"type","number"},{"minimum",0}};
@@ -373,6 +387,15 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
          "issue_count","limit","truncated","thresholds","issues"});
     result["invariants"].push_back("An exact-skeleton composition failure returns asset.import error -32050 with versioned animation_composition data: first incompatible donor, complete issue counts and at most 64 node records. It compares normalized local rest transforms, not recovered bind poses. No partial model is published. Other import failures may have no data.");
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
+    auto source_inspect=object_schema({{"source",{{"type","string"},{"minLength",1},{"maxLength",4096}}},
+        {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
+        {"section",{{"enum",{"summary","nodes","skins","animations"}},{"default","summary"}}},
+        {"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64},{"default",64}}},
+        {"pose",reference_pose},{"expected_model_sha256",asset_id}},{"source"});
+    source_inspect["allOf"]=Json::array({Json{{"if",{{"required",Json::array({"pose"})}}},
+        {"then",{{"required",Json::array({"section"})},{"properties",{{"section",{{"const","nodes"}}}}}}}}});
+    source_inspect["description"]="Inspect normalized original glTF/GLB/FBX data without publishing a cooked asset or changing the world. Geometryless animation donors are supported. Page node/default/clip/skin metadata and optionally sample an original node pose without looping or out-of-duration clamping. model_sha256 identifies the original parsed model; use expected_model_sha256 across pages and the retarget source/base guards. Diagnostics retain complete counts and at most 64 bounded records. This evolving read-only method is outside authoring-core v1.";
+    methods["asset.source.inspect"]=source_inspect;
     const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
     const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};
     methods["asset.animation.channel"]=object_schema({{"asset",asset_id},{"clip",model_index},{"channel",model_index},{"offset",rev},{"limit",page_limit}}, {"asset","clip","channel"});

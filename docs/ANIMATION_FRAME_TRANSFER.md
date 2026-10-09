@@ -9,7 +9,8 @@ and inverse binds.
 The default remains [exact-skeleton composition](FBX_IMPORT.md#compose-separate-clips).
 The optional policy needs matching named ancestry and coincident reference
 joint origins. Different proportions, missing bones and different reference
-stances require a broader retargeting workflow. This operation does not create
+stances can use the distinct [explicit rotation retargeting](ANIMATION_RETARGETING.md)
+policy when named ancestry matches. This operation does not create
 IK constraints or remove root motion.
 
 ## Select the references and motion

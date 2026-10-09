@@ -1,6 +1,6 @@
 # Animation asset reference pipeline
 
-The animation asset pipeline provides glTF skin/curve import, immutable packages, numerical inspection and isolated pose capture. [Compute skinning](GPU_SKINNING.md) and [editable runtime rigs](RUNTIME_ANIMATION.md) support fixed-tick playback, crossfades, inertial transitions and masked layers. Root motion, animation events, IK and retargeting remain unfinished. [FBX import and separate clip composition](FBX_IMPORT.md) feed the same cooked model and runtime paths, with explicit import limits.
+The animation asset pipeline provides glTF skin/curve import, immutable packages, numerical inspection and isolated pose capture. [Compute skinning](GPU_SKINNING.md) and [editable runtime rigs](RUNTIME_ANIMATION.md) support fixed-tick playback, crossfades, inertial transitions and masked layers. [Explicit rotation retargeting](ANIMATION_RETARGETING.md) supports matching named ancestry with chosen reference poses and position/scale policies. Root-motion extraction, animation events, IK and automatic anatomical/contact retargeting remain unfinished. [FBX import and separate clip composition](FBX_IMPORT.md) feed the same cooked model and runtime paths, with explicit import limits.
 
 Run the checked-in original ribbon example from the repository root:
 

@@ -7,6 +7,11 @@
 - [The Character Yard image](docs/evidence/character-yard.png) renders the same unmodified source, attached, placed and animated by Poima, with a lossless BMP-to-PNG conversion. It retains the Cesium attribution and CC BY 4.0 license rather than the engine source's Apache-2.0 notice. The sample's source/license record also supplies exported character credits.
 - The network-free verification runner requires a separately supplied original GLB and embeds no character artwork. Its independently baked reference meshes derive from that licensed source and carry attribution in their metadata and evidence.
 
+## Kenney retargeting documentation image
+
+- [Animated Characters Protagonists](https://kenney.nl/assets/animated-characters-protagonists), by Kenney, is offered under [CC0-1.0](https://creativecommons.org/publicdomain/zero/1.0/). The tested 1.1 archive includes the creator's `License.txt`; exact original source and license fingerprints are recorded in [retargeting evidence](docs/evidence/m2-animation-rotation-retarget.json).
+- [The retargeted character image](docs/evidence/retargeted-character.png) renders the original untextured base body with the original separate Run take, converted by Poima's explicit orientation/reference policy, then losslessly converted from BMP to PNG. It contains no generated artwork. The verifier requires separately supplied original files and does not download or embed the character library.
+
 ## Desktop editor
 
 `desktop/Poima.Editor/packages.lock.json` pins the Avalonia 12.1.3 and Dock 12.1.0.6 dependency graph. The Windows desktop package uses a self-contained .NET runtime, Skia/HarfBuzz and Inter 4.1. The older ImGui frontend retains Source Sans 3. These dependencies support Poima’s first-class desktop editor. They are restored by the desktop build; native headless configurations do not require them. `scripts/build_desktop.py` collects resolved package licenses, runtime/apphost notices and the font license into the desktop payload. Packages that provide only an SPDX expression are supplemented by unchanged upstream license texts pinned to their package source commits in `third_party/desktop_notices/provenance.json`. The package manifest records payload and notice hashes; this inventory is not console or clean-machine distribution qualification.

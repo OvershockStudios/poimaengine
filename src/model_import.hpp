@@ -22,11 +22,24 @@ struct AnimationFrameTransfer {
     std::array<double,3> alignment_position{0,0,0};
     std::array<double,4> alignment_rotation{0,0,0,1};
 };
+enum class AnimationRetargetPositionMode { target_reference, reference_delta };
+struct AnimationRotationRetarget {
+    AnimationReferencePose source_reference,target_reference;
+    std::array<double,4> alignment_rotation{0,0,0,1};
+    AnimationRetargetPositionMode position_mode=AnimationRetargetPositionMode::target_reference;
+    // Original source-local node IDs, not target IDs or filtered channel order.
+    std::vector<std::uint32_t> translation_nodes;
+    double translation_scale=1;
+    // Optional internal file-layer guards; the authoring wire requires both.
+    // Supplied-pose native helpers do not compare these to a filtered donor.
+    std::string expected_source_model_sha256,expected_target_model_sha256;
+};
 struct ModelAnimationSource {
     std::filesystem::path source;
     std::optional<std::uint32_t> clip;
     std::string name;
     std::optional<AnimationFrameTransfer> frame_transfer;
+    std::optional<AnimationRotationRetarget> rotation_retarget;
 };
 enum class AnimationCompositionIssueKind {
     missing_joint_or_ancestor, missing_animation_target, rest_frame
@@ -67,6 +80,12 @@ std::shared_ptr<const ModelAsset> transfer_animation_frames(const ModelAsset& ba
     const ModelPose& source_reference,const ModelPose& target_reference,
     const std::array<double,3>& alignment_position={0,0,0},
     const std::array<double,4>& alignment_rotation={0,0,0,1});
+// Explicit orientation-chain transfer across differing proportions. Positions
+// and scales follow the declared target-reference policy; no contact, shape,
+// affine-motion equivalence or inferred anatomical correspondence is promised.
+std::shared_ptr<const ModelAsset> transfer_animation_rotations(const ModelAsset& base,const ModelAsset& selected_donor,
+    const ModelPose& source_reference,const ModelPose& target_reference,
+    const AnimationRotationRetarget& policy={});
 std::size_t retained_model_import_bytes(const ModelAsset& model);
 std::string encode_model_with_importer(const ModelAsset& model,const std::string& importer);
 // Exact hierarchy/rest-frame composition, not humanoid retargeting. Returns a

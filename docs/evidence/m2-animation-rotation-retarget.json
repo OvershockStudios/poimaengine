@@ -1,0 +1,610 @@
+{
+  "format": "poima.animation-rotation-retarget-evidence",
+  "version": 1,
+  "engine_version": "0.0.74",
+  "recorded_date": "2026-10-09",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 64,
+  "authoring_contract": "poima.authoring-core v1",
+  "native_gameplay_services_abi": 7,
+  "scope": "Guarded original source inspection and explicit same-named-ancestry quaternion-chain retargeting with target-reference positions/scales; original separate-FBX motion, independent analytic mathematics and actual Vulkan consumers. No anatomical mapping/contact/compiled locomotion qualification.",
+  "source_sha256": {
+    "CMakeLists.txt": "2f477ddc770d120460404f68ad42a7fd8e4f95696b08860f40ec94d6e6356211",
+    "src/model_import.hpp": "37ddff868c526a615a5ace5b19f8f195c3134ffacd02c10029dedeafda72cfb9",
+    "src/model_import.cpp": "6ed277d83202edf4cf829e25dbc3be63e980b7255e8ac94aa82244693308ad36",
+    "src/asset_store.hpp": "7566fbb3b0af03cab3f7783baa47fe077719e1da3b48061ffc03d4c5d03383a0",
+    "src/world.cpp": "db9f444c940d22dba33e94eb2e5d4909e81ff1538bc2d692f9a959484e8687bf",
+    "src/world_schema.cpp": "7619f3306bfd74b5e6e71f515942a03780c0b3b805b61f89d6c90111407ceab5",
+    "tests/animation_rotation_retarget.cpp": "23130320e81bdc78d47970b9ee5822b73c27d1a8c92c373abdc7a9eed6595dab",
+    "tests/animation_rotation_retarget.py": "f7de7f9e5f50848fe233f2807a29d99f65fd764575074ccfc44550e647b37c4f",
+    "tests/animation_rotation_retarget_capture.py": "b124239b8adfd3ac7617a2e77571e0b37acad9ebfdf516e60f744e2b705e0c81",
+    "tests/rotation_retarget_fixture.py": "310abdf5cecacb85696db202296c1e01145c18e10cecb4e723e6fc0e62e8207c",
+    "tests/animation_frame_transfer.cpp": "7c0b11e139a351ee94d71f79f60cdfb33d3c388ba3b06cac68f388a49d53c61f",
+    "tests/animation_frame_transfer.py": "3637d71eb134bedb133ba04d3efa2c0c783bcba1b997937807069bb3d5636b4f",
+    "tests/frame_transfer_fixture.py": "4d03723a2fbc3c189d6227b1b2315b802a2e39fe76027fa8d74746eebac6a0a1",
+    "tests/animation_composition_diagnostics.cpp": "33b18f5524ee005a8afb0baec5c6625719dc624134fc77734263e51ba5f03b39",
+    "tests/animation_composition_diagnostics.py": "d459368a4b1672f845e13679a8fb62b9ea724c792c8a8eeac641979df0cb3271",
+    "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+    "tests/fbx_contract.py": "b3cf3b9c64b25908b3e99ad9a7a62e6e1e85b1a29ad83c8c9caa2ba34322434f",
+    "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tests/authoring_core_conformance.py": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "tests/authoring_contract_identity.py": "32e6ed2e2d9427115f883b77dd0a4e1182b5b6650737c7aa7269202ed96ad44c",
+    "tests/mcp_contract.py": "51cdb589f6fc1476cf2bb1500be12a507f4e75ea1fb3fc497ec64c3d5398992f",
+    "docs/ANIMATION_RETARGETING.md": "efd00edce35e76c323f57167c7cb1e02860c528f983aa99f51dfab6d88817527",
+    "docs/ANIMATION_FRAME_TRANSFER.md": "252a579c2b912a1979afadfa4a0a2e714b18cb8588701c97db83ffc2112a06c1",
+    "docs/PLAYBOOKS.md": "8c968fdd68274b6391d01205685bc4dd7b2d6f606a9024522198e98bd5ca9972",
+    "docs/ASSETS.md": "eadecd26c983c95e40d2394969657f4b7256a823563cb28db46eb9322c7e239a",
+    "docs/ANIMATION_ASSETS.md": "16557a3d055811939dee13a31541b6e4b1e21e72606f70472f35fb7cc6e277bc",
+    "docs/FBX_IMPORT.md": "df12b2abcedc962adcd9992c17416f81a61ccc444da099ca395d9e221ad75bd7",
+    "docs/WORLD_SERVICE.md": "06f9f3452f8d44d15048f35f2ee04975aafd87afd10834b5ff67da408a21d718",
+    "THIRD_PARTY_NOTICES.md": "d66d61e9fdf99e114c4d6f833d3dff9e7044ec6330e8ae7ffc63724f66b72888"
+  },
+  "builds": {
+    "linux": {
+      "passed": true,
+      "binary_sha256": "22fbca083d88b1f7873dc1b625d9be54b9b7c9ec9c8ce90aff431cdd0fa05fb9",
+      "build_log_sha256": "29d75a14759204233a83c422600301036570aefad468a0f6c3f944d4323fce50",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_and_gameplay_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    },
+    "windows": {
+      "passed": true,
+      "binary_sha256": "7df6c1693367cb7bb0e6005f18d0c52a4e9427a016d152d888d9886bc123d523",
+      "build_log_sha256": "5b6c467fa581486fbfcfc0dba121ff5bf31afedf12843fc2d17e41a583b4f91f",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_and_gameplay_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    },
+    "authoring": {
+      "passed": true,
+      "binary_sha256": "8eaab93a5a1d2a6ee2e09059d1943e739929d0c39ed3fc48c1a1bb7a9a96dbf0",
+      "build_log_sha256": "29d75a14759204233a83c422600301036570aefad468a0f6c3f944d4323fce50",
+      "compiler_parallelism": 2,
+      "compiler_settings_preserved": true,
+      "frozen_native_and_gameplay_sources_unchanged": true,
+      "process_tree_deadline_seconds": 900,
+      "forced_cleanup": false
+    }
+  },
+  "native_checks": {
+    "passed": true,
+    "groups_per_host": 8,
+    "cases": [
+      "Independent row-major target FK, quaternion-chain transfer and original inverse-bind weighted skin expectations",
+      "Different proportions/reference stance, positive nonuniform target scales, nonjoint ancestors and selected source-local translation deltas",
+      "Root alignment and source node zero, partial selection and scalar translation scale",
+      "Near-unit raw cubic quaternion values/tangents checked at nine times against independent de Casteljau",
+      "Sparse original defaults distinct from sampled references, discarded-only duration and repeated cooked encoding",
+      "Identity orientations retain original timing and evaluated motion",
+      "Invalid modes, topology, duplicate/unmapped IDs, finite scale/reference/rotation bounds reject without modifying inputs",
+      "Synthesized channels count against 8192-channel budget"
+    ],
+    "linux_log_sha256": "f8b0c0bc030fc3fa8584648f4b3a45b0f9c0aa551b99be97ec409240513b6367",
+    "windows_log_sha256": "dd9ef0e52a6b8dd16a6338e50f406280e471b9668dea7cc1eff10a964876b3cd",
+    "authoring_log_sha256": "f8b0c0bc030fc3fa8584648f4b3a45b0f9c0aa551b99be97ec409240513b6367"
+  },
+  "protocol_checks": {
+    "linux": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 793,
+      "clean_owners": 7,
+      "source_hashes_unchanged": true,
+      "original_clips": [
+        "Idle",
+        "Run",
+        "Jump"
+      ],
+      "original_pose_samples": 15,
+      "original_reference_observation": "Native normalized original input; independent quaternion-chain/FK/weighted skin mathematics. Not an independent FBX parser.",
+      "maximum_analytic_joint_matrix_error": 2.2490739670644189e-07,
+      "maximum_analytic_skin_error": 2.537093793941736e-07,
+      "maximum_original_rotation_chain_one_minus_abs_dot": 3.1086244689504383e-15,
+      "maximum_original_target_global_matrix_error": 1.391674019046718e-05,
+      "maximum_original_weighted_vertex_error_meters": 3.5726161762283937e-07,
+      "report_sha256": "f0f5a80f921e106227038572137dd19d52161b9abe73835a8a338b8667237208"
+    },
+    "windows": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 793,
+      "clean_owners": 7,
+      "source_hashes_unchanged": true,
+      "original_clips": [
+        "Idle",
+        "Run",
+        "Jump"
+      ],
+      "original_pose_samples": 15,
+      "original_reference_observation": "Native normalized original input; independent quaternion-chain/FK/weighted skin mathematics. Not an independent FBX parser.",
+      "maximum_analytic_joint_matrix_error": 2.2490739670644189e-07,
+      "maximum_analytic_skin_error": 2.537093793941736e-07,
+      "maximum_original_rotation_chain_one_minus_abs_dot": 3.1086244689504383e-15,
+      "maximum_original_target_global_matrix_error": 1.3916740261521454e-05,
+      "maximum_original_weighted_vertex_error_meters": 3.5726161762283937e-07,
+      "report_sha256": "0ed5997c24e274931d4b9b398deef107457cb9f1f25b81d6a276c4e70966dda6"
+    },
+    "authoring": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 793,
+      "clean_owners": 7,
+      "source_hashes_unchanged": true,
+      "original_clips": [
+        "Idle",
+        "Run",
+        "Jump"
+      ],
+      "original_pose_samples": 15,
+      "original_reference_observation": "Native normalized original input; independent quaternion-chain/FK/weighted skin mathematics. Not an independent FBX parser.",
+      "maximum_analytic_joint_matrix_error": 2.2490739670644189e-07,
+      "maximum_analytic_skin_error": 2.537093793941736e-07,
+      "maximum_original_rotation_chain_one_minus_abs_dot": 3.1086244689504383e-15,
+      "maximum_original_target_global_matrix_error": 1.391674019046718e-05,
+      "maximum_original_weighted_vertex_error_meters": 3.5726161762283937e-07,
+      "report_sha256": "f27a7ea4bd0ce46ba53ecd6aea49fd38c61af0e4bdbec725f41c2533cc4f0e5f"
+    },
+    "total": {
+      "tests": 18,
+      "rpc_count": 2379,
+      "clean_owners": 21
+    }
+  },
+  "vulkan_checks": {
+    "0": {
+      "passed": true,
+      "gpu": "AMD Radeon(TM) Graphics",
+      "samples": 4,
+      "readbacks": 11,
+      "rpc_count": 127,
+      "clean_owners": 2,
+      "original_weighted_vertices": 1029,
+      "original_triangles": 1604,
+      "ordinary_runtime_ticks": 15,
+      "source_files_removed_before_fresh_owner": true,
+      "caller_originals_unchanged": true,
+      "authored_state_history_store_unchanged": true,
+      "nvrhi_errors": 0,
+      "maximum_original_skin_position_error_meters": 2.35413918137084e-07,
+      "maximum_original_skin_normal_error": 1.3464966169829395e-07,
+      "maximum_runtime_joint_matrix_error": 1.1969225756303103e-05,
+      "comparisons": {
+        "initial_gpu_vs_cpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "posed_gpu_vs_cpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "idle_gpu_vs_cpu": {
+          "maximum_channel_error": 13,
+          "pixels_over_2": 1,
+          "changed_pixels": 1,
+          "mean_max_channel_error": 4.2317708333333335e-05
+        },
+        "gpu_vs_normalized_original_source": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "cpu_vs_normalized_original_source": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "converted_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "reference_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "original_visible_motion": {
+          "maximum_channel_error": 127,
+          "pixels_over_2": 16972,
+          "changed_pixels": 21440,
+          "mean_max_channel_error": 2.448411458333333
+        },
+        "runtime_vs_original_source": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "runtime_vs_preview": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "runtime_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        }
+      },
+      "report_sha256": "0b69dd17e7155fbe8142b1228d74980a7b3fa4de44b530748cba30fa490b590f",
+      "captures": {
+        "initial-gpu": "a6c9b5db2be6bd40c08b3e0c21ff2637ac74e85469928205878e744958a39443",
+        "initial-cpu": "a6c9b5db2be6bd40c08b3e0c21ff2637ac74e85469928205878e744958a39443",
+        "posed-gpu": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+        "posed-cpu": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+        "posed-unculled": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+        "idle-gpu": "127586e7cee7cbb96c0facd2218b0d7f06c50d805ca3025075e8b04d3d5923b0",
+        "idle-cpu": "f14602934b14c4958cb48eca9ff86bf695cf416ebae143a4fe711cee1c5eed82",
+        "independent": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+        "independent-unculled": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+        "runtime": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+        "runtime-unculled": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4"
+      }
+    },
+    "1": {
+      "passed": true,
+      "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "samples": 4,
+      "readbacks": 11,
+      "rpc_count": 127,
+      "clean_owners": 2,
+      "original_weighted_vertices": 1029,
+      "original_triangles": 1604,
+      "ordinary_runtime_ticks": 15,
+      "source_files_removed_before_fresh_owner": true,
+      "caller_originals_unchanged": true,
+      "authored_state_history_store_unchanged": true,
+      "nvrhi_errors": 0,
+      "maximum_original_skin_position_error_meters": 2.35413918137084e-07,
+      "maximum_original_skin_normal_error": 1.3464966169829395e-07,
+      "maximum_runtime_joint_matrix_error": 1.1969225756303103e-05,
+      "comparisons": {
+        "initial_gpu_vs_cpu": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "posed_gpu_vs_cpu": {
+          "maximum_channel_error": 1,
+          "pixels_over_2": 0,
+          "changed_pixels": 1,
+          "mean_max_channel_error": 3.2552083333333335e-06
+        },
+        "idle_gpu_vs_cpu": {
+          "maximum_channel_error": 1,
+          "pixels_over_2": 0,
+          "changed_pixels": 1,
+          "mean_max_channel_error": 3.2552083333333335e-06
+        },
+        "gpu_vs_normalized_original_source": {
+          "maximum_channel_error": 17,
+          "pixels_over_2": 1,
+          "changed_pixels": 2,
+          "mean_max_channel_error": 5.859375e-05
+        },
+        "cpu_vs_normalized_original_source": {
+          "maximum_channel_error": 17,
+          "pixels_over_2": 1,
+          "changed_pixels": 1,
+          "mean_max_channel_error": 5.5338541666666664e-05
+        },
+        "converted_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "reference_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "original_visible_motion": {
+          "maximum_channel_error": 127,
+          "pixels_over_2": 16971,
+          "changed_pixels": 21441,
+          "mean_max_channel_error": 2.4486458333333334
+        },
+        "runtime_vs_original_source": {
+          "maximum_channel_error": 17,
+          "pixels_over_2": 1,
+          "changed_pixels": 2,
+          "mean_max_channel_error": 5.859375e-05
+        },
+        "runtime_vs_preview": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "runtime_culling": {
+          "maximum_channel_error": 0,
+          "pixels_over_2": 0,
+          "changed_pixels": 0,
+          "mean_max_channel_error": 0.0
+        }
+      },
+      "report_sha256": "b869d2c422f85b06c0f9373b76ace5015dcd3974ec935d9410b09ad5becf6c4e",
+      "captures": {
+        "initial-gpu": "df2eb0be5e8656e0c393769079315f801d161300b22fd74c36d4a8ee0ecaee25",
+        "initial-cpu": "df2eb0be5e8656e0c393769079315f801d161300b22fd74c36d4a8ee0ecaee25",
+        "posed-gpu": "78c65ba1dccf34e966914dbd7aa109f74cddcfe7a0470c4e4b5fc098dd66df4a",
+        "posed-cpu": "ab386a383b0c56208f2ee8ef55ed51b5bc52088695e52bc50527282442702169",
+        "posed-unculled": "78c65ba1dccf34e966914dbd7aa109f74cddcfe7a0470c4e4b5fc098dd66df4a",
+        "idle-gpu": "ef11be7304645715d034c0c322b88819c9371eb79ac94074e1499208f55de771",
+        "idle-cpu": "0a7fe5fcda4d918ba1a2243200cdf909581c6b875192b9d85e7984f721c0aaf7",
+        "independent": "cd8630bc368f821607c2f491fe80b192c763409d22ef6d7f93b712269214e20c",
+        "independent-unculled": "cd8630bc368f821607c2f491fe80b192c763409d22ef6d7f93b712269214e20c",
+        "runtime": "78c65ba1dccf34e966914dbd7aa109f74cddcfe7a0470c4e4b5fc098dd66df4a",
+        "runtime-unculled": "78c65ba1dccf34e966914dbd7aa109f74cddcfe7a0470c4e4b5fc098dd66df4a"
+      }
+    }
+  },
+  "regression": {
+    "protocol-transfer-linux": {
+      "passed": true,
+      "tests": 5,
+      "rpc_count": 190,
+      "clean_owners": 6,
+      "report_sha256": "856088740f618792c2224c4d329a25e6f02950501ad16af9667854be83f8ab82"
+    },
+    "protocol-diagnostics-linux": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "report_sha256": "54d53622b271751282fb3af13eed0b21e28c5130a82161531d9a50bece51cf00"
+    },
+    "native-frame-linux": {
+      "passed": true,
+      "log_sha256": "1f041b029e5352053ab57a550ce423bbd2956f7bfbf4bd4cb406dfe1bb8ac4fe",
+      "groups": 8
+    },
+    "native-diagnostics-linux": {
+      "passed": true,
+      "log_sha256": "a15ab697ebd16c6b444ef5cbe3d3e72010e550a1c02cb1567174e69cf0be288f",
+      "groups": 8
+    },
+    "native-fbx-linux": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "native-fbx-binary-linux": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "scoped-discovery-linux": {
+      "passed": true,
+      "log_sha256": "e29057f270285a922f5af70680ed2cd23bd083d653c963b20df2d7e43e210380",
+      "owner_scopes": 6,
+      "responses": 1079,
+      "state_history_files_unchanged": true
+    },
+    "fbx-protocol-linux": {
+      "passed": true,
+      "tests": 7,
+      "skipped": 0,
+      "rpc_count": 194,
+      "clean_owners": 9,
+      "report_sha256": "5c6ee8aaebb62af4a64cd77b088633be30723026ab1481d86065754dfe5eaa87"
+    },
+    "authoring-core-linux": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "06883210b0b2292248168e16c503666aac8bbd2fd202569ef4c84155261fc56d"
+    },
+    "protocol-transfer-windows": {
+      "passed": true,
+      "tests": 5,
+      "rpc_count": 190,
+      "clean_owners": 6,
+      "report_sha256": "920e8514f96ff29b4382ccf7dcfc3448da38ad788f87e27cce97e9b338c855b5"
+    },
+    "protocol-diagnostics-windows": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "report_sha256": "b4541ac47fcbad20d4a0d238289107927e7c57f9dd616d37e9ea4e6d830a0706"
+    },
+    "native-frame-windows": {
+      "passed": true,
+      "log_sha256": "b222c2f047fbfc1b6b8bcc1ef7708e41e7f8591a69893bd81c703eb8ae98d4c2",
+      "groups": 8
+    },
+    "native-diagnostics-windows": {
+      "passed": true,
+      "log_sha256": "c27b31dadab951c4df58bfc916378b33f3b0e95fcfbbf0e0b48a1e9948501a03",
+      "groups": 8
+    },
+    "native-fbx-windows": {
+      "passed": true,
+      "log_sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+    },
+    "native-fbx-binary-windows": {
+      "passed": true,
+      "log_sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7"
+    },
+    "scoped-discovery-windows": {
+      "passed": true,
+      "log_sha256": "7d86d80f22782545c65ce8f5fa7e72b1e6198dd411960ba6a91c83f8e71b1988",
+      "owner_scopes": 6,
+      "responses": 1079,
+      "state_history_files_unchanged": true
+    },
+    "fbx-protocol-windows": {
+      "passed": true,
+      "tests": 7,
+      "skipped": 1,
+      "rpc_count": 183,
+      "clean_owners": 8,
+      "report_sha256": "182cb0b653ed337d3c9be101b4679db501ef2f89c34fac9a8ceef286cd19583b"
+    },
+    "authoring-core-windows": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "0bf7e4fa497599a311e2e49dfe58d91b29d75d11ef7c04d8f2b86418d97d8304"
+    },
+    "protocol-transfer-authoring": {
+      "passed": true,
+      "tests": 5,
+      "rpc_count": 190,
+      "clean_owners": 6,
+      "report_sha256": "a7014f692907ba80b1a0fa3441004c4e724e1f868cc585f45f29b838378757ba"
+    },
+    "protocol-diagnostics-authoring": {
+      "passed": true,
+      "tests": 6,
+      "rpc_count": 102,
+      "clean_owners": 7,
+      "report_sha256": "ec1e61440a4c4fa765bb51a61ad5c88a1a66ac51f45e6d52d77b8d3de3b114b8"
+    },
+    "native-frame-authoring": {
+      "passed": true,
+      "log_sha256": "1f041b029e5352053ab57a550ce423bbd2956f7bfbf4bd4cb406dfe1bb8ac4fe",
+      "groups": 8
+    },
+    "native-diagnostics-authoring": {
+      "passed": true,
+      "log_sha256": "a15ab697ebd16c6b444ef5cbe3d3e72010e550a1c02cb1567174e69cf0be288f",
+      "groups": 8
+    },
+    "native-fbx-authoring": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "native-fbx-binary-authoring": {
+      "passed": true,
+      "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b"
+    },
+    "scoped-discovery-authoring": {
+      "passed": true,
+      "log_sha256": "0e044266ce746c8ee6e1d503c3faabb1d9637a5d5fab215a0b76918e175d8f89",
+      "owner_scopes": 6,
+      "responses": 1073,
+      "state_history_files_unchanged": true
+    },
+    "fbx-protocol-authoring": {
+      "passed": true,
+      "tests": 7,
+      "skipped": 0,
+      "rpc_count": 194,
+      "clean_owners": 9,
+      "report_sha256": "c3c68a25552de8bf3de82a5b555c30631faeb43ba5b357a142a5ba78a9791b05"
+    },
+    "authoring-core-authoring": {
+      "passed": true,
+      "tests": 5,
+      "report_sha256": "38516b5bbe67f21df41d1c4814b962f9e052d780ff1969c35890cf4c6c07bdb9"
+    },
+    "identity-linux": {
+      "passed": true,
+      "log_sha256": "5d4453b768c3d8c918b0665a050767f779129f084faa078567d6d4fb3c202938",
+      "tests": 2
+    },
+    "mcp-linux": {
+      "passed": true,
+      "log_sha256": "6bc7366913fb247cf9538787f5b1ebe297bd75f51ecf59e0f53b1735a2d19555",
+      "tests": 8
+    },
+    "identity-windows": {
+      "passed": true,
+      "log_sha256": "19993fd151f191d2cd5b4555cef589d532a6452bea274221d6bc6ba707982f50",
+      "tests": 2
+    },
+    "mcp-windows": {
+      "passed": true,
+      "log_sha256": "4028a3506c3c046470d17e59e8adb44ae1587d22753c444a5bbb5ca45d3b46fd",
+      "tests": 8
+    }
+  },
+  "original_content": {
+    "author": "Kenney",
+    "pack": "Animated Characters Protagonists 1.1",
+    "source_page": "https://kenney.nl/assets/animated-characters-protagonists",
+    "archive_url": "https://kenney.nl/media/pages/assets/animated-characters-protagonists/608191acc4-1774773108/kenney_animated-characters-protagonists.zip",
+    "archive_sha256": "ec3787de70fa2200256848d74201b10f6b6c3126594e9857bf989753312c2b84",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "license_file_sha256": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd",
+    "files": {
+      "Model/characterMedium.fbx": {
+        "bytes": 167212,
+        "sha256": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8"
+      },
+      "Animations/idle.fbx": {
+        "bytes": 608188,
+        "sha256": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74"
+      },
+      "Animations/jump.fbx": {
+        "bytes": 562796,
+        "sha256": "b88429077a7a1af5d3f55f43cfd8ce0f7441b4f6f7bb15a8070d7ed15d275f74"
+      },
+      "Animations/run.fbx": {
+        "bytes": 572732,
+        "sha256": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8"
+      }
+    }
+  },
+  "preserved_compiled_game": {
+    "passed": true,
+    "scope": "Existing 0.0.71 Linux Native AOT Character Yard artifact on 0.0.74 runtime; existing compiled artifact bytes retained. Its stationary arm-opening source is separate from the new FBX consumer.",
+    "rpc_count": 1550,
+    "check_groups": 8,
+    "clean_owners": 2,
+    "native_artifact_descriptor_sha256": "1cc7662253806664dc968edc997061260e76d9b238f1c7069b851f7326e32298",
+    "report_sha256": "f5552493aad14be4d04bc0bfbd62e742bc2ca7cd2c1f6c84ca859d79ec78c9bf"
+  },
+  "documentation_image": {
+    "path": "docs/evidence/retargeted-character.png",
+    "sha256": "e15e65a63ca48aa860e731adc52f1b73f1a79cbbcfb70cfb66a0bd1479f9b991",
+    "source_gpu": 0,
+    "source_capture_sha256": "7d47d10d03811b8853b23264412c706111b21906f9d8897e3b11b943049893c4",
+    "conversion": "Lossless BMP-to-PNG; original Kenney body with separately imported Run under explicit retarget policy",
+    "license": "CC0-1.0"
+  },
+  "development_corrections": [
+    "Two new compiler warnings were corrected without changing policy behavior; final native sources were refrozen and all three binaries rebuilt before recorded qualification."
+  ],
+  "limits": [
+    "Matching named ancestry only; no automatic anatomical bone correspondence.",
+    "Quaternion-chain orientation transfer ignores affine scale/shear in defining its correction. Source affine-motion equivalence and contact/shape fit are not promised.",
+    "Target-reference local translations/scales stay fixed except explicitly selected source-local translation deltas; original source translation/scale tracks are deliberately discarded and counted.",
+    "Source timing/interpolation, including original FBX import baking, is retained. No loop, stride or animation-quality repair.",
+    "Original-character oracle uses native-normalized original source/reference observations and independent retarget/FK/skin mathematics, not a second independent FBX parser.",
+    "Converted root/hip movement remains in the visual rig; no controller consumption or root-motion extraction.",
+    "Ordinary native runtime playback is qualified; a compiled FBX locomotion game, general exporter coverage, editor retarget controls and source-independent exported locomotion remain future work.",
+    "Readbacks on two GPUs from one laptop are not editor OS screenshots, physical-input checks or game-scale performance measurements.",
+    "Source inspection reparses/validates inputs per call; fingerprints bind normalized parsed content rather than raw file bytes.",
+    "Authoring-core v1, JSON-RPC protocol 1 and native gameplay services epoch 7 remain unchanged."
+  ],
+  "playbook_no_download": {
+    "passed": true,
+    "tests_listed": 6,
+    "tests_executed": 5,
+    "original_character_skipped": 1,
+    "rpc_count": 460,
+    "clean_owners": 7,
+    "binary_sha256": "8eaab93a5a1d2a6ee2e09059d1943e739929d0c39ed3fc48c1a1bb7a9a96dbf0",
+    "report_sha256": "4abb3a7f560c8560ea36c36533c1a8ffbc21b7396ca75b7bae99d690d5568e08"
+  }
+}

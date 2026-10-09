@@ -65,6 +65,13 @@ uniform mapped scales. It preserves target geometry and inverse binds; it
 does not adapt different body proportions or solve contacts. Omit that policy
 to retain the exact-skeleton behavior described above.
 
+For differing proportions or reference stances, [explicit rotation
+retargeting](ANIMATION_RETARGETING.md) uses chosen reference poses, inspected
+original-model fingerprints and declared target-position/scale policies.
+It preserves target geometry and binds but does not solve contacts or infer
+anatomical bone correspondence. Inspect original takes and nodes through
+`asset.source.inspect` before selecting an animation-only donor.
+
 ## Inspect a composition failure
 
 An incompatible skeleton still returns `-32050`. In 0.0.72, that rejection also
@@ -137,8 +144,9 @@ Supply an open client and your actual source paths, and import `RpcError` from
 `poima_client`. Inspect the source rig/export settings or choose compatible
 clips before submitting a new import. The rejected operation leaves world
 state and model publication unchanged; retrying the same incompatible files
-does not correct their frames. Reference-pose transfer and general retargeting
-require explicit policies and remain separate work.
+does not correct their frames. [Reference-frame transfer](ANIMATION_FRAME_TRANSFER.md)
+and [rotation retargeting](ANIMATION_RETARGETING.md) require explicit policies;
+automatic anatomical mapping and contact-aware retargeting remain separate work.
 
 ## Supported import profile
 

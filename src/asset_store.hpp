@@ -58,7 +58,7 @@ inline LoadedModel store_model_asset(const std::filesystem::path& directory,cons
         std::vector<std::shared_ptr<const ModelAsset>> donors;
         auto retained=retained_model_import_bytes(*imported.model);
         for(const auto& file:animations) {
-            auto donor=import_animation_source(file,convention,file.frame_transfer ? imported.model.get() : nullptr).model;const auto size=retained_model_import_bytes(*donor);
+            auto donor=import_animation_source(file,convention,(file.frame_transfer || file.rotation_retarget) ? imported.model.get() : nullptr).model;const auto size=retained_model_import_bytes(*donor);
             if(size>128*1024*1024-retained)throw std::runtime_error("Combined imported models exceed the 128 MiB retained-data budget.");
             retained+=size;donors.push_back(std::move(donor));
         }

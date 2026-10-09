@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.74
+
+- Add [guarded original-source inspection and explicit rotation retargeting](docs/ANIMATION_RETARGETING.md). Inspect animation-only donors before cooking; bind original reference/take/node selections to normalized-model fingerprints and reject changed sources.
+- Transfer quaternion-chain orientations across differing proportions and reference stances while preserving target geometry, defaults and inverse binds. Declare fixed target positions/scales or selected source-local position deltas; preserve raw rotation curves, cubic tangents, sparse defaults and original durations.
+- Qualify three native builds, independent analytic motion and original Kenney Idle/Run/Jump checks, 22 actual Windows Vulkan readbacks across both GPUs, and the preserved compiled character game. Retain exact composition, frame conversion and stable authoring/MCP contracts. [Evidence](docs/evidence/m2-animation-rotation-retarget.json).
+- Publish the source-inspection/retargeting playbook, recovery rules and current licensed character capture. Document remaining contact, stride, root-controller, loop and compiled-locomotion work.
+
 ## 0.0.73
 
 - Add explicit [reference-pose bone-frame conversion](docs/ANIMATION_FRAME_TRANSFER.md) for compatible named hierarchies with coincident joint origins and exactly uniform mapped scales. Retain target geometry and inverse binds; choose original reference takes independently of selected motion and declare component alignment when needed.

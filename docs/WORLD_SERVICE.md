@@ -8,6 +8,14 @@ The [Python automation client](PYTHON_CLIENT.md) provides bounded stdio/endpoint
 transport, revision-guarded helpers, pinned query pagination and candidate core
 response checks. Generic calls retain access to the discovered native API.
 
+## Source inspection
+
+`asset.source.inspect` reads original glTF/GLB/FBX nodes, skins and animation
+takes without publishing cooked content. Guard paginated observations and
+explicit reference poses with the returned original-model fingerprint. The
+[retargeting playbook](ANIMATION_RETARGETING.md) explains animation-only donor
+inspection, selecting original IDs/takes and importing guarded motion policies.
+
 ## Asset references
 
 `world.asset.references` lists explicit model, image, audio and navigation bindings by

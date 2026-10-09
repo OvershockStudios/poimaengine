@@ -1,8 +1,38 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.73**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.74**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.74 adds [explicit rotation retargeting](ANIMATION_RETARGETING.md)
+for matching named ancestry with differing proportions, reference stances and
+positive nonuniform scales. Original reference quaternion chains define the
+orientation transfer; target-reference local positions/scales stay fixed unless
+selected source-local position deltas are explicitly requested. Target geometry,
+rest defaults and inverse binds remain unchanged. Read-only `asset.source.inspect`
+exposes original nodes, takes, reference poses and normalized-model fingerprints,
+including geometryless donors. Required fingerprint guards reject changed
+original models before filtering or retargeting. Focused discovery reports
+schema revision 64; authoring-core v1, protocol 1 and native gameplay services
+epoch 7 remain unchanged.
+
+Each of three native builds passes eight independent retargeting groups and
+six API tests, including original Kenney Idle, Run and Jump files. The combined
+2,379 RPCs and 21 clean owners check quaternion chains, target FK and original
+weighted geometry, strict policies, unpublished inspection, failure atomicity
+and source-independent cooked persistence. Windows Vulkan checks pass 22
+readbacks across AMD and NVIDIA using the original 1,029-vertex weighted body,
+separate Run/Idle takes and 15 ordinary runtime ticks. The Run pose and runtime
+match the independent normalized-source reference exactly on AMD; NVIDIA differs
+at one pixel above channel error two, with maximum channel error 17.
+One AMD Idle GPU/CPU pixel has channel error 13. These are bounded readback
+comparisons, not universal rendering tolerances. Existing exact composition,
+frame conversion, discovery, authoring and MCP checks pass, as does the preserved
+0.0.71 Linux Native AOT character game. Automatic bone-name mapping, contact/IK,
+stride and loop repair, root-motion extraction and a compiled FBX locomotion
+game remain unfinished. The source oracle uses original native-normalized
+observations with independent retarget/FK/skin math, not an independent FBX
+parser. [Evidence](evidence/m2-animation-rotation-retarget.json).
 
 Version 0.0.73 adds opt-in [reference-pose bone-frame conversion](ANIMATION_FRAME_TRANSFER.md)
 for separate clips with matching named ancestry, coincident reference joint
@@ -607,7 +637,7 @@ The development [standalone template catalog](RUNTIME.md#standalone-template-cat
 
 [Keyboard/mouse profiles](INPUT_PROFILES.md), [gamepad profiles](GAMEPADS.md), configurable bindings, device discovery and hosted editor assignment are implemented. Physical gamepad qualification remains outstanding. General settings remain unfinished. The experimental [save-slot service](RUNTIME.md#durable-save-slots) adds durable generations, explicit recovery and guarded runtime replacement to the native snapshot foundation. The [editor Save/Load window](EDITOR_SAVES.md) now uses that service. [Typed gameplay requests](GAMEPLAY_SAVES.md) use a post-batch native owner. General migrations and asynchronous save scheduling remain unfinished. Authored document recovery and internal runtime rollback are separate contracts.
 
-Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Bounded [FBX import and exact-skeleton clip composition](FBX_IMPORT.md) are supported; general Mixamo/exporter compatibility and retargeting remain unqualified. Supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
+Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Bounded [FBX import and exact-skeleton clip composition](FBX_IMPORT.md), reference-frame conversion and [explicit rotation retargeting](ANIMATION_RETARGETING.md) are supported; general Mixamo/exporter compatibility and automatic anatomical/contact retargeting remain unqualified. Supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
 
 The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, native job-worker intervals, separate GPU duration samples and trace export. General worker-stack sampling, allocation/GC and process/VRAM tracking, GPU clock correlation and a sustained benchmark workflow remain unfinished. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
 
@@ -615,7 +645,7 @@ Planned editor workflow improvements include configurable hierarchy/folder styli
 
 Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 
-Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers, including opt-in compiled C# controls. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. State machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
+Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers, including opt-in compiled C# controls. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. State machines and transition-history scrubbing, IK, root-motion extraction and automatic anatomical/contact retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
 
 ## Implemented
 

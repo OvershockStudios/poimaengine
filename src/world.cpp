@@ -190,6 +190,52 @@ AnimationFrameTransfer animation_frame_transfer(const Json& value) {
     }
     return result;
 }
+AnimationRotationRetarget animation_rotation_retarget(const Json& value) {
+    fields(value,{"policy","source_pose","target_pose","alignment_rotation","positions","scales",
+        "expected_source_model_sha256","expected_target_model_sha256"},
+        {"policy","source_pose","target_pose","positions","scales","expected_source_model_sha256","expected_target_model_sha256"});
+    require(value.at("policy")=="reference-rotation-v1","Unknown animation retarget policy.");
+    require(value.at("scales")=="target_reference","Retarget scales must explicitly use the target reference.");
+    AnimationRotationRetarget result;
+    result.source_reference=animation_reference_pose(value.at("source_pose"));
+    result.target_reference=animation_reference_pose(value.at("target_pose"));
+    auto model_hash=[&](const char* key) {
+        const auto& item=value.at(key);
+        require(item.is_string() && valid_asset_id(item.get<std::string>()),"Expected model fingerprint must be 64 lowercase hexadecimal characters.");
+        return item.get<std::string>();
+    };
+    result.expected_source_model_sha256=model_hash("expected_source_model_sha256");
+    result.expected_target_model_sha256=model_hash("expected_target_model_sha256");
+    if(value.contains("alignment_rotation")) {
+        const auto& rotation=value.at("alignment_rotation");
+        require(rotation.is_array() && rotation.size()==4,"Retarget alignment requires a XYZW quaternion.");
+        double norm=0;
+        for(std::size_t i=0;i<4;++i) {
+            const auto& number=rotation[i];
+            require(number.is_number() && std::isfinite(number.get<double>()) && number>=-1 && number<=1,"Retarget alignment components must be finite within [-1,1].");
+            result.alignment_rotation[i]=number.get<double>();norm+=result.alignment_rotation[i]*result.alignment_rotation[i];
+        }
+        require(std::abs(norm-1)<=1e-6,"Retarget alignment must be normalized.");
+    }
+    const auto& positions=value.at("positions");fields(positions,{"kind","nodes","scale"},{"kind"});
+    if(positions.at("kind")=="target_reference")fields(positions,{"kind"},{"kind"});
+    else {
+        require(positions.at("kind")=="reference_delta","Unknown retarget position policy.");
+        fields(positions,{"kind","nodes","scale"},{"kind","nodes","scale"});
+        const auto& nodes=positions.at("nodes");
+        require(nodes.is_array() && !nodes.empty() && nodes.size()<=64,"Retarget translation requires 1..64 unique source nodes.");
+        std::set<std::uint32_t> unique;
+        for(const auto& source_node:nodes) {
+            const auto index=revision(source_node);require(index<10000,"Retarget source node index exceeds the model limit.");
+            require(unique.insert(static_cast<std::uint32_t>(index)).second,"Retarget source node index is repeated.");
+            result.translation_nodes.push_back(static_cast<std::uint32_t>(index));
+        }
+        const auto& scale=positions.at("scale");
+        require(scale.is_number() && std::isfinite(scale.get<double>()) && scale>0 && scale<=100,"Retarget translation scale must be finite within (0,100].");
+        result.position_mode=AnimationRetargetPositionMode::reference_delta;result.translation_scale=scale.get<double>();
+    }
+    return result;
+}
 void validate_name(const Json& value) {
     require(value.is_string() && !value.get_ref<const std::string&>().empty() &&
         value.get_ref<const std::string&>().size() <= 256, "Name must contain 1..256 UTF-8 bytes.");
@@ -1462,11 +1508,84 @@ public:
         while(length<text.size() && length>0 && (static_cast<unsigned char>(text[length])&0xc0u)==0x80u)--length;
         text.resize(length);return text;
     }
+    Json source_model_inspection(const Json& params) const {
+        fields(params,{"source","fbx_normal_map","section","offset","limit","pose","expected_model_sha256"},{"source"});
+        const auto& path=params.at("source");
+        require(path.is_string(),"Source inspection requires a path.");const auto text=path.get<std::string>();
+        require(!text.empty() && text.size()<=4096 && text.find('\0')==std::string::npos,"Invalid source inspection path.");
+        require(!params.contains("section") || params.at("section").is_string(),"Source inspection section must be a string.");
+        const auto section=params.value("section",std::string("summary"));
+        require(section=="summary" || section=="nodes" || section=="skins" || section=="animations","Invalid source inspection section.");
+        require(!params.contains("pose") || section=="nodes","Source pose sampling requires the nodes section.");
+        const auto offset=params.contains("offset") ? revision(params.at("offset")) : 0;
+        const auto limit=params.contains("limit") ? revision(params.at("limit")) : 64;
+        require(limit>=1 && limit<=64,"Source inspection page limit must be 1..64.");
+        std::optional<AnimationReferencePose> selector;
+        if(params.contains("pose"))selector=animation_reference_pose(params.at("pose"));
+        std::optional<std::string> expected;
+        if(params.contains("expected_model_sha256")) {
+            const auto& value=params.at("expected_model_sha256");
+            require(value.is_string() && valid_asset_id(value.get<std::string>()),"Expected source fingerprint must be 64 lowercase hexadecimal characters.");
+            expected=value.get<std::string>();
+        }
+        auto convention=FbxNormalConvention::opengl;
+        if(params.contains("fbx_normal_map")) {
+            const auto& value=params.at("fbx_normal_map");
+            require(value=="opengl" || value=="directx","Invalid FBX normal map convention.");
+            convention=value=="opengl" ? FbxNormalConvention::opengl : FbxNormalConvention::directx;
+        }
+        try {
+            auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
+            if(fs::file_size(source)>128*1024*1024)throw std::runtime_error("Source inspection exceeds the 128 MiB source budget.");
+            const auto imported=import_model(source,convention);const auto& model=*imported.model;
+            if(params.contains("fbx_normal_map") && imported.importer.empty())throw std::runtime_error("fbx_normal_map applies only to FBX sources.");
+            validate_animation_data(model);const auto retained=retained_model_import_bytes(model);
+            const auto fingerprint=content_hash(encode_model(model));
+            if(expected && *expected!=fingerprint)throw std::runtime_error("Source model fingerprint changed; inspect the current source before selecting nodes or takes.");
+            std::optional<ModelPose> pose;
+            if(selector) {
+                if(selector->clip && (*selector->clip>=model.animations.size() || selector->time>model.animations[*selector->clip].duration))
+                    throw std::runtime_error("Source reference take or time is outside the original clip.");
+                pose=CompiledAnimation(model).sample(selector->clip,selector->time,false);
+            }
+            std::size_t vertices=0,indices=0;for(const auto& mesh:model.primitives) {vertices+=mesh->vertices.size();indices+=mesh->indices.size();}
+            Json diagnostics=Json::array();
+            for(std::size_t i=0;i<std::min<std::size_t>(64,model.diagnostics.size());++i)diagnostics.push_back(asset_diagnostic(model.diagnostics[i].c_str()));
+            Json out={{"format","poima.source-inspection.v1"},{"published",false},{"model_sha256",fingerprint},
+                {"importer",imported.importer.empty() ? "cgltf-1.15/poima-animation-reference-1" : imported.importer},
+                {"retained_bytes",retained},{"nodes",model.nodes.size()},{"primitives",model.primitives.size()},
+                {"skins",model.skins.size()},{"animations",model.animations.size()},{"images",model.images.size()},
+                {"vertices",vertices},{"triangles",indices/3},{"roots",model.roots},{"diagnostics",std::move(diagnostics)},
+                {"diagnostic_count",model.diagnostics.size()},{"diagnostics_truncated",model.diagnostics.size()>64}};
+            if(pose)out["pose"]=params.at("pose");
+            if(section!="summary") {
+                const auto total=section=="nodes" ? model.nodes.size() : section=="skins" ? model.skins.size() : model.animations.size();
+                const auto end=std::min<std::uint64_t>(total,offset+limit);out["items"]=Json::array();out["section"]=section;out["total"]=total;
+                for(auto i=offset;i<end;++i) {
+                    if(section=="nodes") {
+                        const auto& node=model.nodes[i];
+                        Json row={{"index",i},{"name",node.name},{"parent",node.parent},{"primitives",node.primitives},{"skin",node.skin}};
+                        if(pose) {
+                            const auto& local=pose->local[i];row["position"]=local.position;row["rotation"]=local.rotation;row["scale"]=local.scale;row["world"]=pose->world[i];
+                        }else {row["position"]=node.position;row["rotation"]=node.rotation;row["scale"]=node.scale;}
+                        out["items"].push_back(std::move(row));
+                    }else if(section=="skins") {
+                        const auto& skin=model.skins[i];out["items"].push_back({{"index",i},{"name",skin.name},{"skeleton",skin.skeleton},{"joints",skin.joints.size()}});
+                    }else {
+                        const auto& clip=model.animations[i];out["items"].push_back({{"index",i},{"name",clip.name},{"duration",clip.duration},{"channels",clip.channels.size()}});
+                    }
+                }
+                out["next_offset"]=end<total ? Json(end) : Json(nullptr);
+            }
+            return out;
+        }catch(const Error&) {throw;}catch(const std::exception& error) {throw Error(-32050,asset_diagnostic(error.what()));}
+    }
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.animation.capture")return capture(params,false,true);
         if(method.starts_with("asset.animation."))return animation_dispatch(method,params);
         if(method=="asset.audio.import" || method=="asset.audio.inspect")return audio_asset_dispatch(method,params);
         if(method=="asset.image.import" || method=="asset.image.inspect")return image_dispatch(method,params);
+        if(method=="asset.source.inspect")return source_model_inspection(params);
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
@@ -1485,13 +1604,15 @@ public:
                     for(const auto& file:files) {
                         ModelAnimationSource selected;std::string value;
                         if(file.is_object()) {
-                            fields(file,{"source","clip","name","frame_transfer"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
+                            fields(file,{"source","clip","name","frame_transfer","retarget"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
+                            require(!file.contains("frame_transfer") || !file.contains("retarget"),"Frame transfer and retarget policies are mutually exclusive.");
                             if(file.contains("clip")) {const auto index=revision(file.at("clip"));require(index<256,"Animation take index must be 0..255.");selected.clip=static_cast<std::uint32_t>(index);}
                             if(file.contains("name")) {
                                 require(file.at("name").is_string(),"Animation take name must be a string.");selected.name=file.at("name").get<std::string>();
                                 require(!selected.name.empty() && selected.name.size()<=256 && selected.name.find('\0')==std::string::npos,"Animation take name must be 1..256 bytes without NUL.");
                             }
                             if(file.contains("frame_transfer"))selected.frame_transfer=animation_frame_transfer(file.at("frame_transfer"));
+                            if(file.contains("retarget"))selected.rotation_retarget=animation_rotation_retarget(file.at("retarget"));
                         }else {require(file.is_string(),"Animation source must be a path or a selection object.");value=file.get<std::string>();}
                         require(!value.empty() && value.find('\0')==std::string::npos,"Invalid animation source path.");
                         auto path=fs::path(std::u8string(value.begin(),value.end()));if(path.is_relative())path=path_.parent_path()/path;

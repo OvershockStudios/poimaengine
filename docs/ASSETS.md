@@ -1,6 +1,6 @@
 # Static glTF assets and textured materials
 
-Poima supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and textured metallic/roughness rendering. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. [FBX models and separate animation clips](FBX_IMPORT.md) use the same inspection, instantiation and cooked-content workflow, with a separately documented import profile.
+Poima supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and textured metallic/roughness rendering. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. [FBX models and separate animation clips](FBX_IMPORT.md) use the same inspection, instantiation and cooked-content workflow, with a separately documented import profile. Read-only [`asset.source.inspect`](ANIMATION_RETARGETING.md#inspect-the-original-sources) exposes original nodes, takes and guarded reference poses before cooking, including geometryless animation donors.
 
 ## Import, inspect and instantiate
 
