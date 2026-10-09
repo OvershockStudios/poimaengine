@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/animation.hpp"
+#include "model_import.hpp"
 #include <nlohmann/json.hpp>
 #include <bit>
 #include <algorithm>
@@ -65,10 +66,13 @@ std::shared_ptr<const TextureImage> decode_image(const std::string& bytes) {
     require(metadata.at("version")==1,"Unsupported image package version.");reader.offset=16+length;std::size_t total=0;
     const auto image=parse_image(metadata,reader,total);require(reader.offset==bytes.size(),"Trailing image package bytes.");return image;
 }
-std::string encode_model(const ModelAsset& model) {
+std::string encode_model(const ModelAsset& model) { return encode_model_with_importer(model,{}); }
+std::string encode_model_with_importer(const ModelAsset& model,const std::string& importer) {
     validate_animation_data(model);const bool animated=!model.skins.empty() || !model.animations.empty() || std::any_of(model.primitives.begin(),model.primitives.end(),[](const auto& mesh) { return !mesh->influences.empty(); });
     Json metadata={{"version",3},{"importer","cgltf-1.15/poima-static-3"},{"primitives",Json::array()},{"nodes",Json::array()},{"roots",model.roots},{"diagnostics",model.diagnostics}};
     if(animated) { metadata["version"]=4;metadata["importer"]="cgltf-1.15/poima-animation-reference-1"; }
+    require(importer.size()<=256 && importer.find('\0')==std::string::npos,"Invalid model importer identity.");
+    if(!importer.empty())metadata["importer"]=importer;
     std::string binary;
     for(const auto& p:model.primitives) {
         const auto& m=p->material;

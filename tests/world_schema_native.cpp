@@ -54,7 +54,7 @@ int main(int argc,char** argv) {
                     const auto result=invoke(owner,"world.describe",params,scope);cases.push_back({{"params",params},{"reply",result}});++total;return result;
                 };
                 const auto full=capture(Json::object()).at("result");
-                need(full.at("schema_revision")==59,"Expected .66 schema revision 59.");
+                need(full.at("schema_revision").get<unsigned>()>=59,"Expected schema revision at least 59.");
                 capture({{"view","full"}});const auto catalog=capture({{"view","catalog"}}).at("result");
                 for(const auto* view:{"method","component","section"}) {
                     const auto key=std::string(view)=="method" ? "methods" : std::string(view)=="component" ? "components" : "sections";

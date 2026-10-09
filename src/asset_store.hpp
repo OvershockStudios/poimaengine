@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #pragma once
 #include "poima/assets.hpp"
+#include "model_import.hpp"
 #include "poima/audio.hpp"
 #include "world_storage.hpp"
 #include <fstream>
@@ -26,6 +27,8 @@ inline std::filesystem::path asset_package_path(const std::filesystem::path& dir
     };
     regular(directory,true);const auto path=directory/(id+extension);regular(path,false);return path;
 }
+// Defined below; model and image publication share exclusive staging.
+inline void write_asset_pending_exclusive(const std::filesystem::path& path,const std::string& bytes);
 struct LoadedModel { std::string id; std::size_t bytes=0; std::shared_ptr<const ModelAsset> model; };
 inline LoadedModel read_model_asset(const std::filesystem::path& directory,const std::string& id) {
     if(!valid_asset_id(id))throw std::runtime_error("Invalid model asset ID.");
@@ -36,13 +39,50 @@ inline LoadedModel read_model_asset(const std::filesystem::path& directory,const
     if(!input.read(bytes.data(),static_cast<std::streamsize>(length)) || content_hash(bytes)!=id)throw std::runtime_error("Model asset content hash mismatch or read failure.");
     return {id,bytes.size(),decode_model(bytes)};
 }
-inline LoadedModel store_model_asset(const std::filesystem::path& directory,const std::filesystem::path& source) {
-    const auto imported=import_gltf(source);const auto bytes=encode_model(*imported);
+inline LoadedModel store_model_asset(const std::filesystem::path& directory,const std::filesystem::path& source,
+    const std::vector<ModelAnimationSource>& animations={},std::optional<FbxNormalConvention> normal_map={}) {
+    // Bound the selected top-level files before retaining multiple parsed models.
+    // Each importer independently bounds its external dependency reads.
+    constexpr std::uintmax_t source_budget=128*1024*1024;std::uintmax_t selected_bytes=0;
+    auto count_source=[&](const std::filesystem::path& path) {
+        const auto size=std::filesystem::file_size(path);
+        if(size>source_budget-selected_bytes)throw std::runtime_error("Selected model/animation sources exceed 128 MiB.");
+        selected_bytes+=size;
+    };
+    count_source(source);for(const auto& file:animations)count_source(file.source);
+    const auto convention=normal_map.value_or(FbxNormalConvention::opengl);
+    auto imported=import_model(source,convention);
+    if(normal_map && imported.importer.empty())throw std::runtime_error("fbx_normal_map applies only to FBX base sources; glTF normal maps use their own fixed convention.");
+    if(!animations.empty()) {
+        if(animations.size()>32)throw std::runtime_error("Animation composition permits at most 32 source files.");
+        std::vector<std::shared_ptr<const ModelAsset>> donors;
+        auto retained=retained_model_import_bytes(*imported.model);
+        for(const auto& file:animations) {
+            auto donor=import_animation_source(file,convention).model;const auto size=retained_model_import_bytes(*donor);
+            if(size>128*1024*1024-retained)throw std::runtime_error("Combined imported models exceed the 128 MiB retained-data budget.");
+            retained+=size;donors.push_back(std::move(donor));
+        }
+        imported.model=compose_model_animations(*imported.model,donors);
+        imported.importer=(imported.importer.empty() ? std::string("cgltf-1.15") : imported.importer)+"/poima-exact-skeleton-1";
+    }
+    const auto bytes=encode_model_with_importer(*imported.model,imported.importer);
     const auto model=decode_model(bytes); // Validate the shipping format before publication.
     const auto id=content_hash(bytes);std::filesystem::create_directories(directory);
+    // Match existing image-store admission before any staging write. A linked
+    // directory or predictable pre-existing staging path is never followed.
+    std::error_code error;const auto status=std::filesystem::symlink_status(directory,error);
+    if(error || !std::filesystem::is_directory(status) || std::filesystem::is_symlink(status))throw std::runtime_error("Asset store must be a regular directory.");
+#ifdef _WIN32
+    const auto attributes=GetFileAttributesW(directory.c_str());
+    if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&FILE_ATTRIBUTE_REPARSE_POINT))throw std::runtime_error("Asset store cannot be a reparse point.");
+#endif
     const auto path=directory/(id+".pmodel");
-    if(std::filesystem::exists(path))return read_model_asset(directory,id);
-    const auto pending=directory/(id+".pending");world_detail::write_flushed(pending,bytes);world_detail::replace_file(pending,path);
+    if(std::filesystem::exists(std::filesystem::symlink_status(path)))return read_model_asset(directory,id);
+    const auto pending=directory/(id+".pending");
+    if(std::filesystem::exists(std::filesystem::symlink_status(pending)))throw std::runtime_error("Model staging path already exists; remove only an abandoned regular staging file before retrying.");
+    write_asset_pending_exclusive(pending,bytes);
+    try {world_detail::replace_file(pending,path);}
+    catch(...) {std::error_code unused;std::filesystem::remove(pending,unused);throw;}
     return {id,bytes.size(),model};
 }
 struct LoadedImage { std::string id;std::size_t bytes=0;std::shared_ptr<const TextureImage> image; };

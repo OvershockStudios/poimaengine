@@ -60,6 +60,9 @@ std::shared_ptr<const TextureImage> decode_texture(std::span<const std::byte> by
 std::vector<TextureMip> texture_mips(TextureMip base,bool srgb);
 bool valid_texture_sampler(const TextureMap& map);
 void generate_tangents(MeshAsset& mesh);
+// Explicit import policy: repair only invalid frames on collapsed-UV triangles
+// without a normal map. Returns repaired triangle-corner count; strict by default.
+std::size_t generate_tangents(MeshAsset& mesh, bool allow_unmapped_collapsed_uv_fallback);
 bool valid_tangent(const MeshVertex& vertex);
 std::string encode_image(const TextureImage& image);
 std::shared_ptr<const TextureImage> decode_image(const std::string& bytes);

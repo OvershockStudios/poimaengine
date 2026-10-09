@@ -1,0 +1,438 @@
+{
+  "format": "poima.fbx-import-evidence",
+  "version": 1,
+  "engine_version": "0.0.68",
+  "recorded_date": "2026-10-09",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 60,
+  "authoring_contract": "poima.authoring-core v1",
+  "native_gameplay_services_abi": 7,
+  "source_sha256": {
+    "CMakeLists.txt": "926b6797f66d6e6bacc15ff848689581284e885dc535d775caf7abe126862bfb",
+    "include/poima/assets.hpp": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be",
+    "src/asset_store.hpp": "ff7064dc3df95b96f49e00aaabe67fbae994684247f5545071a950c01b6986f4",
+    "src/core.cpp": "69a3bbdb6357b14f91724191c6057199e429b549ccfa188b07a3ef5d528ca000",
+    "src/fbx.cpp": "6b35a1125733f1166ddca13865e36d4464f9e54cd128a266453cfe70d1b84336",
+    "src/fbx.hpp": "e2f299f3316412cc0bfeed239aa6cd444e61db397a6f1dfc14c2d01545c82b1a",
+    "src/model_codec.cpp": "952f08574007227a5b8e21848f879ec5937155ea8e6ea74599ffd64d1bb55f3d",
+    "src/model_import.cpp": "9a9b8b1e53d0322d2ec13b28495217129dbefa349c16669f024b6631afd388a6",
+    "src/model_import.hpp": "075c496f5549ebaec6fbb65e506633340c569e47201297efc9114f66590e3c10",
+    "src/tangents.cpp": "a79998e3917ad0c779423eeac08eb52295275c352770e78093315147bedc2d95",
+    "src/world.cpp": "4b274b9e7207635515811f92155a620464727e4d31154a904004322fa360c6a9",
+    "src/world_schema.cpp": "d8fa651cb71e5d640276d8e21dc4e4e248e2034c1e6e46f9a24c5dcbd1740a83",
+    "tests/fbx_capture.py": "350bde4f2005d0bd2051e35ea034a787880ed42ce9863132feb6ae69c163ef4a",
+    "tests/fbx_contract.py": "b3cf3b9c64b25908b3e99ad9a7a62e6e1e85b1a29ad83c8c9caa2ba34322434f",
+    "tests/fbx_fixture.py": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+    "tests/fbx_native.cpp": "c0b936434f354691e41a36da2c55ff84e77b22b5b7909b6ce8d6f173b72296b8",
+    "tests/world_schema_native.cpp": "492f67374df090714f114dccebff5fdb1c61dec55b748d09273dc62f7220021f",
+    "third_party/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+    "third_party/ufbx/PROVENANCE.json": "c59f5909f34dd7ff4dda7f6223e94c6eb23556447772d18ba698af641d66a1da",
+    "third_party/ufbx/ufbx.c": "4a956c26a708e40d82ecb0aeaee54da709d5ba7c144c9642174970059bda7e1d",
+    "third_party/ufbx/ufbx.h": "f787be529af577efc04f3e3e735844a08556718dbb613d1211c2b313d72895dc"
+  },
+  "qualification_scope": "Bounded FBX import/exact-skeleton composition and original-fixture native/Vulkan correctness; not general exporter compatibility, retargeting or game-scale performance.",
+  "builds": {
+    "linux": {
+      "exit_code": 0,
+      "source_unchanged": true,
+      "engine_sha256": "23b6cbdf35a8253312c8c2a71b671fa58b50915c9aa050667039428a97f42916",
+      "elapsed_seconds": 1859.453162755,
+      "log_sha256": "c5f46c19710efcc544f003af14f420d8a80ea2d5d60e89b76e46ed91e034744e",
+      "build_report_sha256": "8c6e027624b747e93bb54efff323829cf9c1c211b80ef958e039de8505c24160",
+      "postbuild_test_only_changes": {
+        "tests/fbx_contract.py": {
+          "build": "a83dee3b56eefaf0cfa52124816706fa6aed5b83f9c7008ded12ed7000a0bc32",
+          "current": "b3cf3b9c64b25908b3e99ad9a7a62e6e1e85b1a29ad83c8c9caa2ba34322434f"
+        }
+      }
+    },
+    "windows": {
+      "exit_code": 0,
+      "source_unchanged": true,
+      "engine_sha256": "fb97348c2ad38bb958e8913926d5660de15fb37492378156c97bf0d1d9154c28",
+      "elapsed_seconds": 671.8644759540002,
+      "log_sha256": "517dec8353e04a83422879860a506b606dc989c9a4e68262c774494aeeeafa65",
+      "build_report_sha256": "aed95155ac7468b75c8438e274a962176498f052723b28b80c2e3ce0f9bf1ffd",
+      "postbuild_test_only_changes": {
+        "tests/fbx_contract.py": {
+          "build": "a83dee3b56eefaf0cfa52124816706fa6aed5b83f9c7008ded12ed7000a0bc32",
+          "current": "b3cf3b9c64b25908b3e99ad9a7a62e6e1e85b1a29ad83c8c9caa2ba34322434f"
+        }
+      }
+    }
+  },
+  "native_and_protocol": {
+    "linux": {
+      "native-ascii": {
+        "exit_code": 0,
+        "seconds": 0.4372642539997287,
+        "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b",
+        "fixtures": 36
+      },
+      "native-binary": {
+        "exit_code": 0,
+        "seconds": 0.6140207139997074,
+        "log_sha256": "01d36e151a27622c93b57889dff6a95f1c176f0941bf3a0f900745f76cd6225b",
+        "fixtures": 36
+      },
+      "fbx_contract": {
+        "exit_code": 0,
+        "seconds": 9.645955214999958,
+        "log_sha256": "fa15402cca4131b86f388af5421fe4f343df228d1ca0f4d5441e1b2831f34fa2",
+        "evidence_sha256": "68f31facadaf62525aaff1eff8251238f5c666222994b41a9d97a53037130ecb",
+        "passed": true,
+        "tests": 7,
+        "skipped": 0,
+        "owners": {
+          "count": 9,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "calls": 194
+      },
+      "asset_contract": {
+        "exit_code": 0,
+        "seconds": 6.766655001000345,
+        "log_sha256": "e29c14e63ef208edab4443ec5febc1392768409f68c2cc11d0ac68a9fa1a536b",
+        "evidence_sha256": "7eebc7af4a51eb69908ccbb6672a515810d0186d29af6b85980a453c00e32834",
+        "passed": true,
+        "tests": 11,
+        "skipped": 0
+      },
+      "animation_contract": {
+        "exit_code": 0,
+        "seconds": 4.045113829000002,
+        "log_sha256": "6b1f594ad850a81689440e095f94928d19217b2be8ffefe92ae4c3f98e136e3e",
+        "evidence_sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740",
+        "passed": true,
+        "tests": 11,
+        "skipped": 0
+      },
+      "authoring_core_conformance": {
+        "exit_code": 0,
+        "seconds": 2.222431831999984,
+        "log_sha256": "f21f0987053c9e4163fe1cd7596db8327f9b97a666ad2a06e729d1dc357f1ebf",
+        "evidence_sha256": "46c9bdf80ec158b913d1c7f8b9f4e8a434c231a159c452e226f295e765b02bf8",
+        "passed": true,
+        "tests": 5,
+        "skipped": 0
+      },
+      "schema": {
+        "exit_code": 0,
+        "seconds": 3.4168073189998722,
+        "log_sha256": "bec145e87ceb1e9e274c842b4dfd2f2a4562f3201d54342fc1f331f9e7af8d5a",
+        "dump_sha256": "f8c0bce0931cc4cc084c3a82bc457bc7faed8648536c3b275f9b6230cdc25824",
+        "discovery_responses": 1067,
+        "owner_scopes": 6,
+        "oracle_state_history_files_unchanged": true
+      }
+    },
+    "windows": {
+      "native-ascii": {
+        "exit_code": 0,
+        "seconds": 0.09042111400003705,
+        "log_sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7",
+        "fixtures": 36
+      },
+      "native-binary": {
+        "exit_code": 0,
+        "seconds": 0.06540713000003961,
+        "log_sha256": "f713da6120e837e782b5432344499ddcd3318bc0172523ec862c939127844ec7",
+        "fixtures": 36
+      },
+      "fbx_contract": {
+        "exit_code": 0,
+        "seconds": 7.64245155899971,
+        "log_sha256": "1bdf875959269ac618098e8afa30483c22f49892057b8c44e606ee9bc1f19bd6",
+        "evidence_sha256": "1e61d04da6e4afe4c689df3fa361422cd40f13ecf2265c15659ce5c97b9335c5",
+        "passed": true,
+        "tests": 7,
+        "skipped": 1,
+        "owners": {
+          "count": 8,
+          "exit_codes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "calls": 183
+      },
+      "asset_contract": {
+        "exit_code": 0,
+        "seconds": 5.066160150999622,
+        "log_sha256": "31799427c62f69ec158a496b48f22d9d630acb2a9c441fef74ea6aae4c8d5739",
+        "evidence_sha256": "9c28bfecdf6c5cc4ec93c2ccb0b67a231bfb71e3cab7cd61b1f6d7dd52a3a3e8",
+        "passed": true,
+        "tests": 11,
+        "skipped": 0
+      },
+      "animation_contract": {
+        "exit_code": 0,
+        "seconds": 2.4893061060001855,
+        "log_sha256": "999eef651eeb75b2b2d14ff6d2819ccbb2a56bda0dd5e970003ffb07f83ef3a3",
+        "evidence_sha256": "51328ee332b83764452141a2ec07b655edef2fc2a383fbe76a558bed79597740",
+        "passed": true,
+        "tests": 11,
+        "skipped": 0
+      },
+      "authoring_core_conformance": {
+        "exit_code": 0,
+        "seconds": 2.8083428360000653,
+        "log_sha256": "9f23f2dfc39fc6f3c4a21950f513487623aeb156fb3df0152fadaca2e5de4196",
+        "evidence_sha256": "735ac9ec4b5d747a024bbaebbb451da2eb70e2a97283bf8032799ef356af2c83",
+        "passed": true,
+        "tests": 5,
+        "skipped": 0
+      },
+      "schema": {
+        "exit_code": 0,
+        "seconds": 4.093772262999664,
+        "log_sha256": "83794134355daf8b20a795ea330eefd603b87a1d4f50802790de105b995e3e47",
+        "dump_sha256": "b55d2aac27f4be6fc0ee25e4faba24fce62f5664229d66da5de755b156f0dbbf",
+        "discovery_responses": 1067,
+        "owner_scopes": 6,
+        "oracle_state_history_files_unchanged": true
+      }
+    }
+  },
+  "legacy_gltf": {
+    "linux": {
+      "exit_code": 0,
+      "imports": {
+        "sphere": {
+          "animations": 0,
+          "asset": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+          "bytes": 85992,
+          "diagnostics": [],
+          "format": "poima.static-model.v3",
+          "images": 0,
+          "nodes": 2,
+          "primitives": 1,
+          "roots": [
+            0
+          ],
+          "skins": 0,
+          "triangles": 2208,
+          "vertices": 1225
+        },
+        "ribbon": {
+          "animations": 1,
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "diagnostics": [],
+          "format": "poima.model.v4",
+          "images": 0,
+          "nodes": 3,
+          "primitives": 1,
+          "roots": [
+            0,
+            2
+          ],
+          "skins": 1,
+          "triangles": 4,
+          "vertices": 6
+        }
+      },
+      "exact_baseline_match": true,
+      "package_hashes": {
+        "sphere": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+        "ribbon": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be"
+      },
+      "log_sha256": "5856d47c0e7fed71fbb1f2769cd4851f26835eadb4a985234356bb5b0fdf37b1"
+    },
+    "windows": {
+      "exit_code": 0,
+      "imports": {
+        "sphere": {
+          "animations": 0,
+          "asset": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+          "bytes": 85992,
+          "diagnostics": [],
+          "format": "poima.static-model.v3",
+          "images": 0,
+          "nodes": 2,
+          "primitives": 1,
+          "roots": [
+            0
+          ],
+          "skins": 0,
+          "triangles": 2208,
+          "vertices": 1225
+        },
+        "ribbon": {
+          "animations": 1,
+          "asset": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be",
+          "bytes": 1796,
+          "diagnostics": [],
+          "format": "poima.model.v4",
+          "images": 0,
+          "nodes": 3,
+          "primitives": 1,
+          "roots": [
+            0,
+            2
+          ],
+          "skins": 1,
+          "triangles": 4,
+          "vertices": 6
+        }
+      },
+      "exact_baseline_match": true,
+      "package_hashes": {
+        "sphere": "9d523785bc99760a2c53bc663d6fa36ddf7ed947eeb0974579a652d4ad4fca8e",
+        "ribbon": "d469a16d99f5a60090cd52ccd015b5905eaacf55b6778862af054d7dfec9e4be"
+      },
+      "log_sha256": "5856d47c0e7fed71fbb1f2769cd4851f26835eadb4a985234356bb5b0fdf37b1"
+    }
+  },
+  "windows_vulkan": {
+    "binary_sha256": "fb97348c2ad38bb958e8913926d5660de15fb37492378156c97bf0d1d9154c28",
+    "source_sha256": "350bde4f2005d0bd2051e35ea034a787880ed42ce9863132feb6ae69c163ef4a",
+    "fixture_sha256": "bc7a65b18073de62b9c49e74676cd7ad16138b54c7fe5e67779103ddc104f205",
+    "gpu_index": 0,
+    "samples": 4,
+    "comparisons": {
+      "gpu_vs_cpu": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "gpu_vs_independent_triangle": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "culling": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "visible_motion": {
+        "maximum_channel_error": 120,
+        "pixels_over_2": 22475,
+        "changed_pixels": 22475,
+        "mean_max_channel_error": 8.676204427083333
+      },
+      "runtime_vs_independent_triangle": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      },
+      "runtime_vs_asset_preview": {
+        "maximum_channel_error": 0,
+        "pixels_over_2": 0,
+        "changed_pixels": 0,
+        "mean_max_channel_error": 0.0
+      }
+    },
+    "source_independent": true,
+    "authored_state_preserved_by_capture_and_runtime": true,
+    "runtime_ticks": 30,
+    "cpu_reference": true,
+    "independent_static_geometry": true,
+    "owners": [
+      {
+        "exit_code": 0
+      },
+      {
+        "exit_code": 0
+      }
+    ],
+    "raw_report_sha256": "234927ead9b93d611e6535aedb544f04053d294d37706b31a4462129948a570b",
+    "captures": {
+      "rest-gpu": {
+        "build_version": "0.0.68",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "width": 640,
+        "height": 480,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "image_sha256": "1acba774e612c878887d9d967201558e9e8757f5481c1d851db0b866db9a48c8"
+      },
+      "posed-gpu": {
+        "build_version": "0.0.68",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "width": 640,
+        "height": 480,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "image_sha256": "cb369ba1d812c539f54bb19ff9edfabee52aa35e83e1a19e9c9332b967538105"
+      },
+      "posed-cpu": {
+        "build_version": "0.0.68",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "width": 640,
+        "height": 480,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "image_sha256": "cb369ba1d812c539f54bb19ff9edfabee52aa35e83e1a19e9c9332b967538105"
+      },
+      "posed-unculled": {
+        "build_version": "0.0.68",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "width": 640,
+        "height": 480,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "image_sha256": "cb369ba1d812c539f54bb19ff9edfabee52aa35e83e1a19e9c9332b967538105"
+      },
+      "analytic": {
+        "build_version": "0.0.68",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "width": 640,
+        "height": 480,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "image_sha256": "cb369ba1d812c539f54bb19ff9edfabee52aa35e83e1a19e9c9332b967538105"
+      },
+      "runtime-composed": {
+        "build_version": "0.0.68",
+        "gpu": "AMD Radeon(TM) Graphics",
+        "hardware": true,
+        "width": 640,
+        "height": 480,
+        "nvrhi_errors": 0,
+        "capture_written": true,
+        "image_sha256": "cb369ba1d812c539f54bb19ff9edfabee52aa35e83e1a19e9c9332b967538105"
+      }
+    }
+  },
+  "limits": [
+    "Original analytic fixtures do not establish compatibility with every DCC exporter or character source.",
+    "Exact normalized hierarchy/rest-frame matching only; no skeleton-root remapping or retargeting.",
+    "Windows POSIX invalid-byte filename case is skipped; native UTF-8 cases and staging recovery run on both hosts.",
+    "No C# FBX-character gameplay, editor, physical input, Linux graphics or performance qualification.",
+    "Input/data budgets do not guarantee total process memory."
+  ],
+  "fixture_counts": {
+    "ascii": 36,
+    "binary": 36
+  },
+  "fixture_manifest_sha256": "64fc3888ef5411cbd0436fba341edbc51c8edcd2de6f3ebf27be0ec6f4da9606",
+  "regression_summary_sha256": "18665f083759c248027cf357864d47c4bfdc080f34d319c8abbcb6cdad042481"
+}

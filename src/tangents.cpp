@@ -18,7 +18,8 @@ struct TangentContext { const MeshAsset& mesh;std::vector<std::array<float,4>> c
 TangentContext& data(const SMikkTSpaceContext* c) { return *static_cast<TangentContext*>(c->m_pUserData); }
 const MeshVertex& vertex(const SMikkTSpaceContext* c,int face,int corner) { const auto& m=data(c).mesh;return m.vertices[m.indices[std::size_t(face)*3+std::size_t(corner)]]; }
 }
-void generate_tangents(MeshAsset& mesh) {
+void generate_tangents(MeshAsset& mesh) { (void)generate_tangents(mesh,false); }
+std::size_t generate_tangents(MeshAsset& mesh,bool allow_unmapped_collapsed_uv_fallback) {
     if(!mesh.has_uv || mesh.indices.empty() || mesh.indices.size()%3 || mesh.indices.size()>3000000)throw std::runtime_error("Tangent generation requires bounded triangle geometry and UV0.");
     for(auto index:mesh.indices)if(index>=mesh.vertices.size())throw std::runtime_error("Tangent input index is out of range.");
     TangentContext state{mesh,std::vector<std::array<float,4>>(mesh.indices.size())};
@@ -37,8 +38,38 @@ void generate_tangents(MeshAsset& mesh) {
         if(mesh.influences.size()!=mesh.vertices.size())throw std::runtime_error("Skin influence count mismatch.");
         influences.reserve(mesh.indices.size());
     }
+    std::size_t fallback_count=0;
     for(std::size_t corner=0;corner<mesh.indices.size();++corner) {
         auto v=mesh.vertices[mesh.indices[corner]];v.tangent=state.corners[corner];
+        if(!valid_tangent(v) && allow_unmapped_collapsed_uv_fallback && !mesh.textures[4].image) {
+            const auto first=corner-corner%3;
+            const auto& a=mesh.vertices[mesh.indices[first]];
+            const auto& b=mesh.vertices[mesh.indices[first+1]];
+            const auto& c=mesh.vertices[mesh.indices[first+2]];
+            const double determinant=(double(b.uv[0])-a.uv[0])*(double(c.uv[1])-a.uv[1])-
+                                     (double(b.uv[1])-a.uv[1])*(double(c.uv[0])-a.uv[0]);
+            std::array<double,3> ab{},ac{},cross{};double normal_norm=0;
+            bool finite=true;
+            for(std::size_t k=0;k<3;++k) {
+                finite=finite && std::isfinite(a.position[k]) && std::isfinite(b.position[k]) &&
+                       std::isfinite(c.position[k]) && std::isfinite(v.normal[k]);
+                ab[k]=double(b.position[k])-a.position[k];ac[k]=double(c.position[k])-a.position[k];
+                normal_norm+=double(v.normal[k])*v.normal[k];
+            }
+            for(std::size_t k=0;k<3;++k)cross[k]=ab[(k+1)%3]*ac[(k+2)%3]-ab[(k+2)%3]*ac[(k+1)%3];
+            const double area_squared=cross[0]*cross[0]+cross[1]*cross[1]+cross[2]*cross[2];
+            if(finite && determinant==0 && area_squared>0 && std::isfinite(area_squared) && std::abs(normal_norm-1)<1e-4) {
+                // Cross with the least-aligned cardinal axis for a stable frame.
+                std::size_t axis=0;
+                for(std::size_t k=1;k<3;++k)if(std::abs(v.normal[k])<std::abs(v.normal[axis]))axis=k;
+                std::array<double,3> tangent{};
+                tangent[(axis+1)%3]=v.normal[(axis+2)%3];
+                tangent[(axis+2)%3]=-v.normal[(axis+1)%3];
+                const double length=std::sqrt(tangent[0]*tangent[0]+tangent[1]*tangent[1]+tangent[2]*tangent[2]);
+                for(std::size_t k=0;k<3;++k)v.tangent[k]=static_cast<float>(tangent[k]/length);
+                v.tangent[3]=1;++fallback_count;
+            }
+        }
         if(!valid_tangent(v))throw std::runtime_error("Generated tangent is invalid; check degenerate geometry/UVs.");
         // Reindex complete vertex attributes, including tangent handedness: a
         // mirrored UV seam must never average/overwrite the original index.
@@ -57,5 +88,6 @@ void generate_tangents(MeshAsset& mesh) {
         }
     }
     mesh.vertices=std::move(vertices);mesh.indices=std::move(indices);mesh.influences=std::move(influences);
+    return fallback_count;
 }
 }

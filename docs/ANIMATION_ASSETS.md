@@ -1,6 +1,6 @@
 # Animation asset reference pipeline
 
-Poima 0.0.17 introduced glTF skin/curve import, immutable packages, numerical inspection and isolated pose capture. [Compute skinning](GPU_SKINNING.md) arrived in 0.0.18; [editable runtime rigs and native single-clip playback](RUNTIME_ANIMATION.md) are available in 0.0.21. Blending, root motion, animation events, IK and retargeting remain unfinished. `capabilities.features.animation` remains false; `animation_asset_sampling` is true, `animation_asset_capture` follows renderer availability, and `runtime_clip_playback` follows simulation availability.
+The animation asset pipeline provides glTF skin/curve import, immutable packages, numerical inspection and isolated pose capture. [Compute skinning](GPU_SKINNING.md) and [editable runtime rigs](RUNTIME_ANIMATION.md) support fixed-tick playback, crossfades, inertial transitions and masked layers. Root motion, animation events, IK and retargeting remain unfinished. [FBX import and separate clip composition](FBX_IMPORT.md) feed the same cooked model and runtime paths, with explicit import limits.
 
 Run the checked-in original ribbon example from the repository root:
 
@@ -12,11 +12,11 @@ It imports [the fixture](../examples/assets/animated-ribbon.glb), inspects its r
 
 ## Import and inspect
 
-Use `asset.import` as described in [Assets](ASSETS.md). Animated or weighted models use `poima.model.v4`; ordinary static output remains `poima.static-model.v3`. Import does not alter the world. Original key times and values survive cooking without fixed-rate resampling or compression. Sources can be removed after import.
+Use `asset.import` as described in [Assets](ASSETS.md). Animated or weighted models use `poima.model.v4`; ordinary static output remains `poima.static-model.v3`. Import does not alter the world. glTF key times and values survive cooking without fixed-rate resampling or compression; FBX transform takes use the separately documented baked profile. Sources can be removed after import.
 
 `asset.inspect` accepts the additional `skins` and `animations` sections. Skin summaries expose index, name, skeleton node and joint count. Clip summaries expose index, name, duration and channel count. Node records now include `skin` (-1 when unbound); primitive records include `skinned`. All sections retain pagination with `offset` and `limit` (1–64).
 
-The following read-only commands accept the immutable model hash as `asset` and return `items`, `total` and `next_offset` (null at the end). Numeric indices are zero-based; names need not be unique. `world.describe` schema revision 19 advertises their parameters.
+The following read-only commands accept the immutable model hash as `asset` and return `items`, `total` and `next_offset` (null at the end). Numeric indices are zero-based; names need not be unique. `world.describe` advertises their parameters for the current build.
 
 | Command | Required parameters beyond `asset` | Optional parameters | Observation |
 | --- | --- | --- | --- |

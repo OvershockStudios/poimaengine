@@ -47,6 +47,11 @@ Recipes must use operations the engine actually supplies. A future capability
 matrix is planning documentation, not a runnable playbook. Long tasks compose
 small guides rather than duplicating a complete manual in every prompt.
 
+The runnable [guarded scene edit](../examples/guarded-authoring) is an initial
+playbook: discovery, preview, atomic changes, conflict reconciliation, receipt
+replay and fresh-owner persistence. [Collection Room](../examples/collection-game)
+provides a longer compiled-game example with input and save continuation.
+
 ## Codex and Claude skills
 
 Skills provide compact entry points to tested playbooks and live capability

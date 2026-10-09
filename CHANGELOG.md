@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.68
+
+- Import bounded ASCII/binary FBX models and transform takes through pinned ufbx, with metric/axis normalization, static or linear-skinned geometry, opaque materials and contained PNG/JPEG textures. [Import profile](docs/FBX_IMPORT.md).
+- Compose selected, renamed clips from separate sources using exact normalized hierarchy/rest-frame matching. Reject mismatches and unsupported deformation instead of silently retargeting or dropping influences.
+- Preserve existing glTF cooked identities; protect model staging files from truncation and return bounded UTF-8 filesystem diagnostics with same-owner recovery.
+- Qualify original fixtures and asset/animation/authoring regressions on Windows/Linux, plus source-independent Windows Vulkan skinning and 30-tick runtime reference captures. [Evidence](docs/evidence/m2-fbx-import.json).
+- Define the manual, API reference, tested playbook and agent-skill documentation standard; add a runnable guarded-authoring playbook with conflict reconciliation, retained receipts and fresh-owner persistence.
+
 ## 0.0.67
 
 - Separate world API schema construction from the stateful world service so source edits compile the relevant unit independently. Preserve existing compiler optimization, debug information and warnings.

@@ -1386,6 +1386,14 @@ public:
             out["total"]=total;out["next_offset"]=offset+limit<total ? Json(offset+limit) : Json(nullptr);return out;
         }catch(const Error&) { throw; }catch(const std::exception& e) { throw Error(-32050,e.what()); }
     }
+    static std::string asset_diagnostic(const char* message) {
+        // Filesystem diagnostics can include arbitrary POSIX filename bytes.
+        // Bound both input and repaired output without splitting UTF-8.
+        auto text=Json::parse(Json(std::string(message).substr(0,1024)).dump(-1,' ',false,Json::error_handler_t::replace)).get<std::string>();
+        auto length=std::min<std::size_t>(text.size(),1024);
+        while(length<text.size() && length>0 && (static_cast<unsigned char>(text[length])&0xc0u)==0x80u)--length;
+        text.resize(length);return text;
+    }
     Json asset_dispatch(const std::string& method,const Json& params) const {
         if(method=="asset.animation.capture")return capture(params,false,true);
         if(method.starts_with("asset.animation."))return animation_dispatch(method,params);
@@ -1394,10 +1402,34 @@ public:
         try {
             LoadedModel loaded;
             if(method=="asset.import") {
-                fields(params,{"source"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
+                fields(params,{"source","animations","fbx_normal_map"},{"source"});require(params.at("source").is_string(),"Source path must be a string.");
                 const auto text=params.at("source").get<std::string>();require(!text.empty() && text.find('\0')==std::string::npos,"Invalid source path.");
                 auto source=fs::path(std::u8string(text.begin(),text.end()));if(source.is_relative())source=path_.parent_path()/source;
-                loaded=store_model_asset(asset_directory(),source);
+                std::optional<FbxNormalConvention> normal_map;
+                if(params.contains("fbx_normal_map")) {
+                    require(params.at("fbx_normal_map").is_string(),"FBX normal map convention must be opengl or directx.");
+                    const auto convention=params.at("fbx_normal_map").get<std::string>();require(convention=="opengl" || convention=="directx","Invalid FBX normal map convention.");
+                    normal_map=convention=="opengl" ? FbxNormalConvention::opengl : FbxNormalConvention::directx;
+                }
+                std::vector<ModelAnimationSource> animations;
+                if(params.contains("animations")) {
+                    const auto& files=params.at("animations");require(files.is_array() && !files.empty() && files.size()<=32,"Animations must contain 1..32 source paths.");
+                    for(const auto& file:files) {
+                        ModelAnimationSource selected;std::string value;
+                        if(file.is_object()) {
+                            fields(file,{"source","clip","name"},{"source"});require(file.at("source").is_string(),"Animation source path must be a string.");value=file.at("source").get<std::string>();
+                            if(file.contains("clip")) {const auto index=revision(file.at("clip"));require(index<256,"Animation take index must be 0..255.");selected.clip=static_cast<std::uint32_t>(index);}
+                            if(file.contains("name")) {
+                                require(file.at("name").is_string(),"Animation take name must be a string.");selected.name=file.at("name").get<std::string>();
+                                require(!selected.name.empty() && selected.name.size()<=256 && selected.name.find('\0')==std::string::npos,"Animation take name must be 1..256 bytes without NUL.");
+                            }
+                        }else {require(file.is_string(),"Animation source must be a path or a selection object.");value=file.get<std::string>();}
+                        require(!value.empty() && value.find('\0')==std::string::npos,"Invalid animation source path.");
+                        auto path=fs::path(std::u8string(value.begin(),value.end()));if(path.is_relative())path=path_.parent_path()/path;
+                        selected.source=std::move(path);animations.push_back(std::move(selected));
+                    }
+                }
+                loaded=store_model_asset(asset_directory(),source,animations,normal_map);
             } else if(method=="asset.inspect") {
                 fields(params,{"asset","section","offset","limit"},{"asset"});
                 require(params.at("asset").is_string() && valid_asset_id(params.at("asset").get<std::string>()),"Invalid asset ID.");
@@ -1436,7 +1468,7 @@ public:
             }
             return result;
         } catch(const Error&) { throw; }
-        catch(const std::exception& error) { throw Error(-32050,error.what()); }
+        catch(const std::exception& error) { throw Error(-32050,asset_diagnostic(error.what())); }
     }
     void instantiate_asset(Json& staged,const Json& op,std::set<std::string>& changed) const {
         fields(op,{"op","id","asset","name","parent"},{"op","id","asset","name"});

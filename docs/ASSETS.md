@@ -1,6 +1,6 @@
 # Static glTF assets and textured materials
 
-Poima 0.0.9 supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and an initial textured metallic/roughness rendering path. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. This implements another part of M2; it does not establish full glTF support or the planned advanced renderer.
+Poima supports native glTF/GLB import, immutable cooked model packages, editable hierarchy instances and textured metallic/roughness rendering. Import and inspection work in headless builds. Windows Vulkan capture/player builds render the imported indexed geometry. [FBX models and separate animation clips](FBX_IMPORT.md) use the same inspection, instantiation and cooked-content workflow, with a separately documented import profile.
 
 ## Import, inspect and instantiate
 
@@ -42,7 +42,7 @@ Generated IDs are the first 32 lowercase hex digits of SHA-256 over UTF-8 `poima
 
 Only the selected glTF scene is instantiated. If there is no default scene, all parentless nodes are used. The importer currently validates/cooks all meshes in the source file, including unused ones. Import does not synthesize collision bodies; add explicit collider components where appropriate. [Static mesh collision](MESH_COLLISION.md) uses an explicit unweighted primitive reference and preserves geometric openings. Automatic collider generation remains future work.
 
-Animated models have a [reference import, inspection and pose-capture path](ANIMATION_ASSETS.md) and [explicit rig instantiation with fixed-tick playback](RUNTIME_ANIMATION.md). Blending, retargeting and broader character workflows remain unfinished.
+Animated models have a [reference import, inspection and pose-capture path](ANIMATION_ASSETS.md) and [explicit rig instantiation with fixed-tick playback](RUNTIME_ANIMATION.md), including crossfades, inertial transitions and masked layers. Retargeting, IK, root motion and broader character workflows remain unfinished.
 
 ## Components
 
@@ -53,7 +53,7 @@ Animated models have a [reference import, inspection and pose-capture path](ANIM
 
 An entity cannot combine `StaticMesh` and the older `MeshRenderer`. `PbrMaterial` can override an imported primitive or shade the built-in box. Without an explicit override, imported geometry uses its cooked material. A legacy box without PbrMaterial retains the earlier Lambert/ambient preview appearance.
 
-`world.describe` supplies schema revision 16. Import/asset-file errors use `-32050`; ordinary malformed component/transaction requests retain their existing codes. A reference can be authored before its package is available, but observation/runtime creation validates and resolves the package and primitive. Runtime creation freezes geometry and material values with the authored revision. Later authored edits do not alter that running state.
+`world.describe` supplies the current build's command and component schemas. Import/asset-file errors use `-32050`; ordinary malformed component/transaction requests retain their existing codes. A reference can be authored before its package is available, but observation/runtime creation validates and resolves the package and primitive. Runtime creation freezes geometry and material values with the authored revision. Later authored edits do not alter that running state.
 
 ## Initial supported profile
 

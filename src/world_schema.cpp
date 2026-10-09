@@ -126,7 +126,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 59}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 60}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -316,7 +316,12 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Procedural brick/plaster recipes bake compiled CPU work without world changes or worker file I/O. One CPU worker and eight retained jobs per owner; explicit polling publishes immutable image packages and a recipe descriptor. Jobs are authoring-only; runtime closure contains referenced baked images. These evolving methods are outside authoring-core v1.");
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
-    methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}}}, {"source"});
+    const auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},
+        {"clip",{{"type","integer"},{"minimum",0},{"maximum",255}}},{"name",{{"type","string"},{"minLength",1},{"maxLength",256}}}},{"source"});
+    methods["asset.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},
+        {"fbx_normal_map",{{"enum",{"opengl","directx"}}}},
+        {"animations",{{"type","array"},{"minItems",1},{"maxItems",32},{"items",{{"anyOf",Json::array({Json{{"type","string"},{"minLength",1}},animation_source})}}}}}}, {"source"});
+    methods["asset.import"]["description"]="Cook glTF/GLB/FBX into an immutable model. Animation paths append all named takes; objects select a take by index and optionally rename it. Exact hierarchy/rest-frame matching, no retargeting. FBX normal maps default to OpenGL; select DirectX explicitly. Imports do not mutate the authored world.";
     methods["asset.inspect"]=object_schema({{"asset",asset_id},{"section",{{"enum",{"summary","nodes","primitives","images","skins","animations"}}}},{"offset",rev},{"limit",{{"type","integer"},{"minimum",1},{"maximum",64}}}}, {"asset"});
     const Json page_limit={{"type","integer"},{"minimum",1},{"maximum",64}};
     const Json model_index={{"type","integer"},{"minimum",0},{"maximum",9999}};

@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-08 for **0.0.67**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.68**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.68 adds bounded [FBX model import](FBX_IMPORT.md), including static
+and linear-skinned geometry, metric/axis normalization and transform takes.
+Separate animation sources can select and rename clips through exact normalized
+hierarchy/rest-frame matching. This is not retargeting; mismatched ancestors or
+bone bases reject. The profile rejects unsupported deformation/materials and
+invalid attribute indices, reports narrowly permitted collapsed-UV tangent
+repairs, and preserves the default glTF cooked identities.
+
+Windows and Linux each pass 36 original fixtures in both ASCII and binary
+encodings, 27 asset/animation/authoring-core regression tests, and 1,067 scoped
+schema responses. FBX protocol checks pass seven Linux tests over 194 RPCs and
+six Windows tests over 183 RPCs; the POSIX invalid-byte filename test is skipped
+on Windows. All 17 recorded FBX owners exit cleanly. Staging recovery preserves
+pre-existing files/links, and filesystem errors remain bounded UTF-8 diagnostics.
+Six Windows Vulkan captures on the AMD integrated GPU match CPU and independent
+geometry references, including 30 runtime ticks after source removal and a fresh
+owner. General exporter compatibility, retargeting, compiled FBX-character
+gameplay and game-scale import/render performance remain unqualified.
+[Recorded evidence](evidence/m2-fbx-import.json).
 
 Version 0.0.67 separates base API schemas from the world owner. Both runtime-enabled
 Linux and renderer/UI-enabled Windows builds preserve all 1,067 scoped discovery
@@ -452,7 +472,7 @@ The development [standalone template catalog](RUNTIME.md#standalone-template-cat
 
 [Keyboard/mouse profiles](INPUT_PROFILES.md), [gamepad profiles](GAMEPADS.md), configurable bindings, device discovery and hosted editor assignment are implemented. Physical gamepad qualification remains outstanding. General settings remain unfinished. The experimental [save-slot service](RUNTIME.md#durable-save-slots) adds durable generations, explicit recovery and guarded runtime replacement to the native snapshot foundation. The [editor Save/Load window](EDITOR_SAVES.md) now uses that service. [Typed gameplay requests](GAMEPLAY_SAVES.md) use a post-batch native owner. General migrations and asynchronous save scheduling remain unfinished. Authored document recovery and internal runtime rollback are separate contracts.
 
-Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Direct FBX import and Mixamo character workflows are not qualified; the supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
+Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Bounded [FBX import and exact-skeleton clip composition](FBX_IMPORT.md) are supported; general Mixamo/exporter compatibility and retargeting remain unqualified. Supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
 
 The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. Worker-thread tracing, allocation/GC and process/VRAM tracking, GPU clock correlation and a sustained benchmark workflow remain unfinished. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
 
@@ -460,7 +480,7 @@ Planned editor workflow improvements include configurable hierarchy/folder styli
 
 Runtime collision supports boxes, capsule controllers and explicit [static triangle meshes](MESH_COLLISION.md), preserving openings present in source geometry. Moving/deforming mesh colliders, distinct movement versus weapon-query shapes, finite-radius projectile sweeps and texture-cutout collision masks remain unfinished. Contacts use triangle front faces; rays hit both sides. Numeric/resource bounds and synthetic fixture results do not establish exact arithmetic or game-scale collision performance.
 
-Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. Compiled C# layer controls, state machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
+Animation supports bounded two-pose crossfades, opt-in native inertial transitions and ordered masked override/additive layers, including opt-in compiled C# controls. Legacy fade interruption freezes the current pose. Inertial mode adds decaying corrections that preserve estimated distinct-tick output motion; it does not guarantee smooth clip discontinuities or foot contacts. State machines and transition-history scrubbing, IK, root motion and retargeting remain unfinished. Internal batch rollback is not retained simulation history or a time-travel debugger.
 
 ## Implemented
 
@@ -522,7 +542,7 @@ Animation supports bounded two-pose crossfades, opt-in native inertial transitio
 
 - Native keyboard/mouse and gamepad profiles with alternate bindings, sensitivity/inversion, radial stick deadzones/response, trigger hysteresis, atomic profile edits, persistent retry receipts and isolated event evaluation. SDL gamepad discovery, single-player device assignment and attachment/focus/disconnect handling feed the same evaluator as headless traces; semantic replay remains independent of bindings. General action maps, in-game rebinding UI, haptics and general settings menus remain unfinished. [Input profile contract](INPUT_PROFILES.md), [gamepad contract](GAMEPADS.md).
 
-- glTF skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Native masked layers add independent clocks, transitions and persistent weights. Compiled C# layer controls, retargeting, IK and root motion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md).
+- glTF and bounded FBX skin/curve packages, paginated key/joint/pose inspection and CPU reference deformation with isolated Vulkan pose capture. A [compute skinning pass](GPU_SKINNING.md) feeds the shared material and shadow renderer. Editable rig/node bindings connect compiled curve sampling to fixed-tick runtime playback, independent instance clocks, atomic commands, bounded crossfades, pose/physics rollback and immutable live palettes. Native masked layers add independent clocks, transitions and persistent weights, with opt-in compiled C# layer controls. Retargeting, IK and root motion remain unfinished. [Runtime animation contract](RUNTIME_ANIMATION.md), [animation asset contract](ANIMATION_ASSETS.md), [FBX profile](FBX_IMPORT.md).
 
 - Native mono WAV import and content-addressed audio packages, editable acoustic materials/emitters, and optional Steam Audio direct-path/HRTF capture from authored or live poses. Linux/Windows tests measure actual PCM, dynamic-door obstruction, delayed arrival, directional cues and mixing; the C# use action changes the observed acoustic path. Native logical voices, rollback-safe C# play/stop, persistent direct/HRTF streams, temporal replay recording and optional SDL3 player output and a separate bounded [editor DSP worker](EDITOR_AUDIO.md) are now implemented; reflections, production scheduling and the full environmental system remain unfinished. [Event/output contract](AUDIO_EVENTS.md). [Native audio contract and evidence](AUDIO.md).
 

@@ -228,7 +228,7 @@ cmake --install build/dev --prefix build/install
 
 Substitute `build/windows-render` and a separate install prefix for the Windows executable; this includes NVRHI, SDL and compiler runtime notices. The build defaults do not install into system directories or modify agent configuration. Fetched sources remain under each build's `_deps`; after initial downloads, ordinary rebuilds do not need network access. Workspace tools remain under `.cache/toolchains`.
 
-Static glTF import is compiled into all current builds. No additional download is required; cgltf is vendored with its MIT notice. Vulkan builds add indexed geometry and PBR material factors. [Asset workflow and qualification](ASSETS.md).
+Static glTF and bounded FBX import are compiled into all current builds. No additional download is required; cgltf and ufbx are vendored with their MIT notices. Vulkan builds add indexed geometry and PBR material factors. See [asset workflow and qualification](ASSETS.md) and the [FBX profile and separate animation clips](FBX_IMPORT.md).
 
 ## Textured model example and verification
 
