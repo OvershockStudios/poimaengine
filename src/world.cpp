@@ -26,6 +26,7 @@
 #include "mutation_discovery.hpp"
 #include "asset_references.hpp"
 #include "material_service.hpp"
+#include "poima/jobs.hpp"
 #include "navigation_geometry.hpp"
 #include <nlohmann/json.hpp>
 #include <algorithm>
@@ -1012,7 +1013,28 @@ public:
         require(result.dump().size()<=asset_references::max_result_bytes,"Asset-reference result exceeds 1 MiB.");return result;
     }
     Json dispatch(const std::string& method, const Json& params) {
+        if(auto executor=jobs::peek_owner_executor())profiling::collect_jobs(*executor);
         require(!read_only_ || std::find(authoring_methods.begin(),authoring_methods.end(),method)==authoring_methods.end(),"This packaged world is read-only; authoring and input mutations are unavailable.",-32081);
+        if(method=="jobs.status") {
+            fields(params,{},{});
+            Json result={{"scope","owner_thread"},{"initialized",false},{"policy",{{"default_workers",2},
+                {"environment","POIMA_JOB_WORKERS"},{"worker_range",{0,8}},{"configuration","Set before the first runtime or material job on this owner; zero selects serial reference execution."}}}};
+            if(auto executor=jobs::peek_owner_executor()) {
+                const auto state=executor->status();const auto config=executor->config();
+                auto lane=[](const jobs::LaneStatus& s,const jobs::Limits& limits) {
+                    return Json{{"groups",s.groups},{"tasks",s.tasks},{"dependency_links",s.dependency_links},
+                        {"high_water_groups",s.high_water_groups},{"high_water_tasks",s.high_water_tasks},
+                        {"limits",{{"groups",limits.groups},{"tasks",limits.tasks},{"dependency_links",limits.dependency_links}}}};
+                };
+                result["initialized"]=true;result["workers"]=state.workers;
+                result["frame_reserved_workers"]=state.frame_reserved_workers;result["serial"]=state.serial;
+                result["stopping"]=state.stopping;result["executing"]=state.executing;
+                result["frame"]=lane(state.frame,config.frame);result["background"]=lane(state.background,config.background);
+                result["trace_capacity_per_thread"]=config.trace_capacity_per_thread;
+                result["trace_dropped"]=state.trace_dropped;
+            }
+            return result;
+        }
         // This authored metadata read deliberately bypasses cache pruning and
         // every package/snapshot resolver. Other dispatch behavior is unchanged.
         if(method=="world.asset.references")return asset_reference_dispatch(params);
@@ -1034,7 +1056,7 @@ public:
         if(method.starts_with("save."))return save_dispatch(method,params);
         if(method.starts_with("input."))return input_dispatch(method,params);
         if (method == "world.describe") {
-            (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only C# compilation via explicit executable; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local compile receipts; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner thread, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only C# compilation via explicit executable; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local compile receipts; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner and native job worker threads, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             result["authoring_contract"]=authoring_contract_identity(read_only_);
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;

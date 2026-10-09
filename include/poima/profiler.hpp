@@ -7,17 +7,20 @@
 #include <span>
 #include <string_view>
 
+namespace poima::jobs { class Executor; struct Attribution; }
 namespace poima::profiling {
 enum class Source { native,request,player,editor_poll,editor_scene,editor_game };
 enum class Kind { cpu,counter,gpu };
 struct Event {
     std::uint64_t id=0,parent=0,start_ns=0,duration_ns=0,value=0;
+    std::uint64_t thread=0,group=0,queued_ns=0;
+    std::uint32_t task=UINT32_MAX;
     std::int64_t tick=-1;
     Source source=Source::native;
     Kind kind=Kind::cpu;
     std::array<char,64> name{};
     std::array<char,33> session{};
-    bool complete=false,failed=false,name_truncated=false;
+    bool complete=false,failed=false,name_truncated=false,background=false;
 };
 struct Status {
     bool recording=false,full=false;
@@ -55,6 +58,8 @@ private:
     friend class Scope;
     friend void counter(std::string_view,std::uint64_t,Kind) noexcept;
     friend bool active() noexcept;
+    friend jobs::Attribution job_attribution() noexcept;
+    friend void collect_jobs(jobs::Executor&) noexcept;
     friend DeferredContext capture_deferred() noexcept;
     friend bool deferred_counter(const DeferredContext&,std::string_view,std::uint64_t,Kind) noexcept;
     Event* reserve(std::string_view,Kind,std::int64_t) noexcept;
@@ -123,5 +128,12 @@ void counter(std::string_view name,std::uint64_t value,Kind kind=Kind::counter) 
 // GPU values remain durations, not intervals beginning at the CPU timestamp.
 DeferredContext capture_deferred() noexcept;
 bool deferred_counter(const DeferredContext&,std::string_view name,std::uint64_t value,Kind kind=Kind::counter) noexcept;
+// Capture attribution on the recording owner before submitting native work.
+// Workers receive only this detached value and never access a Recorder.
+// Owner-side collection routes actual intervals to their original, still-active
+// capture. Stop/restart/destruction discard late traces. Collection failure does
+// not fail gameplay; scheduler status retains dropped-ring diagnostics.
+jobs::Attribution job_attribution() noexcept;
+void collect_jobs(jobs::Executor&) noexcept;
 bool active() noexcept;
 }

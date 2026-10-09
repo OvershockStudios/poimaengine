@@ -126,7 +126,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 60}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 61}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -134,6 +134,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
                 object_schema({{"view",{{"const","mutation"}}},{"operation",{{"type","string"},{"minLength",1},{"maxLength",128}}},{"type",{{"type","string"},{"minLength",1},{"maxLength",128}}}},{"view","operation"})
             })}}}, {"world.inspect", object_schema(Json::object())},
             {"world.dependencies",object_schema(Json::object())},
+            {"jobs.status",object_schema(Json::object())},
             {"world.asset.references",references_schema},
             {"session.close", object_schema(Json::object())},
             {"entity.get", object_schema({{"id", id}, {"revision", rev}, {"component", component_type}}, {"id"})},
@@ -313,7 +314,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     result["invariants"].push_back("Sound play/stop commands join runtime.step batch rollback and apply on the first tick; C# sound calls share that transaction. Voices use session-local monotonic handles, at most 64 emitting and 256 retained records. runtime.audio.replay advances and records committed ticks (max 3600 total), retaining partial progress and retry receipts on failure. DSP uses persistent filters and does not alter logical voice state.");
     result["invariants"].push_back("Audio observation is synchronous and frozen: fresh geometry and poses on every query, no simulation advance, source cursor or device playback. AcousticMaterial requires box/mesh geometry. At most 64 enabled emitters, 131072 acoustic triangles, 64 MiB clip packages; mono 48 kHz PCM16/float32 WAV import, up to 60 seconds per clip. Captures are 1..480000 stereo float frames with direct paths and HRTF only.");
     methods.update(materials::Service::schemas());
-    result["invariants"].push_back("Procedural brick/plaster recipes bake compiled CPU work without world changes or worker file I/O. One CPU worker and eight retained jobs per owner; explicit polling publishes immutable image packages and a recipe descriptor. Jobs are authoring-only; runtime closure contains referenced baked images. These evolving methods are outside authoring-core v1.");
+    result["invariants"].push_back("Native animation tasks and material baking share one lazy executor per creating owner thread. POIMA_JOB_WORKERS selects 0..8 workers (default 2) before first use; zero is the serial reference. Frame/background admission is separate, and reserved frame workers do not execute background work. Registry, physics, C# callbacks and publication remain owner-only. jobs.status inspects this shared owner pool without creating it; its counts may include other sessions on the same owner.");
+    result["invariants"].push_back("Procedural brick/plaster recipes bake compiled CPU work without world changes or worker file I/O. One active material bake and eight retained records per service; explicit polling publishes immutable image packages and a recipe descriptor. Cancellation before publication vetoes even completed CPU results. Jobs are authoring-only; runtime closure contains referenced baked images. These evolving methods are outside authoring-core v1.");
     methods["asset.image.import"]=object_schema({{"source",{{"type","string"},{"minLength",1}}},{"color_space",{{"enum",{"srgb","linear"}}}}}, {"source","color_space"});
     methods["asset.image.inspect"]=object_schema({{"asset",asset_id}}, {"asset"});
     const auto animation_source=object_schema({{"source",{{"type","string"},{"minLength",1}}},

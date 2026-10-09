@@ -2,11 +2,11 @@
 #include "material_service.hpp"
 #include "poima/material_recipe.hpp"
 #include "poima/build_metadata.hpp"
+#include "poima/profiler.hpp"
 #include "asset_store.hpp"
-#include <future>
 #include <map>
-#include <chrono>
 #include <set>
+#include <optional>
 
 namespace poima::materials {
 namespace {
@@ -27,10 +27,11 @@ Json canonical_facts(){return {{"height","intermediate only; no displacement or 
     {"determinism","same recipe/evaluator and qualified numerical build profile; cross-platform equality requires qualification"},{"bundle_policy","authoring recipe manifest excluded; referenced baked images follow ordinary runtime closure"},
     {"uv_scale","UV 0..1 must cover tile_width_m by tile_height_m; no automatic UV transform"}};}
 struct Encoded {std::array<std::string,3> images;Json manifest;};
-Encoded encode_bake(const Recipe& recipe,const std::shared_ptr<std::atomic_bool>& cancel){
+Encoded encode_bake(const Recipe& recipe,const std::shared_ptr<std::atomic_bool>& cancel,jobs::Context& context){
+    if(cancel->load() || context.cancel_requested())throw Cancelled();
     auto baked=bake(recipe,cancel.get());Encoded out;Json maps=Json::object(),textures=Json::object();
     const std::array<const char*,3> names{"base_color","normal","metallic_roughness"};
-    for(std::size_t i=0;i<3;++i){if(cancel->load())throw Cancelled();out.images[i]=encode_image(baked.images[i]);(void)decode_image(out.images[i]);const auto hash=content_hash(out.images[i]);
+    for(std::size_t i=0;i<3;++i){if(cancel->load() || context.cancel_requested())throw Cancelled();out.images[i]=encode_image(baked.images[i]);(void)decode_image(out.images[i]);const auto hash=content_hash(out.images[i]);
         maps[names[i]]={{"asset",hash},{"color_space",baked.images[i].srgb?"srgb":"linear"},{"width",recipe.width},{"height",recipe.height},{"mips",baked.images[i].mips.size()},{"bytes",out.images[i].size()}};
         textures[names[i]]={{"asset",hash},{"wrap_s",10497},{"wrap_t",10497},{"min_filter",9987},{"mag_filter",9729}};
     }
@@ -39,7 +40,7 @@ Encoded encode_bake(const Recipe& recipe,const std::shared_ptr<std::atomic_bool>
     out.manifest={{"numerical_profile",{{"compiler",build.compiler},{"compiler_version",build.compiler_version},{"target_os",build.target_os},{"target_arch",build.target_arch}}},{"format","poima.material.v1"},{"recipe_id",recipe_id(recipe)},{"evaluator",evaluator},{"recipe",canonical_recipe(recipe)},{"maps",maps},
         {"PbrTextures",textures},{"PbrMaterial",{{"base_color",{1,1,1}},{"emissive",{0,0,0}},{"metallic",1},{"roughness",1},{"double_sided",false}}},
         {"facts",canonical_facts()}};
-    if(cancel->load())throw Cancelled();
+    if(cancel->load() || context.cancel_requested())throw Cancelled();
     return out;
 }
 Json read_manifest(const fs::path& directory,const std::string& identity){
@@ -91,18 +92,42 @@ Json publish(const fs::path& directory,Encoded&& value){
 Json object(Json properties,Json required){return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}};}
 }
 struct Service::Impl {
-    struct Job {std::string id,state="baking",diagnostic;Recipe recipe;std::shared_ptr<std::atomic_bool> cancel=std::make_shared<std::atomic_bool>(false);std::future<Encoded> future;Json result=nullptr;};
-    std::map<std::string,Job> jobs;
-    ~Impl(){for(auto& [identity,job]:jobs){(void)identity;job.cancel->store(true);}for(auto& [identity,job]:jobs){(void)identity;if(job.future.valid())job.future.wait();}}
+    struct Output {std::optional<Encoded> encoded;bool cancelled=false;};
+    struct Job {
+        std::string id,state="baking",diagnostic;
+        Recipe recipe;
+        std::shared_ptr<std::atomic_bool> cancel=std::make_shared<std::atomic_bool>(false);
+        std::shared_ptr<Output> output=std::make_shared<Output>();
+        jobs::Group group;
+        Json result=nullptr;
+    };
+    std::shared_ptr<jobs::Executor> executor;
+    std::map<std::string,Job> records;
+    explicit Impl(std::shared_ptr<jobs::Executor> supplied):executor(std::move(supplied)){}
+    ~Impl(){
+        for(auto& [identity,job]:records){(void)identity;job.cancel->store(true);if(job.group)job.group.cancel();}
+        for(auto& [identity,job]:records){(void)identity;if(job.group)(void)executor->wait(job.group);}
+        if(executor)profiling::collect_jobs(*executor);
+    }
+    jobs::Executor& scheduler(){if(!executor)executor=jobs::owner_executor();return *executor;}
     Json summary(const Job& job)const{return {{"id",job.id},{"state",job.state},{"recipe_id",job.id},{"result",job.result},{"diagnostic",job.diagnostic.empty()?Json(nullptr):Json(job.diagnostic)}};}
     void poll(Job& job,const fs::path& directory){
-        if(job.state!="baking" || !job.future.valid() || job.future.wait_for(std::chrono::seconds(0))!=std::future_status::ready)return;
-        try {auto encoded=job.future.get();if(job.cancel->load()){job.state="cancelled";return;}job.result=publish(directory,std::move(encoded));job.state="succeeded";}
+        if(executor)profiling::collect_jobs(*executor);
+        if(job.state!="baking" || !job.group || !job.group.poll().terminal())return;
+        try {
+            const auto outcome=job.group.result();
+            if(job.cancel->load() || job.output->cancelled || outcome.snapshot.state==jobs::State::cancelled){job.output->encoded.reset();job.state="cancelled";return;}
+            outcome.rethrow();
+            check(outcome.snapshot.state==jobs::State::succeeded && job.output->encoded.has_value(),"Material job completed without encoded output.",-32050);
+            auto encoded=std::move(*job.output->encoded);job.output->encoded.reset();
+            job.result=publish(directory,std::move(encoded));job.state="succeeded";
+        }
         catch(const Cancelled&){job.state="cancelled";}
         catch(const std::exception& error){job.state="failed";job.diagnostic=safe_diagnostic(error.what());}
+        job.output->encoded.reset();
     }
 };
-Service::Service():impl_(std::make_unique<Impl>()){}Service::~Service()=default;
+Service::Service(std::shared_ptr<jobs::Executor> executor):impl_(std::make_unique<Impl>(std::move(executor))){}Service::~Service()=default;
 Json Service::dispatch(const std::string& method,const Json& params,const fs::path& directory){
     try {
         constexpr std::array names{"asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","asset.material.inspect"};
@@ -110,27 +135,38 @@ Json Service::dispatch(const std::string& method,const Json& params,const fs::pa
         if(method=="asset.material.inspect"){fields(params,{"recipe"});return read_manifest(directory,id(params.at("recipe")));}
         if(method=="asset.material.generate"){
             fields(params,{"recipe"});const auto recipe=parse_recipe(params.at("recipe"));const auto identity=recipe_id(recipe);
-            if(const auto found=impl_->jobs.find(identity);found!=impl_->jobs.end())return impl_->summary(found->second);
-            check(impl_->jobs.size()<8,"Material jobs retain at most8 records; forget a terminal job.",-32080);
-            for(const auto& [key,job]:impl_->jobs){(void)key;check(!job.future.valid() || job.future.wait_for(std::chrono::seconds(0))==std::future_status::ready,"One material bake may run at a time.",-32080);}
+            if(const auto found=impl_->records.find(identity);found!=impl_->records.end())return impl_->summary(found->second);
+            check(impl_->records.size()<8,"Material jobs retain at most8 records; forget a terminal job.",-32080);
+            for(const auto& [key,job]:impl_->records){(void)key;check(!job.group || job.group.poll().terminal(),"One material bake may run at a time.",-32080);}
             Impl::Job job;job.id=identity;job.recipe=recipe;
-            // Allocate the record before launching; no process/worker is accepted
-            // if map insertion fails. Roll back if thread creation fails.
-            auto inserted=impl_->jobs.emplace(identity,std::move(job));
-            try {auto flag=inserted.first->second.cancel;inserted.first->second.future=std::async(std::launch::async,[recipe,flag]{return encode_bake(recipe,flag);});}
-            catch(...){impl_->jobs.erase(inserted.first);throw;}
+            // Allocate the record before admitting work. A callback owns only
+            // frozen recipe/cancellation/output, never a service or world pointer.
+            auto inserted=impl_->records.emplace(identity,std::move(job));
+            try {
+                auto flag=inserted.first->second.cancel;auto output=inserted.first->second.output;
+                std::vector<jobs::Task> tasks;
+                tasks.push_back({[recipe,flag,output](jobs::Context& context){
+                    try {output->encoded=encode_bake(recipe,flag,context);}
+                    catch(const Cancelled&){output->cancelled=true;}
+                },{},"material.bake"});
+                auto& scheduler=impl_->scheduler();const auto occupied=scheduler.status().background;const auto limits=scheduler.config().background;
+                check(occupied.groups<limits.groups && occupied.tasks<limits.tasks,"Shared material background admission budget exhausted.",-32080);
+                inserted.first->second.group=scheduler.submit(std::move(tasks),jobs::Lane::background,profiling::job_attribution());
+                profiling::collect_jobs(*impl_->executor);
+            }
+            catch(...){impl_->records.erase(inserted.first);throw;}
             return impl_->summary(inserted.first->second);
         }
-        if(method=="asset.material.jobs"){fields(params,{});Json values=Json::array();for(const auto& [identity,job]:impl_->jobs){(void)identity;values.push_back(impl_->summary(job));}return {{"jobs",values}};}
-        fields(params,{"id"});const auto identity=id(params.at("id"));auto found=impl_->jobs.find(identity);check(found!=impl_->jobs.end(),"Material job not retained in this session.",-32004);auto& job=found->second;
+        if(method=="asset.material.jobs"){fields(params,{});Json values=Json::array();for(const auto& [identity,job]:impl_->records){(void)identity;values.push_back(impl_->summary(job));}return {{"jobs",values}};}
+        fields(params,{"id"});const auto identity=id(params.at("id"));auto found=impl_->records.find(identity);check(found!=impl_->records.end(),"Material job not retained in this session.",-32004);auto& job=found->second;
         if(method=="asset.material.cancel"){
             // No poll/publication before cancellation: even a completed CPU bake
             // can be cancelled until its owner publishes a successful result.
-            if(job.state=="baking"){job.cancel->store(true);if(job.future.wait_for(std::chrono::seconds(0))==std::future_status::ready)impl_->poll(job,directory);}
+            if(job.state=="baking"){job.cancel->store(true);job.group.cancel();if(job.group.poll().terminal())impl_->poll(job,directory);}
             return impl_->summary(job);
         }
         if(method=="asset.material.job"){impl_->poll(job,directory);return impl_->summary(job);}
-        if(method=="asset.material.forget"){check(job.state!="baking","Only terminal material jobs can be forgotten.",-32080);impl_->jobs.erase(found);return {{"id",identity},{"forgotten",true}};}
+        if(method=="asset.material.forget"){check(job.state!="baking","Only terminal material jobs can be forgotten.",-32080);impl_->records.erase(found);return {{"id",identity},{"forgotten",true}};}
         throw Error(-32601,"Unknown material method.");
     }catch(const Error&){throw;}catch(const std::exception& error){throw Error(-32050,safe_diagnostic(error.what()));}
 }

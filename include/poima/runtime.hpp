@@ -13,6 +13,7 @@
 #include <optional>
 
 namespace poima {
+namespace jobs { class Executor; }
 struct ModelAsset;
 struct RuntimeTransform {
     std::array<double,3> position{0,0,0};
@@ -226,21 +227,23 @@ struct RuntimeControlResult {
     std::uint64_t control_sequence=0,ui_revision=0;
     RuntimeControlIntent intent=RuntimeControlIntent::none;
 };
-// One single-threaded world, no GUI/graphics dependency. Structural definition
-// freezes recipes while running; presentation snapshots own copies of their data.
+// One authoritative owner, no GUI/graphics dependency. Native animation jobs
+// evaluate frozen inputs; physics, gameplay and publication remain on the owner.
+// Structural recipes are frozen; presentation snapshots own their data.
 class Runtime {
     struct Impl;
     std::unique_ptr<Impl> impl_;
     // Detached source restoration shared by validation and exact code binding.
     static std::unique_ptr<Runtime> restore_snapshot_data(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
-        std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision);
+        std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision,
+        std::shared_ptr<jobs::Executor> executor);
     static std::unique_ptr<Runtime> bind_snapshot_gameplay(std::unique_ptr<Runtime> candidate,
         const std::string& saved_gameplay,std::uint64_t saved_gameplay_revision,std::unique_ptr<Gameplay> gameplay);
 public:
     static constexpr double fixed_dt=1.0/60.0;
     static bool available();
-    explicit Runtime(const RuntimeDefinition& definition);
+    explicit Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
     ~Runtime();
     Runtime(const Runtime&)=delete;
     Runtime& operator=(const Runtime&)=delete;
@@ -262,17 +265,18 @@ public:
     // Reconstructs and discards bounded native state; does not publish a world,
     // prove executable compatibility, or authorize a changed-schema restore.
     static void validate_snapshot(const RuntimeDefinition& definition,
-        const std::string& content_sha256,const std::string& bytes);
+        const std::string& content_sha256,const std::string& bytes,std::shared_ptr<jobs::Executor> executor={});
     static std::unique_ptr<Runtime> from_snapshot(const RuntimeDefinition& definition,
         const std::string& content_sha256,const std::string& bytes,
-        const std::optional<GameplayConfig>& gameplay=std::nullopt);
+        const std::optional<GameplayConfig>& gameplay=std::nullopt,std::shared_ptr<jobs::Executor> executor={});
     // Consumes a trusted host-selected instance already registered in restore
     // mode (Initialize skipped), allowing metadata inspection without a second
     // registration. The caller must validate original source data before loading
     // that instance. Exact image/schema/value/reference checks still apply here;
     // this does not authorize migration or suppress constructor side effects.
     static std::unique_ptr<Runtime> from_snapshot_with_gameplay(const RuntimeDefinition& definition,
-        const std::string& content_sha256,const std::string& bytes,std::unique_ptr<Gameplay> gameplay);
+        const std::string& content_sha256,const std::string& bytes,std::unique_ptr<Gameplay> gameplay,
+        std::shared_ptr<jobs::Executor> executor={});
     // Scheduled edits execute after gameplay and before physics at their tick
     // offsets. Results become observable only after the entire batch commits.
     std::vector<RuntimeStructureResult> step(std::uint32_t ticks, const std::vector<RuntimeInput>& inputs,

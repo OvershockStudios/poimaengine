@@ -82,7 +82,7 @@ Recipe identity hashes canonical parameters plus evaluator `poima.cpu.pbr.v1`; c
 
 ## Jobs, storage and bounds
 
-One native worker may bake at a time. At most 8 session job records and their encoded outputs are retained; forget completed records to make room. The recipe's 64-digit identity is the job key. Repeating generate for a retained recipe returns that same job. Forgetting or restarting loses job status; regenerating the same recipe safely rebuilds/deduplicates image packages and reuses a verified manifest. There is no cumulative request limit, unbounded retired-ID set or once-only submission receipt promise.
+One bake may be active per material service. Services on the same owner share the [native job executor](JOBS.md), so separate services can admit background work subject to its worker count and admission budgets. Zero-worker policy executes CPU work synchronously. At most 8 session job records and their encoded outputs are retained per service; forget completed records to make room. The recipe's 64-digit identity is the job key. Repeating generate for a retained recipe returns that same job. Forgetting or restarting loses job status; regenerating the same recipe safely rebuilds/deduplicates image packages and reuses a verified manifest. There is no cumulative request limit, unbounded retired-ID set or once-only submission receipt promise.
 
 - `asset.material.jobs {}` lists retained jobs without polling or publishing them.
 - `asset.material.job {"id":...}` polls nonblocking CPU completion and publishes a completed bake on the owner thread.

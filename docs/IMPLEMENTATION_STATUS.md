@@ -1,8 +1,40 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.68**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.69**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.69 integrates a shared [native job executor](JOBS.md) into animation
+sampling and procedural material baking. Each creating owner lazily obtains a
+bounded pool, with two workers by default and an explicit 0–8 worker policy.
+Frame/background admission is separate, and one worker is reserved for frame
+work when at least two exist. Registry writes, Jolt physics, C# callbacks,
+material file publication and renderer recording remain on their owners.
+
+Animation workers sample independent rigs into private candidate histories and
+poses. Owner assembly preserves stable ordering; failure or cancellation cannot
+commit a partial sample. Material callbacks own frozen inputs and CPU outputs;
+owner cancellation can veto an already-completed result before publication.
+Terminal groups fence capture cleanup before releasing admission capacity.
+Named worker intervals preserve source/session/tick/parent and actual OS thread
+IDs in profiler inspection and trace export. Late records cannot enter a new
+recording.
+
+Five integrated native consumer suites pass on Windows and Linux, including
+15 scheduler groups and exact serial/0/1/2/4/8-worker animation comparisons.
+Linux ASan/UBSan and TSan pass scheduler and worker-profiler checks. Both OSes
+pass the existing compiled layer fixtures under CoreCLR and preserved Native
+AOT: 2,028 RPCs, 32 check groups and 16 clean owner exits in total. The NVIDIA
+GPU passes 36 original-fixture Vulkan captures against 18 exact independent pose
+references, with zero reported NVRHI errors. The simulation-disabled build also
+runs the installed-client guarded-editing playbook and the manual's C++ DAG
+example. These are bounded correctness checks, not production game-scale or
+physical-input qualification. [Jobs evidence](evidence/m2-native-jobs.json).
+
+The [task playbook index](PLAYBOOKS.md) names current prerequisites, completion
+checks and recovery guides. Agent skills remain a later compact entry point to
+qualified workflows; comprehensive manual/reference coverage is a release
+requirement rather than a claim of present completeness.
 
 Version 0.0.68 adds bounded [FBX model import](FBX_IMPORT.md), including static
 and linear-skinned geometry, metric/axis normalization and transform takes.
@@ -474,7 +506,7 @@ The development [standalone template catalog](RUNTIME.md#standalone-template-cat
 
 Cinematic authoring, comprehensive post-processing and a general package manager are not implemented. Bounded [FBX import and exact-skeleton clip composition](FBX_IMPORT.md) are supported; general Mixamo/exporter compatibility and retargeting remain unqualified. Supported asset formats and limits are documented in [Assets](ASSETS.md) and [Animation assets](ANIMATION_ASSETS.md).
 
-The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, separate GPU duration samples and trace export. Worker-thread tracing, allocation/GC and process/VRAM tracking, GPU clock correlation and a sustained benchmark workflow remain unfinished. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
+The [native profiler](PROFILER.md) now provides bounded shared captures, an editor CPU timeline, subsystem summaries, native job-worker intervals, separate GPU duration samples and trace export. General worker-stack sampling, allocation/GC and process/VRAM tracking, GPU clock correlation and a sustained benchmark workflow remain unfinished. Existing [render diagnostics](RENDER_DIAGNOSTICS.md) also retain capture/player aggregates and draw counters. Scene transform handles are implemented; orientation/axis-view controls, camera frustums and light/component icons remain planned. The current Console is a log tab beside Project.
 
 Planned editor workflow improvements include configurable hierarchy/folder styling, component isolation/search/copy-paste, focused object/asset tabs, persistent favorites, fullscreen panels, configurable smooth navigation, hover highlighting and overlap selection, a live preferences inspector, clickable breadcrumbs/back-forward history/context locking, and integrated Git/GitHub workflows. Existing striping, automatic icons, basic geometry picking and dock panels cover only the initial subset.
 

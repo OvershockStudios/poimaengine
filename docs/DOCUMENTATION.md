@@ -47,6 +47,10 @@ Recipes must use operations the engine actually supplies. A future capability
 matrix is planning documentation, not a runnable playbook. Long tasks compose
 small guides rather than duplicating a complete manual in every prompt.
 
+The [task index](PLAYBOOKS.md) lists runnable examples and focused guides with
+their build prerequisites and completion checks. Start there when choosing a
+workflow; discover the actual installed capabilities before executing it.
+
 The runnable [guarded scene edit](../examples/guarded-authoring) is an initial
 playbook: discovery, preview, atomic changes, conflict reconciliation, receipt
 replay and fresh-owner persistence. [Collection Room](../examples/collection-game)

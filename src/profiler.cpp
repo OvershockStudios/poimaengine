@@ -1,17 +1,52 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/profiler.hpp"
+#include "poima/jobs.hpp"
 #include <algorithm>
+#include <atomic>
 #include <exception>
 #include <limits>
 #include <stdexcept>
 #include <thread>
+#include <unordered_map>
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#elif defined(__linux__)
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
 
 namespace poima::profiling {
 struct DeferredRecording {
     Recorder* owner;
     std::thread::id thread;
+    std::uint64_t generation;
 };
 namespace {
+std::atomic<std::uint64_t> last_generation{0};
+thread_local std::unordered_map<std::uint64_t,std::weak_ptr<DeferredRecording>> recordings;
+std::uint64_t next_generation() {
+    auto value=last_generation.load(std::memory_order_relaxed);
+    for(;;) {
+        if(value==std::numeric_limits<std::uint64_t>::max())
+            throw std::overflow_error("Profiler recording generation exhausted.");
+        if(last_generation.compare_exchange_weak(value,value+1,std::memory_order_relaxed))return value+1;
+    }
+}
+std::uint64_t thread_id() noexcept {
+#ifdef _WIN32
+    return GetCurrentThreadId();
+#elif defined(__linux__)
+    return static_cast<std::uint64_t>(syscall(SYS_gettid));
+#else
+    return static_cast<std::uint64_t>(std::hash<std::thread::id>{}(std::this_thread::get_id()));
+#endif
+}
 struct Context {
     Recorder* recorder=nullptr;
     Source source=Source::native;
@@ -25,15 +60,24 @@ void increment(std::uint64_t& value) noexcept {
 }
 }
 Recorder::~Recorder() noexcept {
-    if(deferred_recording_)deferred_recording_->owner=nullptr;
+    if(deferred_recording_) {
+        recordings.erase(deferred_recording_->generation);
+        deferred_recording_->owner=nullptr;
+    }
 }
 void Recorder::start(std::uint32_t capacity) {
     if(recording_ || open_)throw std::logic_error("Stop profiling and close scopes before starting another capture.");
     if(capacity<64 || capacity>65536)throw std::invalid_argument("Profiler capacity must be 64..65536 records.");
     auto storage=std::make_unique<Event[]>(capacity);
-    auto deferred=std::make_shared<DeferredRecording>(DeferredRecording{this,std::this_thread::get_id()});
+    auto deferred=std::make_shared<DeferredRecording>(DeferredRecording{this,std::this_thread::get_id(),next_generation()});
+    // All allocations precede replacing the previous capture. The registry is
+    // owner-local, weak and contains only active recording generations.
+    recordings.emplace(deferred->generation,deferred);
     const auto epoch=std::chrono::steady_clock::now();
-    if(deferred_recording_)deferred_recording_->owner=nullptr;
+    if(deferred_recording_) {
+        recordings.erase(deferred_recording_->generation);
+        deferred_recording_->owner=nullptr;
+    }
     events_=std::move(storage);deferred_recording_=std::move(deferred);epoch_=epoch;capacity_=capacity;count_=open_=0;
     dropped_=elapsed_=0;clock_saturated_=false;full_=false;recording_=true;
 }
@@ -45,7 +89,10 @@ std::uint64_t Recorder::now() const noexcept {
     return std::min(value,safe);
 }
 void Recorder::stop() noexcept {
-    if(recording_) { elapsed_=now();recording_=false; }
+    if(recording_) {
+        elapsed_=now();recording_=false;
+        if(deferred_recording_)recordings.erase(deferred_recording_->generation);
+    }
 }
 Status Recorder::status() const noexcept {
     return {recording_,full_,capacity_,count_,open_,dropped_,
@@ -60,6 +107,7 @@ Event* Recorder::reserve(std::string_view name,Kind kind,std::int64_t tick) noex
     }
     auto& event=events_[count_++];
     event.id=count_;event.parent=context.parent;event.start_ns=now();
+    event.thread=thread_id();
     event.source=context.source;event.kind=kind;event.tick=tick<0 ? context.tick : tick;
     event.session=context.session;
     const auto length=std::min(name.size(),event.name.size()-1);
@@ -138,5 +186,51 @@ bool deferred_counter(const DeferredContext& ticket,std::string_view name,std::u
 }
 bool active() noexcept {
     return context.recorder && context.recorder->recording_;
+}
+jobs::Attribution job_attribution() noexcept {
+    jobs::Attribution value;
+    auto* recorder=context.recorder;
+    if(!recorder || !recorder->recording_)return value;
+    value.session=context.session;value.tick=context.tick;value.parent=context.parent;
+    value.source=static_cast<std::uint32_t>(context.source);
+    value.recording_generation=recorder->deferred_recording_->generation;
+    return value;
+}
+void collect_jobs(jobs::Executor& executor) noexcept {
+    try {
+        // drain_traces enforces the executor's creating thread before touching
+        // its rings. Recorder lookup and emission also remain on that owner.
+        const auto batch=executor.drain_traces();
+        constexpr std::uint64_t safe=9007199254740991ULL;
+        for(const auto& trace:batch.records) {
+            const auto found=recordings.find(trace.attribution.recording_generation);
+            if(found==recordings.end())continue;
+            const auto recording=found->second.lock();
+            if(!recording || recording->thread!=std::this_thread::get_id())continue;
+            auto* recorder=recording->owner;
+            if(!recorder || !recorder->recording_ || recorder->deferred_recording_.get()!=recording.get())continue;
+            if(trace.attribution.source>static_cast<std::uint32_t>(Source::editor_game))continue;
+            if(trace.attribution.parent>recorder->count_)continue;
+            const auto epoch=static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(
+                recorder->epoch_.time_since_epoch()).count());
+            if(trace.started_ns<epoch || trace.duration_ns>safe || trace.started_ns-epoch>safe-trace.duration_ns) {
+                recorder->clock_saturated_=true;increment(recorder->dropped_);continue;
+            }
+            auto* event=recorder->reserve(trace.name.data(),Kind::cpu,trace.attribution.tick);
+            if(!event)continue;
+            event->start_ns=trace.started_ns-epoch;event->duration_ns=trace.duration_ns;
+            event->thread=trace.thread;event->parent=trace.attribution.parent;
+            event->tick=trace.attribution.tick;event->session=trace.attribution.session;
+            event->source=static_cast<Source>(trace.attribution.source);
+            event->group=trace.group;event->task=trace.task;
+            event->queued_ns=trace.started_ns>=trace.submitted_ns ? trace.started_ns-trace.submitted_ns : 0;
+            event->background=trace.lane==jobs::Lane::background;
+            event->complete=true;event->failed=trace.outcome!=jobs::Outcome::succeeded;
+            recorder->elapsed_=std::max(recorder->elapsed_,event->start_ns+event->duration_ns);
+        }
+    }catch(...) {
+        // Profiling never changes a successful task's result. Allocation or
+        // wrong-owner collection failures leave the native execution intact.
+    }
 }
 }

@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.69
+
+- Share a bounded native executor across animation sampling and procedural material baking, with dependency-aware frame/background lanes, reserved frame capacity, cooperative cancellation and a serial reference policy. [Native jobs](docs/JOBS.md).
+- Sample independent rigs into private candidates, preserve serial pose/save results and commit only after complete success. Keep material publication on its owner and fence callback cleanup before terminal completion.
+- Record actual worker CPU intervals, queue delays and submission attribution in the profiler; export physical thread lanes and reject late observations from retired recordings.
+- Qualify native Windows/Linux consumers, existing CoreCLR and preserved Native AOT gameplay, sanitizer checks and exact NVIDIA Vulkan pose references. Retain workload timing summaries without claiming whole-game performance. [Evidence](docs/evidence/m2-native-jobs.json).
+- Add a task playbook index with prerequisites and recovery checks, compile/run the manual's C++ example, and rerun guarded editing with a freshly installed Python client.
+
 ## 0.0.68
 
 - Import bounded ASCII/binary FBX models and transform takes through pinned ufbx, with metric/axis normalization, static or linear-skinned geometry, opaque materials and contained PNG/JPEG textures. [Import profile](docs/FBX_IMPORT.md).

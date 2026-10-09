@@ -55,10 +55,11 @@ int main() {
         }
         check(joined.size()==102 && joined[0].at("id")==1 && joined[101].at("id")==102 && joined[1].at("parent")==1 && joined[1].at("tick")==42,"Paging lost order/parent/tick metadata.");
         check(joined[1].at("session")=="0123456789abcdef0123456789abcdef","Event session metadata missing.");
+        check(joined[0].at("thread").get<std::uint64_t>()!=0 && joined[1].at("thread")==joined[0].at("thread"),"Owner events lost their actual CPU thread identity.");
         const auto exported=service.dispatch("profiler.export",{{"capture_id",a}});
         bool cpu_export=false,gpu_export=false;
         for(const auto& row:exported.at("trace").at("traceEvents")) {
-            if(row.at("name")=="request") {cpu_export=true;check(row.at("ph")=="X" && row.at("dur").get<double>()==joined[0].at("duration_ns").get<double>()/1000.0,"Export CPU units differ.");}
+            if(row.at("name")=="request") {cpu_export=true;check(row.at("tid")==joined[0].at("thread") && row.at("args").at("source")=="request","Trace export replaced the actual thread ID with a logical source lane.");check(row.at("ph")=="X" && row.at("dur").get<double>()==joined[0].at("duration_ns").get<double>()/1000.0,"Export CPU units differ.");}
             if(row.at("name")=="gpu.test.ns") {gpu_export=true;check(row.at("ph")=="C" && row.at("args").at("duration_ns")==250 && !row.contains("dur"),"GPU sample became an aligned span.");}
         }
         check(cpu_export && gpu_export,"Export omitted actual observations.");

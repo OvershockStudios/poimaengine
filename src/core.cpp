@@ -146,8 +146,9 @@ Reply capabilities() {
         ",\"animation_rig_authoring\":true,\"runtime_clip_playback\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_inertial_transitions\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"runtime_animation_layers\":" + boolean(POIMA_SIMULATION != 0) +
+        ",\"runtime_animation_jobs\":" + boolean(POIMA_SIMULATION != 0) +
         ",\"compiled_gameplay_inertial_transitions\":" + boolean(POIMA_SIMULATION != 0 && (POIMA_MANAGED_GAMEPLAY != 0 || POIMA_NATIVE_GAMEPLAY != 0)) +
-        ",\"static_gltf_import\":true,\"fbx_model_import\":true,\"exact_skeleton_animation_composition\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
+        ",\"static_gltf_import\":true,\"fbx_model_import\":true,\"native_job_executor\":true,\"native_job_profiling\":true,\"exact_skeleton_animation_composition\":true,\"static_texture_import\":true,\"pbr_material_factors\":" + boolean(POIMA_RENDER_SMOKE != 0) +
         ",\"renderer\":false,\"scene_editing\":true,\"animation\":false,\"animation_asset_sampling\":true,\"vfx\":false,"
         "\"hot_reload\":false,\"mcp\":true,\"native_world_session\":true,\"local_session_transport\":true,\"shared_world_host\":true,\"world_undo\":true,\"project_manifests\":true,\"native_game_bundles\":true,\"editor\":" + boolean(POIMA_EDITOR != 0) + "},\"qualification\":\"bootstrap_with_authored_world\"}");
 }

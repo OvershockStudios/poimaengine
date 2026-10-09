@@ -4,7 +4,7 @@
 namespace poima {
 struct Runtime::Impl {};
 bool Runtime::available() { return false; }
-Runtime::Runtime(const RuntimeDefinition&) { throw std::runtime_error("Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON."); }
+Runtime::Runtime(const RuntimeDefinition&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built. Configure POIMA_ENABLE_SIMULATION=ON."); }
 Runtime::~Runtime()=default;
 const std::string& Runtime::presentation_source_id() const { throw std::runtime_error("Simulation is not built."); }
 const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const { throw std::runtime_error("Simulation is not built."); }
@@ -13,9 +13,9 @@ std::uint64_t Runtime::structure_revision() const { throw std::runtime_error("Si
 RuntimeSummary Runtime::inspect() const { throw std::runtime_error("Simulation is not built."); }
 RuntimeEntityState Runtime::entity(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::string Runtime::save_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
-void Runtime::validate_snapshot(const RuntimeDefinition&,const std::string&,const std::string&) { throw std::runtime_error("Simulation is not built."); }
-std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,const std::optional<GameplayConfig>&) { throw std::runtime_error("Simulation is not built."); }
-std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition&,const std::string&,const std::string&,std::unique_ptr<Gameplay>) { throw std::runtime_error("Simulation is not built."); }
+void Runtime::validate_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
+std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition&,const std::string&,const std::string&,const std::optional<GameplayConfig>&,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
+std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition&,const std::string&,const std::string&,std::unique_ptr<Gameplay>,std::shared_ptr<jobs::Executor>) { throw std::runtime_error("Simulation is not built."); }
 std::vector<RuntimeStructureResult> Runtime::step(std::uint32_t, const std::vector<RuntimeInput>&, const std::vector<KinematicTarget>&,const std::vector<SoundCommand>&,const std::vector<AnimationCommand>&,const std::vector<RuntimeStructureTick>&) { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeAnimationState> Runtime::animation(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 std::optional<RuntimeAnimationLayerState> Runtime::animation_layer(const std::string&,std::uint32_t) const { throw std::runtime_error("Simulation is not built."); }

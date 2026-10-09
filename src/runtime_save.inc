@@ -146,7 +146,7 @@ std::string Runtime::save_snapshot(const std::string& content_sha256) const {
 }
 
 std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition& definition,const std::string& content_sha256,
-    const std::string& bytes,std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision) {
+    const std::string& bytes,std::string& saved_gameplay,std::uint64_t& saved_gameplay_revision,std::shared_ptr<jobs::Executor> executor) {
     require(save_digest(content_sha256),"Snapshot content identity must be a lowercase SHA-256.");
     const auto envelope=save_parse(bytes);save_fields(envelope,{"format","version","sha256","payload"});
     const bool custom=!definition.component_schemas.empty();
@@ -249,7 +249,7 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     require(data.at("gameplay").is_null() ? game_revision==0 : game_revision>0,"Snapshot gameplay revision does not match module presence.");
     // Construct from the original definition: animation baselines and camera
     // initial rotations must not be replaced by the saved presentation pose.
-    auto candidate=std::make_unique<Runtime>(restored_definition);auto& s=*candidate->impl_;s.tick=tick;
+    auto candidate=std::make_unique<Runtime>(restored_definition,std::move(executor));auto& s=*candidate->impl_;s.tick=tick;
     if(structural) {
         // Bootstrap may see generated objects as definitions, but exclusions
         // must come exclusively from the complete original authored inventory.
@@ -343,14 +343,14 @@ std::unique_ptr<Runtime> Runtime::restore_snapshot_data(const RuntimeDefinition&
     saved_gameplay=data.at("gameplay").dump();saved_gameplay_revision=game_revision;
     return candidate;
 }
-void Runtime::validate_snapshot(const RuntimeDefinition& definition,const std::string& content_sha256,const std::string& bytes) {
+void Runtime::validate_snapshot(const RuntimeDefinition& definition,const std::string& content_sha256,const std::string& bytes,std::shared_ptr<jobs::Executor> executor) {
     std::string saved_gameplay;std::uint64_t saved_gameplay_revision=0;
-    (void)restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,saved_gameplay_revision);
+    (void)restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,saved_gameplay_revision,std::move(executor));
 }
 std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definition,const std::string& content_sha256,
-    const std::string& bytes,const std::optional<GameplayConfig>& gameplay) {
+    const std::string& bytes,const std::optional<GameplayConfig>& gameplay,std::shared_ptr<jobs::Executor> executor) {
     std::string saved_gameplay;std::uint64_t game_revision=0;
-    auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision);
+    auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision,std::move(executor));
     const auto saved=SaveJson::parse(saved_gameplay);
     require(saved.is_null()==!gameplay.has_value(),"Snapshot gameplay needs a matching trusted host configuration.");
     std::unique_ptr<Gameplay> game;
@@ -358,9 +358,9 @@ std::unique_ptr<Runtime> Runtime::from_snapshot(const RuntimeDefinition& definit
     return bind_snapshot_gameplay(std::move(candidate),saved_gameplay,game_revision,std::move(game));
 }
 std::unique_ptr<Runtime> Runtime::from_snapshot_with_gameplay(const RuntimeDefinition& definition,const std::string& content_sha256,
-    const std::string& bytes,std::unique_ptr<Gameplay> game) {
+    const std::string& bytes,std::unique_ptr<Gameplay> game,std::shared_ptr<jobs::Executor> executor) {
     std::string saved_gameplay;std::uint64_t game_revision=0;
-    auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision);
+    auto candidate=restore_snapshot_data(definition,content_sha256,bytes,saved_gameplay,game_revision,std::move(executor));
     return bind_snapshot_gameplay(std::move(candidate),saved_gameplay,game_revision,std::move(game));
 }
 std::unique_ptr<Runtime> Runtime::bind_snapshot_gameplay(std::unique_ptr<Runtime> candidate,const std::string& saved_gameplay,

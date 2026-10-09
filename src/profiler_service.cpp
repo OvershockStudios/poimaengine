@@ -29,7 +29,8 @@ const char* kind(Kind k) { switch(k) {case Kind::cpu:return "cpu";case Kind::cou
 Json event(const Event& e) {
     return {{"id",e.id},{"parent",e.parent},{"name",e.name.data()},{"kind",kind(e.kind)},{"source",source(e.source)},
         {"session",e.session[0] ? Json(e.session.data()):Json(nullptr)},{"tick",e.tick>=0 ? Json(e.tick):Json(nullptr)},
-        {"start_ns",e.start_ns},{"duration_ns",e.duration_ns},{"value",e.value},{"failed",e.failed},{"name_truncated",e.name_truncated}};
+        {"start_ns",e.start_ns},{"duration_ns",e.duration_ns},{"value",e.value},{"failed",e.failed},{"name_truncated",e.name_truncated},
+        {"thread",e.thread},{"job",e.group ? Json{{"group",e.group},{"task",e.task},{"lane",e.background?"background":"frame"},{"queued_ns",e.queued_ns}} : Json(nullptr)}};
 }
 Json object(Json properties,Json required=Json::array()) { return {{"type","object"},{"properties",properties},{"required",required},{"additionalProperties",false}}; }
 }
@@ -85,17 +86,22 @@ Json Service::dispatch(const std::string& method,const Json& params) {
         auto result=status();result["groups"]=std::move(rows);result["percentiles"]="nearest-rank; inclusive CPU scopes overlap and must not be summed";return result;
     }
     Json trace=Json::array();
-    for(int s=0;s<6;++s)trace.push_back({{"name","thread_name"},{"ph","M"},{"pid",1},{"tid",s+1},{"args",{{"name",std::string(source(static_cast<Source>(s)))+" (logical source)"}}}});
+    std::set<std::uint64_t> threads;
+    for(const auto& e:events)threads.insert(e.thread);
+    for(const auto thread:threads)trace.push_back({{"name","thread_name"},{"ph","M"},{"pid",1},{"tid",thread},
+        {"args",{{"name","CPU thread "+std::to_string(thread)}}}});
     for(const auto& e:events) {
         Json args={{"event_id",e.id},{"parent_id",e.parent},{"session",e.session[0]?Json(e.session.data()):Json(nullptr)},
-            {"tick",e.tick>=0?Json(e.tick):Json(nullptr)},{"failed",e.failed},{"name_truncated",e.name_truncated}};
-        Json row={{"name",e.name.data()},{"cat",kind(e.kind)},{"pid",1},{"tid",static_cast<int>(e.source)+1},{"ts",static_cast<double>(e.start_ns)/1000.0}};
+            {"tick",e.tick>=0?Json(e.tick):Json(nullptr)},{"source",source(e.source)},
+            {"failed",e.failed},{"name_truncated",e.name_truncated}};
+        if(e.group)args["job"]={{"group",e.group},{"task",e.task},{"lane",e.background?"background":"frame"},{"queued_ns",e.queued_ns}};
+        Json row={{"name",e.name.data()},{"cat",kind(e.kind)},{"pid",1},{"tid",e.thread},{"ts",static_cast<double>(e.start_ns)/1000.0}};
         if(e.kind==Kind::cpu) {row["ph"]="X";row["dur"]=static_cast<double>(e.duration_ns)/1000.0;row["args"]=std::move(args);}
-        else {row["ph"]="C";row["args"]={{e.kind==Kind::gpu?"duration_ns":"value",e.value}};}
+        else {row["ph"]="C";args[e.kind==Kind::gpu?"duration_ns":"value"]=e.value;row["args"]=std::move(args);}
         trace.push_back(std::move(row));
     }
     auto metadata=status();metadata["timing"]="CPU monotonic relative ns; exported timestamps in us. GPU values are duration samples at CPU observation time, not aligned GPU spans.";
-    metadata["sources"]="Logical source lanes on one owner thread; no worker-thread tracing or process/VRAM allocation tracking.";
+    metadata["sources"]="Actual CPU thread IDs with source/session/tick attribution; native job spans merge on the recording owner. No process/VRAM allocation tracking.";
     metadata["engine_version"]=build_metadata().version;
     return {{"capture_id",capture_},{"trace",{{"traceEvents",std::move(trace)},{"displayTimeUnit","ms"},{"poima",std::move(metadata)}}}};
 }

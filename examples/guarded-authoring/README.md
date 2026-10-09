@@ -7,14 +7,34 @@ It creates authoring data; it does not create a playable game or rendered mesh.
 
 ## Run the example
 
-Build the [headless engine](../../docs/BUILD.md) and install the
-[Python client](../../docs/PYTHON_CLIENT.md):
+Use Python 3.9 or newer and run from the repository root. Build the
+[headless engine](../../docs/BUILD.md), then install the
+[Python client](../../docs/PYTHON_CLIENT.md) in an isolated environment.
+Calling that environment's Python directly avoids changing your shell or
+system Python installation.
 
 ```sh
-python3 -m pip install ./tools/python
-python3 examples/guarded-authoring/edit_scene.py \
+python3 -m venv build/guarded-venv
+build/guarded-venv/bin/python -m pip install ./tools/python
+build/guarded-venv/bin/python examples/guarded-authoring/edit_scene.py \
   build/headless/poima build/guarded-example/world.json
 ```
+
+For Windows-native Python and a Windows executable built with the
+[Windows build guide](../../docs/BUILD.md#native-windows-executable-from-linux--wsl),
+use PowerShell:
+
+```powershell
+py -3 -m venv build/guarded-venv-windows
+.\build\guarded-venv-windows\Scripts\python.exe -m pip install .\tools\python
+.\build\guarded-venv-windows\Scripts\python.exe examples/guarded-authoring/edit_scene.py `
+  build/windows-runtime/poima.exe build/guarded-example-windows/world.json
+```
+
+The Windows example uses the runtime build's authoring API; simulation and
+rendering are not exercised by this script. The environment needs `pip` and
+the client's build dependency, setuptools 68 or newer; installation may
+download that dependency if it is not already available.
 
 Use a new world path on every run. Python and the executable must be native to
 the same operating system. The recorded example runs on Linux; it does not

@@ -12,11 +12,11 @@ CPU scopes measure elapsed wall time, including waits and scheduling delays; the
 
 GPU rows report timestamp-derived durations collected when the submitted frame completes. Completion may be observed by polling or after a required wait; collecting a GPU sample does not imply that the CPU blocked. GPU durations are **not aligned to the CPU timeline**. Resource counters show last/min/max/mean values rather than sums. Texture payload and skin-buffer bytes are partial tracked resources, not total GPU residency or VRAM usage.
 
-**Export** writes a new Chrome trace-event JSON file. Existing files are preserved. The native export can also be opened in viewers supporting that format, including [Perfetto](https://perfetto.dev/docs/getting-started/other-formats). CPU events export as complete spans; GPU durations export as counter observations. Source lanes are logical labels on the owner thread, not separate OS threads.
+**Export** writes a new Chrome trace-event JSON file. Existing files are preserved. The native export can also be opened in viewers supporting that format, including [Perfetto](https://perfetto.dev/docs/getting-started/other-formats). CPU events export as complete spans; GPU durations export as counter observations. CPU lanes use actual OS thread IDs. Logical sources remain event metadata; [native job spans](JOBS.md#profiling) preserve their submission attribution and execution intervals.
 
 ## Command service
 
-Discover schemas with `world.describe` (revision 29). All commands work through a persistent `world`, shared headless host or editor session; capture is lost when its owning session closes.
+Discover schemas from the current build with `world.describe`. All commands work through a persistent `world`, shared headless host or editor session; capture is lost when its owning session closes.
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"profiler.start","params":{"capture_id":"0123456789abcdef0123456789abcdef","expected_capture_id":null,"capacity":16384}}
@@ -44,15 +44,15 @@ When the next event would exceed capacity, recording automatically stops. The re
 
 ## Recorded data
 
-Each event has a capture-local ID, parent ID, bounded name, kind (`cpu`, `gpu`, `counter`), source, optional runtime session and tick, relative `start_ns`, `duration_ns`, value and failure/truncation flags. Children inherit tick/session context unless explicitly changed. Source and session are recorded at entry; a parent spanning a load describes its original context. Later work uses the restored session, so rewound ticks remain distinguishable.
+Each event has a capture-local ID, parent ID, bounded name, kind (`cpu`, `gpu`, `counter`), source, optional runtime session and tick, relative `start_ns`, `duration_ns`, value, actual `thread` ID and failure/truncation flags. Native job events also expose group/task identity, lane and queue delay. Children inherit tick/session context unless explicitly changed. Source and session are recorded at entry; a parent spanning a load describes its original context. Later work uses the restored session, so rewound ticks remain distinguishable.
 
 Delayed renderer GPU durations and completion counters retain the submitting frame's source, runtime session, tick and CPU submission timestamp. Collection under a later tick or another bound session does not change that attribution. These events have parent ID zero: their submitting CPU scope may already have ended. Their `start_ns` identifies CPU submission, not GPU execution start; GPU duration remains in `value`, with `duration_ns` zero. Records are appended when collected, so record order need not match submission timestamps.
 
 Deferred observations are accepted only on the original owner thread while the same recording is still active. Stopping, restarting or destroying that recorder discards outstanding observations rather than attaching them to a later capture. Thus **Stop does not flush pending GPU samples**. Existing CPU scopes still finish normally. Deferred tickets allocate no storage during capture or emission; recording start allocates their lifetime identity along with the event array.
 
-CPU failure flags indicate exception unwinding, not a complete semantic classification of every operation error. Work performed before a rolled-back batch remains in the diagnostic trace. It does not mean that simulation state committed. Scope parentage identifies the enclosing batch; there is no separate permanent gameplay event log.
+Owner CPU failure flags indicate exception unwinding. Native job flags mark non-success task outcomes, including cooperative cancellation. Neither is a complete semantic classification of every operation error. Work performed before a rolled-back batch remains in the diagnostic trace. It does not mean that simulation state committed. Scope parentage identifies the enclosing batch; there is no separate permanent gameplay event log.
 
-Native instrumentation covers runtime batch validation/checkpointing, fixed ticks, C# calls and command application, physics, animation sampling, hierarchy synchronization, rollback, owner advancement, snapshot/save preparation, renderer preparation/acquire/record/submit/present/retirement/wait/readback, player presentation and native audio queue/DSP boundaries. Only paths actually executed produce samples. Native audio device output remains a standalone-player feature; editor audio is still unfinished.
+Native instrumentation covers runtime batch validation/checkpointing, fixed ticks, C# calls and command application, physics, animation sampling, hierarchy synchronization, rollback, owner advancement, snapshot/save preparation, renderer preparation/acquire/record/submit/present/retirement/wait/readback, player presentation and native audio queue/DSP boundaries. Only paths actually executed produce samples. Native audio device output and the editor DSP worker have separate [output contracts](AUDIO_EVENTS.md) and [editor qualification](EDITOR_AUDIO.md).
 
 `render.retire` measures CPU polling, collection of completed frame results and related cleanup. It can occur without a wait. A nested `render.wait` appears only when an unfinished submission must complete before reusing a frame slot or draining outstanding work. These CPU scopes describe the current retirement operation; the delayed GPU events retain submission attribution separately. With render profiling requested, `render_diagnostics.cpu.completion_wait` summarizes the explicit completion-wait calls, excluding successful polls and the remaining retirement work. It is not a frame-time or presentation-latency measurement.
 
@@ -64,13 +64,35 @@ GPU pass observations distinguish skinning, light assignment, shadows, opaque re
 
 Scopes reserve complete-event slots before executing their bodies and fill durations on exit. The recorder allocates its fixed event array at start; recording does not allocate or throw. It uses the native monotonic clock and one owner thread. Nested bindings keep separate sessions isolated. Capture-array bytes exclude the recorder's lifetime identity, read/export buffers, GUI objects and engine allocations. Relative clock values saturate at the safe JSON integer limit after approximately 104 days, with `clock_saturated` set; such a capture no longer supplies accurate later timings.
 
+## Native worker events
+
+Worker callbacks never bind or write a Recorder. Submission captures a detached
+recording generation and source/session/tick/parent. The shared executor records
+bounded actual CPU intervals; collection on the owner routes each event to its
+original active recording. Late work after stop, restart, destruction or capacity
+closure is discarded. Collection under a different session does not relabel it.
+
+`animation.sample.rig` measures one independent rig, including its ordered layers;
+`runtime.animation.wait` measures the owner's wait/help operation. `material.bake`
+measures compiled recipe baking and encoding, with publication measured on the
+owner. Waiting and worker intervals can overlap; their sum is not frame time.
+`jobs.status.trace_dropped` reports lifetime ring loss for the shared executor,
+separately from a Recorder's first capacity overflow. Ring loss can span multiple
+captures, so it is not assigned to the currently selected capture.
+
 ## Limits
 
-This is an instrumentation profiler, not a complete production profiler. It does not sample call stacks, track managed GC or arbitrary native allocations, trace worker threads, report total process/VRAM usage, calibrate GPU clocks, or replace the planned sustained benchmark workflow. Starting a capture can allocate several MiB; stopping/loading/exporting a large capture has a separate tool cost. Instrumentation and GPU timestamps affect the measured workload.
+This is an instrumentation profiler, not a complete production profiler. It does not sample call stacks, track managed GC or arbitrary native allocations, sample arbitrary worker stacks, report total process/VRAM usage, calibrate GPU clocks, or replace the planned sustained benchmark workflow. Starting a capture can allocate several MiB; stopping/loading/exporting a large capture has a separate tool cost. Instrumentation and GPU timestamps affect the measured workload.
 
 The current renderer implementation bounds outstanding frame submissions with `frames_in_flight` (one or two, default two). The one-slot reference path drains after each frame; captures also drain before publishing readback. Resource uploads and lifecycle operations can still wait independently. Two slots do not guarantee overlapping work or improved performance. Render wait/present intervals, GPU queue work, simulation ticks and full application frame time measure different boundaries. No reciprocal of one interval is advertised as a playable FPS result.
 
 ## Qualification
+
+The [native jobs milestone](evidence/m2-native-jobs.json) qualifies actual worker
+intervals, source/recording isolation, bounded trace loss and physical CPU thread
+export on Linux and Windows. Its animation workload keeps timing samples
+separate from profiler observations. The installed-client playbook and manual's
+C++ example are checked against the same engine source checkpoint.
 
 The [frame-retirement milestone](evidence/m2-frame-retirement.json) adds native deferred-recorder tests and original-submission attribution checks for all 49 changing frames per mode on both laptop GPUs. The evidence below records the earlier full profiler/editor checkpoint.
 

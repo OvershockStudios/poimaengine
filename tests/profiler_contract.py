@@ -45,7 +45,8 @@ def main():
     try:
         first=Client(args,run/'first.json',evidence);clients.append(first)
         second=Client(args,run/'second.json',evidence);clients.append(second)
-        descriptor=first.call('world.describe');assert descriptor['schema_revision']==59
+        # Unrelated additive schema revisions must not break this behavior gate.
+        descriptor=first.call('world.describe');assert descriptor['schema_revision']>=61
         for name in ['start','stop','status','events','summary','export']:assert 'profiler.'+name in descriptor['methods']
         assert first.call('profiler.status')['state']=='empty'
         cap=uid(10);params=dict(capture_id=cap,expected_capture_id=None,capacity=256)
@@ -65,7 +66,14 @@ def main():
         assert events[0]['name']=='world.inspect' and not events[0]['failed']
         assert all(e['failed'] for e in events[1:]);assert events[1]['name_truncated'];assert events[2]['name']==events[3]['name']=='request.invalid_name'
         assert not any(e['name'].startswith('profiler.') for e in events)
-        trace=first.call('profiler.export',dict(capture_id=cap));assert len([e for e in trace['trace']['traceEvents'] if e['ph']=='X'])==4
+        assert all(type(e['thread']) is int and e['thread']>0 and e['job'] is None for e in events)
+        assert len({e['thread'] for e in events})==1
+        trace=first.call('profiler.export',dict(capture_id=cap))
+        spans=[e for e in trace['trace']['traceEvents'] if e['ph']=='X'];assert len(spans)==4
+        by_id={e['args']['event_id']:e for e in spans}
+        for event in events:
+            exported=by_id[event['id']]
+            assert exported['tid']==event['thread'] and exported['args']['source']==event['source']
         assert first.call('profiler.events',dict(capture_id=cap))==page
         evidence['checks'].append('Discovery/guards/retries, independent owners, failed-operation spans and safe Unicode/NUL diagnostic names; profiler observation does not record itself.')
         full=uid(12);first.call('profiler.start',dict(capture_id=full,expected_capture_id=cap,capacity=64))

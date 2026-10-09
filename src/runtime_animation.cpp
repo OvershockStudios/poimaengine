@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime_animation.hpp"
+#include "poima/jobs.hpp"
+#include "poima/profiler.hpp"
 #include <algorithm>
 #include <cmath>
 #include <set>
@@ -9,11 +11,11 @@
 namespace poima {
 namespace {
 void check(bool value,const char* message) { if(!value)throw std::runtime_error(message); }
-AnimationCommand normalized(const AnimationCommand& source,const ModelAsset& model) {
+AnimationCommand normalized(const AnimationCommand& source,std::size_t clip_count) {
     auto result=source;
     check(std::isfinite(result.time) && result.time>=0 && result.time<=1e9,"Animation time must be within 0..1e9 seconds.");
     check(std::isfinite(result.speed) && result.speed>=0 && result.speed<=8,"Animation speed must be within 0..8.");
-    check(!result.clip || *result.clip<model.animations.size(),"Animation clip index is invalid for the rig.");
+    check(!result.clip || *result.clip<clip_count,"Animation clip index is invalid for the rig.");
     check(result.blend_ticks<=3600,"Animation blend duration must be 0..3600 ticks.");
     check(result.transition_mode==AnimationTransitionMode::Crossfade || result.transition_mode==AnimationTransitionMode::Inertial,"Unknown animation transition mode.");
     check(!result.layer || (*result.layer>=1 && *result.layer<=4),"Animation layer slot must be 1..4.");
@@ -22,14 +24,15 @@ AnimationCommand normalized(const AnimationCommand& source,const ModelAsset& mod
     if(!result.clip) { result.time=0;result.playing=false; }
     return result;
 }
-AnimationCommand playback_control(const AnimationCommand& command,const ModelAsset& model) {
-    auto result=normalized(command,model);result.layer.reset();result.weight=1;result.weight_blend_ticks=0;return result;
+AnimationCommand playback_control(const AnimationCommand& command,std::size_t clip_count) {
+    auto result=normalized(command,clip_count);result.layer.reset();result.weight=1;result.weight_blend_ticks=0;return result;
 }
-RuntimeAnimationState clock_state(const AnimationCommand& control,std::uint64_t anchor_tick,std::uint64_t tick,const ModelAsset& model) {
+RuntimeAnimationState clock_state(const AnimationCommand& control,std::uint64_t anchor_tick,std::uint64_t tick,std::span<const double> clip_durations) {
     check(tick>=anchor_tick,"Animation clock predates its command.");
     RuntimeAnimationState result{control.entity,control.clip,control.time,control.speed,control.loop,control.playing,0,{}, {}};
     if(!control.clip) { result.time=0;result.playing=false;return result; }
-    result.duration=model.animations[*control.clip].duration;
+    check(*control.clip<clip_durations.size(),"Animation clip index is invalid for the frozen rig.");
+    result.duration=clip_durations[*control.clip];
     if(control.playing)result.time+=double(tick-anchor_tick)*Runtime::fixed_dt*control.speed;
     if(result.duration==0) { result.time=0;result.playing=false; }
     else if(control.loop)result.time=std::fmod(result.time,result.duration);
@@ -152,7 +155,7 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
             for(const auto& clip:rig.model->animations)for(const auto& channel:clip.channels)keys+=channel.times.size();
             check(keys<=2000000,"World unique compiled animation key limit is 2000000.");
         }
-        (void)normalized({entity.id,rig.clip,rig.time,rig.speed,rig.loop,rig.playing},*rig.model);
+        (void)normalized({entity.id,rig.clip,rig.time,rig.speed,rig.loop,rig.playing},rig.model->animations.size());
         check(rig.layers.size()<=4,"AnimationRig permits at most four layers.");
         std::set<std::uint32_t> slots;
         for(const auto& layer:rig.layers) {
@@ -160,7 +163,7 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
             check(layer.mode==AnimationLayerMode::Override || layer.mode==AnimationLayerMode::Additive,"Unknown animation layer mode.");
             check(std::isfinite(layer.weight) && layer.weight>=0 && layer.weight<=1,"Animation layer weight must be 0..1.");
             AnimationCommand control{entity.id,layer.clip,layer.time,layer.speed,layer.loop,layer.playing};control.layer=layer.slot;
-            (void)normalized(control,*rig.model);
+            (void)normalized(control,rig.model->animations.size());
             check(std::isfinite(layer.reference_time) && layer.reference_time>=0 && layer.reference_time<=1e9,"Animation reference time is invalid.");
             check(!layer.reference_clip || *layer.reference_clip<rig.model->animations.size(),"Animation reference clip is invalid.");
             check(layer.mode==AnimationLayerMode::Additive || (!layer.reference_clip && layer.reference_time==0),"Override layers cannot specify an additive reference.");
@@ -217,15 +220,18 @@ void validate_runtime_animation(const RuntimeDefinition& definition) {
     }
 }
 
-RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition) {
+RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor):executor_(std::move(executor)) {
     validate_runtime_animation(definition);
     std::map<const ModelAsset*,std::shared_ptr<const CompiledAnimation>> compiled;
     for(const auto& entity:definition.entities)if(entity.animation_rig) {
         const auto& source=*entity.animation_rig;Rig rig;rig.entity=entity.id;rig.model=source.model;
         if(!compiled.contains(rig.model.get()))compiled[rig.model.get()]=std::make_shared<const CompiledAnimation>(*rig.model);
-        rig.compiled=compiled.at(rig.model.get());rig.nodes.resize(rig.model->nodes.size());rig.baseline.resize(rig.nodes.size());
+        rig.compiled=compiled.at(rig.model.get());
+        rig.clip_durations.reserve(rig.model->animations.size());
+        for(const auto& clip:rig.model->animations)rig.clip_durations.push_back(clip.duration);
+        rig.nodes.resize(rig.model->nodes.size());rig.baseline.resize(rig.nodes.size());
         indices_.emplace(entity.id,rigs_.size());rigs_.push_back(std::move(rig));
-        clocks_.push_back({normalized({entity.id,source.clip,source.time,source.speed,source.loop,source.playing},*source.model),0,{}});
+        clocks_.push_back({normalized({entity.id,source.clip,source.time,source.speed,source.loop,source.playing},rigs_.back().clip_durations.size()),0,{}});
     }
     for(const auto& entity:definition.entities) {
         if(entity.rig_node) {
@@ -244,7 +250,7 @@ RuntimeAnimations::RuntimeAnimations(const RuntimeDefinition& definition) {
             frozen.reference=layer.reference_clip ? rig.compiled->sample(layer.reference_clip,layer.reference_time,false,rig.baseline).local : rig.baseline;
             rig.layers.push_back(std::move(frozen));
             AnimationCommand control{entity.id,layer.clip,layer.time,layer.speed,layer.loop,layer.playing};control.layer=layer.slot;
-            LayerPlayback playback;playback.clock.control=playback_control(control,*rig.model);playback.target_weight=layer.weight;
+            LayerPlayback playback;playback.clock.control=playback_control(control,rig.clip_durations.size());playback.target_weight=layer.weight;
             (void)evaluate(index,playback.clock,0);layers_[index].push_back(std::move(playback));
         }
         if(!rig.layers.empty())(void)composed(index,clocks_[index],layers_[index],0);
@@ -260,8 +266,8 @@ double layer_weight(const RuntimeAnimations::LayerPlayback& layer,std::uint64_t 
 }
 }
 RuntimeAnimationState RuntimeAnimations::clock_summary(std::size_t index,const Clock& clock,std::uint64_t tick) const {
-    const auto& model=*rigs_[index].model;
-    auto result=clock_state(clock.control,clock.anchor_tick,tick,model);
+    const auto& durations=rigs_[index].clip_durations;
+    auto result=clock_state(clock.control,clock.anchor_tick,tick,durations);
     if(clock.transition && active(*clock.transition,tick)) {
         const auto& fade=*clock.transition;RuntimeAnimationTransition transition;
         transition.start_tick=fade.start_tick;transition.duration_ticks=fade.duration_ticks;
@@ -270,7 +276,7 @@ RuntimeAnimationState RuntimeAnimations::clock_summary(std::size_t index,const C
         transition.mode=fade.inertial ? AnimationTransitionMode::Inertial : AnimationTransitionMode::Crossfade;
         transition.source_frozen=bool(fade.frozen_source || fade.inertial);
         if(!fade.frozen_source && !fade.inertial) {
-            const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,model);
+            const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,durations);
             transition.source_clip=source.clip;transition.source_time=source.time;transition.source_speed=source.speed;
             transition.source_loop=source.loop;transition.source_playing=source.playing;
         }
@@ -303,7 +309,7 @@ std::optional<RuntimeAnimationLayerState> RuntimeAnimations::layer_state(const s
     return {};
 }
 ModelPose RuntimeAnimations::evaluate(std::size_t index,const Clock& clock,std::uint64_t tick) const {
-    const auto& rig=rigs_[index];const auto target=clock_state(clock.control,clock.anchor_tick,tick,*rig.model);
+    const auto& rig=rigs_[index];const auto target=clock_state(clock.control,clock.anchor_tick,tick,rig.clip_durations);
     auto pose=rig.compiled->sample(target.clip,target.time,false,rig.baseline);
     // Expired sources must never be evaluated: an outgoing clip may become
     // invalid after the transition has finished, with no effect on its target.
@@ -331,7 +337,7 @@ ModelPose RuntimeAnimations::evaluate(std::size_t index,const Clock& clock,std::
     std::vector<NodePose> outgoing;
     if(fade.frozen_source)outgoing=*fade.frozen_source;
     else {
-        const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,*rig.model);
+        const auto source=clock_state(fade.source,fade.source_anchor_tick,tick,rig.clip_durations);
         outgoing=rig.compiled->sample(source.clip,source.time,false,rig.baseline).local;
     }
     check(outgoing.size()==pose.local.size(),"Animation transition local pose count differs.");
@@ -361,13 +367,13 @@ ModelPose RuntimeAnimations::composed(std::size_t index,const Clock& base,const 
     return pose;
 }
 RuntimeAnimations::Clock RuntimeAnimations::replacement(std::size_t index,const Clock& previous,const AnimationCommand& command,std::uint64_t tick) const {
-        Clock next=previous;next.control=playback_control(command,*rigs_[index].model);next.anchor_tick=tick;next.transition.reset();
+        Clock next=previous;next.control=playback_control(command,rigs_[index].clip_durations.size());next.anchor_tick=tick;next.transition.reset();
         next.inertial_ever_used=next.inertial_ever_used || command.transition_mode==AnimationTransitionMode::Inertial;
         if(command.blend_ticks>0) {
             Transition fade;fade.start_tick=tick;fade.duration_ticks=command.blend_ticks;
             if(command.transition_mode==AnimationTransitionMode::Inertial) {
                 const auto& rig=rigs_[index];const auto outgoing=evaluate(index,previous,tick).local;
-                const auto target=clock_state(next.control,tick,tick,*rig.model);
+                const auto target=clock_state(next.control,tick,tick,rig.clip_durations);
                 auto incoming=rig.compiled->sample_motion(target.clip,target.time,rig.baseline);
                 const auto velocities=history_motion(previous,outgoing.size(),tick);
                 check(incoming.velocities.size()==outgoing.size(),"Inertial destination velocity count differs.");
@@ -422,24 +428,55 @@ void RuntimeAnimations::apply(const std::vector<AnimationCommand>& commands,std:
     clocks_.swap(candidate);layers_.swap(candidate_layers);
 }
 std::vector<RuntimeAnimationPose> RuntimeAnimations::sample(std::uint64_t tick) {
-    std::vector<RuntimeAnimationPose> result;auto candidate=clocks_;auto candidate_layers=layers_;
-    auto remember=[&](Clock& clock,const std::vector<NodePose>& poses) {
+    // Every job owns one candidate clock/layer/output partition. Nothing live
+    // changes until all evaluations and output allocations have succeeded.
+    auto candidate=clocks_;auto candidate_layers=layers_;
+    std::vector<std::vector<RuntimeAnimationPose>> outputs(rigs_.size());
+    std::size_t total_nodes=0;
+    for(std::size_t index=0;index<rigs_.size();++index) {
+        outputs[index].reserve(rigs_[index].nodes.size());total_nodes+=rigs_[index].nodes.size();
+    }
+    std::vector<RuntimeAnimationPose> result;result.reserve(total_nodes);
+    auto remember=[tick](Clock& clock,const std::vector<NodePose>& poses) {
         if(!clock.current || tick>=clock.current->tick) {
             if(clock.current && tick>clock.current->tick)clock.previous=clock.current;
             clock.current=History{tick,std::make_shared<const std::vector<NodePose>>(poses)};
         }
         if(clock.transition && !active(*clock.transition,tick))clock.transition.reset();
     };
-    for(std::size_t index=0;index<rigs_.size();++index) {
-        const auto& rig=rigs_[index];auto pose=evaluate(index,clocks_[index],tick);remember(candidate[index],pose.local);
-        for(std::size_t i=0;i<layers_[index].size();++i) {
-            const auto& layer=layers_[index][i];const auto sampled=evaluate(index,layer.clock,tick);remember(candidate_layers[index][i].clock,sampled.local);
-            const auto& frozen=rig.layers[i];blend_animation_layer(pose.local,sampled.local,frozen.reference,frozen.mask,layer_weight(layer,tick),frozen.mode);
-            if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)candidate_layers[index][i].weight_transition.reset();
+    auto sample_rig=[&](std::size_t index) {
+        const auto& rig=rigs_[index];auto& base=candidate[index];auto& layers=candidate_layers[index];
+        auto pose=evaluate(index,base,tick);remember(base,pose.local);
+        for(std::size_t i=0;i<layers.size();++i) {
+            auto& layer=layers[i];const auto sampled=evaluate(index,layer.clock,tick);
+            remember(layer.clock,sampled.local);
+            const auto& frozen=rig.layers[i];
+            blend_animation_layer(pose.local,sampled.local,frozen.reference,frozen.mask,layer_weight(layer,tick),frozen.mode);
+            if(layer.weight_transition && tick-layer.weight_transition->start_tick>=layer.weight_transition->duration_ticks)layer.weight_transition.reset();
         }
-        if(!layers_[index].empty())pose=rig.compiled->sample({},0,false,pose.local);
-        for(std::size_t i=0;i<rig.nodes.size();++i) { const auto& local=pose.local[i];result.push_back({rig.nodes[i],{local.position,local.rotation,local.scale}}); }
-    }
+        if(!layers.empty())pose=rig.compiled->sample({},0,false,pose.local);
+        auto& output=outputs[index];
+        for(std::size_t node=0;node<rig.nodes.size();++node) {
+            const auto& local=pose.local[node];output.push_back({rig.nodes[node],{local.position,local.rotation,local.scale}});
+        }
+    };
+    if(executor_ && !rigs_.empty()) {
+        std::vector<jobs::Task> tasks;tasks.reserve(rigs_.size());
+        for(std::size_t index=0;index<rigs_.size();++index)
+            tasks.push_back({[&,index](jobs::Context& context) {
+                if(!context.cancel_requested())sample_rig(index);
+            },{},"animation.sample.rig"});
+        auto attribution=profiling::job_attribution();attribution.tick=static_cast<std::int64_t>(tick);
+        const auto group=executor_->submit(std::move(tasks),jobs::Lane::frame,attribution);
+        jobs::Result completed;
+        { profiling::Scope wait("runtime.animation.wait",static_cast<std::int64_t>(tick));completed=executor_->wait(group); }
+        profiling::collect_jobs(*executor_);
+        completed.rethrow();
+        check(completed.snapshot.state==jobs::State::succeeded,"Animation sampling jobs were cancelled; no poses committed.");
+    }else for(std::size_t index=0;index<rigs_.size();++index)sample_rig(index);
+    // Flatten only in frozen rig/node order, never completion order. Moving
+    // strings uses the already-reserved result storage before publication.
+    for(auto& output:outputs)for(auto& pose:output)result.push_back(std::move(pose));
     clocks_.swap(candidate);layers_.swap(candidate_layers);return result;
 }
 namespace {
@@ -476,7 +513,7 @@ StateJson state_control(const AnimationCommand& value,bool modern) {
     if(modern)result["transition_mode"]=state_mode(value.transition_mode);
     return result;
 }
-AnimationCommand read_control(const StateJson& value,const std::string& entity,const ModelAsset& model,bool modern) {
+AnimationCommand read_control(const StateJson& value,const std::string& entity,std::size_t clip_count,bool modern) {
     if(modern)state_fields(value,{"clip","time","speed","loop","playing","blend_ticks","transition_mode"});
     else state_fields(value,{"clip","time","speed","loop","playing","blend_ticks"});
     AnimationCommand control;control.entity=entity;
@@ -486,7 +523,7 @@ AnimationCommand read_control(const StateJson& value,const std::string& entity,c
     control.blend_ticks=static_cast<std::uint32_t>(state_uint(value.at("blend_ticks"),3600));
     if(modern)control.transition_mode=read_mode(value.at("transition_mode"));
     check(control.clip || (control.time==0 && !control.playing),"Rest animation state must have zero time and not play.");
-    return normalized(control,model);
+    return normalized(control,clip_count);
 }
 template<std::size_t N> std::array<double,N> state_vector(const StateJson& value) {
     check(value.is_array() && value.size()==N,"Animation state vector has incorrect length.");
@@ -625,7 +662,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
     bool any_inertial=false;
     auto read_clock=[&](const StateJson& record,std::size_t index,const std::string& entity) {
         const auto& rig=rigs_[index];Clock next;
-        next.control=read_control(record.at("control"),entity,*rig.model,modern);
+        next.control=read_control(record.at("control"),entity,rig.clip_durations.size(),modern);
         next.anchor_tick=state_uint(record.at("anchor_tick"),tick);
         if(modern) {
             next.inertial_ever_used=state_bool(record.at("inertial_ever_used"));any_inertial=any_inertial || next.inertial_ever_used;
@@ -654,7 +691,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                 (void)rig.compiled->sample({},0,false,poses);
                 // Enforce exact-source boundary consistency as well as finite
                 // parameters; otherwise forged offsets could jump after tick 0.
-                const auto target=clock_state(next.control,next.anchor_tick,fade.start_tick,*rig.model);
+                const auto target=clock_state(next.control,next.anchor_tick,fade.start_tick,rig.clip_durations);
                 const auto destination=rig.compiled->sample(target.clip,target.time,false,rig.baseline).local;
                 for(std::size_t node=0;node<correction.size();++node) {
                     const auto& value=correction[node];const auto& to=destination[node];
@@ -668,7 +705,7 @@ void RuntimeAnimations::load_state(const std::string& text,std::uint64_t tick) {
                 fade.inertial=std::make_shared<const std::vector<InertialNode>>(std::move(correction));
             } else if(!source.is_null()) {
                 check(source.is_null()!=frozen.is_null() && (!modern || transition.at("inertial").is_null()),"Crossfade animation state requires exactly one source kind.");
-                state_fields(source,{"control","anchor_tick"});fade.source=read_control(source.at("control"),entity,*rig.model,modern);
+                state_fields(source,{"control","anchor_tick"});fade.source=read_control(source.at("control"),entity,rig.clip_durations.size(),modern);
                 fade.source_anchor_tick=state_uint(source.at("anchor_tick"),fade.start_tick);
                 check(next.inertial_ever_used || fade.source.transition_mode==AnimationTransitionMode::Crossfade,"Inertial source control requires its history flag.");
             } else {

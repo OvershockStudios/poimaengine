@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/runtime.hpp"
 #include "poima/runtime_animation.hpp"
+#include "poima/jobs.hpp"
 #include "runtime_components.hpp"
 #include "runtime_body_ids.hpp"
 #include "runtime_entity_ids.hpp"
@@ -138,6 +139,7 @@ struct Runtime::Impl {
     std::optional<RuntimeEntityIds> entity_ids;
     std::vector<RuntimeSpawnTemplate> templates;
     Runtime* owner=nullptr;
+    std::shared_ptr<jobs::Executor> executor;
     std::unique_ptr<Gameplay> game;
     std::unique_ptr<RuntimeAnimations> animations;
     std::unique_ptr<RuntimeComponents> components;
@@ -231,7 +233,7 @@ struct Runtime::Impl {
         require(definition.entities.size()<=10000,"Runtime entity limit exceeded.");
         validate_runtime_templates(definition);templates=definition.templates;
         std::sort(templates.begin(),templates.end(),[](const auto& a,const auto& b){return a.id<b.id;});
-        animations=std::make_unique<RuntimeAnimations>(definition);
+        animations=std::make_unique<RuntimeAnimations>(definition,executor);
         validate_runtime_mesh_colliders(definition);
         physics.Init(RuntimeBodyIds::capacity,0,8192,8192,broad_layers,broad_filter,object_layers);
         physics.SetGravity(JPH::Vec3(0,-9.81f,0));
@@ -1062,9 +1064,11 @@ struct Runtime::Impl {
 #include "runtime_save.inc"
 
 bool Runtime::available() { return true; }
-Runtime::Runtime(const RuntimeDefinition& definition) {
+Runtime::Runtime(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor) {
     static Library library;
-    impl_=std::make_unique<Impl>();impl_->owner=this;impl_->initialize(definition);
+    impl_=std::make_unique<Impl>();impl_->owner=this;
+    impl_->executor=executor ? std::move(executor) : jobs::owner_executor();
+    impl_->initialize(definition);
 }
 Runtime::~Runtime()=default;
 const std::vector<RuntimeSpawnTemplate>& Runtime::spawn_templates() const {return impl_->templates;}

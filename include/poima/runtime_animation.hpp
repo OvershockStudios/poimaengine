@@ -20,6 +20,8 @@ class RuntimeAnimations {
         std::string entity;
         std::shared_ptr<const ModelAsset> model;
         std::shared_ptr<const CompiledAnimation> compiled;
+        // Snapshot at construction: sampling never reads mutable asset aliases.
+        std::vector<double> clip_durations;
         std::vector<NodePose> baseline;
         std::vector<std::string> nodes;
         std::vector<LayerDefinition> layers;
@@ -60,6 +62,7 @@ public:
         const Clock& operator[](std::size_t index) const { return bases[index]; }
     };
 private:
+    std::shared_ptr<jobs::Executor> executor_;
     std::vector<Rig> rigs_;
     std::map<std::string,std::size_t> indices_;
     std::map<std::string,RuntimeSkinnedMesh> skins_;
@@ -71,7 +74,8 @@ private:
     RuntimeAnimationState clock_summary(std::size_t index,const Clock& clock,std::uint64_t tick) const;
     RuntimeAnimationLayerState layer_summary(std::size_t index,std::size_t layer,std::uint64_t tick) const;
 public:
-    explicit RuntimeAnimations(const RuntimeDefinition& definition);
+    // No executor retains the independent serial reference path.
+    explicit RuntimeAnimations(const RuntimeDefinition& definition,std::shared_ptr<jobs::Executor> executor={});
     std::optional<RuntimeAnimationState> state(const std::string& entity,std::uint64_t tick,bool include_layers=false) const;
     std::optional<RuntimeAnimationLayerState> layer_state(const std::string& entity,std::uint32_t slot,std::uint64_t tick) const;
     void apply(const std::vector<AnimationCommand>& commands,std::uint64_t tick);
