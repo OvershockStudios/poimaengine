@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.70
+
+- Decompose supported static glTF node matrices into editable local TRS while preserving hierarchy, skin joints and inverse binds. Reject unsupported transforms and matrix/TRS animation conflicts under explicit numerical bounds. [Transform policy](docs/ASSETS.md#matrix-authored-transforms).
+- Add a tested imported-character playbook using an unchanged licensed human figure, independent source-pose calculations and source-independent cooked content. [Guide](docs/IMPORTED_CHARACTER.md).
+- Qualify Linux, Windows and simulation-disabled authoring, including numerical-boundary native tests, existing asset/animation/FBX regressions and 24 Vulkan captures on both laptop GPUs. Keep character gameplay, locomotion and retargeting scope explicit. [Evidence](docs/evidence/m2-gltf-matrix-intake.json).
+
 ## 0.0.69
 
 - Share a bounded native executor across animation sampling and procedural material baking, with dependency-aware frame/background lanes, reserved frame capacity, cooperative cancellation and a serial reference policy. [Native jobs](docs/JOBS.md).

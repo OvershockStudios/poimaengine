@@ -44,6 +44,30 @@ Only the selected glTF scene is instantiated. If there is no default scene, all 
 
 Animated models have a [reference import, inspection and pose-capture path](ANIMATION_ASSETS.md) and [explicit rig instantiation with fixed-tick playback](RUNTIME_ANIMATION.md), including crossfades, inertial transitions and masked layers. Retargeting, IK, root motion and broader character workflows remain unfinished.
 
+## Matrix-authored transforms
+
+A glTF node may supply local TRS values or a column-major `matrix`. The importer
+converts supported matrix-authored nodes into editable local TRS while preserving
+the hierarchy, mesh bindings and inverse bind matrices. Matrix-authored skeleton
+ancestors are supported; a node directly targeted by animation must use TRS.
+The [glTF transform specification](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#transformations)
+defines these source constraints.
+
+The matrix must have an exact affine last row `[0, 0, 0, 1]`, finite values,
+translation within ±1 billion meters, and positive column scales no greater than
+1 billion. Normalized basis columns must be orthogonal within `1e-6`; their
+determinant must be positive and within `3e-6` of one. Reconstructed basis
+columns must agree within `1e-6` times their respective scale. These bounds
+account for floating-point export error. Deviations within them are represented
+by a nearby TRS transform; arbitrarily tiny shear cannot be distinguished from
+numerical export error. General shear-preserving transforms remain unsupported.
+
+Reflections, zero scale, shear beyond the stated tolerance, perspective, mixed matrix/TRS properties and
+animated matrix nodes are rejected with import errors. A matrix representing a
+proper 180-degree rotation is supported, including a diagonal matrix with two
+negative axes. Import reports each converted node. This adds no affine/shear
+authoring component or physics-shape support.
+
 ## Components
 
 | Component | Required fields |
@@ -59,14 +83,14 @@ An entity cannot combine `StaticMesh` and the older `MeshRenderer`. `PbrMaterial
 
 - glTF 2.0 JSON and GLB, with embedded GLB buffers, base64 data buffers, or external buffers beneath the source directory.
 - Static indexed or non-indexed triangle lists, POSITION, normals and optional first UV set; strided accessors are supported. cgltf decodes supported accessor representations before cooking. Missing normals generate flat triangle normals and a diagnostic. Authored tangents are validated/preserved; missing tangents are generated with MikkTSpace when UV0 is present.
-- Positive-scale local TRS hierarchies and normalized rotations, mesh instances and multiple primitives/materials.
+- Positive-scale local TRS hierarchies and normalized rotations, mesh instances and multiple primitives/materials. Static matrix-authored nodes are accepted when they decompose into the supported TRS profile; see the transform policy above.
 - Opaque core metallic/roughness base-color, metallic, roughness and emissive factors, with double-sided rendering.
 - PNG (8-bit output, including palette/grayscale inputs) and JPEG texture images from GLB buffer views, base64 image data URIs or relative files beneath the source directory. Referenced primitives must supply TEXCOORD_0. Normal maps use linear tangent-space RGB with a validated/generated tangent frame.
 - Base-color and emissive RGB sampled as sRGB; metallic/roughness channels B/G and occlusion channel R sampled as linear data. Factors multiply the samples. Occlusion strength interpolates between unoccluded and sampled values, and affects the ambient diffuse term only.
 - Repeat, clamp and mirrored-repeat addressing, nearest/linear magnification, all six glTF minification modes. Missing samplers default to repeat and linear/trilinear filtering. Non-mip samplers restrict the texture view to level zero.
 - Complete RGBA8 mip chains, area-box filtered during cooking. sRGB RGB channels are decoded before filtering and re-encoded afterward; alpha stays linear. Odd image edges are included. No vertical image flip: glTF UV (0,0) addresses the upper-left texel.
 
-16-bit PNG, HDR images, KTX/Basis/WebP, texture transforms, morph targets, compression, required extensions, extended material models, alpha masking/blending, vertex colors, additional UV sets, sparse indices, non-triangle-list modes, matrix-authored nodes and mirrored/zero scales are rejected explicitly. Cameras/lights retain their transform nodes but are not converted to engine camera/light components; this produces a diagnostic. Sparse attribute unpacking is delegated to cgltf but has not yet received a dedicated Poima fixture. Do not infer general glTF conformance from the current fixture set.
+16-bit PNG, HDR images, KTX/Basis/WebP, texture transforms, morph targets, compression, required extensions, extended material models, alpha masking/blending, vertex colors, additional UV sets, sparse indices, non-triangle-list modes, unsupported matrix forms and mirrored/zero TRS scales are rejected explicitly. Cameras/lights retain their transform nodes but are not converted to engine camera/light components; this produces a diagnostic. Sparse attribute unpacking is delegated to cgltf but has not yet received a dedicated Poima fixture. Do not infer general glTF conformance from the current fixture set.
 
 This strict profile is intended to grow. Broader transforms/materials, compressed GPU formats and streaming remain required work. [Material authoring](MATERIAL_AUTHORING.md) adds independent image imports, texture-slot overrides, sampler/strength editing and effective inspection. Asset workflows target Poima’s own authoring model and standard interchange formats. Users must have appropriate rights to imported source assets.
 

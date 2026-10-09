@@ -1,8 +1,28 @@
 # Implementation status
 
-Updated 2026-10-09 for **0.0.69**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-09 for **0.0.70**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.70 accepts bounded matrix-authored glTF nodes by decomposing them
+into the existing positive-scale TRS profile. It preserves hierarchy and inverse
+bind frames, reports converted nodes and rejects unsupported transforms or
+matrix/TRS animation conflicts. The [transform policy](ASSETS.md#matrix-authored-transforms)
+includes exact affine constraints and explicit numerical tolerances.
+
+The [imported-character playbook](IMPORTED_CHARACTER.md) qualifies an unchanged,
+licensed 19-joint human figure with independent source calculations, authored
+rest frames, four native frozen-playback seeks and fresh-owner cooked closure.
+Linux runtime, Windows runtime and simulation-disabled Linux pass 694 RPCs with
+eight clean owner exits. Both laptop GPUs pass 24 Vulkan captures; the largest
+GPU/reference error is one edge pixel. Native tests include unequal scales,
+180-degree rotations, nested static/skinned frames, source-independent decode
+and numerical-boundary admission. Existing asset, animation, FBX and stable
+authoring-contract regressions pass separately. [Evidence](evidence/m2-gltf-matrix-intake.json).
+
+This is bounded character intake and observation. Compiled character gameplay,
+save/export continuation, locomotion clips, retargeting and broader exporter
+compatibility are not established by this checkpoint.
 
 Version 0.0.69 integrates a shared [native job executor](JOBS.md) into animation
 sampling and procedural material baking. Each creating owner lazily obtains a

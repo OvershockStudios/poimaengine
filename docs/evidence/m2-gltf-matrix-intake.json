@@ -1,0 +1,632 @@
+{
+  "format": "poima.gltf-matrix-intake-evidence",
+  "version": 1,
+  "engine_version": "0.0.70",
+  "recorded_date": "2026-10-09",
+  "passed": true,
+  "protocol_version": 1,
+  "schema_revision": 61,
+  "authoring_contract": "poima.authoring-core v1",
+  "native_gameplay_services_abi": 7,
+  "scope": "Bounded matrix-authored glTF intake and original licensed weighted-human observation; no locomotion, retargeting, compiled character gameplay/save/export or production performance claim.",
+  "source_sha256": {
+    "CMakeLists.txt": "0bf7c706117f4f01b30dfcf386086c0f6d681e03326da7d98195c0a8dbd33c5f",
+    "src/gltf.cpp": "569dcf19a160063cde6696db57ae0f9eaebb3c6e78c81d95070198b0fecc464b",
+    "tests/gltf_matrix_native.cpp": "02c9f4344b303640a0fd3eca8f29267d4625dded1e80003929ddd418cea7695e",
+    "tests/asset_contract.py": "d478fcdd36eb1db83a208ccb214407facc09adf822c4a85b1b324772320384c3",
+    "tests/imported_character_contract.py": "038190fba749b5cda6d7dd5f2fb682fdb7c9ad1b945715085d7144ee5e6c39f1",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "docs/IMPORTED_CHARACTER.md": "bd8f931f9e06a735fb410a5ec983d2bf0c759837a72573bcb773d0819e902d3c",
+    "docs/ASSETS.md": "955bf6c09f1cf35c477ff4d7db7bddf8e145478491ffd66941c00673e6e9c05c"
+  },
+  "transform_policy": {
+    "affine_last_row": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "exact_affine_row": true,
+    "normalized_basis_dot_limit": 1e-06,
+    "positive_determinant_error_limit": 3e-06,
+    "reconstructed_column_relative_limit": 1e-06,
+    "translation_absolute_limit_m": 1000000000.0,
+    "scale_range": "(0, 1e9]",
+    "animated_matrix_nodes": false,
+    "mixed_matrix_and_trs": false
+  },
+  "original_source": {
+    "name": "Rigged Figure",
+    "artist": "Cesium",
+    "copyright_year": 2017,
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "repository": "https://github.com/KhronosGroup/glTF-Sample-Assets",
+    "commit": "edc7c9e67c639d230715049ee31f9a96a6babbbe",
+    "sha256": "d6be85417d3e256861ee733eea6916093a7af7c79c16366181fd8abcaeb38cf5",
+    "bytes": 50116,
+    "nodes": 22,
+    "skin_joints": 19,
+    "vertices": 370,
+    "triangles": 256,
+    "channels": 57,
+    "clip_duration_seconds": 1.25,
+    "motion": "Stationary arm-opening/head motion; not locomotion."
+  },
+  "builds": {
+    "linux": {
+      "passed": true,
+      "binary_sha256": "981c451d115e06ff4e924f5a2ecad168a96c1150320670a1130b53f82bb2589b",
+      "build_log_sha256": "493fae256396b043a4e9afb387eafbb5131152c61a745e8fb6a02dc16b834199",
+      "unchanged_compiler_settings": true,
+      "bounded_compiler_parallelism": 2
+    },
+    "windows": {
+      "passed": true,
+      "binary_sha256": "072cf8fc2b70a9c8fb21e2c5584fa5315ea405d3761e84d5e950595d1c428e84",
+      "build_log_sha256": "048e707446f9aeee1d364c7d4c6e8c71ab7eba2660a0d5e113faf7598d321d3c",
+      "unchanged_compiler_settings": true,
+      "bounded_compiler_parallelism": 2
+    },
+    "linux-authoring": {
+      "passed": true,
+      "binary_sha256": "8deb912dc10649e2ff9cf528efab2626810f0a4d1a50e002be5227064c962981",
+      "build_log_sha256": "03187642e26032b4beeacc6556a62bf12296a2903d9d3b5f86b8f0b343a1e558",
+      "unchanged_compiler_settings": true,
+      "bounded_compiler_parallelism": 2
+    }
+  },
+  "native_tolerance_boundary_checks": {
+    "passed": true,
+    "test_sha256": "02c9f4344b303640a0fd3eca8f29267d4625dded1e80003929ddd418cea7695e",
+    "report_sha256": "b0b4b600c140f81fa101303ab71587e1f0fe68e3f6fea1ddd30314dc1960713e",
+    "engine_images_unchanged": true,
+    "all_three_native_hosts_pass": true,
+    "cases": [
+      "0.5e-6 normalized residual accepted within reconstruction bounds, ordinary scales",
+      "0.5e-6 normalized residual accepted within reconstruction bounds, strongly unequal scales",
+      "2e-6 normalized residual rejected, ordinary and strongly unequal scales"
+    ]
+  },
+  "regression": {
+    "passed": true,
+    "qualified_commands": 28,
+    "linux_python_tests_passed": 50,
+    "windows_python_tests_passed": 49,
+    "windows_skipped_tests": 1,
+    "skipped_scope": "POSIX invalid-byte filename representation",
+    "report_sha256": "7669a5a9f9ff72f0b34928488701acda671a17159bfa633212c815eb4d6c0710",
+    "native_families": [
+      "matrix intake",
+      "compiled animation math",
+      "animation layers math",
+      "runtime animation",
+      "runtime animation layers",
+      "36 original FBX fixtures in ASCII and binary"
+    ],
+    "python_suites": [
+      "assets",
+      "animation assets",
+      "runtime animation",
+      "runtime animation layers",
+      "FBX protocol",
+      "stable authoring contract"
+    ]
+  },
+  "character_cohorts": {
+    "linux": {
+      "passed": true,
+      "runtime_requested": true,
+      "evidence_sha256": "3b5cd8847dca9643f59ca47d593f287fd3377343979704f9be96e097d9d9312b",
+      "rpc_count": 184,
+      "owned_processes": 2,
+      "all_owned_exits_clean": true,
+      "checks": {
+        "import_profile": true,
+        "source_reference_matrices": true,
+        "independent_cpu_skinning": true,
+        "authored_rest": true,
+        "fresh_owner_cooked_closure": true,
+        "owned_sources_removed": true,
+        "sampling_preserved_authored_history": true,
+        "runtime_frozen_seek": true,
+        "runtime_preserved_authored_history": true,
+        "caller_source_unchanged": true,
+        "binary_unchanged": true
+      },
+      "max_errors": {
+        "import_local": 8.881784197001252e-16,
+        "inverse_bind": 0,
+        "authored_local": 8.881784197001252e-16,
+        "authored_world": 8.881784197001252e-16,
+        "sample_local": 9.97421045756397e-09,
+        "sample_world": 1.0401957989403243e-08,
+        "world_vertex_m": 1.6204131836339286e-07,
+        "world_normal_component": 6.360737458965815e-08,
+        "runtime_local": 9.97421045756397e-09,
+        "runtime_world": 1.0401957989403243e-08
+      },
+      "tolerances": {
+        "local_world_matrix": 2e-06,
+        "world_vertex_m": 2e-05,
+        "normal_component": 3e-05,
+        "raster_pixels_over_2": 128,
+        "raster_mean_max_channel_error": 0.1
+      },
+      "comparisons": {},
+      "captures": {},
+      "cooked_inputs": {
+        "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4.pmodel": "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4"
+      }
+    },
+    "windows-nvidia": {
+      "passed": true,
+      "runtime_requested": true,
+      "evidence_sha256": "9c9e52cf0048e2839bdc7dbc79e39310abd520301fb0b8a9e3d1e38a1c057c33",
+      "rpc_count": 212,
+      "owned_processes": 2,
+      "all_owned_exits_clean": true,
+      "checks": {
+        "import_profile": true,
+        "source_reference_matrices": true,
+        "independent_cpu_skinning": true,
+        "authored_rest": true,
+        "fresh_owner_cooked_closure": true,
+        "owned_sources_removed": true,
+        "sampling_preserved_authored_history": true,
+        "runtime_frozen_seek": true,
+        "runtime_preserved_authored_history": true,
+        "vulkan_independent_reference": true,
+        "caller_source_unchanged": true,
+        "binary_unchanged": true
+      },
+      "max_errors": {
+        "import_local": 8.881784197001252e-16,
+        "inverse_bind": 0,
+        "authored_local": 8.881784197001252e-16,
+        "authored_world": 8.881784197001252e-16,
+        "sample_local": 9.97421045756397e-09,
+        "sample_world": 1.0401957989403243e-08,
+        "world_vertex_m": 1.6204131836339286e-07,
+        "world_normal_component": 6.360737458965815e-08,
+        "runtime_local": 9.97421045756397e-09,
+        "runtime_world": 1.0401957989403243e-08
+      },
+      "tolerances": {
+        "local_world_matrix": 2e-06,
+        "world_vertex_m": 2e-05,
+        "normal_component": 3e-05,
+        "raster_pixels_over_2": 128,
+        "raster_mean_max_channel_error": 0.1
+      },
+      "comparisons": {
+        "0-gpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "0-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "0-gpu-vs-cpu": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "1-gpu-vs-independent": {
+          "changed_pixels": 1,
+          "pixels_over_2": 1,
+          "maximum_channel_error": 4,
+          "mean_max_channel_error": 1.3020833333333334e-05
+        },
+        "1-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "1-gpu-vs-cpu": {
+          "changed_pixels": 1,
+          "pixels_over_2": 1,
+          "maximum_channel_error": 4,
+          "mean_max_channel_error": 1.3020833333333334e-05
+        },
+        "2-gpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "2-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "2-gpu-vs-cpu": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "3-gpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "3-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "3-gpu-vs-cpu": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "visible_arm_motion": {
+          "changed_pixels": 14203,
+          "pixels_over_2": 11843,
+          "maximum_channel_error": 135,
+          "mean_max_channel_error": 2.861708984375
+        }
+      },
+      "captures": {
+        "0-original-gpu": {
+          "sha256": "e627f082711bad9ca25de6be67479879b98cba85be4c26803612c74aecc44adc",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "0-original-cpu": {
+          "sha256": "e627f082711bad9ca25de6be67479879b98cba85be4c26803612c74aecc44adc",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "0-independent": {
+          "sha256": "e627f082711bad9ca25de6be67479879b98cba85be4c26803612c74aecc44adc",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "1-original-gpu": {
+          "sha256": "e72eb83360393545d7041a7d9d4e0d34becc709f24dd888c6a0706477e2e5c9c",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "1-original-cpu": {
+          "sha256": "3c732beffdc83894010969c2bcb9c0f8162bbc2562d84941c003e180b0d66ca8",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "1-independent": {
+          "sha256": "3c732beffdc83894010969c2bcb9c0f8162bbc2562d84941c003e180b0d66ca8",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "2-original-gpu": {
+          "sha256": "41fe681e1b3b85a3a83bf6781bf77cc1774427df63d0274b5611787fe749df78",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "2-original-cpu": {
+          "sha256": "41fe681e1b3b85a3a83bf6781bf77cc1774427df63d0274b5611787fe749df78",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "2-independent": {
+          "sha256": "41fe681e1b3b85a3a83bf6781bf77cc1774427df63d0274b5611787fe749df78",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "3-original-gpu": {
+          "sha256": "4e748aae247249d5e69ccb85c60c1cb8790abee0e864cb907f83dea7057e1836",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "3-original-cpu": {
+          "sha256": "4e748aae247249d5e69ccb85c60c1cb8790abee0e864cb907f83dea7057e1836",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "3-independent": {
+          "sha256": "4e748aae247249d5e69ccb85c60c1cb8790abee0e864cb907f83dea7057e1836",
+          "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "samples": 4,
+          "nvrhi_errors": 0
+        }
+      },
+      "cooked_inputs": {
+        "0aab49c8289217cfa14b234aee8c4656606aaee947ae8665c0eff8f76940762c.pmodel": "0aab49c8289217cfa14b234aee8c4656606aaee947ae8665c0eff8f76940762c",
+        "371f5b548af530a90c70a0b17d234b8e97fcb717cb43ef02d10ee57f402d6e96.pmodel": "371f5b548af530a90c70a0b17d234b8e97fcb717cb43ef02d10ee57f402d6e96",
+        "5c39c1f469119bb3feef12a3c6ccde0d6a3f1d701d5bffd044559de0854b6bfb.pmodel": "5c39c1f469119bb3feef12a3c6ccde0d6a3f1d701d5bffd044559de0854b6bfb",
+        "8700ff1d5905f10c802c43b937882cda559b4ac5d7504de34fa1f86551a69392.pmodel": "8700ff1d5905f10c802c43b937882cda559b4ac5d7504de34fa1f86551a69392",
+        "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4.pmodel": "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4"
+      }
+    },
+    "windows-amd": {
+      "passed": true,
+      "runtime_requested": true,
+      "evidence_sha256": "c47f22067a1a14db21b14028f48057c94bc95b4d9c03df6240a48059c72f1b42",
+      "rpc_count": 212,
+      "owned_processes": 2,
+      "all_owned_exits_clean": true,
+      "checks": {
+        "import_profile": true,
+        "source_reference_matrices": true,
+        "independent_cpu_skinning": true,
+        "authored_rest": true,
+        "fresh_owner_cooked_closure": true,
+        "owned_sources_removed": true,
+        "sampling_preserved_authored_history": true,
+        "runtime_frozen_seek": true,
+        "runtime_preserved_authored_history": true,
+        "vulkan_independent_reference": true,
+        "caller_source_unchanged": true,
+        "binary_unchanged": true
+      },
+      "max_errors": {
+        "import_local": 8.881784197001252e-16,
+        "inverse_bind": 0,
+        "authored_local": 8.881784197001252e-16,
+        "authored_world": 8.881784197001252e-16,
+        "sample_local": 9.97421045756397e-09,
+        "sample_world": 1.0401957989403243e-08,
+        "world_vertex_m": 1.6204131836339286e-07,
+        "world_normal_component": 6.360737458965815e-08,
+        "runtime_local": 9.97421045756397e-09,
+        "runtime_world": 1.0401957989403243e-08
+      },
+      "tolerances": {
+        "local_world_matrix": 2e-06,
+        "world_vertex_m": 2e-05,
+        "normal_component": 3e-05,
+        "raster_pixels_over_2": 128,
+        "raster_mean_max_channel_error": 0.1
+      },
+      "comparisons": {
+        "0-gpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "0-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "0-gpu-vs-cpu": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "1-gpu-vs-independent": {
+          "changed_pixels": 1,
+          "pixels_over_2": 1,
+          "maximum_channel_error": 4,
+          "mean_max_channel_error": 1.3020833333333334e-05
+        },
+        "1-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "1-gpu-vs-cpu": {
+          "changed_pixels": 1,
+          "pixels_over_2": 1,
+          "maximum_channel_error": 4,
+          "mean_max_channel_error": 1.3020833333333334e-05
+        },
+        "2-gpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "2-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "2-gpu-vs-cpu": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "3-gpu-vs-independent": {
+          "changed_pixels": 1,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 1,
+          "mean_max_channel_error": 3.2552083333333335e-06
+        },
+        "3-cpu-vs-independent": {
+          "changed_pixels": 0,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 0,
+          "mean_max_channel_error": 0.0
+        },
+        "3-gpu-vs-cpu": {
+          "changed_pixels": 1,
+          "pixels_over_2": 0,
+          "maximum_channel_error": 1,
+          "mean_max_channel_error": 3.2552083333333335e-06
+        },
+        "visible_arm_motion": {
+          "changed_pixels": 14173,
+          "pixels_over_2": 11839,
+          "maximum_channel_error": 135,
+          "mean_max_channel_error": 2.8616927083333334
+        }
+      },
+      "captures": {
+        "0-original-gpu": {
+          "sha256": "b88fe2e09b5f1b3cc77b8996deef6adfe1eb05dff7c8d636f05782cb606659f9",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "0-original-cpu": {
+          "sha256": "b88fe2e09b5f1b3cc77b8996deef6adfe1eb05dff7c8d636f05782cb606659f9",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "0-independent": {
+          "sha256": "b88fe2e09b5f1b3cc77b8996deef6adfe1eb05dff7c8d636f05782cb606659f9",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "1-original-gpu": {
+          "sha256": "9c02c3a8cdf431905543de7c511328ca2a4005914952ef71b35236f08cfd630f",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "1-original-cpu": {
+          "sha256": "8cc7a40fd2198daf968ec6ee8c74d8f628be39e45f06b34146d188d37f4b7d59",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "1-independent": {
+          "sha256": "8cc7a40fd2198daf968ec6ee8c74d8f628be39e45f06b34146d188d37f4b7d59",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "2-original-gpu": {
+          "sha256": "e2a159c2384e74aa4b28942e707696216c260b3f083aada98a642394004180bf",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "2-original-cpu": {
+          "sha256": "e2a159c2384e74aa4b28942e707696216c260b3f083aada98a642394004180bf",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "2-independent": {
+          "sha256": "e2a159c2384e74aa4b28942e707696216c260b3f083aada98a642394004180bf",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "3-original-gpu": {
+          "sha256": "b7a4cbffb0a42a7de558f737620df1d5370998298703791fb95fdc0f288e4933",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "3-original-cpu": {
+          "sha256": "84136c4f61355f8b5ac4644e971f713f566bed97ea306ede2b41d31c2f98f825",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        },
+        "3-independent": {
+          "sha256": "84136c4f61355f8b5ac4644e971f713f566bed97ea306ede2b41d31c2f98f825",
+          "gpu": "AMD Radeon(TM) Graphics",
+          "samples": 4,
+          "nvrhi_errors": 0
+        }
+      },
+      "cooked_inputs": {
+        "0aab49c8289217cfa14b234aee8c4656606aaee947ae8665c0eff8f76940762c.pmodel": "0aab49c8289217cfa14b234aee8c4656606aaee947ae8665c0eff8f76940762c",
+        "371f5b548af530a90c70a0b17d234b8e97fcb717cb43ef02d10ee57f402d6e96.pmodel": "371f5b548af530a90c70a0b17d234b8e97fcb717cb43ef02d10ee57f402d6e96",
+        "5c39c1f469119bb3feef12a3c6ccde0d6a3f1d701d5bffd044559de0854b6bfb.pmodel": "5c39c1f469119bb3feef12a3c6ccde0d6a3f1d701d5bffd044559de0854b6bfb",
+        "8700ff1d5905f10c802c43b937882cda559b4ac5d7504de34fa1f86551a69392.pmodel": "8700ff1d5905f10c802c43b937882cda559b4ac5d7504de34fa1f86551a69392",
+        "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4.pmodel": "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4"
+      }
+    },
+    "linux-authoring": {
+      "passed": true,
+      "runtime_requested": false,
+      "evidence_sha256": "0df5b4b1c932aefc8c42878f8e510aef95288986e86942bd0296c5ebd8cd79d6",
+      "rpc_count": 86,
+      "owned_processes": 2,
+      "all_owned_exits_clean": true,
+      "checks": {
+        "import_profile": true,
+        "source_reference_matrices": true,
+        "independent_cpu_skinning": true,
+        "authored_rest": true,
+        "fresh_owner_cooked_closure": true,
+        "owned_sources_removed": true,
+        "sampling_preserved_authored_history": true,
+        "caller_source_unchanged": true,
+        "binary_unchanged": true
+      },
+      "max_errors": {
+        "import_local": 8.881784197001252e-16,
+        "inverse_bind": 0,
+        "authored_local": 8.881784197001252e-16,
+        "authored_world": 8.881784197001252e-16,
+        "sample_local": 9.97421045756397e-09,
+        "sample_world": 1.0401957989403243e-08,
+        "world_vertex_m": 1.6204131836339286e-07,
+        "world_normal_component": 6.360737458965815e-08
+      },
+      "tolerances": {
+        "local_world_matrix": 2e-06,
+        "world_vertex_m": 2e-05,
+        "normal_component": 3e-05,
+        "raster_pixels_over_2": 128,
+        "raster_mean_max_channel_error": 0.1
+      },
+      "comparisons": {},
+      "captures": {},
+      "cooked_inputs": {
+        "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4.pmodel": "d0be427a45d8b7f327b5cecde4b2ac50b6eef285b91f684e577bd6660626d7f4"
+      }
+    }
+  },
+  "total_character_rpcs": 694,
+  "total_character_owner_exits": 8,
+  "total_vulkan_captures": 24,
+  "retained_harness_corrections": [
+    "Fresh-owner history is session-local; refreshed its baseline after reopen.",
+    "The earlier asset rejection fixture used a now-supported identity matrix; changed it to unsupported shear.",
+    "Capture references require fresh stable IDs after entity retirement."
+  ],
+  "limitations": [
+    "Original small stylized human and one embedded clip; not arbitrary exporter/character/shading compatibility.",
+    "Frozen seeks at 0, 0.3125, 0.625 and 0.9375 seconds; endpoint and loop-seam behavior not qualified here.",
+    "Only existing positive-scale local TRS representation; no shear/reflection/affine authoring or physics shape extension.",
+    "No new C# character, navigation, save, export, GUI, physical-input or game-scale performance qualification.",
+    "Windows renderer observations on one laptop; no native Linux graphics, browser or console claim.",
+    "Normalized residual tolerance permits bounded floating-point decomposition; no mathematically exact shear-exclusion claim."
+  ],
+  "manual_image": {
+    "path": "docs/evidence/rigged-figure-import.png",
+    "sha256": "9f431a5c82508ea5354f7e3f7d7e220581db681e0e3d3c73acd6a9b27d22f4a5",
+    "source_bmp_sha256": "41fe681e1b3b85a3a83bf6781bf77cc1774427df63d0274b5611787fe749df78",
+    "clip_time_seconds": 0.625,
+    "kind": "Lossless PNG conversion of Windows Vulkan readback; visually inspected.",
+    "attribution": "Rigged Figure, copyright 2017 Cesium, CC-BY-4.0; rendered in Poima from the unmodified source."
+  }
+}

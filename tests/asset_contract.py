@@ -75,7 +75,8 @@ class Assets(unittest.TestCase):
         base,blob=sphere(4,8);variants=[]
         doc=copy.deepcopy(base);doc['extensionsRequired']=['KHR_draco_mesh_compression'];variants.append(doc)
         doc=copy.deepcopy(base);doc['nodes'][1]['scale']=[-1,1,1];variants.append(doc)
-        doc=copy.deepcopy(base);doc['nodes'][1]['matrix']=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];variants.append(doc)
+        # Decomposable matrix nodes are supported; shear remains an import error.
+        doc=copy.deepcopy(base);doc['nodes'][1]['matrix']=[1,0,0,0,.2,1,0,0,0,0,1,0,0,0,0,1];variants.append(doc)
         doc=copy.deepcopy(base);doc['accessors'][0]['count']=999999999;variants.append(doc)
         doc=copy.deepcopy(base);doc['materials'][0]['alphaMode']='BLEND';variants.append(doc)
         doc=copy.deepcopy(base);doc['images']=[{'uri':'missing.png'}];doc['textures']=[{'source':0}];doc['materials'][0]['pbrMetallicRoughness']['baseColorTexture']={'index':0};variants.append(doc)

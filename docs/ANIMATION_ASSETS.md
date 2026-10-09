@@ -60,7 +60,7 @@ These rules follow the [Khronos glTF specification](https://registry.khronos.org
 
 Limits: 64 skins, 256 joints per skin, 4096 total joint references, 256 clips, 8192 total channels, one million total keys and key times in 0–3600 seconds. Inverse-bind accessors may contain extra elements but are limited to 4096 matrices; only the referenced joint prefix is retained. Node/geometry/package limits from [Assets](ASSETS.md) also apply. Preview limits are 10,000 drawable instances, one million deformed vertices and three million deformed indices in aggregate. They are bounded bootstrap limits, not shipping content targets.
 
-Morph targets, mirrored/nonpositive node scales, matrix-authored nodes and the broader excluded glTF profile remain unsupported. Inverse bind matrices must be affine and invertible. Weighted primitives instantiated without a skin are rejected. Unused weighted primitives are retained in v4 packages.
+Morph targets, mirrored/nonpositive node scales and the broader excluded glTF profile remain unsupported. Static matrix-authored nodes use the [documented decomposition policy](ASSETS.md#matrix-authored-transforms); animation-targeted nodes must supply TRS. Inverse bind matrices must be affine and invertible. Weighted primitives instantiated without a skin are rejected. Unused weighted primitives are retained in v4 packages.
 
 ## Cooked format v4
 

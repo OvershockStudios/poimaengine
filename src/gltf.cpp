@@ -61,6 +61,57 @@ void normal(std::array<float,3>& n) {
     require(length>1e-12 && std::isfinite(length),"glTF contains a zero normal or degenerate triangle.");
     for(auto& v:n)v=static_cast<float>(v/length);
 }
+void matrix_transform(const cgltf_node& source,ModelNode& node) {
+    // glTF 2.0 section 3.5.3: matrix and TRS are mutually exclusive;
+    // matrices must decompose as T * R * S without shear.
+    require(!source.has_translation && !source.has_rotation && !source.has_scale,
+        "glTF node cannot combine matrix and TRS properties.");
+    const auto& m=source.matrix;
+    for(float value:m)require(std::isfinite(value),"Invalid nonfinite glTF node matrix.");
+    require(m[3]==0 && m[7]==0 && m[11]==0 && m[15]==1,
+        "Perspective/non-affine glTF node matrices are not supported.");
+    constexpr double tolerance=1e-6; // Normalized basis and relative column reconstruction.
+    std::array<std::array<double,3>,3> columns{};
+    for(std::size_t c=0;c<3;++c) {
+        const double scale=std::hypot(double(m[c*4]),double(m[c*4+1]),double(m[c*4+2]));
+        require(std::isfinite(scale) && scale>0 && scale<=1e9,
+            "Singular/zero/out-of-range glTF matrix scales are not supported.");
+        node.scale[c]=scale;
+        for(std::size_t r=0;r<3;++r)columns[c][r]=m[c*4+r]/scale;
+        node.position[c]=m[12+c];
+    }
+    for(std::size_t a=0;a<3;++a)for(std::size_t b=a+1;b<3;++b) {
+        double dot=0;for(std::size_t r=0;r<3;++r)dot+=columns[a][r]*columns[b][r];
+        require(std::abs(dot)<=tolerance,"Sheared glTF node matrices are not supported.");
+    }
+    const auto& x=columns[0];const auto& y=columns[1];const auto& z=columns[2];
+    const double determinant=x[0]*(y[1]*z[2]-y[2]*z[1])-y[0]*(x[1]*z[2]-x[2]*z[1])+z[0]*(x[1]*y[2]-x[2]*y[1]);
+    require(determinant>0 && std::abs(determinant-1)<=3*tolerance,
+        "Mirrored/non-orthonormal glTF node matrices are not supported.");
+    // Largest diagonal branches avoid division by a vanishing quaternion W
+    // for 180-degree rotations. Columns are rotation matrix columns.
+    auto& q=node.rotation;const double trace=x[0]+y[1]+z[2];
+    if(trace>0) {
+        const double s=2*std::sqrt(trace+1);
+        q={(y[2]-z[1])/s,(z[0]-x[2])/s,(x[1]-y[0])/s,s/4};
+    } else if(x[0]>=y[1] && x[0]>=z[2]) {
+        const double s=2*std::sqrt(1+x[0]-y[1]-z[2]);
+        q={s/4,(y[0]+x[1])/s,(z[0]+x[2])/s,(y[2]-z[1])/s};
+    } else if(y[1]>=z[2]) {
+        const double s=2*std::sqrt(1+y[1]-x[0]-z[2]);
+        q={(y[0]+x[1])/s,s/4,(z[1]+y[2])/s,(z[0]-x[2])/s};
+    } else {
+        const double s=2*std::sqrt(1+z[2]-x[0]-y[1]);
+        q={(z[0]+x[2])/s,(z[1]+y[2])/s,s/4,(x[1]-y[0])/s};
+    }
+    double norm=0;for(double value:q)norm+=value*value;
+    require(std::isfinite(norm) && norm>0,"Cannot decompose glTF matrix rotation.");
+    for(double& value:q)value/=std::sqrt(norm);
+    const auto reconstructed=local_matrix(node.position,node.rotation,node.scale);
+    for(std::size_t c=0;c<3;++c)for(std::size_t r=0;r<3;++r)
+        require(std::abs(reconstructed[c*4+r]-m[c*4+r])<=tolerance*node.scale[c],
+            "glTF matrix TRS reconstruction exceeds tolerance.");
+}
 std::string image_bytes(const cgltf_image& image,const cgltf_options& options,Files& files) {
     require(!image.mime_type || std::string(image.mime_type)=="image/png" || std::string(image.mime_type)=="image/jpeg","Unsupported glTF image MIME type.");
     if(image.buffer_view) {
@@ -247,11 +298,14 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
     require(!result->primitives.empty(),"glTF contains no renderable triangles.");
     for(std::size_t i=0;i<data->nodes_count;++i) {
         const auto& source_node=data->nodes[i];ModelNode node;
-        require(!source_node.has_matrix,"Matrix-authored nodes need the forthcoming affine transform import path; export TRS nodes for now.");
         node.name=source_node.name ? source_node.name : "Node "+std::to_string(i);require(node.name.size()<=256,"glTF node name exceeds 256 bytes.");
         if(node.name.empty())node.name="Node "+std::to_string(i);
         node.parent=source_node.parent ? static_cast<int>(source_node.parent-data->nodes) : -1;
-        std::copy_n(source_node.translation,3,node.position.begin());std::copy_n(source_node.rotation,4,node.rotation.begin());std::copy_n(source_node.scale,3,node.scale.begin());
+        if(source_node.has_matrix) {
+            matrix_transform(source_node,node);
+            result->diagnostics.push_back("Decomposed matrix-authored node "+std::to_string(i)+" ("+node.name+") to TRS.");
+        }
+        else { std::copy_n(source_node.translation,3,node.position.begin());std::copy_n(source_node.rotation,4,node.rotation.begin());std::copy_n(source_node.scale,3,node.scale.begin()); }
         for(auto x:node.position)require(std::isfinite(x) && std::abs(x)<=1e9,"Invalid glTF translation.");
         for(auto x:node.scale)require(std::isfinite(x) && x>0 && x<=1e9,"Mirrored/zero/out-of-range node scales are not supported yet.");
         double norm=0;for(auto x:node.rotation) { require(std::isfinite(x),"Invalid glTF rotation.");norm+=x*x; }
@@ -283,6 +337,7 @@ std::shared_ptr<const ModelAsset> import_gltf(const std::filesystem::path& sourc
         channel_count+=source_animation.channels_count;require(channel_count<=max_animation_channels,"Animation channel budget exceeded.");
         for(std::size_t j=0;j<source_animation.channels_count;++j) {
             const auto& source_channel=source_animation.channels[j];require(source_channel.target_node && source_channel.sampler,"Animation requires a target node and sampler.");const auto& sampler=*source_channel.sampler;AnimationChannel channel;channel.node=static_cast<std::uint32_t>(source_channel.target_node-data->nodes);
+            require(!source_channel.target_node->has_matrix,"glTF animation targets cannot use a matrix-authored transform.");
             switch(source_channel.target_path) {
                 case cgltf_animation_path_type_translation:channel.path=AnimationPath::translation;break;
                 case cgltf_animation_path_type_rotation:channel.path=AnimationPath::rotation;break;
