@@ -133,7 +133,7 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
         {"then",Json{{"required",Json::array({"revision"})}}}
     });
     references_schema["description"]="Read current authored typed asset references without package I/O. Asset and owner filters are exclusive; continuation requires the returned revision. This evolving API is outside authoring-core v1.";
-    Json result = {{"protocol_version", 1}, {"schema_revision", 72}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
+    Json result = {{"protocol_version", 1}, {"schema_revision", 73}, {"transport", "JSON-RPC 2.0; one request per line; no batches"},
         {"methods", {
             {"world.describe", {{"type","object"},{"description","Full discovery by default; catalog lists names, while method/component/section retrieves one entry and mutation selects transaction operation schemas. Read the invariants section before mutations."},{"oneOf",Json::array({
                 object_schema({{"view",{{"enum",{"full","catalog"}},{"default","full"}}}}),
@@ -301,6 +301,8 @@ Json describe(const Json& sky_defaults, std::uint64_t max_revision, std::size_t 
     player_start["description"]="Start an owner-pumped native player in a shared headless host. Acknowledgement precedes graphics initialization; inspect readiness/completion separately. Outside authoring-core v1.";
     methods["player.start"]=std::move(player_start);
     methods["player.inspect"]=object_schema({{"player_id",id}});
+    methods["player.diagnostics.inspect"]=object_schema({{"player_id",id},{"generation",rev}},{"player_id","generation"});
+    methods["player.diagnostics.inspect"]["description"]="Read up to 128 chronological retained slow CPU polls for an exact player identity/generation. No simulation, presentation, device access, drain or receipt. A terminal snapshot survives until another player replaces its owner. Outside authoring-core v1.";
     methods["player.control"]=object_schema({{"player_id",id},{"request_id",id},{"expected_control_revision",rev},
         {"action",{{"enum",{"pause","resume","stop"}}}}},{"player_id","request_id","expected_control_revision","action"});
     methods["player.capture"]=object_schema({{"player_id",id},{"request_id",id},{"expected_control_revision",rev},

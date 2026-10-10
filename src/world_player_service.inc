@@ -145,6 +145,7 @@
         std::unique_ptr<PlayerSessionAdapter> session;
         std::unique_ptr<PlayerWindow> window;
         Json cached_report;
+        std::optional<player_diagnostics::Snapshot> terminal_diagnostics;
         std::uint64_t applied_ui_control_sequence=0;
     };
     static constexpr bool player_available() noexcept { return POIMA_SIMULATION!=0 && POIMA_RENDER_SMOKE!=0; }
@@ -216,6 +217,9 @@
         player.cached_report=player_report_json(player.prepared.options,player.prepared.input_info,
             player.prepared.settings_application,player.window->report(),player.mode);
         if(player.window->finished()) {
+            // Copy the bounded CPU recorder exactly once before any terminal
+            // window destruction. Reads after stop retain this owner identity.
+            if(!player.terminal_diagnostics)player.terminal_diagnostics=player.window->diagnostics();
             // Normal finish retires actual GPU work. A fault must retain loss,
             // never report the unfinished ticket as a completed duration.
             auto& capture=performance_.recorder();capture.stop_admission();
@@ -255,6 +259,74 @@
         result["control_sequence"]=active ? runtime_->control_sequence() : player.control_sequence;
         if(include_report)result["report"]=player.cached_report;
         return result;
+    }
+    static Json player_diagnostic_audio(const player_diagnostics::AudioWork& a) {
+        return {{"queue_wait",a.queue_wait_ns},{"enqueue",a.enqueue_ns},{"queue_observe",a.queue_observe_ns},
+            {"device_resume",a.device_resume_ns},{"device_pause",a.device_pause_ns},{"clear",a.clear_ns},{"dsp",a.dsp_ns},
+            {"reset",a.reset_ns},{"gain",a.gain_ns},{"open",a.open_ns},{"flush",a.flush_ns},{"drain_wait",a.drain_wait_ns}};
+    }
+    static Json player_diagnostic_sample(const player_diagnostics::Sample& sample) {
+        const auto& w=sample.work;const auto& a=sample.audio;const auto& c=sample.clock;
+        Json nonfinite=Json::array();
+        auto clock_number=[&](const char* name,double value)->Json {
+            if(!std::isfinite(value)) { nonfinite.push_back(name);return nullptr; }
+            return c.observed ? Json(value):Json(nullptr);
+        };
+        Json clock={{"observed",c.observed},{"active",c.active},
+            {"elapsed_seconds",clock_number("elapsed_seconds",c.elapsed_seconds)},
+            {"accepted_seconds",clock_number("accepted_seconds",c.accepted_seconds)},
+            {"dropped_seconds",clock_number("dropped_seconds",c.dropped_seconds)},
+            {"accumulator_seconds",clock_number("accumulator_seconds",c.accumulator_seconds)},
+            {"planned_ticks",c.observed ? Json(c.planned_ticks):Json(nullptr)},
+            {"committed_ticks",c.observed ? Json(c.committed_ticks):Json(nullptr)}};
+        clock["nonfinite_fields"]=std::move(nonfinite);
+        return {{"begin_ns",sample.begin_ns},{"end_ns",sample.end_ns},
+            {"poll_wall_ns",sample.end_ns>=sample.begin_ns ? Json(sample.end_ns-sample.begin_ns):Json(nullptr)},
+            {"tick_before",sample.tick_before},{"tick_after",sample.tick_after},{"flags",sample.flags},
+            {"width",sample.width},{"height",sample.height},
+            {"resize_ns",sample.resize_ns},
+            {"runtime_replacements_before",sample.runtime_replacements_before},{"runtime_replacements_after",sample.runtime_replacements_after},
+            {"clock",std::move(clock)},
+            {"cpu_wall_ns",{{"owner_prepare",w.owner_prepare_ns},{"events",w.events_ns},{"simulation_owner",w.simulation_owner_ns},
+                {"scene_prepare",w.scene_prepare_ns},{"render",w.render_ns},{"retire",w.retire_ns},{"acquire",w.acquire_ns},
+                {"record",w.record_ns},{"submit",w.submit_ns},{"present",w.present_ns},{"gpu_wait",w.gpu_wait_ns},
+                {"pacing_wait",w.pacing_wait_ns},{"report",w.report_ns}}},
+            {"audio_wall_ns",player_diagnostic_audio(a)},
+            {"audio_counters_saturated",a.counters_saturated}};
+    }
+    Json player_diagnostics_info(const Json& params) const {
+        fields(params,{"player_id","generation"},{"player_id","generation"});
+        const auto id=identifier(params.at("player_id"));const auto generation=revision(params.at("generation"));
+        require(player_owner_ && id==player_owner_->id,"Player identity is not retained.",-32004);
+        require(generation==player_generation_,"Player generation conflict.",-32009);
+        const auto& player=*player_owner_;const bool active=bool(player.window);
+        require(active || player.terminal_diagnostics.has_value(),"Terminal player diagnostics are not retained.",-32003);
+        // The accessor and cached value contain completed CPU observations only.
+        // No poll, clock step, device access, GPU drain or receipt is performed.
+        const auto snapshot=active ? player.window->diagnostics():*player.terminal_diagnostics;
+        require(snapshot.count<=player_diagnostics::capacity,"Invalid native diagnostic retention count.",-32020);
+        Json rows=Json::array();
+        for(std::uint32_t i=0;i<snapshot.count;++i) {
+            const auto& row=snapshot.rows[i];
+            rows.push_back({{"poll_sequence",row.poll_sequence},{"valid",row.valid},{"issues",row.issues},
+                {"inter_poll_gap_ns",row.gap_available ? Json(row.inter_poll_gap_ns):Json(nullptr)},
+                {"current",player_diagnostic_sample(row.sample)},
+                {"previous",row.previous_available ? player_diagnostic_sample(row.previous):Json(nullptr)}});
+        }
+        return {{"format","poima.player-diagnostics.v1"},{"player_id",player.id},{"generation",player_generation_},
+            {"active",active},{"terminal",!active},{"capacity",player_diagnostics::capacity},
+            {"slow_threshold_ns",player_diagnostics::slow_threshold_ns},{"count",snapshot.count},
+            {"polls",snapshot.polls},{"slow_polls",snapshot.slow_polls},{"overwritten",snapshot.overwritten},
+            {"invalid_samples",snapshot.invalid_samples},{"max_gap_ns",snapshot.max_gap_ns},{"max_wall_ns",snapshot.max_wall_ns},
+            {"clock_drop_polls",snapshot.clock_drop_polls},{"counters_saturated",snapshot.counters_saturated},
+            {"audio_cumulative",{{"wall_ns",player_diagnostic_audio(snapshot.audio_cumulative)},
+                {"counters_saturated",snapshot.audio_cumulative.counters_saturated}}},
+            {"audio_since_last_poll",{{"wall_ns",player_diagnostic_audio(snapshot.audio_since_last_poll)},
+                {"counters_saturated",snapshot.audio_since_last_poll.counters_saturated}}},
+            {"issue_bits",{{"invalid_wall",player_diagnostics::Issue::invalid_wall},{"backwards_poll",player_diagnostics::Issue::backwards_poll},
+                {"invalid_clock",player_diagnostics::Issue::invalid_clock},{"backwards_tick",player_diagnostics::Issue::backwards_tick},
+                {"backwards_replacements",player_diagnostics::Issue::backwards_replacements}}},
+            {"rows",std::move(rows)}};
     }
     struct PlayerReceipt {
         Json params,result;
@@ -408,6 +480,7 @@
             }
             return player_receipt_json(receipt,false);
         }
+        if(method=="player.diagnostics.inspect")return player_diagnostics_info(params);
         if(method=="player.inspect") {
             fields(params,{"player_id"});
             if(params.contains("player_id")) {

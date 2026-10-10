@@ -16,7 +16,7 @@ The later [native profiler](PROFILER.md) retains scoped CPU events and separate 
 | `scene_debug_view` | `color` | Select `depth`, `shading_normal`, `motion` or `motion_validity` with `samples: 1`; see [scene products](SCENE_PRODUCTS.md) for encoding and qualification. |
 | `scene_product_probes` | `[]` | Up to 64 ordered `{x,y}` pixel requests for raw depth, shading normal, motion and validity; requires a capture path and `samples: 1`. |
 | `reconstruction` | `none` | Optional FSR NativeAA or fixed-ratio upscaling; requires an enabled build, `samples: 1` and the color view. See the [reconstruction contract and qualification boundary](RECONSTRUCTION.md). |
-| `profile` | false | Collect CPU intervals and, when supported, graphics-queue GPU timestamps. False records no timing samples or query commands. Draw counters remain available. |
+| `profile` | false | Collect aggregate render-report CPU intervals and, when supported, graphics-queue GPU timestamps. False disables these report timings; a performance capture or active profiler can independently request GPU queries. Draw counters and the player's bounded [CPU hitch diagnostics](LIVE_PLAYER.md#slow-poll-diagnostics) remain available. |
 
 ```json
 {"jsonrpc":"2.0","id":1,"method":"world.capture","params":{"revision":1,"camera":"00000000000000000000000000000001","path":"build/profile.bmp","culling":true,"profile":true}}

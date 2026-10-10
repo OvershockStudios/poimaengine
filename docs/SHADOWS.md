@@ -56,7 +56,25 @@ The runtime owns the frozen settings. Light and caster transforms follow current
 
 Depth maps use an array of single-sample D32 layers independently of viewport MSAA. The implementation requires D32 depth-attachment and sampled-image support and validates device dimensions. An unshadowed scene binds a one-texel dummy depth layer to keep material layouts consistent; this small allocation is excluded from the requested shadow-budget report.
 
-Poima 0.0.12 adds independent [frustum culling and render diagnostics](RENDER_DIAGNOSTICS.md) for each shadow view. An object rejected by the camera can still cast a visible shadow. There is no shadow caching, occlusion culling, per-light scheduling or virtual page allocation. The renderer still serializes frames with a GPU wait. The tests establish correctness on the named hardware; they are not evidence of a shipped-game frame-rate target or scalable many-light performance. These limitations motivate the subsequent render scheduling and broader performance qualification.
+Poima 0.0.12 adds independent [frustum culling and render diagnostics](RENDER_DIAGNOSTICS.md) for each shadow view. An object rejected by the camera can still cast a visible shadow. There is no shadow caching, occlusion culling, per-light scheduling or virtual page allocation. The renderer now supports bounded [frames in flight](RENDER_SCHEDULE.md). The shadow tests establish correctness on the named hardware; they are not evidence of a shipped-game frame-rate target or scalable many-light performance.
+
+## Quality and planned extensions
+
+The current filter is fixed-width PCF. Its smoothness and map texel density are
+not a production character-shadow quality target. Performance Yard deliberately
+uses 512-pixel maps over 30 metres; higher resolution, receiver bias and contact
+filtering need controlled comparisons with the actual imported character.
+Skinned instances already cast their posed meshes with separate per-view bounds.
+Per-renderer cast/receive controls and hardware-instanced shadow submission remain
+separate planned work.
+
+The [rendering roadmap](ROADMAP.md#4-scalable-rendering-and-atmosphere) includes
+soft shadows and cacheable static/dynamic casters. A correct cache lowers redraw
+cost while preserving visibility; it does not improve a low-resolution
+silhouette. Character deformation, moved lights, changed caster eligibility and
+runtime replacement all require valid cache invalidation. GI is planned and
+currently absent. Optional RTAO belongs to a higher hardware tier, with raster
+AO retained and indirect-light composition checked separately.
 
 ## Verification and example
 

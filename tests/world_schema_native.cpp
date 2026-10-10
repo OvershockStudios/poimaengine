@@ -55,6 +55,26 @@ int main(int argc,char** argv) {
                 };
                 const auto full=capture(Json::object()).at("result");
                 need(full.at("schema_revision").get<unsigned>()>=59,"Expected schema revision at least 59.");
+                const auto& diagnostics=full.at("methods").at("player.diagnostics.inspect");
+                need(diagnostics.at("required")==Json::array({"player_id","generation"}) &&
+                    diagnostics.at("additionalProperties")==false,"Diagnostic identity/generation schema differs.");
+                const auto before_player=invoke(owner,"player.inspect",Json::object(),scope);
+                const auto diagnostic_error=[&](const Json& params,int expected) {
+                    const auto reply=invoke(owner,"player.diagnostics.inspect",params,scope);
+                    need(reply.contains("error") && reply.at("error").at("code")==expected,"Diagnostic guard accepted absent or malformed owner.");
+                };
+                const auto unknown_player=std::string(32,'a');
+                diagnostic_error({{"player_id",unknown_player},{"generation",0}},-32004);
+                diagnostic_error({{"player_id",unknown_player}},-32602);
+                diagnostic_error({{"generation",0}},-32602);
+                diagnostic_error({{"player_id",unknown_player},{"generation",0.0}},-32602);
+                diagnostic_error({{"player_id",unknown_player},{"generation",-1}},-32602);
+                diagnostic_error({{"player_id","invalid"},{"generation",0}},-32602);
+                diagnostic_error({{"player_id",unknown_player},{"generation",0},{"unknown",true}},-32602);
+                need(invoke(owner,"player.inspect",Json::object(),scope)==before_player &&
+                    invoke(owner,"world.inspect",Json::object(),scope)==state &&
+                    invoke(owner,"world.history",Json::object(),scope)==history && tree(root)==initial,
+                    "Diagnostic rejection changed player/world/history/files.");
                 capture({{"view","full"}});const auto catalog=capture({{"view","catalog"}}).at("result");
                 for(const auto* view:{"method","component","section"}) {
                     const auto key=std::string(view)=="method" ? "methods" : std::string(view)=="component" ? "components" : "sections";

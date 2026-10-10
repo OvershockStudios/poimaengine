@@ -10,6 +10,7 @@ import base64
 import copy
 import hashlib
 import json
+import math
 from pathlib import Path
 import queue
 import shutil
@@ -46,6 +47,44 @@ def native(path):
 def check(value, message):
     if not value:
         raise AssertionError(message)
+
+
+def diagnostics(client, owner):
+    value = client.call('player.diagnostics.inspect', {
+        'player_id': owner['player_id'], 'generation': owner['generation']})
+    check(value['format'] == 'poima.player-diagnostics.v1' and value['player_id'] == owner['player_id'] and
+          value['generation'] == owner['generation'] and value['active'] == owner['active'] and
+          value['terminal'] == (not owner['active']), 'Diagnostic retained-owner identity differs')
+    check(value['capacity'] == 128 and value['slow_threshold_ns'] == 50_000_000 and
+          0 <= value['count'] == len(value['rows']) <= 128, 'Unbounded diagnostic response')
+    if not value['counters_saturated']:
+        check(value['slow_polls'] == value['count']+value['overwritten'] <= value['polls'] and
+              value['invalid_samples'] <= value['slow_polls'], 'Diagnostic retention accounting differs')
+        check(all(b['poll_sequence'] > a['poll_sequence'] for a,b in zip(value['rows'],value['rows'][1:])),
+              'Diagnostic ring is not chronological')
+    for row in value['rows']:
+        check(row['valid'] == (row['issues'] == 0) and row['issues'] & ~31 == 0, 'Diagnostic issue flags differ')
+        for sample in (row['current'], row['previous']):
+            if sample is None:
+                continue
+            check(all(type(sample[name]) is int and sample[name] >= 0 for name in
+                      ('begin_ns','end_ns','tick_before','tick_after','flags','width','height',
+                       'resize_ns','runtime_replacements_before','runtime_replacements_after')), 'Malformed CPU observation')
+            check(set(sample['cpu_wall_ns']) == {'owner_prepare','events','simulation_owner','scene_prepare','render',
+                      'retire','acquire','record','submit','present','gpu_wait','pacing_wait','report'} and
+                  set(sample['audio_wall_ns']) == {'queue_wait','enqueue','queue_observe','device_resume','device_pause',
+                      'clear','dsp','reset','gain','open','flush','drain_wait'} and
+                  all(type(v) is int and v >= 0 for v in sample['cpu_wall_ns'].values()) and
+                  all(type(v) is int and v >= 0 for v in sample['audio_wall_ns'].values()), 'Malformed operation wall timings')
+            clock = sample['clock']
+            for name in ('elapsed_seconds','accepted_seconds','dropped_seconds','accumulator_seconds'):
+                measured = clock[name]
+                check(measured is None if not clock['observed'] or name in clock['nonfinite_fields'] else
+                      type(measured) in (int,float) and math.isfinite(measured), 'Unavailable clock value presented as measured zero')
+        if row['inter_poll_gap_ns'] is not None:
+            check(row['previous'] is not None and row['inter_poll_gap_ns'] ==
+                  row['current']['begin_ns']-row['previous']['end_ns'], 'Host gap lacks its actual previous poll')
+    return value
 
 
 def cleanup_process(process, marker, role):
@@ -257,6 +296,9 @@ def unavailable_checks(client, discovery, world):
           initial['control_revision'] == 0 and initial['state'] == 'absent' and
           not initial['active'] and not initial['ready'], initial)
     client.reject('player.inspect', {'unknown': True}, -32602)
+    client.reject('player.diagnostics.inspect', {'player_id': uid(999), 'generation': 0}, -32004)
+    client.reject('player.diagnostics.inspect', {'player_id': uid(999), 'generation': 0.0}, -32602)
+    check(client.call('player.inspect') == initial, 'Absent diagnostics read changed owner')
     if not initial['available']:
         params = start_parameters(uuid.uuid4().hex)
         client.reject('player.start', params, -32003)
@@ -311,6 +353,21 @@ def graphics_checks(client, second, world):
           observed['session_id'] == session and observed['tick'] == 0, observed)
     check(observed['report']['hardware'] and observed['report']['nvrhi_errors'] == 0, observed)
     identity = observed['player_id']
+    before_read = client.call('runtime.inspect', {'session_id': session})
+    first_diagnostics = diagnostics(client, observed)
+    check(first_diagnostics['polls'] > 0, 'Ready native player recorded no diagnostic polls')
+    second_diagnostics = diagnostics(second, observed)
+    check(second_diagnostics['polls'] >= first_diagnostics['polls'] and
+          client.call('runtime.inspect', {'session_id': session}) == before_read,
+          'Paused diagnostic observation changed runtime state')
+    client.reject('player.diagnostics.inspect', {'player_id': identity, 'generation': observed['generation']+1}, -32009)
+    client.reject('player.diagnostics.inspect', {'player_id': uid(999), 'generation': observed['generation']}, -32004)
+    client.reject('player.diagnostics.inspect', {'player_id': identity, 'generation': observed['generation'], 'unknown': True}, -32602)
+    after_read = client.call('player.inspect')
+    check(all(after_read[key] == observed[key] for key in
+              ('player_id','generation','control_revision','tick','structure_revision','ui_revision','control_sequence')) and
+          'diagnostics' not in after_read and 'diagnostics' not in after_read['report'],
+          'Read-only diagnostic request changed a guard or duplicated its ring in regular inspection')
 
     old_pause = control_parameters(observed, 'pause')
     paused = client.call('player.control', old_pause)
@@ -456,6 +513,8 @@ def graphics_checks(client, second, world):
     stopped = client.call('player.control', control_parameters(after_evicted, 'stop'))
     terminal = await_state(client, lambda value: not value['active'], 'interactive-stopped')
     check(terminal['state'] == 'finished' and terminal['report']['stop_reason'] == 'requested_stop', terminal)
+    terminal_diagnostics = diagnostics(client, terminal)
+    check(terminal_diagnostics == diagnostics(second, terminal), 'Terminal diagnostic snapshot changed after window destruction')
 
     # Paused replay permits owner pause/resume/cancel, while every external
     # simulation/save mutation remains forbidden.
@@ -464,6 +523,8 @@ def graphics_checks(client, second, world):
                   mode='replay', gpu=ARGS.gpu, sequence=[{'ticks': replay_ticks, 'move': [.3,.4], 'look': [4,-2]}])
     replay_ack = client.call('player.start', replay)
     replay_ready = await_state(client, lambda value: value['ready'], 'replay-ready')
+    client.reject('player.diagnostics.inspect', {'player_id': identity, 'generation': terminal['generation']}, -32004)
+    client.reject('player.diagnostics.inspect', {'player_id': replay_ready['player_id'], 'generation': terminal['generation']}, -32009)
     check(replay_ready['mode'] == 'replay' and replay_ready['paused'] and
           replay_ready['tick'] == saved_tick, replay_ready)
     for method, parameters in [
@@ -504,6 +565,8 @@ def graphics_checks(client, second, world):
           and finished['report']['success'], finished)
     client.reject('player.control', control_parameters(resumed, 'pause'), -32009)
     client.call('runtime.stop', {'session_id': fresh})
+    finished_diagnostics = diagnostics(client, finished)
+    check(finished_diagnostics == diagnostics(second, finished), 'Finished diagnostics depended on destroyed Runtime/window')
     check(world.read_bytes() == world_before, 'Live player changed authored world bytes')
     RECORD['graphics'] = {'passed': True, 'gpu': ARGS.gpu, 'hardware_name': captured['gpu'],
                           'initial_capture': initial_capture, 'image': image,
@@ -519,6 +582,9 @@ def graphics_checks(client, second, world):
                         'one_graphics_lifetime': True, 'expired_receipts_do_not_reapply': True,
                         'replay_external_mutations_rejected': True,
                         'zero_tick_replay_cancel': True, 'replay_pause_preserves_offset': True,
+                        'diagnostic_reads_preserve_runtime_and_guards': True,
+                        'diagnostic_identity_generation_guards': True, 'terminal_diagnostics_immutable': True,
+                        'diagnostic_ring_bounded_chronological': True,
                         'authored_world_unchanged': True}
 
 

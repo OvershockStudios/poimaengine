@@ -14,10 +14,19 @@ class PlayerAudio {
     AudioStreamStats retired_;
     SDL_AudioStream* device_=nullptr;
     PlayerAudioReport report_;
+    // Owned by the window, so constructor failure still retains measured work.
+    player_diagnostics::AudioWork& work_;
+    struct Wall {
+        std::uint64_t& target;bool& saturated;std::uint64_t started=frame_performance::Recorder::now_ns();
+        Wall(std::uint64_t& value,bool& flag) noexcept:target(value),saturated(flag) {}
+        ~Wall() noexcept {player_diagnostics::saturating_add(target,frame_performance::Recorder::now_ns()-started,saturated);}
+    };
     bool paused_=true,started_=false;
     static void check(bool value) { if(!value)throw std::runtime_error(SDL_GetError()); }
-    int queued() const { const int bytes=SDL_GetAudioStreamQueued(device_);check(bytes>=0);return bytes; }
-    int available() const { const int bytes=SDL_GetAudioStreamAvailable(device_);check(bytes>=0);return bytes; }
+    int queued() const { Wall wall(work_.queue_observe_ns,work_.counters_saturated);const int bytes=SDL_GetAudioStreamQueued(device_);check(bytes>=0);return bytes; }
+    int available() const { Wall wall(work_.queue_observe_ns,work_.counters_saturated);const int bytes=SDL_GetAudioStreamAvailable(device_);check(bytes>=0);return bytes; }
+    void resume_device() {Wall wall(work_.device_resume_ns,work_.counters_saturated);check(SDL_ResumeAudioStreamDevice(device_));}
+    void pause_device() {Wall wall(work_.device_pause_ns,work_.counters_saturated);check(SDL_PauseAudioStreamDevice(device_));}
     void submit(const std::vector<float>& pcm) {
         if(pcm.empty())return;
         profiling::Scope submit_scope("audio.submit");
@@ -27,25 +36,30 @@ class PlayerAudio {
         // keeps queued audio under 120 ms instead of retaining the whole replay.
         {
         profiling::Scope queue_scope("audio.queue_wait");
+        Wall wall(work_.queue_wait_ns,work_.counters_saturated);
         while(bytes>4800*8) {
             if(SDL_GetTicksNS()-before>500000000)throw std::runtime_error("Audio output queue did not drain within 500 ms.");
             SDL_Delay(1);bytes=queued();
         }
         }
         report_.backpressure_ms+=double(SDL_GetTicksNS()-before)/1e6;
-        check(SDL_PutAudioStreamData(device_,pcm.data(),static_cast<int>(pcm.size()*sizeof(float))));
+        {Wall wall(work_.enqueue_ns,work_.counters_saturated);check(SDL_PutAudioStreamData(device_,pcm.data(),static_cast<int>(pcm.size()*sizeof(float))));}
         report_.submitted_frames+=pcm.size()/2;
         report_.max_queued_frames=std::max(report_.max_queued_frames,static_cast<std::uint64_t>(queued()/8));
         profiling::counter("audio.submitted_frames",report_.submitted_frames);
         profiling::counter("audio.queued_bytes_before_submit",static_cast<std::uint64_t>(bytes));
-        if(!started_ && queued()>=2048*8) { check(SDL_ResumeAudioStreamDevice(device_));started_=true;paused_=false; }
+        if(!started_ && queued()>=2048*8) { resume_device();started_=true;paused_=false; }
     }
 public:
-    explicit PlayerAudio(const PlayerAudioState& state,double master_gain=1):mixer_(std::make_unique<AudioStream>(state.tick,state.snapshot)) {
+    explicit PlayerAudio(const PlayerAudioState& state,player_diagnostics::AudioWork& work,double master_gain=1):work_(work) {
+        {Wall wall(work_.dsp_ns,work_.counters_saturated);mixer_=std::make_unique<AudioStream>(state.tick,state.snapshot);}
         if(!std::isfinite(master_gain) || master_gain<0 || master_gain>1)
             throw std::invalid_argument("Player master gain must be finite and within 0..1.");
+        {
+        Wall wall(work_.open_ns,work_.counters_saturated);
         check(SDL_InitSubSystem(SDL_INIT_AUDIO));SDL_AudioSpec spec{SDL_AUDIO_F32,2,static_cast<int>(audio_rate)};
         device_=SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&spec,nullptr,nullptr);
+        }
         if(!device_) { const std::string error=SDL_GetError();SDL_QuitSubSystem(SDL_INIT_AUDIO);throw std::runtime_error(error); }
         try {
             report_.enabled=true;const auto* driver=SDL_GetCurrentAudioDriver();report_.driver=driver ? driver : "unknown";
@@ -53,7 +67,9 @@ public:
         }catch(...) {SDL_DestroyAudioStream(device_);device_=nullptr;SDL_QuitSubSystem(SDL_INIT_AUDIO);throw;}
     }
     ~PlayerAudio() { if(device_)SDL_DestroyAudioStream(device_);SDL_QuitSubSystem(SDL_INIT_AUDIO); }
+    player_diagnostics::AudioWork work() const noexcept {return work_;}
     void set_master_gain(double gain) {
+        Wall wall(work_.gain_ns,work_.counters_saturated);
         if(!std::isfinite(gain) || gain<0 || gain>1)
             throw std::invalid_argument("Player master gain must be finite and within 0..1.");
         const auto native=static_cast<float>(gain);
@@ -65,19 +81,20 @@ public:
     }
     void active(bool active) {
         if(!started_)return;
-        if(active && paused_) { check(SDL_ResumeAudioStreamDevice(device_));paused_=false; }
-        else if(!active && !paused_) { check(SDL_PauseAudioStreamDevice(device_));paused_=true; }
+        if(active && paused_) { resume_device();paused_=false; }
+        else if(!active && !paused_) { pause_device();paused_=true; }
     }
     void discard_pending() {
-        check(SDL_PauseAudioStreamDevice(device_));paused_=true;
-        check(SDL_ClearAudioStream(device_));started_=false;
+        pause_device();paused_=true;
+        {Wall wall(work_.clear_ns,work_.counters_saturated);check(SDL_ClearAudioStream(device_));}started_=false;
     }
     void reset(const PlayerAudioState& state) {
         profiling::Scope reset_scope("audio.timeline_reset",static_cast<std::int64_t>(state.tick));
+        Wall wall(work_.reset_ns,work_.counters_saturated);
         // Never play or drain old-world PCM after a load. The audio device and
         // Vulkan window remain alive; only the timeline's DSP is reconstructed.
         discard_pending();
-        auto replacement=std::make_unique<AudioStream>(state.tick,state.snapshot);
+        auto replacement=[&] {Wall dsp(work_.dsp_ns,work_.counters_saturated);return std::make_unique<AudioStream>(state.tick,state.snapshot);}();
         const auto previous=mixer_->stats();
         retired_.frames+=previous.frames;retired_.blocks+=previous.blocks;
         retired_.voices_started+=previous.voices_started;retired_.path_updates+=previous.path_updates;
@@ -87,17 +104,18 @@ public:
     }
     void advance(const PlayerAudioState& state) {
         profiling::Scope advance_scope("audio.advance",static_cast<std::int64_t>(state.tick));
-        const auto pcm=[&] { profiling::Scope dsp_scope("audio.dsp");return mixer_->advance(state.tick,state.snapshot,state.voices); }();
+        const auto pcm=[&] { profiling::Scope dsp_scope("audio.dsp");Wall wall(work_.dsp_ns,work_.counters_saturated);return mixer_->advance(state.tick,state.snapshot,state.voices); }();
         submit(pcm);
     }
     void finish(const PlayerAudioState& state) {
         profiling::Scope finish_scope("audio.finish",static_cast<std::int64_t>(state.tick));
         active(true);
-        const auto pcm=[&] { profiling::Scope dsp_scope("audio.dsp");return mixer_->advance(state.tick,state.snapshot,state.voices,true); }();
+        const auto pcm=[&] { profiling::Scope dsp_scope("audio.dsp");Wall wall(work_.dsp_ns,work_.counters_saturated);return mixer_->advance(state.tick,state.snapshot,state.voices,true); }();
         submit(pcm);
-        check(SDL_FlushAudioStream(device_));check(SDL_ResumeAudioStreamDevice(device_));paused_=false;
+        {Wall wall(work_.flush_ns,work_.counters_saturated);check(SDL_FlushAudioStream(device_));}resume_device();paused_=false;
         const auto start=SDL_GetTicksNS();
         profiling::Scope drain_scope("audio.drain_wait");
+        Wall wall(work_.drain_wait_ns,work_.counters_saturated);
         while(queued()>0 || available()>0) {
             if(SDL_GetTicksNS()-start>2000000000)throw std::runtime_error("Audio stream did not drain within two seconds.");
             SDL_Delay(2);
@@ -106,7 +124,7 @@ public:
     }
     PlayerAudioReport report() const {
         auto result=report_;result.stream=mixer_->stats();
-        const auto gain=SDL_GetAudioStreamGain(device_);
+        const auto gain=[&] {Wall wall(work_.gain_ns,work_.counters_saturated);return SDL_GetAudioStreamGain(device_);}();
         if(!std::isfinite(gain) || gain<0 || gain>1)
             throw std::runtime_error("SDL output stream gain query failed.");
         result.master_gain=gain;

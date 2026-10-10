@@ -57,6 +57,7 @@ void PlayerInput::commit_tick() noexcept {
 }
 std::uint32_t PlayerClock::advance(double elapsed,bool active) {
     if(!std::isfinite(elapsed) || elapsed<0) throw std::invalid_argument("Invalid frame duration.");
+    last_={};last_.observed=true;last_.active=active;last_.elapsed_seconds=elapsed;
     if(!active) { accumulated_=0; return 0; }
     // Keep the fixed step; discard excess wall time instead of a spiral of
     // catch-up work after a debugger stop, window drag or severe stall.
@@ -67,6 +68,8 @@ std::uint32_t PlayerClock::advance(double elapsed,bool active) {
     // remaining fraction for a later poll instead of discarding earned time.
     const auto ticks=std::min(8u,static_cast<std::uint32_t>(std::floor((accumulated_+1e-12)/Runtime::fixed_dt)));
     accumulated_=std::max(0.0,accumulated_-ticks*Runtime::fixed_dt);
+    last_.accepted_seconds=accepted;last_.dropped_seconds=elapsed-accepted;
+    last_.accumulator_seconds=accumulated_;last_.planned_ticks=ticks;
     return ticks;
 }
 }

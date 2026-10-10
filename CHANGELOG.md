@@ -2,6 +2,14 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.97
+
+- Retain a bounded native slow-poll history with current and preceding CPU stages, clock observations, viewport resize work and separate audio device timings.
+- Add guarded, read-only `player.diagnostics.inspect` with terminal observations retained after the native window closes. Preserve interactive clock policy, GPU timestamp admission and gameplay/save formats.
+- Add the compiled Performance Yard reliability harness with complete checkpoint comparisons, immediate retries, current preferences and fresh-process continuation checks.
+- Record the first longer attempt as failed: 23 exact restore cycles precede a clock stall in cycle 24. Preserve raw timing/memory observations and the unknown viewport-change cause. [Reproduction and scope](docs/PERFORMANCE_YARD_RELIABILITY.md).
+- Clarify planned character-shadow quality, cache invalidation, per-instance controls, GI and optional RTAO.
+
 ## 0.0.96
 
 - Read current native camera and lighting values without rebuilding geometry or animation skin palettes for every player report. Preserve cached report boundaries, rendering and the JSON contract.

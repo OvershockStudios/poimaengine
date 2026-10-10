@@ -122,7 +122,12 @@ retained games, packages and supported saves continue to work.
 
 Develop one renderer with quality tiers: PBR/material layers, transparent
 materials, scalable lights and shadows, GPU culling/instancing, LOD and content
-streaming.
+streaming. Shadow quality includes stable character/contact shadows, per-instance
+cast/receive controls and configurable soft filtering. Compare cacheable static
+and dynamic casters with explicit invalidation through motion, animation and
+runtime restoration. Caching must preserve the uncached visibility result.
+Optional high-tier ray-traced ambient occlusion remains distinct from diffuse GI;
+retain the non-RT ambient-occlusion path and avoid double-counting visibility.
 Dense-scene research compares virtualized geometry with GPU-driven instancing
 and LOD under actual content/frame/VRAM budgets. Select and qualify the measured
 approach; a particular engine's geometry technique is not itself the requirement.

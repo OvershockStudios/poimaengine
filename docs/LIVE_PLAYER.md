@@ -87,6 +87,74 @@ see the [live settings task](PLAYER_SETTINGS.md#task-adjust-and-observe-a-live-p
 owner; [exported game clients](GAME_SERVICE.md) can exercise them through this
 shared service.
 
+## Slow-poll diagnostics
+
+`player.diagnostics.inspect` reads the native player's bounded CPU recorder:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"player.diagnostics.inspect","params":{"player_id":"00000000000000000000000000000901","generation":1}}
+```
+
+Supply the actual identity and generation from `player.start` or
+`player.inspect`. The example ID is a placeholder. An absent or replaced
+identity rejects with `-32004`; a stale generation rejects with `-32009`;
+malformed or unknown fields reject with `-32602`. Reads do not consume a
+command receipt, poll the player, advance simulation, synchronize settings,
+drain GPU submissions, or query an audio device. The shared host can perform
+its normal next poll between client requests, so live counters may increase.
+
+The `poima.player-diagnostics.v1` response contains up to 128 `rows`, oldest
+retained first. Each row has `current`, `previous` (null before the first
+completed poll), `poll_sequence`, `inter_poll_gap_ns` (null if unavailable),
+`valid` and `issues`. Samples include the retained swapchain `width`/`height`, ticks,
+runtime-replacement counts, measurement flags, `cpu_wall_ns`, `audio_wall_ns`
+and `clock`. Separate `resize_ns` observes native swapchain rebuild wall time
+without changing the frame recorder's stage definitions. A skipped or failed
+rebuild can retain the preceding extent; it is not proof of the current OS
+drawable size. Absolute begin/end
+stamps use the process's steady-clock
+nanosecond basis; they are not calendar time. CPU stages overlap, and audio
+operations can be nested within them. They must not be summed into exclusive
+CPU time. Audio operations issued by an external pause/resume control are
+attributed to the interval ending at the next completed player poll.
+Top-level `audio_cumulative` and `audio_since_last_poll` retain the owned
+operation totals and the not-yet-recorded interval, respectively, so a control
+operation remains observable before another poll. These are copies of CPU
+timing counters, not new audio-device queries. Saturation is explicit in each.
+
+The recorder retains a poll when its wall time or preceding host gap exceeds
+50 ms, valid native clock work drops elapsed time, the poll reports an error,
+or the observation has an issue. `polls` counts all completed observations;
+`slow_polls` counts admitted observations; `overwritten` reports ring eviction.
+`invalid_samples`, `clock_drop_polls`, `max_wall_ns`, `max_gap_ns` and
+`counters_saturated` remain explicit. This is a diagnostic sample, not a full
+frame trace or a frame-rate qualification. Use the independent
+[performance recorder](FRAME_PERFORMANCE.md) for bounded per-frame GPU timings
+and present-return cadence.
+
+Clock observations expose elapsed, accepted, dropped and remaining accumulator
+seconds plus planned and actually committed ticks. `observed: false` means
+unavailable; duration/tick values then return null. Nonfinite clock durations
+also return null, with their names in `nonfinite_fields`; finite invalid values
+remain visible and the row's issue mask marks invalidity. These observations
+report the existing clock policy, including replacement/storage boundaries;
+they do not change its tick cap or turn dropped time into catch-up work.
+
+Stop, normal completion, quit and error retain one final CPU snapshot before
+the window is destroyed. The same guarded identity can read that snapshot
+after stopping the Runtime; its diagnostic content is immutable. Starting
+another player retires the old identity. Regular `player.inspect` retains its
+existing report shape and does not duplicate this ring. Diagnostic CPU data
+does not establish physical input, audible output, GPU fault cause, scanout
+timing or input latency.
+
+The [native diagnostic check](../tests/player_diagnostics_contract.py) runs the
+compiled Performance Yard game's short rehearsal with actual audio, guarded
+read-only observations, terminal retention and a paused window resize/restore.
+Fast resize polls can remain below the ring's admission threshold; that is
+reported separately. Its two cycles do not qualify the longer
+[reliability gate](PERFORMANCE_YARD_RELIABILITY.md).
+
 ## A guarded observation recipe
 
 This Python sequence uses the physics room's camera and controller IDs. Run it

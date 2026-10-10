@@ -1,8 +1,39 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.96**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.97**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.97 adds bounded native slow-poll observations through
+`player.diagnostics.inspect`. The owner retains up to 128 events with current
+and preceding poll timings, clock acceptance/discard, retained swapchain dimensions,
+resize work and separate audio device durations. Inspection reads owned CPU
+values and remains available after the native window closes. The interactive
+clock's eight-tick cap, gameplay services and save formats are unchanged;
+discovery revision 73 adds the inspection method. [Contract](LIVE_PLAYER.md#slow-poll-diagnostics).
+
+Thirteen selected Windows native CTests, twelve simulation-disabled headless
+authoring CTests and six native preference groups pass against frozen inputs.
+The Windows player-service cohort passes 148 requests. A separate two-cycle
+Performance Yard diagnostic rehearsal passes 1,406 requests, including 160
+diagnostic reads, nine complete checkpoint/restoration observations and a fresh
+native-process continuation. Programmatic paused resizing settles at both
+960×540 and 1920×1080 without advancing the tick. Resize observations are
+retained; both lifetimes retain audio timings, with zero discarded simulation
+time and no unrequested GPU profiling. These short checks do not close the longer reliability gate or
+measure diagnostic overhead in a paired comparison.
+[Qualification and compressed native observations](evidence/m2-player-diagnostics.json).
+
+The first longer Performance Yard attempt used the retained 0.0.96 native
+engine and 0.0.94 Native AOT game. It failed after 23 Save/Load cycles and
+1,035.611 cumulative unpaused seconds, with all 92 checkpoint observations
+matching. Cycle 24 caught 0.759537 seconds of discarded native clock time.
+The first failure inspection also reports a viewport change from 1920×1080 to
+1920×1051; neither the stall nor that change has an established cause. Seven
+earlier short frame windows passed their timing budgets. Native owners exited
+cleanly with no render validation errors and drained audio. The 1,800-second
+gate and fresh-process continuation remain open.
+[Failed attempt, reproduction and limits](PERFORMANCE_YARD_RELIABILITY.md).
 
 Version 0.0.96 avoids rebuilding mesh objects and animation skin palettes when
 projecting native player reports. A camera/lens/lighting-only query shares

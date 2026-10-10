@@ -90,6 +90,14 @@ between native frames. Pause before external simulation edits; capture current
 state through the same live context. See the [task playbook](LIVE_PLAYER.md) for
 identity/revision guards, retries, replay restrictions and runtime replacement.
 
+Schema revision 73 adds read-only `player.diagnostics.inspect`, guarded by the
+retained `player_id` and `generation`. It returns up to 128 chronological slow
+CPU polls with the preceding poll, native clock work and separate audio-operation
+wall timings. It neither polls the player nor accesses a device. A terminal CPU
+snapshot remains readable until another player replaces that owner. See
+[diagnostic observations](LIVE_PLAYER.md#slow-poll-diagnostics) for units, loss
+counters and limitations. This additive method is outside authoring-core v1.
+
 ## Player preference profiles
 
 `settings.describe`, `settings.inspect` and `settings.transact` manage eight typed sparse player preferences with independent revisions and retry receipts. Schema revision 65 adds the profile and override fields to `runtime.play`. Inspect stored intent separately from resolved launch outcomes; see [the player-settings task and reference](PLAYER_SETTINGS.md) for commands, precedence, units and recovery. These settings do not mutate authored worlds, input-profile files or saved gameplay state.

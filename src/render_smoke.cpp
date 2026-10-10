@@ -3063,6 +3063,9 @@ struct PlayerWindow::Impl {
     Context context;
     SceneSnapshot snapshot;
     PlayerClock clock;
+    player_diagnostics::Recorder diagnostics;
+    player_diagnostics::AudioWork audio_work{},previous_audio_work{};
+    player_diagnostics::Sample* diagnostic_sample=nullptr;
     BoundPlayerInput input;
     struct GamepadBinding { GamepadHost* host=nullptr; ~GamepadBinding() { if(host)try { host->stop(); }catch(...) {} } } gamepad_binding;
     GamepadHost* gamepads=nullptr;
@@ -3076,9 +3079,9 @@ struct PlayerWindow::Impl {
     std::size_t segment=0;
     std::uint32_t offset=0;
     std::uint64_t previous=0,performance_sequence=0;
-    std::uint32_t performance_interventions=0;
+    std::uint32_t performance_interventions=0,diagnostic_interventions=0;
     void intervention(std::uint32_t flag) noexcept {
-        performance_interventions|=flag;if(context.performance_cpu)context.performance_cpu->flags|=flag;
+        performance_interventions|=flag;diagnostic_interventions|=flag;if(context.performance_cpu)context.performance_cpu->flags|=flag;
     }
     explicit Impl(const PlayerOptions& requested,PlayerSession& value,bool paused)
         :options(requested),session(value),input(requested.input_profile ? *requested.input_profile : default_gamepad_input_profile()),owner_paused(paused) {
@@ -3097,6 +3100,9 @@ struct PlayerWindow::Impl {
     }
     void check_thread() const {
         if(std::this_thread::get_id()!=owner)throw std::runtime_error("Player window calls require its creating thread.");
+    }
+    player_diagnostics::AudioWork pending_audio() const noexcept {
+        return player_diagnostics::audio_delta(audio_work,previous_audio_work);
     }
     bool ui_modal() const { return snapshot.logical_ui && !snapshot.logical_ui->modal.empty(); }
     bool ui_available() const { return snapshot.logical_ui && !snapshot.logical_ui->elements.empty(); }
@@ -3162,7 +3168,7 @@ struct PlayerWindow::Impl {
         result.effective_ui_scale=context.effective_game_ui_scale();
         SDL_SetWindowTitle(context.window,options.replay ? "Poima player — recorded input replay" : "Poima player — configured controls — Esc exits, Tab pauses, click or gamepad Start resumes");
         if(options.audio) {
-            try {audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera),result.preferences.requested_master_gain);}
+            try {audio=std::make_unique<PlayerAudio>(session.audio_state(options.camera),audio_work,result.preferences.requested_master_gain);}
             catch(...) {result.preferences.audio_outcome="initialization_failed";throw;}
             result.preferences.sink_gain=audio->report().master_gain;result.preferences.audio_outcome="sink_gain_verified";
         }
@@ -3376,7 +3382,8 @@ struct PlayerWindow::Impl {
         require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
         if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
             intervention(fp::Flag::resize);auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
-            if(!context.rebuild(resized)) { clock.advance(0,false); SDL_Delay(10); return; }
+            const auto rebuilt=[&] {PerformanceWallScope resize_wall(diagnostic_sample?&diagnostic_sample->resize_ns:nullptr);return context.rebuild(resized);}();
+            if(!rebuilt) { clock.advance(0,false); SDL_Delay(10); return; }
             ++result.swapchain_rebuilds;
         }
         {
@@ -3390,8 +3397,10 @@ struct PlayerWindow::Impl {
             after_advance(save_serviced);
         } else if(!options.replay) {
             const auto ticks=clock.advance(elapsed,!owner_paused && focused && active);
+            if(diagnostic_sample)diagnostic_sample->clock=clock.last_sample();
             for(std::uint32_t tick=0;tick<ticks;++tick) {
                 const bool save_serviced=session.advance(options.controller.empty() ? std::vector<RuntimeInput>{} : std::vector<RuntimeInput>{input.peek(options.controller)});
+                if(diagnostic_sample)++diagnostic_sample->clock.committed_ticks;
                 if(after_advance(save_serviced))break;
                 if(!options.controller.empty())input.consume(options.controller);
                 // A gameplay tick can open a modal during catch-up. Clear
@@ -3473,27 +3482,46 @@ bool PlayerWindow::poll() {
         if(state.performance_sequence!=std::numeric_limits<std::uint64_t>::max())++state.performance_sequence;
         token=recorder->begin_frame(state.performance_sequence);
     }
-    if(token) {
-        sample.begin_ns=fp::Recorder::now_ns();sample.tick_before=state.session.tick();sample.flags=state.performance_interventions;
-        if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
-        if(state.options.replay)sample.flags|=fp::Flag::replay;
-        state.context.performance=recorder;state.context.performance_token=token;state.context.performance_cpu=&sample;
-    }
+    // CPU wall observation is always on. Only an admitted FrameToken enables
+    // GPU timestamps/retirement tickets; the CPU pointer alone does not.
+    sample.begin_ns=fp::Recorder::now_ns();sample.tick_before=state.session.tick();sample.flags=state.performance_interventions;
+    if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
+    if(state.options.replay)sample.flags|=fp::Flag::replay;
+    player_diagnostics::Sample diagnostic;
+    diagnostic.flags=state.diagnostic_interventions;
+    if(state.owner_paused || (!state.options.replay && !state.active))diagnostic.flags|=fp::Flag::paused;
+    if(state.options.replay)diagnostic.flags|=fp::Flag::replay;
+    diagnostic.runtime_replacements_before=state.result.runtime_replacements;
+    state.diagnostic_sample=&diagnostic;
+    state.context.performance=token?recorder:nullptr;state.context.performance_token=token;state.context.performance_cpu=&sample;
     try {
-        {PerformanceWallScope wall(token?&sample.work.owner_prepare_ns:nullptr);state.synchronize();if(!state.quit && !state.initialized)state.initialize();}
+        {PerformanceWallScope wall(&sample.work.owner_prepare_ns);state.synchronize();if(!state.quit && !state.initialized)state.initialize();}
         if(!state.quit)state.frame();
-        {PerformanceWallScope wall(token?&sample.work.report_ns:nullptr);if(state.quit)state.finish();else state.refresh_report();}
+        {PerformanceWallScope wall(&sample.work.report_ns);if(state.quit)state.finish();else state.refresh_report();}
     }catch(const std::exception& error) {state.intervention(fp::Flag::error);state.fail(error);}
+    sample.end_ns=fp::Recorder::now_ns();sample.tick_after=state.result.final_tick;sample.flags|=state.performance_interventions;
+    sample.width=state.context.extent.width;sample.height=state.context.extent.height;
+    if(state.focused)sample.flags|=fp::Flag::focused;
+    if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
+    if(!sample.successful_present)sample.flags|=fp::Flag::skip;
     if(token) {
-        sample.end_ns=fp::Recorder::now_ns();sample.tick_after=state.result.final_tick;
-        sample.width=state.context.extent.width;sample.height=state.context.extent.height;
-        if(state.focused)sample.flags|=fp::Flag::focused;
-        if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
-        if(!sample.successful_present)sample.flags|=fp::Flag::skip;
         std::copy_n(state.result.final_session.data(),std::min(std::size_t{32},state.result.final_session.size()),sample.session.data());
         if(!recorder->finish_frame(token,sample))recorder->fail_frame(token,sample);
     }
-    if(sample.successful_present)state.performance_interventions=0;
+    diagnostic.begin_ns=sample.begin_ns;diagnostic.end_ns=sample.end_ns;
+    diagnostic.tick_before=sample.tick_before;diagnostic.tick_after=sample.tick_after;
+    diagnostic.width=sample.width;diagnostic.height=sample.height;
+    diagnostic.flags|=state.diagnostic_interventions;
+    if(state.focused)diagnostic.flags|=fp::Flag::focused;
+    if(state.owner_paused || (!state.options.replay && !state.active))diagnostic.flags|=fp::Flag::paused;
+    if(!sample.successful_present)diagnostic.flags|=fp::Flag::skip;
+    diagnostic.work=sample.work;diagnostic.audio=state.pending_audio();state.previous_audio_work=state.audio_work;
+    diagnostic.runtime_replacements_after=state.result.runtime_replacements;
+    (void)state.diagnostics.record(diagnostic);state.diagnostic_sample=nullptr;
+    if(sample.successful_present) {
+        state.diagnostic_interventions=0;
+        if(token)state.performance_interventions=0;
+    }
     state.context.performance=nullptr;state.context.performance_token={};state.context.performance_cpu=nullptr;
     return !state.done;
 }
@@ -3515,6 +3543,12 @@ bool PlayerWindow::paused() const {
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return impl_->initialized && impl_->ui_presented && !impl_->quit && !impl_->done;}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+player_diagnostics::Snapshot PlayerWindow::diagnostics() const {
+    impl_->check_thread();auto snapshot=impl_->diagnostics.snapshot();
+    snapshot.audio_cumulative=impl_->audio_work;snapshot.audio_since_last_poll=impl_->pending_audio();
+    snapshot.counters_saturated|=snapshot.audio_cumulative.counters_saturated || snapshot.audio_since_last_poll.counters_saturated;
+    return snapshot;
+}
 void PlayerWindow::note_performance_intervention(std::uint32_t flags) {
     impl_->check_thread();impl_->intervention(flags);
 }

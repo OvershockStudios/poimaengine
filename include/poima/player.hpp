@@ -3,6 +3,7 @@
 #include "poima/core.hpp"
 #include "poima/runtime.hpp"
 #include "poima/gamepad.hpp"
+#include "poima/player_diagnostics.hpp"
 #include <memory>
 
 namespace poima::frame_performance { class Recorder; }
@@ -25,9 +26,11 @@ public:
 };
 class PlayerClock {
     double accumulated_=0, dropped_=0;
+    player_diagnostics::ClockSample last_{};
 public:
     std::uint32_t advance(double elapsed, bool active);
     double dropped_seconds() const { return dropped_; }
+    player_diagnostics::ClockSample last_sample() const noexcept { return last_; }
 };
 struct PlayerSegment { std::uint32_t ticks=1; RuntimeInput input; std::vector<KinematicTarget> motions; std::vector<SoundCommand> sounds; };
 struct PlayerAudioState {
@@ -148,6 +151,8 @@ public:
     bool finished() const;
     bool ready() const; // Initialized, with a current successful presentation.
     PlayerReport report() const; // Owned partial/final CPU state; no graphics drain.
+    // Owner-only bounded CPU/clock/audio history; no poll, device read or GPU drain.
+    player_diagnostics::Snapshot diagnostics() const;
     // Observe a fresh owner snapshot through this live context, without stepping.
     // The caller validates the output path; capture_exclusive is honored.
     RenderReport capture(const std::string& path);

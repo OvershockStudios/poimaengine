@@ -1,0 +1,1876 @@
+{
+  "format": "poima.performance-yard-reliability",
+  "version": 1,
+  "source_checkpoint": "0.0.97",
+  "measured_engine_version": "0.0.96",
+  "result": "failed",
+  "functional_reliability_passed": false,
+  "reliability_duration_requirement_met": false,
+  "fresh_process_continuation_qualified": false,
+  "alpha_gate_closed": false,
+  "planned_cycles": 40,
+  "completed_cycles": 23,
+  "required_credited_seconds": 1800,
+  "credited_unpaused_seconds": 1035.6108890999676,
+  "harness_elapsed_seconds": 1418.8734681999995,
+  "supervisor_elapsed_seconds": 1419.2939887046814,
+  "failure": {
+    "cycle": 24,
+    "phase": "before-save",
+    "reason": "Native interactive clock discarded wall time",
+    "first_observed_drop_seconds": 0.7595370333333333,
+    "terminal_drop_seconds": 0.8024271000000001,
+    "previous_extent": [
+      1920,
+      1080
+    ],
+    "first_failure_extent": [
+      1920,
+      1051
+    ],
+    "cause_established": false,
+    "note": "First failure interval has no frame-recorder window. Extent changed; its cause and relation to the stall are unknown."
+  },
+  "clean_shutdown": {
+    "native_owner_count": 2,
+    "exit_codes": [
+      0,
+      0
+    ],
+    "supervisor_exit_code": 1,
+    "forced_cleanup": false,
+    "render_success": true,
+    "nvrhi_errors": 0,
+    "audio_drained": true
+  },
+  "native_binary_sha256": "e3e3264eb574827bfd727f8f07707e2eb2923efde37c21805165c0b85c99ebd1",
+  "world_sha256": "2624dc6724f60ae4bb315f4ad7e645a36eebd3d35fa78527b1bd9441bf51ea8d",
+  "manifest_sha256": "55f048db290f3f50b3d4918c06092e039e9debed64e5daf22ff87cce965086b2",
+  "descriptor_sha256": "e521c05c9cdc907c09cbe6bc9a7ecd11eec8c16ca695bd8fd4dcd7e419e2d3a9",
+  "native_library_sha256": "ba66e320bbe0375dca25b4934112e7c4bc487e03a5f8980a0618b5cd3b578f80",
+  "game_artifact_engine_version": "0.0.94",
+  "workload": {
+    "authored_entities": 2394,
+    "live_entities": 2397,
+    "animated_rigs": 24,
+    "simple_props": 768,
+    "dynamic_boxes": 32,
+    "lights": 64,
+    "shadow_views": 8
+  },
+  "verifier_source_sha256": {
+    "tests/performance_yard_soak.py": "657e3fca5a7537f2009630f88683e01486f6ac30eb1b14bb62b1a68c00e7505c",
+    "tests/performance_yard.py": "7019cfa2ed05d1027bd67de6aa750a626a3ba94ef2a08a6edf08ac20e32cbbeb",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tests/player_performance.py": "7676bee3803c72b9cea3721ffd22ec911d6217355efadde8a6fa08d14c02a9d6",
+    "tools/performance/windows_process_memory.py": "b73e322800a18d300c4df669c6ecdf196c48eb335f53881d26e8772224db2ef8"
+  },
+  "previous_commit": "ae364ab862d40b89e48d09b91df562df6a5240bb",
+  "protocol": {
+    "protocol_evidence_sha256": "3be4b1649a8843d7eb3969bf29b2f56e7b84f8c82aa8236be71c05920eb93e49",
+    "requests": 9742,
+    "uncompressed_bytes": 263410250,
+    "complete_snapshots": 92,
+    "immediate_save_retries": 23,
+    "immediate_load_retries": 23,
+    "initialization_steps": 1,
+    "caller_driven_measured_input": false,
+    "exact_snapshot_comparisons": true
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "saved_tick": 5706,
+      "snapshot_canonical_sha256": "b9b48cb047a81f0876b7133126902181f886fab1b18c919dc3730f5c718d0459",
+      "snapshot_envelope_sha256": "5bac809218579e4c91f047a1f27356db98a0896177d536f69362a0bab6fc1a65",
+      "generation": 1,
+      "exact_restore": true,
+      "durable_payload_sha256": "313448068bcc7fcea7ee7df1d7c630f6a0f5214004db3828709980dbbf4800df",
+      "durable_manifest_sha256": "f780d4f9dac8e3ce7db54aba823870ed2e5da8631d81b4c9ae3e6321be1f3f5d"
+    },
+    {
+      "cycle": 2,
+      "saved_tick": 7809,
+      "snapshot_canonical_sha256": "cd4976a1ce3d19eea8319168078da26431f125141364ee234798951b2cf11b6c",
+      "snapshot_envelope_sha256": "b027af8845797122f262973a9a0d8730a9dbd8b7a7eeda819839cb9759f63a09",
+      "generation": 2,
+      "exact_restore": true,
+      "durable_payload_sha256": "9588146e2f1da213d1f6326982fce817f85646457a8d24230a37e19238a0287e",
+      "durable_manifest_sha256": "83ee34f0d1b568e92811f85bc3c460434a22f4c470ebe9b2887a8faf88b57b33"
+    },
+    {
+      "cycle": 3,
+      "saved_tick": 9912,
+      "snapshot_canonical_sha256": "b5aa01b458f7fa9e0e19b80f898b450a77607014fb07623828127c4c0b459d0e",
+      "snapshot_envelope_sha256": "5e31166425c5f8f9cd115c5acd26433ae96674fdd2c197b4657354a72520734b",
+      "generation": 3,
+      "exact_restore": true,
+      "durable_payload_sha256": "74e81156d41d9ede3cf41bf8fa7d5877b068f60ab6b28f10423f326631a2ba8d",
+      "durable_manifest_sha256": "26a633e92fa392061109a30055c96e487bbe6da200b9e7aacdd17e9e66495800"
+    },
+    {
+      "cycle": 4,
+      "saved_tick": 12015,
+      "snapshot_canonical_sha256": "0be43ab50efeb8871ba1e4167850446752a6580cf2e66a0b305bdbfb2735142f",
+      "snapshot_envelope_sha256": "b53712a44a2d7b4360d8e140e8fada65b826b93a16b6aaaacaddb3d6c39b8568",
+      "generation": 4,
+      "exact_restore": true,
+      "durable_payload_sha256": "94c9362825a7a2fb44ae0274bdd91bcdbd2314f3f2a4be6cfdc3f193184e204d",
+      "durable_manifest_sha256": "c3d5bd9baa08789053a1419308eef748d7355df8cc0a88fee7fafebc26f9c0af"
+    },
+    {
+      "cycle": 5,
+      "saved_tick": 14117,
+      "snapshot_canonical_sha256": "2d27f6dcfe33c46f7f87b92e313dcef4b765d68685817edc57fc4ce054aeba7c",
+      "snapshot_envelope_sha256": "7449ccef260e423a98f46d21f6264cdfa04f8fe219d35bc6c88c0aacdc86f4d4",
+      "generation": 5,
+      "exact_restore": true,
+      "durable_payload_sha256": "a7a54694a86cdc39722c7e636174209aa87b4c868b26b92e29fe9261bf5d5bae",
+      "durable_manifest_sha256": "7ddee8d0d7e8604273cafba12773a51ac661cacc2780c19d4551266945f6597e"
+    },
+    {
+      "cycle": 6,
+      "saved_tick": 16220,
+      "snapshot_canonical_sha256": "f51096d9e095e198b1576bb012fa711ad2e07708a307bfa8e9c50e3ac2f37bdb",
+      "snapshot_envelope_sha256": "06c6c593f8c6af5540f255c8e277e44492e0758e018cb4a92d5eba49ef89e36d",
+      "generation": 6,
+      "exact_restore": true,
+      "durable_payload_sha256": "c432981e79ea5f531338855a7a8255b84b3766493746fd1f7bc83004917a3fa6",
+      "durable_manifest_sha256": "1ea2fadb03f1ceea8e2e34f6d892e5a7ce740a24c093231df2d1ea269a050913"
+    },
+    {
+      "cycle": 7,
+      "saved_tick": 18323,
+      "snapshot_canonical_sha256": "9b94aa54a4db3223b48cedf415ac751990cf68591dafa306af0807541a4cf5e3",
+      "snapshot_envelope_sha256": "f40078aaf90386d8f08be33c7495897e2875bc9c05c142e7364a2bff9f359474",
+      "generation": 7,
+      "exact_restore": true,
+      "durable_payload_sha256": "536141299f3939c4cf3e649b060fe7fb1b340b146092d8db122896e895b2d2b8",
+      "durable_manifest_sha256": "878729a25a2064d841b8da909cbef8dacb1c545269657701fac6a023de5793ed"
+    },
+    {
+      "cycle": 8,
+      "saved_tick": 20426,
+      "snapshot_canonical_sha256": "3fc47620e5b1b2df14a7f831aaa339b4f913bc1f72b8363da0abeae7066fd3c8",
+      "snapshot_envelope_sha256": "3c04f850b972019f9ed4c576a72f7b317a31e44090fb62cbbaea8fffa5fe5bc0",
+      "generation": 8,
+      "exact_restore": true,
+      "durable_payload_sha256": "723e1de12bf8e0e17351f28ced5b9481789dc5a780ce4ebe950c53a8b23f5792",
+      "durable_manifest_sha256": "222803e024af8f93e5440dc4a659b7c60e4e673f63fd918102da54d7b0bd1ddd"
+    },
+    {
+      "cycle": 9,
+      "saved_tick": 22528,
+      "snapshot_canonical_sha256": "27d51cfbaf404ca6904f3936bc3a15dfd966bcad9e111edc269c0ff4560a4ed4",
+      "snapshot_envelope_sha256": "336363877026bc313d18843451be9eab2dc4e64adc020ad4de4dc38b6a037113",
+      "generation": 9,
+      "exact_restore": true,
+      "durable_payload_sha256": "527627a835f1122e8bac4088639aa4ad5186153a44aee415e8ee0f62ec317392",
+      "durable_manifest_sha256": "70d6a717d1cb26c0b3c10648dce4cb30c45f3bd240fa8e904ceb9629131672b4"
+    },
+    {
+      "cycle": 10,
+      "saved_tick": 24630,
+      "snapshot_canonical_sha256": "95f32c7f50b895540e202bf46176c8c2a404ce6bb436a77fa68511256fa990b2",
+      "snapshot_envelope_sha256": "082fb082e805c6906aa9916075ba653ad8517e06f0cb7a4a88ac98db7209afe4",
+      "generation": 10,
+      "exact_restore": true,
+      "durable_payload_sha256": "b13fca1fc4d075cced298a2c781c4c88acef9ee1f1cbdcf9135dd11ca557c2f1",
+      "durable_manifest_sha256": "3a0d971b7229d0c7fd920219c6f6c3e1b9fa8dc532b0a4d632af021b0551f566"
+    },
+    {
+      "cycle": 11,
+      "saved_tick": 26732,
+      "snapshot_canonical_sha256": "3468a0fd39cff81f025f8cd427e0207d5577b041aeb4d60cdc9509e3ac7b7225",
+      "snapshot_envelope_sha256": "02dd1d7f91c80c233d2e5c5e70b6f70d9149f8cb626417f6528e3edc1d5af2cd",
+      "generation": 11,
+      "exact_restore": true,
+      "durable_payload_sha256": "08599e47dbc1c3544a9c53c50abd66f2864b3f1dfa6d63c5e3190738230247ba",
+      "durable_manifest_sha256": "f5072aa2455c412b759980f68a8cc60d169c44bc0a391a73070ff72b8375dec4"
+    },
+    {
+      "cycle": 12,
+      "saved_tick": 28835,
+      "snapshot_canonical_sha256": "ca27d0bcc96553b267eda4ed697e5acc2a36dd02ee2ebd4e9d83aa40d9fc7210",
+      "snapshot_envelope_sha256": "c11996e1b667d03c8ea3d785d7b87c0020e7aeb7e6afc137225d6d60ac0d88b4",
+      "generation": 12,
+      "exact_restore": true,
+      "durable_payload_sha256": "b2421f60aade91aa3086dcf2ad9a9e577b3f81f571bb923071d003faf0a62211",
+      "durable_manifest_sha256": "442fd5794afc34ee417ed825209733ffd453004c256a2f7b30dcc1637b48bbf9"
+    },
+    {
+      "cycle": 13,
+      "saved_tick": 30937,
+      "snapshot_canonical_sha256": "fbe590727efa9cb4d47c4474231e88238391a16ae9dead842863bc97051f7017",
+      "snapshot_envelope_sha256": "d28ddf247734a9a4886e7533b12379d5f2faf37fdcd842beec6d619e292b8579",
+      "generation": 13,
+      "exact_restore": true,
+      "durable_payload_sha256": "41108f4e71ed21acab786233da3a5a1648a53eeaec3baf8209df72838119b3e6",
+      "durable_manifest_sha256": "fe9063c38bdb99c33c8ce057e60319d6cb56c2fdcde546ad37fc0b9482dfd412"
+    },
+    {
+      "cycle": 14,
+      "saved_tick": 33040,
+      "snapshot_canonical_sha256": "35da1fad37276386a0c32453710637fd03733943179b40e6da1013dc517caa5e",
+      "snapshot_envelope_sha256": "cc215a0ee9e3f59d519ac86cc9665c62721be8ec47025dbef6809e1b71e76463",
+      "generation": 14,
+      "exact_restore": true,
+      "durable_payload_sha256": "a555b1bfc0f8df6179eb7eb74d05282e5110c0d8bb9f1e0215817a84f6e30658",
+      "durable_manifest_sha256": "17c9a76a43dcaddf7b27025b71666a4610440cdf99712968264ba941e9409544"
+    },
+    {
+      "cycle": 15,
+      "saved_tick": 35143,
+      "snapshot_canonical_sha256": "cb9af8c318a4e114a0e01db0decab2aeb654604173314f118055f902d49b2ff3",
+      "snapshot_envelope_sha256": "c85303add93bc4de9268fb4e16036399be698b831fb8b20de218fa99c3a83ab9",
+      "generation": 15,
+      "exact_restore": true,
+      "durable_payload_sha256": "d831df3ba439b80556310a89889e8b7688265010b7825f7bd6e4c261375b4521",
+      "durable_manifest_sha256": "4d0b26e45c1a91b24b1a3512c5e8d772caf2a05b3d1a39f65ab6dcb688813344"
+    },
+    {
+      "cycle": 16,
+      "saved_tick": 37246,
+      "snapshot_canonical_sha256": "615193025f4974045e220f376fb1421f7a8bdcc62efa9d5398eca310a01caf5e",
+      "snapshot_envelope_sha256": "6b7afe1c7b0813b4181a6458ef75d3dd8f25393052926b7914478220f4ef77d5",
+      "generation": 16,
+      "exact_restore": true,
+      "durable_payload_sha256": "9949a7c52612b0007fde84d947bd65da17bf186559fc31cb30f38b7746b75243",
+      "durable_manifest_sha256": "e665f916ef8a6f4ed216569c0c4835d94a9c9426b63e3b049fbf208798d8010c"
+    },
+    {
+      "cycle": 17,
+      "saved_tick": 39348,
+      "snapshot_canonical_sha256": "dd92da8e80ee35b4482a577ed4ce71cf640d8938624ca853f0cfb84a6170586d",
+      "snapshot_envelope_sha256": "4a4bf5b9a7281995cac42462121fa14a5d43f7ba71ccfe45a4262d20d9e443dd",
+      "generation": 17,
+      "exact_restore": true,
+      "durable_payload_sha256": "0be91565c07e9e24f84572b2a83a194b586f749a1729c9ef8252c9243d030903",
+      "durable_manifest_sha256": "8bd2a12aa668b5588baf63c9325d42fba6db87b72af0c0907976c873def12a75"
+    },
+    {
+      "cycle": 18,
+      "saved_tick": 41450,
+      "snapshot_canonical_sha256": "e202efe8ab4db175c5fe286a9509ce5127d9694fd858bfbcde834ac0a2942e10",
+      "snapshot_envelope_sha256": "18efee085864d299f0e3fa402eeb00803df3582401b35addfd801e5311a0420d",
+      "generation": 18,
+      "exact_restore": true,
+      "durable_payload_sha256": "59be563e79a53ba085fd27747ea6900e169e423d74c78ac13b809f3c99ec607c",
+      "durable_manifest_sha256": "7a30b697cb7764d2cc39cb1fa6fe14b216a86abbfe0826f8943e870f3ffa667c"
+    },
+    {
+      "cycle": 19,
+      "saved_tick": 43553,
+      "snapshot_canonical_sha256": "b5edbd0f04ae3fc682ae49582e563643d8b054f8af5759460da212864747d9e6",
+      "snapshot_envelope_sha256": "074ee052e282eb2ab9dbd385f5192b06db431626b96397ed8fc7017f4f950a8c",
+      "generation": 19,
+      "exact_restore": true,
+      "durable_payload_sha256": "9546246311b6e95dff04ad6e7308ad22dd34971980a8c25606dd5f8e26675a59",
+      "durable_manifest_sha256": "3ad8df831ae7be2c5aa77527665518c866515a04e38dc2b0b2aa269f239e1af2"
+    },
+    {
+      "cycle": 20,
+      "saved_tick": 45655,
+      "snapshot_canonical_sha256": "9990a37b51ad4c509b7b43350e7a13e8520cb2370603caf61ab3abf4fec4005a",
+      "snapshot_envelope_sha256": "30375fef1db76647a291f8da9b83794d64e9c7ccd2f1d76180f68cc71e4d7c4c",
+      "generation": 20,
+      "exact_restore": true,
+      "durable_payload_sha256": "42d4ebc4d43e362ac5c758365e74ba975015041b1233f52bb7ecca2b8160e88f",
+      "durable_manifest_sha256": "c16995ac0b64b099d2551c72ca284f26ba566d1b94511b9171e73c1d304a5aad"
+    },
+    {
+      "cycle": 21,
+      "saved_tick": 47758,
+      "snapshot_canonical_sha256": "6a1843d7274e99cc32905ded8f72410b0b461d6b795554e38508e4f3d30a739c",
+      "snapshot_envelope_sha256": "e584ebd12d9527de77437b5d910c7d2264da0363ddfe1ca3ae9e591a3aa3f5d8",
+      "generation": 21,
+      "exact_restore": true,
+      "durable_payload_sha256": "d597d9dabc33c2b78062401132fd2fc638a10ca3f4feabbaaeccec3b56cf1bcc",
+      "durable_manifest_sha256": "dd23113f4592eed0cd6de6a24ad5849f9253e0c0d4dc8ffdc68a54b70b9edbc5"
+    },
+    {
+      "cycle": 22,
+      "saved_tick": 49861,
+      "snapshot_canonical_sha256": "c50a57000f9fa3655f9967934a9f86158fd266684496676af9660fbbb3ce007f",
+      "snapshot_envelope_sha256": "1548fc0a4c01ff88aad3486b4c732ea199c039f7646f63a3e50ba108e344721b",
+      "generation": 22,
+      "exact_restore": true,
+      "durable_payload_sha256": "4a2d90d2511ca4372dfea258f812c9a7b71baa0d6a64c883a3b98e92062e5eb3",
+      "durable_manifest_sha256": "bfc2314e62523c9a97c7941780b9e771a3d83d37cce35e60740a690c90f48808"
+    },
+    {
+      "cycle": 23,
+      "saved_tick": 51963,
+      "snapshot_canonical_sha256": "c69a980c7114cad3413249d0a4617f85309b67be7d6516309bd7b24632bfaff7",
+      "snapshot_envelope_sha256": "f60d1f34b787270df06e574ac0ca63b4c0a194bb07af56c2e3947a1b5df8f510",
+      "generation": 23,
+      "exact_restore": true,
+      "durable_payload_sha256": "6e51dd573b20ef1b334e87b0475a6fa44f6504ce6b90f9d220dc5b21345c5e81",
+      "durable_manifest_sha256": "68fec8dd874da7cd19693a7491a352f57bf710de4168cad6250bdb6a091eef65"
+    }
+  ],
+  "frame_windows": [
+    {
+      "window": 1,
+      "owner": "soak",
+      "count": 1039,
+      "duration_seconds": 10.0589451,
+      "ticks_per_second": 60.14547191434616,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1023,
+        "count": 1039,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 672300,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 0,
+          "error": 0,
+          "focused": 1039,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 1039,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 1039,
+        "gpu_timed": 1039,
+        "gpu_total": {
+          "max": 3623104,
+          "mean": 2673924.6814244464,
+          "min": 1714048,
+          "p50": 2812096,
+          "p95": 3143488,
+          "p99": 3364736,
+          "samples": 1039,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 6755800,
+          "mean": 2990274.08477842,
+          "min": 1728500,
+          "p50": 2939000,
+          "p95": 3995200,
+          "p99": 4291000,
+          "samples": 1038,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 10409800,
+          "mean": 6693975.553416747,
+          "min": 3738400,
+          "p50": 6925200,
+          "p95": 9024200,
+          "p99": 9658100,
+          "samples": 1039,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 15128800,
+          "mean": 9680670.712909441,
+          "min": 5825400,
+          "p50": 9805900,
+          "p95": 12354700,
+          "p99": 13216600,
+          "samples": 1038,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 15128800,
+          "mean": 9683351.783992285,
+          "min": 5825400,
+          "p50": 9806600,
+          "p95": 12354700,
+          "p99": 13216600,
+          "samples": 1037,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 1039,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 1714048,
+            "max": 3623104,
+            "mean": 2673924.6814244464,
+            "p50": 2812096,
+            "p95": 3143488,
+            "p99": 3364736
+          },
+          "skinning": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 150304,
+            "max": 235136,
+            "mean": 176063.16843118382,
+            "p50": 171968,
+            "p95": 192640,
+            "p99": 207904
+          },
+          "light_assignment": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 23520,
+            "max": 45760,
+            "mean": 27684.49663137632,
+            "p50": 26976,
+            "p95": 30816,
+            "p99": 31808
+          },
+          "shadows": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 152096,
+            "max": 237600,
+            "mean": 171860.08084696825,
+            "p50": 170208,
+            "p95": 192576,
+            "p99": 215552
+          },
+          "opaque": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 201728,
+            "max": 1037312,
+            "mean": 494813.75168431184,
+            "p50": 495616,
+            "p95": 751616,
+            "p99": 790528
+          },
+          "deferred_lighting": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 372736,
+            "max": 845824,
+            "mean": 570657.7555341675,
+            "p50": 598016,
+            "p95": 693248,
+            "p99": 777216
+          },
+          "ambient_occlusion": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 452608,
+            "max": 1527808,
+            "mean": 894609.3705486044,
+            "p50": 914432,
+            "p95": 1183744,
+            "p99": 1236992
+          },
+          "ambient_occlusion_filter": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 160768,
+            "max": 598016,
+            "mean": 283201.53994225216,
+            "p50": 305152,
+            "p95": 343040,
+            "p99": 370688
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 1039,
+            "unit": "ns",
+            "min": 1168640,
+            "max": 2764800,
+            "mean": 1803503.1838306063,
+            "p50": 1885376,
+            "p95": 2209792,
+            "p99": 2427200
+          }
+        }
+      },
+      "evidence_sha256": "8bbb3e8fd70155e123c21ba91785257f16aeebbb54e0dbf9cd4f25fd0088cd3c"
+    },
+    {
+      "window": 2,
+      "owner": "soak",
+      "count": 1053,
+      "duration_seconds": 10.0582662,
+      "ticks_per_second": 60.05011082327489,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1022,
+        "count": 1053,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 109800,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 1053,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 0,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 2,
+        "gpu_completed": 1053,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 1053,
+        "gpu_timed": 1053,
+        "gpu_total": {
+          "max": 3361888,
+          "mean": 2634411.578347578,
+          "min": 1955808,
+          "p50": 2713792,
+          "p95": 3001568,
+          "p99": 3166432,
+          "samples": 1053,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 7796600,
+          "mean": 3083108.0798479086,
+          "min": 1832700,
+          "p50": 3095400,
+          "p95": 3975000,
+          "p99": 4253500,
+          "samples": 1052,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11017000,
+          "mean": 6471829.534662868,
+          "min": 3408800,
+          "p50": 6794000,
+          "p95": 8721300,
+          "p99": 9430100,
+          "samples": 1053,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 16998000,
+          "mean": 9552877.47148289,
+          "min": 5461600,
+          "p50": 9685900,
+          "p95": 12061000,
+          "p99": 12836600,
+          "samples": 1052,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 16998000,
+          "mean": 9550509.800190294,
+          "min": 5461600,
+          "p50": 9685900,
+          "p95": 12061000,
+          "p99": 12836600,
+          "samples": 1051,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 1053,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 1955808,
+            "max": 3361888,
+            "mean": 2634411.578347578,
+            "p50": 2713792,
+            "p95": 3001568,
+            "p99": 3166432
+          },
+          "skinning": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 147360,
+            "max": 238752,
+            "mean": 180727.0351377018,
+            "p50": 184000,
+            "p95": 195904,
+            "p99": 223808
+          },
+          "light_assignment": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 24096,
+            "max": 38752,
+            "mean": 28403.631528964863,
+            "p50": 29120,
+            "p95": 31744,
+            "p99": 34720
+          },
+          "shadows": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 149056,
+            "max": 230656,
+            "mean": 175659.39601139602,
+            "p50": 179648,
+            "p95": 201792,
+            "p99": 222016
+          },
+          "opaque": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 253952,
+            "max": 781312,
+            "mean": 479502.3437796771,
+            "p50": 464896,
+            "p95": 708608,
+            "p99": 734208
+          },
+          "deferred_lighting": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 406528,
+            "max": 843776,
+            "mean": 561644.0645773979,
+            "p50": 568320,
+            "p95": 648192,
+            "p99": 717824
+          },
+          "ambient_occlusion": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 546816,
+            "max": 1210368,
+            "mean": 872271.012345679,
+            "p50": 866304,
+            "p95": 1138688,
+            "p99": 1192960
+          },
+          "ambient_occlusion_filter": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 206848,
+            "max": 568320,
+            "mean": 280371.7834757835,
+            "p50": 291840,
+            "p95": 360448,
+            "p99": 392192
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 1053,
+            "unit": "ns",
+            "min": 1236992,
+            "max": 2336768,
+            "mean": 1770119.1718898385,
+            "p50": 1802528,
+            "p95": 2116608,
+            "p99": 2239488
+          }
+        }
+      },
+      "evidence_sha256": "e6095e84576d80b01435a448f6c693c59694a591ff0d7e05602bc2eb8f088a26"
+    },
+    {
+      "window": 3,
+      "owner": "soak",
+      "count": 1019,
+      "duration_seconds": 10.0608704,
+      "ticks_per_second": 60.03456718814308,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1021,
+        "count": 1019,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 111000,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 1019,
+          "paused": 1,
+          "replacement": 1,
+          "replay": 0,
+          "resize": 0,
+          "skip": 0,
+          "storage": 1
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 3,
+        "gpu_completed": 1019,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 1019,
+        "gpu_timed": 1019,
+        "gpu_total": {
+          "max": 3489536,
+          "mean": 2655753.829244357,
+          "min": 1815008,
+          "p50": 2768256,
+          "p95": 3120192,
+          "p99": 3163104,
+          "samples": 1019,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 7031800,
+          "mean": 3049700.1964636543,
+          "min": 1758300,
+          "p50": 3029200,
+          "p95": 4008500,
+          "p99": 4450400,
+          "samples": 1018,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11030300,
+          "mean": 6826570.755642787,
+          "min": 3770600,
+          "p50": 7177400,
+          "p95": 9114200,
+          "p99": 9913400,
+          "samples": 1019,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 16301200,
+          "mean": 9873885.854616895,
+          "min": 5635500,
+          "p50": 10074400,
+          "p95": 12515100,
+          "p99": 13440700,
+          "samples": 1018,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 16301200,
+          "mean": 9871272.861356933,
+          "min": 5635500,
+          "p50": 10074400,
+          "p95": 12510000,
+          "p99": 13440700,
+          "samples": 1017,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 1019,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 1815008,
+            "max": 3489536,
+            "mean": 2655753.829244357,
+            "p50": 2768256,
+            "p95": 3120192,
+            "p99": 3163104
+          },
+          "skinning": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 150944,
+            "max": 239200,
+            "mean": 181180.13738959766,
+            "p50": 176640,
+            "p95": 207904,
+            "p99": 217664
+          },
+          "light_assignment": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 24224,
+            "max": 45728,
+            "mean": 28581.558390578997,
+            "p50": 28000,
+            "p95": 31488,
+            "p99": 32704
+          },
+          "shadows": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 149152,
+            "max": 254240,
+            "mean": 175556.99313052013,
+            "p50": 176960,
+            "p95": 189664,
+            "p99": 229056
+          },
+          "opaque": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 224256,
+            "max": 772096,
+            "mean": 483492.80471050047,
+            "p50": 446464,
+            "p95": 736256,
+            "p99": 757760
+          },
+          "deferred_lighting": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 387072,
+            "max": 844800,
+            "mean": 571543.740922473,
+            "p50": 583680,
+            "p95": 695296,
+            "p99": 714752
+          },
+          "ambient_occlusion": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 523264,
+            "max": 1226752,
+            "mean": 878749.770363101,
+            "p50": 902144,
+            "p95": 1123328,
+            "p99": 1191936
+          },
+          "ambient_occlusion_filter": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 180224,
+            "max": 631808,
+            "mean": 279242.4887144259,
+            "p50": 297984,
+            "p95": 352256,
+            "p99": 370688
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 1019,
+            "unit": "ns",
+            "min": 1171456,
+            "max": 2454528,
+            "mean": 1786942.33562316,
+            "p50": 1857536,
+            "p95": 2118656,
+            "p99": 2208960
+          }
+        }
+      },
+      "evidence_sha256": "9a6b41966ea0cddfcab85473fc3045209939feff53e81f9e7ec1e4d5a7c3e876"
+    },
+    {
+      "window": 4,
+      "owner": "soak",
+      "count": 994,
+      "duration_seconds": 10.0665417,
+      "ticks_per_second": 60.100083825212785,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1020,
+        "count": 994,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 109000,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 0,
+          "error": 0,
+          "focused": 994,
+          "paused": 1,
+          "replacement": 1,
+          "replay": 0,
+          "resize": 0,
+          "skip": 0,
+          "storage": 1
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 4,
+        "gpu_completed": 994,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 994,
+        "gpu_timed": 994,
+        "gpu_total": {
+          "max": 3797568,
+          "mean": 2690528.0321931588,
+          "min": 1884224,
+          "p50": 2800384,
+          "p95": 3102368,
+          "p99": 3555392,
+          "samples": 994,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 7477000,
+          "mean": 3180277.9456193354,
+          "min": 1704200,
+          "p50": 3205900,
+          "p95": 4103200,
+          "p99": 4463600,
+          "samples": 993,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11648300,
+          "mean": 6950227.062374245,
+          "min": 3849300,
+          "p50": 7288800,
+          "p95": 9252300,
+          "p99": 9869800,
+          "samples": 994,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 16469600,
+          "mean": 10127111.98388721,
+          "min": 5955700,
+          "p50": 10470100,
+          "p95": 12854600,
+          "p99": 13773600,
+          "samples": 993,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 16469600,
+          "mean": 10125550.100806452,
+          "min": 5955700,
+          "p50": 10462600,
+          "p95": 12854600,
+          "p99": 13773600,
+          "samples": 992,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 994,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 1884224,
+            "max": 3797568,
+            "mean": 2690528.0321931588,
+            "p50": 2800384,
+            "p95": 3102368,
+            "p99": 3555392
+          },
+          "skinning": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 151328,
+            "max": 237280,
+            "mean": 181447.91951710262,
+            "p50": 179328,
+            "p95": 206624,
+            "p99": 222816
+          },
+          "light_assignment": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 24480,
+            "max": 44032,
+            "mean": 28740.281690140844,
+            "p50": 28128,
+            "p95": 32000,
+            "p99": 32544
+          },
+          "shadows": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 150976,
+            "max": 246976,
+            "mean": 175568.1931589537,
+            "p50": 174240,
+            "p95": 191360,
+            "p99": 223104
+          },
+          "opaque": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 232448,
+            "max": 740352,
+            "mean": 485723.1710261569,
+            "p50": 457728,
+            "p95": 696320,
+            "p99": 715776
+          },
+          "deferred_lighting": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 402432,
+            "max": 991232,
+            "mean": 587114.6237424547,
+            "p50": 576512,
+            "p95": 700416,
+            "p99": 720896
+          },
+          "ambient_occlusion": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 457728,
+            "max": 1699840,
+            "mean": 891814.3742454728,
+            "p50": 906240,
+            "p95": 1143808,
+            "p99": 1256448
+          },
+          "ambient_occlusion_filter": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 186368,
+            "max": 655360,
+            "mean": 282237.68209255533,
+            "p50": 303104,
+            "p95": 366592,
+            "p99": 468992
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 994,
+            "unit": "ns",
+            "min": 1222656,
+            "max": 2817024,
+            "mean": 1819048.4668008047,
+            "p50": 1868800,
+            "p95": 2167040,
+            "p99": 2596160
+          }
+        }
+      },
+      "evidence_sha256": "ded4393865c70ac94213121c2e5c7d16d789185c5a459dd2057089262ec1af98"
+    },
+    {
+      "window": 5,
+      "owner": "soak",
+      "count": 942,
+      "duration_seconds": 10.0688167,
+      "ticks_per_second": 60.086504504546205,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1019,
+        "count": 942,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 109400,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 0,
+          "error": 0,
+          "focused": 942,
+          "paused": 1,
+          "replacement": 1,
+          "replay": 0,
+          "resize": 0,
+          "skip": 0,
+          "storage": 1
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 5,
+        "gpu_completed": 942,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 942,
+        "gpu_timed": 942,
+        "gpu_total": {
+          "max": 3714304,
+          "mean": 2823437.7919320595,
+          "min": 1971104,
+          "p50": 2953120,
+          "p95": 3386368,
+          "p99": 3609632,
+          "samples": 942,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 7541200,
+          "mean": 3185289.054197662,
+          "min": 1702700,
+          "p50": 3173700,
+          "p95": 4115100,
+          "p99": 4377600,
+          "samples": 941,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11996600,
+          "mean": 7506857.430997876,
+          "min": 3734600,
+          "p50": 7924400,
+          "p95": 9829400,
+          "p99": 10855400,
+          "samples": 942,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 17110800,
+          "mean": 10689048.671625929,
+          "min": 5437300,
+          "p50": 10980700,
+          "p95": 13376000,
+          "p99": 14216300,
+          "samples": 941,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 17110800,
+          "mean": 10686687.978723405,
+          "min": 5437300,
+          "p50": 10976000,
+          "p95": 13376000,
+          "p99": 14216300,
+          "samples": 940,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 942,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 1971104,
+            "max": 3714304,
+            "mean": 2823437.7919320595,
+            "p50": 2953120,
+            "p95": 3386368,
+            "p99": 3609632
+          },
+          "skinning": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 160160,
+            "max": 234112,
+            "mean": 185165.31634819534,
+            "p50": 186976,
+            "p95": 194400,
+            "p99": 211616
+          },
+          "light_assignment": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 25632,
+            "max": 35968,
+            "mean": 29744.71337579618,
+            "p50": 29984,
+            "p95": 32128,
+            "p99": 32832
+          },
+          "shadows": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 156256,
+            "max": 262368,
+            "mean": 182128.06794055202,
+            "p50": 182816,
+            "p95": 202720,
+            "p99": 209312
+          },
+          "opaque": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 248832,
+            "max": 1019904,
+            "mean": 514187.1422505308,
+            "p50": 532480,
+            "p95": 766976,
+            "p99": 861184
+          },
+          "deferred_lighting": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 421888,
+            "max": 1044480,
+            "mean": 632912.4416135881,
+            "p50": 651264,
+            "p95": 746496,
+            "p99": 773120
+          },
+          "ambient_occlusion": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 573440,
+            "max": 1251328,
+            "mean": 926958.0636942675,
+            "p50": 953344,
+            "p95": 1162240,
+            "p99": 1222656
+          },
+          "ambient_occlusion_filter": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 200704,
+            "max": 652288,
+            "mean": 294421.74097664544,
+            "p50": 313344,
+            "p95": 377856,
+            "p99": 385024
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 942,
+            "unit": "ns",
+            "min": 1283200,
+            "max": 2663680,
+            "mean": 1912212.5520169851,
+            "p50": 1983712,
+            "p95": 2316576,
+            "p99": 2421760
+          }
+        }
+      },
+      "evidence_sha256": "d698f1801eddbb5d31bc61324718eb6801a1a0aeaab0f83c779c00bd596b2b5a"
+    },
+    {
+      "window": 6,
+      "owner": "soak",
+      "count": 992,
+      "duration_seconds": 10.0737003,
+      "ticks_per_second": 60.057375342008136,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1018,
+        "count": 992,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 124600,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 0,
+          "error": 0,
+          "focused": 992,
+          "paused": 1,
+          "replacement": 1,
+          "replay": 0,
+          "resize": 0,
+          "skip": 0,
+          "storage": 1
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 6,
+        "gpu_completed": 992,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 992,
+        "gpu_timed": 992,
+        "gpu_total": {
+          "max": 3597344,
+          "mean": 2738782.5161290322,
+          "min": 1962240,
+          "p50": 2841664,
+          "p95": 3254560,
+          "p99": 3549120,
+          "samples": 992,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 7289800,
+          "mean": 3207310.2926337034,
+          "min": 1772300,
+          "p50": 3241500,
+          "p95": 4136000,
+          "p99": 4425000,
+          "samples": 991,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11177000,
+          "mean": 6950862.701612903,
+          "min": 3827400,
+          "p50": 7389100,
+          "p95": 9193700,
+          "p99": 9913200,
+          "samples": 992,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 16544000,
+          "mean": 10154766.29667003,
+          "min": 6331300,
+          "p50": 10465700,
+          "p95": 12754200,
+          "p99": 13681900,
+          "samples": 991,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 16544000,
+          "mean": 10153047.070707072,
+          "min": 6331300,
+          "p50": 10464400,
+          "p95": 12754200,
+          "p99": 13681900,
+          "samples": 990,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 992,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 1962240,
+            "max": 3597344,
+            "mean": 2738782.5161290322,
+            "p50": 2841664,
+            "p95": 3254560,
+            "p99": 3549120
+          },
+          "skinning": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 155072,
+            "max": 237792,
+            "mean": 182551.12903225806,
+            "p50": 179168,
+            "p95": 193728,
+            "p99": 217824
+          },
+          "light_assignment": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 25600,
+            "max": 36256,
+            "mean": 29309.516129032258,
+            "p50": 28512,
+            "p95": 32064,
+            "p99": 32896
+          },
+          "shadows": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 159680,
+            "max": 259392,
+            "mean": 180049.06451612903,
+            "p50": 179584,
+            "p95": 199296,
+            "p99": 228800
+          },
+          "opaque": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 240640,
+            "max": 890880,
+            "mean": 466701.4193548387,
+            "p50": 483328,
+            "p95": 708608,
+            "p99": 789504
+          },
+          "deferred_lighting": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 420864,
+            "max": 795648,
+            "mean": 621767.2258064516,
+            "p50": 642048,
+            "p95": 726016,
+            "p99": 764928
+          },
+          "ambient_occlusion": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 477184,
+            "max": 1416192,
+            "mean": 910825.2903225806,
+            "p50": 945152,
+            "p95": 1142784,
+            "p99": 1190912
+          },
+          "ambient_occlusion_filter": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 193536,
+            "max": 635904,
+            "mean": 290680.77419354836,
+            "p50": 314368,
+            "p95": 362496,
+            "p99": 380928
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 992,
+            "unit": "ns",
+            "min": 1277952,
+            "max": 2519040,
+            "mean": 1880171.3870967743,
+            "p50": 1969504,
+            "p95": 2273280,
+            "p99": 2331648
+          }
+        }
+      },
+      "evidence_sha256": "79ad9294a086f8fe20efd1025c81ff01cafb9351274ae2f6203f4205955f975b"
+    },
+    {
+      "window": 7,
+      "owner": "soak",
+      "count": 1002,
+      "duration_seconds": 10.0699509,
+      "ticks_per_second": 60.07973683367214,
+      "timing_budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 65536,
+        "captures_remaining": 1017,
+        "count": 1002,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 97400,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 0,
+          "error": 0,
+          "focused": 1002,
+          "paused": 1,
+          "replacement": 1,
+          "replay": 0,
+          "resize": 0,
+          "skip": 0,
+          "storage": 1
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 7,
+        "gpu_completed": 1002,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 1002,
+        "gpu_timed": 1002,
+        "gpu_total": {
+          "max": 3416576,
+          "mean": 2706420.6946107782,
+          "min": 2081536,
+          "p50": 2845344,
+          "p95": 3079552,
+          "p99": 3167968,
+          "samples": 1002,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 7408200,
+          "mean": 3181939.260739261,
+          "min": 1767300,
+          "p50": 3209100,
+          "p95": 4116900,
+          "p99": 4358200,
+          "samples": 1001,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11915800,
+          "mean": 6871087.5249501,
+          "min": 3660500,
+          "p50": 7253900,
+          "p95": 9259200,
+          "p99": 9993200,
+          "samples": 1002,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 16290000,
+          "mean": 10050342.157842157,
+          "min": 6066100,
+          "p50": 10326200,
+          "p95": 12637700,
+          "p99": 13660700,
+          "samples": 1001,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 16290000,
+          "mean": 10049047.7,
+          "min": 6066100,
+          "p50": 10322300,
+          "p95": 12637700,
+          "p99": 13660700,
+          "samples": 1000,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 1002,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 2081536,
+            "max": 3416576,
+            "mean": 2706420.6946107782,
+            "p50": 2845344,
+            "p95": 3079552,
+            "p99": 3167968
+          },
+          "skinning": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 156064,
+            "max": 233248,
+            "mean": 183609.1017964072,
+            "p50": 179776,
+            "p95": 193952,
+            "p99": 220096
+          },
+          "light_assignment": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 26112,
+            "max": 36416,
+            "mean": 29479.057884231537,
+            "p50": 28544,
+            "p95": 31936,
+            "p99": 32576
+          },
+          "shadows": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 162816,
+            "max": 247936,
+            "mean": 181749.0139720559,
+            "p50": 180608,
+            "p95": 199488,
+            "p99": 222016
+          },
+          "opaque": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 252928,
+            "max": 723968,
+            "mean": 429806.11576846306,
+            "p50": 473088,
+            "p95": 546816,
+            "p99": 675840
+          },
+          "deferred_lighting": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 444416,
+            "max": 874496,
+            "mean": 621896.0479041917,
+            "p50": 642048,
+            "p95": 716800,
+            "p99": 726016
+          },
+          "ambient_occlusion": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 594944,
+            "max": 1247232,
+            "mean": 911720.750499002,
+            "p50": 950272,
+            "p95": 1108992,
+            "p99": 1178624
+          },
+          "ambient_occlusion_filter": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 204800,
+            "max": 618496,
+            "mean": 290740.375249501,
+            "p50": 317440,
+            "p95": 350208,
+            "p99": 385024
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 1002,
+            "unit": "ns",
+            "min": 1351680,
+            "max": 2502016,
+            "mean": 1881777.4051896208,
+            "p50": 1977536,
+            "p95": 2165920,
+            "p99": 2266112
+          }
+        }
+      },
+      "evidence_sha256": "631b22d04cca788e92ac39b46785a2070f8d0ca1f3d6098d587ce81823192b92"
+    }
+  ],
+  "memory": [
+    {
+      "owner": "soak",
+      "sample_count": 1405,
+      "span_seconds": 1414.8698225000044,
+      "summary": {
+        "working_set_bytes": {
+          "samples": 1405,
+          "minimum": 304635904,
+          "maximum": 400003072,
+          "first": 304635904,
+          "last": 344096768,
+          "median": 347852800
+        },
+        "private_commit_bytes": {
+          "samples": 1405,
+          "minimum": 538734592,
+          "maximum": 636809216,
+          "first": 585854976,
+          "last": 590639104,
+          "median": 585154560
+        },
+        "system_total_physical_bytes": {
+          "samples": 1405,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744
+        },
+        "system_available_physical_bytes": {
+          "samples": 1405,
+          "minimum": 5800321024,
+          "maximum": 6118629376,
+          "first": 6118612992,
+          "last": 5931163648,
+          "median": 5968723968
+        }
+      },
+      "evidence_sha256": "db38472205082f8d7d831bac413ac24ce0b3577616f9f507545ef5ebab5837c7"
+    }
+  ],
+  "rehearsals": [
+    {
+      "passed": true,
+      "reliability_qualified": false,
+      "cycles": 2,
+      "credited_unpaused_seconds": 30.05659289999312,
+      "elapsed_seconds": 108.29100679999829,
+      "clean_owner_exit_codes": true,
+      "supervisor_sha256": "7e1281967456a3e6f3c7b28fa664cf9cad4b51c9dc181ab9ba949882c6016015",
+      "evidence_sha256": "15255482f00c3aeb78a2aaddaf7221649769fd8367cc8885088c01cb289da816"
+    },
+    {
+      "passed": true,
+      "reliability_qualified": false,
+      "cycles": 2,
+      "credited_unpaused_seconds": 30.06852269999945,
+      "elapsed_seconds": 113.65646430000197,
+      "clean_owner_exit_codes": true,
+      "supervisor_sha256": "c9140409b01a179fe82c699143a15cefe3140e3670b0d6846ad397afb2e49168",
+      "evidence_sha256": "7c5897f594385b063d81c40e1b6a2737e722f4234b0bc1bcfb6ed50e6c403233"
+    }
+  ],
+  "limitations": [
+    "Failed prefix is not the thirty-minute reliability gate.",
+    "Seven short frame windows precede the failed interval and do not cover every frame.",
+    "Memory samples cover observed play and checkpoints, not startup/shutdown or GPU VRAM.",
+    "No fresh-process continuation occurred in this failed long run.",
+    "The fixed .94 Native AOT image does not qualify code reload or production FPS complexity.",
+    "Timing stages available before this checkpoint cannot establish the stall cause."
+  ],
+  "raw": {
+    "file": "performance-yard-reliability-failure-native.json.gz",
+    "sha256": "b2c0c369fac9a9e2717dead0be701210c02d81bf3997275ed260405328802f5b",
+    "compressed_bytes": 734816,
+    "uncompressed_bytes": 5976286
+  }
+}

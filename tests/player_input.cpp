@@ -34,12 +34,27 @@ int main() {
         PlayerClock paused; check(paused.advance(.01,true)==0,"Fractional time advanced.");
         check(paused.advance(100,false)==0 && paused.advance(.01,true)==0,"Pause caught up elapsed wall time.");
         check(paused.advance(10,true)==8 && paused.dropped_seconds()>9.8,"Stall catch-up is unbounded.");
+        const auto stall=paused.last_sample();
+        check(stall.observed && stall.active && stall.elapsed_seconds==10 &&
+              stall.accepted_seconds==8*Runtime::fixed_dt &&
+              stall.dropped_seconds==10-8*Runtime::fixed_dt && stall.planned_ticks==8 &&
+              stall.committed_ticks==0 && stall.accumulator_seconds>=0,
+              "Clock observation changed or concealed bounded stall policy.");
+        paused.advance(10,false);const auto suspension=paused.last_sample();
+        check(suspension.observed && !suspension.active && suspension.elapsed_seconds==10 &&
+              suspension.accepted_seconds==0 && suspension.dropped_seconds==0 &&
+              suspension.accumulator_seconds==0 && suspension.planned_ticks==0 &&
+              paused.dropped_seconds()==stall.dropped_seconds,
+              "Paused observation invented discarded time or reset lifetime drops.");
         PlayerClock boundary;
         // Exact double reproducer: epsilon-assisted rounding formerly returned
         // nine ticks from the second call despite the eight-tick work budget.
         check(boundary.advance(0.016666666665666664,true)==0,"Boundary fraction unexpectedly advanced.");
         check(boundary.advance(8*Runtime::fixed_dt,true)==8,"Fractional carry exceeded the eight-tick cap.");
         check(boundary.dropped_seconds()==0,"Work capping discarded accepted fractional time.");
+        check(boundary.last_sample().planned_ticks==8 && boundary.last_sample().dropped_seconds==0 &&
+              boundary.last_sample().accumulator_seconds>0,
+              "Clock diagnostics lost accepted fractional carry.");
         check(boundary.advance(.0001,true)==1,"Work cap lost the prior fractional carry.");
         PlayerClock bounded;
         check(bounded.advance(0.016666666665666664,true)==0,"Bounded fixture fraction unexpectedly advanced.");

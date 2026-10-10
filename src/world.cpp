@@ -12,6 +12,7 @@
 #endif
 #include "world_schema.hpp"
 #include "poima/player.hpp"
+#include "poima/player_diagnostics.hpp"
 #include "poima/player_preferences.hpp"
 #include "poima/gameplay_player_preferences.hpp"
 #include "poima/build_metadata.hpp"
