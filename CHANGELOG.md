@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.94
+
+- Add Performance Yard: an API-authored workload retaining Relay Yard's compiled gameplay, imported character, navigation, UI and licensed audio, with additional rigs, geometry, lights and physics bodies.
+- Add an opt-in compiled navigation circuit with saved counters for committed movement, path plans and complete laps; run on the normal native clock without per-tick RPC or replay.
+- Add a Windows workload benchmark that records raw frame/GPU/memory data, actual focus, owning-monitor mode and power source. Keep functional integrity and timing budgets separate. [Workload and reproduction](examples/performance-yard/README.md).
+- Qualify genuine Windows Native AOT gameplay and one-minute combined workload measurements on NVIDIA and AMD. Preserve the AMD timing misses, raw observations and short-run limits. [Evidence](docs/evidence/m2-performance-yard.json).
+
 ## 0.0.93
 
 - Add guarded native frame captures with immutable paging, raw present-return cadence, overlapping CPU wall stages and per-submission GPU outcomes.

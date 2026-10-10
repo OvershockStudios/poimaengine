@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../managed/Directory.Build.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../managed/Poima.Gameplay/Poima.Gameplay.csproj" />
+    <!-- Reuse the exact existing gameplay and generated config/buffer/audio
+         declarations. Only PerformanceGame is selected as the module type. -->
+    <Compile Include="../relay-yard/RelayYardGame.cs" Link="RelayYardGame.cs" />
+    <Compile Include="../relay-yard/RelayAudio.cs" Link="RelayAudio.cs" />
+    <Compile Include="../locomotion-yard/LocomotionYardGame.cs" Link="LocomotionDeclarations.cs" />
+  </ItemGroup>
+  <Import Project="../../managed/Poima.Components.targets" />
+</Project>

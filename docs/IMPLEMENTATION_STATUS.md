@@ -1,8 +1,35 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.93**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.94**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.94 adds [Performance Yard](../examples/performance-yard/README.md),
+an API-authored combined workload retaining compiled Relay gameplay, licensed
+character/audio, navigation and UI, with 24 weighted animated rigs, 768 simple
+props, 32 dynamic boxes and 64 lights/eight shadow views. An opt-in compiled
+controller follows native navigation on the actual interactive clock; no replay
+or per-tick RPC supplies movement. Its new module/content identity is separate
+from retained Relay save cohorts. No engine API, schema or services change.
+
+Native Windows Native AOT publication and both focused GPU runs pass functional
+checks with 30 seconds of warm-up and 60 seconds of measurement at 1920×1080,
+deferred lighting, medium GTAO and no reconstruction/frame generation.
+Both sustain approximately 60 simulation ticks/s, travel 163 m and complete three
+circuits. RTX 4070 Laptop present-return cadence is p95 12.444 ms/p99 13.348 ms;
+AMD integrated graphics is p95 27.409 ms/p99 29.196 ms and misses both timing
+budgets. Sampled peak working sets are 404,819,968 and 469,823,488 bytes,
+respectively; these are process observations, not VRAM. All GPU tickets retire,
+native owners exit normally and NVRHI errors remain zero. Seven selected
+headless and six Windows tests pass against frozen native inputs.
+
+These are short, modest-geometry measurements on one laptop. Spectators play
+Idle, can overlap the camera at circuit corners, and do not provide crowd AI;
+dynamic boxes can settle. Skinning includes shadow-only work. Initial power and
+owning-monitor observations are AC and a 144 Hz OS mode, not continuous power,
+scanout or VRR qualification. A 30-minute soak, production FPS complexity,
+physical input/audibility, GPU residency and clean-machine delivery remain open.
+[Recorded results and compressed raw rows](evidence/m2-performance-yard.json).
 
 Version 0.0.93 adds an independent `performance.*` capture for native player
 polls: bounded preallocated rows, guarded identities/retries, immutable pages,

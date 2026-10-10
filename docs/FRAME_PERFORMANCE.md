@@ -137,3 +137,9 @@ messages to its own window. It also checks profiler independence, paused ticks,
 capture flags, full-buffer behavior and actual process memory. It does not
 establish representative game FPS, physical device input, scanout latency,
 clean-machine support, a memory leak-free soak or GPU residency.
+
+[Performance Yard](../examples/performance-yard/README.md) supplies a separate
+compiled game workload with a continuously navigated controller, additional
+imported rigs, geometry, lighting and physics. Its benchmark checks the normal
+interactive clock and completed draw work; it preserves missed budgets as
+results. Its simple art and bounded runs do not close the full release gates.
