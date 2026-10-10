@@ -55,6 +55,14 @@ def main():
         before = rpc('world.inspect')['revision']
         params = dict(request_id=uuid.uuid4().hex, executable=str(args.sdk.resolve()), project=str(project),
                       output=str(run/'compiled'), configuration='Release', timeout_ms=120000)
+        # Environment replacement belongs to the trusted native host, not this
+        # RPC's caller. Reject it before creating a job or changing the world.
+        if 'environment' in discovered['methods']['development.compile'].get('properties', {}):
+            raise RuntimeError('Compile RPC unexpectedly authorizes environment overrides.')
+        rpc('development.compile', dict(params, environment={'POIMA_UNAUTHORIZED': 'value'}), error=-32602)
+        if rpc('development.jobs')['jobs'] or rpc('world.inspect')['revision'] != before:
+            raise RuntimeError('Rejected environment override created work or changed the world.')
+        record['rpc_environment_override_rejected'] = True
         job = rpc('development.compile', params)
         retry = rpc('development.compile', params)
         if not retry['replayed'] or job['job_id'] != retry['job_id']: raise RuntimeError('Compile retry duplicated job.')

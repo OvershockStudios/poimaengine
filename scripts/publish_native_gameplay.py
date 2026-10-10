@@ -61,6 +61,15 @@ def run(command, cwd, *, capture=False):
     return result.stdout.strip() if capture else None
 
 
+def build(dotnet, operation, *arguments, capture=False):
+    # A supervised job owns its compiler processes. Do not connect to shared
+    # compiler/MSBuild servers that outlive or escape that job's process tree.
+    options = ['-nodeReuse:false', '-p:UseSharedCompilation=false']
+    if operation in ('build', 'publish'):
+        options.append('--disable-build-servers')
+    return run([dotnet, operation, *arguments, *options], ROOT, capture=capture)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', type=Path, required=True)
@@ -94,8 +103,8 @@ def main():
     # The generated project lives outside repo Directory.Build.props, so every
     # compilation contract is explicit and independent of ambient working paths.
     built = work / 'game'
-    run([dotnet, 'build', project, '-c', 'Release', '-o', built, '--nologo'], ROOT)
-    name = run([dotnet, 'msbuild', project, '-getProperty:AssemblyName', '-nologo'], ROOT, capture=True)
+    build(dotnet, 'build', project, '-c', 'Release', '-o', built, '--nologo')
+    name = build(dotnet, 'msbuild', project, '-getProperty:AssemblyName', '-nologo', capture=True)
     assembly = built / (name + '.dll')
     if not assembly.is_file():
         raise ValueError('Selected project produced no game assembly: ' + str(assembly))
@@ -103,7 +112,7 @@ def main():
     if not sdk.is_file():
         raise ValueError('Selected project must copy its Poima.Gameplay SDK dependency to the build output: ' + str(sdk))
     generator = ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj'
-    run([dotnet, 'build', generator, '-c', 'Release', '-o', work / 'generator', '--nologo'], ROOT)
+    build(dotnet, 'build', generator, '-c', 'Release', '-o', work / 'generator', '--nologo')
     generated = work / 'generated'
     run([dotnet, work / 'generator/Poima.NativeGame.Generator.dll', assembly, args.game_type, generated], ROOT)
     schema = json.loads((generated / 'schema.json').read_text())
@@ -130,7 +139,7 @@ def main():
     generated_project = generated / 'Poima.NativeGame.csproj'
     generated_project.write_text(project_xml, encoding='utf-8')
     published = work / 'publish'
-    run([dotnet, 'publish', generated_project, '-c', 'Release', '-r', rid, '-o', published, '--nologo'], ROOT)
+    build(dotnet, 'publish', generated_project, '-c', 'Release', '-r', rid, '-o', published, '--nologo')
     library_name = 'Poima.NativeGame.dll' if rid == 'win-x64' else 'Poima.NativeGame.so'
     library = published / library_name
     if not library.is_file():

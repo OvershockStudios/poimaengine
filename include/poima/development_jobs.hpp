@@ -6,6 +6,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace poima::development {
@@ -18,6 +19,12 @@ struct Request {
     std::filesystem::path executable,working_directory;
     std::vector<std::string> arguments; // UTF-8 on both platforms; no shell.
     std::chrono::milliseconds timeout{600000};
+    // Host-selected only: nullopt inherits; a present vector replaces the entire
+    // environment (an empty vector is valid). Never mutates the parent's env.
+    // At most 256 entries; names 1..256 UTF-8 bytes without '=' or NUL;
+    // values at most 32768 UTF-8 bytes without NUL; total key/value plus
+    // '=' and NUL bytes at most 131072. Duplicate names follow OS case rules.
+    std::optional<std::vector<std::pair<std::string,std::string>>> environment=std::nullopt;
 };
 struct Status {
     JobId id=0;

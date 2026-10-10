@@ -64,6 +64,26 @@ std::wstring wide(const std::string& text) {
     MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,text.data(),static_cast<int>(text.size()),result.data(),size);
     return result;
 }
+int compare_environment_names(const std::wstring& left,const std::wstring& right) {
+    const int result=CompareStringOrdinal(left.data(),static_cast<int>(left.size()),right.data(),static_cast<int>(right.size()),TRUE);
+    if(!result)throw std::runtime_error("Cannot compare environment names.");
+    return result;
+}
+std::vector<wchar_t> environment_block(const std::vector<std::pair<std::string,std::string>>& values) {
+    std::vector<std::pair<std::wstring,std::wstring>> entries;entries.reserve(values.size());
+    for(const auto& [name,value]:values)entries.emplace_back(wide(name),wide(value));
+    std::sort(entries.begin(),entries.end(),[](const auto& left,const auto& right) {
+        return compare_environment_names(left.first,right.first)==CSTR_LESS_THAN;
+    });
+    std::vector<wchar_t> block;
+    for(const auto& [name,value]:entries) {
+        block.insert(block.end(),name.begin(),name.end());block.push_back(L'=');
+        block.insert(block.end(),value.begin(),value.end());block.push_back(L'\0');
+    }
+    // The empty environment also needs two NULs, not a null pointer (inherit).
+    if(block.empty())block.push_back(L'\0');
+    block.push_back(L'\0');return block;
+}
 // Windows programs using the CRT/CommandLineToArgvW receive exactly these args.
 std::wstring quote(const std::wstring& value) {
     std::wstring result=L"\"";std::size_t slashes=0;
@@ -176,9 +196,13 @@ struct Jobs::Impl {
         startup.StartupInfo.hStdInput=input.value;startup.StartupInfo.hStdOutput=output_write.value;startup.StartupInfo.hStdError=error_write.value;startup.lpAttributeList=attribute_list;
         std::wstring command=quote(request.executable.wstring());for(const auto& argument:request.arguments)command+=L" "+quote(wide(argument));
         if(command.size()>=32767)throw std::runtime_error("Windows command line exceeds 32766 UTF-16 units.");
+        std::vector<wchar_t> environment;
+        if(request.environment)environment=environment_block(*request.environment);
+        const DWORD flags=CREATE_SUSPENDED|CREATE_NO_WINDOW|EXTENDED_STARTUPINFO_PRESENT|
+            (request.environment ? CREATE_UNICODE_ENVIRONMENT:0);
         PROCESS_INFORMATION child{};
         if(!CreateProcessW(request.executable.c_str(),command.data(),nullptr,nullptr,TRUE,
-                          CREATE_SUSPENDED|CREATE_NO_WINDOW|EXTENDED_STARTUPINFO_PRESENT,nullptr,
+                          flags,request.environment ? environment.data():nullptr,
                           request.working_directory.c_str(),&startup.StartupInfo,&child))throw std::runtime_error("Cannot launch executable (Windows error "+std::to_string(GetLastError())+").");
         process.value=child.hProcess;thread.value=child.hThread;
         job.launched=true;
@@ -245,7 +269,15 @@ struct Jobs::Impl {
         std::string executable=request.executable.string();std::vector<char*> argv;argv.push_back(executable.data());
         for(const auto& argument:request.arguments)argv.push_back(const_cast<char*>(argument.c_str()));
         argv.push_back(nullptr);
-        pid_t pid=0;spawn_check(posix_spawn(&pid,executable.c_str(),&actions.value,&attributes.value,argv.data(),environ));
+        std::vector<std::string> environment_storage;std::vector<char*> environment;
+        if(request.environment) {
+            environment_storage.reserve(request.environment->size());
+            for(const auto& [name,value]:*request.environment)environment_storage.push_back(name+"="+value);
+            environment.reserve(environment_storage.size()+1);
+            for(auto& entry:environment_storage)environment.push_back(entry.data());
+            environment.push_back(nullptr);
+        }
+        pid_t pid=0;spawn_check(posix_spawn(&pid,executable.c_str(),&actions.value,&attributes.value,argv.data(),request.environment ? environment.data():environ));
         job.launched=true;
         struct Child {
             pid_t pid;bool reaped=false;
@@ -315,6 +347,34 @@ JobId Jobs::submit(Request request) {
     std::size_t bytes=0;for(const auto& argument:request.arguments) {
         require(argument.find('\0')==std::string::npos && valid_utf8(argument),"Arguments must be valid UTF-8 without NUL.");
         bytes+=argument.size();require(bytes<=65536,"Job arguments exceed 64 KiB.");
+    }
+    if(request.environment) {
+        require(request.environment->size()<=256,"A job environment may have at most 256 entries.");
+        std::size_t environment_bytes=0;
+#ifdef _WIN32
+        std::vector<std::wstring> names;names.reserve(request.environment->size());
+#else
+        std::vector<std::string> names;names.reserve(request.environment->size());
+#endif
+        for(const auto& [name,value]:*request.environment) {
+            require(!name.empty() && name.size()<=256 && name.find('=')==std::string::npos &&
+                name.find('\0')==std::string::npos && valid_utf8(name),"Environment names must contain 1..256 valid UTF-8 bytes without '=' or NUL.");
+            require(value.size()<=32768 && value.find('\0')==std::string::npos && valid_utf8(value),"Environment values must contain at most 32768 valid UTF-8 bytes without NUL.");
+            environment_bytes+=name.size()+value.size()+2;
+            require(environment_bytes<=131072,"Job environment exceeds 128 KiB.");
+#ifdef _WIN32
+            names.push_back(wide(name));
+#else
+            names.push_back(name);
+#endif
+        }
+#ifdef _WIN32
+        std::sort(names.begin(),names.end(),[](const auto& left,const auto& right) {return compare_environment_names(left,right)==CSTR_LESS_THAN;});
+        for(std::size_t index=1;index<names.size();++index)require(compare_environment_names(names[index-1],names[index])!=CSTR_EQUAL,"Duplicate environment name.");
+#else
+        std::sort(names.begin(),names.end());
+        require(std::adjacent_find(names.begin(),names.end())==names.end(),"Duplicate environment name.");
+#endif
     }
     require(request.timeout>=std::chrono::milliseconds(1) && request.timeout<=std::chrono::hours(24),"Job timeout must be between 1 ms and 24 hours.");
     auto& impl=*impl_;std::lock_guard lock(impl.mutex);

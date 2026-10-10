@@ -1,0 +1,712 @@
+{
+  "format": "poima.development-environment-evidence",
+  "version": 1,
+  "engine_version": "0.0.90",
+  "date": "2026-10-10",
+  "passed": true,
+  "scope": "Native per-job environment replacement and supervised matching-host SDK/Native AOT publication; no autonomous publish/export API claim.",
+  "unchanged_contracts": {
+    "authoring_core": 1,
+    "schema_revision": 70,
+    "services_epoch": 7,
+    "native_artifact_format": 2
+  },
+  "limitations": [
+    "Already configured matching x64 SDK/native linker hosts; no installation or cross-host execution qualification.",
+    "Native caller selects replacement values. Existing compile RPC still inherits environment and rejects supplied environment parameters.",
+    "Trusted MSBuild code is not sandboxed; no complete source snapshot or dependency-closure guarantee.",
+    "Native owner-environment comparison monitors two sentinels; worker contracts also check selected parent variables. Python driver compares its complete environment.",
+    "Normal worker process cleanup is tested; emergency Linux driver /proc cleanup remains best-effort and unqualified.",
+    "No fresh provider autonomy, new export/relocation, graphics, physical-input or representative-performance qualification."
+  ],
+  "worker_contract": {
+    "environment_modes": [
+      "inherit",
+      "replace",
+      "explicitly empty"
+    ],
+    "max_entries": 256,
+    "max_name_utf8_bytes": 256,
+    "max_value_utf8_bytes": 32768,
+    "max_total_pair_bytes": 131072,
+    "duplicate_rules": {
+      "windows": "Unicode ordinal case-insensitive",
+      "linux": "case-sensitive"
+    },
+    "invalid_requests_consume_capacity": false,
+    "windows": "Sorted double-NUL UTF-16 block passed with CREATE_UNICODE_ENVIRONMENT",
+    "linux": "Owned envp strings supplied to posix_spawn"
+  },
+  "platforms": {
+    "windows": {
+      "passed": true,
+      "private_record_sha256": "068a64aa3deb3d0c722e24ce1b49b1efdcb8dbf1200ffbd6311f299de72d198f",
+      "host_os": "win32",
+      "worker_sha256": "a3cc041c2fec69adf330b39e923ae681a3b307c4707ad650153487c15fd86a79",
+      "runner_sha256": "aec49eaae897b4edf8e45587e200e1a740ce4919efb32624e822a5c801b7d780",
+      "compatibility_test_sha256": "e8e92fc1912a5a6609d74371131e82e3d350eada17002ae7dd6f8f6cc9ad7bd9",
+      "environment": {
+        "names": [
+          "ALLUSERSPROFILE",
+          "APPDATA",
+          "BuildInParallel",
+          "COMSPEC",
+          "DOTNET_CLI_HOME",
+          "DOTNET_CLI_TELEMETRY_OPTOUT",
+          "DOTNET_GENERATE_ASPNET_CERTIFICATE",
+          "DOTNET_NOLOGO",
+          "DOTNET_PROCESSOR_COUNT",
+          "FRAMEWORKDIR",
+          "FRAMEWORKDIR64",
+          "FRAMEWORKVERSION",
+          "FRAMEWORKVERSION64",
+          "INCLUDE",
+          "IlcSingleThreaded",
+          "LC_ALL",
+          "LIB",
+          "LIBPATH",
+          "LOCALAPPDATA",
+          "MSBUILDDISABLENODEREUSE",
+          "NUGET_HTTP_CACHE_PATH",
+          "NUGET_PACKAGES",
+          "NUGET_PLUGINS_CACHE_PATH",
+          "OS",
+          "PATH",
+          "POIMA_TOOLCHAIN_VALUE",
+          "PROGRAMDATA",
+          "PROGRAMFILES",
+          "PROGRAMFILES(X86)",
+          "PROGRAMW6432",
+          "SYSTEMDRIVE",
+          "SYSTEMROOT",
+          "TEMP",
+          "TMP",
+          "TMPDIR",
+          "UCRTVERSION",
+          "UNIVERSALCRTSDKDIR",
+          "USERPROFILE",
+          "UseSharedCompilation",
+          "VCINSTALLDIR",
+          "VCTOOLSINSTALLDIR",
+          "VSINSTALLDIR",
+          "WINDIR",
+          "WINDOWSSDKBINPATH",
+          "WINDOWSSDKDIR",
+          "WINDOWSSDKVERBINPATH",
+          "WINDOWSSDKVERSION"
+        ],
+        "exact_child_probe": true,
+        "owner_sentinels_and_invalid_startup_hook_omitted": true,
+        "job_owned_profile_and_http_plugin_cache": true,
+        "configured_package_cache": true,
+        "values_private": true
+      },
+      "sources": {
+        "fixture_sha256": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+        "sdk_sha256": "8a24d52c5779e215736dda8ed19ed46c6c4a4965f896c3905dbfedf3bb8f279e",
+        "publisher_sha256": "e68a931e0a81fb0c603ef483aca5670cf7b0d51e2630b4c3fd2a3d30ae17fd45"
+      },
+      "commands": [
+        {
+          "label": "probe-environment",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 64,
+          "duration_seconds": 0.0838965000002645,
+          "stdout_bytes": 40,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "3712efe3cc3f719efb9af2cf38a4e1dd8ee50b1b597203236f9f189f1182a0c9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "sdk-build",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 1340,
+          "duration_seconds": 1.3597301999980118,
+          "stdout_bytes": 289,
+          "stderr_bytes": 99,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "9354a8b2868c5d8729c12bb6d224a3dc6cafb8c614224bc18a2a8c773464c1bc",
+          "stderr_sha256": "c5e989318b5d7f3b1813fb2a30cdb62ca56f7dc963e4c1f1e6ba73034905b232"
+        },
+        {
+          "label": "binary-reference-publish",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 13357,
+          "duration_seconds": 13.376069300000381,
+          "stdout_bytes": 2929,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "656066f0bdf3d8cdf37908faad3cc4b16e77092801e7e2dda384085c976aa106",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-callbacks",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 102,
+          "duration_seconds": 0.11745759999757865,
+          "stdout_bytes": 91,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "ce4d1b4ecd0cef8e3577b4c85d6cdf616694a1645a85937091ed6c945b96494b",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-publish",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 16699,
+          "duration_seconds": 16.71773320000284,
+          "stdout_bytes": 3172,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "d4299ceb8c0d9c9675a18a507dfe8d91e3b83d5429fd29bca5dfd64bfbf63184",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-callbacks",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 66,
+          "duration_seconds": 0.0925442000007024,
+          "stdout_bytes": 91,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "ce4d1b4ecd0cef8e3577b4c85d6cdf616694a1645a85937091ed6c945b96494b",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "noncopying-publish",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_exit_code": 2,
+          "elapsed_ms": 3495,
+          "duration_seconds": 3.5085777000022063,
+          "stdout_bytes": 403,
+          "stderr_bytes": 547,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "09ae3fa48de18ac16c3113a28bba64aac10ff493876acb6542c68b1e2dc689ea",
+          "stderr_sha256": "10b4cd5749c8344d0350639a29c03cd1198c01e4e1490507ce263d3ef7e308e8"
+        }
+      ],
+      "fixtures": {
+        "binary-reference": {
+          "descriptor_sha256": "84e3bd3141ffe092080b9815807d23001f00ee5d7973f3f11e97d93c660222ef",
+          "staged_sdk_sha256": "8a24d52c5779e215736dda8ed19ed46c6c4a4965f896c3905dbfedf3bb8f279e",
+          "generated_project_sha256": "86e14bdc4ee096bb0ad197fcc6a222f1e3f6a0f7e349120a4e836b098c174f5d",
+          "inventory": {
+            "native-gameplay.json": "84e3bd3141ffe092080b9815807d23001f00ee5d7973f3f11e97d93c660222ef",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+            "Poima.NativeGame.dll": "7ad35ef245eddfbe1a3166bfa0ed04025bebc82165164f32ddfc5e1fe1bd95f2"
+          },
+          "target": "Windows",
+          "baseline": {
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176
+          }
+        },
+        "project-reference": {
+          "descriptor_sha256": "58ac10bcae8b3351cf3ce24934f7be8cb76453961974ba3e8a5c1005e309c39c",
+          "staged_sdk_sha256": "8a24d52c5779e215736dda8ed19ed46c6c4a4965f896c3905dbfedf3bb8f279e",
+          "generated_project_sha256": "f5d3d2f3c53c0378ec601dc30ed53e351a3313f90db4197bd85ed0e5948a3b2a",
+          "inventory": {
+            "native-gameplay.json": "58ac10bcae8b3351cf3ce24934f7be8cb76453961974ba3e8a5c1005e309c39c",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+            "Poima.NativeGame.dll": "90a755922c3f2d4226d82843fff85d527f8342dd4ed16f8add89461869573fd5"
+          },
+          "target": "Windows",
+          "baseline": {
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176
+          }
+        }
+      },
+      "noncopying_reference_rejected": true,
+      "unchanged_python_driver_environment": true,
+      "authoring_protocol": {
+        "passed": true,
+        "private_record_sha256": "c35f9ab0940fcd7a3576d33937925775689e5ad796d3beb7c67204765b8360ef",
+        "calls": 198,
+        "rpc_environment_override_rejected": true,
+        "unchanged_world_revision": 0,
+        "exit_code": 0,
+        "successful_compile_state": "succeeded",
+        "failure_codes": [
+          "CS1525"
+        ]
+      }
+    },
+    "linux": {
+      "passed": true,
+      "private_record_sha256": "f7d38cef56c6857b5a8ddeb77ce8156ed7d915b9b17b90e6efe198dbfbd727fa",
+      "host_os": "linux",
+      "worker_sha256": "6a468917e16b9ce81bfa30cec6f57c8bd40f773f3abe52c01b41c3f6582d7eb0",
+      "runner_sha256": "aec49eaae897b4edf8e45587e200e1a740ce4919efb32624e822a5c801b7d780",
+      "compatibility_test_sha256": "bf4bf331ecdbb9f7986875048dd07614f5ec88d74a9bc8427f7c8a7c22fa8803",
+      "environment": {
+        "names": [
+          "BuildInParallel",
+          "DOTNET_CLI_HOME",
+          "DOTNET_CLI_TELEMETRY_OPTOUT",
+          "DOTNET_GENERATE_ASPNET_CERTIFICATE",
+          "DOTNET_NOLOGO",
+          "DOTNET_PROCESSOR_COUNT",
+          "HOME",
+          "IlcSingleThreaded",
+          "LC_ALL",
+          "MSBUILDDISABLENODEREUSE",
+          "NUGET_HTTP_CACHE_PATH",
+          "NUGET_PACKAGES",
+          "NUGET_PLUGINS_CACHE_PATH",
+          "PATH",
+          "POIMA_TOOLCHAIN_VALUE",
+          "TEMP",
+          "TMP",
+          "TMPDIR",
+          "UseSharedCompilation"
+        ],
+        "exact_child_probe": true,
+        "owner_sentinels_and_invalid_startup_hook_omitted": true,
+        "job_owned_profile_and_http_plugin_cache": true,
+        "configured_package_cache": true,
+        "values_private": true
+      },
+      "sources": {
+        "fixture_sha256": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+        "sdk_sha256": "b05487967f89485ad0229eff4351e824439a0ef0b49a5ca6a0e3bc9e5fb63754",
+        "publisher_sha256": "e68a931e0a81fb0c603ef483aca5670cf7b0d51e2630b4c3fd2a3d30ae17fd45"
+      },
+      "commands": [
+        {
+          "label": "probe-environment",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 31,
+          "duration_seconds": 0.07023861299967393,
+          "stdout_bytes": 39,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "ee98195efee2a3576f2cd5512a1539ef141de7548452bc9d5cc952e9d7058423",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "sdk-build",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 10705,
+          "duration_seconds": 10.75638184499985,
+          "stdout_bytes": 327,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "a95dda5028b81f37b7fcd16409d5c13c9624909c9fcb2e410a81062ad4a21799",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-publish",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 52736,
+          "duration_seconds": 52.78499990199998,
+          "stdout_bytes": 2892,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "7aa539b4aa3acde00eea8d006b73b0852a580d9dc9e6e050e0554115d758a59f",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-callbacks",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 265,
+          "duration_seconds": 0.322884768998847,
+          "stdout_bytes": 90,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-publish",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 55433,
+          "duration_seconds": 55.500885172999915,
+          "stdout_bytes": 3029,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "f2a94059b46394a96a65ed5cc03b63441fbe898d9b740c7e5296f201d3894526",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-callbacks",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0,
+          "elapsed_ms": 255,
+          "duration_seconds": 0.3221547749999445,
+          "stdout_bytes": 90,
+          "stderr_bytes": 0,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "noncopying-publish",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_exit_code": 2,
+          "elapsed_ms": 12159,
+          "duration_seconds": 12.211596143999486,
+          "stdout_bytes": 398,
+          "stderr_bytes": 550,
+          "stdout_truncated": false,
+          "stderr_truncated": false,
+          "unchanged_owner_environment": true,
+          "stdout_sha256": "7783d88b6c64f48b62fd35ce203590441359d0d879cded69497a4d37a8446716",
+          "stderr_sha256": "78b32bae37c5b92e04bc65efc46efb8920fdb97b3ae3582f28f72ae42a2e597a"
+        }
+      ],
+      "fixtures": {
+        "binary-reference": {
+          "descriptor_sha256": "21144fae24853654fbfb48d782c8678f15eacbb338237105dc88ba10c7275e6b",
+          "staged_sdk_sha256": "b05487967f89485ad0229eff4351e824439a0ef0b49a5ca6a0e3bc9e5fb63754",
+          "generated_project_sha256": "d78855f649889b292db47764829fce2658d3c3a22e5bcbe02fcc1736b5c4f139",
+          "inventory": {
+            "native-gameplay.json": "21144fae24853654fbfb48d782c8678f15eacbb338237105dc88ba10c7275e6b",
+            "Poima.NativeGame.so": "04f8841957f4a6bb8bd4d7e161be02f3bfcdf7ace4677449e07e1943b293e093",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          },
+          "target": "Linux",
+          "baseline": {
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176
+          }
+        },
+        "project-reference": {
+          "descriptor_sha256": "4b84979fcfccf4b848c102d264ffb3327619b78dfcad7f05ce436fe0dd5a59e7",
+          "staged_sdk_sha256": "b05487967f89485ad0229eff4351e824439a0ef0b49a5ca6a0e3bc9e5fb63754",
+          "generated_project_sha256": "199450a9a73bbcfb2d336dec32787cc0538e00c09b81fc607faa426bad4147cc",
+          "inventory": {
+            "native-gameplay.json": "4b84979fcfccf4b848c102d264ffb3327619b78dfcad7f05ce436fe0dd5a59e7",
+            "Poima.NativeGame.so": "4f367361560d6f726672340ab890fcb4c90c66a52f159feaa95d2178870c6420",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          },
+          "target": "Linux",
+          "baseline": {
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176
+          }
+        }
+      },
+      "noncopying_reference_rejected": true,
+      "unchanged_python_driver_environment": true,
+      "authoring_protocol": {
+        "passed": true,
+        "private_record_sha256": "c1f98801d49b29e056387f9a265938ebb778d84f0ea8ee9ed55524d6656fc7b0",
+        "calls": 706,
+        "rpc_environment_override_rejected": true,
+        "unchanged_world_revision": 0,
+        "exit_code": 0,
+        "successful_compile_state": "succeeded",
+        "failure_codes": [
+          "CS1525"
+        ]
+      }
+    }
+  },
+  "initial_failures": [
+    {
+      "kind": "Windows CMake linkage",
+      "passed": false,
+      "reason": "Unicode worker test entry point lacked MinGW -municode; fixed for both Unicode targets.",
+      "private_record_sha256": "4cd7f3094d4abae82241856d62ad62fb71745942f6f971819c2bda804a46a89a",
+      "build_exit_code": 1
+    },
+    {
+      "kind": "Windows explicit environment qualification",
+      "passed": false,
+      "reason": "SDK restore rejected missing machine/profile configuration locations.",
+      "private_record_sha256": "739c3a848197da996ae5f8c2261d6da5c3df1bbeef749b9112011b77f62234a0",
+      "phases": [
+        {
+          "label": "probe-environment",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0
+        },
+        {
+          "label": "sdk-build",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_exit_code": 2
+        }
+      ]
+    },
+    {
+      "kind": "Windows explicit environment qualification",
+      "passed": false,
+      "reason": "Job-owned user-profile directories alone did not supply required Windows machine configuration variables.",
+      "private_record_sha256": "5e53ba9836ba1a06f135b04c937e601a2ced9e9c48629626d8e512b2e8a51d3c",
+      "phases": [
+        {
+          "label": "probe-environment",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0
+        },
+        {
+          "label": "sdk-build",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_exit_code": 2
+        }
+      ]
+    },
+    {
+      "kind": "Windows explicit environment qualification",
+      "passed": false,
+      "reason": "SDK build succeeded; Native AOT rejected the missing MSBuild OS platform variable.",
+      "private_record_sha256": "67e264b59b29b1d3e95fce2e699efac8c9b0f563ce527db0c27b252a8404c45b",
+      "phases": [
+        {
+          "label": "probe-environment",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0
+        },
+        {
+          "label": "sdk-build",
+          "state": "succeeded",
+          "exit_code": 0,
+          "worker_exit_code": 0
+        },
+        {
+          "label": "binary-reference-publish",
+          "state": "failed",
+          "exit_code": 1,
+          "worker_exit_code": 2
+        }
+      ]
+    }
+  ],
+  "native_builds": {
+    "passed": true,
+    "private_cohort_sha256": "4ec28fd214d2c530a25b22c0d9351d6e772bd762abb2f0823ac23c2a4a06ae2e",
+    "frozen_source_files": 289,
+    "sequential": true,
+    "max_compilers": 2,
+    "timeout_seconds": 900,
+    "builds": [
+      {
+        "host": "windows",
+        "pid": 26116,
+        "exit_code": 0,
+        "seconds": 67.55383644899848,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "binary_sha256": "61ef45bc9ca54d2997b1544bf67d21a49f160a8960b3ad9c79532e60cf36a105",
+        "log_sha256": "b7043a7a1594893122f8414d7243fdf470bad8cf53461c6178f85fdcf3bc1c50"
+      },
+      {
+        "host": "linux",
+        "pid": 26392,
+        "exit_code": 0,
+        "seconds": 158.03598898400014,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "binary_sha256": "81a1b46efbb7184aae89e0266b8a2d3adfc20e41be7d825331b43fc900ffb5dc",
+        "log_sha256": "2016fbc5b2b2641b26de5461b09e10b4195cb22a3260bd5c5d0e3a66c1f090f1"
+      },
+      {
+        "host": "authoring",
+        "pid": 26657,
+        "exit_code": 0,
+        "seconds": 152.11010094199992,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "binary_sha256": "e8332b9cb3dd712d55be026dbc38a3ec66d1998886d725b6f2da4f2f7e561400",
+        "log_sha256": "f17f3e8e264cfdbccfcb54d0bd2c915eb6073b78e03016d4190981a23c1032aa"
+      }
+    ]
+  },
+  "worker_tests_windows": {
+    "passed": true,
+    "tests": [
+      {
+        "name": "development-jobs",
+        "executable_sha256": "26f859444361dcd9114e855799ab1852d840856598f348eddce2004ef015ff0a",
+        "timed_out": false,
+        "pid": 20448,
+        "exit_code": 0,
+        "seconds": 4.977679600000556,
+        "log_sha256": "92a652451c1041e2fe780fc5dae2f6659f30473cb724ba8e8addd7a2b180ae5b"
+      },
+      {
+        "name": "development-service",
+        "executable_sha256": "a7c29be7200dbf69ef23f7a566667effc9e8115165a1e61d06cb87d0403a27a5",
+        "timed_out": false,
+        "pid": 30080,
+        "exit_code": 0,
+        "seconds": 5.1807475999994494,
+        "log_sha256": "abe55ad898c29a42c9a1b7675a43d34249952106a568586d7db9f75b2e48034b"
+      },
+      {
+        "name": "development-diagnostics",
+        "executable_sha256": "a02536c32ad640f6a8c03642ee824a554728053c91d0570cf68acb4bdded257a",
+        "timed_out": false,
+        "pid": 18296,
+        "exit_code": 0,
+        "seconds": 0.03517479999936768,
+        "log_sha256": "3cb65731c5b9e41ac847784a7201ef46642cd793c4687308e105d66797d95f69"
+      }
+    ]
+  },
+  "selected_regressions": [
+    {
+      "name": "linux-worker-contract",
+      "passed": true,
+      "suites": 3,
+      "log_sha256": "2a7237873f8306bf7a1b627a18a0a7b21448d067428ae8e02c2ebc790a7e8f2d"
+    },
+    {
+      "name": "linux-regressions",
+      "passed": true,
+      "suites": 3,
+      "log_sha256": "68cdd36f378a3d28339e971798cd8cf43708f04187d1de17fea2342d0e2e30c9"
+    },
+    {
+      "name": "windows-metadata",
+      "passed": true,
+      "suites": 1,
+      "log_sha256": "1d5d791eda12fc610f39ce44884e40034986bf2dbc9cc471764ae9e1c1ffd19a"
+    },
+    {
+      "name": "authoring-regressions",
+      "passed": true,
+      "suites": 5,
+      "log_sha256": "da376c136014c0de5c34408293204e1f6dda904ab8195295abe774247bed7d30"
+    },
+    {
+      "name": "windows-authoring-identity",
+      "passed": true,
+      "test_cases": 2,
+      "log_sha256": "3b60feae0e2f684754d5225cfb7bafecef91a6e36703bc865307d342ec8bd9ae"
+    }
+  ],
+  "owned_processes": {
+    "remaining": [],
+    "private_windows_check_sha256": "84b1c14e68260082e3e79edff0a78f4ebf1942cfd6c593246044ec2149cbb87d"
+  },
+  "source_hashes": {
+    "CHANGELOG.md": "9fdfe37135e9fc87efe33521629767edec4f22d2384fb6103cbadbfd34ce733d",
+    "CMakeLists.txt": "d6edf585a7d1c07d2d86ccc527570328904d06f4f366f83664c379babafef6a4",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "README.md": "eeab89db4bc1f48f6cbd8bd256c6faf7ca09ee87d17f386a2093d3cc3747d9cd",
+    "THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+    "docs/DEVELOPMENT_JOBS.md": "b2305b9f367e54ac87df0dd50160889e70574a0cd05a16b7bb29603446c7d37e",
+    "docs/IMPLEMENTATION_STATUS.md": "b0edf5573d84d8fe38b46fe4fac8881d5929613041a95a2fabfaeb4d2479de8b",
+    "docs/NATIVE_GAMEPLAY.md": "5a4b549ec1878f4e96062d9c21b0b7dd5e600f17d69b118b976d068f2183e52a",
+    "include/poima/development_jobs.hpp": "44f23b2ee118dcc036d9f408992d032882755cc023b31da53e28aac8164bc14f",
+    "managed/Poima.Gameplay/Animation.cs": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9",
+    "managed/Poima.Gameplay/AnimationLayers.cs": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497",
+    "managed/Poima.Gameplay/Buffers.cs": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f",
+    "managed/Poima.Gameplay/CharacterInput.cs": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118",
+    "managed/Poima.Gameplay/Components.cs": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4",
+    "managed/Poima.Gameplay/Gameplay.cs": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "213eca52e48c8b2eba6c31e344336008e3b6c0627eb8a38a6bab2368f4fe714f",
+    "managed/Poima.Gameplay/Instances.cs": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7",
+    "managed/Poima.Gameplay/Lifecycle.cs": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172",
+    "managed/Poima.Gameplay/Navigation.cs": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef",
+    "managed/Poima.Gameplay/Persistence.cs": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2",
+    "managed/Poima.Gameplay/PlayerPreferences.cs": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a",
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "managed/Poima.Gameplay/ServiceAbi.cs": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e",
+    "managed/Poima.Gameplay/Ui.cs": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c",
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098",
+    "managed/Poima.NativeGame.Generator/Program.cs": "019e650f4aba1b831da5ac2d81f70f2fce40c033d4bc93e92da7d2d0b52d6e64",
+    "managed/Poima.NativeGame/Entry.cs": "dff4ff2b5569bb5d0d463b1305fdb951f579143643c15a24157b17c540bc76f6",
+    "scripts/publish_native_gameplay.py": "e68a931e0a81fb0c603ef483aca5670cf7b0d51e2630b4c3fd2a3d30ae17fd45",
+    "src/development_jobs.cpp": "943db3f8297faade81f0654f10bbdd82c37776301a30f48cdf3b06a2c5ac31a9",
+    "src/development_service.cpp": "c826356b451e074ee0070a0c5d5f858461c2176a586ab20389324ee3abd5e7f0",
+    "src/development_service.hpp": "ccd24334904ed7e236f494e3f1714020f78eecae65cde5f3aeda05946b1e50a5",
+    "tests/development_diagnostics.cpp": "9a64819f5e24952b2acdde06e4e20f2030659fd6b88522f08be564deff03e868",
+    "tests/development_jobs.cpp": "23cb720f669bbaea0ed79e946ef11c4aadc39d164c73e1e7507c9c25dbc12375",
+    "tests/development_protocol.py": "65e2a0b0728283183e630a3244bb54f796683de10cdc50f0ee5f71b725ac6523",
+    "tests/development_service.cpp": "5cc09dcb794263bdff7fe078a69ea3b8e2d753367bf7fcf2db5e6d66bce5a651",
+    "tests/development_toolchain.cpp": "4d17bd69d11504ad9117dc7255e13cbedb5258975cd48b53c46010caaf431ac3",
+    "tests/development_toolchain.py": "aec49eaae897b4edf8e45587e200e1a740ce4919efb32624e822a5c801b7d780",
+    "tests/gameplay_compatibility_native.cpp": "f5ff594af6120f574ea4dd3626209e68878331d7f6723437e5ff332cd5fa3fe9",
+    "tests/managed_ui_gameplay/ManagedUiGame.cs": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+    "tests/managed_ui_gameplay/Poima.ManagedUiGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/native_gameplay_sdk_reference.py": "11a2804d379859c6d407cd082bfc1125b38a145ced528760b5239a2e90a86ec7"
+  }
+}

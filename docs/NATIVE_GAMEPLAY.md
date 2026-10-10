@@ -24,6 +24,14 @@ python3 scripts/publish_native_gameplay.py \
 
 The output directory must be new. `--rid linux-x64` or `--rid win-x64` selects a matching host target; cross-OS Native AOT publication is not supported. `--work` retains build intermediates in a separate new directory. Project builds execute trusted build tasks and dependencies.
 
+The publisher disables persistent compiler/build servers and MSBuild node reuse.
+This allows a [native development worker](DEVELOPMENT_JOBS.md#per-job-environments)
+to own its ordinary compiler descendants and enforce a deadline. Running the
+publisher directly still requires the caller to supervise it. Builds receive
+the publisher process's environment; the worker can supply a complete host-selected
+replacement. Microsoft's [`dotnet publish` options](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-publish#options)
+document `--disable-build-servers`.
+
 Games may reference the matching `Poima.Gameplay` SDK through a project reference
 or a distributed DLL. The game build must copy `Poima.Gameplay.dll` into its
 output; a binary reference with `Private=false` is rejected before generation.

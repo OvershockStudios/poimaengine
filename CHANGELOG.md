@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.90
+
+- Native development jobs can receive a complete per-job environment, including an explicitly empty one, without changing the host environment. Validate Unicode, duplicate names and size bounds before accepting work. [Contract](docs/DEVELOPMENT_JOBS.md#per-job-environments).
+- Native gameplay publishing disables persistent compiler and MSBuild servers for supervised publication.
+- Qualify real matching-host SDK builds, Native AOT publication and compiled callbacks through the worker with selected linker/cache variables. [Evidence](docs/evidence/m2-development-environment.json).
+
 ## 0.0.89
 
 - Fix Native AOT publication for games referencing the distributed gameplay SDK DLL: generated bindings use the SDK copied by the selected game build.

@@ -7,7 +7,8 @@ bounded queue sequentially; it uses Windows process APIs or Linux `posix_spawn`.
 
 Submit an absolute executable, absolute working directory, UTF-8 argument vector
 and timeout. Arguments are passed directly to the executable, with no shell or
-PATH lookup. The process inherits the host environment; the worker does not edit
+PATH lookup. The process inherits the host environment by default; a native
+caller can provide a complete replacement. The worker does not edit
 global environment, tools, accounts or configuration. This is an execution
 primitive, not a sandbox: its caller must authorize filesystem effects and tools.
 
@@ -65,6 +66,70 @@ redirection when the host's standard descriptors are closed.
 This foundation does not claim project watching, automatic reload, dependency
 restore, import scheduling or a complete development service. The authoring
 service supplies policy, retry receipts and generated compilation arguments.
+
+## Per-job environments
+
+The native `Request.environment` member is optional. Omission retains inherited
+environment behavior; a present list replaces the entire child environment.
+An empty list requests an empty environment. It does not mean inherit or merge.
+
+```cpp
+poima::development::Request request{tool,working_directory,arguments,
+    std::chrono::minutes(10)};
+request.environment=std::vector<std::pair<std::string,std::string>>{
+    {"PATH",selected_tool_paths}, {"NUGET_PACKAGES",selected_package_cache},
+    {"DOTNET_CLI_HOME",job_cli_home}, {"DOTNET_CLI_TELEMETRY_OPTOUT","1"}};
+auto id=jobs.submit(std::move(request));
+```
+
+The caller supplies every needed operating-system, linker, locale and cache
+variable. Windows tools may need `SystemRoot`, `PATH`, `INCLUDE`, `LIB` and
+`LIBPATH` from the selected native toolchain, plus machine configuration paths
+such as `ProgramFiles(x86)` and `ProgramData`. MSBuild's Windows native path
+also requires its `OS=Windows_NT` marker. Do not forward unrelated account
+variables. .NET/NuGet also require usable profile/configuration directories;
+the qualifier assigns job-owned `DOTNET_CLI_HOME`, `USERPROFILE`, `APPDATA`,
+`LOCALAPPDATA` or `HOME`, plus private HTTP/plugin caches. This confines
+environment inheritance; it does not sandbox trusted
+MSBuild projects or prevent a process from reading files or credentials itself.
+
+Validation accepts at most 256 pairs. Names contain 1–256 UTF-8 bytes without
+`=` or NUL; values contain at most 32,768 UTF-8 bytes without NUL, and may be
+empty. Combined names, values, one `=` and one NUL per pair fit within 131,072
+bytes. Invalid requests consume no queue capacity. Duplicate names reject:
+case-sensitive on Linux, Unicode ordinal case-insensitive on Windows. Windows
+sorts names and passes a double-NUL-terminated UTF-16 block to `CreateProcessW`;
+Linux supplies owned strings to `posix_spawn`. Both preserve the parent process
+environment and existing process cleanup behavior.
+
+`development.compile` retains its original RPC shape and inherited environment.
+RPC clients cannot supply arbitrary environment values through this change.
+Host-configured native publishing/export profiles remain the next integration
+step; the native member alone does not authorize new agent build operations.
+
+The [matching-host qualification tool](../tests/development_toolchain.py) uses
+the compiled worker for real SDK builds, Native AOT publishing and native
+Tick/Control execution with explicit replacement environments. It reuses the
+DLL/project-reference and missing-copy regression, probes the exact child
+environment, omits deliberately invalid owner startup hooks and checks unchanged
+owner variables. Its requests and raw logs remain local build products. Run it
+with an already configured matching-host SDK/linker and built
+`poima-development-toolchain-test` and `poima-gameplay-compatibility-test`:
+
+```sh
+python tests/development_toolchain.py \
+  --worker /absolute/path/poima-development-toolchain-test \
+  --dotnet /absolute/path/dotnet \
+  --compatibility-test /absolute/path/poima-gameplay-compatibility-test \
+  --engine-version 0.0.90 --output /absolute/path/new-qualification
+```
+
+The native worker remains responsible for deadlines and child cleanup. Publisher
+builds disable persistent compiler/MSBuild servers; publication does not modify
+the selected gameplay or export a project automatically. Successful process
+completion alone is not artifact validation. The qualification separately checks
+artifact inventories and real native callbacks.
+[Recorded environment qualification](evidence/m2-development-environment.json).
 
 ## Authoring compile adapter (development)
 

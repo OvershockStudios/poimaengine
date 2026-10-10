@@ -1,8 +1,38 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.89**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.90**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.90 adds complete per-job environment replacement to the native
+development worker. Omission preserves inheritance; an explicitly empty list
+produces an empty child environment. Unicode, names, platform-specific duplicate
+rules and byte/count limits validate before queue acceptance. Parent environment
+and existing cancellation, deadline and process-group cleanup behavior remain
+unchanged. Native gameplay publication disables persistent compiler/MSBuild
+servers and node reuse for supervised builds.
+
+Windows and Linux real-child contracts pass inherited, replaced and empty
+environments, exact bounds, malformed input and descendant cleanup. Matching-host
+toolchain checks probe the exact replacement, omit deliberately invalid owner
+startup hooks, publish actual Native AOT games through both SDK reference forms,
+execute compiled Tick/Control callbacks and verify complete immutable artifacts.
+The missing-copy fixture must fail normally with exit 1; timeout, cancellation
+or launch failure cannot pass it. Windows qualification required explicit machine
+configuration/platform variables and job-owned profile/cache directories; initial
+failed attempts are retained in the evidence.
+
+The authoring compile RPC retains its original shape and inherited environment;
+real SDK success/failure tests reject injected environment parameters before
+creating work and retain unchanged world revisions. Authoring-core v1, schema
+revision 70, services epoch 7 and native artifact format 2 are unchanged. This is
+trusted worker/toolchain qualification, not an autonomous publish/export API,
+source snapshot, process sandbox or clean-machine installation claim. Native
+owner checks monitor selected sentinels; the Python driver separately compares
+its full environment. Emergency Linux driver cleanup remains best-effort and
+unqualified; normal worker cancellation is tested independently.
+[Contract and reproduction](DEVELOPMENT_JOBS.md#per-job-environments),
+[evidence](evidence/m2-development-environment.json).
 
 Version 0.0.89 fixes Native AOT publication for games consuming the distributed
 `Poima.Gameplay.dll` through a binary SDK reference. Generated entry/binding
