@@ -21,6 +21,7 @@
 #include "poima/save_upgrade_snapshot.hpp"
 #include "world_storage.hpp"
 #include "profiler_service.hpp"
+#include "frame_performance_service.hpp"
 #include "development_service.hpp"
 #include "poima/development_profiles.hpp"
 #include "asset_store.hpp"
@@ -751,6 +752,7 @@ void validate(const Json& doc) {
 constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
 class World {
     profiling::Service profiler_;
+    frame_performance::Service performance_;
     fs::path path_;
     bool read_only_=false;
     std::unique_ptr<WriterLock> lock_;
@@ -1212,6 +1214,13 @@ public:
             try { return profiler_.dispatch(method,params); }
             catch(const profiling::ServiceError& error) { throw Error(error.code,error.what()); }
         }
+        if(method.starts_with("performance.")) {
+            try {
+                const auto active=player_active();
+                return performance_.dispatch(method,params,active ? player_owner_->id : std::string{},
+                    active && player_owner_->window->ready(),active ? std::function<void()>([this]{player_owner_->window->drain_performance();}) : std::function<void()>{});
+            } catch(const frame_performance::ServiceError& e) {throw Error(e.code,e.what());}
+        }
         if(method.starts_with("development.")) {
             try { return development_.dispatch(method,params); }
             catch(const development::ServiceError& error) { throw Error(error.code,error.what()); }
@@ -1221,11 +1230,14 @@ public:
             catch(const materials::Error& error) { throw Error(error.code,error.what()); }
         }
         if(method.starts_with("player."))return player_dispatch(method,params);
-        if(method.starts_with("save."))return save_dispatch(method,params);
+        if(method.starts_with("save.")) {
+            if(player_active() && (method=="save.write" || method=="save.load"))player_owner_->window->note_performance_intervention(frame_performance::Flag::storage);
+            return save_dispatch(method,params);
+        }
         if(method.starts_with("input."))return input_dispatch(method,params);
         if(method.starts_with("settings."))return settings_dispatch(method,params);
         if (method == "world.describe") {
-            (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only compilation; native publish/export require immutable host-selected profiles; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local development receipts; method and profile identity guarded; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner and native job worker threads, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(frame_performance::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only compilation; native publish/export require immutable host-selected profiles; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local development receipts; method and profile identity guarded; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner and native job worker threads, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["performance"]={{"scope","Ready native player polls; bounded independent frame capture with completed GPU retirement"},{"capacity","1..262144 rows; start preallocates storage, record paths do not allocate"},{"stop","Close admission, drain actual submissions, report loss explicitly, freeze before paged reading"},{"timing","Present-return cadence includes host gaps; CPU wall stages overlap; GPU durations have an independent clock; no scanout/input latency or VRAM claim"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             result["authoring_contract"]=authoring_contract_identity(read_only_);
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;

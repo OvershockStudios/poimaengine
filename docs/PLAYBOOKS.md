@@ -89,3 +89,19 @@ and the relevant image, sound or gameplay outcome. Future terrain, FPS and
 other capability plans are in the [roadmap](ROADMAP.md); they are not runnable
 instructions. Codex and Claude skills will serve as compact entry points to
 qualified workflows under the [documentation standard](DOCUMENTATION.md).
+
+
+## Measure native frame cadence
+
+1. Start a shared native player and wait for `player.inspect.ready`.
+2. Use [frame performance capture](FRAME_PERFORMANCE.md) to start a guarded,
+   preallocated recording. Warm up the workload before evaluating steady data.
+3. Preserve raw intervals and flags; avoid captures/imports/save operations during
+   the steady interval. Record any intervention rather than hiding its delay.
+4. Stop to drain pending GPU work, freeze, and read immutable frame pages. Inspect
+   dropped/failed/pending counts before comparing percentiles.
+5. Sample the actual native process with the Windows memory tool. Keep working set
+   and private commit distinct; this does not measure GPU residency.
+6. Retain workload, hardware, build/settings identity and raw evidence. The small
+   [qualification probe](../tests/player_performance.py) checks telemetry integrity;
+   it does not establish a game-scale performance result.

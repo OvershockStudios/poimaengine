@@ -5,6 +5,7 @@
 #include "poima/gamepad.hpp"
 #include <memory>
 
+namespace poima::frame_performance { class Recorder; }
 namespace poima {
 enum class PlayerAction { forward, backward, left, right, jump, use };
 // Platform-independent pending input. Mouse/jump edges survive render frames
@@ -45,6 +46,8 @@ struct PlayerReport;
 class PlayerSession {
 public:
     virtual ~PlayerSession()=default;
+    // Optional owner-thread diagnostic storage; outlives this player and its GPU slots.
+    virtual frame_performance::Recorder* frame_recorder() noexcept { return nullptr; }
     // Cached value observations only; called outside compiled callbacks, never
     // reenters a device or changes preferences. Used by negotiated gameplay reads.
     virtual void preference_observation(const PlayerReport&) noexcept {}
@@ -148,6 +151,11 @@ public:
     // Observe a fresh owner snapshot through this live context, without stepping.
     // The caller validates the output path; capture_exclusive is honored.
     RenderReport capture(const std::string& path);
+    // Close capture admission before calling. Retires GPU work without a tick or
+    // presentation; failure is explicit and never fabricates completed timings.
+    void drain_performance();
+    // Sticky measurement flags for external save/owner operations; diagnostic only.
+    void note_performance_intervention(std::uint32_t flags);
 };
 PlayerReport run_player(const PlayerOptions& options, PlayerSession& session);
 }

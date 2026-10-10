@@ -67,6 +67,8 @@ bool PlayerWindow::paused() const {impl_->check_thread();return impl_->is_paused
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return false;}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+void PlayerWindow::drain_performance() { impl_->check_thread(); }
+void PlayerWindow::note_performance_intervention(std::uint32_t) { impl_->check_thread(); }
 RenderReport PlayerWindow::capture(const std::string&) {
     impl_->check_thread();throw std::runtime_error("This build has no native player rendering.");
 }

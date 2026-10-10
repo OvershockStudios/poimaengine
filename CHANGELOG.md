@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.93
+
+- Add guarded native frame captures with immutable paging, raw present-return cadence, overlapping CPU wall stages and per-submission GPU outcomes.
+- Drain actual GPU work before freezing; retain explicit overflow, failed samples and capture/save/resize/pause interventions without changing existing profiler behavior.
+- Add a Windows process-memory sampler with pinned process identity, separate resident working-set/private-commit counters and bounded partial results.
+- Qualify one/two-slot rendering, resize, captures, overflow and memory observations on NVIDIA and AMD GPUs. Representative gameplay performance remains a separate gate. [Guide](docs/FRAME_PERFORMANCE.md), [evidence](docs/evidence/m2-frame-performance.json).
+
 ## 0.0.92
 
 - Publish DEPOT RUN: retained agent-authored C#, native scene/UI, licensed cooked character/audio and portable exercise rules.

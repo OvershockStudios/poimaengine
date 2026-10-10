@@ -82,6 +82,7 @@
     }
     struct PlayerSessionAdapter final : PlayerSession {
             World& owner;explicit PlayerSessionAdapter(World& value):owner(value) {}
+            frame_performance::Recorder* frame_recorder() noexcept override { return &owner.performance_.recorder(); }
             void preference_observation(const PlayerReport& report) noexcept override { owner.observe_gameplay_player_preferences(report); }
             std::string identity() const override { return owner.runtime_id_; }
             std::uint64_t tick() const override { return owner.runtime_->inspect().tick; }
@@ -215,6 +216,11 @@
         player.cached_report=player_report_json(player.prepared.options,player.prepared.input_info,
             player.prepared.settings_application,player.window->report(),player.mode);
         if(player.window->finished()) {
+            // Normal finish retires actual GPU work. A fault must retain loss,
+            // never report the unfinished ticket as a completed duration.
+            auto& capture=performance_.recorder();capture.stop_admission();
+            if(capture.status().gpu_pending)capture.drop_remaining(frame_performance::GpuDropReason::owner_shutdown);
+            // Explicit performance.stop freezes after it records drain timing.
             detach_gameplay_player_preferences(player.prepared.gameplay_preferences);
             player.window.reset();player.session.reset();invalidate_player_control();
         }
@@ -435,6 +441,7 @@
             require(player_available(),"Native player service requires simulation and Vulkan player support.",-32003);
             require(generation==player_generation_,"Player generation conflict.",-32009);
             require(!player_active(),"Stop the active player before starting another window.",-32080);
+            require(!performance_.recorder().status().admitting,"Stop performance capture before changing player owner.",-32080);
             require(player_generation_<max_revision,"Player generation exhausted.",-32009);
             auto prepared=prepare_player(launch);prepared.options.render.capture_exclusive=true;
             auto receipts=reserve_player_receipt(normalized);
@@ -531,6 +538,7 @@
     void synchronize_player_request(const std::string& method,const Json& result) noexcept {
         if(!player_active() || !player_runtime_mutation(method))return;
         try {
+            if(result.value("save_serviced",false))player_owner_->window->note_performance_intervention(frame_performance::Flag::storage);
             player_owner_->window->synchronize();
             if(method=="runtime.ui.activate" && player_active() && !player_owner_->window->finished() && result.contains("intent")) {
                 const bool same_epoch=!result.at("runtime_replaced").get<bool>() && result.at("session_id")==runtime_id_ && result.at("current_session_id")==runtime_id_;

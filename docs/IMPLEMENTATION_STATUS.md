@@ -1,8 +1,27 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.92**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.93**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.93 adds an independent `performance.*` capture for native player
+polls: bounded preallocated rows, guarded identities/retries, immutable pages,
+CPU wall stages, actual present-return cadence and delayed GPU execution/query
+outcomes. Stop closes admission, drains submissions and freezes; unresolved
+execution and invalid samples remain explicit. Existing `profiler.*` stop and
+retirement semantics are unchanged. Discovery schema is 72; authoring-core v1,
+gameplay services epoch 7 and native artifact format 2 are unchanged.
+
+Actual Windows integrity probes pass on NVIDIA RTX 4070 Laptop and AMD integrated
+GPUs, each with one/two frame slots, screenshot/resize interventions, overflow,
+paused tick stability and independent row/counter reconstruction. Each collects
+40 samples from the original engine process handle, keeping working set and
+private commit distinct. Native owners close normally with no NVRHI errors.
+The probes use a small paused fixture, so their timings do not establish
+interactive game FPS, representative performance, a 30-minute soak, GPU residency
+or click-to-photon latency. Seven headless and six Windows selected tests pass,
+plus six authoring compatibility checks. [Capture guide](FRAME_PERFORMANCE.md),
+[qualification and raw observations](evidence/m2-frame-performance.json).
 
 Version 0.0.92 publishes DEPOT RUN's retained agent-authored source, licensed
 cooked content and independent gameplay/save/bundle verifier. The measured

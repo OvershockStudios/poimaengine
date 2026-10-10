@@ -9,6 +9,7 @@
 #include "poima/editor_viewport.hpp"
 #include "poima/hosted_viewport.hpp"
 #include "poima/profiler.hpp"
+#include "poima/frame_performance.hpp"
 #include "poima/render_schedule.hpp"
 #include "poima/fsr3.hpp"
 #include "poima/temporal_clock.hpp"
@@ -243,6 +244,12 @@ struct SkinInstance {
 };
 struct DrawItem { std::uint32_t object_index=0;std::uint64_t incarnation=0;std::shared_ptr<const MeshAsset> mesh; nvrhi::BufferHandle previous_vertices;std::string entity_id;SkinInstance* skin=nullptr; DrawConstants constants{};Geometry geometry;nvrhi::BindingSetHandle bindings;bool cull=false,camera_visible=true;std::uint32_t shadow_mask=0; };
 using SteadyClock=std::chrono::steady_clock;
+namespace fp=frame_performance;
+struct PerformanceWallScope {
+    std::uint64_t* target;std::uint64_t started;
+    explicit PerformanceWallScope(std::uint64_t* value) noexcept:target(value),started(value?fp::Recorder::now_ns():0) {}
+    ~PerformanceWallScope() noexcept {if(target)*target+=fp::Recorder::now_ns()-started;}
+};
 double elapsed_ms(SteadyClock::time_point start) { return std::chrono::duration<double,std::milli>(SteadyClock::now()-start).count(); }
 void timing_sample(TimingSummary& value,double ms) {
     if(value.samples==0)value.min_ms=value.max_ms=ms;
@@ -296,12 +303,16 @@ struct Context {
         LightAssignmentDiagnostics lights;
         std::vector<std::string> skin_ids;
         profiling::DeferredContext profile;
+        fp::Recorder* performance=nullptr;fp::GpuTicket performance_ticket;
         bool history_valid=false,capture_probes=false;
         std::uint64_t history_sequence=0;
         std::string history_reset;
         ReconstructionDiagnostics reconstruction;
     };
     std::array<FrameSlot,2> slots;
+    // Borrowed only during a player poll. Slots retain detached generation
+    // tickets; the session recorder outlives renderer teardown.
+    fp::Recorder* performance=nullptr;fp::FrameToken performance_token;fp::CpuSample* performance_cpu=nullptr;
     std::uint64_t next_slot=0,retire_slot=0;
     std::vector<vk::Semaphore> finished;
     std::vector<vk::Fence> present_fences;
@@ -927,13 +938,18 @@ struct Context {
         if(timestamp_recording)native_commands().writeTimestamp(index==0 ? vk::PipelineStageFlagBits::eTopOfPipe : vk::PipelineStageFlagBits::eBottomOfPipe,timestamp_pool,index,dispatch);
     }
     void collect_timestamps(FrameSlot& slot,double cpu_interval_ms) {
-        if(!slot.timing)return;
+        if(!slot.timing) {
+            if(slot.performance)slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::query_unavailable);
+            return;
+        }
         std::array<std::uint64_t,14> values{};
         const auto status=device.getQueryPoolResults(slot.timestamps,0,14,sizeof(values),values.data(),sizeof(values[0]),vk::QueryResultFlagBits::e64,dispatch);
         const auto bits=diagnostics.timestamp_valid_bits;
         const double wrap_ms=std::ldexp(diagnostics.timestamp_period_ns*1e-6,static_cast<int>(bits));
         if(status!=vk::Result::eSuccess || cpu_interval_ms>=wrap_ms) {
-            ++diagnostics.gpu_samples_dropped;profiling::deferred_counter(slot.profile,"gpu.samples_dropped",diagnostics.gpu_samples_dropped);return;
+            ++diagnostics.gpu_samples_dropped;profiling::deferred_counter(slot.profile,"gpu.samples_dropped",diagnostics.gpu_samples_dropped);
+            if(slot.performance)slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::query_failed);
+            return;
         }
         const auto mask=bits==64 ? ~std::uint64_t(0) : (std::uint64_t(1)<<bits)-1;
         auto ms=[&](std::size_t a,std::size_t b) { return static_cast<double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns*1e-6; };
@@ -957,6 +973,22 @@ struct Context {
         if(ao_enabled) {sample("gpu.ambient_occlusion.ns",10,11);sample("gpu.ambient_occlusion_filter.ns",12,13);}
         if(slot.reconstruction.active)sample("gpu.reconstruction.ns",6,7);
         sample("gpu.post.ns",4,5);sample("gpu.total.ns",0,5);
+        if(slot.performance) {
+            fp::GpuTiming timing;bool valid=true;
+            auto duration=[&](std::size_t a,std::size_t b) {
+                const long double ns=static_cast<long double>((values[b]-values[a])&mask)*diagnostics.timestamp_period_ns;
+                if(!std::isfinite(ns) || ns<0 || ns>=static_cast<long double>(std::numeric_limits<std::uint64_t>::max())) {valid=false;return std::uint64_t{0};}
+                return static_cast<std::uint64_t>(ns);
+            };
+            timing.total_ns=duration(0,5);timing.skinning_ns=duration(0,1);timing.light_assignment_ns=duration(1,2);
+            timing.shadows_ns=duration(2,3);timing.opaque_ns=duration(3,4);timing.post_ns=duration(4,5);
+            timing.pass_mask=fp::GpuPass::total|fp::GpuPass::skinning|fp::GpuPass::light_assignment|fp::GpuPass::shadows|fp::GpuPass::opaque|fp::GpuPass::post;
+            if(deferred) {timing.deferred_lighting_ns=duration(8,9);timing.pass_mask|=fp::GpuPass::deferred_lighting;}
+            if(ao_enabled) {timing.ambient_occlusion_ns=duration(10,11);timing.ambient_occlusion_filter_ns=duration(12,13);timing.pass_mask|=fp::GpuPass::ambient_occlusion|fp::GpuPass::ambient_occlusion_filter;}
+            if(slot.reconstruction.active) {timing.reconstruction_ns=duration(6,7);timing.pass_mask|=fp::GpuPass::reconstruction;}
+            if(valid)slot.performance->gpu_complete(slot.performance_ticket,timing);
+            else slot.performance->gpu_drop(slot.performance_ticket,fp::GpuDropReason::invalid_timing);
+        }
     }
 
     void prepare_shadows() {
@@ -2332,6 +2364,7 @@ struct Context {
     // Shared GPU scratch returns to its initial state at command-list close.
     void retire_frames(bool drain=false,bool reuse=false) {
         profiling::Scope retire_scope("render.retire");
+        PerformanceWallScope wall(performance_cpu?&performance_cpu->work.retire_ns:nullptr);
         try {
             while(diagnostics.frame_execution.outstanding) {
                 auto& slot=slots[retire_slot%diagnostics.frame_execution.limit];
@@ -2342,7 +2375,9 @@ struct Context {
                     ++waits;const auto started=SteadyClock::now();
                     const vk::Semaphore semaphore=native->getQueueSemaphore(nvrhi::CommandQueue::Graphics);
                     const vk::SemaphoreWaitInfo info({},1,&semaphore,&slot.submission);
+                    const auto wait_started=performance_cpu?fp::Recorder::now_ns():0;
                     const auto status=device.waitSemaphores(info,5'000'000'000ULL,dispatch);
+                    if(performance_cpu)performance_cpu->work.gpu_wait_ns+=fp::Recorder::now_ns()-wait_started;
                     if(diagnostics.profile_requested)timing_sample(diagnostics.completion_wait_cpu,elapsed_ms(started));
                     require(status==vk::Result::eSuccess,"GPU frame completion timed out; recreate the renderer session.");
                 }
@@ -2354,7 +2389,7 @@ struct Context {
                 if(slot.capture_probes)collect_product_probes();
                 ++diagnostics.completed_submissions;--diagnostics.frame_execution.outstanding;
                 profiling::deferred_counter(slot.profile,"renderer.completed_submissions",diagnostics.completed_submissions);
-                checked->resetEventQuery(slot.completion);slot.occupied=false;++retire_slot;
+                checked->resetEventQuery(slot.completion);slot.occupied=false;slot.performance=nullptr;slot.performance_ticket={};++retire_slot;
                 if(reuse && !drain)break;
             }
             checked->runGarbageCollection();
@@ -2636,14 +2671,14 @@ struct Context {
         prepare_game_ui();prepare_submission_history();prepare_temporal_submission();prepare_ambient_occlusion();prepare_deferred_lighting();
         // Query storage belongs to this Context. Create it before acquiring an
         // image; stopped traces leave it allocated but perform no query work.
-        if(profiling::active() && !timestamp_prepared)prepare_timestamps();
+        if((profiling::active() || bool(performance_token)) && !timestamp_prepared)prepare_timestamps();
         timestamp_pool=slot.timestamps;
-        timestamp_recording=bool(timestamp_pool) && (diagnostics.profile_requested || profiling::active());
+        timestamp_recording=bool(timestamp_pool) && (diagnostics.profile_requested || profiling::active() || bool(performance_token));
         auto plan=make_schedule(capture_frame);
         plan.validate(true);
         // A finite acquire timeout bounds the experiment if presentation stalls.
         vk::ResultValue<std::uint32_t> next(vk::Result::eSuccess,0);
-        try { profiling::Scope acquire_scope("render.acquire");next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,slot.acquired,{},dispatch); }
+        try { profiling::Scope acquire_scope("render.acquire");PerformanceWallScope wall(performance_cpu?&performance_cpu->work.acquire_ns:nullptr);next=device.acquireNextImageKHR(swapchain, (editor || hosted) ? 16'000'000ULL : 5'000'000'000ULL,slot.acquired,{},dispatch); }
         catch(const vk::OutOfDateKHRError&) { swapchain_dirty=true; return false; }
         if((editor || hosted) && (next.result==vk::Result::eTimeout || next.result==vk::Result::eNotReady))return false;
         require(next.result == vk::Result::eSuccess || next.result == vk::Result::eSuboptimalKHR,
@@ -2657,6 +2692,7 @@ struct Context {
         } failure{*this};
         const auto index = next.value;
         if(maintenance1 && present_pending[index]) {
+            PerformanceWallScope wall(performance_cpu?&performance_cpu->work.gpu_wait_ns:nullptr);
             require(device.waitForFences(1,&present_fences[index],true,5'000'000'000ULL,dispatch)==vk::Result::eSuccess,"Previous image presentation did not retire.");
             require(device.resetFences(1,&present_fences[index],dispatch)==vk::Result::eSuccess,"Presentation fence reset failed.");present_pending[index]=false;
         }
@@ -2667,6 +2703,7 @@ struct Context {
         double record_ms=0;
         {
         profiling::Scope record_scope("render.record");
+        PerformanceWallScope wall(performance_cpu?&performance_cpu->work.record_ns:nullptr);
         const auto record_started=SteadyClock::now();commands->open();
         // Queue order alone does not order accesses to scratch that stays in
         // the same state (depth/UAV). Keep an explicit cross-submission memory
@@ -2753,6 +2790,7 @@ struct Context {
         }
         {
         profiling::Scope submit_scope("render.submit");
+        PerformanceWallScope wall(performance_cpu?&performance_cpu->work.submit_ns:nullptr);
         native->queueSignalSemaphore(nvrhi::CommandQueue::Graphics, finished[index], 0);
         slot.started=frame_started;slot.draws=pending_draws;slot.lights=submitted_lights;
         slot.skin_ids.clear();for(const auto& draw:draws)slot.skin_ids.push_back(draw.entity_id);
@@ -2760,6 +2798,10 @@ struct Context {
         slot.history_valid=pending_history_valid;slot.history_sequence=scene ? history_sequence+1 : 0;slot.history_reset=pending_history_reset;
         slot.capture_probes=capture_frame && !product_probes.empty();slot.reconstruction=pending_reconstruction;
         slot.submission=checked->executeCommandList(commands);
+        // The GPU may have accepted work even if a later validation/query/
+        // present operation fails. Attribute that submission immediately.
+        slot.performance=performance;slot.performance_ticket={};
+        if(slot.submission && performance)slot.performance_ticket=performance->gpu_submit(performance_token);
         require(slot.submission!=0 && messages.errors==0,"Frame submission was not accepted; history was not advanced.");
         commit_history();
         checked->setEventQuery(slot.completion,nvrhi::CommandQueue::Graphics);
@@ -2778,7 +2820,10 @@ struct Context {
         present_info.pSwapchains = &swapchain;
         present_info.pImageIndices = &index;
         vk::Result presented;
-        { profiling::Scope present_scope("render.present");presented=static_cast<vk::Result>(dispatch.vkQueuePresentKHR(static_cast<VkQueue>(queue),reinterpret_cast<const VkPresentInfoKHR*>(&present_info))); }
+        { profiling::Scope present_scope("render.present");PerformanceWallScope wall(performance_cpu?&performance_cpu->work.present_ns:nullptr);
+          presented=static_cast<vk::Result>(dispatch.vkQueuePresentKHR(static_cast<VkQueue>(queue),reinterpret_cast<const VkPresentInfoKHR*>(&present_info)));
+          if(performance_cpu) {performance_cpu->present_return_ns=fp::Recorder::now_ns();performance_cpu->successful_present=presented==vk::Result::eSuccess || presented==vk::Result::eSuboptimalKHR;}
+        }
         // OUT_OF_DATE still enqueues the present semaphore wait and fence.
         if(maintenance1 && (presented==vk::Result::eSuccess || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR || presented==vk::Result::eErrorSurfaceLostKHR || presented==vk::Result::eErrorFullScreenExclusiveModeLostEXT))present_pending[index]=true;
         swapchain_dirty = next.result==vk::Result::eSuboptimalKHR || presented==vk::Result::eSuboptimalKHR || presented==vk::Result::eErrorOutOfDateKHR;
@@ -3030,7 +3075,11 @@ struct PlayerWindow::Impl {
     bool audio_gain_failed=false;
     std::size_t segment=0;
     std::uint32_t offset=0;
-    std::uint64_t previous=0;
+    std::uint64_t previous=0,performance_sequence=0;
+    std::uint32_t performance_interventions=0;
+    void intervention(std::uint32_t flag) noexcept {
+        performance_interventions|=flag;if(context.performance_cpu)context.performance_cpu->flags|=flag;
+    }
     explicit Impl(const PlayerOptions& requested,PlayerSession& value,bool paused)
         :options(requested),session(value),input(requested.input_profile ? *requested.input_profile : default_gamepad_input_profile()),owner_paused(paused) {
         result.initial_tick=result.final_tick=session.tick();
@@ -3134,7 +3183,7 @@ struct PlayerWindow::Impl {
             ++result.runtime_replacements;
     }
     bool after_advance(bool save_serviced) {
-        if(save_serviced)previous=SDL_GetTicksNS();
+        if(save_serviced) {intervention(fp::Flag::storage);previous=SDL_GetTicksNS();}
         // A successful compiled boundary may have published new preferences.
         // Consume before any following event or catch-up input, without polling.
         apply_preferences();
@@ -3144,6 +3193,7 @@ struct PlayerWindow::Impl {
             if(audio)audio->advance(session.audio_state(options.camera));
             return false;
         }
+        intervention(fp::Flag::replacement);
         record_runtime_replacement(current);
         // Runtime ownership changed only after the committed owner advance.
         // Never reuse catch-up ticks, pending edges or DSP from that timeline.
@@ -3175,7 +3225,7 @@ struct PlayerWindow::Impl {
             const auto accepted=session.control(result.final_session,snapshot.logical_ui->revision,*response.activated);
             const bool replaced=after_advance(accepted.save_serviced);
             if(!replaced && accepted.intent!=RuntimeControlIntent::none) {
-                owner_paused=accepted.intent!=RuntimeControlIntent::resume;
+                intervention(fp::Flag::paused);owner_paused=accepted.intent!=RuntimeControlIntent::resume;
                 active=!owner_paused && focused;
                 captured=false;input.clear();clock.advance(0,false);previous=SDL_GetTicksNS();
                 SDL_SetWindowRelativeMouseMode(context.window,false);
@@ -3189,6 +3239,7 @@ struct PlayerWindow::Impl {
         return response.consumed;
     }
     void pause(bool value) {
+        if(value!=owner_paused)intervention(fp::Flag::paused);
         owner_paused=value;captured=false;input.clear();clock.advance(0,false);
         active=!value && initialized && !options.replay && focused;
         if(initialized) {
@@ -3213,7 +3264,7 @@ struct PlayerWindow::Impl {
         if(identity!=result.final_session)after_advance(false);
         else if(session.tick()!=result.final_tick) {
             // Explicit paused stepping belongs to a different input clock.
-            pause(true);ui_presented=false;
+            intervention(fp::Flag::replacement);pause(true);ui_presented=false;
             if(audio)audio->reset(session.audio_state(options.camera));
             if(options.replay) {quit=true;result.stop_reason="runtime_changed";}
         }
@@ -3226,6 +3277,7 @@ struct PlayerWindow::Impl {
         result.final_tick=session.tick();
     }
     void frame() {
+        std::uint64_t events_started=context.performance_cpu?fp::Recorder::now_ns():0;
         apply_preferences();
         profiling::SessionScope frame_session(result.final_session);
         profiling::Scope frame_scope("player.frame",static_cast<std::int64_t>(session.tick()));
@@ -3244,13 +3296,13 @@ struct PlayerWindow::Impl {
                 quit=true; result.stop_reason="escape";
             }
             if(event.type==SDL_EVENT_WINDOW_FOCUS_LOST || event.type==SDL_EVENT_WINDOW_MINIMIZED) {
-                focused=false; captured=false; active=false; if(!options.replay)owner_paused=true; input.clear();if(gamepads)gamepads->activate(false);
+                intervention(fp::Flag::skip);focused=false; captured=false; active=false; if(!options.replay)owner_paused=true; input.clear();if(gamepads)gamepads->activate(false);
                 ui_ready=false;ui_presented=false;context.reset_game_ui_input();if(gamepads)gamepads->ui_active(false);
                 if(!options.replay) SDL_SetWindowRelativeMouseMode(context.window,false);
             }
             if(event.type==SDL_EVENT_WINDOW_FOCUS_GAINED) focused=true;
             if(event.type==SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type==SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED) {
-                context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
+                intervention(fp::Flag::resize);context.swapchain_dirty=true;ui_ready=false;ui_presented=false;context.reset_game_ui_input();
             }
             if(options.replay) continue;
             if(gamepads) {
@@ -3260,7 +3312,7 @@ struct PlayerWindow::Impl {
                 if(event.type==SDL_EVENT_GAMEPAD_AXIS_MOTION) { gamepads->axis(event.gaxis.which,event.gaxis.axis,event.gaxis.value);continue; }
                 if(event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN || event.type==SDL_EVENT_GAMEPAD_BUTTON_UP) {
                     if(gamepads->button(event.gbutton.which,event.gbutton.button,event.type==SDL_EVENT_GAMEPAD_BUTTON_DOWN) && focused) {
-                        active=!active;owner_paused=!active;input.clear();gamepads->activate(active);
+                        intervention(fp::Flag::paused);active=!active;owner_paused=!active;input.clear();gamepads->activate(active);
                         if(!active) { captured=false;SDL_SetWindowRelativeMouseMode(context.window,false); }
                     }
                     continue;
@@ -3284,10 +3336,10 @@ struct PlayerWindow::Impl {
                 if(ui_modal())continue;
             }
             if(event.type==SDL_EVENT_KEY_DOWN && event.key.scancode==SDL_SCANCODE_TAB) {
-                captured=false;active=false;owner_paused=true;input.clear();if(gamepads)gamepads->activate(false);SDL_SetWindowRelativeMouseMode(context.window,false);
+                intervention(fp::Flag::paused);captured=false;active=false;owner_paused=true;input.clear();if(gamepads)gamepads->activate(false);SDL_SetWindowRelativeMouseMode(context.window,false);
             }
             if(event.type==SDL_EVENT_MOUSE_BUTTON_DOWN && event.button.button==SDL_BUTTON_LEFT && focused && !captured && !options.controller.empty()) {
-                const bool resuming=!active;require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());captured=true;active=true;owner_paused=false;
+                intervention(fp::Flag::paused);const bool resuming=!active;require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());captured=true;active=true;owner_paused=false;
                 if(resuming) { input.clear();if(gamepads)gamepads->activate(true); }continue;
             }
             if(!focused || !active) continue;
@@ -3308,22 +3360,27 @@ struct PlayerWindow::Impl {
             }
         }
         if(audio)audio->active(!owner_paused && (options.replay || (focused && active)));
+        if(context.performance_cpu)context.performance_cpu->work.events_ns+=fp::Recorder::now_ns()-events_started;
         if(quit) return;
         // Occluded FIFO swapchains can return immediately. Keep an idle
         // editor/player from spinning at thousands of frames per second.
-        if(!options.replay && !(focused && active)) SDL_Delay(16);
+        if(!options.replay && !(focused && active)) {
+            PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(16);
+        }
         int width=0,height=0;
         require(SDL_GetWindowSizeInPixels(context.window,&width,&height),SDL_GetError());
         const auto now=SDL_GetTicksNS();
         const double elapsed=static_cast<double>(now-previous)/1e9; previous=now;
         const bool drawable=width>0 && height>0 && !(SDL_GetWindowFlags(context.window)&SDL_WINDOW_MINIMIZED);
-        if(!drawable) { clock.advance(0,false); SDL_Delay(10); return; }
+        if(!drawable) {intervention(fp::Flag::skip);clock.advance(0,false);PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.pacing_wait_ns:nullptr);SDL_Delay(10);return;}
         require(width<=4096 && height<=4096,"Player drawable exceeds the initial 4096-pixel limit.");
         if(context.swapchain_dirty || context.extent.width!=static_cast<std::uint32_t>(width) || context.extent.height!=static_cast<std::uint32_t>(height)) {
-            auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
+            intervention(fp::Flag::resize);auto resized=options.render; resized.width=static_cast<std::uint32_t>(width); resized.height=static_cast<std::uint32_t>(height);
             if(!context.rebuild(resized)) { clock.advance(0,false); SDL_Delay(10); return; }
             ++result.swapchain_rebuilds;
         }
+        {
+        PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.simulation_owner_ns:nullptr);
         if(options.replay && !owner_paused) {
             if(segment==options.sequence.size()) { quit=true;result.stop_reason="replay_complete"; return; }
             auto control=options.sequence[segment].input;
@@ -3346,10 +3403,11 @@ struct PlayerWindow::Impl {
                 }
             }
         }
+        }
         profiling::SessionScope render_session(result.final_session);
         profiling::Scope presentation_scope("player.presentation",static_cast<std::int64_t>(session.tick()));
-        fresh_snapshot(); context.update_scene();
-        ui_ready=context.frame(false);ui_presented=ui_ready;
+        {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.scene_prepare_ns:nullptr);fresh_snapshot();context.update_scene();}
+        {PerformanceWallScope wall(context.performance_cpu?&context.performance_cpu->work.render_ns:nullptr);ui_ready=context.frame(false);}ui_presented=ui_ready;
         if(ui_ready) {++result.render.frames_presented;presented_preferences();}
         if(!quit && options.max_frames && result.render.frames_presented>=options.max_frames) { quit=true;result.stop_reason="frame_limit"; }
     }
@@ -3360,6 +3418,10 @@ struct PlayerWindow::Impl {
             profiling::SessionScope final_session(result.final_session);
             if(initialized && audio)audio->finish(session.audio_state(options.camera));
             if(initialized && !options.render.capture.empty()) {
+                intervention(fp::Flag::capture);
+                // Final screenshot work is an intervention, not another normal
+                // frame paired with the current poll's submission ticket.
+                context.performance_token={};context.performance_cpu=nullptr;
                 profiling::SessionScope capture_session(result.final_session);
                 profiling::Scope capture_scope("player.final_capture",static_cast<std::int64_t>(session.tick()));
                 // Final artifact observes the exact final tick without simulating an
@@ -3375,7 +3437,7 @@ struct PlayerWindow::Impl {
             result.render.success=true;
             result.render.detail="Continuous native viewport using the fixed-step runtime; bounded Vulkan presentation, no frame-time qualification.";
         }catch(const std::exception& error) {
-            result.render.success=false;result.render.detail=error.what();result.stop_reason="error";
+            intervention(fp::Flag::error);result.render.success=false;result.render.detail=error.what();result.stop_reason="error";
         }
         done=true;quit=true;active=false;captured=false;input.clear();
         if(gamepads && gamepad_binding.host)gamepads->activate(false);
@@ -3406,12 +3468,33 @@ PlayerWindow::~PlayerWindow()=default;
 bool PlayerWindow::poll() {
     auto& state=*impl_;state.check_thread();if(state.done)return false;
     profiling::SourceScope source(profiling::Source::player);
+    auto* recorder=state.session.frame_recorder();fp::FrameToken token;fp::CpuSample sample;
+    if(recorder && recorder->status().admitting) {
+        if(state.performance_sequence!=std::numeric_limits<std::uint64_t>::max())++state.performance_sequence;
+        token=recorder->begin_frame(state.performance_sequence);
+    }
+    if(token) {
+        sample.begin_ns=fp::Recorder::now_ns();sample.tick_before=state.session.tick();sample.flags=state.performance_interventions;
+        if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
+        if(state.options.replay)sample.flags|=fp::Flag::replay;
+        state.context.performance=recorder;state.context.performance_token=token;state.context.performance_cpu=&sample;
+    }
     try {
-        state.synchronize();
-        if(!state.quit && !state.initialized)state.initialize();
+        {PerformanceWallScope wall(token?&sample.work.owner_prepare_ns:nullptr);state.synchronize();if(!state.quit && !state.initialized)state.initialize();}
         if(!state.quit)state.frame();
-        if(state.quit)state.finish();else state.refresh_report();
-    }catch(const std::exception& error) {state.fail(error);}
+        {PerformanceWallScope wall(token?&sample.work.report_ns:nullptr);if(state.quit)state.finish();else state.refresh_report();}
+    }catch(const std::exception& error) {state.intervention(fp::Flag::error);state.fail(error);}
+    if(token) {
+        sample.end_ns=fp::Recorder::now_ns();sample.tick_after=state.result.final_tick;
+        sample.width=state.context.extent.width;sample.height=state.context.extent.height;
+        if(state.focused)sample.flags|=fp::Flag::focused;
+        if(state.owner_paused || (!state.options.replay && !state.active))sample.flags|=fp::Flag::paused;
+        if(!sample.successful_present)sample.flags|=fp::Flag::skip;
+        std::copy_n(state.result.final_session.data(),std::min(std::size_t{32},state.result.final_session.size()),sample.session.data());
+        if(!recorder->finish_frame(token,sample))recorder->fail_frame(token,sample);
+    }
+    if(sample.successful_present)state.performance_interventions=0;
+    state.context.performance=nullptr;state.context.performance_token={};state.context.performance_cpu=nullptr;
     return !state.done;
 }
 void PlayerWindow::pause(bool paused) {
@@ -3432,10 +3515,19 @@ bool PlayerWindow::paused() const {
 bool PlayerWindow::finished() const {impl_->check_thread();return impl_->done;}
 bool PlayerWindow::ready() const {impl_->check_thread();return impl_->initialized && impl_->ui_presented && !impl_->quit && !impl_->done;}
 PlayerReport PlayerWindow::report() const {impl_->check_thread();return impl_->result;}
+void PlayerWindow::note_performance_intervention(std::uint32_t flags) {
+    impl_->check_thread();impl_->intervention(flags);
+}
+void PlayerWindow::drain_performance() {
+    auto& state=*impl_;state.check_thread();
+    require(!state.context.renderer_fault,"Performance drain cannot claim completion after a renderer fault.");
+    if(state.context.checked)state.context.retire_frames(true);
+}
 RenderReport PlayerWindow::capture(const std::string& path) {
     auto& state=*impl_;state.check_thread();
     require(!path.empty() && path.size()<=4096 && path.find('\0')==std::string::npos,"Player capture requires a bounded, nonempty, NUL-free output path.");
     require(ready(),"Player capture requires a live initialized and presented window.");
+    state.intervention(fp::Flag::capture);
     profiling::SourceScope source(profiling::Source::player);
     profiling::SessionScope session(state.result.final_session);
     profiling::Scope scope("player.capture",static_cast<std::int64_t>(state.session.tick()));
