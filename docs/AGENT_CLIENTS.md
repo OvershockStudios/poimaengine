@@ -118,6 +118,11 @@ Open **Window → Agent** in the development editor. Select the Codex executable
 
 The client attaches its Poima MCP server to the editor's existing endpoint. **Allow Poima world edits in this session** explicitly authorizes that operation tool for the process; shell and file approvals remain separate. Supported command/file approval requests display accept/decline controls. Startup failures allow reconnect; an uncertain send disconnects instead of automatically repeating the prompt. No global provider configuration or credentials are written by Poima.
 
+Compile, native publish and export requests use the separately authorized `poima_build` tool
+and [host-selected profiles](DEVELOPMENT_PROFILES.md). The existing world-edit
+toggle does not grant that tool or configure a compiler/linker. Allow build
+execution explicitly in the provider client when working with trusted projects.
+
 A candidate Windows package with Codex CLI 0.160.1 and `gpt-6.1-sol` passes 17 semantic actions: recovery from a missing executable, model discovery, a completed chat turn, one guarded entity creation and clean completion controls. Persisted state advances exactly one revision and preserves every existing entity. An attached-window render was visually inspected. This is one small authoring exercise on the NVIDIA development GPU; physical mouse input, approval-card interaction, interruption completion, broad game creation and Claude chat remain unqualified. [Evidence](evidence/m2-agent-workspace.json).
 
 To reproduce with a logged-in official CLI and Windows Python:

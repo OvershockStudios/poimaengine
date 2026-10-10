@@ -116,7 +116,7 @@ class McpContract(unittest.TestCase):
     def test_authoring_receipts_conflicts_undo_and_eof_persistence(self):
         client = self.client()
         tools = client.rpc('tools/list')['tools']
-        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call'})
+        self.assertEqual({tool['name'] for tool in tools}, {'poima_discover', 'poima_call', 'poima_build'})
         catalog = client.tool('poima_discover')
         self.assertEqual(catalog['view'], 'catalog')
         self.assertTrue(catalog['partial'])

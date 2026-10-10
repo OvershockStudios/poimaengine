@@ -104,8 +104,9 @@ environment and existing process cleanup behavior.
 
 `development.compile` retains its original RPC shape and inherited environment.
 RPC clients cannot supply arbitrary environment values through this change.
-Host-configured native publishing/export profiles remain the next integration
-step; the native member alone does not authorize new agent build operations.
+[Host-configured native publishing/export profiles](DEVELOPMENT_PROFILES.md)
+supply separate owner policy and build authorization; the native environment
+member alone does not grant agent execution authority.
 
 The [matching-host qualification tool](../tests/development_toolchain.py) uses
 the compiled worker for real SDK builds, Native AOT publishing and native
@@ -200,3 +201,17 @@ Native read-only/shared-scope tests hide and reject all development methods.
 This API does not load the resulting module or change gameplay automatically.
 [World-host evidence](evidence/m2-development-host.json),
 [earlier standalone evidence](evidence/m2-development-diagnostics.json).
+
+## Worker success verification
+
+A native caller can attach `Request.verify_success`, a worker-only callback
+invoked after a successful child and the existing owned-child cleanup boundary.
+It returns at most 65,536 valid UTF-8 bytes. Exceptions, oversized results or
+invalid encoding convert zero-exit success into `failed`; other child outcomes
+skip verification. `Status.result` appears atomically with success. The service
+additionally requires a bounded nonempty JSON object. Cancellation suppresses
+the result, including cancellation during verification. The callback itself
+performs bounded work but is not interruptible; destruction joins it.
+
+`validate_request` shares the submit-time validation rules without queueing or
+launching a process, so owner profiles can reject invalid environments at startup.

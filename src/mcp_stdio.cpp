@@ -40,8 +40,9 @@ int serve_stdio(McpSession& session) {
     return 0;
 }
 }
-int run_mcp_world(const std::string& path) {
+int run_mcp_world(const std::string& path,const std::string& development_profiles) {
     WorldSession world(path);
+    if(!development_profiles.empty())world.configure_development_profiles(development_profiles);
     McpSession session([&world](std::string_view message) {return world.request(message);});
     return serve_stdio(session);
 }

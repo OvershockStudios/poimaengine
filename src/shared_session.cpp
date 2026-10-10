@@ -18,10 +18,11 @@ struct Signals {
     ~Signals() { if(interrupt!=SIG_ERR)std::signal(SIGINT,interrupt);if(terminate!=SIG_ERR)std::signal(SIGTERM,terminate); }
 };
 }
-int run_shared_world(const std::string& world,const std::string& endpoint) {
+int run_shared_world(const std::string& world,const std::string& endpoint,const std::string& development_profiles) {
     // Acquire the endpoint first; an unavailable endpoint must not create a
     // world's writer sidecar. WorldSession never leaves its owning thread.
     LocalSessionServer host(endpoint);WorldSession session(world);
+    if(!development_profiles.empty())session.configure_development_profiles(development_profiles);
     return run_shared_session(session,host,endpoint);
 }
 int run_shared_session(WorldSession& session,LocalSessionServer& host,const std::string& endpoint) {

@@ -68,14 +68,14 @@ constexpr std::array operations{
         "{}", "[]"},
     Operation{"doctor", "Inspect this host, optionally enumerating Vulkan devices.", "[--graphics] [--require-hardware]",
         R"({"graphics":{"type":"boolean","default":false},"require_hardware":{"type":"boolean","default":false,"description":"Implies graphics. Require an enumerated discrete/integrated Vulkan 1.3 device with a graphics queue; this is not renderer qualification."}})", "[]"},
-    Operation{"world", "Open a persistent authored-world session over newline-delimited JSON-RPC 2.0.", "<path.json>",
-        R"({"path":{"type":"string","minLength":1,"description":"World file; parent directory must exist. Reserves .lock/.pending/.previous sidecars. Use world.describe inside the session for method schemas."}})", "[\"path\"]"},
-    Operation{"serve", "Host one authoritative world for same-user local clients.", "<world.json> --endpoint <name>",
-        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"}})", "[\"world\",\"endpoint\"]"},
+    Operation{"world", "Open a persistent authored-world session over newline-delimited JSON-RPC 2.0.", "<path.json> [--development-profiles file.json]",
+        R"({"path":{"type":"string","minLength":1,"description":"World file; parent directory must exist. Reserves .lock/.pending/.previous sidecars. Use world.describe inside the session for method schemas."},"development_profiles":{"type":"string","minLength":1,"description":"Host-owned trusted build profile file; no RPC can configure tools."}})", "[\"path\"]"},
+    Operation{"serve", "Host one authoritative world for same-user local clients.", "<world.json> --endpoint <name> [--development-profiles file.json]",
+        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"development_profiles":{"type":"string","minLength":1}})", "[\"world\",\"endpoint\"]"},
     Operation{"connect", "Bridge newline-delimited JSON-RPC to a running local world/editor host.", "<endpoint> [--timeout-ms N]",
         R"({"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000}})", "[\"endpoint\"]"},
-    Operation{"mcp", "Expose native authoring tools over MCP stdio; choose one world or existing endpoint.", "--world <world.json> | --endpoint <name> [--timeout-ms N]",
-        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000}})", "[]"},
+    Operation{"mcp", "Expose native authoring tools over MCP stdio; choose one world or existing endpoint.", "--world <world.json> [--development-profiles file.json] | --endpoint <name> [--timeout-ms N]",
+        R"({"world":{"type":"string","minLength":1},"endpoint":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,64}$"},"timeout_ms":{"type":"integer","minimum":100,"maximum":600000,"default":30000},"development_profiles":{"type":"string","minLength":1}})", "[]"},
     Operation{"project", "Create and inspect projects or export a verified native game bundle.", "create <directory> --name <name> | inspect <project.json> | build <project.json> --output <new-directory> --runtime <installed-runtime>",
         R"({"action":{"enum":["create","inspect","build"]},"path":{"type":"string","minLength":1},"name":{"type":"string","minLength":1},"output":{"type":"string","minLength":1},"runtime":{"type":"string","minLength":1}})", "[\"action\",\"path\"]"},
     Operation{"game", "Verify a portable game bundle, launch its native player or host its runtime for agents without modifying packaged content.", "inspect <game.json> | serve <game.json> --endpoint <name> [--save-root external-directory] | run <game.json> [--gpu N] [--frames N | --replay segments.json] [--capture external.bmp] [--report external.json] [--save-root external-directory] [--width N] [--height N] [--samples 1|4] [--frames-in-flight 1|2] [--settings-profile external.poima-settings.json] [--settings-revision N] [--settings-overrides JSON]",
@@ -207,7 +207,7 @@ Reply schema(std::string_view command) {
         quote(found->name) + ",\"description\":" + quote(found->summary) +
         ",\"type\":\"object\",\"additionalProperties\":false,\"properties\":" +
         std::string(found->properties) + ",\"required\":" + std::string(found->required) +
-        (command=="mcp" ? R"(,"oneOf":[{"required":["world"],"not":{"anyOf":[{"required":["endpoint"]},{"required":["timeout_ms"]}]}},{"required":["endpoint"],"not":{"required":["world"]}}])" : "") + "}");
+        (command=="mcp" ? R"(,"oneOf":[{"required":["world"],"not":{"anyOf":[{"required":["endpoint"]},{"required":["timeout_ms"]}]}},{"required":["endpoint"],"not":{"anyOf":[{"required":["world"]},{"required":["development_profiles"]}]}}])" : "") + "}");
 }
 
 Reply version() { return envelope("version", build_info()); }

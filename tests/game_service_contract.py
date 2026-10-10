@@ -240,7 +240,7 @@ class Exercise:
              initialized.get('serverInfo') == {'name': 'Poima', 'version': version} and
              'tools' in initialized.get('capabilities', {}), initialized)
         need(replies[1]['result'] == {} and
-             {tool['name'] for tool in replies[2]['result']['tools']} == {'poima_call', 'poima_discover'}, replies)
+             {tool['name'] for tool in replies[2]['result']['tools']} == {'poima_call', 'poima_discover', 'poima_build'}, replies)
         for reply, expected, error in ((replies[3], runtime, None), (replies[4], catalog, None),
                                        (replies[5], None, -32081)):
             result = reply['result']
@@ -320,7 +320,7 @@ class Exercise:
         self.record['checks'].append('Endpoint collision rejects before accessing a missing game manifest and leaves the existing owner intact.')
 
         forbidden = ['world.transact', 'world.undo', 'world.redo', 'input.transact', 'settings.transact',
-                     'development.compile', 'development.jobs', 'asset.import', 'asset.material.generate',
+                     'development.compile', 'development.profiles', 'development.publish', 'development.export', 'development.jobs', 'asset.import', 'asset.material.generate',
                      'world.navigation.bake', 'asset.provenance.create']
         for method in forbidden:
             self.call(client, method, {}, error=-32081)

@@ -123,7 +123,7 @@ int main(int argc,char** argv) {
         for(const auto& job:catalog) {wait(job);service.dispatch("development.forget",{{"job_id",job.at("job_id")}});}
         for(int i=0;i<129;++i) {auto accepted=service.dispatch("development.compile",stress(sequence++));wait(accepted);service.dispatch("development.forget",{{"job_id",accepted.at("job_id")}});}
         error("development.compile",params,-32009); // Tombstone protects an expired receipt.
-        const auto schemas=Service::schemas();check(schemas.size()==6 && schemas.contains("development.diagnostics"),"Operation discovery incomplete.");
+        const auto schemas=Service::schemas();check(schemas.size()==9 && schemas.contains("development.diagnostics"),"Operation discovery incomplete.");
         std::cout<<Json({{"passed",true},{"checks",{"literal_argv_and_cwd","incremental_build_arguments","invalid_parameters","exact_retry","changed_retry_rejected","compact_catalog","forget_does_not_recompile","launch_failure","invalid_utf8_diagnostics","cancel_and_terminal_forget","capacity_failure_retry_rollback","expired_receipt_tombstone","discovery"}},
             {"diagnostic_checks",{"structured_source_location","summary_deduplication","limited_results_explicit","invalid_limits","invalid_utf8_diagnostic","unrecognized_output_preserves_failure"}},
             {"scope","Development service and real self-child processes; no actual SDK or world-host qualification."}}).dump(2)<<'\n';

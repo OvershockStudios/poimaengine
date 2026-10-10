@@ -1,8 +1,52 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.90**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.91**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.91 exposes native publication and game export through named,
+owner-configured development profiles. Standalone, shared and MCP world hosts
+load the same policy before accepting jobs. Clients cannot supply tool paths,
+environment changes or shell commands to the new operations. Exact retries
+include the operation and profile fingerprint; accepted output locations remain
+reserved across failure, cancellation and forgotten status.
+
+Worker verification checks complete native artifact or bundle inventories after
+successful child cleanup. A zero exit alone cannot report success; verification
+errors fail the job, and cancelled jobs expose no successful result. Inspection
+returns compact verified hashes, file/byte counts and target information.
+Verification uses bounded filesystem reads but is not interruptible by the child
+deadline or cancellation. Successful receipts identify completion bytes, not a
+lease against later output edits.
+
+MCP requires the separate `poima_build` tool for all compile, publish and export
+submissions; `poima_call` rejects them before backend execution. Provider build
+consent is separate from world editing. Direct native RPC remains a trusted
+interface, and other world operations can execute selected trusted gameplay.
+This is not a process sandbox or universal code-execution boundary.
+
+Matching-host publication checks pass 222 MCP requests on Windows and 544 on
+Linux, with actual Native AOT artifacts, compiled Tick/Control callbacks,
+independent inventory checks, compiler-error feedback, exact retries and observed
+queued cancellation. Windows also passes native game export and inspection;
+Linux qualification is publication-only with a headless installed runtime.
+Standalone/shared profile startup passes on both platforms. Seven Windows native
+contracts, three native-Windows Python protocol suites and eleven regressions
+in each Linux runtime/authoring build pass. Three privileged Windows symlink
+fixture cases are skipped; actual Windows junction configuration/output guards
+pass separately. The relocated source-free primitive game-service regression
+passes 48 RPC requests, six MCP requests and one notification without compiled
+gameplay; it does not extend compiled-game relocation or rendering evidence.
+
+The initial native fixture build failure and incorrectly launched Windows
+protocol regressions remain recorded separately from corrected passes. Frozen
+native inputs match all three terminal builds. Authoring-core v1 remains stable;
+schema revision is 71, services epoch 7 and native artifact format 2 are unchanged.
+Tools and live projects are trusted, tool pins do not cover whole SDK/resource
+closures, and publication still needs source-checkout authoring resources.
+A fresh external-agent build-through-export gate and representative performance
+qualification remain ahead. [Contract and reproduction](DEVELOPMENT_PROFILES.md),
+[evidence](evidence/m2-development-profiles.json).
 
 Version 0.0.90 adds complete per-job environment replacement to the native
 development worker. Omission preserves inheritance; an explicitly empty list

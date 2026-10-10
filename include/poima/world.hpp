@@ -76,6 +76,8 @@ public:
     explicit WorldSession(const std::string& utf8_path,WorldOpenMode mode=WorldOpenMode::authoring,
         const std::string& protected_root={});
     ~WorldSession();
+    // Host-owner startup policy; no RPC can add tools or grant build authority.
+    void configure_development_profiles(const std::string& profile_file);
     WorldSession(const WorldSession&)=delete;
     WorldSession& operator=(const WorldSession&)=delete;
     std::string request(std::string_view json_rpc,WorldRequestScope scope=WorldRequestScope::standalone);
@@ -129,5 +131,5 @@ public:
 };
 // Persistent authored-world service over newline-delimited JSON-RPC 2.0.
 // Simulation/renderer state is deliberately not stored in this document.
-int run_world_session(const std::string& utf8_path);
+int run_world_session(const std::string& utf8_path,const std::string& development_profiles={});
 }

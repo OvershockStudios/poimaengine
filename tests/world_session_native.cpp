@@ -634,10 +634,10 @@ int main() {
             check(discovery["schema_revision"].get<unsigned>()>=65,"Read-only discovery schema revision differs.");
             for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_editor,poima::WorldRequestScope::shared_headless})discovery_projection(session,scope);
             check(discovery["methods"].contains("world.dependencies") && !discovery["methods"].contains("world.transact"),"Read-only discovery advertises mutation or hides dependencies.");
-            for(const auto* method:{"development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
+            for(const auto* method:{"development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})
                 check(!discovery["methods"].contains(method),"Read-only discovery advertises development jobs.");
             for(const auto* method:{"world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact",
-                "development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
+                "development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget"})for(const auto scope:{poima::WorldRequestScope::standalone,poima::WorldRequestScope::shared_headless,poima::WorldRequestScope::shared_editor}) {
                 const auto response=Json::parse(session.request(Json{{"jsonrpc","2.0"},{"id",9},{"method",method},{"params",{{"source","missing"},{"path","forbidden.poima-input.json"}}}}.dump(),scope));
                 check(response["error"]["code"]==-32081,"Read-only operation reached validation or mutation.");
             }

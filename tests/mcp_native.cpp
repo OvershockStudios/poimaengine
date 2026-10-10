@@ -126,7 +126,7 @@ try {
     error(rpc(session,"initialize"),-32600);
     ignore_responses();
     const auto listed=rpc(session,"tools/list").at("result").at("tools");
-    check(listed.size()==2,"Unexpected tool count");
+    check(listed.size()==3,"Unexpected tool count");
     check(calls==0,"Lifecycle or listing invoked backend");
     check(session.request(R"({"jsonrpc":"2.0","method":"tools/call","params":{"name":"poima_call","arguments":{"method":"world.transact"}}})").empty(),"Tool notification replied");
     check(calls==0,"Tool notification executed backend");
@@ -135,6 +135,20 @@ try {
     const Json parameters={{"request_id",std::string(32,'1')},{"base_revision",11}};
     auto result=tool(session,{{"method","world.transact"},{"params",parameters}});
     check(seen.at("params")==parameters&&result.at("structuredContent").at("result")==receipt,"Native parameters or receipt changed");
+    for(const char* method:{"development.compile","development.publish","development.export"}) {
+        const auto before_build=calls;
+        auto rejected_build=tool(session,{{"method",method},{"params",Json::object()}});
+        check(rejected_build.at("isError")==true && calls==before_build,"World edit tool silently granted build authority");
+        rejected_build=tool(session,{{"method","world.transact"},{"params",parameters}},"poima_build");
+        check(rejected_build.at("isError")==true && calls==before_build,"Build tool accepted world mutation");
+        rejected_build=tool(session,{{"method",method}},"poima_build");
+        check(rejected_build.at("isError")==true && calls==before_build,"Build tool accepted missing params");
+        rejected_build=tool(session,{{"method",method},{"params",Json::object()},{"image",Json::object()}},"poima_build");
+        check(rejected_build.at("isError")==true && calls==before_build,"Build tool accepted an image option");
+        auto built=tool(session,{{"method",method},{"params",{{"profile","selected"}}}},"poima_build");
+        check(!built.at("isError").get<bool>() && calls==before_build+1 && seen.at("method")==method
+            && seen.at("params")==Json{{"profile","selected"}},"Build tool changed parameters or repeated backend call");
+    }
     const auto before_invalid=calls;
     for(const Json arguments:{Json{{"method",1}},Json{{"method",""}},Json{{"method","world.inspect"},{"params",false}},Json{{"method","world.inspect"},{"extra",1}}}) {
         result=tool(session,arguments);check(result.at("isError")==true&&result.at("structuredContent").at("error").at("code")==-32602,"Known tool argument error not tool result");

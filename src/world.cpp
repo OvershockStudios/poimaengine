@@ -22,6 +22,7 @@
 #include "world_storage.hpp"
 #include "profiler_service.hpp"
 #include "development_service.hpp"
+#include "poima/development_profiles.hpp"
 #include "asset_store.hpp"
 #include "asset_provenance.hpp"
 #include "input_profile_store.hpp"
@@ -747,7 +748,7 @@ void validate(const Json& doc) {
     }
 }
 
-constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
+constexpr std::array authoring_methods{"component.schema.import","world.transact","world.undo","world.redo","asset.import","asset.image.import","asset.audio.import","input.transact","settings.transact","development.compile","development.profiles","development.publish","development.export","development.jobs","development.inspect","development.diagnostics","development.cancel","development.forget","asset.material.generate","asset.material.job","asset.material.jobs","asset.material.cancel","asset.material.forget","world.navigation.bake","asset.provenance.create"};
 class World {
     profiling::Service profiler_;
     fs::path path_;
@@ -915,6 +916,10 @@ public:
         const auto schemas=authored_component_schemas(doc_);(void)authored_schema(schemas,custom_type(type));
     }
     profiling::Recorder& profiler() noexcept { return profiler_.recorder(); }
+    void configure_development_profiles(const std::string& filename) {
+        require(!read_only_,"Read-only runtime hosts cannot configure development tools.",-32081);
+        development_.configure(development::load_profiles(filename));
+    }
     WorldProfilerContext profiler_context() const {
         WorldProfilerContext result;
         if(runtime_) { std::copy(runtime_id_.begin(),runtime_id_.end(),result.session.begin());result.tick=static_cast<std::int64_t>(runtime_->inspect().tick); }
@@ -1220,7 +1225,7 @@ public:
         if(method.starts_with("input."))return input_dispatch(method,params);
         if(method.starts_with("settings."))return settings_dispatch(method,params);
         if (method == "world.describe") {
-            (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only C# compilation via explicit executable; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local compile receipts; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner and native job worker threads, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
+            (void)discovery_view(params);auto result=world_schema::describe(sky_json(SkySettings{}),max_revision,max_document_bytes);result["methods"].update(profiling::Service::schemas());result["methods"].update(development::Service::schemas());result["development"]={{"execution","Trusted authoring-only compilation; native publish/export require immutable host-selected profiles; no shell or automatic runtime reload"},{"jobs","Single background worker, 32 retained jobs, bounded diagnostic tails; inspect/cancel/forget"},{"diagnostics","Bounded recognized MSBuild/C# records without raw logs; state/exit code remain authoritative, no errors inferred from an empty list"},{"receipts","128 session-local development receipts; method and profile identity guarded; expired IDs rejected within 4096-request lifetime budget"},{"paths","Absolute executable, project and output; cwd is project parent; generated Debug/Release dotnet build arguments"},{"qualification","See DEVELOPMENT_JOBS.md; source availability is separate from shipped-package qualification"}};result["profiler"]={{"capacity","64..65536 fixed events; allocation occurs at capture start"},{"lifetime","Session-owned and diagnostic only; runtime replacement/rollback does not discard observations"},{"reading","Stop before immutable paged reading; full capture stops accepting events and reports loss"},{"scope","CPU owner and native job worker threads, separate GPU duration samples; no calibrated GPU/CPU timeline, managed stacks or allocation/VRAM profiler"}};result["read_only"]=read_only_;result["mode"]=read_only_ ? "read_only_runtime" : "authoring";
             result["authoring_contract"]=authoring_contract_identity(read_only_);
             if(read_only_) { result["unavailable_mutations"]=authoring_methods;for(const auto* name:authoring_methods)result["methods"].erase(name); }
             return result;
@@ -3099,6 +3104,10 @@ struct WorldSession::Impl {
 };
 WorldSession::WorldSession(const std::string& path,WorldOpenMode mode,const std::string& protected_root):impl_(std::make_unique<Impl>(path,mode,protected_root)) {}
 WorldSession::~WorldSession()=default;
+void WorldSession::configure_development_profiles(const std::string& filename) {
+    require(!closed(),"World session is closed.",-32001);
+    impl_->world.configure_development_profiles(filename);
+}
 bool WorldSession::poll_player() {
     require(!closed(),"World session is closed.",-32001);
     profiling::Binding trace(&impl_->world.profiler(),profiling::Source::player);
@@ -3239,8 +3248,9 @@ std::string WorldSession::request(std::string_view line,WorldRequestScope scope)
     }
     return notification ? std::string{} : response.dump();
 }
-int run_world_session(const std::string& utf8_path) {
+int run_world_session(const std::string& utf8_path,const std::string& development_profiles) {
     WorldSession session(utf8_path);
+    if(!development_profiles.empty())session.configure_development_profiles(development_profiles);
     while(!session.closed()) {
         std::string line;bool oversized=false;char c=0;
         while(std::cin.get(c) && c!='\n') { if(line.size()<1024*1024)line+=c;else oversized=true; }

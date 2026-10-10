@@ -24,12 +24,22 @@ Startup failures and diagnostics go to stderr. Stdout contains only MCP messages
 
 ## Tools and workflow
 
-Only two tools are advertised, keeping the initial tool catalog small:
+Three tools keep discovery, world operations and build-job submission
+separate:
 
 | Tool | Arguments | Result |
 | --- | --- | --- |
 | `poima_discover` | Optional `view` and `name`, or mutation `operation` and `type`, as in [focused discovery](WORLD_SERVICE.md#focused-discovery-development). Defaults to `catalog`. | Available operation names, a selected schema or contract section. |
 | `poima_call` | Required `method`, optional object `params` and capture-only `image`. | The native operation result or error. |
+| `poima_build` | Required build `method` and object `params`. | A session-local job receipt for a trusted build; inspect it through the world API. |
+
+[Host-configured development profiles](DEVELOPMENT_PROFILES.md) authorize native
+publishing and export. Their execution tool requires separate provider consent;
+compile, publish and export cannot use `poima_call`. Approval of ordinary world
+edits does not approve build submission. World operations may still execute
+selected trusted gameplay; this is not a general code-execution sandbox. The host
+configures tools before accepting requests, and the adapter does not retry an
+uncertain submission.
 
 For a small mutation schema, call `poima_discover` with
 `{"view":"mutation","operation":"component.set","type":"Transform"}`.

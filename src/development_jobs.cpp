@@ -328,10 +328,33 @@ struct Jobs::Impl {
             try { result=run(*job); }
             catch(const std::exception& error) { result.state=job->launched?State::failed:State::launch_failed;result.error=std::string(error.what()).substr(0,4096); }
             catch(...) { result.state=job->launched?State::failed:State::launch_failed;result.error="Unexpected development worker failure."; }
+            std::string verified;
+            bool verify=false;
+            {
+                std::lock_guard lock(mutex);
+                verify=result.state==State::succeeded && !job->status.cancellation_requested && bool(job->request.verify_success);
+            }
+            // run() has already completed owned-child cleanup. Keep callbacks
+            // outside the owner mutex so polling/cancellation remain responsive.
+            if(verify) {
+                try {
+                    verified=job->request.verify_success();
+                    if(verified.size()>65536)throw std::runtime_error("Success verification result exceeds 65536 bytes.");
+                    if(!valid_utf8(verified))throw std::runtime_error("Success verification result is not valid UTF-8.");
+                }catch(const std::exception& error) {
+                    result.state=State::failed;
+                    result.error="Success verification failed: "+std::string(error.what()).substr(0,4096);
+                    verified.clear();
+                }catch(...) {
+                    result.state=State::failed;result.error="Success verification failed with an unknown exception.";
+                    verified.clear();
+                }
+            }
             {
                 std::lock_guard lock(mutex);
                 job->status.state=job->status.cancellation_requested?State::cancelled:result.state;
                 job->status.exit_code=result.exit_code;job->status.error=std::move(result.error);
+                job->status.result=job->status.state==State::succeeded?std::move(verified):std::string{};
                 job->status.elapsed=std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now()-job->started);
             }
         }
@@ -339,7 +362,7 @@ struct Jobs::Impl {
 };
 Jobs::Jobs(Limits limits):impl_(std::make_unique<Impl>(limits)) {}
 Jobs::~Jobs()=default;
-JobId Jobs::submit(Request request) {
+void validate_request(const Request& request) {
     require(request.executable.is_absolute() && request.working_directory.is_absolute(),"Executable and working directory must be absolute paths.");
     require(request.executable.native().find(std::filesystem::path::value_type{})==std::filesystem::path::string_type::npos && request.working_directory.native().find(std::filesystem::path::value_type{})==std::filesystem::path::string_type::npos,"Paths cannot contain NUL.");
     require(request.executable.native().size()<=32768 && request.working_directory.native().size()<=32768,"Job paths exceed 32768 native units.");
@@ -377,6 +400,9 @@ JobId Jobs::submit(Request request) {
 #endif
     }
     require(request.timeout>=std::chrono::milliseconds(1) && request.timeout<=std::chrono::hours(24),"Job timeout must be between 1 ms and 24 hours.");
+}
+JobId Jobs::submit(Request request) {
+    validate_request(request);
     auto& impl=*impl_;std::lock_guard lock(impl.mutex);
     if(impl.stopping)throw std::runtime_error("Development jobs are shutting down.");
     if(impl.jobs.size()>=impl.limits.retained_jobs)throw std::runtime_error("Development job capacity reached; forget a terminal job.");

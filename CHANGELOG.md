@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.91
+
+- Add owner-configured native C# publication and game export jobs, with fixed tools, complete child environments, guarded relative paths and retry receipts.
+- Verify artifacts and bundle inventories on the worker before reporting success; return compact hashes and target information without blocking world queries.
+- Require the separate MCP `poima_build` tool for compile, publish and export submissions. World editing permission does not authorize build jobs. [Contract](docs/DEVELOPMENT_PROFILES.md).
+- Qualify genuine Native AOT publication and compiled callbacks on Windows and Linux, Windows game export, standalone/shared profile startup and native contract regressions. Preserve failed attempts and platform limits. [Evidence](docs/evidence/m2-development-profiles.json).
+
 ## 0.0.90
 
 - Native development jobs can receive a complete per-job environment, including an explicitly empty one, without changing the host environment. Validate Unicode, duplicate names and size bounds before accepting work. [Contract](docs/DEVELOPMENT_JOBS.md#per-job-environments).

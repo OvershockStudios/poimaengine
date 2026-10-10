@@ -30,12 +30,16 @@ int run_mcp_cli(int argc,char** argv) {
     // Startup and usage failures must not put the ordinary CLI envelope on
     // MCP stdout. Only the established protocol session writes that stream.
     const auto usage=[](const char* message) {std::cerr<<message<<'\n';return 2;};
-    if(argc!=4 && argc!=6)return usage("Use: mcp --world <world.json> | mcp --endpoint <name> [--timeout-ms N].");
+    if(argc!=4 && argc!=6)return usage("Use: mcp --world <world.json> [--development-profiles file.json] | mcp --endpoint <name> [--timeout-ms N].");
     const std::string_view kind=argv[2],value=argv[3];
     if(value.empty() || value.starts_with("--"))return usage("Missing MCP world path or endpoint.");
     unsigned timeout=30000;
+    std::string profiles;
     if(kind=="--world") {
-        if(argc!=4)return usage("MCP standalone world mode does not accept a connection timeout.");
+        if(argc==6) {
+            if(std::string_view(argv[4])!="--development-profiles" || !*argv[5] || std::string_view(argv[5]).starts_with("--"))return usage("MCP world mode accepts only --development-profiles file.json.");
+            profiles=argv[5];
+        }
     } else if(kind=="--endpoint") {
         if(!endpoint_name(value))return usage("Invalid MCP endpoint name.");
         if(argc==6) {
@@ -46,7 +50,7 @@ int run_mcp_cli(int argc,char** argv) {
         }
     } else return usage("Choose exactly one MCP world path or endpoint.");
     try {
-        return kind=="--world" ? poima::run_mcp_world(std::string(value)) : poima::run_mcp_connected(std::string(value),timeout);
+        return kind=="--world" ? poima::run_mcp_world(std::string(value),profiles) : poima::run_mcp_connected(std::string(value),timeout);
     } catch(const std::exception& error) {
         std::cerr<<"Poima MCP session failed: "<<error.what()<<'\n';return 4;
     }
@@ -112,9 +116,23 @@ poima::Reply run(int argc, char** argv) {
         return poima::run_game(options);
     }
     if(command=="serve") {
-        if(argc!=5 || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--") || std::string_view(argv[3])!="--endpoint" || !endpoint_name(argv[4]))
-            return poima::usage_error("Use: serve <world.json> --endpoint <name>; name is 1..64 ASCII letters/digits/_/-.");
-        return {poima::run_shared_world(argv[2],argv[4]),{}};
+        if((argc!=5 && argc!=7) || std::string_view(argv[2]).empty() || std::string_view(argv[2]).starts_with("--") || std::string_view(argv[3])!="--endpoint" || !endpoint_name(argv[4]))
+            return poima::usage_error("Use: serve <world.json> --endpoint <name> [--development-profiles file.json].");
+        std::string profiles;
+        if(argc==7) {
+            if(std::string_view(argv[5])!="--development-profiles" || !*argv[6] || std::string_view(argv[6]).starts_with("--"))return poima::usage_error("Serve accepts only one development profile file.");
+            profiles=argv[6];
+        }
+        return {poima::run_shared_world(argv[2],argv[4],profiles),{}};
+    }
+    if(command=="world") {
+        if((argc!=3 && argc!=5) || !*argv[2] || std::string_view(argv[2]).starts_with("--"))return poima::usage_error("Use: world <world.json> [--development-profiles file.json].");
+        std::string profiles;
+        if(argc==5) {
+            if(std::string_view(argv[3])!="--development-profiles" || !*argv[4] || std::string_view(argv[4]).starts_with("--"))return poima::usage_error("World accepts only one development profile file.");
+            profiles=argv[4];
+        }
+        return {poima::run_world_session(argv[2],profiles),{}};
     }
     if(command=="connect") {
         if((argc!=3 && argc!=5) || !endpoint_name(argv[2]))return poima::usage_error("Use: connect <endpoint> [--timeout-ms N].");
@@ -223,7 +241,6 @@ poima::Reply run(int argc, char** argv) {
 int main_utf8(int argc, char** argv) {
     if(argc>=2 && std::string_view(argv[1])=="mcp")return run_mcp_cli(argc,argv);
     try {
-        if (argc == 3 && std::string_view(argv[1]) == "world") return poima::run_world_session(argv[2]);
         const auto reply = run(argc, argv);
         if(!reply.json.empty())std::cout << reply.json << '\n';
         return reply.exit_code;

@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 #include "poima/development_jobs.hpp"
 #include <chrono>
+#include <atomic>
+#include <condition_variable>
 #include <cstdlib>
 #include <cwchar>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <mutex>
 #include <stdexcept>
 #include <thread>
 #ifdef _WIN32
@@ -87,6 +90,24 @@ dev::Status await_output(dev::Jobs& jobs,dev::JobId id,const std::string& text) 
     }
     throw std::runtime_error("Child readiness was not observed.");
 }
+struct VerificationGate {
+    std::mutex mutex;std::condition_variable wake;
+    bool entered=false,released=false,finished=false,destroy_started=false,destroy_done=false;
+    std::string verify() {
+        std::unique_lock lock(mutex);entered=true;wake.notify_all();
+        check(wake.wait_for(lock,5s,[&]{return released;}),"Verification gate was not released.");
+        finished=true;wake.notify_all();return "{\"verified\":true}";
+    }
+    void await_entry() {
+        std::unique_lock lock(mutex);
+        check(wake.wait_for(lock,5s,[&]{return entered;}),"Success callback did not start.");
+    }
+    void release() {std::lock_guard lock(mutex);released=true;wake.notify_all();}
+};
+struct ReleaseVerification {
+    VerificationGate& gate;
+    ~ReleaseVerification(){gate.release();}
+};
 int peer(int argc,char** argv) {
 #ifdef _WIN32
     _setmode(_fileno(stdout),_O_BINARY);_setmode(_fileno(stderr),_O_BINARY);
@@ -106,6 +127,11 @@ int peer(int argc,char** argv) {
         std::cerr<<"diagnostic\n";return 0;
     }
     if(mode=="fail") { std::cerr<<"bad source\n";return 7; }
+    if(mode=="verification") {
+        std::ofstream output(utf8_path(argv[3]),std::ios::binary);
+        output<<"verified-child-artifact";output.close();
+        check(bool(output),"Cannot write verification fixture.");return 0;
+    }
 #ifndef _WIN32
     if(mode=="descriptor") { errno=0;check(fcntl(std::stoi(argv[3]),F_GETFD)==-1 && errno==EBADF,"Unrelated owner descriptor leaked into child.");return 0; }
     if(mode=="closed-standard") {
@@ -149,6 +175,16 @@ int test_main(int argc,char** argv) {
         struct Cleanup { std::filesystem::path path;~Cleanup() { std::error_code error;std::filesystem::remove_all(path,error); } } cleanup{root};
         auto request=[&](std::string mode) { return dev::Request{executable,root/"cwd space",{"--peer",std::move(mode)},5s}; };
         dev::Jobs jobs({4,1024});
+        {
+            auto valid=request("echo");valid.executable=root/"not-created-validation-only";
+            valid.working_directory=root/"also-not-created";
+            dev::validate_request(valid);
+            check(jobs.list().empty(),"Direct validation queued a job.");
+            auto invalid=valid;invalid.environment=std::vector<std::pair<std::string,std::string>>{{"BAD=KEY","value"}};
+            bool rejected=false;
+            try {dev::validate_request(invalid);}catch(const std::invalid_argument&){rejected=true;}
+            check(rejected && jobs.list().empty(),"Direct malformed environment validation accepted or queued a job.");
+        }
         auto echo=request("echo");echo.arguments.insert(echo.arguments.end(),{"","hello world","quote\"slash\\","$(no-shell)","unicode-\xE2\x98\x83","slashes\\\\\\\"quote","trailing\\\\\\","line\nnext\ttab","& | ; %path%"});
         const auto echoed=await(jobs,jobs.submit(echo));
         check(echoed.state==dev::State::succeeded && echoed.exit_code==0,"Echo did not succeed.");
@@ -224,6 +260,90 @@ int test_main(int argc,char** argv) {
             key_bound.environment=Environment{{longest_key,longest_value}};key_bound.arguments.push_back(longest_key);
             observe(key_bound,"["+longest_key+"]=present[32768]\n");
         }
+        {
+            // Verification inspects real child output, runs off the owner, and
+            // publishes nothing while still running or after a failed check.
+            const auto owner=std::this_thread::get_id();const auto artifact=root/"verified-artifact";
+            auto verified=request("verification");verified.arguments.push_back(path_text(artifact));
+            std::atomic<unsigned> calls=0;
+            dev::Jobs verification_jobs({4,1024});
+            verified.verify_success=[&] {
+                ++calls;check(std::this_thread::get_id()!=owner,"Verification ran on the owner thread.");
+                std::ifstream input(artifact,std::ios::binary);std::string contents;std::getline(input,contents);
+                check(contents=="verified-child-artifact","Verification ran before the child wrote its artifact.");
+                return std::string("{\"artifact\":\"verified-child-artifact\"}");
+            };
+            auto result=await(verification_jobs,verification_jobs.submit(verified));
+            check(result.state==dev::State::succeeded && result.exit_code==0 && calls==1 &&
+                result.result=="{\"artifact\":\"verified-child-artifact\"}","Verified child did not publish its result.");
+            verification_jobs.forget(result.id);
+            auto rejected=[&](std::function<std::string()> callback,const char* message) {
+                auto child=request("echo");child.verify_success=std::move(callback);
+                const auto status=await(verification_jobs,verification_jobs.submit(std::move(child)));
+                check(status.state==dev::State::failed && status.exit_code==0 && status.result.empty() &&
+                    status.error.find(message)!=std::string::npos,"Bad verification did not fail without publishing a result.");
+                verification_jobs.forget(status.id);
+            };
+            rejected([]()->std::string{throw std::runtime_error("artifact mismatch");},"artifact mismatch");
+            rejected([]()->std::string{throw 17;},"unknown exception");
+            rejected([]{return std::string(65537,'x');},"65536 bytes");
+            for(const auto& malformed:std::vector<std::string>{std::string(1,char(0xff)),"\xC0\xAF","\xED\xA0\x80","\xE2\x98"})
+                rejected([malformed]{return malformed;},"UTF-8");
+            auto boundary=request("echo");
+            const std::string maximum=std::string(65533,'x')+"\xE2\x98\x83";
+            boundary.verify_success=[maximum]{return maximum;};
+            result=await(verification_jobs,verification_jobs.submit(boundary));
+            check(result.state==dev::State::succeeded && result.result==maximum,"Valid 65536-byte verification result rejected.");verification_jobs.forget(result.id);
+            auto unchecked_json=request("echo");unchecked_json.verify_success=[]{return "caller validates content";};
+            result=await(verification_jobs,verification_jobs.submit(unchecked_json));
+            check(result.state==dev::State::succeeded && result.result=="caller validates content","Jobs unexpectedly parsed result content.");verification_jobs.forget(result.id);
+            calls=0;
+            auto skipped=[&](dev::Request child,dev::State expected) {
+                child.verify_success=[&]{++calls;return "unexpected";};
+                const auto status=await(verification_jobs,verification_jobs.submit(std::move(child)));
+                check(status.state==expected && status.result.empty() && calls==0,"Callback ran for a failed child.");verification_jobs.forget(status.id);
+            };
+            skipped(request("fail"),dev::State::failed);
+            auto missing=request("echo");missing.executable=root/"missing-verified-child";skipped(missing,dev::State::launch_failed);
+            auto expired=request("sleep");expired.timeout=100ms;skipped(expired,dev::State::timed_out);
+            auto cancelled=request("sleep");cancelled.verify_success=[&]{++calls;return "unexpected";};
+            const auto active=verification_jobs.submit(cancelled);await_output(verification_jobs,active,"ready");
+            auto pending=request("echo");pending.verify_success=cancelled.verify_success;const auto queued=verification_jobs.submit(pending);
+            check(verification_jobs.cancel(queued) && verification_jobs.cancel(active),"Cannot cancel callback-skip fixtures.");
+            for(auto id:{active,queued}) {
+                result=await(verification_jobs,id);check(result.state==dev::State::cancelled && result.result.empty() && calls==0,"Cancelled job ran verification.");verification_jobs.forget(id);
+            }
+        }
+        {
+            VerificationGate gate;dev::Jobs scoped;ReleaseVerification release{gate};
+            auto child=request("echo");child.verify_success=[&]{return gate.verify();};
+            const auto id=scoped.submit(child);gate.await_entry();
+            const auto before=std::chrono::steady_clock::now();const auto active=scoped.poll(id);
+            check(active && active->state==dev::State::running && active->result.empty(),"Unfinished verification published success.");
+            check(scoped.cancel(id),"Cannot cancel during success verification.");
+            check(std::chrono::steady_clock::now()-before<1s,"Verification blocked owner poll/cancel.");
+            gate.release();const auto cancelled=await(scoped,id);
+            check(cancelled.state==dev::State::cancelled && cancelled.exit_code==0 && cancelled.cancellation_requested &&
+                cancelled.result.empty(),"Cancellation lost to verification success.");
+        }
+        {
+            VerificationGate gate;auto scoped=std::make_unique<dev::Jobs>();ReleaseVerification release{gate};
+            auto child=request("echo");child.verify_success=[&]{return gate.verify();};
+            scoped->submit(child);gate.await_entry();
+            std::thread destroyer([&] {
+                {std::lock_guard lock(gate.mutex);gate.destroy_started=true;gate.wake.notify_all();}
+                scoped.reset();
+                {std::lock_guard lock(gate.mutex);gate.destroy_done=true;gate.wake.notify_all();}
+            });
+            struct Join {VerificationGate& gate;std::thread& thread;~Join(){gate.release();if(thread.joinable())thread.join();}} join{gate,destroyer};
+            {
+                std::unique_lock lock(gate.mutex);
+                check(gate.wake.wait_for(lock,5s,[&]{return gate.destroy_started;}),"Destructor did not start.");
+                check(!gate.wake.wait_for(lock,100ms,[&]{return gate.destroy_done;}),"Destructor returned before verification completed.");
+            }
+            gate.release();destroyer.join();
+            check(gate.finished && gate.destroy_done,"Destructor did not join its active verifier.");
+        }
         const auto failed=await(jobs,jobs.submit(request("fail")));
         check(failed.state==dev::State::failed && failed.exit_code==7 && failed.standard_error.find("bad source")!=std::string::npos,"Nonzero exit was not reported.");
         jobs.forget(failed.id);
@@ -270,7 +390,7 @@ int test_main(int argc,char** argv) {
         auto oversized=request("echo");oversized.arguments.push_back(std::string(65537,'a'));
         invalid=false;try { jobs.submit(oversized); }catch(const std::invalid_argument&) { invalid=true; }check(invalid,"Oversized arguments accepted.");
         check(jobs.list().empty(),"Forgotten jobs retained.");
-        std::cout<<"development_jobs: argument/environment fidelity, cwd, diagnostics, failures, limits, cancel, timeout and tree cleanup passed\n";
+        std::cout<<"development_jobs: argument/environment fidelity, cwd, diagnostics, verification, failures, limits, cancel, timeout and tree cleanup passed\n";
         return 0;
     } catch(const std::exception& error) { std::cerr<<error.what()<<'\n';return 1; }
 }

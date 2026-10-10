@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
@@ -25,6 +26,11 @@ struct Request {
     // values at most 32768 UTF-8 bytes without NUL; total key/value plus
     // '=' and NUL bytes at most 131072. Duplicate names follow OS case rules.
     std::optional<std::vector<std::pair<std::string,std::string>>> environment=std::nullopt;
+    // Runs on the worker only after a zero exit and owned-child cleanup. Return
+    // at most 65536 bytes of valid UTF-8; JSON/content validation is the caller's
+    // responsibility. May perform bounded IO, but is not interrupted by timeout
+    // or cancellation. Cancellation suppresses success; destruction waits for it.
+    std::function<std::string()> verify_success={};
 };
 struct Status {
     JobId id=0;
@@ -36,7 +42,13 @@ struct Status {
     std::uint64_t output_bytes=0,error_bytes=0;
     bool output_truncated=false,error_truncated=false,cancellation_requested=false;
     std::chrono::milliseconds elapsed{0};
+    // Published atomically with success; empty for all other states. Empty is
+    // also allowed when no verifier is supplied or it returns an empty string.
+    std::string result;
 };
+// Validate request fields without filesystem probes, queuing or execution.
+// Throws std::invalid_argument for the same field errors as Jobs::submit.
+void validate_request(const Request& request);
 struct Limits {
     std::size_t retained_jobs=32,diagnostic_bytes_per_stream=32768;
 };
