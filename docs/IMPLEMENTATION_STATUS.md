@@ -1,8 +1,37 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.84**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.85**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.85 adds [Relay Yard](../examples/relay-yard/README.md), a complete
+small compiled first-person integration game. Three real camera-ray pickups
+unlock an imported Idle/Run courier's native route around cover; an in-range
+terminal Use after arrival completes the objective. Compiled menus provide
+checkpoints, visible save errors and current native preferences. The sample
+reuses the exact original licensed FBX intake and reviewed locomotion component
+layouts. It adds no engine API or schema surface.
+
+Actual Native AOT publication is qualified on Windows and Linux. Both semantic
+playthroughs pass four groups and 5,492 native operations each: welcome gating,
+missing-save and negative-use outcomes, premature terminal rejection, repeated
+compiled saves, guarded retries, exact partial restoration, native courier
+collision/animation and completion. The partial save contains one collected
+cell and a stationary courier; this checkpoint does not establish active-motion
+save coverage. [Evidence](evidence/m2-relay-yard.json) preserves earlier failed
+attempts and their recovery rather than relabelling them as passes.
+
+Windows exported-game qualification runs on both laptop GPUs. Each removes the
+owned source copy, relocates the immutable bundle outside the checkout and
+launches from an unrelated directory with a system-only path. One native
+process collects a cell and saves; a distinct native process uses Welcome Load,
+restores the exact partial snapshot under its independent current player
+configuration, and completes the remaining game. Seven native frame captures
+per GPU observe welcome, menus, restore, Run and final Idle. Public player
+identities/configuration are observed; hidden preference epochs are not claimed.
+These checks do not establish physical input, audibility, representative
+performance, clean-machine deployment or full Alpha readiness. Protocol 1,
+authoring-core v1, schema revision 70 and services epoch 7 remain unchanged.
 
 Version 0.0.84 removes the native player's artificial exit after 32 interactive
 checkpoint replacements. Restores retain the same window and current preference

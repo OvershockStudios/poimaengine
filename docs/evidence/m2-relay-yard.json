@@ -1,0 +1,2386 @@
+{
+  "format": "poima.relay-yard-integration",
+  "version": 1,
+  "engine_version": "0.0.85",
+  "date": "2026-10-10",
+  "passed": true,
+  "scope": "A complete small compiled first-person game and source-free Windows fresh-process checkpoint continuation. This is an integration workload toward Alpha, not full engine or Alpha qualification.",
+  "contracts": {
+    "protocol": 1,
+    "authoring_core": "v1",
+    "schema_revision": 70,
+    "services_epoch": 7,
+    "public_engine_abi_or_schema_changed": false
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "seconds": 73.71828630699974,
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "log_sha256": "9e6ab3709ea65bfe1b1f1567409b462544bbae7e8efeb6780e264d77370de025",
+      "binary_sha256": "8174b7a5cb1c9bf0b483d3925f1253a3dd45e3137ee40ebf37cb2556fc5e9fe9"
+    },
+    {
+      "host": "linux",
+      "seconds": 66.24907580699983,
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "log_sha256": "bceae818bef94eae24864f7a7168a89936a90273c8c4f1ee467693c00f322211",
+      "binary_sha256": "1bdb2493b0ce4c1f1839f5d63c8a08c5fc4d5afd8389e2985329da6d1586ab47"
+    },
+    {
+      "host": "authoring",
+      "seconds": 71.9646363339998,
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "log_sha256": "1a4738f8eba8be76dcc8edc09af4ffafa653d17fe1d812ef0958977dbe203fd1",
+      "binary_sha256": "bcc746660f7779090db952a37340ad5a6f833a1429bf97ea3a550bb7bb61f177"
+    }
+  ],
+  "selected_regressions": [
+    {
+      "host": "windows",
+      "raw_report_sha256": "a428009def41cdf0bbc8f40f8df998733299b0086cf0eeaa196e5d12ed83a369",
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.6232309399997575,
+          "log_sha256": "771ae321a673aa7dd08b8aded5df6e11654ea8c585fc86aaa544ea1d4161edd5"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5696307570001409,
+          "log_sha256": "6d767ff9df11bd64b408d5722266c1631a0a560072151e091a75916be67e0c00"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.9265047779999804,
+          "log_sha256": "313ec730b946dee9e5d4d9409bb601445e4ff8de165149a199e59a83b9e5ff22"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 7.546481851999943,
+          "log_sha256": "cad88b2b2097578c27bf4e6a41342d9c344c5921cad5e5790c6d1a6fdfe4b197"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 2.8269527440002093,
+          "log_sha256": "e86a3e8ea2814a3c311666db57940fd6bb07e9d134282be3cddb6a3730bee9a9"
+        },
+        {
+          "name": "project_contract",
+          "exit_code": 0,
+          "seconds": 5.686920227999963,
+          "log_sha256": "597bd034538e1865d3dd544fd4bdd724c0a2688400663a160ab3e7530b1a4fb7"
+        },
+        {
+          "name": "shared_session_contract",
+          "exit_code": 0,
+          "seconds": 1.0732179120000183,
+          "log_sha256": "0fe041e9f8b9800f4712a895e299332e01aaf18d6901d8371c107ac1b54ec8e6"
+        }
+      ],
+      "binary_sha256": "8174b7a5cb1c9bf0b483d3925f1253a3dd45e3137ee40ebf37cb2556fc5e9fe9"
+    },
+    {
+      "host": "linux",
+      "raw_report_sha256": "7dc44110899eb824b29851855ebafc947f121af050be1bfffe23ab9dc6dcaf61",
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.3731383829999686,
+          "log_sha256": "9edc4c1f47c3239df3f2de11e68b9087d8a01f0af0cfb102557625a68f4bd4bf"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5200070699997923,
+          "log_sha256": "8e47fb1aa943f59befc36e922a73970e74775a685a459e33341ef2804f9f2ede"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.1740974019999157,
+          "log_sha256": "8d0c0e39f828736de31ad48775701af50afdb479e561d51b20f44c8a17df7370"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 11.455231199000082,
+          "log_sha256": "60dce5702a4a9684370c4d6ecf4dd146e70049fc8089b01178aedcedcc74e597"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 1.9755056240001068,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        },
+        {
+          "name": "project_contract",
+          "exit_code": 0,
+          "seconds": 15.016946836999978,
+          "log_sha256": "50b368aae284f1e961bfa8b25d1c51a02931481b7d281fef955fab53982cffc3"
+        },
+        {
+          "name": "shared_session_contract",
+          "exit_code": 0,
+          "seconds": 1.5728575130001445,
+          "log_sha256": "529e65de41fa0642b946308343d183c1c51d1a1213c3fef4bb366005e3e648b9"
+        }
+      ],
+      "binary_sha256": "1bdb2493b0ce4c1f1839f5d63c8a08c5fc4d5afd8389e2985329da6d1586ab47"
+    },
+    {
+      "host": "authoring",
+      "raw_report_sha256": "1e30501bf62f81b18bc26345a213fcbae9ba2c02b6444d6cd7263561e4ff36ee",
+      "checks": [
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.121579899000153,
+          "log_sha256": "4f6b55c20a862fd61c7c6146b29c6487234d3a9f2a7bf477a4b63fe825191d84"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.4690185620002012,
+          "log_sha256": "bb4376d674cbb436e8296cf262910139c82294066114f723040ab5be71f33541"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.572978946999683,
+          "log_sha256": "3bbdf91ac554ef0b2ea0f2a3c02fd6a61518a20f2b1277089092ce615c296274"
+        },
+        {
+          "name": "player_settings_contract",
+          "exit_code": 0,
+          "seconds": 8.395713906999845,
+          "log_sha256": "06d4a8b219cb8131736d255ec62083adfe74311b7ff16ffd9c4a5b22fc21d73e"
+        },
+        {
+          "name": "player_service_contract",
+          "exit_code": 0,
+          "seconds": 1.4730560840002909,
+          "log_sha256": "b6b911d2af892995ca2afbe7f47a7467f36b1f9cec3a063f72a2dbda2a96913a"
+        },
+        {
+          "name": "project_contract",
+          "exit_code": 0,
+          "seconds": 13.111103512999762,
+          "log_sha256": "5de60257fe075b1d6ec9c9a13bde493d063bd7a939e0788b2f4cb44a3de1b461"
+        },
+        {
+          "name": "shared_session_contract",
+          "exit_code": 0,
+          "seconds": 1.0214730470001996,
+          "log_sha256": "60a5adb20bb2ca51ecb34861dcea45f5770eff55c078301fe6fb69c7e5d5af8d"
+        }
+      ],
+      "binary_sha256": "bcc746660f7779090db952a37340ad5a6f833a1429bf97ea3a550bb7bb61f177"
+    }
+  ],
+  "publications": [
+    {
+      "host": "windows",
+      "raw_report_sha256": "93fd47620a0105895f6f03ebf5c74a6a1d91d64fa3157106d3d33bd28417c143",
+      "post_publication_verifier_passed": true,
+      "qualification_report_sha256": "6b76cf6ffda03b72f662fb23d4861a585f0ac62cc717befaeda83b29498fc32e",
+      "sdk": "10.0.401",
+      "commands": [
+        {
+          "name": "aot",
+          "seconds": 22.721936600000845,
+          "exit_code": 0,
+          "timed_out": false,
+          "log_sha256": "80ba69807bdee7b0c57ecea9ad40340d0cb73728f2f9d19b71205cefd21a79f4"
+        }
+      ],
+      "descriptor_sha256": "35bc7b38a4e489bf3c35659545c05b9b8aeb6207bb572d8fa2763c9a2236e864",
+      "type": "Poima.Examples.RelayYardGame",
+      "identity": "poima.examples.relay-yard",
+      "state_bytes": 328,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1",
+        "player_preferences_v1"
+      ],
+      "inventory": [
+        {
+          "path": "game.poima-components.json",
+          "size": 1771,
+          "sha256": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1407488,
+          "sha256": "205a81821a441f885a1c1791a800ad327f0dcbdfb6f403061162f17bede9e8ed",
+          "role": "library"
+        }
+      ],
+      "global_json_sha256": "9969064a379ad96f0fd9358b4133bf2652018a32c60d44f37a0638168381a90d"
+    },
+    {
+      "host": "linux",
+      "raw_report_sha256": "6f491901288d3b0a8305a4b33d64b43ea8bc8b84190064b9a55fcd19a67bad1a",
+      "post_publication_verifier_passed": true,
+      "qualification_report_sha256": null,
+      "sdk": "10.0.401",
+      "commands": [
+        {
+          "name": "aot",
+          "seconds": 104.2581665040002,
+          "exit_code": 0,
+          "timed_out": false,
+          "log_sha256": "9c3b16712c1871e6c508e77c815395bfa1d64e059a26c1c1c5213992506279c0"
+        }
+      ],
+      "descriptor_sha256": "7f42d6aaeb2237d15ba3209f46653b5eba592d46c3782dbaf3c3eb5f56ba8241",
+      "type": "Poima.Examples.RelayYardGame",
+      "identity": "poima.examples.relay-yard",
+      "state_bytes": 328,
+      "required_features": [
+        "baseline_v7",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1",
+        "player_preferences_v1"
+      ],
+      "inventory": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1656680,
+          "sha256": "9b757ad5a923abc792a04a10fd0f40ff9d92dd3162000d0ba78df4f4a7cc9e59",
+          "role": "library"
+        },
+        {
+          "path": "game.poima-components.json",
+          "size": 1771,
+          "sha256": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        }
+      ],
+      "global_json_sha256": "9969064a379ad96f0fd9358b4133bf2652018a32c60d44f37a0638168381a90d"
+    }
+  ],
+  "semantic_cohorts": [
+    {
+      "host": "windows",
+      "passed": true,
+      "raw_report_sha256": "7b8aa22b58931fbc8889c8ef7dc87b65960df374b089e8067671336c751f02ca",
+      "rpc_count": 5492,
+      "checks": [
+        "Welcome gates game logic; missing Load surfaces a terminal outcome; Begin selects actual Idle",
+        "Wrong/no-hit/out-of-range Use cannot collect; real premature terminal Use remains locked",
+        "Repeated compiled saves, inert retries, stale guards and exact partial checkpoint restoration",
+        "All three roots truly despawn; native collision/navigation/IdleRun courier arrives; terminal ray alone completes"
+      ],
+      "elapsed_seconds": 2.272175200001584,
+      "clean_owners": 1,
+      "native_operation_counts": {
+        "asset.animation.sample": 17,
+        "asset.import": 2,
+        "asset.inspect": 1,
+        "asset.provenance.create": 1,
+        "asset.provenance.inspect": 1,
+        "asset.source.inspect": 8,
+        "component.schema.import": 1,
+        "runtime.component.get": 407,
+        "runtime.entity": 2706,
+        "runtime.gameplay.inspect": 1339,
+        "runtime.gameplay.load_native": 1,
+        "runtime.inspect": 492,
+        "runtime.raycast": 8,
+        "runtime.start": 1,
+        "runtime.step": 471,
+        "runtime.stop": 1,
+        "runtime.ui.activate": 17,
+        "runtime.ui.inspect": 10,
+        "save.configure": 1,
+        "world.inspect": 1,
+        "world.navigation.bake": 2,
+        "world.transact": 4
+      },
+      "rejected_codes": {
+        "-32004": 5,
+        "-32009": 1,
+        "-32010": 1,
+        "-32030": 1
+      },
+      "original_source_pins": {
+        "Model/characterMedium.fbx": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+        "Animations/run.fbx": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+        "Animations/idle.fbx": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+        "License.txt": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "authored_model": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+      "navigation": "fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce",
+      "original_clips": {
+        "Run": {
+          "index": 0,
+          "duration": 0.6666666865348816,
+          "name": "Run"
+        },
+        "Idle": {
+          "index": 1,
+          "duration": 1.0666667222976685,
+          "name": "Idle"
+        }
+      },
+      "complete_tick": 1248,
+      "completed_values": {
+        "Actor": "0000000000000000000000000000012c",
+        "AnimatedVisual": "00000000000000000000000000000190",
+        "AnimationChanges": 145,
+        "AnimationClip": 1,
+        "AnimationLoop": 1,
+        "AnimationMode": 0,
+        "AnimationRate": 1.0,
+        "AnimationTransitions": 9,
+        "Arrivals": 1,
+        "CellOne": "00000000000000000000000000000000",
+        "CellThree": "00000000000000000000000000000000",
+        "CellTwo": "00000000000000000000000000000000",
+        "Collected": 3,
+        "DeferredRateUpdates": 11,
+        "GoalX": 4.0,
+        "GoalZ": 0.0,
+        "Initialized": 1,
+        "LastCornerCount": 6,
+        "LastDisplacement": 0.0,
+        "LastHorizontalSpeed": 0.0,
+        "LastPathStatus": 0,
+        "LastSaveError": 0,
+        "LastSaveGeneration": "2",
+        "LastSaveState": 3,
+        "LockedUses": 1,
+        "Moving": 0,
+        "ObservedEpochHigh": "6973187972151039867",
+        "ObservedEpochLow": "-7660771039930559022",
+        "Phase": 2,
+        "Plans": 1,
+        "PreferenceNotice": 0,
+        "PreviousPositionValid": 1,
+        "PreviousSampleTick": "1247",
+        "PreviousX": 3.9471265671309084,
+        "PreviousZ": 0.057987788241007365,
+        "RateChanges": 136,
+        "RequestedRunRate": 0.0,
+        "RouteValid": 1,
+        "SaveHigh": "7612870337822287876",
+        "SaveKind": 1,
+        "SaveLow": "4606906899372395211",
+        "SaveNotice": 6,
+        "SavePending": 0,
+        "SaveSequence": "3",
+        "SaveStatusKey": 6,
+        "Started": 1,
+        "StatusKey": -1,
+        "Ticks": 1245,
+        "Won": 1
+      },
+      "courier_observation_count": 470,
+      "strict_single_tick_observation_count": 388,
+      "minimum_cover_clearance_m": 0.03390361212144921,
+      "maximum_animation_clock_error_seconds": 9.992007221626409e-16,
+      "checkpoint": {
+        "collected": 1,
+        "phase": "stationary_before_delivery",
+        "saved_tick": 567,
+        "generations": [
+          1,
+          2
+        ],
+        "restored_generation": 2,
+        "exact_partial_snapshot_restored": true,
+        "durable_inventory": {
+          ".lock": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "current.json": {
+            "bytes": 1097,
+            "sha256": "82b72a5d69ba14a8d5a38a3552ccfaf7e1aabdefaf080d2bce6033eccc09d245"
+          },
+          "p-3e790e38a449a7e9a8c31e701d5b82ea.bin": {
+            "bytes": 103327,
+            "sha256": "0a501d85ed24df7a21609b1da3c48ec8d6e79708ec7daca1c2a0c443ab0ff199"
+          },
+          "p-dee8102a464fa2c5d6057762a4b11298.bin": {
+            "bytes": 103332,
+            "sha256": "3738065305bff247cafaa2c502acd37fd3ab3b840c41551dacb7ee58102b8e78"
+          },
+          "previous.json": {
+            "bytes": 651,
+            "sha256": "e3b0f01aca8d999c532675995e808023c2f5790ee8f6eb40b1d8c948e3743e25"
+          }
+        }
+      },
+      "immutable_inputs_content_and_saves": true
+    },
+    {
+      "host": "linux",
+      "passed": true,
+      "raw_report_sha256": "270378dcfdc5652dc6efe316077daf83e11f534304fdff5c4fd64c08c0ebcb27",
+      "rpc_count": 5492,
+      "checks": [
+        "Welcome gates game logic; missing Load surfaces a terminal outcome; Begin selects actual Idle",
+        "Wrong/no-hit/out-of-range Use cannot collect; real premature terminal Use remains locked",
+        "Repeated compiled saves, inert retries, stale guards and exact partial checkpoint restoration",
+        "All three roots truly despawn; native collision/navigation/IdleRun courier arrives; terminal ray alone completes"
+      ],
+      "elapsed_seconds": 5.142191833000197,
+      "clean_owners": 1,
+      "native_operation_counts": {
+        "asset.animation.sample": 17,
+        "asset.import": 2,
+        "asset.inspect": 1,
+        "asset.provenance.create": 1,
+        "asset.provenance.inspect": 1,
+        "asset.source.inspect": 8,
+        "component.schema.import": 1,
+        "runtime.component.get": 407,
+        "runtime.entity": 2706,
+        "runtime.gameplay.inspect": 1339,
+        "runtime.gameplay.load_native": 1,
+        "runtime.inspect": 492,
+        "runtime.raycast": 8,
+        "runtime.start": 1,
+        "runtime.step": 471,
+        "runtime.stop": 1,
+        "runtime.ui.activate": 17,
+        "runtime.ui.inspect": 10,
+        "save.configure": 1,
+        "world.inspect": 1,
+        "world.navigation.bake": 2,
+        "world.transact": 4
+      },
+      "rejected_codes": {
+        "-32004": 5,
+        "-32009": 1,
+        "-32010": 1,
+        "-32030": 1
+      },
+      "original_source_pins": {
+        "Model/characterMedium.fbx": "18835fef534eede635b081ee7fe647d01a885550a591d2e6bf071010906167d8",
+        "Animations/run.fbx": "e635461fc8dace85ec67a7f7941e949a7c3f108b51ae4d2da1557e6e01749df8",
+        "Animations/idle.fbx": "c8a24e0294376ee5a195c56752a13310e1c0b5f8588a4db50e094120e3e4cc74",
+        "License.txt": "68280323c6dca1f532c71fb248a6f344abed39a574278a2edfa27801aea3d0cd"
+      },
+      "authored_model": "e1e3908ba527bc5b73a6275a5ce11b1e20dc4ca80d86f96fa703e3d3ba24c62c",
+      "navigation": "fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce",
+      "original_clips": {
+        "Run": {
+          "index": 0,
+          "duration": 0.6666666865348816,
+          "name": "Run"
+        },
+        "Idle": {
+          "index": 1,
+          "duration": 1.0666667222976685,
+          "name": "Idle"
+        }
+      },
+      "complete_tick": 1248,
+      "completed_values": {
+        "Actor": "0000000000000000000000000000012c",
+        "AnimatedVisual": "00000000000000000000000000000190",
+        "AnimationChanges": 145,
+        "AnimationClip": 1,
+        "AnimationLoop": 1,
+        "AnimationMode": 0,
+        "AnimationRate": 1.0,
+        "AnimationTransitions": 9,
+        "Arrivals": 1,
+        "CellOne": "00000000000000000000000000000000",
+        "CellThree": "00000000000000000000000000000000",
+        "CellTwo": "00000000000000000000000000000000",
+        "Collected": 3,
+        "DeferredRateUpdates": 11,
+        "GoalX": 4.0,
+        "GoalZ": 0.0,
+        "Initialized": 1,
+        "LastCornerCount": 6,
+        "LastDisplacement": 0.0,
+        "LastHorizontalSpeed": 0.0,
+        "LastPathStatus": 0,
+        "LastSaveError": 0,
+        "LastSaveGeneration": "2",
+        "LastSaveState": 3,
+        "LockedUses": 1,
+        "Moving": 0,
+        "ObservedEpochHigh": "4895392299689884275",
+        "ObservedEpochLow": "7064554695926243232",
+        "Phase": 2,
+        "Plans": 1,
+        "PreferenceNotice": 0,
+        "PreviousPositionValid": 1,
+        "PreviousSampleTick": "1247",
+        "PreviousX": 3.9471265671309084,
+        "PreviousZ": 0.057987788241007365,
+        "RateChanges": 136,
+        "RequestedRunRate": 0.0,
+        "RouteValid": 1,
+        "SaveHigh": "-7838770303981342777",
+        "SaveKind": 1,
+        "SaveLow": "5553037316926215634",
+        "SaveNotice": 6,
+        "SavePending": 0,
+        "SaveSequence": "3",
+        "SaveStatusKey": 6,
+        "Started": 1,
+        "StatusKey": -1,
+        "Ticks": 1245,
+        "Won": 1
+      },
+      "courier_observation_count": 470,
+      "strict_single_tick_observation_count": 388,
+      "minimum_cover_clearance_m": 0.03390361212144921,
+      "maximum_animation_clock_error_seconds": 9.992007221626409e-16,
+      "checkpoint": {
+        "collected": 1,
+        "phase": "stationary_before_delivery",
+        "saved_tick": 567,
+        "generations": [
+          1,
+          2
+        ],
+        "restored_generation": 2,
+        "exact_partial_snapshot_restored": true,
+        "durable_inventory": {
+          ".lock": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "current.json": {
+            "bytes": 1097,
+            "sha256": "636d80ba8539b660d4560f722997eacfe4eb054028dcebdbf37e9a8c1c6e00a5"
+          },
+          "p-2cba1a8b14702f7c190c349729c0b531.bin": {
+            "bytes": 103330,
+            "sha256": "ae092f145a99ed266a60f28678810e0904d98da4bf3f6f7349769c4cd03248bc"
+          },
+          "p-66a41eeb54983d277e5749ed0a8c130e.bin": {
+            "bytes": 103335,
+            "sha256": "c866db7fce482efe640634321bcba89381b00873bdecd2e99da2c0d9ae5f41f0"
+          },
+          "previous.json": {
+            "bytes": 651,
+            "sha256": "ae59e3c12e4878a5c24e64fbfa5e35ba3787091ec8f41d5b586d179e2e9af144"
+          }
+        }
+      },
+      "immutable_inputs_content_and_saves": true
+    }
+  ],
+  "exported_cohorts": [
+    {
+      "gpu_index": 1,
+      "passed": true,
+      "raw_report_sha256": "141cd548eb2b196916514be2581ef4b87451532dfdeee56ba6911b0e2d06c11b",
+      "rpc_count": 4580,
+      "elapsed_seconds": 93.52996059999896,
+      "checks": [
+        "Genuine Windows NativeAOT, imported body/Run/Idle, navigation, provenance and redistribution notices form an exact immutable export.",
+        "Owned original sources removed before relocated game serves from unrelated cwd with system-only PATH and runtime variables removed.",
+        "First native process drives its actual entry controller/ray to collect one cell, compiles no code, accepts native menu preferences and saves durable partial progress.",
+        "A distinct fresh native process invokes Welcome Load and restores the exact partial snapshot before any subsequent control; its current public player/configuration remains independent.",
+        "Remaining real controller pickups trigger native courier pathfinding and original Run/Idle playback; actual in-range terminal Use completes the objective.",
+        "Seven paused native captures observe welcome, menu, partial save/fresh restore, running courier and final scene/UI; no physical input or image-reference claim.",
+        "Both live players/runtime/hosts/transports exit cleanly; immutable bundle/supplied closures and durable checkpoint remain exact."
+      ],
+      "clean_native_commands": 6,
+      "clean_transports": 3,
+      "source_removed_before_serving": true,
+      "relocated_outside_checkout": true,
+      "system_only_launch_path": true,
+      "immutable_bundle_file_count": 61,
+      "bundle_inventory": {
+        "content/ASSET_CREDITS.txt": "c7b82db303fd45eab55574344480ed5aef25e6152943089d772d70c04ae2cbf8",
+        "content/world.json": "28a1d0eb04b7da4764e4a4557aeb1f834c69a4e3ddb983415b87e8221b96bd0b",
+        "content/world.json.assets/44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857.pprov": "44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857",
+        "content/world.json.assets/b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+        "content/world.json.assets/fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce.pnav": "fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce",
+        "game.json": "9b09c448ec24450301d64a45219500632341c0c17b61a8a943ac2554fddb52cb",
+        "gameplay/game.poima-components.json": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "gameplay/native-gameplay.json": "35bc7b38a4e489bf3c35659545c05b9b8aeb6207bb572d8fa2763c9a2236e864",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "205a81821a441f885a1c1791a800ad327f0dcbdfb6f403061162f17bede9e8ed",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "3b8ccfbec518665776e4cf510e9b5e30ee67344dc66771810236cc8039829676",
+        "runtime/bin/poima_desktop.dll": "15506e9a9ccb95841858a7816fc480f3d1644d379a4202b3d64aa743c65cf746",
+        "runtime/runtime.json": "2946a5ffe2afee1c1cc88667486114c8d1c99e35a6068030d9efdd6d7866ca99",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "partial_checkpoint": {
+        "saved_tick": 40,
+        "manifest_sha256": "fe1521f1a4e84062b5f750c403b40286da56952f618e4471394c06c180f4d321",
+        "payload_sha256": "2664e46e1fc5e4a50bb4727a4da7d413da7e3a93727edf6a26b2b31078f8b859",
+        "collected": 1,
+        "phase": "stationary_before_delivery",
+        "first_preference_revision": 3,
+        "first_preference_values": {
+          "audio.master_gain": 0.9,
+          "camera.vertical_fov": 65.0,
+          "graphics.frames_in_flight": 1,
+          "graphics.samples": 1,
+          "ui.scale": 1.25
+        }
+      },
+      "fresh_continuation": {
+        "exact_snapshot_restored": true,
+        "distinct_native_process": true,
+        "public_player_identity_distinct": true,
+        "hidden_preference_epochs_observed": false,
+        "current_preferences": {
+          "application": {
+            "applied_revision": 0,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.0,
+            "effective_vertical_fov": 60.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 0,
+            "presented_revision": 0,
+            "requested_master_gain": 1.0,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          },
+          "fields": {
+            "audio.master_gain": {
+              "application": "live",
+              "effective": 1.0,
+              "outcome": "disabled",
+              "requested": 1.0,
+              "requires_next_player": false,
+              "source": "session_override"
+            },
+            "camera.vertical_fov": {
+              "application": "live",
+              "effective": 60.0,
+              "outcome": "applied",
+              "requested": 60.0,
+              "requires_next_player": false,
+              "source": "session_override"
+            },
+            "graphics.frames_in_flight": {
+              "application": "next_player",
+              "effective": 1,
+              "next_effective": 1,
+              "outcome": "unchanged",
+              "requested": 1,
+              "requires_next_player": false,
+              "source": "explicit_option"
+            },
+            "graphics.samples": {
+              "application": "next_player",
+              "effective": 1,
+              "next_effective": 1,
+              "outcome": "unchanged",
+              "requested": 1,
+              "requires_next_player": false,
+              "source": "explicit_option"
+            },
+            "input.invert_x": {
+              "application": "live",
+              "effective": false,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "input.invert_y": {
+              "application": "live",
+              "effective": false,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "input.sensitivity_x": {
+              "application": "live",
+              "effective": 0.1,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "input.sensitivity_y": {
+              "application": "live",
+              "effective": 0.1,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "ui.scale": {
+              "application": "live",
+              "effective": 1.0,
+              "outcome": "applied",
+              "requested": 1.0,
+              "requires_next_player": false,
+              "source": "session_override"
+            }
+          },
+          "format": "poima.player-preferences.v1",
+          "profile": {
+            "content_hash": null,
+            "revision": 0,
+            "source": "none"
+          },
+          "revision": 0,
+          "sources": {
+            "audio.master_gain": "session_override",
+            "camera.vertical_fov": "session_override",
+            "graphics.frames_in_flight": "explicit_option",
+            "graphics.samples": "explicit_option",
+            "ui.scale": "session_override"
+          },
+          "values": {
+            "audio.master_gain": 1.0,
+            "camera.vertical_fov": 60.0,
+            "graphics.frames_in_flight": 1,
+            "graphics.samples": 1,
+            "ui.scale": 1.0
+          }
+        }
+      },
+      "completed_values": {
+        "Actor": "0000000000000000000000000000012c",
+        "AnimatedVisual": "00000000000000000000000000000190",
+        "AnimationChanges": 145,
+        "AnimationClip": 1,
+        "AnimationLoop": 1,
+        "AnimationMode": 0,
+        "AnimationRate": 1.0,
+        "AnimationTransitions": 9,
+        "Arrivals": 1,
+        "CellOne": "00000000000000000000000000000000",
+        "CellThree": "00000000000000000000000000000000",
+        "CellTwo": "00000000000000000000000000000000",
+        "Collected": 3,
+        "DeferredRateUpdates": 11,
+        "GoalX": 4.0,
+        "GoalZ": 0.0,
+        "Initialized": 1,
+        "LastCornerCount": 6,
+        "LastDisplacement": 0.0,
+        "LastHorizontalSpeed": 0.0,
+        "LastPathStatus": 0,
+        "LastSaveError": 0,
+        "LastSaveGeneration": "1",
+        "LastSaveState": 3,
+        "LockedUses": 0,
+        "Moving": 0,
+        "ObservedEpochHigh": "8331821653001301566",
+        "ObservedEpochLow": "4754348838921487410",
+        "Phase": 2,
+        "Plans": 1,
+        "PreferenceNotice": 0,
+        "PreviousPositionValid": 1,
+        "PreviousSampleTick": "751",
+        "PreviousX": 3.9471265671309084,
+        "PreviousZ": 0.057987788241007365,
+        "RateChanges": 136,
+        "RequestedRunRate": 0.0,
+        "RouteValid": 1,
+        "SaveHigh": "-3722630264047191658",
+        "SaveKind": 1,
+        "SaveLow": "9204719889413665435",
+        "SaveNotice": 6,
+        "SavePending": 0,
+        "SaveSequence": "1",
+        "SaveStatusKey": 6,
+        "Started": 1,
+        "StatusKey": -1,
+        "Ticks": 751,
+        "Won": 1
+      },
+      "completed_tick": 752,
+      "runtime_replacements": 1,
+      "pause_boundaries": [
+        {
+          "action": "begin",
+          "receipt_tick": 1,
+          "observed_tick": 1,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "menu",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "fov.plus",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "ui.plus",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "gain.minus",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "refresh",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "save",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "welcome.load",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "refresh",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "close",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        }
+      ],
+      "captures": {
+        "first-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "0ee7e498b9778973c4d78311030f014bcefc860a0da1f0e90de9301ad94f586d",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 1,
+          "animation": {
+            "clip": null,
+            "duration": 0.0,
+            "loop": true,
+            "playing": false,
+            "speed": 1.0,
+            "time": 0.0,
+            "transition": null
+          },
+          "collected": 0,
+          "won": 0
+        },
+        "partial-menu": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "a841cef9e5872a49a28843307a59f3712a177d968b8a7bc6f23ee3e9eebe9bf3",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 40,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.65,
+            "transition": null
+          },
+          "collected": 1,
+          "won": 0
+        },
+        "saved-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "63816638a1857c73758b291fb1c20e4d228a3b14c8fcefafc965066a1b3f940a",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 40,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.65,
+            "transition": null
+          },
+          "collected": 1,
+          "won": 0
+        },
+        "fresh-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "0ee7e498b9778973c4d78311030f014bcefc860a0da1f0e90de9301ad94f586d",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 1,
+          "animation": {
+            "clip": null,
+            "duration": 0.0,
+            "loop": true,
+            "playing": false,
+            "speed": 1.0,
+            "time": 0.0,
+            "transition": null
+          },
+          "collected": 0,
+          "won": 0
+        },
+        "restored-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "c1e7bb9ac216d3406992d93a37a9cb72a9eb9225fb44078bfea31d0dce9b0501",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 10808,
+            "distinct_scene_sample_colors": 77,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 2,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 40,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.65,
+            "transition": null
+          },
+          "collected": 1,
+          "won": 0
+        },
+        "courier-running": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "7ea8071617b333bcbdd8e918349d82974be1dc9a66cd8ce809f122c0a0a4958d",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 60,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 1,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 259,
+          "animation": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 0.9991667474935224,
+            "time": 0.03330555824978408,
+            "transition": {
+              "duration_ticks": 12,
+              "elapsed_ticks": 2,
+              "mode": "inertial",
+              "source_clip": null,
+              "source_frozen": true,
+              "source_loop": null,
+              "source_playing": null,
+              "source_speed": null,
+              "source_time": null,
+              "start_tick": 257,
+              "weight": 0.16666666666666666
+            }
+          },
+          "collected": 3,
+          "won": 0
+        },
+        "relay-complete": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "240aa97e4718354093580db9f94e80b8e80c29c9576d944c26c59a7259bbb664",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 123,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 0,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 752,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.5333332220713296,
+            "transition": null
+          },
+          "collected": 3,
+          "won": 1
+        }
+      },
+      "limitations": [
+        "Windows development host; source-free relocation is not clean-machine deployment.",
+        "Semantic guarded controller/UI requests and native Vulkan readbacks; not physical input or editor qualification.",
+        "Two actual native host processes with one live player each; not multiplayer, representative performance or whole Alpha.",
+        "Audio disabled; configured gain does not qualify sink behavior or audible output.",
+        "Public player identities/configuration prove independent lifetimes; hidden preference epochs are not exposed or claimed.",
+        "Original imported Run/Idle rig and native controller/navigation; no motion matching, IK, foot locking or general character creator.",
+        "Owned source copies are deleted; caller originals, bundles, external saves and failed evidence are retained."
+      ]
+    },
+    {
+      "gpu_index": 0,
+      "passed": true,
+      "raw_report_sha256": "d93fce707359169716cfebfbd1d42f21dc4a92f674a8f9aaaa7608d6c944183a",
+      "rpc_count": 4580,
+      "elapsed_seconds": 102.67822729999898,
+      "checks": [
+        "Genuine Windows NativeAOT, imported body/Run/Idle, navigation, provenance and redistribution notices form an exact immutable export.",
+        "Owned original sources removed before relocated game serves from unrelated cwd with system-only PATH and runtime variables removed.",
+        "First native process drives its actual entry controller/ray to collect one cell, compiles no code, accepts native menu preferences and saves durable partial progress.",
+        "A distinct fresh native process invokes Welcome Load and restores the exact partial snapshot before any subsequent control; its current public player/configuration remains independent.",
+        "Remaining real controller pickups trigger native courier pathfinding and original Run/Idle playback; actual in-range terminal Use completes the objective.",
+        "Seven paused native captures observe welcome, menu, partial save/fresh restore, running courier and final scene/UI; no physical input or image-reference claim.",
+        "Both live players/runtime/hosts/transports exit cleanly; immutable bundle/supplied closures and durable checkpoint remain exact."
+      ],
+      "clean_native_commands": 6,
+      "clean_transports": 3,
+      "source_removed_before_serving": true,
+      "relocated_outside_checkout": true,
+      "system_only_launch_path": true,
+      "immutable_bundle_file_count": 61,
+      "bundle_inventory": {
+        "content/ASSET_CREDITS.txt": "c7b82db303fd45eab55574344480ed5aef25e6152943089d772d70c04ae2cbf8",
+        "content/world.json": "a624c881e85316bf173609c865785ea0635801bf55820d73754111f3bbd5c5f1",
+        "content/world.json.assets/44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857.pprov": "44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857",
+        "content/world.json.assets/b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+        "content/world.json.assets/fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce.pnav": "fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce",
+        "game.json": "312aab48ec129f9bb2795e9fbc5c9d057cb1b8f9ba059f85abba843338d94860",
+        "gameplay/game.poima-components.json": "5a73eb6ada7fb7665cc5eed65a56d6ceaa5e1609e4b410498f49410b46a27ba7",
+        "gameplay/native-gameplay.json": "35bc7b38a4e489bf3c35659545c05b9b8aeb6207bb572d8fa2763c9a2236e864",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "205a81821a441f885a1c1791a800ad327f0dcbdfb6f403061162f17bede9e8ed",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "3b8ccfbec518665776e4cf510e9b5e30ee67344dc66771810236cc8039829676",
+        "runtime/bin/poima_desktop.dll": "15506e9a9ccb95841858a7816fc480f3d1644d379a4202b3d64aa743c65cf746",
+        "runtime/runtime.json": "2946a5ffe2afee1c1cc88667486114c8d1c99e35a6068030d9efdd6d7866ca99",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "partial_checkpoint": {
+        "saved_tick": 40,
+        "manifest_sha256": "110204dc924dfe381459c303ee0ca6da6ba28d066bb3e69b9bc3007b85737457",
+        "payload_sha256": "6adc778fc087f8056ae332961a413135325cbbbd102c59dbc1fbc0b69577e039",
+        "collected": 1,
+        "phase": "stationary_before_delivery",
+        "first_preference_revision": 3,
+        "first_preference_values": {
+          "audio.master_gain": 0.9,
+          "camera.vertical_fov": 65.0,
+          "graphics.frames_in_flight": 1,
+          "graphics.samples": 1,
+          "ui.scale": 1.25
+        }
+      },
+      "fresh_continuation": {
+        "exact_snapshot_restored": true,
+        "distinct_native_process": true,
+        "public_player_identity_distinct": true,
+        "hidden_preference_epochs_observed": false,
+        "current_preferences": {
+          "application": {
+            "applied_revision": 0,
+            "audio_outcome": "disabled",
+            "effective_ui_scale": 1.0,
+            "effective_vertical_fov": 60.0,
+            "invert_x": false,
+            "invert_y": false,
+            "observed_revision": 0,
+            "presented_revision": 0,
+            "requested_master_gain": 1.0,
+            "sensitivity_x": 0.1,
+            "sensitivity_y": 0.1,
+            "sink_gain": null
+          },
+          "fields": {
+            "audio.master_gain": {
+              "application": "live",
+              "effective": 1.0,
+              "outcome": "disabled",
+              "requested": 1.0,
+              "requires_next_player": false,
+              "source": "session_override"
+            },
+            "camera.vertical_fov": {
+              "application": "live",
+              "effective": 60.0,
+              "outcome": "applied",
+              "requested": 60.0,
+              "requires_next_player": false,
+              "source": "session_override"
+            },
+            "graphics.frames_in_flight": {
+              "application": "next_player",
+              "effective": 1,
+              "next_effective": 1,
+              "outcome": "unchanged",
+              "requested": 1,
+              "requires_next_player": false,
+              "source": "explicit_option"
+            },
+            "graphics.samples": {
+              "application": "next_player",
+              "effective": 1,
+              "next_effective": 1,
+              "outcome": "unchanged",
+              "requested": 1,
+              "requires_next_player": false,
+              "source": "explicit_option"
+            },
+            "input.invert_x": {
+              "application": "live",
+              "effective": false,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "input.invert_y": {
+              "application": "live",
+              "effective": false,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "input.sensitivity_x": {
+              "application": "live",
+              "effective": 0.1,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "input.sensitivity_y": {
+              "application": "live",
+              "effective": 0.1,
+              "outcome": "applied",
+              "requested": null,
+              "requires_next_player": false,
+              "source": "input_profile"
+            },
+            "ui.scale": {
+              "application": "live",
+              "effective": 1.0,
+              "outcome": "applied",
+              "requested": 1.0,
+              "requires_next_player": false,
+              "source": "session_override"
+            }
+          },
+          "format": "poima.player-preferences.v1",
+          "profile": {
+            "content_hash": null,
+            "revision": 0,
+            "source": "none"
+          },
+          "revision": 0,
+          "sources": {
+            "audio.master_gain": "session_override",
+            "camera.vertical_fov": "session_override",
+            "graphics.frames_in_flight": "explicit_option",
+            "graphics.samples": "explicit_option",
+            "ui.scale": "session_override"
+          },
+          "values": {
+            "audio.master_gain": 1.0,
+            "camera.vertical_fov": 60.0,
+            "graphics.frames_in_flight": 1,
+            "graphics.samples": 1,
+            "ui.scale": 1.0
+          }
+        }
+      },
+      "completed_values": {
+        "Actor": "0000000000000000000000000000012c",
+        "AnimatedVisual": "00000000000000000000000000000190",
+        "AnimationChanges": 145,
+        "AnimationClip": 1,
+        "AnimationLoop": 1,
+        "AnimationMode": 0,
+        "AnimationRate": 1.0,
+        "AnimationTransitions": 9,
+        "Arrivals": 1,
+        "CellOne": "00000000000000000000000000000000",
+        "CellThree": "00000000000000000000000000000000",
+        "CellTwo": "00000000000000000000000000000000",
+        "Collected": 3,
+        "DeferredRateUpdates": 11,
+        "GoalX": 4.0,
+        "GoalZ": 0.0,
+        "Initialized": 1,
+        "LastCornerCount": 6,
+        "LastDisplacement": 0.0,
+        "LastHorizontalSpeed": 0.0,
+        "LastPathStatus": 0,
+        "LastSaveError": 0,
+        "LastSaveGeneration": "1",
+        "LastSaveState": 3,
+        "LockedUses": 0,
+        "Moving": 0,
+        "ObservedEpochHigh": "8329270796914361543",
+        "ObservedEpochLow": "6218357990529363338",
+        "Phase": 2,
+        "Plans": 1,
+        "PreferenceNotice": 0,
+        "PreviousPositionValid": 1,
+        "PreviousSampleTick": "751",
+        "PreviousX": 3.9471265671309084,
+        "PreviousZ": 0.057987788241007365,
+        "RateChanges": 136,
+        "RequestedRunRate": 0.0,
+        "RouteValid": 1,
+        "SaveHigh": "-6494155228503868621",
+        "SaveKind": 1,
+        "SaveLow": "4068559117170651138",
+        "SaveNotice": 6,
+        "SavePending": 0,
+        "SaveSequence": "1",
+        "SaveStatusKey": 6,
+        "Started": 1,
+        "StatusKey": -1,
+        "Ticks": 751,
+        "Won": 1
+      },
+      "completed_tick": 752,
+      "runtime_replacements": 1,
+      "pause_boundaries": [
+        {
+          "action": "begin",
+          "receipt_tick": 1,
+          "observed_tick": 1,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "menu",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "fov.plus",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "ui.plus",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "gain.minus",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "refresh",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "save",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "welcome.load",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "refresh",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        },
+        {
+          "action": "close",
+          "receipt_tick": 40,
+          "observed_tick": 40,
+          "naturally_elapsed_ticks": 0
+        }
+      ],
+      "captures": {
+        "first-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "3d2d9c2a14da6f19c19ebbeb1857678170540463f2ad7f001ee4cfbfb6e32870",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 1,
+          "animation": {
+            "clip": null,
+            "duration": 0.0,
+            "loop": true,
+            "playing": false,
+            "speed": 1.0,
+            "time": 0.0,
+            "transition": null
+          },
+          "collected": 0,
+          "won": 0
+        },
+        "partial-menu": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "0f9fa132508df198c6b42eebea706b96dbf01c1114f55ef1a688626690039465",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 40,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.65,
+            "transition": null
+          },
+          "collected": 1,
+          "won": 0
+        },
+        "saved-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "419f3d1fa7b4943bfffd03ef2fecce168118beb8eabef178daf3c9250594c2cb",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 40,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.65,
+            "transition": null
+          },
+          "collected": 1,
+          "won": 0
+        },
+        "fresh-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "3d2d9c2a14da6f19c19ebbeb1857678170540463f2ad7f001ee4cfbfb6e32870",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 1,
+          "animation": {
+            "clip": null,
+            "duration": 0.0,
+            "loop": true,
+            "playing": false,
+            "speed": 1.0,
+            "time": 0.0,
+            "transition": null
+          },
+          "collected": 0,
+          "won": 0
+        },
+        "restored-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "2bde2e9fb6e4c5a592e00c490a62c07fdd3662dd4691efb23f3463461e118d55",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 10808,
+            "distinct_scene_sample_colors": 77,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 2,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 40,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.65,
+            "transition": null
+          },
+          "collected": 1,
+          "won": 0
+        },
+        "courier-running": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "78a233051e37d38a10534f7d44ea6e7dd6f0ca1cf426c1a0bf603f37da6d4ff5",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 60,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 1,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 259,
+          "animation": {
+            "clip": 0,
+            "duration": 0.6666666865348816,
+            "loop": true,
+            "playing": true,
+            "speed": 0.9991667474935224,
+            "time": 0.03330555824978408,
+            "transition": {
+              "duration_ticks": 12,
+              "elapsed_ticks": 2,
+              "mode": "inertial",
+              "source_clip": null,
+              "source_frozen": true,
+              "source_loop": null,
+              "source_playing": null,
+              "source_speed": null,
+              "source_time": null,
+              "start_tick": 257,
+              "weight": 0.16666666666666666
+            }
+          },
+          "collected": 3,
+          "won": 0
+        },
+        "relay-complete": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "c05fdf10939623fb1b7f07a4420174c19c58a43277e93cf527e554cae65da88f",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 123,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "native": {
+            "build_version": "0.0.85",
+            "hardware": true,
+            "gpu": "AMD Radeon(TM) Graphics",
+            "samples": 1,
+            "nvrhi_errors": 0,
+            "capture_written": true
+          },
+          "rendered_draws": {
+            "camera_culled": 0,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          },
+          "runtime_tick": 752,
+          "animation": {
+            "clip": 1,
+            "duration": 1.0666667222976685,
+            "loop": true,
+            "playing": true,
+            "speed": 1.0,
+            "time": 0.5333332220713296,
+            "transition": null
+          },
+          "collected": 3,
+          "won": 1
+        }
+      },
+      "limitations": [
+        "Windows development host; source-free relocation is not clean-machine deployment.",
+        "Semantic guarded controller/UI requests and native Vulkan readbacks; not physical input or editor qualification.",
+        "Two actual native host processes with one live player each; not multiplayer, representative performance or whole Alpha.",
+        "Audio disabled; configured gain does not qualify sink behavior or audible output.",
+        "Public player identities/configuration prove independent lifetimes; hidden preference epochs are not exposed or claimed.",
+        "Original imported Run/Idle rig and native controller/navigation; no motion matching, IK, foot locking or general character creator.",
+        "Owned source copies are deleted; caller originals, bundles, external saves and failed evidence are retained."
+      ]
+    }
+  ],
+  "retained_failed_attempts": [
+    {
+      "kind": "author-preflight",
+      "raw_report_sha256": "67b5c457c1c3295a0c8a8eb50feda2a7aa29d0aabd0a54236bcc0dcd09d2ed38",
+      "reason": "Scrollable panels requested unsupported rounded clipping; corrected sample panel radius only, admission policy unchanged.",
+      "cleanup_clean": true
+    },
+    {
+      "kind": "contract-windows-1",
+      "raw_report_sha256": "51ab817a66488f5c99e380d7cf9c5af1c5b27eaacc37f083bf1438a563c5d097",
+      "reason": "Verifier performed arithmetic on the documented decimal-string int64 state representation; corrected decoding and metadata without changing gameplay.",
+      "cleanup_clean": true,
+      "original_verifier_sha256": "14cde14e7603730da2d1315e43d435866928efbaef0106d6a7a4bcce7e5cb2c1"
+    },
+    {
+      "kind": "bundle-gpu1-1",
+      "raw_report_sha256": "b4ab0150ec8df67faf686a4e5610d207d6c17d57cc8c8112d5c1428996cf4984",
+      "reason": "The right-half image observation excluded the visible courier at the left. Mask now follows actual modal and authored HUD/reticle bounds; diversity threshold remains unchanged.",
+      "cleanup_clean": true,
+      "original_verifier_sha256": "44e9e6a2b47464f7d701ad18a796a07c325300aad584e1f69e58f744e37ecfd3"
+    },
+    {
+      "kind": "windows_publication_outer_assertion",
+      "raw_report_sha256": "93fd47620a0105895f6f03ebf5c74a6a1d91d64fa3157106d3d33bd28417c143",
+      "reason": "Actual publication succeeded; the initial outer assertion omitted the correctly generated collection feature. The original native image was retained and independently qualified; the failed assertion report remains failed.",
+      "actual_publisher_exit_code": 0,
+      "qualification_sha256": "6b76cf6ffda03b72f662fb23d4861a585f0ac62cc717befaeda83b29498fc32e"
+    }
+  ],
+  "native_report_sha256": "9785d992e20b55905a3a9c9113ec99bcc07175f1dc4193ffad8a53a070b32f41",
+  "frozen_native_source_count": 288,
+  "installation": {
+    "raw_report_sha256": "41b22257982ff8703f40d62234787f828bab596913ece5820bfc7043d3247445",
+    "steps": [
+      {
+        "kind": "desktop",
+        "seconds": 24.358541763000176,
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "log_sha256": "a08148194e74daad499b20241085489fb4e1cc297904df45a79c61e694631a81"
+      },
+      {
+        "kind": "install",
+        "seconds": 44.36912586700009,
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "log_sha256": "d2acc2536be0c1985671a4a8fdda265bb97b9ddd9197b27e920486487069563b"
+      }
+    ]
+  },
+  "documentation_image": {
+    "path": "docs/evidence/relay-yard.png",
+    "passed": true,
+    "png_sha256": "cf5331f7f477f787be8cf9c3a5651c7be718975143a8f6117c1ded599dc3e737",
+    "bmp_sha256": "a841cef9e5872a49a28843307a59f3712a177d968b8a7bc6f23ee3e9eebe9bf3",
+    "width": 1280,
+    "height": 720,
+    "every_rgb_pixel_matches": true,
+    "native_capture": "NVIDIA exported partial menu",
+    "reviewed_frames": [
+      "NVIDIA partial-menu",
+      "NVIDIA relay-complete",
+      "NVIDIA initial failed courier-running"
+    ],
+    "review_scope": "Root inspected native game frames and legible menu text; no desktop OS screenshot, OCR or physical interaction claim.",
+    "raw_lineage_report_sha256": "9629454835ae14d5252a02d2705c54c35024b39853add7490f5c3f62630da7f8"
+  },
+  "limitations": [
+    "This original small game does not prove AA/AAA FPS scope, Alpha release readiness or representative performance.",
+    "Semantic input and native renderer readbacks do not qualify physical mouse/keyboard/gamepad input, editor workflows or clean-machine deployment.",
+    "Audio disabled in graphical cohorts; changing master gain does not prove audibility, sound design or acoustic behavior.",
+    "The partial checkpoint is saved while the courier is stationary. Active-navigation/fade checkpoint coverage belongs to separate subsystem evidence.",
+    "Native imported-source retargeting and original geometry/clip lineage are retained; this is not an independent FBX parser or a repeated original-pose oracle.",
+    "Public player identities/configurations are observed; hidden gameplay preference epochs are not exposed or claimed.",
+    "Image checks cover authored UI colors and unobscured scene variation alongside native weighted-mesh submissions; no full-image reference or OCR claim.",
+    "Frame counts and elapsed execution times are records, not frame-time or memory benchmarks.",
+    "GUI controls are exercised semantically; large-scale text/scroll accessibility, physical interaction and localization need separate qualification."
+  ],
+  "source_pins": {
+    "CMakeLists.txt": "b20ee8af8a0b8786a35a4d4d347c61d482b1c5721e47e14ce693d3fb5e60fe91",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "README.md": "6603a871c8413e0be6c89233856f6389702bd5ec6b2b2fa86214f0a6260f0d13",
+    "THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+    "docs/ALPHA_ROADMAP.md": "ce6991b45f9853ecfe7a725d793686ec92dbd37de89420b403fb7acc1c57030e",
+    "docs/DOCUMENTATION_COVERAGE.md": "795927715e4541cb302e7b8e8aeacf3bd1863d17b55664f443c5732ea816fb8b",
+    "docs/IMPLEMENTATION_STATUS.md": "67e3f6f2c813957b1ef0eccdb0145911d83f1b28b57a30975cdf6eee89caab77",
+    "docs/PLAYBOOKS.md": "e4ae0019e469ba4fc15979cb9ea874d282ddea4f1e9df7d83581c6e6c5f968a4",
+    "docs/evidence/relay-yard.png": "cf5331f7f477f787be8cf9c3a5651c7be718975143a8f6117c1ded599dc3e737",
+    "examples/locomotion-yard/LocomotionYardGame.cs": "9bc8d458da7ae509c57adda7dd7ecc6caabf736e3021e3993fad19aff3a0de0f",
+    "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+    "examples/relay-yard/Poima.RelayYardGame.csproj": "8b557c74ee1f1fd1a413bbc53a469e0766ddea8a48d4e521f51c2c2fd3fc6801",
+    "examples/relay-yard/README.md": "7b6b98de97f51e95ad7311a09b5fb046955c87c83073fd2e81205fb0edc0c668",
+    "examples/relay-yard/RelayYardGame.cs": "377ae91c50e84dc8fda7df96ab14d4992ebad4477ec2713f4e7c2bc216b5a89f",
+    "examples/relay-yard/run.py": "fe84fae86be93a657ad0bf8e2a8f0a3df369fb583c122e2c4ae10c9121a840d7",
+    "managed/Directory.Build.props": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d",
+    "managed/Poima.Components.Generator/Buffers.cs": "94c6719e9b00491e5a26ae0f3e8cd5876583fcfc0654c0b621e560162416109d",
+    "managed/Poima.Components.Generator/Generator.cs": "0fc907b247d2a29dcb7053c4409e93d2da93d5de3f92177d5c346f1d93971612",
+    "managed/Poima.Components.Generator/Poima.Components.Generator.csproj": "a0efd70e361774a8ea1fde88b9f1bb5fd94ed276a3d1c907f4b33684e80c530e",
+    "managed/Poima.Components.targets": "be51eef6e02f456ad64dbe71a9d8ca73b9969199776cf3be7a4d04f6762dc6a2",
+    "managed/Poima.Gameplay/Animation.cs": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9",
+    "managed/Poima.Gameplay/AnimationLayers.cs": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497",
+    "managed/Poima.Gameplay/Buffers.cs": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f",
+    "managed/Poima.Gameplay/CharacterInput.cs": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118",
+    "managed/Poima.Gameplay/Components.cs": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4",
+    "managed/Poima.Gameplay/Gameplay.cs": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "213eca52e48c8b2eba6c31e344336008e3b6c0627eb8a38a6bab2368f4fe714f",
+    "managed/Poima.Gameplay/Instances.cs": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7",
+    "managed/Poima.Gameplay/Lifecycle.cs": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172",
+    "managed/Poima.Gameplay/Navigation.cs": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef",
+    "managed/Poima.Gameplay/Persistence.cs": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2",
+    "managed/Poima.Gameplay/PlayerPreferences.cs": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a",
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "managed/Poima.Gameplay/ServiceAbi.cs": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e",
+    "managed/Poima.Gameplay/Ui.cs": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c",
+    "managed/Poima.ManagedBridge/Entry.cs": "6dab8ba3306a86b1b6764339881ade8fe97aae2393937f010caa3cdadff99c39",
+    "managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj": "fca83a20df45dea4f10593b7503f774d37ea2a4beceb7cd3b4a4072d1806ee8e",
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098",
+    "managed/Poima.NativeGame.Generator/Program.cs": "019e650f4aba1b831da5ac2d81f70f2fce40c033d4bc93e92da7d2d0b52d6e64",
+    "managed/Poima.NativeGame/Entry.cs": "dff4ff2b5569bb5d0d463b1305fdb951f579143643c15a24157b17c540bc76f6",
+    "managed/Shared/ComponentMetadata.cs": "1c67e83c6a3b5048dd80737a542a843df5ca5ef68e5d01cccefbab1cc30e33d7",
+    "managed/Shared/PersistenceMetadata.cs": "953c5cbfef06b2b3ffa7814ee16b9486ecb6ac540358c8d9698829a5515206f8",
+    "scripts/publish_native_gameplay.py": "3246b78de1d6d57f304f6d2b49ca96d810c04352694dfe8a39b9419506b3ca19",
+    "src/render_smoke.cpp": "b9c28480b5f1a0e796e5758cdf14bab84679eb222162c3c5cf1a4c94babcbe0c",
+    "src/world_player_service.inc": "15f4b2b47c15de97eaa9cbbfd480666ad772e6be2603cf36736ec0abfec73edc",
+    "src/world_save.inc": "556ed68928c79240453b9645cab3b08b0b776f062b8867792d8a304522fd2b5e",
+    "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+    "tests/player_preferences_gameplay_bundle.py": "90569cedefd4b7819af0765ebdf2c3ae22a2b4bdf49bd99899c00cac2410911f",
+    "tests/player_preferences_gameplay_contract.py": "f08bdf0208a6153676dcb405b46e0b6f31826ccfd28e670b58a1472e58db062b",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tests/relay_yard_bundle.py": "76272fd107361a2046de3f7a2fac2d5b3368b09936008c2da375d3ec34a59be3",
+    "tests/relay_yard_contract.py": "fa7621c488643f4a52e2e6d525710d5f68ee6ed9c2add1ac100cff54a21b9628",
+    "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+    "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92"
+  }
+}

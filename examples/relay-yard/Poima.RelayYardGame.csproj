@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../managed/Directory.Build.props" />
+  <ItemGroup>
+    <ProjectReference Include="../../managed/Poima.Gameplay/Poima.Gameplay.csproj" />
+    <!-- Compile the exact existing config/buffer/route declarations into this
+         assembly so generated manifests retain their original stable IDs.
+         Its old Game class is present but is never selected by the launcher. -->
+    <Compile Include="../../examples/locomotion-yard/LocomotionYardGame.cs" Link="LocomotionDeclarations.cs" />
+  </ItemGroup>
+  <Import Project="../../managed/Poima.Components.targets" />
+</Project>

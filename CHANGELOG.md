@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.85
+
+- Add Relay Yard: a complete small C# game with native first-person pickups, imported Idle/Run courier navigation, compiled menus, current preferences and checkpoints.
+- Add genuine Native AOT playthrough checks for Windows and Linux, including negative interaction, repeated saves, exact partial restoration, stale guards and objective completion.
+- Qualify source-free Windows export and fresh-process continuation on both laptop GPUs, with native frame observations, retained failed attempts and a documented [playbook](examples/relay-yard/README.md). [Evidence](docs/evidence/m2-relay-yard.json).
+
 ## 0.0.84
 
 - Keep the interactive native player alive beyond 32 checkpoint restores while preserving input release, paused continuation, current preferences and restored-controller validation.
