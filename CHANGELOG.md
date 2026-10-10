@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.86
+
+- Add persistent IDs to Relay Yard's 49 existing state fields and an explicitly defaulted checkpoint version, preserving its native services prefix.
+- Verify actual retained 0.0.85 checkpoints against separately compiled targets on Windows and Linux: exact-source restoration, denied updates, explicit hash-bound upgrade, complete native-state preservation, real game completion and fresh-process target saves.
+- Compare exact same-tick source/target Vulkan pixels with positive imported weighted geometry on both laptop GPUs; re-qualify the updated source-free exported game on both GPUs.
+- Document the [gameplay/content/save boundary](docs/ALPHA_GAMEPLAY_PROFILE.md) and [retained-game update workflow](examples/relay-yard/UPGRADING.md), with explicit compatibility limits and preserved failed attempts. [Evidence](docs/evidence/m2-relay-yard-upgrade.json).
+
 ## 0.0.85
 
 - Add Relay Yard: a complete small C# game with native first-person pickups, imported Idle/Run courier navigation, compiled menus, current preferences and checkpoints.

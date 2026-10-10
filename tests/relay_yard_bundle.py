@@ -66,10 +66,11 @@ def artifact_inputs(path, launcher):
           descriptor['type'] == launcher.TYPE and descriptor['identity'] == 'poima.examples.relay-yard' and
           descriptor['target_os'] == 'Windows' and descriptor['target_arch'] == 'x86_64',
           'Supply the genuine Windows Relay Yard artifact')
+    required = REQUIRED | ({'gameplay_persistence_v1'} if 'persistent' in descriptor['schema'] else set())
     check((descriptor['call_version'], descriptor['call_bytes'], descriptor['services_version'],
            descriptor['minimum_services_bytes']) == (1, 80, 7, 256) and
-          set(descriptor['required_features']) == REQUIRED and
-          len(descriptor['required_features']) == len(REQUIRED), 'Relay Yard ABI/features differ')
+          set(descriptor['required_features']) == required and
+          len(descriptor['required_features']) == len(required), 'Relay Yard ABI/features differ')
     names = set()
     rows = descriptor['files']
     check(1 <= len(rows) <= 256, 'Artifact file count exceeds its bound')

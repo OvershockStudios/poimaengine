@@ -75,6 +75,21 @@ Recovery remains separate consent: `allow_recovery:true` permits the store-selec
 
 Successful loading does not overwrite the original slot or current authored document. Explicitly save a new generation or slot when ready to make the upgraded state durable. Snapshot and storage work remain synchronous.
 
+## Task: update a saved first-person game
+
+[Relay Yard](../examples/relay-yard/UPGRADING.md) consumes actual retained
+0.0.85 checkpoints and separate genuine source/target Native AOT artifacts. Its
+version-5 root-prop snapshot stays exact outside gameplay while 49 legacy global
+fields acquire stable IDs and one new version field receives default 2. The
+verifier checks denied loads, hash-bound authorization, all receipt identities,
+pre-callback state preservation, remaining controller-ray pickups, native
+courier/animation completion and a deliberately saved target reopened in a
+fresh process. Optional Windows captures compare exact same-tick native pixels
+and positive imported weighted mesh submissions. It does not change component
+layouts, geometry or the compiled
+menu's exact-load policy. The [gameplay/content profile](ALPHA_GAMEPLAY_PROFILE.md)
+keeps API, artifact, content and save compatibility separate.
+
 ## Task: upgrade a retained hierarchical game
 
 Use this sequence from either a human-operated CLI or an agent. The [retained instance fixture](../tests/fixtures/instance_save_evolution/README.md) supplies concrete build/configuration commands and a verifier for an actual compiled source/target pair. It requires the earlier fixture's retained source world, cooked closure, compiled module and save slot; it does not recreate that historical source.

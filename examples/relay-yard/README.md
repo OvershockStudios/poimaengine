@@ -80,6 +80,22 @@ current player; loading a checkpoint does not apply an old preference owner or
 configuration. The sample's preference changes are session intent, with no
 implicit settings-file write.
 
+## Updating a saved game
+
+The state declares a persistent ID for each field. `CheckpointVersion` has the
+literal persistence default 2 and ordinary initialization also sets it to 2.
+These are separate operations: defaults map newly added fields during an
+authorized upgrade; `Initialize` prepares a new game. Keep each ID when moving
+or renaming its field. Changing its kind requires a different migration policy.
+
+The 0.0.85 sample used legacy name/layout metadata. Loading its checkpoint with
+a rebuilt module remains an error without an explicit, hash-bound upgrade plan.
+The trusted host selects both the target artifact and the plan; saved data never
+selects executable code. After verifying the upgrade, write a new checkpoint
+and retain the source save and artifact. The compiled menu uses ordinary exact
+loads; it does not silently approve game updates. See
+[the retained-game workflow](UPGRADING.md) and [save upgrades](../../docs/SAVE_UPGRADES.md).
+
 ## Qualification
 
 This is a small integration workload, not evidence of AA/AAA scale or production

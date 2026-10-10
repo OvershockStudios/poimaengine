@@ -1,8 +1,47 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.85**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.86**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.86 gives Relay Yard persistent global field IDs and a meaningful
+checkpoint version. All 49 old fields keep their kinds; the new field defaults
+to 2, the actual sequential layout grows from 328 to 336 bytes, and the artifact
+adds `gameplay_persistence_v1` without changing its 256-byte services prefix.
+The [gameplay/content/save profile](ALPHA_GAMEPLAY_PROFILE.md) separates released
+stable authoring, negotiated gameplay features, bounded content intake and exact
+or explicitly upgraded checkpoints. It does not freeze every SDK API or format.
+
+The [retained-game playbook](../examples/relay-yard/UPGRADING.md) consumes actual
+0.0.85 Native AOT artifacts and version-5 root-prop checkpoints, not regenerated
+source saves. Windows and Linux checks exact-restore the old game, reject
+changed-image and invalid-plan loads without mutation, then preserve every old
+global value and all native state through one explicit hash-bound upgrade.
+Immediate observations verify the new default, target schema/image and every
+reported edge identity before target callbacks. Real remaining pickups, native
+courier/animation travel and terminal Use complete the objective. A deliberately
+written new target slot exact-reopens in a fresh process and runs real callbacks.
+Native restoration bypasses `Initialize` by the reviewed dispatch path; state
+preservation is not a dynamic constructor/static-initializer trace.
+
+Both laptop GPUs compare source/target captures at the exact saved tick and
+authored overview camera. Native pixels and draw counts match, with eight draws,
+1,688 triangles, one skinned instance and 1,029 weighted vertices submitted.
+The checkpoint menu overlaps part of that overview; this is native output
+preservation, not an independent source-pose or unobscured-character oracle.
+Each Windows capture cohort passes 4,218 operations; Linux headless passes 4,198.
+The updated source-free exported-game continuation also passes on both GPUs,
+with 4,580 operations and seven native captures per run.
+[Evidence](evidence/m2-relay-yard-upgrade.json) retains the initial verifier's
+incorrect version-6 assumption as a failed attempt; actual root-prop snapshots
+require version 5. The save format/admission policy was not loosened. Protocol 1,
+authoring-core v1, schema revision 70 and services epoch 7 are unchanged.
+
+This qualifies a real global-only Native AOT update, not arbitrary component or
+geometry updates, upgrade chains, automatic compiled-menu migration, CoreCLR
+Relay Yard upgrade, physical input, audibility, representative performance,
+clean-machine delivery or whole Alpha. Ordinary menu loads remain exact and
+host-selected upgrades do not silently overwrite source checkpoints.
 
 Version 0.0.85 adds [Relay Yard](../examples/relay-yard/README.md), a complete
 small compiled first-person integration game. Three real camera-ray pickups

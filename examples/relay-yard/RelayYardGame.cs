@@ -7,19 +7,109 @@ namespace Poima.Examples;
 
 // Flat native-owned state. The locomotion config/route declarations are linked
 // from LocomotionYardGame.cs; no second component layout or movement authority.
+[GameplayPersistence(2)]
 [StructLayout(LayoutKind.Sequential)]
 public struct RelayState
 {
-    public EntityId Actor, AnimatedVisual, CellOne, CellTwo, CellThree;
-    public int Initialized, Started, Collected, Won, LockedUses;
-    public int Ticks, Phase, RouteValid, Plans, Arrivals, LastPathStatus, LastCornerCount;
-    public int PreviousPositionValid, Moving, AnimationMode, AnimationClip, AnimationLoop, AnimationChanges;
-    public int AnimationTransitions, RateChanges, DeferredRateUpdates;
-    public double GoalX, GoalZ, PreviousX, PreviousZ, LastDisplacement;
-    public double LastHorizontalSpeed, RequestedRunRate, AnimationRate;
+    [GameplayField("f8ad1d8f0fab3a847f1731ff1fb01f3d",Default="2")]
+    public int CheckpointVersion;
+    [GameplayField("dc2eff690495ce6d8b235c5080b9ddde",Default="00000000000000000000000000000000")]
+    public EntityId Actor;
+    [GameplayField("8de585fe914c86cbad5ad7602ba3e8f4",Default="00000000000000000000000000000000")]
+    public EntityId AnimatedVisual;
+    [GameplayField("0c95413bb7edd13b0df676fb150329fd",Default="00000000000000000000000000000000")]
+    public EntityId CellOne;
+    [GameplayField("7a15dcc61f69ebc925d50ecff69aa9eb",Default="00000000000000000000000000000000")]
+    public EntityId CellTwo;
+    [GameplayField("639fe425b42ece644c6ae880fa4127a3",Default="00000000000000000000000000000000")]
+    public EntityId CellThree;
+    [GameplayField("287f9ba377964bc41f96ab8e3ce2bc3b",Default="0")]
+    public int Initialized;
+    [GameplayField("9c6d7ef0857baad1d31e881ac7de0435",Default="0")]
+    public int Started;
+    [GameplayField("1a016020abb03e7b2ef172c3240ab476",Default="0")]
+    public int Collected;
+    [GameplayField("e9069f03ef985972b8cfb2c539877e56",Default="0")]
+    public int Won;
+    [GameplayField("270eaf4b50f68dcb1563702e95c71b1f",Default="0")]
+    public int LockedUses;
+    [GameplayField("d6a11188abff798abf7d76f7d0b25c25",Default="0")]
+    public int Ticks;
+    [GameplayField("eb665c81b11e03f20d617b6d2f720ec5",Default="0")]
+    public int Phase;
+    [GameplayField("c370db873f739c8ecab92015d32b6f13",Default="0")]
+    public int RouteValid;
+    [GameplayField("03248b120e1e2d3911bb18484af3468c",Default="0")]
+    public int Plans;
+    [GameplayField("95589d925eb87a42e0a5a13e08c7297e",Default="0")]
+    public int Arrivals;
+    [GameplayField("f95ceb67da28ecd15749c6d2ad6f40a7",Default="0")]
+    public int LastPathStatus;
+    [GameplayField("684738836198b5c10127346f83811b53",Default="0")]
+    public int LastCornerCount;
+    [GameplayField("897883ead622701fc92b316a2f535c47",Default="0")]
+    public int PreviousPositionValid;
+    [GameplayField("a608303f5e02f4a4daf9a2672527e9a3",Default="0")]
+    public int Moving;
+    [GameplayField("089e1ac71cff3a5854cb57ab722ee88a",Default="0")]
+    public int AnimationMode;
+    [GameplayField("986d213287cf88612e0dc4a58b4c1444",Default="0")]
+    public int AnimationClip;
+    [GameplayField("b01608510bdfdcae38056b0322535595",Default="0")]
+    public int AnimationLoop;
+    [GameplayField("156dab641be8a96c8e963f51ec1e3296",Default="0")]
+    public int AnimationChanges;
+    [GameplayField("62dc555007411a08a74750a8545db18d",Default="0")]
+    public int AnimationTransitions;
+    [GameplayField("9b2ed5213c75d6e43a89abdc04ba1a66",Default="0")]
+    public int RateChanges;
+    [GameplayField("1a50d5b3edcfc85b86505f25161337da",Default="0")]
+    public int DeferredRateUpdates;
+    [GameplayField("893cd792ce0b34d3ff32110867b8b140",Default="0")]
+    public double GoalX;
+    [GameplayField("b9474bea97992872f01ac6e0aa96a1b9",Default="0")]
+    public double GoalZ;
+    [GameplayField("6d68e205cc429a3eb2114e48177d6cfa",Default="0")]
+    public double PreviousX;
+    [GameplayField("c1044e78d0f06caf07a100a6a83926ce",Default="0")]
+    public double PreviousZ;
+    [GameplayField("dc4e1c2805f263df07fc929f2376855e",Default="0")]
+    public double LastDisplacement;
+    [GameplayField("e7c213ca22b65f7dbb2b1c8a36c61ad3",Default="0")]
+    public double LastHorizontalSpeed;
+    [GameplayField("d3a8be3916892a5a0cbc5d2f28574659",Default="0")]
+    public double RequestedRunRate;
+    [GameplayField("91681df6d608e8ab58020605547b8f2b",Default="0")]
+    public double AnimationRate;
+    [GameplayField("8e7b9da1090d339030eac5bc5101986f",Default="0")]
     public long PreviousSampleTick;
-    public int StatusKey, SaveStatusKey, SavePending, SaveNotice, SaveKind, LastSaveState, LastSaveError;
-    public long SaveHigh, SaveLow, SaveSequence, LastSaveGeneration, ObservedEpochHigh, ObservedEpochLow;
+    [GameplayField("13f9a2f9ebdae01dcd1e78308e30a6fa",Default="0")]
+    public int StatusKey;
+    [GameplayField("d48f5c6ff678eea0dc286019d56bb2f6",Default="0")]
+    public int SaveStatusKey;
+    [GameplayField("d8582b48bee1da9272acc0c18d4e37a9",Default="0")]
+    public int SavePending;
+    [GameplayField("b382acf42a263ac5dd07fbca45145f46",Default="0")]
+    public int SaveNotice;
+    [GameplayField("441868a3730af58b50221f13c849ef71",Default="0")]
+    public int SaveKind;
+    [GameplayField("9b04c414bda4c84fcc68dc0b7f02f0b8",Default="0")]
+    public int LastSaveState;
+    [GameplayField("aaa2fdb643932e733542a847505667ec",Default="0")]
+    public int LastSaveError;
+    [GameplayField("1952e240bea34863091d6cc63dda3c04",Default="0")]
+    public long SaveHigh;
+    [GameplayField("3730fe4f0ae1e373413e0b5dcef514f7",Default="0")]
+    public long SaveLow;
+    [GameplayField("43be39e5884d72e25572ecfed5a2ce31",Default="0")]
+    public long SaveSequence;
+    [GameplayField("2be6adf33e2ceda0bcdd5f03f10e6b2d",Default="0")]
+    public long LastSaveGeneration;
+    [GameplayField("50047a291fbefec3700bfbeeb680e37a",Default="0")]
+    public long ObservedEpochHigh;
+    [GameplayField("1be1afb97a27450dcbdd744f5894ded1",Default="0")]
+    public long ObservedEpochLow;
+    [GameplayField("a7b9bd0ad9e7d7b0c976d44382c71468",Default="0")]
     public int PreferenceNotice;
 }
 
@@ -39,6 +129,7 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
     public override void Initialize(ref RelayState state)
     {
         state=default;
+        state.CheckpointVersion=2;
         state.Actor=Actor;
         state.AnimationMode=state.AnimationClip=state.StatusKey=state.SaveStatusKey=-1;
     }
@@ -296,6 +387,7 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
 
     public override void Tick(ref RelayState state,GameContext context)
     {
+        Check(state.CheckpointVersion==2,"Use an explicit save upgrade for this checkpoint schema.");
         PollSave(ref state,context);
         if(state.Initialized==0)
         {
@@ -357,6 +449,7 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
 
     public override void Control(ref RelayState state,ControlContext context)
     {
+        Check(state.CheckpointVersion==2,"Use an explicit save upgrade for this checkpoint schema.");
         PollSave(ref state,context);
         switch(context.Action)
         {
