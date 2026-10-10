@@ -2,7 +2,11 @@
 
 Poima 0.0.15 adds native WAV import, editable `AudioEmitter` and `AcousticMaterial` components, and Steam Audio 4.8.1 observations of authored or live worlds. Agents can inspect direct paths and save actual stereo HRTF-processed output. A moving physics door changes its acoustic obstruction even when the source and listener remain stationary. The existing C# door game is included in that regression test.
 
-This first integration renders **frozen audio snapshots offline**. It does not yet play sound through an output device, maintain event/voice cursors during gameplay, or provide C# sound events. Reflections, reverberation, diffraction, streaming, buses, captions and the complete environmental audio system remain unfinished. These capabilities are reported explicitly rather than implied by the presence of Steam Audio.
+The snapshot methods on this page render **frozen audio snapshots offline**.
+[Sound events and player output](AUDIO_EVENTS.md) provide logical gameplay voices,
+C# play/stop calls and optional native device playback. Reflections, reverberation,
+diffraction, compressed streaming, buses, captions and the complete environmental
+audio system remain unfinished. Inspect build capabilities before using either path.
 
 ## Build
 

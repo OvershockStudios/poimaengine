@@ -15,11 +15,50 @@ An enabled `AudioEmitter` is an available source, not an automatically playing s
 
 Commands run in array order on the segment/batch's first tick, before C# gameplay. Gain defaults to 1 and must be finite in [0,4]; it multiplies the authored emitter gain. Each play starts a separate voice, including repeated plays on one emitter. Stops are idempotent while the record exists; unknown or expired handles fail. Playing and immediately stopping at the same tick emits nothing. The authored `loop` flag controls repetition.
 
-C# uses `long voice = context.PlaySound(emitter, gain)` and `context.StopSound(voice)`. Store handles in native-owned game state when they must survive reload. At most 64 caller commands per batch and 64 C# commands per tick are accepted; at most 64 voices may emit at once. Handles are monotonic within a runtime session and never reused after an ordinary stop. A failed batch restores voice state **and handle allocation**, alongside C# fields and physics. No device or DSP observes the failed intermediate state. Gameplay API callbacks use service ABI version 3 (64 bytes), with animation callbacks appended after the audio prefix; rebuild the SDK, bridge and game assemblies together.
+C# uses `long voice = context.PlaySound(emitter, gain)` and `context.StopSound(voice)`
+inside `Tick`; these calls are unavailable in `Initialize` and UI `Control`.
+Store handles in native-owned game state when they must survive reload. At most
+64 caller commands per batch and 64 C# commands per tick are accepted; at most
+64 voices may emit at once. Handles are monotonic within a runtime session and
+never reused after an ordinary stop. A failed batch restores voice state
+**and handle allocation**, alongside C# fields and physics. No device or DSP
+observes the failed intermediate state. Sound callbacks belong to the current
+epoch-7 baseline services prefix; use the matching
+[gameplay compatibility profile](ALPHA_GAMEPLAY_PROFILE.md), SDK and bridge.
 
 `runtime.step` reports `sound_events: {first_voice, next_voice}`, the half-open handle range created by that successful batch, including C# calls. Retry receipts return the same result without creating more voices. These are logical handles; playback is a separate consumer of committed simulation.
 
 `runtime.audio.voices {session_id,tick,after?,limit?}` lists retained records in handle order. The default limit is 64, maximum 256; `after` is an exclusive handle cursor. The response includes `next_voice`, `emitting`, `retained`, `has_more`, source/asset, gains, loop mode, start tick, stop/end sample and current emitting clip frame. Stop/end sample positions are decimal strings to retain integer precision even at very large runtime ticks; an unbounded loop has a null end. `clip_frame` describes emission time, not the delayed sample at the listener. The oldest finished records are evicted when the 256-record history fills. DSP may still be playing a delayed arrival or filter tail after emission ends.
+
+### Removing emitters and saving
+
+Removing a runtime instance retires every logical voice belonging to its removed
+emitters, including finished records. Surviving voices keep their handles and
+cursors; `next_voice` keeps the allocator's high-water mark. Retained IDs can have
+gaps, omit the latest allocated handle, or be empty with `next_voice > 1`.
+Saving and restoring those states preserves the allocator without resurrecting
+removed emitters. IDs must still be positive, strictly increasing and below the
+allocator; existing chronology, trusted clip bindings and capacity checks apply.
+The `poima.sound-state` format remains version 1. Older engine builds that enforce
+contiguous retained IDs cannot load these valid retirement states.
+
+Do not attach a pickup cue to the prop that gameplay immediately despawns: its
+logical voice is retired with the prop. Use a surviving dedicated emitter when
+the cue should continue. Retired or evicted handles are unknown to `StopSound`;
+do not retain them as an indefinite stop capability.
+
+To verify this lifecycle, import a clip, author a hierarchical emitter recipe,
+spawn instances, play them and remove one at an observed tick/structure revision.
+Inspect `runtime.audio.voices`, then use guarded `save.write`. Reopen the world and
+cooked assets in a fresh owner and load the exact slot; compare retained voices,
+sample cursors and `next_voice`. Spawn/play again and check allocation continues
+above every retired handle. The [executable task](../tests/sound_retirement_contract.py)
+also checks whole-history retirement, failed-batch rollback and relocated
+source-independent saves. [Recorded qualification](evidence/m2-sound-retirement.json).
+
+These are logical simulation/save guarantees. Device queues and acoustic filters
+are reconstructed after restoration; they do not promise seamless waveforms or
+prove audibility. See the player output section below for those boundaries.
 
 ## Headless temporal recording
 

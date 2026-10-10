@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(Poima VERSION 0.0.86 LANGUAGES C CXX)
+project(Poima VERSION 0.0.87 LANGUAGES C CXX)
 
 option(POIMA_ENABLE_VULKAN_PROBE "Build the optional Vulkan device inspection" ON)
 option(POIMA_BUILD_TESTS "Build and register CLI contract tests (Python is test-only)" ON)
@@ -893,6 +893,10 @@ if(POIMA_BUILD_TESTS)
         --binary "$<TARGET_FILE:poima>" ${POIMA_METADATA_TEST_INTEROP})
     set_tests_properties(player_live_settings_contract PROPERTIES TIMEOUT 180)
     if(POIMA_ENABLE_SIMULATION)
+        add_test(NAME sound_retirement_contract COMMAND "${Python3_EXECUTABLE}"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/sound_retirement_contract.py"
+            --binary "$<TARGET_FILE:poima>" ${POIMA_METADATA_TEST_INTEROP})
+        set_tests_properties(sound_retirement_contract PROPERTIES TIMEOUT 180)
         add_test(NAME player_window_native COMMAND poima-player-window-test)
         set_tests_properties(player_window_native PROPERTIES TIMEOUT 180)
     endif()

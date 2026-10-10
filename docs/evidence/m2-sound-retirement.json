@@ -1,0 +1,746 @@
+{
+  "format": "poima.qualification",
+  "version": 1,
+  "engine_version": "0.0.87",
+  "date": "2026-10-10",
+  "passed": true,
+  "scope": "Logical sound retirement, guarded native saves, fresh relocated owners and monotonic continuation; actual diagnostic player device submission is a separate regression.",
+  "contracts": {
+    "protocol": 1,
+    "authoring_core": "v1",
+    "schema_revision": 70,
+    "services_epoch": 7,
+    "sound_state_format": 1
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 96.6697119219998,
+      "log_sha256": "54c73811f34a90268d45964aafb3ab29cad2a95b569d5f6e6cbf59e4ba0acdf9",
+      "binary_sha256": "8074496ff49168137c9537b049077a8e542b34adf2ef85c56de88b0721d9cf09"
+    },
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 94.7922279659997,
+      "log_sha256": "313448e850d2623b5790e654883e5ce61015fd249f97b33fcb7f20a9b912aaa8",
+      "binary_sha256": "3896230ec04a16450f194ac703bf9f1974fbf469789b778ca346b1698b268310"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "seconds": 93.37787697499971,
+      "log_sha256": "dad0483ac757c541721e9c8f371315a13c2fe4a79d46ff53be7713f5ba16725d",
+      "binary_sha256": "c17c4fed4d9da9606ef68b66093c813a1a055d2dbe5d9d46cf35d1dee2f0b644"
+    }
+  ],
+  "selected_regressions": [
+    {
+      "host": "windows",
+      "raw_report_sha256": "022df33351190584d63f8f07c3006261c7c750d02e1db194c6ebffd287793f9c",
+      "binary_sha256": "8074496ff49168137c9537b049077a8e542b34adf2ef85c56de88b0721d9cf09",
+      "checks": [
+        {
+          "name": "audio-save",
+          "exit_code": 0,
+          "seconds": 0.12151111899947864,
+          "log_sha256": "1a6b4dc54577cbc80204d70cc09ac71887ab3173bd63c25d968428bd63e12733"
+        },
+        {
+          "name": "world-audio",
+          "exit_code": 0,
+          "seconds": 0.16958008199981123,
+          "log_sha256": "4b50224304ea69af1aa9708eabc2caabcbe9a3621553cc5a2b0b2aa3254b403f"
+        },
+        {
+          "name": "world-save",
+          "exit_code": 0,
+          "seconds": 0.2707896259998961,
+          "log_sha256": "4e5bb84dcc7cfe48e04806bf5d6576fdbb726b5acafb6514e6d4d33aeb23250a"
+        },
+        {
+          "name": "runtime-instances",
+          "exit_code": 0,
+          "seconds": 0.11922266199962905,
+          "log_sha256": "9ed94a30ebd9dabf7544ebf4bb34816a3ca325a86e35797c54c18257b48262f8"
+        },
+        {
+          "name": "audio_contract",
+          "exit_code": 0,
+          "seconds": 3.7296613669996077,
+          "log_sha256": "7314379b09f97e985546041bdf7f1730dc72b09de23b69fed67060e60242ddfc"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 3.6807930320001105,
+          "log_sha256": "70330f96227cbaf37b2bb7fa0ea9e3eb06707eec75de3e20965d6fc48c0c9793"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "seconds": 2.9778187950005304,
+          "log_sha256": "ff8431d9792c69144dee988cc20e3a559b2d4cff20974bfb6b11675bf08830ec"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.5721730229997775,
+          "log_sha256": "5e60bf9b78334a0a633336de56a13f91b0bade67f477ab46af3de34c006691f7"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5696159689996421,
+          "log_sha256": "21d0932a57c54d954ec44ee8b270e62f80a4c8826cf4079377d632110002c5d2"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 3.0775351140000566,
+          "log_sha256": "622fa609b6520dc46d594c0acacfe400acd78bfc61d9086726532205674260e1"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "raw_report_sha256": "6ac4655caa98dbdfcea6e3e0d31ecf2adca4a89b56ecaf01de31067011562970",
+      "binary_sha256": "3896230ec04a16450f194ac703bf9f1974fbf469789b778ca346b1698b268310",
+      "checks": [
+        {
+          "name": "audio-save",
+          "exit_code": 0,
+          "seconds": 0.06866928599993116,
+          "log_sha256": "e62532d23e503ab8c66408287846ec8ed0762bdefd0580cd21c36a7ace165b05"
+        },
+        {
+          "name": "world-audio",
+          "exit_code": 0,
+          "seconds": 0.11847909199968853,
+          "log_sha256": "792c1615046aa5bdc98d1e644781ef02f15f01e10506237cf09a1851367b21a2"
+        },
+        {
+          "name": "world-save",
+          "exit_code": 0,
+          "seconds": 0.16880803799995192,
+          "log_sha256": "ea16b7ac1592e7e22693ba5a399e7a4cd21ce2fabbcc9f8baf5e057ffc28574b"
+        },
+        {
+          "name": "runtime-instances",
+          "exit_code": 0,
+          "seconds": 0.11901178600055573,
+          "log_sha256": "6750495835823d800342d69fd7153b57d5f4747f65131a97bb17fe71a78273d7"
+        },
+        {
+          "name": "audio_contract",
+          "exit_code": 0,
+          "seconds": 5.735654569999497,
+          "log_sha256": "593c7925f8033494c1c38df5af1aa3e3f92a58e7f8790900abe7d4d9f43bfdb7"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 5.433574320999469,
+          "log_sha256": "1edd37fab5b09fe59599c233107249ba8fb1febc14dad2105a4c337c5c1047c8"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "seconds": 3.4777102040006866,
+          "log_sha256": "3851449255b18ba54a2838baf1bee02fe273b934a876b28a17919938de4a2634"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.62110551799924,
+          "log_sha256": "4c2f1630312f74ee7816c4409d8b630c89ee0fef583b67cc04d3a56f7051eef8"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.618786643999556,
+          "log_sha256": "92ac93a45b4b95c5264f5065f2eda2117032bbe20a5c85a1642710664d90f95b"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.373641793999923,
+          "log_sha256": "5ad4f1a0e94c09a7caf9d3ce0432fa98b57596d8b25a0d9bd8afcd7a2a07421c"
+        }
+      ]
+    },
+    {
+      "host": "authoring",
+      "raw_report_sha256": "b494d0eeb4fe21ae6a24a416f38a4f7a9e725fe7f84d86f39dd9fd1e295216a6",
+      "binary_sha256": "c17c4fed4d9da9606ef68b66093c813a1a055d2dbe5d9d46cf35d1dee2f0b644",
+      "checks": [
+        {
+          "name": "audio-save",
+          "exit_code": 0,
+          "seconds": 0.037639662000401586,
+          "log_sha256": "e62532d23e503ab8c66408287846ec8ed0762bdefd0580cd21c36a7ace165b05"
+        },
+        {
+          "name": "world-audio",
+          "exit_code": 0,
+          "seconds": 0.036100537000493205,
+          "log_sha256": "37e45ba580c693def07afdab810bc6464d22401c41f7983e3bb5911294bd339c"
+        },
+        {
+          "name": "world-save",
+          "exit_code": 0,
+          "seconds": 0.06838864400015154,
+          "log_sha256": "821e14b8619c2c5f94f23174751a4201660d3e7228d91626d23ce7624d33c5d6"
+        },
+        {
+          "name": "audio_contract",
+          "exit_code": 0,
+          "seconds": 0.8191752410002664,
+          "log_sha256": "12d9a0310f0fe1e0d8728f4675b6769159971c95e6da68d8940d9e7cd2341c0f"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 0.9203894420006691,
+          "log_sha256": "cd1eb4bc80d49087862d645e437f66215b76f1639e778f04fafd5b0aa59d031f"
+        },
+        {
+          "name": "world_instances_contract",
+          "exit_code": 0,
+          "seconds": 1.8225419649998003,
+          "log_sha256": "6a12fa064123421ec1df33c7421d9d069fca724bd8445f33a122c998f97130df"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.169715083000483,
+          "log_sha256": "7c5d452537e44db0e6a99530c56a9fd2fc54c67855295c4745e53952ee373fbb"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.4684261200000037,
+          "log_sha256": "5d1389717665d1a4d3e6af1fe5911029fbc0b99167bdb3ee7043ef2cce8991a9"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.5705753850006658,
+          "log_sha256": "485a423472af72916a74b82231872ab9fae94c72c940eb1f6dbda1d4851efb32"
+        }
+      ]
+    }
+  ],
+  "baseline_reproductions": [
+    {
+      "host": "windows",
+      "engine_version": "0.0.86",
+      "binary_sha256": "45c9df88a7f55550d43a0a1beca775701ddffb66a0f1e2cfbf76fbd86e856356",
+      "verifier_sha256": "e10a414aa646a2c93f42881f7f23f52734a608257950fc8819a07aefd5b27d17",
+      "raw_report_sha256": "f4bf0d31f7a8088d23059364756d7dc9f29dbeb95328859759f328ff571d8994",
+      "rpc_count": 33,
+      "clean_native_owners": 3,
+      "groups": [
+        {
+          "name": "sole-active",
+          "rejection": "Sound allocator does not follow its retained newest voice.",
+          "code": -32070,
+          "retained_ids": [],
+          "next_voice": 2,
+          "failed_save_isolated": true
+        },
+        {
+          "name": "newest-finished",
+          "rejection": "Sound allocator does not follow its retained newest voice.",
+          "code": -32070,
+          "retained_ids": [
+            1,
+            2
+          ],
+          "next_voice": 4,
+          "failed_save_isolated": true
+        },
+        {
+          "name": "middle-active",
+          "rejection": "Unpruned sound history has missing voice IDs.",
+          "code": -32070,
+          "retained_ids": [
+            1,
+            3
+          ],
+          "next_voice": 4,
+          "failed_save_isolated": true
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "engine_version": "0.0.86",
+      "binary_sha256": "deb487bda2baca9c4ae7d69195653bd40eaee54b3bf3f69021d6e4664e85f61d",
+      "verifier_sha256": "e10a414aa646a2c93f42881f7f23f52734a608257950fc8819a07aefd5b27d17",
+      "raw_report_sha256": "d1e0a5a55c0b549e4e2eb4921d039849f34c6e14c7ccaf5df016e606c34ec440",
+      "rpc_count": 33,
+      "clean_native_owners": 3,
+      "groups": [
+        {
+          "name": "sole-active",
+          "rejection": "Sound allocator does not follow its retained newest voice.",
+          "code": -32070,
+          "retained_ids": [],
+          "next_voice": 2,
+          "failed_save_isolated": true
+        },
+        {
+          "name": "newest-finished",
+          "rejection": "Sound allocator does not follow its retained newest voice.",
+          "code": -32070,
+          "retained_ids": [
+            1,
+            2
+          ],
+          "next_voice": 4,
+          "failed_save_isolated": true
+        },
+        {
+          "name": "middle-active",
+          "rejection": "Unpruned sound history has missing voice IDs.",
+          "code": -32070,
+          "retained_ids": [
+            1,
+            3
+          ],
+          "next_voice": 4,
+          "failed_save_isolated": true
+        }
+      ]
+    }
+  ],
+  "lifecycle_cohorts": [
+    {
+      "host": "windows",
+      "raw_report_sha256": "b4098af9169a78d60801fe5f6d16004d2f35782044136532a2b9a64f6d29c807",
+      "binary_sha256": "8074496ff49168137c9537b049077a8e542b34adf2ef85c56de88b0721d9cf09",
+      "rpc_count": 93,
+      "clean_native_owners": 9,
+      "native_operation_counts": {
+        "asset.audio.import": 3,
+        "runtime.audio.voices": 33,
+        "runtime.start": 3,
+        "runtime.step": 12,
+        "runtime.structure.transact": 15,
+        "save.configure": 9,
+        "save.load": 6,
+        "save.write": 9,
+        "world.transact": 3
+      },
+      "groups": [
+        {
+          "name": "sole-active",
+          "loop": true,
+          "played_ticks": 1,
+          "saved_retained_ids": [],
+          "saved_next_voice": 2,
+          "continued_new_voice": 2,
+          "empty_saved_next_voice": 3,
+          "empty_restored_new_voice": 3,
+          "final_next_voice": 4,
+          "original_closure_unchanged": true
+        },
+        {
+          "name": "newest-finished",
+          "loop": false,
+          "played_ticks": 120,
+          "saved_retained_ids": [
+            1,
+            2
+          ],
+          "saved_next_voice": 4,
+          "continued_new_voice": 4,
+          "empty_saved_next_voice": 5,
+          "empty_restored_new_voice": 5,
+          "final_next_voice": 6,
+          "original_closure_unchanged": true
+        },
+        {
+          "name": "middle-active",
+          "loop": true,
+          "played_ticks": 1,
+          "saved_retained_ids": [
+            1,
+            3
+          ],
+          "saved_next_voice": 4,
+          "continued_new_voice": 4,
+          "empty_saved_next_voice": 5,
+          "empty_restored_new_voice": 5,
+          "final_next_voice": 6,
+          "original_closure_unchanged": true
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "raw_report_sha256": "f1ffe1eedaea96ab04c5e52be8d4abbf5ddd5ce8a0823f650a9451a879ed2864",
+      "binary_sha256": "3896230ec04a16450f194ac703bf9f1974fbf469789b778ca346b1698b268310",
+      "rpc_count": 93,
+      "clean_native_owners": 9,
+      "native_operation_counts": {
+        "asset.audio.import": 3,
+        "runtime.audio.voices": 33,
+        "runtime.start": 3,
+        "runtime.step": 12,
+        "runtime.structure.transact": 15,
+        "save.configure": 9,
+        "save.load": 6,
+        "save.write": 9,
+        "world.transact": 3
+      },
+      "groups": [
+        {
+          "name": "sole-active",
+          "loop": true,
+          "played_ticks": 1,
+          "saved_retained_ids": [],
+          "saved_next_voice": 2,
+          "continued_new_voice": 2,
+          "empty_saved_next_voice": 3,
+          "empty_restored_new_voice": 3,
+          "final_next_voice": 4,
+          "original_closure_unchanged": true
+        },
+        {
+          "name": "newest-finished",
+          "loop": false,
+          "played_ticks": 120,
+          "saved_retained_ids": [
+            1,
+            2
+          ],
+          "saved_next_voice": 4,
+          "continued_new_voice": 4,
+          "empty_saved_next_voice": 5,
+          "empty_restored_new_voice": 5,
+          "final_next_voice": 6,
+          "original_closure_unchanged": true
+        },
+        {
+          "name": "middle-active",
+          "loop": true,
+          "played_ticks": 1,
+          "saved_retained_ids": [
+            1,
+            3
+          ],
+          "saved_next_voice": 4,
+          "continued_new_voice": 4,
+          "empty_saved_next_voice": 5,
+          "empty_restored_new_voice": 5,
+          "final_next_voice": 6,
+          "original_closure_unchanged": true
+        }
+      ]
+    },
+    {
+      "host": "windows-installed",
+      "raw_report_sha256": "844678ae9cdf13d3728b1f8323a42ad264d2858885f001b94a924cf5cf71d2d7",
+      "binary_sha256": "03bbaa4d90ed142396e66cde73f6cad79d6ee0ce840d63c487f6de213e4447ef",
+      "rpc_count": 93,
+      "clean_native_owners": 9,
+      "native_operation_counts": {
+        "asset.audio.import": 3,
+        "runtime.audio.voices": 33,
+        "runtime.start": 3,
+        "runtime.step": 12,
+        "runtime.structure.transact": 15,
+        "save.configure": 9,
+        "save.load": 6,
+        "save.write": 9,
+        "world.transact": 3
+      },
+      "groups": [
+        {
+          "name": "sole-active",
+          "loop": true,
+          "played_ticks": 1,
+          "saved_retained_ids": [],
+          "saved_next_voice": 2,
+          "continued_new_voice": 2,
+          "empty_saved_next_voice": 3,
+          "empty_restored_new_voice": 3,
+          "final_next_voice": 4,
+          "original_closure_unchanged": true
+        },
+        {
+          "name": "newest-finished",
+          "loop": false,
+          "played_ticks": 120,
+          "saved_retained_ids": [
+            1,
+            2
+          ],
+          "saved_next_voice": 4,
+          "continued_new_voice": 4,
+          "empty_saved_next_voice": 5,
+          "empty_restored_new_voice": 5,
+          "final_next_voice": 6,
+          "original_closure_unchanged": true
+        },
+        {
+          "name": "middle-active",
+          "loop": true,
+          "played_ticks": 1,
+          "saved_retained_ids": [
+            1,
+            3
+          ],
+          "saved_next_voice": 4,
+          "continued_new_voice": 4,
+          "empty_saved_next_voice": 5,
+          "empty_restored_new_voice": 5,
+          "final_next_voice": 6,
+          "original_closure_unchanged": true
+        }
+      ]
+    }
+  ],
+  "device_regressions": [
+    {
+      "gpu_index": 1,
+      "failed_device_test": false,
+      "raw_report_sha256": "def70baac21b713ec3e1596da883617e4153be1cd6b5a58e6bba7b6297e5c2bb",
+      "binary_sha256": "8074496ff49168137c9537b049077a8e542b34adf2ef85c56de88b0721d9cf09",
+      "device": {
+        "backpressure_ms": 1789.6076,
+        "driver": "wasapi",
+        "dsp_ms": 11.699000000000005,
+        "empty_queue_observations": 0,
+        "enabled": true,
+        "max_queued_frames": 5824,
+        "over_range_samples": 0,
+        "peak": 0.004061116836965084,
+        "stream_drained": true,
+        "submitted_frames": 96000,
+        "timeline_resets": 0,
+        "voices_started": 1
+      },
+      "capture": {
+        "sha256": "b5d82f191f8c2f80dfeb7535b74170bf70ba23d11fb64ef20a2484b24daa1366",
+        "frames": 96000,
+        "channels": 2,
+        "sample_rate": 48000,
+        "format": "WAV IEEE float32"
+      },
+      "scope": "Actual output stream submission/drain; same mixer peak/event count as headless replay. No loopback recording or subjective listening claim.",
+      "native_owner_exit_code": 0
+    },
+    {
+      "gpu_index": 0,
+      "failed_device_test": false,
+      "raw_report_sha256": "6bec9f440c4f2949c8592837cace949490c77d583500c58aef90d7bac0a446ec",
+      "binary_sha256": "8074496ff49168137c9537b049077a8e542b34adf2ef85c56de88b0721d9cf09",
+      "device": {
+        "backpressure_ms": 1719.2586999999999,
+        "driver": "wasapi",
+        "dsp_ms": 15.66099999999999,
+        "empty_queue_observations": 0,
+        "enabled": true,
+        "max_queued_frames": 5824,
+        "over_range_samples": 0,
+        "peak": 0.004061116836965084,
+        "stream_drained": true,
+        "submitted_frames": 96000,
+        "timeline_resets": 0,
+        "voices_started": 1
+      },
+      "capture": {
+        "sha256": "b5d82f191f8c2f80dfeb7535b74170bf70ba23d11fb64ef20a2484b24daa1366",
+        "frames": 96000,
+        "channels": 2,
+        "sample_rate": 48000,
+        "format": "WAV IEEE float32"
+      },
+      "scope": "Actual output stream submission/drain; same mixer peak/event count as headless replay. No loopback recording or subjective listening claim.",
+      "native_owner_exit_code": 0
+    },
+    {
+      "gpu_index": 0,
+      "failed_device_test": true,
+      "raw_report_sha256": "5b81a525fb9c6c57d6705b2a53f973778c1464891a100ea47f12f6de1e377e44",
+      "binary_sha256": "8074496ff49168137c9537b049077a8e542b34adf2ef85c56de88b0721d9cf09",
+      "device": {
+        "backpressure_ms": 0.0,
+        "driver": "",
+        "dsp_ms": 0.0,
+        "empty_queue_observations": 0,
+        "enabled": false,
+        "max_queued_frames": 0,
+        "over_range_samples": 0,
+        "peak": 0.0,
+        "stream_drained": false,
+        "submitted_frames": 0,
+        "timeline_resets": 0,
+        "voices_started": 0
+      },
+      "capture": {
+        "sha256": "b5d82f191f8c2f80dfeb7535b74170bf70ba23d11fb64ef20a2484b24daa1366",
+        "frames": 96000,
+        "channels": 2,
+        "sample_rate": 48000,
+        "format": "WAV IEEE float32"
+      },
+      "scope": "Failed output initialization retains tick zero and a retry receipt; headless audio remains usable in the same runtime session.",
+      "native_owner_exit_code": 0
+    }
+  ],
+  "retained_failed_attempts": [
+    {
+      "kind": "build-driver target selection",
+      "raw_report_sha256": "a7561a2fdc0ca0cde5b23149705b764bfb8c11d85bcd0b83363253ead362d720",
+      "exit_code": 1,
+      "reason": "The driver requested runtime-instances in the simulation-disabled authoring build. Ninja rejected the absent target. A separate corrected authoring build passed with unchanged frozen source inputs."
+    },
+    {
+      "kind": "verifier error-code expectation",
+      "raw_report_sha256": "83f249d8c8990ee81587b25f718e20432740afc6d54b8f2f085a37f8f9b7a3f9",
+      "verifier_sha256": "e10a414aa646a2c93f42881f7f23f52734a608257950fc8819a07aefd5b27d17",
+      "reason": "Verifier expected -32602 for a failed runtime sound batch; the established native contract returns -32040. The oracle was corrected; no runtime admission policy changed.",
+      "native_owners_clean": true
+    },
+    {
+      "kind": "early verifier setup",
+      "raw_report_sha256": "471818bdcec0c3fe30b507566791057857b1b53b71a3ecea354541606cdc0e93",
+      "verifier_sha256": "6ad9c4dd4647698ec0a3788457fa690c39723d674d1aa501412045aa2a2b3921",
+      "reason": "Relative import source was resolved twice",
+      "native_owners_clean": true
+    },
+    {
+      "kind": "early verifier setup",
+      "raw_report_sha256": "e66dec5c8d0000e10528b7b6c31132a00fa887c5e7e4e607c0d4651105192e9a",
+      "verifier_sha256": "1b45fb9076dbc7ef246c3d04b2240b8f0c272fa5b7a445caa3439bf44758c054",
+      "reason": "Verifier had not created the required existing save directory",
+      "native_owners_clean": true
+    },
+    {
+      "kind": "early verifier setup",
+      "raw_report_sha256": "89b5399118185fefe00aafd72f8b8cfca80886950402890ff0a641e468aed1c3",
+      "verifier_sha256": "51de3dff49b2f5b98e87387a1be3822c295378d0551a1de2d2b7a877973b907a",
+      "reason": "Case-sensitive error-message assertion did not match the actual middle-hole rejection",
+      "native_owners_clean": true
+    }
+  ],
+  "source_pins": {
+    "CMakeLists.txt": "94aa88f7b97ef35a1dd5b5fb60fe35dc1e33be3acbbc9530baf0a8c328c006c4",
+    "src/audio_events.cpp": "9e7d4b273063e7e89bf59d900215923417bb7fc95f716a5be76240a5319e46a2",
+    "include/poima/audio.hpp": "3612080f5134dfb2ae6c69453eb3e182f9a75c53eae8c8ca77e0b65db15558d4",
+    "src/runtime.cpp": "f98387ee7331b680372592c3d0694e56bc9c25a42188f6fe90a3f3e9c4ec5cb7",
+    "src/runtime_save.inc": "2dfb4930dcf82873c1d4d73118077345699b5fe200980f832231fa43e8d9bc88",
+    "src/world_gameplay_save.inc": "aa31727cde5cfc7f213e28b8c68deca6e6134aed7a1da72c6352e1c7a84dbbb6",
+    "src/player_audio.hpp": "d634f840aa811b4ac3c1deafb95b186ab49d0d7445bb909056d7920d6b4fcf4e",
+    "src/render_smoke.cpp": "b9c28480b5f1a0e796e5758cdf14bab84679eb222162c3c5cf1a4c94babcbe0c",
+    "tests/audio_save_native.cpp": "268ba2bbe84e8ec3b0eb86ea7bdb594fbecfec624524c574272fa27280d81f8e",
+    "tests/world_audio_native.cpp": "125a7f5ca30fdd7ebd0b11216a064d78dd9ac2bd6be87fb51140767079603097",
+    "tests/runtime_instances_native.cpp": "bb1dc8fb8fb566f64d75d7c21263e09b486b1e2e7003f97247b2bc7c01d0e648",
+    "tests/world_save_native.cpp": "15806a562874d4089dd59ba3bd899f81dbaddb7e8472b4d85efda65e6d8401bf",
+    "tests/sound_retirement_contract.py": "30fd0277442209c9ab3c76d1f5286f58dae979eb76531a40700e22f612548917",
+    "tests/audio_contract.py": "27eb4530cd1014ab5ccc33364b8299f6516322c975eaa6fc4235fef037c010e8",
+    "tests/audio_player.py": "266cf8ce177906627380531e17f7fc51f0ead4e189c7f5c1f334f46260dc0367",
+    "tests/runtime_save_contract.py": "2089408407db6bc74670b99bfef2da4ee8b9dfe3142493b2039f142d2d9693df",
+    "tests/world_instances_contract.py": "c2f6076be44779b7633431e508b784aee9029a9647c418f6f9b9b299aceebe74",
+    "tests/authoring_core_conformance.py": "d1d1c204249a7c0a5d32c9e07e76c72bd94d4c42f15e4c8afc75830cbcbb167a",
+    "tests/authoring_contract_identity.py": "32e6ed2e2d9427115f883b77dd0a4e1182b5b6650737c7aa7269202ed96ad44c",
+    "tests/build_metadata_contract.py": "7967a024bf9084fdc358705f590f5e01e9f08978f2dfba5829f9ebc66b922085",
+    "tests/relay_yard_upgrade.py": "db0f5cc3371f1eb88141a8f4da820af902f451c81b16e5a082c17480f6e12cd7",
+    "tests/relay_yard_contract.py": "fa7621c488643f4a52e2e6d525710d5f68ee6ed9c2add1ac100cff54a21b9628",
+    "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92",
+    "examples/relay-yard/RelayYardGame.cs": "62f672919eaad4df125562d3853320af23c11b939db4c2bfd5bd4140decd21b8",
+    "examples/relay-yard/run.py": "fe84fae86be93a657ad0bf8e2a8f0a3df369fb583c122e2c4ae10c9121a840d7",
+    "examples/assets/acoustic-probe.wav": "bfbe27ec9d9b6dc06f81c002c6395224ccea9a78b83c00effbc31236684d85fe",
+    "docs/AUDIO.md": "e79c4481390f9afafef0e114669db79f241854cd20b16c8a2505f0586ae5d7c2",
+    "docs/AUDIO_EVENTS.md": "a13ad4cd876adbe5d007edcfcc65ffbf47b6928eced9718d6c7d3e3cd2209eae",
+    "docs/IMPLEMENTATION_STATUS.md": "00f8e6fe0cf7e16e19dd809eb32e8537546501bc78a19b95076e7c17bb0f1454",
+    "docs/PLAYBOOKS.md": "27e96d57f04d800fb9b2ea5f616880d494e5354086c8ecb910d19370bd084152",
+    "docs/DOCUMENTATION_COVERAGE.md": "b585bfe4d6fbcb53949c3ba3b322dff0fc53aceebd8d8bcf2369925a7af74c4d",
+    "README.md": "75211d33e5732a833eb60d8725bb7413835b0d7c2ec1ba25b0f2f6bbdc029de4",
+    "CHANGELOG.md": "3e31cd0b9f75f57a8c260a93738f1db2dfa0e399b8a545bd1d6f9e579918cc5e"
+  },
+  "limitations": [
+    "Diagnostic tone fixtures; licensed game-cue integration remains open.",
+    "Logical save restoration reconstructs DSP; no seamless waveform guarantee.",
+    "Device submission/drain and queue observations are not listening, physical loopback, hardware-underrun or click-to-photon measurements.",
+    "No graphics quality, representative performance, full Alpha or older-reader compatibility claim."
+  ],
+  "frozen_native_source_count": 288,
+  "frozen_native_inventory_sha256": "cba8655ef34cbc6668f332dca73ad72250050e45657aee8c76d08883719c5b2f",
+  "native_report_sha256": "a7561a2fdc0ca0cde5b23149705b764bfb8c11d85bcd0b83363253ead362d720",
+  "corrected_authoring_report_sha256": "28d5e638bad754d29374b35a5a656734da6535099f89c179d9a87c763db59777",
+  "retained_game_upgrade_regression": {
+    "host": "linux",
+    "raw_report_sha256": "62227b87adbc78b6bea5da37195d5bf20e7e35d9c8f2fe38e132c7533c2676f7",
+    "rpc_count": 4198,
+    "clean_native_owners": 4,
+    "checks": [
+      "Original native artifact exactly restores retained real-game checkpoint",
+      "Explicit legacy-ID edge preserves complete native state and all49 values; denied edges/retries stay inert",
+      "Remaining genuine pickups, courier and terminal complete; deliberate target save exactly reopens and continues in fresh process"
+    ],
+    "source_identity": {
+      "world_id": "cfc503bfb75fae619569293e9ba1896f",
+      "content_sha256": "bfbece40db911f1a5183d961a98fa0803109b68cd86c79d098fdcfe4fdbbf0d5",
+      "backend": "native_aot",
+      "module_identity": "poima.examples.relay-yard",
+      "type": "Poima.Examples.RelayYardGame",
+      "image_sha256": "9b757ad5a923abc792a04a10fd0f40ff9d92dd3162000d0ba78df4f4a7cc9e59",
+      "schema_sha256": "f09d550898336c4f23ec6d9e09f7aa7db2cbb7f3522827f4f76fbec6ad522055"
+    },
+    "target_identity": {
+      "world_id": "cfc503bfb75fae619569293e9ba1896f",
+      "content_sha256": "bfbece40db911f1a5183d961a98fa0803109b68cd86c79d098fdcfe4fdbbf0d5",
+      "backend": "native_aot",
+      "module_identity": "poima.examples.relay-yard",
+      "type": "Poima.Examples.RelayYardGame",
+      "image_sha256": "4092e7ebcfe532b0ec30b7e30bbe020c12d2390a87d00fc3ccc49a924c0a7c65",
+      "schema_sha256": "9769066f338a3864dfb1daa5df9f5d27ae882d713e2203ba8b2a7440e5f85d00"
+    },
+    "immutable_inputs_preserved": true,
+    "game_completed": true,
+    "fresh_process_continued": true,
+    "compiled_artifacts": "Unchanged retained 0.0.85 source and 0.0.86 target; no newly compiled gameplay consumer."
+  },
+  "installation": {
+    "raw_report_sha256": "24d796b5348ee16a17e32570b657f1b132b13a60f3f139e790e4f224e6771472",
+    "steps": [
+      {
+        "kind": "desktop",
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "seconds": 25.552888059999532,
+        "log_sha256": "a08148194e74daad499b20241085489fb4e1cc297904df45a79c61e694631a81"
+      },
+      {
+        "kind": "install",
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "seconds": 51.611454844000036,
+        "log_sha256": "8224f0ffeaf7f6a21587d975a507c7ffdf17f31105babee8b4e87b1b4a328426"
+      }
+    ],
+    "installed_file_count": 45,
+    "scope": "Relinked native desktop bridge and stripped Windows installation; installed native executable passes separate full retirement lifecycle. No new desktop visual or physical-input qualification."
+  },
+  "cmake_registration_check": {
+    "host": "windows-cross-build",
+    "passed": true,
+    "log_sha256": "523f853b6156162c9de6a204852d50971121695375fc4e79ba06be9721b3d622",
+    "scope": "Actual registered test uses WSL Python, native Windows engine and explicit path conversion; three cases/nine owners/93 operations."
+  }
+}

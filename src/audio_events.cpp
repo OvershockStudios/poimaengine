@@ -76,11 +76,11 @@ SavedSound decode_state(const Json& value,std::uint64_t tick,const std::map<std:
         if(end>start) { events.emplace_back(start,1);events.emplace_back(end,-1); }
         result.voices.push_back(std::move(voice));previous=result.voices.back().id;previous_start=result.voices.back().start_tick;
     }
-    check(result.voices.empty() ? result.next==1 : previous==result.next-1,"Sound allocator does not follow its retained newest voice.");
-    if(result.voices.size()<256) {
-        check(result.next==result.voices.size()+1,"Unpruned sound history has missing voice IDs.");
-        for(std::size_t i=0;i<result.voices.size();++i)check(result.voices[i].id==i+1,"Unpruned sound history has missing voice IDs.");
-    }
+    // Retired emitters remove their complete history, including the newest or
+    // every retained voice. The allocator is a monotonic high-water mark, not
+    // a retained-record count. Pruning/retirement may leave arbitrary holes;
+    // the positive, strictly increasing IDs below next already checked above
+    // remain the invariant, and loading must never recycle retired handles.
     // End before start at the same sample: a replacement may begin precisely
     // when an older voice stops, including zero-length play/stop commands.
     std::sort(events.begin(),events.end());int active=0;

@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.87
+
+- Fix saves after removing played runtime sound emitters: preserve surviving voices and the monotonic allocator through gaps or completely retired history.
+- Verify real spawn/play/despawn, relocated fresh-process restoration, rejected sound-batch rollback and continued handle allocation on Windows and Linux; retain the previous-build failure reproduction.
+- Recheck native audio output on both laptop GPUs and retained Relay Yard save upgrades. Document [emitter lifetime and saves](docs/AUDIO_EVENTS.md#removing-emitters-and-saving). [Evidence](docs/evidence/m2-sound-retirement.json).
+
 ## 0.0.86
 
 - Add persistent IDs to Relay Yard's 49 existing state fields and an explicitly defaulted checkpoint version, preserving its native services prefix.

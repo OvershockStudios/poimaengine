@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.86**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.87**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.87 fixes saves after removing played runtime emitters. Emitter
+retirement legitimately leaves holes, removes the newest handle or empties
+logical voice history while preserving its allocator. Restore now accepts those
+states while retaining positive ordered ID bounds, trusted clip bindings,
+chronology, capacity limits and atomic load validation. Sound-state format 1,
+authoring-core v1, schema revision 70 and services epoch 7 are unchanged.
+
+Windows and Linux reproduce the previous build's isolated save rejection, then
+pass real hierarchical spawn/play/despawn, relocated fresh-owner restoration,
+failed sound-batch rollback and allocation after complete retirement. Each
+corrected run checks three scenarios through nine clean native owners and 93
+operations. Native tests additionally cover retirement after history pruning
+and malformed ID/allocator rejection. Both Windows GPUs submit and drain actual
+WASAPI output with matching offline mixer statistics; this is diagnostic content
+and device submission, not listening or physical loopback qualification.
+The retained real-game upgrade also passes on the corrected host without
+changing its compiled artifacts or content. [Evidence](evidence/m2-sound-retirement.json)
+and [lifetime/save task](AUDIO_EVENTS.md#removing-emitters-and-saving).
+
+This closes a sound/save lifecycle defect. Relay Yard still needs licensed
+gameplay cues and continuous-play audio integration; these checks do not close
+whole Alpha, general acoustic realism, representative performance or audibility.
 
 Version 0.0.86 gives Relay Yard persistent global field IDs and a meaningful
 checkpoint version. All 49 old fields keep their kinds; the new field defaults
