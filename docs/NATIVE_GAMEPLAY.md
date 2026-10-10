@@ -24,6 +24,27 @@ python3 scripts/publish_native_gameplay.py \
 
 The output directory must be new. `--rid linux-x64` or `--rid win-x64` selects a matching host target; cross-OS Native AOT publication is not supported. `--work` retains build intermediates in a separate new directory. Project builds execute trusted build tasks and dependencies.
 
+Games may reference the matching `Poima.Gameplay` SDK through a project reference
+or a distributed DLL. The game build must copy `Poima.Gameplay.dll` into its
+output; a binary reference with `Private=false` is rejected before generation.
+Generated native bindings explicitly reference that copied SDK. This supports
+both reference styles within a matched SDK/tooling cohort; it does not qualify
+arbitrary mixtures of SDK versions.
+
+To check both routes on a configured matching host, run the regression with a
+built `poima-gameplay-compatibility-test` executable:
+
+```sh
+python3 tests/native_gameplay_sdk_reference.py \
+  --dotnet /path/to/dotnet \
+  --compatibility-test /path/to/poima-gameplay-compatibility-test \
+  --output build/native-sdk-reference-check
+```
+
+The test publishes two actual Native AOT libraries, executes their compiled
+Tick/Control callbacks, and verifies missing-copy rejection. Build products,
+checksums and failed-command diagnostics stay in the new output directory.
+
 Build-time inspection generates a direct typed factory and state-layout assertions. The native entry calls the selected game and state types directly. It does not discover or load managed game assemblies at runtime. The generator currently requires public, non-generic top-level game and state types, a public parameterless game constructor, a stateless game class and supported unmanaged state fields. Nested types are not supported. Arbitrary reflection, dynamic code, managed plugin loading and dependency publication are not supplied by this route. Unexpected runtime publish payloads reject until an explicit packaging policy exists.
 
 Native AOT includes runtime services, including garbage collection. It is native compiled gameplay, not a guarantee of zero allocation or absence of a runtime. The module reports its actual dynamic-code support and compilation flags; the loader requires both to be false.

@@ -174,6 +174,13 @@ public override void Control(ref State state, ControlContext context)
 
 Reads within a callback see committed UI values. UI writes stage bounded patches; repeated writes to a field select the last value. Publication applies the combined candidate once after the callback. Native validation bounds callbacks and text writes and rejects invalid targets or a final invalid modal state. Failure rolls back gameplay state, UI changes and staged save intents. A later failure in a multi-tick batch also rolls back earlier UI publications in that batch.
 
+A Begin or Continue handler that defers work to the next `Tick` must also call
+`context.RequestResume()` when it should leave paused playback. Setting a
+state flag alone does not advance simulation: controls can run while the native
+player is paused, and the next tick waits for a successful resume. Test the
+welcome screen with `initially_paused:true`, as well as a normally advancing
+player, so a queued Begin action cannot leave the menu stuck.
+
 An accepted control callback increments `control_sequence` once while leaving simulation tick unchanged. A successful Control callback also advances the gameplay revision once, even when its final scalar values are unchanged. This invalidates gameplay Inspector drafts captured before that same-tick callback; a failed callback advances neither gameplay nor control revisions. UI revision advances when UI commands publish; a scalar-only callback still changes control sequence. Save requests are serviced by the serialized owner after acceptance, without calling Tick. An I/O failure is a save-operation outcome, not a reversal of an already accepted callback. Storage retries resolve the original ticket without invoking the handler again.
 
 `runtime.ui.activate` requires `session_id`, `request_id`, `id` (the button), `expected_tick`, `expected_ui_revision`, `expected_control_sequence` and `expected_gameplay_revision`. After structural edits, `expected_structure_revision` is required too; supplied guards are always checked. The owner derives the action token from frozen metadata and validates logical eligibility. It does not accept an arbitrary caller-supplied action string. Retained identical retries return original acceptance; changing parameters under the same request ID conflicts.

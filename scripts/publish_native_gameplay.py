@@ -99,6 +99,9 @@ def main():
     assembly = built / (name + '.dll')
     if not assembly.is_file():
         raise ValueError('Selected project produced no game assembly: ' + str(assembly))
+    sdk = built / 'Poima.Gameplay.dll'
+    if not sdk.is_file():
+        raise ValueError('Selected project must copy its Poima.Gameplay SDK dependency to the build output: ' + str(sdk))
     generator = ROOT / 'managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj'
     run([dotnet, 'build', generator, '-c', 'Release', '-o', work / 'generator', '--nologo'], ROOT)
     generated = work / 'generated'
@@ -106,7 +109,9 @@ def main():
     schema = json.loads((generated / 'schema.json').read_text())
     requirements = generated_requirements(generated / 'requirements.json')
     # Referencing the original project preserves source and dependency semantics;
-    # the linker sees direct calls to the exact game and state types.
+    # the linker sees direct calls to the exact game and state types. Binary SDK
+    # references do not propagate through ProjectReference, so bind Entry.cs and
+    # generated calls to the same SDK copied by the selected game's build.
     project_xml = f'''<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework><LangVersion>14.0</LangVersion>
@@ -117,6 +122,7 @@ def main():
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="{escape(str(project), {chr(34): "&quot;"})}" />
+    <Reference Include="Poima.Gameplay"><HintPath>{escape(str(sdk))}</HintPath></Reference>
     <Compile Include="{escape(str(ROOT / 'managed/Poima.NativeGame/Entry.cs'), {chr(34): '&quot;'})}" Link="Entry.cs" />
   </ItemGroup>
 </Project>

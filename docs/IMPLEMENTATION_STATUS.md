@@ -1,8 +1,24 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.88**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.89**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.89 fixes Native AOT publication for games consuming the distributed
+`Poima.Gameplay.dll` through a binary SDK reference. Generated entry/binding
+code explicitly references the SDK copied by the selected game build; projects
+that disable copying receive an actionable rejection before native generation.
+The game project remains a project reference, preserving its source/dependencies.
+This changes build tooling, not authoring-core v1, services epoch 7 or artifacts.
+
+Matching-host Windows and Linux regressions publish the same unchanged compiled
+UI fixture through DLL and project references, execute real native Tick/Control
+callbacks, verify exact SDK/artifact hashes and reject a noncopying SDK reference.
+These checks cover matched SDK/tooling cohorts, not arbitrary SDK version mixes,
+clean-machine toolchain installation or complete autonomous build workflows.
+See the [publishing contract](NATIVE_GAMEPLAY.md#publish),
+[regression runner](../tests/native_gameplay_sdk_reference.py) and
+[recorded evidence](evidence/m2-native-sdk-reference.json).
 
 Version 0.0.88 integrates licensed audio into Relay Yard. Five original Kenney
 CC0 clips are preserved with licenses, hashes and a reproducible offline

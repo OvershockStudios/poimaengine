@@ -1,0 +1,913 @@
+{
+  "format": "poima.native-sdk-reference-evidence",
+  "version": 1,
+  "engine_version": "0.0.89",
+  "date": "2026-10-10",
+  "passed": true,
+  "scope": "Matching-host Native AOT publication and compiled compatibility callbacks through distributed SDK DLL and SDK project references.",
+  "unchanged_contracts": {
+    "authoring_core": 1,
+    "services_epoch": 7,
+    "baseline_services_bytes": 176,
+    "native_artifact_format": 2
+  },
+  "limitations": [
+    "Requires an already configured matching x64 .NET SDK/native linker host.",
+    "Matched SDK/tooling cohorts; arbitrary SDK version mixtures are not qualified.",
+    "No new clean-machine deployment, graphics, physical input, audibility, representative performance or complete autonomous workflow qualification."
+  ],
+  "regression_runner": "tests/native_gameplay_sdk_reference.py",
+  "platforms": {
+    "windows": {
+      "passed": true,
+      "private_record_sha256": "52d59f1d355b005aa2d8dd9344f6e286673f98e86377efceb59bffe2c6a58969",
+      "host_os": "win32",
+      "compatibility_test_sha256": "bdf941f526021eca5358b2a7cd4ca69727171c22fa06e964a9994d559ed5cafc",
+      "runner_sha256": "11a2804d379859c6d407cd082bfc1125b38a145ced528760b5239a2e90a86ec7",
+      "sources": {
+        "fixture_sha256": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+        "sdk_sha256": "ccf635d449d884957245be44d86368e1f9279a71b5abee8e1b66df17e78e1e8b",
+        "publisher_sha256": "0a778e8f6ee2f00c196a021cfdf95a44e7b32d2b02b82d5a2a86d168b03913ac"
+      },
+      "commands": [
+        {
+          "label": "sdk-build",
+          "pid": 29216,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 3.3573341999981494,
+          "stdout_sha256": "6df99b80fff4384964a15f47336ba0ae64bdb6f941e9af49aae67e6861c0749d",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-publish",
+          "pid": 13240,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 14.322925799999211,
+          "stdout_sha256": "43d19a1b0b922999c7715d40040836645b0874df9d26f0fff31de5c8170810b3",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-callbacks",
+          "pid": 6488,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 0.08189019999917946,
+          "stdout_sha256": "f053c263769029b7f517b8662e4433dca5357ab4cacaf337c8eb4a1cb010159a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-publish",
+          "pid": 7580,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 16.01507529999799,
+          "stdout_sha256": "d14f3de2c59c49c04b43938c72d2d99fff5633cd6746dd2e3d9739ede412bff4",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-callbacks",
+          "pid": 31136,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 0.049911099999008,
+          "stdout_sha256": "f053c263769029b7f517b8662e4433dca5357ab4cacaf337c8eb4a1cb010159a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "noncopying-publish",
+          "pid": 26924,
+          "timeout_seconds": 900,
+          "exit_code": 1,
+          "duration_seconds": 3.662779499998578,
+          "stdout_sha256": "397561c4660ff2a3a4cbe10e29b016ca1ab3b9c934f9eb1671da2a406423b856",
+          "stderr_sha256": "e193b084c15bcb794e946a8717a9e0198c2584fbed03603d05dfb99f583fb275"
+        }
+      ],
+      "fixtures": {
+        "binary-reference": {
+          "descriptor_sha256": "2b583118ea119089da550e8b01bbe29b88c65ce6af54962030476baead9f3333",
+          "inventory": {
+            "native-gameplay.json": "2b583118ea119089da550e8b01bbe29b88c65ce6af54962030476baead9f3333",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+            "Poima.NativeGame.dll": "8abe1dfcc1ecf20051a35eef3c335a1833bfaa6032260da83ad5209aac679bc9"
+          },
+          "descriptor": {
+            "format": "poima.native-gameplay",
+            "version": 2,
+            "engine_version": "0.0.89",
+            "target_os": "Windows",
+            "target_arch": "x86_64",
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176,
+            "required_features": [
+              "baseline_v7"
+            ],
+            "entry": "poima_gameplay_entry",
+            "library": "Poima.NativeGame.dll",
+            "identity": "poima.test.managed-ui",
+            "type": "Poima.Tests.ManagedUiGame",
+            "schema": {
+              "identity": "poima.test.managed-ui",
+              "bytes": 72,
+              "fields": [
+                {
+                  "name": "ControlCalls",
+                  "kind": "int32",
+                  "offset": 8,
+                  "bytes": 4
+                },
+                {
+                  "name": "EnabledAfter",
+                  "kind": "int32",
+                  "offset": 24,
+                  "bytes": 4
+                },
+                {
+                  "name": "LastAction",
+                  "kind": "int32",
+                  "offset": 28,
+                  "bytes": 4
+                },
+                {
+                  "name": "Mode",
+                  "kind": "int32",
+                  "offset": 0,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadAfter",
+                  "kind": "int32",
+                  "offset": 16,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadBefore",
+                  "kind": "int32",
+                  "offset": 12,
+                  "bytes": 4
+                },
+                {
+                  "name": "SaveHigh",
+                  "kind": "int64",
+                  "offset": 48,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveLow",
+                  "kind": "int64",
+                  "offset": 56,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveSequence",
+                  "kind": "int64",
+                  "offset": 64,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenSequence",
+                  "kind": "int64",
+                  "offset": 40,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenTick",
+                  "kind": "int64",
+                  "offset": 32,
+                  "bytes": 8
+                },
+                {
+                  "name": "Ticks",
+                  "kind": "int32",
+                  "offset": 4,
+                  "bytes": 4
+                },
+                {
+                  "name": "VisibleAfter",
+                  "kind": "int32",
+                  "offset": 20,
+                  "bytes": 4
+                }
+              ]
+            },
+            "files": [
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+                "size": 1139,
+                "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 78041,
+                "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+                "size": 1139,
+                "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 78041,
+                "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-LICENSE.txt",
+                "size": 11358,
+                "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+                "size": 21133,
+                "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+                "role": "notice"
+              },
+              {
+                "path": "Poima.NativeGame.dll",
+                "size": 1339904,
+                "sha256": "8abe1dfcc1ecf20051a35eef3c335a1833bfaa6032260da83ad5209aac679bc9",
+                "role": "library"
+              }
+            ]
+          },
+          "staged_sdk_sha256": "ccf635d449d884957245be44d86368e1f9279a71b5abee8e1b66df17e78e1e8b",
+          "generated_project_sha256": "a129eae562fa8ab2e2a9085d5fadac7807c8169d7ed9f5390c7752a9f298b5dd"
+        },
+        "project-reference": {
+          "descriptor_sha256": "f14b3db15d7596b48dd7d4485dd913a54829897196698d62263ec1abe531e9c9",
+          "inventory": {
+            "native-gameplay.json": "f14b3db15d7596b48dd7d4485dd913a54829897196698d62263ec1abe531e9c9",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+            "Poima.NativeGame.dll": "be6dd1b1387f56b3485eb7445e818f4e94b7e896271a3a6f8c58b2d4fd71cd10"
+          },
+          "descriptor": {
+            "format": "poima.native-gameplay",
+            "version": 2,
+            "engine_version": "0.0.89",
+            "target_os": "Windows",
+            "target_arch": "x86_64",
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176,
+            "required_features": [
+              "baseline_v7"
+            ],
+            "entry": "poima_gameplay_entry",
+            "library": "Poima.NativeGame.dll",
+            "identity": "poima.test.managed-ui",
+            "type": "Poima.Tests.ManagedUiGame",
+            "schema": {
+              "identity": "poima.test.managed-ui",
+              "bytes": 72,
+              "fields": [
+                {
+                  "name": "ControlCalls",
+                  "kind": "int32",
+                  "offset": 8,
+                  "bytes": 4
+                },
+                {
+                  "name": "EnabledAfter",
+                  "kind": "int32",
+                  "offset": 24,
+                  "bytes": 4
+                },
+                {
+                  "name": "LastAction",
+                  "kind": "int32",
+                  "offset": 28,
+                  "bytes": 4
+                },
+                {
+                  "name": "Mode",
+                  "kind": "int32",
+                  "offset": 0,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadAfter",
+                  "kind": "int32",
+                  "offset": 16,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadBefore",
+                  "kind": "int32",
+                  "offset": 12,
+                  "bytes": 4
+                },
+                {
+                  "name": "SaveHigh",
+                  "kind": "int64",
+                  "offset": 48,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveLow",
+                  "kind": "int64",
+                  "offset": 56,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveSequence",
+                  "kind": "int64",
+                  "offset": 64,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenSequence",
+                  "kind": "int64",
+                  "offset": 40,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenTick",
+                  "kind": "int64",
+                  "offset": 32,
+                  "bytes": 8
+                },
+                {
+                  "name": "Ticks",
+                  "kind": "int32",
+                  "offset": 4,
+                  "bytes": 4
+                },
+                {
+                  "name": "VisibleAfter",
+                  "kind": "int32",
+                  "offset": 20,
+                  "bytes": 4
+                }
+              ]
+            },
+            "files": [
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+                "size": 1139,
+                "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 78041,
+                "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+                "size": 1139,
+                "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 78041,
+                "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-LICENSE.txt",
+                "size": 11358,
+                "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+                "size": 21133,
+                "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+                "role": "notice"
+              },
+              {
+                "path": "Poima.NativeGame.dll",
+                "size": 1339904,
+                "sha256": "be6dd1b1387f56b3485eb7445e818f4e94b7e896271a3a6f8c58b2d4fd71cd10",
+                "role": "library"
+              }
+            ]
+          },
+          "staged_sdk_sha256": "ccf635d449d884957245be44d86368e1f9279a71b5abee8e1b66df17e78e1e8b",
+          "generated_project_sha256": "bd57c1771dc1de0976891cbe4f50b3de9b627d98c6a15dec38e1c404446ef139"
+        }
+      },
+      "noncopying_reference_rejected": true
+    },
+    "linux": {
+      "passed": true,
+      "private_record_sha256": "69bef1a305e2bca642d3092ba7e5aa639d17ca0999a3424fc3575374a4adbaaf",
+      "host_os": "linux",
+      "compatibility_test_sha256": "5b509713dd1aaa73e5950d9085062859f47506e749295bdbb91a3f81ba2bcf47",
+      "runner_sha256": "11a2804d379859c6d407cd082bfc1125b38a145ced528760b5239a2e90a86ec7",
+      "sources": {
+        "fixture_sha256": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+        "sdk_sha256": "3b664de894ee6d87035ef37277e8d9144407768aded88a2269efa5d597515a65",
+        "publisher_sha256": "0a778e8f6ee2f00c196a021cfdf95a44e7b32d2b02b82d5a2a86d168b03913ac"
+      },
+      "commands": [
+        {
+          "label": "sdk-build",
+          "pid": 22700,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 10.506824959000369,
+          "stdout_sha256": "467606e5bf16583dbe0d04d55536c7e637e70eb31b72ed51641a4c72e6ef6843",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-publish",
+          "pid": 22733,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 51.09533025500059,
+          "stdout_sha256": "23db0487176535cee62526e102c37ad262eea4d83299347df0896a626d6b77d7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "binary-reference-callbacks",
+          "pid": 22895,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 0.2704805959983787,
+          "stdout_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-publish",
+          "pid": 22897,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 55.45550598799855,
+          "stdout_sha256": "afde75361569960928030af2adf4b0fce2822d96d578eeed29b9308d2618d4a8",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "project-reference-callbacks",
+          "pid": 23082,
+          "timeout_seconds": 900,
+          "exit_code": 0,
+          "duration_seconds": 0.3202604229991266,
+          "stdout_sha256": "586f7a5104c5e79fcf9fbfed4d6f738f779ad1caec7eec458c3eefdefc132cef",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "label": "noncopying-publish",
+          "pid": 23084,
+          "timeout_seconds": 900,
+          "exit_code": 1,
+          "duration_seconds": 12.460888491999867,
+          "stdout_sha256": "8736dd08ed05641452a9ed24e35d119bf814b90f8a3ae0d93af0fbf5cbaac0c3",
+          "stderr_sha256": "47921d9b256d34dc2a32ee17351ae1f184d8431959db0bddb40ef96531d09288"
+        }
+      ],
+      "fixtures": {
+        "binary-reference": {
+          "descriptor_sha256": "502223d084a3410f57d130f268979ce63fc60987348c070f280843f29c845e44",
+          "inventory": {
+            "native-gameplay.json": "502223d084a3410f57d130f268979ce63fc60987348c070f280843f29c845e44",
+            "Poima.NativeGame.so": "fa55a4c4d1c2e6c57cd529dc01e4f4c26882b0c1dab55573987ea25ddfa862e7",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          },
+          "descriptor": {
+            "format": "poima.native-gameplay",
+            "version": 2,
+            "engine_version": "0.0.89",
+            "target_os": "Linux",
+            "target_arch": "x86_64",
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176,
+            "required_features": [
+              "baseline_v7"
+            ],
+            "entry": "poima_gameplay_entry",
+            "library": "Poima.NativeGame.so",
+            "identity": "poima.test.managed-ui",
+            "type": "Poima.Tests.ManagedUiGame",
+            "schema": {
+              "identity": "poima.test.managed-ui",
+              "bytes": 72,
+              "fields": [
+                {
+                  "name": "ControlCalls",
+                  "kind": "int32",
+                  "offset": 8,
+                  "bytes": 4
+                },
+                {
+                  "name": "EnabledAfter",
+                  "kind": "int32",
+                  "offset": 24,
+                  "bytes": 4
+                },
+                {
+                  "name": "LastAction",
+                  "kind": "int32",
+                  "offset": 28,
+                  "bytes": 4
+                },
+                {
+                  "name": "Mode",
+                  "kind": "int32",
+                  "offset": 0,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadAfter",
+                  "kind": "int32",
+                  "offset": 16,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadBefore",
+                  "kind": "int32",
+                  "offset": 12,
+                  "bytes": 4
+                },
+                {
+                  "name": "SaveHigh",
+                  "kind": "int64",
+                  "offset": 48,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveLow",
+                  "kind": "int64",
+                  "offset": 56,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveSequence",
+                  "kind": "int64",
+                  "offset": 64,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenSequence",
+                  "kind": "int64",
+                  "offset": 40,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenTick",
+                  "kind": "int64",
+                  "offset": 32,
+                  "bytes": 8
+                },
+                {
+                  "name": "Ticks",
+                  "kind": "int32",
+                  "offset": 4,
+                  "bytes": 4
+                },
+                {
+                  "name": "VisibleAfter",
+                  "kind": "int32",
+                  "offset": 20,
+                  "bytes": 4
+                }
+              ]
+            },
+            "files": [
+              {
+                "path": "Poima.NativeGame.so",
+                "size": 1591160,
+                "sha256": "fa55a4c4d1c2e6c57cd529dc01e4f4c26882b0c1dab55573987ea25ddfa862e7",
+                "role": "library"
+              },
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+                "size": 1116,
+                "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 76623,
+                "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+                "size": 1116,
+                "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 76623,
+                "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-LICENSE.txt",
+                "size": 11358,
+                "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+                "size": 21133,
+                "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+                "role": "notice"
+              }
+            ]
+          },
+          "staged_sdk_sha256": "3b664de894ee6d87035ef37277e8d9144407768aded88a2269efa5d597515a65",
+          "generated_project_sha256": "c12a33828fcb1da73309acb70b677933af5974ef930ceed833f6ae93dd79957b"
+        },
+        "project-reference": {
+          "descriptor_sha256": "ba46db23d74e88c0b1e5d7afe9994641096a70955239bd07a3b0910cb8c2298d",
+          "inventory": {
+            "native-gameplay.json": "ba46db23d74e88c0b1e5d7afe9994641096a70955239bd07a3b0910cb8c2298d",
+            "Poima.NativeGame.so": "00c554433b0f3e98a11c16ae209539447c150318ab2dec7136169a9f2dfa3be7",
+            "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+            "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+            "notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+            "notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1"
+          },
+          "descriptor": {
+            "format": "poima.native-gameplay",
+            "version": 2,
+            "engine_version": "0.0.89",
+            "target_os": "Linux",
+            "target_arch": "x86_64",
+            "call_version": 1,
+            "call_bytes": 80,
+            "services_version": 7,
+            "minimum_services_bytes": 176,
+            "required_features": [
+              "baseline_v7"
+            ],
+            "entry": "poima_gameplay_entry",
+            "library": "Poima.NativeGame.so",
+            "identity": "poima.test.managed-ui",
+            "type": "Poima.Tests.ManagedUiGame",
+            "schema": {
+              "identity": "poima.test.managed-ui",
+              "bytes": 72,
+              "fields": [
+                {
+                  "name": "ControlCalls",
+                  "kind": "int32",
+                  "offset": 8,
+                  "bytes": 4
+                },
+                {
+                  "name": "EnabledAfter",
+                  "kind": "int32",
+                  "offset": 24,
+                  "bytes": 4
+                },
+                {
+                  "name": "LastAction",
+                  "kind": "int32",
+                  "offset": 28,
+                  "bytes": 4
+                },
+                {
+                  "name": "Mode",
+                  "kind": "int32",
+                  "offset": 0,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadAfter",
+                  "kind": "int32",
+                  "offset": 16,
+                  "bytes": 4
+                },
+                {
+                  "name": "ReadBefore",
+                  "kind": "int32",
+                  "offset": 12,
+                  "bytes": 4
+                },
+                {
+                  "name": "SaveHigh",
+                  "kind": "int64",
+                  "offset": 48,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveLow",
+                  "kind": "int64",
+                  "offset": 56,
+                  "bytes": 8
+                },
+                {
+                  "name": "SaveSequence",
+                  "kind": "int64",
+                  "offset": 64,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenSequence",
+                  "kind": "int64",
+                  "offset": 40,
+                  "bytes": 8
+                },
+                {
+                  "name": "SeenTick",
+                  "kind": "int64",
+                  "offset": 32,
+                  "bytes": 8
+                },
+                {
+                  "name": "Ticks",
+                  "kind": "int32",
+                  "offset": 4,
+                  "bytes": 4
+                },
+                {
+                  "name": "VisibleAfter",
+                  "kind": "int32",
+                  "offset": 20,
+                  "bytes": 4
+                }
+              ]
+            },
+            "files": [
+              {
+                "path": "Poima.NativeGame.so",
+                "size": 1591160,
+                "sha256": "00c554433b0f3e98a11c16ae209539447c150318ab2dec7136169a9f2dfa3be7",
+                "role": "library"
+              },
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+                "size": 1116,
+                "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 76623,
+                "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+                "size": 1116,
+                "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+                "role": "notice"
+              },
+              {
+                "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+                "size": 76623,
+                "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-LICENSE.txt",
+                "size": 11358,
+                "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+                "role": "notice"
+              },
+              {
+                "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+                "size": 21133,
+                "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+                "role": "notice"
+              }
+            ]
+          },
+          "staged_sdk_sha256": "3b664de894ee6d87035ef37277e8d9144407768aded88a2269efa5d597515a65",
+          "generated_project_sha256": "b453b1c239d20d8e779357ff38a9da47e85a02957247463b07d26bce2bb6d2b3"
+        }
+      },
+      "noncopying_reference_rejected": true
+    }
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "seconds": 74.87486640399948,
+      "binary_sha256": "acac562233905dd19f6db9d655339e955a340728ef62deb829f728107b8e7e1b",
+      "log_sha256": "7bcf8c955b016ef1ee9b08efa4117e11fbb3dfe7c3d414b58f1fed2f9eb0145e",
+      "timed_out": false,
+      "forced_cleanup": false
+    },
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "seconds": 72.72085238399995,
+      "binary_sha256": "e560c7eb9e4a9f1cb456b43173e65e5427c50ce0d816850e9af7c2dbbd4b61c6",
+      "log_sha256": "bceae818bef94eae24864f7a7168a89936a90273c8c4f1ee467693c00f322211",
+      "timed_out": false,
+      "forced_cleanup": false
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "seconds": 87.31646535300024,
+      "binary_sha256": "4946652495271c062371d3b79c817995002e3fc79dcd2dc591ccc6c09b0a26f3",
+      "log_sha256": "0cac1be7cdb9c55c961d501a565fc2479ca909a852135051f63a4fd18151cc69",
+      "timed_out": false,
+      "forced_cleanup": false
+    }
+  ],
+  "corrected_windows_script_checks": {
+    "identity": {
+      "passed": true,
+      "test_count": 2,
+      "skipped": 0,
+      "log_sha256": "92f41ba3941279a7136343c0b00a694ea678d8b57dc01ae768ab9dd10664cb63",
+      "invocation": "explicit --windows-interop"
+    },
+    "project": {
+      "passed": true,
+      "test_count": 20,
+      "skipped": 5,
+      "log_sha256": "6dd8987dbe89db95f7a57884e6b3407a5805ee08d49dafebe4f4b0348a133cec",
+      "invocation": "explicit --windows-interop"
+    },
+    "cli": {
+      "passed": true,
+      "test_count": 9,
+      "skipped": 2,
+      "log_sha256": "d74725b4f375246a307c6413563d87f19766a52cbeeb5884900f55e0e1ab626e",
+      "invocation": "native Windows Python"
+    }
+  },
+  "selected_ctest": {
+    "linux": {
+      "passed": true,
+      "test_count": 6,
+      "log_sha256": "e365a01178e7cc42c64cd903af5c4a37868c36183417a91b3bcf343f152305f2"
+    },
+    "authoring": {
+      "passed": true,
+      "test_count": 5,
+      "log_sha256": "f1b2c555465944b90999f6df379b510d162439b3dd0b8bb2c0e8367c2af5397c"
+    },
+    "windows_initial": {
+      "passed": false,
+      "test_count": 6,
+      "failed_count": 3,
+      "log_sha256": "2bcab63ca9a19fff34f7e9775db1e30b5efd46580dd9806c20c6c631fdd304b6",
+      "diagnosis": "Cross-host CTest omitted explicit Windows path conversion for identity/project scripts and the Linux-run driver override test did not exclude Windows device enumeration; the CLI check passed from native Windows Python."
+    }
+  },
+  "source_hashes": {
+    "CHANGELOG.md": "be7ab765f6e075d96fa058be987d5fa049a4a176d0e71f81e53e8341ea8b873e",
+    "CMakeLists.txt": "a0f3410e9b9a60e041fdabcbad3ddc6e0b869346f030546588a9a59b402670a0",
+    "README.md": "20006f5bc63bfd8703b01d722cf564fbb74e5b82db37cfcb243a18456e44aecb",
+    "docs/GAME_UI.md": "27b760146defb662521c8171e5e2b74a17fb1a2b520865417942ea275a13a1b1",
+    "docs/IMPLEMENTATION_STATUS.md": "f281b95760d10718d9bb6564faafa70a1b4139766850e658ab434f9513bbfe49",
+    "docs/NATIVE_GAMEPLAY.md": "69188890a9ac9331d76f6e9baabb6d280124710dbe287187d8d02c8336eb7c0d",
+    "managed/Directory.Build.props": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d",
+    "managed/Poima.Gameplay/Animation.cs": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9",
+    "managed/Poima.Gameplay/AnimationLayers.cs": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497",
+    "managed/Poima.Gameplay/Buffers.cs": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f",
+    "managed/Poima.Gameplay/CharacterInput.cs": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118",
+    "managed/Poima.Gameplay/Components.cs": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4",
+    "managed/Poima.Gameplay/Gameplay.cs": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "213eca52e48c8b2eba6c31e344336008e3b6c0627eb8a38a6bab2368f4fe714f",
+    "managed/Poima.Gameplay/Instances.cs": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7",
+    "managed/Poima.Gameplay/Lifecycle.cs": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172",
+    "managed/Poima.Gameplay/Navigation.cs": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef",
+    "managed/Poima.Gameplay/Persistence.cs": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2",
+    "managed/Poima.Gameplay/PlayerPreferences.cs": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a",
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "managed/Poima.Gameplay/ServiceAbi.cs": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e",
+    "managed/Poima.Gameplay/Ui.cs": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c",
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098",
+    "managed/Poima.NativeGame.Generator/Program.cs": "019e650f4aba1b831da5ac2d81f70f2fce40c033d4bc93e92da7d2d0b52d6e64",
+    "managed/Poima.NativeGame/Entry.cs": "dff4ff2b5569bb5d0d463b1305fdb951f579143643c15a24157b17c540bc76f6",
+    "scripts/publish_native_gameplay.py": "0a778e8f6ee2f00c196a021cfdf95a44e7b32d2b02b82d5a2a86d168b03913ac",
+    "tests/gameplay_compatibility_native.cpp": "f5ff594af6120f574ea4dd3626209e68878331d7f6723437e5ff332cd5fa3fe9",
+    "tests/managed_ui_gameplay/ManagedUiGame.cs": "499e3f287e314cf6d4aac60c3fdfaab2f859c754a681b0dabc6a7478190ba7cd",
+    "tests/managed_ui_gameplay/Poima.ManagedUiGame.csproj": "a4aef7679b1bfbb8e54aab9923b3cf1841531082ee56d820aaf0fb6b918b1a8a",
+    "tests/managed_ui_gameplay/README.md": "7b9166fdef63a59ccdacce73ba593178c60db5b023ca4d04bc9afe6374c8b0a1",
+    "tests/native_gameplay_publish_requirements.py": "73ed1f63d1f2b95872882f6fd33d05a884c56c185f318c9ea0567f4a2d441b78",
+    "tests/native_gameplay_sdk_reference.py": "11a2804d379859c6d407cd082bfc1125b38a145ced528760b5239a2e90a86ec7"
+  }
+}

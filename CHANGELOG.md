@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.89
+
+- Fix Native AOT publication for games referencing the distributed gameplay SDK DLL: generated bindings use the SDK copied by the selected game build.
+- Reject SDK references that disable copying with an actionable error before native generation or artifact publication.
+- Add matching-host regression checks for DLL and project references, genuine native Tick/Control execution and missing-copy rejection. Document the [publishing contract](docs/NATIVE_GAMEPLAY.md#publish). [Evidence](docs/evidence/m2-native-sdk-reference.json).
+
 ## 0.0.88
 
 - Add licensed Relay Yard pickup, denial, arrival, completion and displacement-driven footstep cues, using permanent emitters and saved scalar cadence components.
