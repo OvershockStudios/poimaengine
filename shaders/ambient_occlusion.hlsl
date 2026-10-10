@@ -11,16 +11,24 @@ float3 ao_normal(float2 oct) {
     if(n.z<0)n.xy=(1-abs(n.yx))*float2(n.x>=0 ? 1 : -1,n.y>=0 ? 1 : -1);
     return normalize(n);
 }
-bool ao_load(int2 p,uint2 extent,out float3 world,out float3 normal) {
+bool ao_load(int2 p,uint2 extent,bool decode_normal,out float3 world,out float3 normal) {
     world=0;normal=0;
     const float2 pixel=float2(p)+.5;
     if(any(p<0) || any(p>=int2(extent)) || any(pixel<cluster_viewport.xy) || any(pixel>=cluster_viewport.xy+cluster_viewport.zw))return false;
     const float flags_value=ao_surface.Load(int3(p,0)).w;
     const float d=ao_depth.Load(int3(p,0));
     if(!isfinite(flags_value) || (((uint)round(flags_value)&9u)!=9u) || !isfinite(d) || d<0 || d>=1)return false;
-    const float2 oct=ao_correspondence.Load(int3(p,0)).zw;
-    if(!all(isfinite(oct)))return false;
-    normal=ao_normal(oct);
+    if(decode_normal) {
+        const float2 oct=ao_correspondence.Load(int3(p,0)).zw;
+        if(!all(isfinite(oct)))return false;
+        normal=ao_normal(oct);
+    }
+    // Horizon samples only use the position. This renderer-owned RGBA32
+    // correspondence texture is cleared to zero and its normal coordinates
+    // are written only by encode_normal, which guarantees finite [-1,1] oct.
+    // Such oct decodes to a vector with L1 length one, so normalization cannot
+    // become nonfinite. Future G-buffer writers must uphold this contract or
+    // restore neighbor normal validation before their buffers are admitted.
     const float z=cluster_depth.z/((1-d)+d*(cluster_depth.z/cluster_depth.w));
     const float2 uv=(pixel-cluster_viewport.xy-temporal_jitter.xy)/cluster_viewport.zw;
     world=camera.xyz+z*(temporal_forward.xyz+(uv.x*2-1)*temporal_right.w*temporal_right.xyz+(1-uv.y*2)*temporal_up.w*temporal_up.xyz);
@@ -55,7 +63,7 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
     if(any(id.xy>=uint2(width,height)))return;
     ao_output[id.xy]=1;
     float3 world,normal;
-    if(!ao_load(int2(id.xy),uint2(width,height),world,normal))return;
+    if(!ao_load(int2(id.xy),uint2(width,height),true,world,normal))return;
     const float3 to_camera=camera.xyz-world;
     const float distance_squared=dot(to_camera,to_camera);
     if(!isfinite(distance_squared) || distance_squared<1e-12)return;
@@ -98,7 +106,7 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
                 const int2 p=int2(floor(candidate));
                 if(all(p==int2(id.xy)))continue;
                 float3 sample_world,sample_normal;
-                if(!ao_load(p,uint2(width,height),sample_world,sample_normal))continue;
+                if(!ao_load(p,uint2(width,height),false,sample_world,sample_normal))continue;
                 const float3 delta=sample_world-world;
                 const float distance=length(delta);
                 if(distance<=1e-6 || distance>=ao_settings.x)continue;
@@ -107,10 +115,24 @@ void compute_main(uint3 id : SV_DispatchThreadID) {
                 horizon[side]=max(horizon[side],lerp(baseline[side],cosine,falloff));
             }
         }
-        visible+=ao_integral(-acos(horizon.x),acos(horizon.y),a,b);
-        // Identical finite slices in numerator and denominator preserve a fully visible
-        // hemisphere exactly, including grazing normals and low slice counts.
-        total+=ao_integral(-ao_pi,ao_pi,a,b);
+        if(a>=0 && projected_length>1e-8) {
+            // The front-facing baseline bounds the visible interval inside the
+            // positive cosine lobe. Integrate its negative and positive halves
+            // directly, using cos(acos(h))=h and sin(acos(h))=sqrt(1-h*h),
+            // instead of searching three lobes and evaluating their primitives.
+            const float2 square=horizon*horizon;
+            const float2 sine=sqrt(max(1-square,0));
+            const float slice_visible=.5*a*(2-square.x-square.y)+.5*b*(
+                acos(horizon.y)-acos(horizon.x)-horizon.y*sine.y+horizon.x*sine.x);
+            visible+=max(slice_visible,0);
+            total+=a+b*atan2(b,a);
+        } else {
+            // Rear-facing normals can have disjoint lobes. A tiny projection
+            // also uses a zero baseline rather than the lobe's actual boundary;
+            // retain the general integral for both cases.
+            visible+=ao_integral(-acos(horizon.x),acos(horizon.y),a,b);
+            total+=ao_integral(-ao_pi,ao_pi,a,b);
+        }
     }
     ao_output[id.xy]=total>1e-8 ? saturate(visible/total) : 1;
 }

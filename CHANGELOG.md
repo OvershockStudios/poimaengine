@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.95
+
+- Reduce GTAO work with a direct front-facing integral and removal of unused neighbor normal reads under the renderer-owned G-buffer producer contract. Preserve resolution, quality settings, sample counts and filtering.
+- Add paired reference/candidate captures with fixed image/probe budgets, pinned geometry/content and exact AO-disabled image checks on both laptop GPUs.
+- Measure lower AMD AO and total GPU cost in the unchanged Performance Yard workload. Preserve the remaining p95 budget miss, NVIDIA cadence results and earlier candidates without meaningful AMD gains. [Results](docs/evidence/m2-ao-optimization.json).
+- Recheck native contracts and the original AO integration, reconstruction and UI fixtures without relaxing their visual assertions. [Guide and reproduction](docs/AMBIENT_OCCLUSION.md).
+
 ## 0.0.94
 
 - Add Performance Yard: an API-authored workload retaining Relay Yard's compiled gameplay, imported character, navigation, UI and licensed audio, with additional rigs, geometry, lights and physics bodies.

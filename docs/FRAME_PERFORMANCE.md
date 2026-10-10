@@ -143,3 +143,13 @@ compiled game workload with a continuously navigated controller, additional
 imported rigs, geometry, lighting and physics. Its benchmark checks the normal
 interactive clock and completed draw work; it preserves missed budgets as
 results. Its simple art and bounded runs do not close the full release gates.
+
+The [0.0.95 AO comparison](evidence/m2-ao-optimization.json) repeats that workload
+against retained reference and optimized binaries with identical settings.
+AMD mean AO falls from 10.777 to 4.001 ms and mean total GPU duration from
+19.584 to 13.416 ms; present-return p95/p99 are 18.625/19.486 ms. The p99 budget
+passes while p95 still misses. NVIDIA mean AO falls from 1.079 to 0.902 ms, but
+its measured cadence does not improve. These are short observed comparisons,
+not a guarantee that reducing one GPU pass reduces present-return cadence.
+Use the [paired capture verifier](AMBIENT_OCCLUSION.md#reproduce-the-paired-captures)
+to check bounded image/probe equivalence separately from timing.

@@ -1,8 +1,42 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.94**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.95**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.95 reduces GTAO work without lowering resolution, slice/step counts,
+radius, filtering or quality settings. Front-facing slices use a direct form
+of the existing integral; rear-facing and tiny projections retain its general
+form. Neighbor samples omit unused normal reads under the renderer-owned
+G-buffer producer contract. Center normal validation remains complete. No
+engine API, discovery schema, gameplay services or save format changes.
+
+Paired reference/candidate captures pass on both GPUs: 25 images per binary and
+device, with all seven AO-disabled images exact, enabled images differing by at
+most one channel level, and raw/filtered visibility probes by at most
+0.00048828125. These are bounded equivalence checks, not general physical AO
+accuracy. Fresh Performance Yard comparisons use the same 1080p medium-GTAO
+workload, 30-second warm-up and 60-second measurement:
+
+| Device | Mean AO, reference → candidate | Mean total GPU, reference → candidate | Present-return p95, reference → candidate |
+| --- | --- | --- | --- |
+| RTX 4070 Laptop | 1.079 → 0.902 ms | 2.747 → 2.692 ms | 12.478 → 12.695 ms |
+| AMD integrated | 10.777 → 4.001 ms | 19.584 → 13.416 ms | 27.067 → 18.625 ms |
+
+AMD candidate p99 is 19.486 ms: it meets the 25 ms p99 budget but still misses
+the 16.7 ms p95 budget. NVIDIA candidate p99 is 13.721 ms; lower AO cost does
+not establish a NVIDIA cadence improvement. Earlier integral-only and guarded
+neighbor-decode attempts remain recorded; neither established a meaningful AMD
+gain. Results are short measurements on one laptop, not a soak, scanout FPS,
+VRAM residency or production-scene guarantee.
+
+Seven Windows and nine headless authoring CTests pass, along with 14 Windows world
+and nine runtime checks. The original per-device AO fixtures also pass: 12 basic,
+21 API, 100 reconstruction and 50 UI captures. The first API attempt stopped
+before image capture at a stale schema-52 assertion; only that discovery
+expectation was updated to 72. No visual tolerance was relaxed.
+[Optimization, reproduction and raw observations](evidence/m2-ao-optimization.json),
+[AO guide](AMBIENT_OCCLUSION.md#bounded-optimization-checkpoint--0095).
 
 Version 0.0.94 adds [Performance Yard](../examples/performance-yard/README.md),
 an API-authored combined workload retaining compiled Relay gameplay, licensed

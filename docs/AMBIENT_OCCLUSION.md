@@ -4,6 +4,67 @@ Poima's experimental spatial GTAO path estimates local ambient visibility from t
 
 **Bounded integration checks pass on both development-laptop GPUs.** Linux API and render-schedule contracts pass. Windows hardware capture, reconstruction lifecycle and UI tests pass on AMD Radeon integrated graphics and the NVIDIA RTX 4070 Laptop GPU with Vulkan synchronization validation. General visual quality, temporal behavior and performance remain unqualified. The default forward renderer retains exact pixel matches across 16 saved reference captures per device. This feature is disabled by default. [Evidence](evidence/m2-ambient-occlusion.json).
 
+## Bounded optimization checkpoint — 0.0.95
+
+The optimized estimator retains full internal resolution, every quality tier's
+slice/step counts, radius, bias, falloff and the existing filter. Front-facing
+projected normals use an algebraically equivalent direct integral; rear-facing
+and tiny projections keep the general cosine-lobe integral.
+
+Neighbor samples need positions rather than normals. Their unused normal
+texture reads are omitted because the renderer-owned RGBA32 correspondence
+image is cleared to zero and its normal coordinates are written only by
+`encode_normal`. That producer guarantees finite octahedral coordinates in
+`[-1,1]`, whose decoded vector has nonzero bounded length. Center normal reads
+and validation remain complete, as do neighbor coordinate, viewport, surface,
+depth and reconstructed-position checks. Future G-buffer writers must preserve
+this producer invariant or restore neighbor normal validation.
+
+Paired captures use identical authored geometry, cameras, content, quality and
+radius on each device: 25 captures per binary, including planes, contact corners,
+sloped/grazing geometry, rear imported normals, background edges and two 1080p
+Performance Yard views. All seven AO-disabled images match exactly. Enabled
+images differ by at most one RGB channel level; raw and filtered visibility
+probes differ by at most 0.00048828125, within the fixed 0.002 budget. This is
+bounded visual equivalence, not bit-exact enabled output or general physical AO
+accuracy. The original AO integration evidence remains historical.
+
+Matched Performance Yard runs use 30 seconds of warm-up and 60 seconds of
+measurement at 1920×1080, deferred lighting and medium GTAO without reconstruction
+or frame generation:
+
+| Device | Mean AO, reference → candidate | Mean total GPU, reference → candidate | Present-return p95, reference → candidate |
+| --- | --- | --- | --- |
+| RTX 4070 Laptop | 1.079 → 0.902 ms | 2.747 → 2.692 ms | 12.478 → 12.695 ms |
+| AMD integrated | 10.777 → 4.001 ms | 19.584 → 13.416 ms | 27.067 → 18.625 ms |
+
+AMD candidate p99 is 19.486 ms. It meets the 25 ms p99 budget and still misses
+the 16.7 ms p95 budget. NVIDIA candidate p99 is 13.721 ms; these measurements
+do not show a NVIDIA cadence improvement. The earlier integral-only and guarded
+decode candidates did not establish a meaningful AMD gain and remain recorded.
+Short runs on one laptop do not qualify production performance, a soak or GPU
+residency. [Results and compressed raw observations](evidence/m2-ao-optimization.json).
+
+### Reproduce the paired captures
+
+Retain the reference executable and its matching runtime dependencies before
+building the candidate. Use native Windows Python, new output directories and
+the same prepared [Performance Yard](../examples/performance-yard/README.md)
+world for both calls:
+
+```powershell
+python tests/ambient_occlusion_equivalence.py --binary build/ao-reference/poima.exe --output build/ao-reference-gpu0 --gpu 0 --workload-world build/performance-world/world.json
+python tests/ambient_occlusion_equivalence.py --binary build/windows-runtime/poima.exe --output build/ao-candidate-gpu0 --gpu 0 --reference build/ao-reference-gpu0 --workload-world build/performance-world/world.json
+```
+
+Replace executable paths with your retained reference and candidate builds;
+repeat with GPU 1 and separate outputs. The verifier pins its own sources,
+executable dependencies and content, checks clean native owner exits, and keeps
+failure records. Omitting `--workload-world` runs the 19 geometric captures;
+including it runs all 25. For timed comparisons, run the
+[Performance Yard benchmark](../examples/performance-yard/README.md#measure)
+separately against each executable with the same world and compiled artifact.
+
 ## Requesting AO
 
 The following options apply to `world.capture`, `runtime.capture`, `asset.animation.capture` and `runtime.play`. Add them to the operation's required parameters:
@@ -64,6 +125,7 @@ The current fixtures separate API correctness from GPU behavior:
 | `render_schedule_native` | Resource roles, initialization, ordering, formats, extents and invalid schedules. |
 | `ambient_occlusion_native.cpp` | Plane/corner visibility and separation of ambient, direct and emissive radiance. |
 | `ambient_occlusion_capture.py` | Defaults, quality/radius bounds, sloped geometry, normal-map independence, background and exposure-independent debug output. |
+| `ambient_occlusion_equivalence.py` | Paired reference/candidate geometry and Performance Yard captures with fixed image/probe budgets and frozen inputs. |
 | `reconstruction_native.cpp … deferred gtao` | Planar visibility during reconstruction, resize, resets and interleaved view lifetimes. |
 | `reconstruction_ui_capture.py --lighting-path deferred --ambient-occlusion gtao` | Occluded geometry beneath a colored UI patch, with probes requiring nontrivial visibility reduction; full-image UI comparisons against matching AO-disabled reconstruction modes and exposures. |
 

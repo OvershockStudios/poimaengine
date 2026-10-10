@@ -1,0 +1,3501 @@
+{
+  "format": "poima.ao-optimization-qualification",
+  "version": 1,
+  "checkpoint": "0.0.95",
+  "date": "2026-10-10",
+  "passed": true,
+  "passed_scope": "Functional contracts and fixed-budget image/probe equivalence; not universal timing budgets or a generalized speedup.",
+  "source_sha256": {
+    "CMakeLists.txt": "0e54bd8247192ac17970ff312021678cb00dffee9ada5fc7d399a35ab692c635",
+    "include/poima/animation.hpp": "b3f236e61130ba95e8508139e6209234ac2be4c5c86207e7c28e7b57a00db68a",
+    "include/poima/animation_layers.hpp": "b8045f047ec5ad20f48df054112e15edc947039395bf15c0f58985c3c33e1fd9",
+    "include/poima/assets.hpp": "8773c80bf2c1011f95e97fdd4227625d5a58ad28d7950157b2d0fd0f8efce5be",
+    "include/poima/audio.hpp": "3612080f5134dfb2ae6c69453eb3e182f9a75c53eae8c8ca77e0b65db15558d4",
+    "include/poima/build_metadata.hpp": "dab99eefdc6be9ebe100055306bbb30e120520597ed03093d55bbdf0bf6a6851",
+    "include/poima/capture_image.hpp": "12ddc48d422c303b558be696b11d8a10ac2d1cdc1ee9d82ef4d9eed2cdded6b5",
+    "include/poima/components.hpp": "5494fa87959c2ed03ae82317fee9b4e7a8132cc0f4510da9dba11828a6b3b95b",
+    "include/poima/core.hpp": "315317a7db27ac76c001c2016abe3010ecf7a85d6342324342302a3f2a64499b",
+    "include/poima/desktop_bridge.h": "6171d1557cd9bbd125f715dd86ff7ff995e0b553283d51d68b674d436b49dacb",
+    "include/poima/development_jobs.hpp": "97bdc63703a152d465ac10623dac93111a6a66b2253785d07bed6447d0de9ccc",
+    "include/poima/development_profiles.hpp": "7d778df8fc57ffa179d77d048c427a118d179c3e21725b00b0e572d3bb67966a",
+    "include/poima/editor.hpp": "8f67e83bab27b57d6b9fda9680eef357a442fa3a2e542f47e97d0900519e5c3a",
+    "include/poima/editor_gizmo.hpp": "35072f6a2e68f73abd0c96bba96bebd8a077157d4d12878929485cfb151e116b",
+    "include/poima/editor_overlay.hpp": "af1e4e71f9d38235f9a3d6f24e0a65070385134d085a3fe3153780316c887cb6",
+    "include/poima/editor_style.hpp": "c0c1e31a66401217b736603ef52fa33dd48309555e37686e4c005ff4df049c8e",
+    "include/poima/editor_viewport.hpp": "176eede8c2088c0f4ad3f19ee4a57d01c5bc2837f34b0e301c1ed60adde0a563",
+    "include/poima/frame_performance.hpp": "714e379b04bcd1c888b3adbc5f779a663b54707e7477488e0d34e5c29974bbc9",
+    "include/poima/fsr3.hpp": "f71d56e9783081005f6cc57262d5ea8390dd935b4017d3288ff65a061c280c92",
+    "include/poima/gamepad.hpp": "031d9c4456346e1993d5e26022224ebf05565f4c69adad142c5ecb6643f5d059",
+    "include/poima/gameplay.hpp": "ea17e3fd5a70fca9481ec9e4e6200b6044d1e7e04b4cd8e58ad33b6ae3b94d2f",
+    "include/poima/gameplay_abi.h": "04fc3fa24ef92a9b04a1e7c933880deddec496a4e499dd324db729f147a2c220",
+    "include/poima/gameplay_compatibility.hpp": "4bcaa6ed79d1965f607f5324d57a748d8a01e9c4dbe434a8038abd650c562f22",
+    "include/poima/gameplay_player_preferences.hpp": "f772a3583f2d9641926b0cc10eb624f8cf5a770867cd73d36af7667790baf164",
+    "include/poima/gameplay_save.hpp": "fb112c130fea2eda06544b787f778f07af40970a1cbf48359c661f906238f9ab",
+    "include/poima/game_launch.hpp": "3d77304927db5b345b05435cb6c3eecfa91cf0c635f9b86ba1da4af4a905c0fb",
+    "include/poima/hosted_viewport.hpp": "1141108e50c7978263eaa368f4f00b3fe8eeb5203dccd0da79b4086cfb2b388b",
+    "include/poima/input_profile.hpp": "d5a1164370b5fc7d0e1c6dcc370a0b8875705a1ccde5ccd691a5e8d6eacb39d8",
+    "include/poima/jobs.hpp": "777ff1a8e7c02f139d44d74403989d55176759dedbb7a1b3586d81c8007d8375",
+    "include/poima/local_session.hpp": "ba039d97f9ba78e6b6c4bf2963c5782a22df080cf08e9653a5b0332cf501e51f",
+    "include/poima/material_recipe.hpp": "86283610224dcd3f19e970dded0151f5a318c44afc265ce3aa91420f8fc42a24",
+    "include/poima/mcp.hpp": "eef8510be5e1129506a1b0e35b9ca7631ecc7ed81937fff6662ab270cc335caf",
+    "include/poima/native_gameplay_artifact.hpp": "e45c855c234e2e15f3cf0312ec7f378c33abf847842b22779d1bc84a2a3d2d27",
+    "include/poima/navigation.hpp": "09d96cbcaf61ab3f8a70a0a816cfe616b5f4f587b3134fdca7862bea2434f861",
+    "include/poima/player.hpp": "1b0cc457a83cb25336acf47b3bde193861fdc41b21ce7a0bfc5e814be4dbe090",
+    "include/poima/player_preferences.hpp": "238df5fcdc2457e232b847f4fba27e8e93d691e9ba9ffdd4dd138d54c65b3bd0",
+    "include/poima/profiler.hpp": "f364780aca15c609cecb797d6767e0d13d7e741bdb876fe74a0979218b9cfd56",
+    "include/poima/project.hpp": "29bb4ffbc18c71d71004a1fb5192a38e5975f0f17d17f6fe23fd50fcad158372",
+    "include/poima/render_schedule.hpp": "b43e83a28c2b232cc526910f7fff4fb75b98a1a9dd96c1a57ad3c56ce3e157e9",
+    "include/poima/runtime.hpp": "a5b14c575f2793282a6637393f47dcc9a131ac12781e979d366b05d2124f7d2c",
+    "include/poima/runtime_animation.hpp": "d7a9c1e5f555381563f020809f9c70a7750d0e711269615229c1515551cfc718",
+    "include/poima/save_store.hpp": "1389b077a887175f3b50467a76306805b8d3b7864fbac556c9c514f4b78adb75",
+    "include/poima/save_upgrade.hpp": "d84dd33ee52c3cbb7c7c5b96a1c7d4ffa5f78f8af37699ac13c9b298e6107539",
+    "include/poima/save_upgrade_document.hpp": "18ae156243c4064dda6b9fead3848f74d0a170971d74f63ebb8268990eaead82",
+    "include/poima/save_upgrade_plan.hpp": "f9b1b94ee447686c738d0180b1d0d44b989eed0fea4b4f99e93e773c8d623031",
+    "include/poima/save_upgrade_snapshot.hpp": "ce3b6ce1eac0820148f739ee8ff622e376235f65a8536b7eea38960cd4fccd35",
+    "include/poima/scene.hpp": "0f2f01b3215e93157ebaf30516401e2806707c1687af5341002f59dda7b27bdc",
+    "include/poima/shared_session.hpp": "6ce2e0772b516453bff8ea24ff18740fcf5fd7c24e0e2ed1f3c5cf7e9aacaf2e",
+    "include/poima/temporal_clock.hpp": "6fad32b563b573997135d02abaa9caa2ea0ff69f3f12811c41502addba00ff6e",
+    "include/poima/ui.hpp": "d23ef452818236c6330bf04b53459a78509feb09bc75a3557eed9c50df8621a9",
+    "include/poima/ui_document.hpp": "b9c8107c38beb5bcf1d2183ae064f0a2802360eb3344c7d7ba7b43a9f1c3db4f",
+    "include/poima/ui_input.hpp": "14e14c4a7bdbf1922354865289ac721c6006d37b52292ec4d02f832c9d8cdf73",
+    "include/poima/ui_model.hpp": "35bdba2764ae9592c1461d407ce33dfc848653a689d21810791046680e6aef2b",
+    "include/poima/ui_presenter.hpp": "1e5287d5786f8c63cedeabf774a060a541e8f81afebee66a8671442b15d6a5d8",
+    "include/poima/world.hpp": "97be2d54f33c9505406ac4ec63b4801a3ae18fde41d54f965a3248e96354bb81",
+    "include/poima/experimental/module_abi.h": "81cf9f6b284cd8d92bb2ee57d24d89d07932d463c7be5ffed882657fad6da9d9",
+    "src/animation.cpp": "b55cf2048505c6dbcc2c845b8b87b37033cd7d989212bfec46c33ac8944fc481",
+    "src/animation_layers.cpp": "358b994db25edb8d6acb894411d785326d458d94327d7bc1f72f3c8d18b98d29",
+    "src/asset_provenance.hpp": "980f16265362692beb25858c97736f18d41587454d5d0fc29af5fbf79559e6a6",
+    "src/asset_references.cpp": "750cb5b018951c228cd3b71ef9f2a0d281a8ba91726249494431dc5704ebfca0",
+    "src/asset_references.hpp": "7e7bd10378a8264aa6c0cb97f436f4c5beac9cf34bf5608a1d6d8d9dee3baf75",
+    "src/asset_store.hpp": "7566fbb3b0af03cab3f7783baa47fe077719e1da3b48061ffc03d4c5d03383a0",
+    "src/audio.cpp": "3857db59020cd11533b7201322ac298934e3044c803ee0fd9ce978b5cc251578",
+    "src/audio_clip.cpp": "824ce921d19bf23f398a7c6796c3203035ccf4b61dbbe49b7b11e69f4d23b91b",
+    "src/audio_events.cpp": "9e7d4b273063e7e89bf59d900215923417bb7fc95f716a5be76240a5319e46a2",
+    "src/audio_hrtf.hpp": "4f48b3aa91910bf8299681687a08509cbbb7e6582f974fc3e6e1a0165d0314b3",
+    "src/audio_stream.cpp": "905f82822fba025592e33ca5507c9db1c61d51fa3a19893b23503576b9b608f1",
+    "src/capture_image.cpp": "b4328ac307d5863c30749eecebfb2065d1c37d9909b0e23e4323176fbcd5aac6",
+    "src/components.cpp": "6033b59d8905ff2202a87fc13d1258b728b018bd8fdaa0b63a1be03c9d0865f2",
+    "src/core.cpp": "4130e0dedca2632d48eb298d47b46c79492247e793ccba62a65982ab3b8df870",
+    "src/desktop_bridge.cpp": "a440b798b50226783129326526431aadb48e8405957e917b5c722cde27a1943c",
+    "src/development_diagnostics.cpp": "90554fb764f53eaf8e3f425ec0ec2e96670a088894133c3bd488ea435c9539ee",
+    "src/development_diagnostics.hpp": "4f52e23d1240b72fa3bc48262690dc9ca71d18de84abf5fcaffeb7182813fa0d",
+    "src/development_jobs.cpp": "ce543c477d9635a0e9771a40cec0a0c660577012dc435f31767130a46e3c224f",
+    "src/development_profiles.cpp": "19a047c29e28ab0277f328b5837352bee41623af7ac84f27c94e6d52fb7e5f7e",
+    "src/development_service.cpp": "f1625d61fb47feb045eb60973b917610908e23389ebfafcff41c0f81585bc173",
+    "src/development_service.hpp": "73b5ce0b93561fe16dd023231a623ea1a24be906137b004400dea6d2a3a6c68c",
+    "src/editor.cpp": "6d6c9cf6c8098884dc15ac059a672cdd253f27a2b2ec713b3f25578fe137a1f6",
+    "src/editor_audio.cpp": "fbd93e16dd20f65e41289a26611d029a45e5b4eced43e4aada88c2a538836e57",
+    "src/editor_audio.hpp": "cbf139111a7a592a8c2b9e684ca136247a776a97634f83744d929135e13a1a62",
+    "src/editor_disabled.cpp": "75af1098caf35845a70189e6f6d331a549387413be7b798ed83639b0ff682b47",
+    "src/editor_gizmo.cpp": "b63e5e0f94aeaf7a00242f3fbd84489619765438e9fad2253484e51894f70a59",
+    "src/editor_style.cpp": "542a6c1518d4a340bd2d6a400ed0e95f4a3db7eee8b7dffd0f417950fc6c21f2",
+    "src/editor_viewport_disabled.cpp": "cefb416ab2534a6aa2a899dad9eea0eb8ce6358b371505115b80baa5648c9b63",
+    "src/fbx.cpp": "6b35a1125733f1166ddca13865e36d4464f9e54cd128a266453cfe70d1b84336",
+    "src/fbx.hpp": "e2f299f3316412cc0bfeed239aa6cd444e61db397a6f1dfc14c2d01545c82b1a",
+    "src/frame_performance.cpp": "3ec91e3ae7ea6a948b36e3a8eb55ef9851c170c16b4b6d34cc98ab245941cc87",
+    "src/frame_performance_service.cpp": "471b63d8caa64071acecb5335ec7573f1254dcc18cca96a59123c2df240c834a",
+    "src/frame_performance_service.hpp": "f2ed2c55faf0476fc95a786f1bb157e110b33eb24c601b665953ea919229659d",
+    "src/fsr3.cpp": "2b22fd2a438ace95918af5e841926cd3af2bac0f802aa29e7afbd0118c31d858",
+    "src/fsr3_disabled.cpp": "32f071a3e96003c1cc67066b5679d49883c1fb44570e3ee5a3344afc24228322",
+    "src/fsr3_no_frame_generation.cpp": "b93ec259cdb3f5acf66b8919812f305bd4a3717697831513545eaa8ce8a07b4e",
+    "src/gamepad_disabled.cpp": "a85bacc2ceadce4ac9e4afca4f49e5be82c30a7222b51b0bf949e249cadaf38d",
+    "src/gamepad_sdl.cpp": "567c32ab8d97a0d896a66ffb5db2ca9e212de3b03c504e444756ed1c33728c28",
+    "src/gameplay.cpp": "55a90cc175027fb8361163e5b458bb8c57f8fe4db9ebaecaff85f056b7d3626b",
+    "src/gameplay_player_preferences.cpp": "221a3f6c618c7fad6c099a29e6f6aa3e00600f92356c21ef96616726569a5e49",
+    "src/gameplay_save.cpp": "55c9113fd21a3f1b9f4f8e9742755c4ed9b527b2398d688ccad08001758a6b5f",
+    "src/game_launch.cpp": "8adcd8289b6eb47e6652351c3d9fb74bef614ba198b5636819587f1353c13ce7",
+    "src/gltf.cpp": "569dcf19a160063cde6696db57ae0f9eaebb3c6e78c81d95070198b0fecc464b",
+    "src/hash.cpp": "72a251370332fc6d842169ff19e8eace728d2ee73d5f5a1706f1dba2501e21d5",
+    "src/host.cpp": "5db026cacb021855c75cfa5bde1cc68fe239276b1e4fc5175635446b62fca179",
+    "src/hosted_viewport_disabled.cpp": "acadaa81d5797d8f0ef286ebd1c57ed154ff844978cc545cf49288878e62f0b0",
+    "src/input_profile.cpp": "5c739b5dcee63d4c1877ae106b208333da6cf5ae037812fc7bf2e5510afcf5ba",
+    "src/input_profile_store.cpp": "4093d28a73991a752dbfc96190eb841ce9f2b9ff0eec864c868971fc43cb35e2",
+    "src/input_profile_store.hpp": "5bb63face39a4df04eef2b7f59b716640b75a9edb6b06f59db86186ea7e34f61",
+    "src/jobs.cpp": "6eb8b6e14dd81a3ea0efbb29c6aa97f9cf2c0fa115f814ad1e367ccb0c584c27",
+    "src/lighting.cpp": "0941862f2c2cf29af3085b37f174e7b6ef800b59240c87173e2e7403bca93ac5",
+    "src/local_session.cpp": "30aea121181a7afb8cc27f39bfc3a5226e2bea4db8864e68c8eb55d9798c36e2",
+    "src/main.cpp": "7d225308d27dcef1057d3da1acbb432ee6c34e382091970f9c8877c63d925e34",
+    "src/material_recipe.cpp": "94740453e1a276248adb97b8decf8bec832e4503e177202317b8dbe87a428389",
+    "src/material_service.cpp": "0755cf6d290bced79a45bb9872189ecc3652fb9c08a0b12dfacd79d2fe641856",
+    "src/material_service.hpp": "e12939b5ecac58ee70b76d3c44bbb858407ccc246c6566e2132dd6676f0f76e4",
+    "src/mcp.cpp": "7896d13a0184901cd24f94fdca77848e717b0b77e3cdfa03d214eba4194c329f",
+    "src/mcp_stdio.cpp": "88bd2ca12c88a81c27b4347c9917f9126af695f2c3ed02f9c42cae4d7e3eaf57",
+    "src/model_codec.cpp": "952f08574007227a5b8e21848f879ec5937155ea8e6ea74599ffd64d1bb55f3d",
+    "src/model_import.cpp": "6ed277d83202edf4cf829e25dbc3be63e980b7255e8ac94aa82244693308ad36",
+    "src/model_import.hpp": "37ddff868c526a615a5ace5b19f8f195c3134ffacd02c10029dedeafda72cfb9",
+    "src/mutation_discovery.hpp": "b270359e15d5c9882b26fbcf50b7612d28967eabd6381fba9f5b2da60cd0b455",
+    "src/native_gameplay_artifact.cpp": "f3c590a58289425acea7d0cc530118f569124c0a136adc022be9749c0763133c",
+    "src/navigation.cpp": "5aa148e7096e6a4a89ec426e42b1a36ac12fc41edba737558a5882258064bc21",
+    "src/navigation_disabled.cpp": "a13939876a82507d5a7e11763427c02bd7db6a7d6b7619f2e976c2fe2e9bf0bf",
+    "src/navigation_geometry.cpp": "2affa0a1dfc17f7ca44bf6e187a817a44ea0078227ff7fea7304acf59cd8299f",
+    "src/navigation_geometry.hpp": "c12c8b7755e7f0fffe3acd94170be33766c87659afba5c4bc2fa158c5698399f",
+    "src/navigation_memory.hpp": "7a54aaff9224ce0be650b122d77b02b4519791edec8fce94aab3c365f5ec66a7",
+    "src/navigation_schema.hpp": "6dc2781f3f6650016ca145d5d42d22969619a36be196ebe452ef3817d3360264",
+    "src/player.cpp": "0ab7c8202ab4b0cef56bf3ddcfc3ea73b82a566b8d41c59f0086758adcb1ae2e",
+    "src/player_audio.hpp": "d634f840aa811b4ac3c1deafb95b186ab49d0d7445bb909056d7920d6b4fcf4e",
+    "src/player_preferences.cpp": "27534b3d88062726400e9cf8ccb98ea5b3f9ec7b77ec3d60456808c330af89ef",
+    "src/player_settings_store.cpp": "61e6db711c43664f0e9ef12903759a1b67fb52db6a4dbac2abf91cb6c2b265ac",
+    "src/player_settings_store.hpp": "e42cd571ed9b2f6da453297ebf21ca8e2d4e5bca6dca3a6b5d823c7623b646a8",
+    "src/profiler.cpp": "3fc59009e8a49d4daf0a1691253da149e3e7660182ed574daa1a0609570bf289",
+    "src/profiler_service.cpp": "edb190b443ba679b8277cb140137b18e5901aa1f45c6dbc04c32046990c698ea",
+    "src/profiler_service.hpp": "21ac363f9935b3fdb0c350dec5f19b5f1a4eabb64d77b42f68558715ef2c9917",
+    "src/project.cpp": "b8215b18fb68028a9481db5eff92bd3128a12dd77c8ffee41105b818463afa92",
+    "src/render_smoke.cpp": "212b3a492ac2e876f80a076d43f58b3cac7642f914961d177635440ef6d1dac0",
+    "src/render_smoke_disabled.cpp": "1545e4ae93fc30709554d7a167de2d9a3d084939c6eeafb89c5973688fac23f8",
+    "src/runtime.cpp": "f98387ee7331b680372592c3d0694e56bc9c25a42188f6fe90a3f3e9c4ec5cb7",
+    "src/runtime_animation.cpp": "96462d482306c3be712be9204aa76a8db332ff4bddc2dc795cd1440ee6763488",
+    "src/runtime_body_ids.hpp": "46c84801b20fcba146255775993ad46477f6a65a8a4d3ea5dae58f0ea83a9b80",
+    "src/runtime_components.cpp": "b6154273ee277ac8098eb77f616a3f1416639e335d053c13167cc8bd3e888404",
+    "src/runtime_components.hpp": "6e548040172c6b29cd4c5ddc800160388e0abc12452491825deba53edcf50741",
+    "src/runtime_disabled.cpp": "60101138c54fa60a53663bdad8617118320217ef84b73ef87789c2eb51a5dc38",
+    "src/runtime_entity_ids.hpp": "7874a5d0762d6820bcf1b2cd46601924143ebe0e49d55ab4cee163cb3aaea58c",
+    "src/runtime_geometry.cpp": "4f759aad183444c1d8f27b453dfa8380d7c87cc87d86a9ff9b24761a85d80d13",
+    "src/runtime_navigation.inc": "156a0bf8a3ef7210e31372dc596ee1b52c6d3d881a7ea3dbf49284f2fd5b27e3",
+    "src/runtime_player_preferences.inc": "5798d8efd78d8c5da0bcd347b4689827f9016ae26d3d7f98968be511defdccd1",
+    "src/runtime_save.inc": "2dfb4930dcf82873c1d4d73118077345699b5fe200980f832231fa43e8d9bc88",
+    "src/runtime_templates.cpp": "a4411c054c996b95d763758832c40368fa1b4e1cfcba6d18af356bb81c869cdd",
+    "src/runtime_ui.inc": "5085e86903963c098229b877e39e1dddbea713654fdadb9f79a54d25b84f60da",
+    "src/save_store.cpp": "b921507f9da872d2d432292ba8add8074c66c04c833bf16c49b3dcd78e9e50ee",
+    "src/save_upgrade.cpp": "5ea88fc5f9f125e0b1cab238941ed9ff44facc0e880d97fb40f2ea71ba43bde4",
+    "src/save_upgrade_document.cpp": "f83740f87aa13b9b47c62d49a6b2692f3da40d6832fb4fd10a3598d30a331d85",
+    "src/save_upgrade_plan.cpp": "4ee3e5b2589efd2f6aeab91923fa817347e7f87dae04d46174df89c0b434282b",
+    "src/save_upgrade_snapshot.cpp": "af0a822f2364c64584ce52c0b71999150ac0c6f93a2958c8f6f0a0c8f85effdf",
+    "src/scene.cpp": "adc020695b8ce72b959624ded070a1aae1fb47e302681c0941d357196ab8890f",
+    "src/shadows.cpp": "0eb39a93d5359317535a288a3f39403e12c65cd1e8ada0f6ebf9de4fce64ecdb",
+    "src/shared_session.cpp": "7a590e207bfff270ec6bcba8d441e0d84aed188b22e38cc1697b1f5ef192a737",
+    "src/tangents.cpp": "a79998e3917ad0c779423eeac08eb52295275c352770e78093315147bedc2d95",
+    "src/texture.cpp": "3d2942782212887c6abb848fdb6bf6c5a1b4fc51d1204fdc44518ecf1ae0541b",
+    "src/ui_authoring_schema.hpp": "baa1d70ab544d8336134535b8ce2038f76ad204fdde90180a88d46d688ff19c0",
+    "src/ui_document.cpp": "a9b345e0de2696299987fdd0fb87df6f9c90ae9cb69110cf67a36087807de5c2",
+    "src/ui_frame.cpp": "ef217be90009a03fcfa997c5240fcac3b42ceb98d40821c32b304f5c4b28b5d8",
+    "src/ui_model.cpp": "61a15caa8cf70048479c07ab92d04d5f675acbe2625520d1028e890680a8d8c7",
+    "src/ui_presenter.cpp": "7e2874f178e043482dfbada26d245f73ce7ecc0ad64f6e399ead47e1c1763e3b",
+    "src/visibility.cpp": "69bd7374e82e7a407937e3cc675dca8fd488fac81adc39515dadeb504982481a",
+    "src/vulkan_probe.cpp": "0177c7893541c538fb961fd88e85524471319835b91de27e72c2f46dcbad6c76",
+    "src/vulkan_probe_disabled.cpp": "c252c4203683795ac15569ba2bb4a5256f7ba9b194895bd04d697d536aaa47db",
+    "src/world.cpp": "b8ac08d5b168e8e9181f7d2aa8a963c9eebae422a54ee1b181c7366a27883aa5",
+    "src/world_control.inc": "5d5fb8702d76ed95ce9a2ec94f852d66bfc60b4e96d1196130f3723cb3897386",
+    "src/world_gameplay_save.inc": "aa31727cde5cfc7f213e28b8c68deca6e6134aed7a1da72c6352e1c7a84dbbb6",
+    "src/world_navigation.inc": "538eee70e46ddcb8e9c816e68568434be559e142ae663540be610517db0ef7ad",
+    "src/world_observe.inc": "3cb074960872dee891eddff4a5f162c40dec23a009766f7cc91e08054bebe31f",
+    "src/world_player_service.inc": "1d8f31601eb741d572a4f1f6a469768e666b10b31533b607716e4d8af71a0dc6",
+    "src/world_player_settings.inc": "8f8efaa4f579a9bb9c5649ac3abff2606a93adfe8f9376d52f66bec9404df419",
+    "src/world_provenance.inc": "1f4f0d3664cc8cb07820ba2632ba98931831cc9b9ba8da2705b4119a06fb7c08",
+    "src/world_save.inc": "556ed68928c79240453b9645cab3b08b0b776f062b8867792d8a304522fd2b5e",
+    "src/world_save_upgrade.inc": "5cc2d35ccc9130621d5d217c141ee8698b652054ec985ecf6df7919f2d8669d3",
+    "src/world_schema.cpp": "ab742580fffc3aee06e2e7fb26196a2308aed675ebd6b1fef8e5805edcf8a371",
+    "src/world_schema.hpp": "4a944758d3ec4749ad9d4775377fd948ebdeb421225eed53dbce67216f435064",
+    "src/world_storage.hpp": "a2286e75b264f45956ec67b2a689a44ae6d69947a096a879d40b2e03026db080",
+    "src/world_ui.inc": "dea0baa761ab7ae7f6982a5ec910213385e0530a4f9538df0afb874382fe9176",
+    "cmake/audio.cmake": "9115c80f7e41d96e44b5e9cf2f40b71e8cd4c2fb7bb03503caf2ed7f2632bea5",
+    "cmake/build_info.hpp.in": "18349e62eb1241b1f4d9cffa6d7e5778f21f3a6b35d1008ca48ae777e113f438",
+    "cmake/desktop_bridge.cmake": "e3520e5bb9daf7535b0a6cc4abcbed34eb226afa6eae7858f78ba447e39cad9d",
+    "cmake/editor.cmake": "8404d25df52655bf3e6c66145c7362733c79a6b1fd5594a010ccbce330ab9d1b",
+    "cmake/embed_ui_font.cmake": "df9726cb63ab3eaa402c901d8370a0e5a76abcdf3d22823feaff5457a38687c9",
+    "cmake/fsr3.cmake": "1ed8ab6a2655ae02c107bafe3b9058f798b9e8995ce16790510ec36a52c19609",
+    "cmake/fsr3_compat.hpp": "4a827479d2c4f7c43ff329e7d05366fe133e789ca8c291db1921565783d21e62",
+    "cmake/game_ui.cmake": "f56cf903b917f118c7cbe2c577ceb1fbad21c219e26d4fb61acba2d44583a55e",
+    "cmake/jolt_character_ids.cmake": "984af312e512a43656168ed9686eca5921832820db2bf58bfabd6ab3f6866efa",
+    "cmake/navigation.cmake": "d6dc97efde40fa70d29dff1d0d58318866e48d9c32415b7d7d15d809deea4793",
+    "cmake/render_smoke.cmake": "8eb2e7d5340a366291a61ad4185d394aa36fa625b3c7e440848fc44994148e31",
+    "cmake/runtime.json.in": "09b4c01fb4d7d4bdf9b775732cfc36b1c1d46d5673a1fde1666b8265e4a476b4",
+    "cmake/simulation.cmake": "9d2317f474c3c3b31f6529545820ed69cf0907c7a387ab7b6d37ae5ee2dc6e74",
+    "cmake/windows-llvm-mingw.cmake": "8416d2f836578692c765abc7fd857ca390d8ea4833a57e97adf0590d76b102d2",
+    "shaders/ambient_occlusion.hlsl": "6bc94d6019855bc345bf4909e6d8bd9705713ed22529bf722e4038e9ec3584fa",
+    "shaders/ambient_occlusion_filter.hlsl": "ba6681a39e2d5bc1c3ded5e6cf00ddeb1e4cbb9ec24f6fdeaee65996ce6a9eed",
+    "shaders/cluster_lights.hlsl": "77c04aa19b606082477b5d2f2dcdcbd28d64588c5a01b2a3d4f1d6b416b5a994",
+    "shaders/deferred_lighting.hlsl": "e54c373ce1024bdd7b1d75d113203f8d67a72889d03662ffab5489aff69c1bcd",
+    "shaders/editor_overlay.hlsl": "ca1103d90acc3c91967d7b2dea47b1cd04c1e0e19899e27b8a63299ebd128940",
+    "shaders/editor_ui.hlsl": "077ac437d811aa3c9451afd35d0e9da35ca30fa123846a1a87f9b64f51d7f804",
+    "shaders/game_ui.hlsl": "dce1cf05d7612a4f642946094c5fbcd6a8512add68d87f4434545f3f2206b1c0",
+    "shaders/scene.hlsl": "9390cf957c244577719f6d20a0d8472ffda6ef304dbfef5931fcb35396b2910e",
+    "shaders/scene_frame.hlsli": "66c7c860b628c6febe1dc8aeb9a9e655f3e78b9ba2e7952fd7c089fe389dd7b8",
+    "shaders/scene_lighting.hlsli": "2a7fc0eef7e39fd8c3217662a59f8d1569fae994e9eb18c41d8ef6ee368a9d96",
+    "shaders/scene_output.hlsl": "ef311bc843f42903f4495e8a4dfe70af31c738d4c1eaae3e0d1ffbb67ea26959",
+    "shaders/scene_surface.hlsli": "b488aab18ef82175cebb03e273dd1c64c54a14851d2b423f4ad6586e859b70fb",
+    "shaders/shadow.hlsl": "f285ba3d3fc4b4107f6dce2e972371c557cf458e3ac0d05e1bf1c9dbb4a39066",
+    "shaders/skinning.hlsl": "7805eeb3fe6d3509193e9c38b119e5ecc20c48a094394879a8da6ba29ecf095a",
+    "shaders/sky.hlsl": "bcb51e5d66d9385f7328c337213f11184d55551e0265054a07c7d1f813c71286",
+    "shaders/smoke.hlsl": "5ac41014221c4b7ac34c9895d75aada0f4c80ac97a6e5a35588a8ef682b776de",
+    "shaders/temporal_inputs.hlsl": "21818455c86d9be0d8d0a39f144bce49f0d80920d5001ab304f1268bd515a9b6",
+    "tests/ambient_occlusion_native.cpp": "0448ff588f380be934ee52f5958a636da7ac3be7d60801b387649240e114aa90",
+    "tests/animation_composition_diagnostics.cpp": "33b18f5524ee005a8afb0baec5c6625719dc624134fc77734263e51ba5f03b39",
+    "tests/animation_frame_transfer.cpp": "7c0b11e139a351ee94d71f79f60cdfb33d3c388ba3b06cac68f388a49d53c61f",
+    "tests/animation_layers_native.cpp": "5de1dea4ba2d8ee56972692a4cfbb5d56881028cb8828a125117867a9a583268",
+    "tests/animation_native.cpp": "327edc299214021332e071fa366e371e575c80c5f0c49b5d1b0aab1909c42546",
+    "tests/animation_rotation_retarget.cpp": "23130320e81bdc78d47970b9ee5822b73c27d1a8c92c373abdc7a9eed6595dab",
+    "tests/asset_provenance_native.cpp": "e07a585e6ac3a157cfe2d5f313068ea5b528f695597386f8562eeef9f4189ce7",
+    "tests/asset_references_native.cpp": "f68848d402ba3934d2d3eae8d4447a51cbdf210c1c230e12ef725b44ef53b5a7",
+    "tests/audio_save_native.cpp": "268ba2bbe84e8ec3b0eb86ea7bdb594fbecfec624524c574272fa27280d81f8e",
+    "tests/capture_image_native.cpp": "6ac367b1da96cd805fe669af29922e1f1c726a51032f1c2c9ed4f84a0fa71b3b",
+    "tests/components_benchmark.cpp": "a523aa6dd6da07823b12a1525a36a1dc3afb030773769619a7336e4d65b4e476",
+    "tests/components_native.cpp": "ea3f2738943d4bfdc6088442b264708c8268ae8c341a19eb8748dc0a3dac50f6",
+    "tests/component_collections_native.cpp": "6cfaf4519c3d15274fc1097dd46eb91966f81f8aa4c6be074d2ebddd497c2943",
+    "tests/deferred_native.cpp": "caa6a1fe5c1c92ca4c92415d174a8421ed74d34752e596175e1c6954a16cd0f1",
+    "tests/desktop_gamepad_native.cpp": "a75eb59ae499f7d48bdc305d9643451423b814350f861eb6dce966f3ec1f863c",
+    "tests/development_diagnostics.cpp": "9a64819f5e24952b2acdde06e4e20f2030659fd6b88522f08be564deff03e868",
+    "tests/development_jobs.cpp": "3f9df00c46e2f44ee7fb68de66320c28afae1bcfaa41abe5db5d556d894fb6da",
+    "tests/development_profiles.cpp": "5d20e4186b54c340f37a7eb980d07247e58b552619cb7a67141c6cb2383a80b3",
+    "tests/development_service.cpp": "4556b9d78db075f78be23a9cae26045eae03a981e11eca90351c1bef2678ff9c",
+    "tests/development_toolchain.cpp": "4d17bd69d11504ad9117dc7255e13cbedb5258975cd48b53c46010caaf431ac3",
+    "tests/editor_audio_native.cpp": "6b2c560bf513a410c63c82d2942368671b04379a6247015030b098b955c92b5d",
+    "tests/editor_gizmo.cpp": "93eac617ce27f4c57b5ad08088e9154888f2ba15eddaf7f1e0ebbf4c6aabab36",
+    "tests/fbx_native.cpp": "c0b936434f354691e41a36da2c55ff84e77b22b5b7909b6ce8d6f173b72296b8",
+    "tests/frame_execution_native.cpp": "9fab16257e0e816dec1a91cf3d40d2708acdf00d5918d084b4005b94a79da274",
+    "tests/frame_performance.cpp": "a258cfb9f24d6c74ac323694a4b5575acc09a045c890f5e8a944d25066b24045",
+    "tests/frame_performance_service.cpp": "e04234cb87baa03b9b0d401b52fdd2d76f90f0bb07ae3d3d4f7848dd275b0275",
+    "tests/gamepad_sdl.cpp": "4102137c6d8ac48b6c0b07d86754b3697b54fe79df1f44793633be30c608bed9",
+    "tests/gameplay_compatibility_native.cpp": "f5ff594af6120f574ea4dd3626209e68878331d7f6723437e5ff332cd5fa3fe9",
+    "tests/gameplay_metadata_native.cpp": "4aab2b6e33346c31757c55a46f41d4f4277f075f41fbeef376be6279cf6ac293",
+    "tests/gameplay_player_preferences_native.cpp": "0a746e1dcda5955099fd692f22ee03b91020cd6cf9c3ebe47b1c9b7cfc35ce2a",
+    "tests/gameplay_save.cpp": "e2c8fcb806b6ea23dfc45ad53aff07e668a752f1f80c5d3451f862119cc94454",
+    "tests/gameplay_service_contract_native.cpp": "e6c4f173442a1de7d02d226a611dd3ea338c40165692a72c56064824ef117c35",
+    "tests/gltf_matrix_native.cpp": "02c9f4344b303640a0fd3eca8f29267d4625dded1e80003929ddd418cea7695e",
+    "tests/hash_native.cpp": "86181b990fab30267d26c5a8798410a7bd9a41dea79dd26d236caab14a7bd9b6",
+    "tests/input_profile.cpp": "abad6f67c68157859aa8ae2e8436652455ef20727384a66f92142a9ccddd4eb8",
+    "tests/interaction_native.cpp": "0f4bcabc7a6160b49dbd7a82e0d70ed596f23049f108c58286ff2e1995fdc61a",
+    "tests/jobs_native.cpp": "645a27dbf589f29e61669d21683f089650537337bd2fa235a2bd3bdadadf7f2b",
+    "tests/job_workload_benchmark.cpp": "a265b1be5ab2ba45689b69bcef798c7bc6d42624dd71f4d2d8b964822217ac05",
+    "tests/local_session_native.cpp": "65575ef7c94beb7782c81fbeb3b1d269c4fb09a887a21afdfe65197ad4c45490",
+    "tests/material_jobs.cpp": "c7cda5fa230369f54995b59ec6879dc809a336bda379b45933fc7274b2ba2877",
+    "tests/material_recipe_native.cpp": "3a821f11321963af92cd5c485809dbb8b2a9b655313b92bcad8c483591d5507c",
+    "tests/mcp_native.cpp": "657506906e8823589bd36f763827fcfc6b36c55dc28a3bb1f709027131877520",
+    "tests/mutation_discovery_native.cpp": "865fd7ca6e3b20ed8d448c3a4a286ae0f2150053530736a7e13a2c448027be93",
+    "tests/navigation_binding_native.cpp": "36caeaec9edaf762adbca179e68e6258aece7e0567d3f243b64bf7984fe7a149",
+    "tests/navigation_native.cpp": "a148f1eca0560b024811017d815ad2d46ad7033d5c926cbc68fa55854582dd1c",
+    "tests/player_input.cpp": "4fea6c313f7bdf6d3e6961baf21b155c2ba5f58b03a7e27fb4843d8ed3fb0845",
+    "tests/player_preferences_live_native.cpp": "f8bcdfd17b80a79d04f3b68c93bf728986618309e849d09a29d74c9fe446d323",
+    "tests/player_preferences_native.cpp": "3f7b57bc04de8670499a5e44b684aba370ad36678c73a656cf91ca46a5671b96",
+    "tests/player_replacement.cpp": "a8e5410526ac1fb3e6c760ce9d2f6aa15d8a48f75e7b559d35c816afe7848765",
+    "tests/player_window_native.cpp": "ceb49149e6761f7362a041f25d1a0528ee04d6365f1d29a9c22cc9f898ff07aa",
+    "tests/profiler.cpp": "1b5e5be3d3cb147100a5cc6bbe724161725c71ceef0835e05ef187604316840d",
+    "tests/profiler_benchmark.cpp": "d329789924d07a50c5d541dbf3e67baf1ddb342cf83f13ffa20e59d90358d5f7",
+    "tests/profiler_jobs.cpp": "f086c8084bd2d0b42c6bafbb27fa3a5a372078bd66f08087a273097649be12ec",
+    "tests/profiler_service.cpp": "e8ff1a3abb828c427acd29e4cb03833a6322eb9e43e287018af3170f057b919f",
+    "tests/reconstruction_native.cpp": "23f734a28d7650078d3f8a31583c4504bc8cf87f66431f88cd9c72790c8d4f28",
+    "tests/reconstruction_quality_native.cpp": "1308a330fbeacd060233b0f8736f9ce476711fd2db2718562834c748462d6df9",
+    "tests/reconstruction_sky_native.cpp": "3ac26c88d46df8d9162aac54ca26d3756b0b43dc2a4f051bef4e962d272ea079",
+    "tests/render_schedule.cpp": "099ce5081ab19c7d0c17db26b1ea22f4c518509698f0e17fc1cee25de422c49f",
+    "tests/runtime_animation_jobs.cpp": "04835481bab4c64c1538daacaab82aa8c5cc2632a10cbcd19ec3825c2271cfed",
+    "tests/runtime_animation_layers_native.cpp": "6aa82331431af8dd1030bdbeebb4bbd418503ab762ab60be0faacbd2ad8268b5",
+    "tests/runtime_animation_membership_native.cpp": "d90e5b6d3278cb03769ada4e3264c1b3ce1594f7957e6091ca8c226fec8a563e",
+    "tests/runtime_animation_native.cpp": "e9772600031c882a916552f3d4bc91827418e15fe924c5347fedc0e0851290e2",
+    "tests/runtime_animation_save_native.cpp": "c17614ccf6bcee319b5ca7d362f09181ba7be2fe1eac8fd0e925783ce2c47def",
+    "tests/runtime_body_ids_native.cpp": "53419b5d748d0a49e32601645b37cefff7f9ef52e3dd92e92433c06b05f815ab",
+    "tests/runtime_components_native.cpp": "8f87db4b7ec858ec3c64f49c16e28c1ded98c8dfaaa620e87a7f6e544ae2a0f4",
+    "tests/runtime_entity_ids_native.cpp": "459942e3e73b1c33c739051c46ea6e14d391abd6aaab4365bf16ef3eea1ccd1f",
+    "tests/runtime_instances_native.cpp": "bb1dc8fb8fb566f64d75d7c21263e09b486b1e2e7003f97247b2bc7c01d0e648",
+    "tests/runtime_jobs.cpp": "a25d9d4a4edaa0695641f79bd056d4f83144d24f521f18337ec64a03473e9b9f",
+    "tests/runtime_lifecycle_gameplay_native.cpp": "4d8f7b441c9508d180233ff1ca2f58ddea872e7bbbe56c769440de0c78303a26",
+    "tests/runtime_managed_lifecycle_native.cpp": "105e7879089cf51665ea88edf93a74ac7246c3de946574b1e55fcd24169d784a",
+    "tests/runtime_mesh_native.cpp": "3a32476c90d3e2d4a795df68bc618b36f807b2e2b044f679720cceca5c9990e6",
+    "tests/runtime_native.cpp": "0082c49007307c51e0302c753c08b788da9c9fa9be8a9838f8480c31895dcfaa",
+    "tests/runtime_navigation_native.cpp": "7887f87d0df323f03f9b1cdaad5ffbe6c6c4d205c15760d7f83226b2c59d9b6c",
+    "tests/runtime_save_gameplay_native.cpp": "820513a83e105e5313dcf30bdf5d6053bfdee7b0fc147f768630b5483ed4b86a",
+    "tests/runtime_save_native.cpp": "0c8425b8c3079d90cdef47383e069158877c7364847f975c773057dd40ad5553",
+    "tests/runtime_templates_native.cpp": "b0bc7c11603dd56d4fe5a54456463f06b46f161320e538a54aa3952b9974728a",
+    "tests/runtime_topology_native.cpp": "2844a3c89c925aa9d7cb8eec5b489a6a33e5ba73fd21127a1cb6041b407196de",
+    "tests/runtime_ui_control_native.cpp": "2f677bb8b656e1c123a9eb904f8252f8632a323ca33e174f02d1c6e98b786af8",
+    "tests/runtime_ui_native.cpp": "9cb10da788783ea99e7895dffdbd967f4c003ec7e14d5e3cc3bfd05722d58750",
+    "tests/save_store_native.cpp": "e40a3392892ed7766e1da47cca31f12baf28347025182df61870cd030f8f5237",
+    "tests/save_upgrade_document_native.cpp": "a58335bce5f036a172cb6efe40f5dc055f26f6eb7ab9c4a173fb082685156934",
+    "tests/save_upgrade_native.cpp": "29e9f52f7879d9912f06a5fa967fc7269b9ff2b06cc1584d673710eac959ab28",
+    "tests/save_upgrade_plan_native.cpp": "4146d627ffa76700b3bb612622ea1374a9d2383fef409ae6e82e354570f517ed",
+    "tests/save_upgrade_snapshot_native.cpp": "874ae2835cd2855fe7e23a4262d0a6a936d01bf137f3dac4c5500dfe3522fa79",
+    "tests/scene_history_source.cpp": "d9e598f7e3aae6ad3c211182a8352d85457e4fcb301f6b343bb8cc9dc1b615ff",
+    "tests/scene_math.cpp": "fd80397d41c09dbaeeccde56340e80a46abc686d39b37327c5f5050b7242a092",
+    "tests/scene_motion.cpp": "254b9539d4b543d2a74200c18b8f66d7e12154bab4328c120ce24ce50b2d3ff2",
+    "tests/shadow_math.cpp": "89f48180338dd722e0c8c7afcd89243ceb85abcaa81ed03aa95d8cb7876b3694",
+    "tests/tangents_native.cpp": "03949569b986390bf86bd378d202322eef40465b8e13224f7eb13c83755fb029",
+    "tests/temporal_clock.cpp": "6b1b1d70ace4099172d478f3b9ad18094240e40c8e0d86710d782baa356dd2af",
+    "tests/texture_native.cpp": "2c322a615d73c404e2488c151aa9d41b18f9da8c88fbc0d2168ad790cade268f",
+    "tests/ui_capture_native.cpp": "5051aed020e9fc02e807dab0cc8ff7bacb8f234c639b11286d488871ac35a388",
+    "tests/ui_document.cpp": "8a76190b7712e953405e13de1d41b3b6c3b597d5c641b3b77f5af8a830b3c1b8",
+    "tests/ui_document_capture.cpp": "8ff81615afbb03263f69169eed6a2e3846372692e3c8840f25a96971d7804c70",
+    "tests/ui_frame.cpp": "6df67220d16e0bf20c2d8de424930d5f0dcdc6e84fc02b917618ed2efee8eca4",
+    "tests/ui_model.cpp": "0956f79be7b3798a9a5c7e1932da54b07ec29aba9a5eca02ba37e89889142b69",
+    "tests/ui_presenter.cpp": "34a90b3cee35abff567642582caff35a96223567c0bb110d3d673c2813747733",
+    "tests/visibility_math.cpp": "2091ac109da75c083f4766e171ed46d1c4d849a1f30e1b3825a991cd7c8b136e",
+    "tests/world_audio_native.cpp": "125a7f5ca30fdd7ebd0b11216a064d78dd9ac2bd6be87fb51140767079603097",
+    "tests/world_save_native.cpp": "15806a562874d4089dd59ba3bd899f81dbaddb7e8472b4d85efda65e6d8401bf",
+    "tests/world_schema_native.cpp": "492f67374df090714f114dccebff5fdb1c61dec55b748d09273dc62f7220021f",
+    "tests/world_session_native.cpp": "d327513fb7b9320aed2194ef9776625052b1886a81a62b9f85aa9010d93a5e25",
+    "tests/world_tick_native.cpp": "76cdecd89dbb1f1cab7d954b15f24adfb421fe535ff6a58e7717730e962df13f",
+    "tests/ambient_occlusion_equivalence.py": "ee5496153cb3673690904e7d5c6d14349da291423af1d6bd7442d5322f9cbd54",
+    "tests/gltf_fixture.py": "1673c267588131b14137f85511c74ab069d99e69c537b979e7f578f2554fddaf",
+    "tests/texture_fixture.py": "b9b157237cdf3a493278e4551c1e635c41c43cd4eeea59c0d6ca34acc0828fb0",
+    "tests/scene_capture.py": "4ecb4d6fca9cc46cde70209ed8749547abd71356366361ca6c0f4f3b140761c1",
+    "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+    "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92",
+    "tools/python/poima_client/core_responses.v1.json": "66a030969fd2d3120854479ebde12ce31d76435ac97901095a9a370a0d714507",
+    "tests/performance_yard.py": "7019cfa2ed05d1027bd67de6aa750a626a3ba94ef2a08a6edf08ac20e32cbbeb",
+    "tests/player_performance.py": "7676bee3803c72b9cea3721ffd22ec911d6217355efadde8a6fa08d14c02a9d6",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tools/performance/windows_process_memory.py": "b73e322800a18d300c4df669c6ecdf196c48eb335f53881d26e8772224db2ef8",
+    "tests/ambient_occlusion_capture.py": "a43f15a23cbce02c8b3ae04ffe97a57598968f96412794dbd5c00a50c3808b85",
+    "tests/reconstruction_ui_capture.py": "24cd59f11f3b4bcf9df03ddba989d04457ad2ecc919c55c530e5f11c52fd83d7",
+    "tests/ui_capture.py": "ce24ad616eef45fecf6633a3ab41088e2706fbf2f9a8afb5ec1ef133abe342c6"
+  },
+  "builds": [
+    {
+      "configuration": "windows_runtime",
+      "simulation_enabled": true,
+      "scope": "Native Windows runtime build and selected checks.",
+      "passed": true,
+      "input_count": 315,
+      "tests": 7,
+      "changed_inputs": [],
+      "forced_cleanup": false,
+      "test_inventory": [
+        "profiler_native",
+        "frame_performance_native",
+        "frame_performance_service",
+        "windows_process_memory_contract",
+        "render_schedule_native",
+        "profiler_service",
+        "build_metadata_contract"
+      ],
+      "build_seconds": 58.26086792299975,
+      "test_seconds": 3.929158445000212,
+      "evidence_sha256": "64834e4abb546d7a6146dbe1d59085bd0ab72a4a8982761eaa45cd5c7da2d311"
+    },
+    {
+      "configuration": "headless_authoring",
+      "simulation_enabled": false,
+      "scope": "Linux headless authoring build and selected checks; simulation disabled, no Linux runtime qualification.",
+      "passed": true,
+      "input_count": 315,
+      "tests": 9,
+      "changed_inputs": [],
+      "forced_cleanup": false,
+      "test_inventory": [
+        "profiler_native",
+        "frame_performance_native",
+        "frame_performance_service",
+        "windows_process_memory_contract",
+        "render_schedule_native",
+        "profiler_service",
+        "profiler_contract",
+        "build_metadata_contract",
+        "world_contract"
+      ],
+      "build_seconds": 91.9650694089978,
+      "test_seconds": 9.096215904999553,
+      "evidence_sha256": "07378cac4a10ebac947e7b2b356b4b1d95ce972a6e6eeef52924391e79e145e7"
+    }
+  ],
+  "binary_variants": {
+    "reference": "f51f4ef796abd52db2748bf31b304c73af119f0dc9a01ecff786421b8223224e",
+    "integral-only": "a9bcfe0216429b794abed69a7fa362099bf6c276eaea8690abba44c11e3fbeb7",
+    "guarded": "a2c6f90a1a2d6e125bb02a484ad68c7685858e1547ff85dd4e9f0c2de25c0984",
+    "producer-bounded-no-fetch": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633"
+  },
+  "shader_variants": {
+    "integral-only": "2f1210d7167789806fc02f641dd7839c31cc4e99feff62788fa85308ca4f3523",
+    "guarded": "e5b015fff89fe9d628ae15fe71ad23749a58187e386e1e5bef63cc4c2203e28c",
+    "producer-bounded-no-fetch": "6bc94d6019855bc345bf4909e6d8bd9705713ed22529bf722e4038e9ec3584fa"
+  },
+  "unchanged_workload": {
+    "world_sha256": "2624dc6724f60ae4bb315f4ad7e645a36eebd3d35fa78527b1bd9441bf51ea8d",
+    "descriptor_sha256": "e521c05c9cdc907c09cbe6bc9a7ecd11eec8c16ca695bd8fd4dcd7e419e2d3a9",
+    "artifact_engine_version": "0.0.94"
+  },
+  "visual_runs": [
+    {
+      "role": "reference",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 0,
+      "maximum_ao_probe_difference": 0,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "f51f4ef796abd52db2748bf31b304c73af119f0dc9a01ecff786421b8223224e",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 19.532688856124878,
+        "evidence_sha256": "b0bce90892e65b2dca2a6d53bdf28755249691dedee51cf0488396887484511c"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "d20cee27bb0e628bdae6fb0b31aa7593be56953d900bcd13538e6bc2e1a751d1"
+    },
+    {
+      "role": "reference",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 0,
+      "maximum_ao_probe_difference": 0,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "f51f4ef796abd52db2748bf31b304c73af119f0dc9a01ecff786421b8223224e",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 17.291154861450195,
+        "evidence_sha256": "a5a7fc61247a3dd023dd202dba81abbff5dbd11eb13c57c9d9f61c5a063edb47"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "c29cb715f4d9a4e08c7b0a01f2736ab8221dbb714eef3068f89d199fee314bc2"
+    },
+    {
+      "role": "integral-only",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 1,
+      "maximum_ao_probe_difference": 0.00048828125,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "a9bcfe0216429b794abed69a7fa362099bf6c276eaea8690abba44c11e3fbeb7",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 31.5913348197937,
+        "evidence_sha256": "6ff918c3b6100abe99556a5139070fb7e90fa75359b82cdbace54e5a3b1c7956"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "c5ceee05d56611b608db66875abf9a4f1aad480fb39d2f75d9a505c545d9f7b0"
+    },
+    {
+      "role": "integral-only",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 1,
+      "maximum_ao_probe_difference": 0.00048828125,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "a9bcfe0216429b794abed69a7fa362099bf6c276eaea8690abba44c11e3fbeb7",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 29.598730087280273,
+        "evidence_sha256": "72e7627b5147a044cc913706655256f30fc5537885a2009a135217a29f5d5777"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "d4c533d422649fa46f7d226694c1c955170f08696a6c92419be402bd28f126c4"
+    },
+    {
+      "role": "guarded",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 1,
+      "maximum_ao_probe_difference": 0.00048828125,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "a2c6f90a1a2d6e125bb02a484ad68c7685858e1547ff85dd4e9f0c2de25c0984",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 31.988499402999878,
+        "evidence_sha256": "3e41d22ebd16789add4be9eec2a83efd66636cd467e429d65e05e0863f260b58"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "32382b4cd6614d987b1449455c6285888b2fd1778ea89d52207daf718978457f"
+    },
+    {
+      "role": "guarded",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 1,
+      "maximum_ao_probe_difference": 0.00048828125,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "a2c6f90a1a2d6e125bb02a484ad68c7685858e1547ff85dd4e9f0c2de25c0984",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 29.849977731704712,
+        "evidence_sha256": "837573e524175ae591d48ea28f74f753215ba08bf4940a844860a6475d069505"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "e54c651f01e4c648a8c96f0e88f1885ee2f28719e93d6a18612bd5e271f02df0"
+    },
+    {
+      "role": "producer-bounded-no-fetch",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 1,
+      "maximum_ao_probe_difference": 0.00048828125,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 31.957220315933228,
+        "evidence_sha256": "122228123654cbfa4be66f4d999d30f68249f209a70a9565364efae80c8cc544"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "fe58d8d4d382ec893627abee5a49beeb11263a61be8ff1d081025605ba983167"
+    },
+    {
+      "role": "producer-bounded-no-fetch",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "captures": 25,
+      "disabled_exact_rgb8": 7,
+      "enabled_rgb8_budget1": 18,
+      "probes": 1263,
+      "maximum_channel_difference": 1,
+      "maximum_ao_probe_difference": 0.00048828125,
+      "probe_budget": 0.002,
+      "native_binary_sha256": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 30.045809745788574,
+        "evidence_sha256": "3f64828aecdcb770a739d73418a0fcc8152da52e74c4e208cd80e41240c5b752"
+      },
+      "owners": 7,
+      "all_owner_exit_codes_zero": true,
+      "evidence_sha256": "8842f50ef1e8137c135766f27160bfd1db703a38515872e4a77d19b5af43c3f0"
+    }
+  ],
+  "performance_runs": [
+    {
+      "role": "reference",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "native_binary_sha256": "f51f4ef796abd52db2748bf31b304c73af119f0dc9a01ecff786421b8223224e",
+      "settings": {
+        "gpu": 1,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.02742830000352,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.0224361,
+        "ticks_per_second": 60.01089315999955,
+        "max_ticks_per_poll": 1
+      },
+      "progress": {
+        "travel_meters": 162.96765164423266,
+        "motion_ticks": 3460,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 51,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 2204,
+          "maximum": 26992
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 6068,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 105500,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 6068,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 6068,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 6068,
+        "gpu_timed": 6068,
+        "gpu_total": {
+          "max": 3836320,
+          "mean": 2746523.1641397495,
+          "min": 1849088,
+          "p50": 2872704,
+          "p95": 3155008,
+          "p99": 3329888,
+          "samples": 6068,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 8093800,
+          "mean": 3367897.6100214273,
+          "min": 1933500,
+          "p50": 3345900,
+          "p95": 4407700,
+          "p99": 4842900,
+          "samples": 6067,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11161100,
+          "mean": 6524291.578773896,
+          "min": 3567100,
+          "p50": 6928900,
+          "p95": 8649800,
+          "p99": 9338500,
+          "samples": 6068,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 17920700,
+          "mean": 9891853.156419978,
+          "min": 5970700,
+          "p50": 10066100,
+          "p95": 12477700,
+          "p99": 13462000,
+          "samples": 6067,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 17920700,
+          "mean": 9891459.742828881,
+          "min": 5970700,
+          "p50": 10065900,
+          "p95": 12477700,
+          "p99": 13462000,
+          "samples": 6066,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 6068,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 1849088,
+            "max": 3836320,
+            "mean": 2746523.1641397495,
+            "p50": 2872704,
+            "p95": 3155008,
+            "p99": 3329888
+          },
+          "skinning": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 147648,
+            "max": 238272,
+            "mean": 174050.2412656559,
+            "p50": 167296,
+            "p95": 192736,
+            "p99": 210720
+          },
+          "light_assignment": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 23712,
+            "max": 41888,
+            "mean": 27425.28147659855,
+            "p50": 26080,
+            "p95": 31648,
+            "p99": 32224
+          },
+          "shadows": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 142784,
+            "max": 248768,
+            "mean": 166698.8740936058,
+            "p50": 161728,
+            "p95": 189280,
+            "p99": 206560
+          },
+          "opaque": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 195584,
+            "max": 851968,
+            "mean": 425367.6255767963,
+            "p50": 431104,
+            "p95": 640000,
+            "p99": 663552
+          },
+          "deferred_lighting": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 365568,
+            "max": 897024,
+            "mean": 554114.2781806197,
+            "p50": 569344,
+            "p95": 648192,
+            "p99": 673792
+          },
+          "ambient_occlusion": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 500736,
+            "max": 2033664,
+            "mean": 1078728.1423862886,
+            "p50": 1122304,
+            "p95": 1363968,
+            "p99": 1443840
+          },
+          "ambient_occlusion_filter": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 156672,
+            "max": 545792,
+            "mean": 264143.90507580753,
+            "p50": 286720,
+            "p95": 318464,
+            "p99": 340992
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 6068,
+            "unit": "ns",
+            "min": 1243520,
+            "max": 3003584,
+            "mean": 1952981.141727093,
+            "p50": 2040864,
+            "p95": 2315328,
+            "p99": 2440192
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 295,
+          "minimum": 402448384,
+          "maximum": 403398656,
+          "first": 402448384,
+          "last": 403398656,
+          "median": 402911232
+        },
+        "private_commit_bytes": {
+          "samples": 295,
+          "minimum": 608231424,
+          "maximum": 609116160,
+          "first": 608264192,
+          "last": 609116160,
+          "median": 608624640
+        },
+        "system_total_physical_bytes": {
+          "samples": 295,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744
+        },
+        "system_available_physical_bytes": {
+          "samples": 295,
+          "minimum": 5779132416,
+          "maximum": 5799657472,
+          "first": 5797785600,
+          "last": 5779492864,
+          "median": 5795733504
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "1b4d0962715f40e17849a851fb344b643e544d08a63878fe9e7c6472fb78227c",
+      "raw_frames_sha256": "71501ec15ee9d4e29b8fa11c18cf77c63722c49018149058e7475bef45c62cdb",
+      "raw_memory_sha256": "7b17a3516ab6a612db27447483dc77a129c8dd1161c1f729878bb6e90de5dc49",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 105.60474228858948,
+        "evidence_sha256": "13177ead724dc96896cabfb00c1e3b462cb0e76fdcd331282427d384ee880ea3"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "reference",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "native_binary_sha256": "f51f4ef796abd52db2748bf31b304c73af119f0dc9a01ecff786421b8223224e",
+      "settings": {
+        "gpu": 0,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.06410609999875,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.0313831,
+        "ticks_per_second": 60.00194921379381,
+        "max_ticks_per_poll": 2
+      },
+      "progress": {
+        "travel_meters": 163.0074060600224,
+        "motion_ticks": 3462,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 29,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 1940,
+          "maximum": 27016
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 2982,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 24722400,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 2982,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 2982,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 2982,
+        "gpu_timed": 2982,
+        "gpu_total": {
+          "max": 30292070,
+          "mean": 19584206.76727029,
+          "min": 10633680,
+          "p50": 19139960,
+          "p95": 26283880,
+          "p99": 26800690,
+          "samples": 2982,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 10559200,
+          "mean": 4003515.1291512917,
+          "min": 2216500,
+          "p50": 3919800,
+          "p95": 5418900,
+          "p99": 6244100,
+          "samples": 2981,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 26130900,
+          "mean": 16129075.955734406,
+          "min": 7504700,
+          "p50": 15799000,
+          "p95": 22657200,
+          "p99": 23643500,
+          "samples": 2982,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 31235500,
+          "mean": 20133343.039248575,
+          "min": 11279300,
+          "p50": 19776900,
+          "p95": 27066600,
+          "p99": 27947200,
+          "samples": 2981,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 31235500,
+          "mean": 20131441.20805369,
+          "min": 11279300,
+          "p50": 19753900,
+          "p95": 27066600,
+          "p99": 27947200,
+          "samples": 2980,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 2982,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 10633680,
+            "max": 30292070,
+            "mean": 19584206.76727029,
+            "p50": 19139960,
+            "p95": 26283880,
+            "p99": 26800690
+          },
+          "skinning": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 75920,
+            "max": 197120,
+            "mean": 86953.80281690141,
+            "p50": 85920,
+            "p95": 97120,
+            "p99": 103480
+          },
+          "light_assignment": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 15160,
+            "max": 47080,
+            "mean": 17676.98189134809,
+            "p50": 17520,
+            "p95": 19040,
+            "p99": 30040
+          },
+          "shadows": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 578520,
+            "max": 1143050,
+            "mean": 661983.8430583501,
+            "p50": 659000,
+            "p95": 720560,
+            "p99": 770440
+          },
+          "opaque": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 2238160,
+            "max": 7533790,
+            "mean": 3573476.7169684777,
+            "p50": 3362320,
+            "p95": 5452240,
+            "p99": 5786120
+          },
+          "deferred_lighting": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 2124000,
+            "max": 8777420,
+            "mean": 3084151.8779342724,
+            "p50": 2983480,
+            "p95": 4043260,
+            "p99": 4253780
+          },
+          "ambient_occlusion": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 1953040,
+            "max": 16896990,
+            "mean": 10777496.820925552,
+            "p50": 10513920,
+            "p95": 14803160,
+            "p99": 15356760
+          },
+          "ambient_occlusion_filter": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 801440,
+            "max": 1641120,
+            "mean": 1116487.6056338027,
+            "p50": 1108400,
+            "p95": 1446920,
+            "p99": 1521440
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 2982,
+            "unit": "ns",
+            "min": 6591560,
+            "max": 24653020,
+            "mean": 15244115.42253521,
+            "p50": 15049680,
+            "p95": 20301640,
+            "p99": 20880320
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 296,
+          "minimum": 477896704,
+          "maximum": 478842880,
+          "first": 477896704,
+          "last": 478842880,
+          "median": 478355456.0
+        },
+        "private_commit_bytes": {
+          "samples": 296,
+          "minimum": 473067520,
+          "maximum": 474284032,
+          "first": 473067520,
+          "last": 474284032,
+          "median": 473788416.0
+        },
+        "system_total_physical_bytes": {
+          "samples": 296,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744.0
+        },
+        "system_available_physical_bytes": {
+          "samples": 296,
+          "minimum": 5658607616,
+          "maximum": 5676621824,
+          "first": 5671628800,
+          "last": 5664669696,
+          "median": 5667278848.0
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": false,
+        "p99_25ms": false,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "b97319c35bc3ff4d192bbf260a92a52e1a3961d4aeb9c022142dc604d36c5953",
+      "raw_frames_sha256": "71d6f791279385c81ffc9c2d33b83dee0920a4d3f47d9ae67e944cb48d2abf96",
+      "raw_memory_sha256": "8ef4ffd4b6f20ad65497984370ed3cc0b7eeb7ab70ba0ea16e3dd9553b090f59",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 101.41397976875305,
+        "evidence_sha256": "e5c07bd9ce9dcfc65e052afbccb370f5f3f0cce0374fddb4ec7051cf33d4d83b"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "integral-only",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "native_binary_sha256": "a9bcfe0216429b794abed69a7fa362099bf6c276eaea8690abba44c11e3fbeb7",
+      "settings": {
+        "gpu": 1,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.0202930000014,
+      "interactive_clock": {
+        "ticks": 3601,
+        "wall_seconds": 60.0154365,
+        "ticks_per_second": 60.00122985025694,
+        "max_ticks_per_poll": 1
+      },
+      "progress": {
+        "travel_meters": 162.9723833165785,
+        "motion_ticks": 3459,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 51,
+          "maximum": 417
+        },
+        "camera_triangles": {
+          "minimum": 2204,
+          "maximum": 26992
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 6077,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 105300,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 6077,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 6077,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 6077,
+        "gpu_timed": 6077,
+        "gpu_total": {
+          "max": 3885568,
+          "mean": 2722285.6119795954,
+          "min": 1785088,
+          "p50": 2848160,
+          "p95": 3133632,
+          "p99": 3328832,
+          "samples": 6077,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 8161100,
+          "mean": 3360354.3778801844,
+          "min": 1954200,
+          "p50": 3345400,
+          "p95": 4406700,
+          "p99": 4834700,
+          "samples": 6076,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11408400,
+          "mean": 6516031.479348362,
+          "min": 3528000,
+          "p50": 6939200,
+          "p95": 8604600,
+          "p99": 9221000,
+          "samples": 6077,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 17027900,
+          "mean": 9876061.849901251,
+          "min": 5838500,
+          "p50": 10061200,
+          "p95": 12416600,
+          "p99": 13393200,
+          "samples": 6076,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 17027900,
+          "mean": 9876087.637860082,
+          "min": 5838500,
+          "p50": 10061500,
+          "p95": 12416600,
+          "p99": 13393200,
+          "samples": 6075,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 6077,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 1785088,
+            "max": 3885568,
+            "mean": 2722285.6119795954,
+            "p50": 2848160,
+            "p95": 3133632,
+            "p99": 3328832
+          },
+          "skinning": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 147072,
+            "max": 239424,
+            "mean": 174995.14628928748,
+            "p50": 169280,
+            "p95": 192608,
+            "p99": 211744
+          },
+          "light_assignment": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 23296,
+            "max": 41216,
+            "mean": 27733.910811255555,
+            "p50": 26688,
+            "p95": 31712,
+            "p99": 32160
+          },
+          "shadows": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 141280,
+            "max": 251296,
+            "mean": 167537.461247326,
+            "p50": 164192,
+            "p95": 188576,
+            "p99": 210720
+          },
+          "opaque": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 196608,
+            "max": 979968,
+            "mean": 429823.8104327793,
+            "p50": 437248,
+            "p95": 643072,
+            "p99": 673792
+          },
+          "deferred_lighting": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 361472,
+            "max": 880640,
+            "mean": 561774.4545005759,
+            "p50": 573440,
+            "p95": 664576,
+            "p99": 692224
+          },
+          "ambient_occlusion": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 432128,
+            "max": 1904640,
+            "mean": 1036116.631232516,
+            "p50": 1065984,
+            "p95": 1318912,
+            "p99": 1391616
+          },
+          "ambient_occlusion_filter": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 156672,
+            "max": 615424,
+            "mean": 267751.9881520487,
+            "p50": 288768,
+            "p95": 325632,
+            "p99": 352256
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 6077,
+            "unit": "ns",
+            "min": 1186112,
+            "max": 2949408,
+            "mean": 1922195.2831989469,
+            "p50": 1991680,
+            "p95": 2287840,
+            "p99": 2423808
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 295,
+          "minimum": 402452480,
+          "maximum": 403382272,
+          "first": 402452480,
+          "last": 403382272,
+          "median": 402739200
+        },
+        "private_commit_bytes": {
+          "samples": 295,
+          "minimum": 612147200,
+          "maximum": 613187584,
+          "first": 612147200,
+          "last": 613187584,
+          "median": 612540416
+        },
+        "system_total_physical_bytes": {
+          "samples": 295,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744
+        },
+        "system_available_physical_bytes": {
+          "samples": 295,
+          "minimum": 5674905600,
+          "maximum": 5702606848,
+          "first": 5687918592,
+          "last": 5699235840,
+          "median": 5685411840
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "d577f8cb27174b94e6d94a65f80ec6e7ac48e505276895dcf67f98daae2d9f35",
+      "raw_frames_sha256": "1b4a3e7a56d72f66a9a18963b1a44f67687385e6fb9aaa0bb3790565538cdefb",
+      "raw_memory_sha256": "c99eedf5527e717c52133665dc9411dc6c22bdfd1a5a354a817db937963fce3d",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 105.11362552642822,
+        "evidence_sha256": "c2f94d6c89380d143e9d77122cc979030dc79a308a81e3353286eb8076b43128"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "integral-only",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "native_binary_sha256": "a9bcfe0216429b794abed69a7fa362099bf6c276eaea8690abba44c11e3fbeb7",
+      "settings": {
+        "gpu": 0,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.06192240000382,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.0282257,
+        "ticks_per_second": 60.0051052316877,
+        "max_ticks_per_poll": 2
+      },
+      "progress": {
+        "travel_meters": 163.0074060600224,
+        "motion_ticks": 3462,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 58,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 2288,
+          "maximum": 26992
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 2973,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 27424600,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 2973,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 2973,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 2973,
+        "gpu_timed": 2973,
+        "gpu_total": {
+          "max": 30242730,
+          "mean": 19595289.149007738,
+          "min": 10802200,
+          "p50": 19278040,
+          "p95": 26446160,
+          "p99": 27296880,
+          "samples": 2973,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 10685000,
+          "mean": 4075769.1117092865,
+          "min": 2091000,
+          "p50": 4033800,
+          "p95": 5586600,
+          "p99": 6142300,
+          "samples": 2972,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 27482300,
+          "mean": 16116730.541540531,
+          "min": 7480500,
+          "p50": 15795800,
+          "p95": 22751800,
+          "p99": 23796700,
+          "samples": 2973,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 31497800,
+          "mean": 20193725.437415883,
+          "min": 11894300,
+          "p50": 20001500,
+          "p95": 27215400,
+          "p99": 28156100,
+          "samples": 2972,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 31497800,
+          "mean": 20191866.47593403,
+          "min": 11894300,
+          "p50": 20001500,
+          "p95": 27215400,
+          "p99": 28156100,
+          "samples": 2971,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 2973,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 10802200,
+            "max": 30242730,
+            "mean": 19595289.149007738,
+            "p50": 19278040,
+            "p95": 26446160,
+            "p99": 27296880
+          },
+          "skinning": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 75320,
+            "max": 207600,
+            "mean": 87100.06054490413,
+            "p50": 86400,
+            "p95": 97080,
+            "p99": 102520
+          },
+          "light_assignment": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 14640,
+            "max": 46400,
+            "mean": 17350.568449377733,
+            "p50": 17320,
+            "p95": 18880,
+            "p99": 19720
+          },
+          "shadows": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 564440,
+            "max": 3812690,
+            "mean": 662030.329633367,
+            "p50": 657240,
+            "p95": 730520,
+            "p99": 773680
+          },
+          "opaque": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 2271200,
+            "max": 7822140,
+            "mean": 3589630.4305415405,
+            "p50": 3348600,
+            "p95": 5492640,
+            "p99": 5826120
+          },
+          "deferred_lighting": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 2111720,
+            "max": 6437790,
+            "mean": 3045332.63370333,
+            "p50": 2944680,
+            "p95": 4051920,
+            "p99": 4298520
+          },
+          "ambient_occlusion": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 1919520,
+            "max": 17080400,
+            "mean": 10882664.863773966,
+            "p50": 10691720,
+            "p95": 15043560,
+            "p99": 15463600
+          },
+          "ambient_occlusion_filter": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 714000,
+            "max": 1482640,
+            "mean": 1039475.7080390179,
+            "p50": 1054360,
+            "p95": 1311480,
+            "p99": 1358560
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 2973,
+            "unit": "ns",
+            "min": 6454000,
+            "max": 25100850,
+            "mean": 15239177.759838548,
+            "p50": 15175720,
+            "p95": 20397070,
+            "p99": 20915280
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 297,
+          "minimum": 423739392,
+          "maximum": 424996864,
+          "first": 423739392,
+          "last": 424996864,
+          "median": 424505344
+        },
+        "private_commit_bytes": {
+          "samples": 297,
+          "minimum": 471040000,
+          "maximum": 472502272,
+          "first": 471040000,
+          "last": 472502272,
+          "median": 472006656
+        },
+        "system_total_physical_bytes": {
+          "samples": 297,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744
+        },
+        "system_available_physical_bytes": {
+          "samples": 297,
+          "minimum": 5706297344,
+          "maximum": 5723058176,
+          "first": 5716447232,
+          "last": 5716672512,
+          "median": 5710594048
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": false,
+        "p99_25ms": false,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "dda4275786864dcc037f231e1c4edf3b6b359804980bc4002f152bf70e748d74",
+      "raw_frames_sha256": "31a303acefd68c3b2c4d5012dd2010c960b27b014679b04e8cd56facdee201b6",
+      "raw_memory_sha256": "0c5141151a3db27944edda8bf46db1b08bb034fbbc13bfa4725a98a7607a231a",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 100.70435452461243,
+        "evidence_sha256": "63ea590cb89ffe8dbacc005cf2cae3a5bc13528d699cf47f221d8d7833cc99a9"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "guarded",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "native_binary_sha256": "a2c6f90a1a2d6e125bb02a484ad68c7685858e1547ff85dd4e9f0c2de25c0984",
+      "settings": {
+        "gpu": 1,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.03036620000057,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.024543,
+        "ticks_per_second": 60.008786739117696,
+        "max_ticks_per_poll": 1
+      },
+      "progress": {
+        "travel_meters": 162.9957254833036,
+        "motion_ticks": 3460,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 51,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 2204,
+          "maximum": 26992
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 6080,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 112000,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 6080,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 6080,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 6080,
+        "gpu_timed": 6080,
+        "gpu_total": {
+          "max": 3866560,
+          "mean": 2681401.252631579,
+          "min": 1761120,
+          "p50": 2781312,
+          "p95": 3129120,
+          "p99": 3333856,
+          "samples": 6080,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 8666700,
+          "mean": 3333376.4105938477,
+          "min": 1929300,
+          "p50": 3319900,
+          "p95": 4334300,
+          "p99": 4835100,
+          "samples": 6079,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 11165000,
+          "mean": 6539629.572368421,
+          "min": 3604400,
+          "p50": 6987300,
+          "p95": 8621200,
+          "p99": 9299100,
+          "samples": 6080,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 17309600,
+          "mean": 9872632.538246423,
+          "min": 5739600,
+          "p50": 10088500,
+          "p95": 12356200,
+          "p99": 13343600,
+          "samples": 6079,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 17309600,
+          "mean": 9872457.864429088,
+          "min": 5739600,
+          "p50": 10088000,
+          "p95": 12356200,
+          "p99": 13343600,
+          "samples": 6078,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 6080,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 1761120,
+            "max": 3866560,
+            "mean": 2681401.252631579,
+            "p50": 2781312,
+            "p95": 3129120,
+            "p99": 3333856
+          },
+          "skinning": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 147360,
+            "max": 241536,
+            "mean": 177650.02631578947,
+            "p50": 173888,
+            "p95": 193120,
+            "p99": 212896
+          },
+          "light_assignment": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 23840,
+            "max": 46496,
+            "mean": 28265.715789473685,
+            "p50": 27296,
+            "p95": 31840,
+            "p99": 32448
+          },
+          "shadows": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 143904,
+            "max": 247008,
+            "mean": 171840.1,
+            "p50": 168128,
+            "p95": 190848,
+            "p99": 213248
+          },
+          "opaque": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 197632,
+            "max": 991232,
+            "mean": 436878.9210526316,
+            "p50": 446464,
+            "p95": 666624,
+            "p99": 703488
+          },
+          "deferred_lighting": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 366592,
+            "max": 925696,
+            "mean": 572398.1473684211,
+            "p50": 587776,
+            "p95": 677888,
+            "p99": 723968
+          },
+          "ambient_occlusion": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 408576,
+            "max": 1758208,
+            "mean": 964875.9578947368,
+            "p50": 987136,
+            "p95": 1241088,
+            "p99": 1296384
+          },
+          "ambient_occlusion_filter": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 156672,
+            "max": 624640,
+            "mean": 272789.05263157893,
+            "p50": 291840,
+            "p95": 340992,
+            "p99": 363520
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 6080,
+            "unit": "ns",
+            "min": 1156096,
+            "max": 2866624,
+            "mean": 1866766.4894736842,
+            "p50": 1934336,
+            "p95": 2239488,
+            "p99": 2380800
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 295,
+          "minimum": 403316736,
+          "maximum": 404566016,
+          "first": 403316736,
+          "last": 404566016,
+          "median": 403804160
+        },
+        "private_commit_bytes": {
+          "samples": 295,
+          "minimum": 609517568,
+          "maximum": 610775040,
+          "first": 609517568,
+          "last": 610775040,
+          "median": 610041856
+        },
+        "system_total_physical_bytes": {
+          "samples": 295,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744
+        },
+        "system_available_physical_bytes": {
+          "samples": 295,
+          "minimum": 5821624320,
+          "maximum": 5841580032,
+          "first": 5836414976,
+          "last": 5826150400,
+          "median": 5832183808
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "752491206a8c749a89c3e2d0a5d08a21a28a63120913cb4be3d17111b4936498",
+      "raw_frames_sha256": "c1b154fc3a756934a2b31301fde873d6a1b7bd24f1f977ed24c0d87b69053eb4",
+      "raw_memory_sha256": "5cb69022c8e913f85ae7017af496b2bf44c592c95595073db55b4fa2d9794126",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 105.26797842979431,
+        "evidence_sha256": "e9c88555513d9e29bf41a157ee02b351dee673137b1a0621b1a4509445dab62d"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "guarded",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "native_binary_sha256": "a2c6f90a1a2d6e125bb02a484ad68c7685858e1547ff85dd4e9f0c2de25c0984",
+      "settings": {
+        "gpu": 0,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.06283080000139,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.0290196,
+        "ticks_per_second": 60.004311647961686,
+        "max_ticks_per_poll": 2
+      },
+      "progress": {
+        "travel_meters": 162.97548299771069,
+        "motion_ticks": 3462,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 38,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 2048,
+          "maximum": 27064
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 3000,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 25805300,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 3000,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 3000,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 3000,
+        "gpu_timed": 3000,
+        "gpu_total": {
+          "max": 30339580,
+          "mean": 19466677.043333333,
+          "min": 10546160,
+          "p50": 19208520,
+          "p95": 26183000,
+          "p99": 26978600,
+          "samples": 3000,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 10472700,
+          "mean": 3962809.5031677224,
+          "min": 2092700,
+          "p50": 3895100,
+          "p95": 5453300,
+          "p99": 6199400,
+          "samples": 2999,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 27648300,
+          "mean": 16048184.633333333,
+          "min": 7680700,
+          "p50": 15597100,
+          "p95": 22577300,
+          "p99": 23666500,
+          "samples": 3000,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 31711900,
+          "mean": 20011925.708569523,
+          "min": 11017500,
+          "p50": 19782100,
+          "p95": 26939700,
+          "p99": 27891500,
+          "samples": 2999,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 31711900,
+          "mean": 20009961.97464977,
+          "min": 11017500,
+          "p50": 19781900,
+          "p95": 26939700,
+          "p99": 27891500,
+          "samples": 2998,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 3000,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 10546160,
+            "max": 30339580,
+            "mean": 19466677.043333333,
+            "p50": 19208520,
+            "p95": 26183000,
+            "p99": 26978600
+          },
+          "skinning": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 77000,
+            "max": 114480,
+            "mean": 86963.42666666667,
+            "p50": 86480,
+            "p95": 95480,
+            "p99": 101200
+          },
+          "light_assignment": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 15200,
+            "max": 37400,
+            "mean": 20851.48,
+            "p50": 18400,
+            "p95": 32160,
+            "p99": 34680
+          },
+          "shadows": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 562200,
+            "max": 1018770,
+            "mean": 653226.2266666667,
+            "p50": 647720,
+            "p95": 725040,
+            "p99": 776360
+          },
+          "opaque": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 2212600,
+            "max": 6652080,
+            "mean": 3571994.296666667,
+            "p50": 3349440,
+            "p95": 5487640,
+            "p99": 5851960
+          },
+          "deferred_lighting": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 2073840,
+            "max": 8506580,
+            "mean": 3038205.93,
+            "p50": 2925240,
+            "p95": 4014680,
+            "p99": 4218320
+          },
+          "ambient_occlusion": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 1877960,
+            "max": 17766690,
+            "mean": 10739217.346666666,
+            "p50": 10495080,
+            "p95": 14731920,
+            "p99": 15229560
+          },
+          "ambient_occlusion_filter": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 779440,
+            "max": 1537120,
+            "mean": 1086377.0,
+            "p50": 1087560,
+            "p95": 1364040,
+            "p99": 1423840
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 3000,
+            "unit": "ns",
+            "min": 6483040,
+            "max": 24479340,
+            "mean": 15133641.613333333,
+            "p50": 15029360,
+            "p95": 20169960,
+            "p99": 20682800
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 296,
+          "minimum": 459804672,
+          "maximum": 461320192,
+          "first": 459804672,
+          "last": 461320192,
+          "median": 460806144.0
+        },
+        "private_commit_bytes": {
+          "samples": 296,
+          "minimum": 470482944,
+          "maximum": 472375296,
+          "first": 470482944,
+          "last": 472375296,
+          "median": 471756800.0
+        },
+        "system_total_physical_bytes": {
+          "samples": 296,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744.0
+        },
+        "system_available_physical_bytes": {
+          "samples": 296,
+          "minimum": 5689286656,
+          "maximum": 5736001536,
+          "first": 5700714496,
+          "last": 5734809600,
+          "median": 5703436288.0
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": false,
+        "p99_25ms": false,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "bd7f2ac178eaf5d10d89768a4392294e971c58b332c69513967a5b25e7cde18c",
+      "raw_frames_sha256": "0fd04d18287b30ed0cb6935a96907f47508ed8920aa3e961a1d269f7a0a2ac29",
+      "raw_memory_sha256": "7abc034a24769180d5a8393361a8ffe8dd22d043ba1dfb704cf86913763df181",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 100.98132801055908,
+        "evidence_sha256": "f0b8be5b36e7d8ab14326494b3f973dbea8a3f2fef6b3ca3f134e1b367232bb5"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "producer-bounded-no-fetch",
+      "gpu": 1,
+      "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+      "passed": true,
+      "native_binary_sha256": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633",
+      "settings": {
+        "gpu": 1,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.02060070000152,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.015088,
+        "ticks_per_second": 60.018240746393644,
+        "max_ticks_per_poll": 1
+      },
+      "progress": {
+        "travel_meters": 162.9723833165785,
+        "motion_ticks": 3459,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 51,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 2204,
+          "maximum": 26992
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 5929,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 117100,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 5929,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 5929,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 5929,
+        "gpu_timed": 5929,
+        "gpu_total": {
+          "max": 3926304,
+          "mean": 2692288.3670096137,
+          "min": 1924064,
+          "p50": 2794272,
+          "p95": 3159616,
+          "p99": 3359808,
+          "samples": 5929,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 8216600,
+          "mean": 3412914.7604588396,
+          "min": 1935400,
+          "p50": 3405800,
+          "p95": 4444300,
+          "p99": 4907600,
+          "samples": 5928,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 12176200,
+          "mean": 6709956.029684601,
+          "min": 3614700,
+          "p50": 7103900,
+          "p95": 8791500,
+          "p99": 9505200,
+          "samples": 5929,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 16799700,
+          "mean": 10122710.897435898,
+          "min": 5702300,
+          "p50": 10338300,
+          "p95": 12694600,
+          "p99": 13721100,
+          "samples": 5928,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 16799700,
+          "mean": 10122946.954614475,
+          "min": 5702300,
+          "p50": 10339900,
+          "p95": 12694600,
+          "p99": 13721100,
+          "samples": 5927,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 5929,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 1924064,
+            "max": 3926304,
+            "mean": 2692288.3670096137,
+            "p50": 2794272,
+            "p95": 3159616,
+            "p99": 3359808
+          },
+          "skinning": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 150880,
+            "max": 462080,
+            "mean": 182186.50834879407,
+            "p50": 180192,
+            "p95": 193216,
+            "p99": 216960
+          },
+          "light_assignment": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 24320,
+            "max": 44032,
+            "mean": 29118.12717152977,
+            "p50": 28672,
+            "p95": 31872,
+            "p99": 32576
+          },
+          "shadows": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 150112,
+            "max": 329760,
+            "mean": 178988.05734525216,
+            "p50": 179968,
+            "p95": 196128,
+            "p99": 221824
+          },
+          "opaque": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 221184,
+            "max": 1022976,
+            "mean": 455799.6883116883,
+            "p50": 458752,
+            "p95": 705536,
+            "p99": 735232
+          },
+          "deferred_lighting": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 403456,
+            "max": 1045504,
+            "mean": 599772.8102546803,
+            "p50": 615424,
+            "p95": 726016,
+            "p99": 776192
+          },
+          "ambient_occlusion": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 465920,
+            "max": 1705984,
+            "mean": 902023.6208466858,
+            "p50": 924672,
+            "p95": 1140736,
+            "p99": 1209344
+          },
+          "ambient_occlusion_filter": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 179200,
+            "max": 657408,
+            "mean": 286320.1754090066,
+            "p50": 304128,
+            "p95": 357376,
+            "p99": 382976
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 5929,
+            "unit": "ns",
+            "min": 1225728,
+            "max": 2924576,
+            "mean": 1846195.9858323494,
+            "p50": 1918240,
+            "p95": 2213888,
+            "p99": 2338816
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 295,
+          "minimum": 402370560,
+          "maximum": 403902464,
+          "first": 402370560,
+          "last": 403902464,
+          "median": 403152896
+        },
+        "private_commit_bytes": {
+          "samples": 295,
+          "minimum": 613396480,
+          "maximum": 614961152,
+          "first": 613396480,
+          "last": 614961152,
+          "median": 614195200
+        },
+        "system_total_physical_bytes": {
+          "samples": 295,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744
+        },
+        "system_available_physical_bytes": {
+          "samples": 295,
+          "minimum": 3920068608,
+          "maximum": 3947782144,
+          "first": 3920068608,
+          "last": 3926511616,
+          "median": 3935735808
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": true,
+        "p99_25ms": true,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "9cfd155b947d84de2600d0c96a7fe2f305cbc383aef248ac0fbbd89a9a45fc12",
+      "raw_frames_sha256": "89b82eb0ebb57a86018cd2a2138bf8cb9108802f47d44e2f96c8c6a5dfa54971",
+      "raw_memory_sha256": "406215417751cc9f82275fdd854baf671523ef8c17d157f9d35bf56e5b0cd347",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 105.39345359802246,
+        "evidence_sha256": "f7e59933d755e42f538a2dfc0210cba90c99beec0b63ab2ac6e45677640d65c4"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    },
+    {
+      "role": "producer-bounded-no-fetch",
+      "gpu": 0,
+      "device": "AMD Radeon(TM) Graphics",
+      "passed": true,
+      "native_binary_sha256": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633",
+      "settings": {
+        "gpu": 0,
+        "warmup": 30.0,
+        "duration": 60.0,
+        "width": 1920,
+        "height": 1080,
+        "lighting_path": "deferred",
+        "frames_in_flight": 2,
+        "ambient_occlusion": "medium GTAO, radius1",
+        "reconstruction": "none",
+        "frame_generation": false,
+        "audio": true
+      },
+      "machine": {
+        "os": [
+          "11",
+          "10.0.26220",
+          "SP0",
+          "Multiprocessor Free"
+        ],
+        "ac_line_status": 1,
+        "power_source": "AC",
+        "battery_percent": 100,
+        "cache_state": "Existing engine shader/package caches; fresh native process and cold scene upload. No cache reset.",
+        "display": {
+          "mode_width": 1920,
+          "mode_height": 1080,
+          "raw_frequency": 144,
+          "nominal_hz": 144,
+          "variable_refresh_qualified": false
+        }
+      },
+      "measured_wall_seconds": 60.04099090000091,
+      "interactive_clock": {
+        "ticks": 3602,
+        "wall_seconds": 60.0211813,
+        "ticks_per_second": 60.01214774491618,
+        "max_ticks_per_poll": 2
+      },
+      "progress": {
+        "travel_meters": 163.01760998154688,
+        "motion_ticks": 3461,
+        "path_plans": 12,
+        "complete_laps": 3
+      },
+      "completed_render_work": {
+        "objects": {
+          "minimum": 832,
+          "maximum": 832
+        },
+        "camera_draws": {
+          "minimum": 51,
+          "maximum": 418
+        },
+        "camera_triangles": {
+          "minimum": 2204,
+          "maximum": 27064
+        },
+        "shadow_views": {
+          "minimum": 8,
+          "maximum": 8
+        },
+        "skinned_instances": {
+          "minimum": 24,
+          "maximum": 24
+        },
+        "skinned_vertices": {
+          "minimum": 24696,
+          "maximum": 24696
+        }
+      },
+      "summary": {
+        "admitting": false,
+        "capacity": 262144,
+        "captures_remaining": 1023,
+        "count": 4240,
+        "counters_saturated": false,
+        "cpu_open": 0,
+        "drain_failed": false,
+        "drain_ns": 16518300,
+        "eligible_interval_exclusions": "Both returns and intervening rows focused, with contiguous recorded sequences; neither endpoint nor intervening row paused, replay, resize, capture, storage, skip, error or replacement. Raw rows and all intervals remain available; this filter is not a performance qualification.",
+        "flag_bits": {
+          "capture": 16,
+          "error": 128,
+          "focused": 1,
+          "paused": 2,
+          "replacement": 256,
+          "replay": 4,
+          "resize": 8,
+          "skip": 64,
+          "storage": 32
+        },
+        "flagged_frames": {
+          "capture": 1,
+          "error": 0,
+          "focused": 4240,
+          "paused": 1,
+          "replacement": 0,
+          "replay": 0,
+          "resize": 1,
+          "skip": 0,
+          "storage": 0
+        },
+        "frames_dropped": 0,
+        "frames_failed": 0,
+        "frames_rejected": 0,
+        "frozen": true,
+        "full": false,
+        "generation": 1,
+        "gpu_completed": 4240,
+        "gpu_dropped": 0,
+        "gpu_late": 0,
+        "gpu_not_submitted_unavailable": 0,
+        "gpu_pending": 0,
+        "gpu_query_failed": 0,
+        "gpu_submitted": 4240,
+        "gpu_timed": 4240,
+        "gpu_total": {
+          "max": 22317370,
+          "mean": 13416207.384433962,
+          "min": 8812880,
+          "p50": 13373360,
+          "p95": 17911480,
+          "p99": 18565280,
+          "samples": 4240,
+          "unit": "ns"
+        },
+        "gpu_unavailable": 0,
+        "host_poll_gap": {
+          "max": 9208200,
+          "mean": 4065221.490917669,
+          "min": 2013400,
+          "p50": 4089900,
+          "p95": 5542600,
+          "p99": 6152500,
+          "samples": 4239,
+          "unit": "ns"
+        },
+        "last_gpu_drop_reason": "none",
+        "percentiles": "nearest-rank",
+        "poll_wall": {
+          "max": 21704700,
+          "mean": 10091676.273584906,
+          "min": 4386200,
+          "p50": 9865600,
+          "p95": 13866000,
+          "p99": 14800200,
+          "samples": 4240,
+          "unit": "ns"
+        },
+        "present_return_cadence_all": {
+          "max": 24195600,
+          "mean": 14157107.147912243,
+          "min": 6901000,
+          "p50": 14119000,
+          "p95": 18625200,
+          "p99": 19486100,
+          "samples": 4239,
+          "unit": "ns"
+        },
+        "present_return_cadence_eligible": {
+          "max": 24195600,
+          "mean": 14157342.496460594,
+          "min": 6901000,
+          "p50": 14119000,
+          "p95": 18625200,
+          "p99": 19486100,
+          "samples": 4238,
+          "unit": "ns"
+        },
+        "sequence_gaps": 0,
+        "state": "frozen",
+        "successful_present_returns": 4240,
+        "timing": "Steady CPU nanoseconds relative to capture epoch; poll/stages are wall durations and overlap. GPU values are independent queue durations. Present-return cadence includes host gaps; it is not scanout or input latency.",
+        "gpu_passes": {
+          "total": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 8812880,
+            "max": 22317370,
+            "mean": 13416207.384433962,
+            "p50": 13373360,
+            "p95": 17911480,
+            "p99": 18565280
+          },
+          "skinning": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 80480,
+            "max": 230200,
+            "mean": 95757.07547169812,
+            "p50": 94880,
+            "p95": 106240,
+            "p99": 112200
+          },
+          "light_assignment": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 15680,
+            "max": 61760,
+            "mean": 19418.622641509435,
+            "p50": 19160,
+            "p95": 21120,
+            "p99": 24320
+          },
+          "shadows": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 602000,
+            "max": 5483210,
+            "mean": 708246.4716981133,
+            "p50": 696040,
+            "p95": 781360,
+            "p99": 1072930
+          },
+          "opaque": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 2209080,
+            "max": 6855720,
+            "mean": 3750019.908018868,
+            "p50": 3543760,
+            "p95": 5738560,
+            "p99": 6117920
+          },
+          "deferred_lighting": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 2231080,
+            "max": 9097740,
+            "mean": 3408535.742924528,
+            "p50": 3327360,
+            "p95": 4532560,
+            "p99": 4663680
+          },
+          "ambient_occlusion": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 1443680,
+            "max": 6227100,
+            "mean": 4001452.7216981133,
+            "p50": 4080520,
+            "p95": 5458800,
+            "p99": 5676200
+          },
+          "ambient_occlusion_filter": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 764440,
+            "max": 1675880,
+            "mean": 1142891.3113207547,
+            "p50": 1139520,
+            "p95": 1459640,
+            "p99": 1511720
+          },
+          "reconstruction": {
+            "samples": 0,
+            "unit": "ns"
+          },
+          "post": {
+            "samples": 4240,
+            "unit": "ns",
+            "min": 5719000,
+            "max": 15893700,
+            "mean": 8842765.306603774,
+            "p50": 8935400,
+            "p95": 11593960,
+            "p99": 11884320
+          }
+        }
+      },
+      "memory_summary": {
+        "working_set_bytes": {
+          "samples": 296,
+          "minimum": 455049216,
+          "maximum": 455991296,
+          "first": 455049216,
+          "last": 455991296,
+          "median": 455503872.0
+        },
+        "private_commit_bytes": {
+          "samples": 296,
+          "minimum": 466591744,
+          "maximum": 467771392,
+          "first": 466591744,
+          "last": 467771392,
+          "median": 467312640.0
+        },
+        "system_total_physical_bytes": {
+          "samples": 296,
+          "minimum": 16440479744,
+          "maximum": 16440479744,
+          "first": 16440479744,
+          "last": 16440479744,
+          "median": 16440479744.0
+        },
+        "system_available_physical_bytes": {
+          "samples": 296,
+          "minimum": 4696219648,
+          "maximum": 5230923776,
+          "first": 5230923776,
+          "last": 4696219648,
+          "median": 4997023744.0
+        }
+      },
+      "budgets": {
+        "p95_16_7ms": false,
+        "p99_25ms": true,
+        "working_set_4GiB": true,
+        "vram_qualified": false,
+        "explanation": "Application present-return cadence, not scanout FPS. No frame generation."
+      },
+      "evidence_sha256": "6291b1cdde7886d3e99634facae5ebe60c23447ef0c40798f1f0de69a6e0e350",
+      "raw_frames_sha256": "5a7134b3acf4273e1b5eaedefb9b213f0e0caf7de1b94dd656127a8016d672f7",
+      "raw_memory_sha256": "87a837b9d8cd40a34b79f7c5a671fd968085e410587baa29a5ba1c003f48c52f",
+      "supervisor": {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 103.42342591285706,
+        "evidence_sha256": "b04fb1b6b58936094ce58847098314e811586be167df1d873575fc633042647e"
+      },
+      "owner_count": 2,
+      "all_owner_exit_codes_zero": true,
+      "nvrhi_errors": 0
+    }
+  ],
+  "contracts": {
+    "world": {
+      "passed": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "seconds": 3.8079183101654053,
+      "evidence_sha256": "3125123062821c62a648f2bd9b48613792c8771db762e611e40024252a19b198",
+      "tests": 14,
+      "log_sha256": "5c8a1d7a153f5ff0d0feb9fef96b3631c3a6d4d53e77c0f72f6b5c8773fd7d8e"
+    },
+    "runtime": {
+      "passed": true,
+      "exit_code": 0,
+      "forced_cleanup": false,
+      "seconds": 0.9699971675872803,
+      "evidence_sha256": "64d436a8dba806c413aebed74171850cd5fa461c05c0d8dbd8bd6044b164389f",
+      "tests": 9,
+      "log_sha256": "aa204f787e681999bbd3b303f57bbbdc7606882a9e65735191292d5eebb6605d"
+    },
+    "basic": [
+      {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 6.639563083648682,
+        "evidence_sha256": "c12e3bbf462bdd49bda246337149b9d075f19fc0ba075f3aa320d80b017c637a",
+        "gpu": 1,
+        "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "captures": 12,
+        "cases": 6
+      },
+      {
+        "passed": true,
+        "exit_code": 0,
+        "forced_cleanup": false,
+        "seconds": 4.837257385253906,
+        "evidence_sha256": "0478a3c9db768ae54eeb11957caae4706402f3c934798bd28a76cdda935aaa17",
+        "gpu": 0,
+        "device": "AMD Radeon(TM) Graphics",
+        "captures": 12,
+        "cases": 6
+      }
+    ],
+    "ao_regressions": {
+      "capture_api": [
+        {
+          "passed": true,
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 18.171176433563232,
+          "evidence_sha256": "7a8e31eeecc46c60eda6ec7f6d776e96302bb6fd564075e3d8643fcc0533ba5e",
+          "log_sha256": "896447e9d2d62d4ce36bf4b6790450d1c1bee02ecb3258959fed284a97840e8c",
+          "gpu": 1,
+          "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "captures": 21,
+          "owners": 31,
+          "requests": 31,
+          "all_owner_exit_codes_zero": true,
+          "validation_errors": 0,
+          "binary_sha256": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633",
+          "discovery_schema_revision": 72,
+          "visibility_tolerance": 0.01,
+          "ambient_radiance_tolerance": 0.002,
+          "normal_tolerance": 0.002
+        },
+        {
+          "passed": true,
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 13.42628026008606,
+          "evidence_sha256": "a8a6c61fb2a19eef101922ea3e4556c7840e0d72daf0b6f26360d3231f35fa31",
+          "log_sha256": "1ac8c2e9c190ac61e7f32e8d26dfae3594e762489044a74d42a825e2a0d1eeab",
+          "gpu": 0,
+          "device": "AMD Radeon(TM) Graphics",
+          "captures": 21,
+          "owners": 31,
+          "requests": 31,
+          "all_owner_exit_codes_zero": true,
+          "validation_errors": 0,
+          "binary_sha256": "d6315dfe2d39d2f45619eb9ed201b4d64d6805aefe59fa5dc0a55f23ea002633",
+          "discovery_schema_revision": 72,
+          "visibility_tolerance": 0.01,
+          "ambient_radiance_tolerance": 0.002,
+          "normal_tolerance": 0.002
+        }
+      ],
+      "reconstruction_lifecycle": [
+        {
+          "passed": true,
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 8.020864009857178,
+          "evidence_sha256": "39a840ab7eff7706f67745e5524557ab25aab22bdc5ee53afd471480e611e596",
+          "log_sha256": "b1ccc401ed867edae779decba024e50f5e1375eb49bb001e32e4f6560ba56a98",
+          "gpu": 1,
+          "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "captures": 100,
+          "mode_slot_cases": 8,
+          "interleaved_captures": 12,
+          "validation_errors": 0,
+          "auxiliary_binary_sha256_observed_after_run": "ae53ea4dcf878463db72533645aa396dda2482a5736b91ebe0766c2cc81ddd77",
+          "fixture_source": "tests/reconstruction_native.cpp",
+          "plane_visibility_tolerance": 0.002,
+          "raw_hdr_tolerance": 0.005,
+          "resolved_hdr_tolerance": 0.03
+        },
+        {
+          "passed": true,
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 9.369560718536377,
+          "evidence_sha256": "56d807075cccf5e8c988c7992828e51577d75162dbf54352f2ca840402faa35b",
+          "log_sha256": "c180d7e8f713d03c2121ba5e1e4455b6a78ee6808a3ec087cf27b101eadaac04",
+          "gpu": 0,
+          "device": "AMD Radeon(TM) Graphics",
+          "captures": 100,
+          "mode_slot_cases": 8,
+          "interleaved_captures": 12,
+          "validation_errors": 0,
+          "auxiliary_binary_sha256_observed_after_run": "ae53ea4dcf878463db72533645aa396dda2482a5736b91ebe0766c2cc81ddd77",
+          "fixture_source": "tests/reconstruction_native.cpp",
+          "plane_visibility_tolerance": 0.002,
+          "raw_hdr_tolerance": 0.005,
+          "resolved_hdr_tolerance": 0.03
+        }
+      ],
+      "ui_composition": [
+        {
+          "passed": true,
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 30.123623609542847,
+          "evidence_sha256": "c0a6938ddb5d0070c65022fdf63eac86b287ca654a40d881e17e98cccb46afef",
+          "log_sha256": "c0a6938ddb5d0070c65022fdf63eac86b287ca654a40d881e17e98cccb46afef",
+          "gpu": 1,
+          "device": "NVIDIA GeForce RTX 4070 Laptop GPU",
+          "captures": 50,
+          "owners": 10,
+          "validation_errors": 0,
+          "all_owner_exit_codes_zero": true,
+          "auxiliary_binary_sha256_observed_after_run": "5a97c7502e210f9fcd42ab6fafcf1b44234a478a11bdf3d97ae62b8cc5bdff31",
+          "input_hashes_before_after_equal": true,
+          "full_image_exact_comparisons": true,
+          "composition_byte_tolerance": 2,
+          "nontrivial_occlusion_interval": [
+            0.1,
+            0.99
+          ]
+        },
+        {
+          "passed": true,
+          "exit_code": 0,
+          "forced_cleanup": false,
+          "seconds": 28.02750539779663,
+          "evidence_sha256": "cbfd9681d4787dd20a2cdd3a522e390b789036fd7274db61a43f47f4a880a9bf",
+          "log_sha256": "cbfd9681d4787dd20a2cdd3a522e390b789036fd7274db61a43f47f4a880a9bf",
+          "gpu": 0,
+          "device": "AMD Radeon(TM) Graphics",
+          "captures": 50,
+          "owners": 10,
+          "validation_errors": 0,
+          "all_owner_exit_codes_zero": true,
+          "auxiliary_binary_sha256_observed_after_run": "5a97c7502e210f9fcd42ab6fafcf1b44234a478a11bdf3d97ae62b8cc5bdff31",
+          "input_hashes_before_after_equal": true,
+          "full_image_exact_comparisons": true,
+          "composition_byte_tolerance": 2,
+          "nontrivial_occlusion_interval": [
+            0.1,
+            0.99
+          ]
+        }
+      ],
+      "auxiliary_binary_hash_scope": "Observed after terminal runs and tied to frozen final native build inputs; not before/after runtime hash receipts.",
+      "original_thresholds_retained": true
+    }
+  },
+  "retained_attempts": [
+    {
+      "attempt": "initial Windows cross-host contracts",
+      "passed": false,
+      "native_build_passed": true,
+      "ctest_passed": 7,
+      "ctest_total": 9,
+      "forced_cleanup": false,
+      "evidence_sha256": "0182699e8ee8891415cc06645c7fbed701348527dfb02325ee80d326c997226e",
+      "cause": "Two Python contracts ran under the wrong host path conventions. Final contracts use native Windows Python."
+    },
+    {
+      "attempt": "integral-only variant",
+      "functional_equivalence_passed": true,
+      "performance_improvement_claim": false,
+      "cause": "No meaningful AMD improvement; measured variants and raw rows remain visible."
+    },
+    {
+      "attempt": "guarded variant",
+      "functional_equivalence_passed": true,
+      "performance_improvement_claim": false,
+      "native_build_passed": true,
+      "ctest_passed": 7,
+      "ctest_total": 7,
+      "forced_cleanup": false,
+      "native_build_evidence_sha256": "095e899aac7ec83a5ae13d5a74892798036aaaa696880bb9c7ce48da17d1490a",
+      "cause": "Retained intermediate variant; final qualification identifies the producer-bounded no-fetch binary separately."
+    },
+    {
+      "attempt": "AO API fixture stale discovery revision",
+      "passed": false,
+      "captures": 0,
+      "expected_schema_revision": 52,
+      "observed_schema_revision": 72,
+      "forced_cleanup": false,
+      "evidence_sha256": "bfaf080c3b53953a11423311de3634aee813bd7db3bbfdda20cf1f6e296d2fd4",
+      "cause": "Discovery assertion updated from 52 to 72; original visual and numeric tolerances retained."
+    }
+  ],
+  "owner_closure": {
+    "passed": true,
+    "remaining_owned_processes": 0,
+    "evidence_sha256": "07f5e2399fa2a1be678a5c33637daf259a5e805d3eb6e53dcc8485393d0dd3b4",
+    "recorded_endpoints": 8
+  },
+  "limitations": [
+    "One laptop, sequential warm-up30s/measurement60s per variant/GPU; no repeated randomized or thermal-soak causal speedup qualification.",
+    "Application present-return cadence is not display scanout FPS or click-to-photon latency.",
+    "CPU stages overlap; AO/filter/deferred intervals are nested in post/total. No overlapping durations are summed.",
+    "Capture timings cover two frames and small fixtures; continuous measurements use independent native frame rows.",
+    "Performance Yard visual captures cover the authored static scene, not its running Native AOT gameplay state.",
+    "Tiny-projection fallback is not guaranteed to be exercised by these fixtures; its dedicated GPU coverage remains unqualified.",
+    "Imported Idle spectators/shared boxes are not production-art complexity, crowd AI or GPU instancing qualification.",
+    "Skinning includes shadow-only geometry. Authored rig counts do not prove all rigs are camera-visible.",
+    "Dynamic boxes can settle. Native navigation workload belongs to one moving player.",
+    "Memory samples cover process working set/private commit separately; GPU residency and audibility are unqualified.",
+    "Existing caches, fresh native process/scene upload; clean-cache and edit-to-play performance unqualified.",
+    "Image and probe equivalence cover the stated fixtures, not general physical AO correctness.",
+    "Only staged phonon.dll is pinned alongside the CLI; system/driver libraries are outside that file closure."
+  ],
+  "raw_observations": {
+    "path": "ao-optimization-native.json.gz",
+    "compression": "gzip",
+    "sha256": "89f4340e06fb0f6bc73d8d802f37f4df5c70390e7f095ebca85c1fa390325692",
+    "decompressed_sha256": "8e0b69eb98a2d6060a6a6cf059d353e3e5ae035e5316f101d979872c7953ffc4",
+    "bytes": 4097235
+  }
+}
