@@ -1,0 +1,87 @@
+{
+  "format": "poima.agent-depot",
+  "version": 1,
+  "game": {
+    "project": "DepotRun.csproj",
+    "type": "Depot.DepotGame",
+    "identity": "depot-run-v1",
+    "native_descriptor": "native-artifact/native-gameplay.json",
+    "components_manifest": null
+  },
+  "project": "project.json",
+  "player": "de907000000000000000000000000001",
+  "camera": "de907000000000000000000000000002",
+  "regions": {
+    "start": {
+      "entity": "de907000000000000000000000000003"
+    },
+    "pickup_a": {
+      "entity": "de907000000000000000000000000004"
+    },
+    "delivery_a": {
+      "entity": "de907000000000000000000000000005"
+    },
+    "pickup_b": {
+      "entity": "de907000000000000000000000000006"
+    },
+    "delivery_b": {
+      "entity": "de907000000000000000000000000007"
+    },
+    "finish": {
+      "entity": "de907000000000000000000000000008"
+    }
+  },
+  "fields": {
+    "phase": "Phase",
+    "stage": "Stage",
+    "cargo": "Cargo",
+    "elapsed": "RunningTicks",
+    "rejected": "Rejected"
+  },
+  "state_fields": {
+    "previous_use": "PreviousUse",
+    "menu": "Menu",
+    "ticket_high": "TicketHigh",
+    "ticket_low": "TicketLow",
+    "ticket_sequence": "TicketSequence",
+    "ticket_kind": "TicketKind",
+    "storage_status": "StorageStatus",
+    "storage_error": "StorageError",
+    "completion_voice": "CompletionVoice"
+  },
+  "ui": {
+    "welcome": "de90700000000000000000000000000e",
+    "begin": "de90700000000000000000000000000f",
+    "welcome_load": "de907000000000000000000000000010",
+    "hud": "de907000000000000000000000000011",
+    "menu_button": "de907000000000000000000000000012",
+    "menu": "de907000000000000000000000000013",
+    "resume": "de907000000000000000000000000014",
+    "save": "de907000000000000000000000000015",
+    "load": "de907000000000000000000000000016",
+    "save_status": "de907000000000000000000000000017",
+    "terminal": "de907000000000000000000000000019",
+    "terminal_text": "de90700000000000000000000000001a",
+    "hud_status": "de907000000000000000000000000018",
+    "welcome_status": "de90700000000000000000000000001b"
+  },
+  "save": {
+    "checkpoint_slot": "depot-checkpoint"
+  },
+  "marshal": {
+    "root": "de90700000000000000000000000000c",
+    "rig": "de90700000000000000000000000000c",
+    "asset": "a6342da2e4bb2388bce48058189199437131d54ad23ec21d398e3ff7af75747e",
+    "idle_clip": 0,
+    "provenance": [
+      "591f096256855cc18e5f74b5932a51cec4e90b1be3153442332d70cafbfdef1f"
+    ]
+  },
+  "finish_audio": {
+    "emitter": "de90700000000000000000000000000d",
+    "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+    "provenance": [
+      "931d2dd31525cc53459122be5122bddf85cbc3590213240756aa7f4609a15ffe"
+    ]
+  }
+}

@@ -1,8 +1,41 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.91**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.92**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.92 publishes DEPOT RUN's retained agent-authored source, licensed
+cooked content and independent gameplay/save/bundle verifier. The measured
+engine is 0.0.91. A Linux Codex provider uses the native Windows MCP host and
+separate build consent to author 99 entities, compile C# and submit genuine
+Native AOT publication and verified 60-file Windows export.
+
+The first fresh attempt is incomplete: a capture and subsequent publication
+return unknown transport outcomes while the owner stops answering. The owner
+is forcibly closed; missing owner output directories and the outage's cause
+remain unexplained. A maintainer restarts the same engine and restores owner
+directories. A separate agent recovery session completes publication/export
+without changing game source or scene. This is a recovered workflow, not a
+one-shot autonomy claim. Native Windows provider file operations fail an earlier
+preflight; Linux provider file access passes without widening policy.
+
+Independent managed/native gates each pass 14,623 requests, covering ordered
+native-controller interaction, negative cases, all 14 scalar fields, exact
+same/fresh-process saves, terminal audio state and compiled Begin resuming an
+initially paused player. Relocated source-free bundle checks pass 14,607 requests
+with development-tool variables removed and system-only PATH. The public
+fixture/verifier repeat both native scopes successfully. An earlier verifier
+launch used an unpumped stdio owner; its failure remains separate from the
+corrected shared-owner pass. No engine runtime, authoring schema or gameplay
+ABI change is introduced by this checkpoint.
+
+Physical input, audible device output, clean-machine launch, visible imported
+skinning at the initial camera, game-scale performance and general agent success
+rates remain unqualified. Menu is checked while externally paused because live
+external UI mutation is prohibited; Begin alone is proven to resume. Repeated
+fresh workflows and representative performance still block broader alpha
+qualification. [Fixture and reproduction](evidence/fixtures/agent-depot/README.md),
+[recorded attempts](evidence/m2-agent-depot.json).
 
 Version 0.0.91 exposes native publication and game export through named,
 owner-configured development profiles. Standalone, shared and MCP world hosts

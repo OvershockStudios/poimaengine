@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.92
+
+- Publish DEPOT RUN: retained agent-authored C#, native scene/UI, licensed cooked character/audio and portable exercise rules.
+- Add an independent verifier for ordered controller gameplay, complete same/fresh-process checkpoints, native artifact/bundle inventories and compiled Begin resumption.
+- Qualify Windows Native AOT gameplay and relocated source-free export using the measured 0.0.91 engine; repeat against the public fixture/verifier.
+- Preserve the incomplete first attempt, explicit owner recovery and verifier failures alongside successful checks. [Reproduction](docs/evidence/fixtures/agent-depot/README.md), [evidence](docs/evidence/m2-agent-depot.json).
+
 ## 0.0.91
 
 - Add owner-configured native C# publication and game export jobs, with fixed tools, complete child environments, guarded relative paths and retry receipts.

@@ -1,0 +1,127 @@
+{
+  "format": "poima.relay-audio",
+  "version": 1,
+  "creator": "Kenney",
+  "license": "CC0-1.0",
+  "procedure": {
+    "id": "relay-audio-convert-v1",
+    "decoder": "sf_readf_float",
+    "downmix": "Arithmetic mean of original channels, rounded to float32",
+    "resampler": "libsamplerate SRC_SINC_BEST_QUALITY, end_of_input=1, mono, ratio=48000/source_rate",
+    "encoding": "48kHz mono PCM16; round-to-nearest-even(sample*32768), saturate to [-32768,32767]",
+    "script_sha256": "d5573165b1908a20bae863890cd8822913ad5401fe13e95d6147397338ebb783",
+    "libraries": {
+      "sndfile": {
+        "version": "libsndfile-1.2.2",
+        "sha256": "7ef24c51a786d6ced3798ef82a246b525bc78582f03773fc9902d16cde633fad"
+      },
+      "samplerate": {
+        "version": "libsamplerate-0.2.2 (c) 2002-2008 Erik de Castro Lopo",
+        "sha256": "46d125ec40a5ef38d39b356f4efb2de20bc8f5cf7264861324fd6013d9a96f48"
+      }
+    }
+  },
+  "packs": {
+    "impact": {
+      "archive_sha256": "029d734af1582474edf3a694d1b0cebc97c1c152f2f39fa34d4c2bafc5de77f8",
+      "source": "https://kenney.nl/assets/impact-sounds",
+      "license_sha256": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db",
+      "license_path": "sources/impact/License.txt",
+      "license_bytes": 608
+    },
+    "interface": {
+      "archive_sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+      "source": "https://kenney.nl/assets/interface-sounds",
+      "license_sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9",
+      "license_path": "sources/interface/License.txt",
+      "license_bytes": 574
+    }
+  },
+  "sounds": {
+    "step-a": {
+      "path": "step-a.wav",
+      "bytes": 10212,
+      "sha256": "528818942d3913cc2d03d13b5c045edacccacb0dcba971e06d42a0eea8302e49",
+      "frames": 5084,
+      "channels": 1,
+      "sample_rate": 48000,
+      "clamped_samples": 0,
+      "pack": "impact",
+      "original_path": "sources/impact/footstep_concrete_000.ogg",
+      "original_sha256": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe",
+      "original_bytes": 5808,
+      "original_archive_member": "Audio/footstep_concrete_000.ogg",
+      "original_frames": 4671,
+      "original_channels": 2,
+      "original_sample_rate": 44100
+    },
+    "step-b": {
+      "path": "step-b.wav",
+      "bytes": 10376,
+      "sha256": "43c74b15aae8d545ae696c626b05533aef0323fdb41d49de4786ec12ac013800",
+      "frames": 5166,
+      "channels": 1,
+      "sample_rate": 48000,
+      "clamped_samples": 0,
+      "pack": "impact",
+      "original_path": "sources/impact/footstep_concrete_001.ogg",
+      "original_sha256": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d",
+      "original_bytes": 6308,
+      "original_archive_member": "Audio/footstep_concrete_001.ogg",
+      "original_frames": 4747,
+      "original_channels": 2,
+      "original_sample_rate": 44100
+    },
+    "pickup": {
+      "path": "pickup.wav",
+      "bytes": 27868,
+      "sha256": "7ddfe1006034e52f541c0c6017d6807111b4095ce55f2875d9eb67d979cc3ca1",
+      "frames": 13912,
+      "channels": 1,
+      "sample_rate": 48000,
+      "clamped_samples": 0,
+      "pack": "interface",
+      "original_path": "sources/interface/confirmation_001.ogg",
+      "original_sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+      "original_bytes": 8968,
+      "original_archive_member": "Audio/confirmation_001.ogg",
+      "original_frames": 12782,
+      "original_channels": 1,
+      "original_sample_rate": 44100
+    },
+    "relay": {
+      "path": "relay.wav",
+      "bytes": 51788,
+      "sha256": "530e175a1ed5aa17951ae4e66892eae84012a63032353ff37631d2f3a6b66bd8",
+      "frames": 25872,
+      "channels": 1,
+      "sample_rate": 48000,
+      "clamped_samples": 0,
+      "pack": "interface",
+      "original_path": "sources/interface/confirmation_002.ogg",
+      "original_sha256": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c",
+      "original_bytes": 14169,
+      "original_archive_member": "Audio/confirmation_002.ogg",
+      "original_frames": 23770,
+      "original_channels": 1,
+      "original_sample_rate": 44100
+    },
+    "denied": {
+      "path": "denied.wav",
+      "bytes": 15840,
+      "sha256": "5673e023e8a51199338ee9c68f1c465614e23415e428fdf60ae2b0d3fc493dd8",
+      "frames": 7898,
+      "channels": 1,
+      "sample_rate": 48000,
+      "clamped_samples": 2,
+      "pack": "interface",
+      "original_path": "sources/interface/error_001.ogg",
+      "original_sha256": "46e67425d16339772e8d328fb36a49426c9467418686e11beeb71ff84b0f6433",
+      "original_bytes": 7373,
+      "original_archive_member": "Audio/error_001.ogg",
+      "original_frames": 7257,
+      "original_channels": 2,
+      "original_sample_rate": 44100
+    }
+  }
+}

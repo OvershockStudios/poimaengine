@@ -1,0 +1,13 @@
+{
+  "format": "poima.project",
+  "version": 2,
+  "project_id": "de907000000000000000000000000099",
+  "name": "DEPOT RUN",
+  "entry": {
+    "world": "world.json",
+    "controller": "de907000000000000000000000000001",
+    "camera": "de907000000000000000000000000002"
+  },
+  "audio": true,
+  "gameplay": {"descriptor": "native-artifact/native-gameplay.json"}
+}

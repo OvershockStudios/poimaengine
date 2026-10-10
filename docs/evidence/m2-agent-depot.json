@@ -1,0 +1,379 @@
+{
+  "format": "poima.agent-game-qualification",
+  "version": 1,
+  "checkpoint": "0.0.92",
+  "date": "2026-10-10",
+  "measured_engine_version": "0.0.91",
+  "game": "DEPOT RUN",
+  "scope": "One fresh authoring attempt plus a separately recorded infrastructure-assisted recovery; bounded Windows game workflow, not one-shot autonomy.",
+  "provider": {
+    "client": "Codex CLI",
+    "client_version": "0.160.1",
+    "model": "gpt-6.1-sol",
+    "provider_platform": "Linux WSL",
+    "engine_platform": "native Windows",
+    "tools": [
+      "poima_discover",
+      "poima_call",
+      "poima_build"
+    ],
+    "separate_build_consent": true,
+    "policy_widened": false
+  },
+  "preflights": [
+    {
+      "platform": "native Windows provider",
+      "passed": false,
+      "reason": "Effective filesystem policy blocked ordinary shell reads and workspace writes; no policy bypass or gameplay/build attempt."
+    },
+    {
+      "platform": "Linux WSL provider, native Windows MCP",
+      "passed": true,
+      "workspace_write_and_read": true,
+      "profile_discovery": true
+    }
+  ],
+  "attempts": [
+    {
+      "kind": "fresh_authoring",
+      "workflow_completed": false,
+      "provider_exit_code": 0,
+      "seconds": 567.395,
+      "mcp_calls": 276,
+      "shell_commands": 25,
+      "prompt_sha256": "9a11d52b4371f52325aa9c289cae4fee70f41de640dd9b203b0e58c941a7c48d",
+      "events_sha256": "691461e394002ddf661a24d0d0f0558bfe25e39fe302b9213e1faabd1c412871",
+      "immutable_inputs_changed": [],
+      "compile_attempts": [
+        {
+          "job": 1,
+          "state": "failed",
+          "cause": "Default source glob included staged SDK reference source; agent disabled default compile items."
+        },
+        {
+          "job": 2,
+          "state": "succeeded",
+          "warnings": 0,
+          "errors": 0
+        }
+      ],
+      "outage": {
+        "operation": "runtime.capture",
+        "response_code": -32603,
+        "outcome_unknown": true,
+        "capture_receipt": false,
+        "publish_receipt": false,
+        "host_alive_but_unresponsive": true,
+        "root_forced_owned_host_closure": true,
+        "missing_output_directories_observed": true,
+        "cause_established": false
+      }
+    },
+    {
+      "kind": "explicit_recovery",
+      "workflow_completed": true,
+      "provider_exit_code": 0,
+      "seconds": 253.541,
+      "mcp_calls": 591,
+      "shell_commands": 14,
+      "prompt_sha256": "36e2ae752ca018e78ef797bf7b4750074d63a51120ee6b619c2b0a4ce41ed93a",
+      "events_sha256": "89e0eb1e4cc0d81974c8e34248083a6154ad5c0ecc09e4d4b4b13b36a73452df",
+      "immutable_inputs_changed": [],
+      "maintainer_actions": [
+        "Restart the same native engine owner.",
+        "Restore owner output directories."
+      ],
+      "maintainer_game_source_or_scene_edits": false,
+      "agent_recovery_game_source_or_scene_edits": false,
+      "publish_submissions": 1,
+      "export_submissions": 1,
+      "verified_jobs": {
+        "1": {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 16868,
+          "verified_result": {
+            "descriptor_sha256": "a608e0e5c49cc880458bae732cb19fdc114062f7231594d915307fb6f06090a4",
+            "files": 7,
+            "identity": "depot-run-v1",
+            "inventory_sha256": "90b0ca3344b26d28245bba57316ed935accc01c6677a7a8ab85a50fafcd238e1",
+            "kind": "native_gameplay",
+            "library_sha256": "02db58229d6ad3796d8ff66d0dbc11ffb50ad9108220da4c4d2bb40ee9f77ddb",
+            "payload_bytes": 1550723,
+            "target_arch": "x86_64",
+            "target_os": "Windows",
+            "type": "Depot.DepotGame"
+          }
+        },
+        "2": {
+          "state": "succeeded",
+          "exit_code": 0,
+          "elapsed_ms": 4295,
+          "verified_result": {
+            "files": 60,
+            "inventory_sha256": "f8e5fbe9d66d7a7f70fd529bb0d41da3f4b4061b51db8eecb1cee26ff35e7442",
+            "kind": "game_bundle",
+            "manifest_sha256": "051a4b8764b60959295b3c4dddbdb48ed0a20b314f4dbb9de7768898288eed66",
+            "payload_bytes": 95389270,
+            "project_id": "de907000000000000000000000000099",
+            "source_revision": 2,
+            "target_arch": "x86_64",
+            "target_os": "Windows"
+          }
+        }
+      },
+      "host_clean_exit": true
+    }
+  ],
+  "gameplay": {
+    "original_source_sha256": "15b77747b88bde353d85bc2cc3fcb18ef5eb3cfdac348211f5d7a2aec8224e7b",
+    "public_source_sha256": "15b77747b88bde353d85bc2cc3fcb18ef5eb3cfdac348211f5d7a2aec8224e7b",
+    "original_project_sha256": "b23bd7110564e81bcf1870026e928832a6988e817e11a02a31e7f22f30dfcc68",
+    "original_world_sha256": "566d3992e7ab39776d0e06d0d728323b6d8cd8a9a6192bcab25d6c09a9eb8578",
+    "public_world_sha256": "b173b6ff47c5c9c3fb98c6b3bc62fdc1994e9c2f0a5e6df113c4117c0e213785",
+    "public_world_change": "Authoring receipts removed; entity/UI/content definition preserved.",
+    "authored_entities": 99,
+    "authored_revision": 2,
+    "scalar_fields": 14,
+    "state_bytes": 80,
+    "identity": "depot-run-v1",
+    "native_backend": "native_aot",
+    "dynamic_code_supported": false,
+    "dynamic_code_compiled": false,
+    "library_sha256": "02db58229d6ad3796d8ff66d0dbc11ffb50ad9108220da4c4d2bb40ee9f77ddb",
+    "descriptor_sha256": "a608e0e5c49cc880458bae732cb19fdc114062f7231594d915307fb6f06090a4"
+  },
+  "bundle": {
+    "manifest_sha256": "051a4b8764b60959295b3c4dddbdb48ed0a20b314f4dbb9de7768898288eed66",
+    "payload_files": 60,
+    "payload_bytes": 95389270,
+    "target_os": "Windows",
+    "target_arch": "x86_64",
+    "relocated_inventory_identical": true,
+    "owned_staging_source_removed": true,
+    "system_only_path": true,
+    "development_environment_prefixes_removed": [
+      "DOTNET",
+      "COREHOST",
+      "POIMA",
+      "NUGET",
+      "MSBUILD",
+      "COMPLUS"
+    ],
+    "game_process_does_not_use_verifier_reference_workspace": true,
+    "clean_machine_qualified": false
+  },
+  "independent_checks": {
+    "managed_original": {
+      "passed": true,
+      "qualification_scope": "managed_development_partial",
+      "rpc_requests": 14623,
+      "evidence_sha256": "0ab7856a319552f45eec477d79233e70c8857b78b1a297c4f83c338a913341ad",
+      "verifier_sha256": "4fda522434dc47589f68352642b3e505b4c6dc479696cabca4e361779e982265",
+      "native_gate_passed": false,
+      "export_gate_passed": false,
+      "same_owner_complete": true,
+      "fresh_process_complete": true,
+      "complete_immediate_restore": true,
+      "all_scalar_fields_checked": 14,
+      "checkpoint_payload_sha256": "3d2d8c5be990ce7e00b4bc36c299be94332e746b3b8842d7ebeed41bc1c7754d",
+      "exact_save_retry": true,
+      "paused_begin": {
+        "passed": true,
+        "initially_paused": true,
+        "compiled_intent": 1,
+        "before_tick": 0,
+        "after_tick": 2,
+        "explicit_resume_or_step": false,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "nvrhi_errors": 0,
+        "running_menu_to_paused_qualified": false
+      },
+      "owned_processes": 4,
+      "all_owners_zero_exit": true,
+      "cleanup_error": null
+    },
+    "native_original": {
+      "passed": true,
+      "qualification_scope": "native_aot",
+      "rpc_requests": 14623,
+      "evidence_sha256": "bb4d0b2f9be17b11cab2d6383571e771f91a25d5c7ca284bfff1aa7564fc45c0",
+      "verifier_sha256": "4fda522434dc47589f68352642b3e505b4c6dc479696cabca4e361779e982265",
+      "native_gate_passed": true,
+      "export_gate_passed": false,
+      "same_owner_complete": true,
+      "fresh_process_complete": true,
+      "complete_immediate_restore": true,
+      "all_scalar_fields_checked": 14,
+      "checkpoint_payload_sha256": "adafd5207e9144cd506bb6715d8d3fafb8422447f2dde9218627063814b78008",
+      "exact_save_retry": true,
+      "paused_begin": {
+        "passed": true,
+        "initially_paused": true,
+        "compiled_intent": 1,
+        "before_tick": 0,
+        "after_tick": 3,
+        "explicit_resume_or_step": false,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "nvrhi_errors": 0,
+        "running_menu_to_paused_qualified": false
+      },
+      "owned_processes": 4,
+      "all_owners_zero_exit": true,
+      "cleanup_error": null
+    },
+    "relocated_original": {
+      "passed": true,
+      "qualification_scope": "native_aot",
+      "rpc_requests": 14607,
+      "evidence_sha256": "bdf584f5fd83ef64dc29959ece55efbe0d6cda4ef51aa9285a5ed797098915fa",
+      "verifier_sha256": "4fda522434dc47589f68352642b3e505b4c6dc479696cabca4e361779e982265",
+      "native_gate_passed": true,
+      "export_gate_passed": true,
+      "same_owner_complete": true,
+      "fresh_process_complete": true,
+      "complete_immediate_restore": true,
+      "all_scalar_fields_checked": 14,
+      "checkpoint_payload_sha256": "4cf1515fb08f0588fc0021374b746dfec2305a4b091d1cea29f40334d523fabd",
+      "exact_save_retry": true,
+      "paused_begin": {
+        "passed": true,
+        "initially_paused": true,
+        "compiled_intent": 1,
+        "before_tick": 0,
+        "after_tick": 2,
+        "explicit_resume_or_step": false,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "nvrhi_errors": 0,
+        "running_menu_to_paused_qualified": false
+      },
+      "owned_processes": 4,
+      "all_owners_zero_exit": true,
+      "cleanup_error": null
+    },
+    "public_fixture_native": {
+      "passed": true,
+      "qualification_scope": "native_aot",
+      "rpc_requests": 14623,
+      "evidence_sha256": "450d52331e2e7c69bdd8599847bd57e6a5df9b96bd9f999bd02cdcba7f4a68ed",
+      "verifier_sha256": "12cc3310e6302ad5a7a2c977bb4f4866885982a4ab16da4594018c216db468a9",
+      "native_gate_passed": true,
+      "export_gate_passed": false,
+      "same_owner_complete": true,
+      "fresh_process_complete": true,
+      "complete_immediate_restore": true,
+      "all_scalar_fields_checked": 14,
+      "checkpoint_payload_sha256": "72b154080e6eea7a6bdd42efc68e26b49ba9037f62381c7e7f09a7c1a6573ef7",
+      "exact_save_retry": true,
+      "paused_begin": {
+        "passed": true,
+        "initially_paused": true,
+        "compiled_intent": 1,
+        "before_tick": 0,
+        "after_tick": 2,
+        "explicit_resume_or_step": false,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "nvrhi_errors": 0,
+        "running_menu_to_paused_qualified": false
+      },
+      "owned_processes": 4,
+      "all_owners_zero_exit": true,
+      "cleanup_error": null
+    },
+    "public_fixture_relocated": {
+      "passed": true,
+      "qualification_scope": "native_aot",
+      "rpc_requests": 14607,
+      "evidence_sha256": "f9cc73da1e0649ee01ae5d01708fa91dde645ac591d3fa349f2bc1e30785490e",
+      "verifier_sha256": "12cc3310e6302ad5a7a2c977bb4f4866885982a4ab16da4594018c216db468a9",
+      "native_gate_passed": true,
+      "export_gate_passed": true,
+      "same_owner_complete": true,
+      "fresh_process_complete": true,
+      "complete_immediate_restore": true,
+      "all_scalar_fields_checked": 14,
+      "checkpoint_payload_sha256": "e02b8d9436c365e2e1d3220996e19a94ec0381438683514e16fcee0f919a1c37",
+      "exact_save_retry": true,
+      "paused_begin": {
+        "passed": true,
+        "initially_paused": true,
+        "compiled_intent": 1,
+        "before_tick": 0,
+        "after_tick": 2,
+        "explicit_resume_or_step": false,
+        "gpu": "NVIDIA GeForce RTX 4070 Laptop GPU",
+        "nvrhi_errors": 0,
+        "running_menu_to_paused_qualified": false
+      },
+      "owned_processes": 4,
+      "all_owners_zero_exit": true,
+      "cleanup_error": null
+    }
+  },
+  "content": {
+    "character": {
+      "creator": "Kenney",
+      "license": "CC0-1.0",
+      "vertices": 1029,
+      "triangles": 1604,
+      "joints": 45,
+      "weighted_vertex_samples_checked": 3,
+      "positive_weight_per_sample": true,
+      "idle_clip": 0,
+      "selected_import": "reference-rotation-v1",
+      "affine_frame_transfer_succeeded": false,
+      "visible_skinning_at_initial_camera_qualified": false,
+      "weighted_sample_evidence_sha256": "8c52fe767a5a4ff67dec15404e5f4fc5117f289fc45dbede45842c6c6e8cdaea"
+    },
+    "audio": {
+      "creator": "Kenney",
+      "license": "CC0-1.0",
+      "sample_rate": 48000,
+      "frames": 25872,
+      "completion_voice_once": true,
+      "audible_output_qualified": false
+    }
+  },
+  "retained_failures": [
+    "Initial preparation failed before provider launch because a staged analyzer path was wrong; a new workspace was prepared.",
+    "Native Windows provider preflight could not perform authorized workspace file operations.",
+    "First development compile included staged SDK source; the agent repaired its own project glob.",
+    "Affine frame transfer rejected a near-uniform original scale; supported rotation transfer succeeded without changing originals.",
+    "First capture and later publication returned unknown transport outcomes; no completion receipt was obtained.",
+    "Initial independent managed live probe used an unpumped stdio owner; the verifier was corrected to own a shared host.",
+    "Initial render-diagnostic helpers used unsupported Python transport options/property names; no render claim was made until corrected controls passed.",
+    "Recovery receipt bookkeeping required correction and a repeated native route; one oversized shell argument failed before process creation.",
+    "Original report inventory hashed result.md before its last original-session update; that report hash was stale."
+  ],
+  "limitations": [
+    "This is not a cross-engine comparison or population-level agent success-rate benchmark.",
+    "The first fresh workflow was incomplete and needed explicit maintainer infrastructure recovery.",
+    "The original transport outage and disappearance of empty owner directories have no established cause.",
+    "Physical keyboard/mouse/gamepad input, audible device output, clean-machine installation and game-scale performance are unqualified.",
+    "PressedUse is already an engine edge; adjacent synthetic pulse suppression is sample behavior, not a physical-held-input qualification.",
+    "Compiled Begin resumption is proven; external Menu is tested after owner pause because live external UI mutation is prohibited.",
+    "Imported positive weights are inspected, but initial camera rendering does not establish visible imported skinning.",
+    "Linux provider usage does not establish Linux graphics, browser, multiplayer or console execution.",
+    "These checks do not establish alpha release completion or AA/AAA FPS readiness."
+  ],
+  "checkpoint_verification": {
+    "scope": "No-simulation authoring metadata build; measured Windows game runtime remains 0.0.91",
+    "authoring_build": {
+      "passed": true,
+      "input_count": 191,
+      "changed_inputs": [],
+      "forced_cleanup": false,
+      "seconds": 73.99978613853455,
+      "evidence_sha256": "8f6912ba4265cc98fbac7b3869cd5bb329674e891e45680d512a299103e13387"
+    },
+    "build_metadata_contract": {
+      "passed": true,
+      "tests": 1,
+      "seconds": 1.74
+    },
+    "final_owned_native_process_scan": {
+      "remaining_processes": 0,
+      "passed": true
+    }
+  }
+}
