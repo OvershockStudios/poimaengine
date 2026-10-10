@@ -1,0 +1,4875 @@
+{
+  "format": "poima.relay-yard-audio",
+  "version": 1,
+  "engine_version": "0.0.88",
+  "date": "2026-10-10",
+  "passed": true,
+  "scope": "Licensed compiled game cues, logical active-sound checkpoint continuation, source-free Windows export and actual continuous device submission. A small integration workload toward Alpha, not whole-engine qualification.",
+  "contracts": {
+    "protocol": 1,
+    "authoring_core": "v1",
+    "schema_revision": 70,
+    "services_epoch": 7,
+    "minimum_services_bytes": 256,
+    "global_state_fields": 50,
+    "global_bytes": 336,
+    "global_persistence_version": 2,
+    "engine_abi_or_native_schema_changed": false,
+    "content_cohort": "New generated three-schema profile; optional audio graph is distinct from retained two-schema .86 worlds. No automatic scene rebasing or save conversion."
+  },
+  "native_builds": [
+    {
+      "host": "windows",
+      "exit_code": 0,
+      "seconds": 73.51878229300019,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "log_sha256": "ef20927372444189a2542fa6848e2d1d5f3efbce4cb0f34d11f46689ce7bdd95",
+      "binary_sha256": "26e06b422100718082a4cb5dd50e9ad78d8ad2c6ba230bd0421be974a1e93528"
+    },
+    {
+      "host": "linux",
+      "exit_code": 0,
+      "seconds": 65.99269293799989,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "log_sha256": "bceae818bef94eae24864f7a7168a89936a90273c8c4f1ee467693c00f322211",
+      "binary_sha256": "bbc271fd2b6c14a85d0a9ca0e407fd68366fcaf9cdff15596d2e88da1ffe5901"
+    },
+    {
+      "host": "authoring",
+      "exit_code": 0,
+      "seconds": 72.40972941600012,
+      "timed_out": false,
+      "forced_cleanup": false,
+      "log_sha256": "4dddabed6ef6cc41ce16fc45d568f7e615f6572bc638e66aac7c66d02ed080b5",
+      "binary_sha256": "43a86690f54d4cb096ea4592cae93a0294a1edce4e9f1c76dcb5b5af41bbf97a"
+    }
+  ],
+  "native_source_cohort_sha256": "b21b75f4d8e3c8b64a66252ba5806b56722019c83a5c066029f716943ce70415",
+  "selected_regressions": [
+    {
+      "host": "windows",
+      "raw_report_sha256": "9908d2603c2fc1576644eb860b205c654fab2cc4a541faf290bfc4c60be3632a",
+      "binary_sha256": "26e06b422100718082a4cb5dd50e9ad78d8ad2c6ba230bd0421be974a1e93528",
+      "checks": [
+        {
+          "name": "audio_contract",
+          "exit_code": 0,
+          "seconds": 3.6800826039998356,
+          "log_sha256": "bef605437a20c275c24fe12f6533828e00b68984062ba5d377b61a722ff10644"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 3.780572833000406,
+          "log_sha256": "1f86722de92181c42c6eb501d0651d9f6625ac58ce363f103119ada896faaf40"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.6733780579997983,
+          "log_sha256": "552054c35ab6b7e2993db059c57abfee3110ff8714326225abbcc04f58b3768b"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5708587320004881,
+          "log_sha256": "67c0131522593fd14ffa0ea0f337dfc17eea6bebcb4e89fc0365c39ad4b5252c"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 3.1288600460011367,
+          "log_sha256": "6f4a71af57d0317ee451d69a07a02256a98365a52b8d6b49d236bac8b38a0006"
+        }
+      ]
+    },
+    {
+      "host": "linux",
+      "raw_report_sha256": "15a0cd3035c5ad7927f4a2a7f8ebbb144d6edc3434ef12e38db9bd60aa576166",
+      "binary_sha256": "bbc271fd2b6c14a85d0a9ca0e407fd68366fcaf9cdff15596d2e88da1ffe5901",
+      "checks": [
+        {
+          "name": "audio_contract",
+          "exit_code": 0,
+          "seconds": 5.686965891,
+          "log_sha256": "847e76464112be0f5f62bf00ce3648a8cad5d12bf95044b3759aebcbe8b30caf"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 5.285457347999909,
+          "log_sha256": "e0553b975583150a2e632430029803b5b15518c32723ebf0ef2a4183c0c1385a"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.4219282969988853,
+          "log_sha256": "ea1c0a450c1f4aa3d048dacc7d9bdbca7c91b34d0cc9e7870560750dc5898001"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5704933710003388,
+          "log_sha256": "fc4a9959cbcf15ea99e1e9f231765673132b70bc46588bb4b18f50e2a37861c0"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 2.1759569229998306,
+          "log_sha256": "d0fb0b6a33d782e0d6c0a14bf9d289e85d75884f74889d7f39aaff65554277b0"
+        }
+      ]
+    },
+    {
+      "host": "authoring",
+      "raw_report_sha256": "666f619efc8a52699feebd44f55ca8300df3069b7b197b223447bfb7cfdf90de",
+      "binary_sha256": "43a86690f54d4cb096ea4592cae93a0294a1edce4e9f1c76dcb5b5af41bbf97a",
+      "checks": [
+        {
+          "name": "audio_contract",
+          "exit_code": 0,
+          "seconds": 0.7708249499992235,
+          "log_sha256": "e54a65ed310abb75db4c93a36f95a309a671298d323f5c6f2dde1e3c1b30ec06"
+        },
+        {
+          "name": "runtime_save_contract",
+          "exit_code": 0,
+          "seconds": 0.921252841999376,
+          "log_sha256": "52df60277058b85743420de0b3bb6a4bd998d9a05ed7ae58d39365019792569c"
+        },
+        {
+          "name": "authoring_core_conformance",
+          "exit_code": 0,
+          "seconds": 1.1716908119997242,
+          "log_sha256": "49ebc7668a4f21f8557d9c1716f08cacde6f6310ae114856d518678373c829a4"
+        },
+        {
+          "name": "authoring_contract_identity",
+          "exit_code": 0,
+          "seconds": 0.5195340449990908,
+          "log_sha256": "d2fb77bd2f5a5493574595e5e17c7f2779d027e00eb04a7d54f5c5fa432248b0"
+        },
+        {
+          "name": "build_metadata_contract",
+          "exit_code": 0,
+          "seconds": 1.6236071589992207,
+          "log_sha256": "26491ad7471c388545f85fb6e6241c57fa4d8701b1cb0a42f89df1c0125f85ea"
+        }
+      ]
+    }
+  ],
+  "managed_artifacts": [
+    {
+      "host": "linux",
+      "sdk": "10.0.401",
+      "native_aot": true,
+      "descriptor_sha256": "acb733e90b01dcbbde31857298cc8fc30abb71e8766c71c675d5a695cbf38919",
+      "required_features": [
+        "baseline_v7",
+        "gameplay_persistence_v1",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1",
+        "player_preferences_v1"
+      ],
+      "minimum_services_bytes": 256,
+      "call_version": 1,
+      "services_version": 7,
+      "component_ids": [
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb75",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb76",
+        "c0870000000000000000000000000001"
+      ],
+      "component_fingerprints": {
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb75": "dbfc29081c036a37f6f3ce1b2eea195d07ca0fa7c9fc97f6a92370030dadff69",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb76": "7f7bc814b8954a16e99d2a88b54e5e3603726abc51aba54e256f64077c79b9c0",
+        "c0870000000000000000000000000001": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed"
+      },
+      "inventory": [
+        {
+          "path": "Poima.NativeGame.so",
+          "size": 1681256,
+          "sha256": "1ba9a84aef0113c1be4979924349de79e3213f97fc9bf8e6c0412f61094f8dae",
+          "role": "library"
+        },
+        {
+          "path": "game.poima-components.json",
+          "size": 3735,
+          "sha256": "764ade923f7e8eeb72b7b6fd1fd6c982962f59157de61014d84989b3fafb0286",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1116,
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 76623,
+          "sha256": "66f1d4e44973185519bb4aa8a9718eb22fc7af2cc532e3ae9cfc4c127ee7fc54",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        }
+      ],
+      "publish_command_exit_code": 0,
+      "publish_log_sha256": "01ca045d240385851aedadad4593e93072262a7ea576b8b3510f50a749767e09",
+      "seconds": 63.03645580600005,
+      "raw_report_sha256": "d722622c40611f94a5c63701b3357964ec15a199bac34b3563e96a799c4130e9"
+    },
+    {
+      "host": "windows",
+      "sdk": "10.0.401",
+      "native_aot": true,
+      "descriptor_sha256": "cd75b25afc4226f0fc14984abe9d6bbb2cb2892bbe80238ddc8b2a10001b1597",
+      "required_features": [
+        "baseline_v7",
+        "gameplay_persistence_v1",
+        "component_collections_v1",
+        "animation_inertial_v1",
+        "character_input_v1",
+        "navigation_query_v1",
+        "player_preferences_v1"
+      ],
+      "minimum_services_bytes": 256,
+      "call_version": 1,
+      "services_version": 7,
+      "component_ids": [
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb75",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb76",
+        "c0870000000000000000000000000001"
+      ],
+      "component_fingerprints": {
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb75": "dbfc29081c036a37f6f3ce1b2eea195d07ca0fa7c9fc97f6a92370030dadff69",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbb76": "7f7bc814b8954a16e99d2a88b54e5e3603726abc51aba54e256f64077c79b9c0",
+        "c0870000000000000000000000000001": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed"
+      },
+      "inventory": [
+        {
+          "path": "game.poima-components.json",
+          "size": 3735,
+          "sha256": "764ade923f7e8eeb72b7b6fd1fd6c982962f59157de61014d84989b3fafb0286",
+          "role": "metadata"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt",
+          "size": 1139,
+          "sha256": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+          "role": "notice"
+        },
+        {
+          "path": "notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt",
+          "size": 78041,
+          "sha256": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-LICENSE.txt",
+          "size": 11358,
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "role": "notice"
+        },
+        {
+          "path": "notices/POIMA-THIRD-PARTY-NOTICES.md",
+          "size": 21133,
+          "sha256": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+          "role": "notice"
+        },
+        {
+          "path": "Poima.NativeGame.dll",
+          "size": 1430528,
+          "sha256": "e18638eb334280167afd65b4888d6f5e0c34eb4365cf7518aab2b19c7fdec51f",
+          "role": "library"
+        }
+      ],
+      "publish_command_exit_code": 0,
+      "publish_log_sha256": "97bdb41b071eb217a75c2378abb558b22304d25533f00428b45a6c5c6a12a2a2",
+      "seconds": 19.523060200001055,
+      "raw_report_sha256": "5dc7b51fa2ac1e1e0eb89c6db025701337c98487be31f70785689ad87ae7129e"
+    }
+  ],
+  "playthroughs": [
+    {
+      "host": "Linux",
+      "audio_enabled": true,
+      "raw_report_sha256": "0011ab10c9942fa9eac8f4068256211a19e15776a56399d2f34e853c13c12aa3",
+      "rpc_count": 5962,
+      "checks": [
+        "Welcome gates game logic; missing Load surfaces a terminal outcome; Begin selects actual Idle",
+        "Wrong/no-hit/out-of-range Use cannot collect; real premature terminal Use remains locked",
+        "Repeated compiled saves, inert retries, stale guards and exact partial checkpoint restoration",
+        "Licensed native cues follow real gameplay; cadence/voices restore exactly; both characters produce grounded displacement steps",
+        "All three roots truly despawn; native collision/navigation/IdleRun courier arrives; terminal ray alone completes"
+      ],
+      "owners": [
+        {
+          "label": "relay-contract",
+          "calls": 5962,
+          "exit_code": 0,
+          "process_id": 16984,
+          "stderr": "",
+          "stderr_truncated": false
+        }
+      ],
+      "completed": {
+        "Collected": 3,
+        "Arrivals": 1,
+        "Won": 1,
+        "CheckpointVersion": 2
+      },
+      "immutable_checks": {
+        "inputs": true,
+        "sources": true,
+        "originals": true,
+        "audio_sources": true,
+        "authored": true,
+        "cooked": true,
+        "durable_checkpoint": true
+      },
+      "cue_probes": [
+        {
+          "label": "no-hit pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 20,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 21,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "no-hit denial",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 20,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 21,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "unrelated-hit pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 22,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 23,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "unrelated-hit denial",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 22,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 23,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "out-of-range pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 24,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 25,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "out-of-range denial",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 24,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 25,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "premature terminal",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 276,
+            "next_voice": 9,
+            "emitting": 0,
+            "retained": 8
+          },
+          "after": {
+            "tick": 278,
+            "next_voice": 10,
+            "emitting": 1,
+            "retained": 9
+          },
+          "selected": [
+            {
+              "asset": "ec06b0e156c9dfccf44e6b78990f4ceda784698f8a2a97226df0c1832c43bb60",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000263",
+              "emitter_gain": 0.3499999940395355,
+              "emitting": true,
+              "end_sample": "229498",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 277,
+              "stop_sample": null,
+              "voice": 9
+            }
+          ]
+        },
+        {
+          "label": "premature terminal pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 276,
+            "next_voice": 9,
+            "emitting": 0,
+            "retained": 8
+          },
+          "after": {
+            "tick": 278,
+            "next_voice": 10,
+            "emitting": 1,
+            "retained": 9
+          },
+          "selected": []
+        },
+        {
+          "label": "first pickup survives despawn",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 567,
+            "next_voice": 19,
+            "emitting": 0,
+            "retained": 18
+          },
+          "after": {
+            "tick": 569,
+            "next_voice": 20,
+            "emitting": 1,
+            "retained": 19
+          },
+          "selected": [
+            {
+              "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000262",
+              "emitter_gain": 0.44999998807907104,
+              "emitting": true,
+              "end_sample": "468312",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 568,
+              "stop_sample": null,
+              "voice": 19
+            }
+          ]
+        },
+        {
+          "label": "courier arrival",
+          "emitter": "00000000000000000000000000000264",
+          "before": {
+            "tick": 769,
+            "next_voice": 29,
+            "emitting": 1,
+            "retained": 28
+          },
+          "after": {
+            "tick": 1121,
+            "next_voice": 39,
+            "emitting": 1,
+            "retained": 38
+          },
+          "selected": [
+            {
+              "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000264",
+              "emitter_gain": 0.6499999761581421,
+              "emitting": true,
+              "end_sample": "921872",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 1120,
+              "stop_sample": null,
+              "voice": 38
+            }
+          ]
+        },
+        {
+          "label": "final terminal win",
+          "emitter": "00000000000000000000000000000265",
+          "before": {
+            "tick": 1248,
+            "next_voice": 42,
+            "emitting": 0,
+            "retained": 41
+          },
+          "after": {
+            "tick": 1250,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": [
+            {
+              "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000265",
+              "emitter_gain": 0.6499999761581421,
+              "emitting": true,
+              "end_sample": "1025072",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 1249,
+              "stop_sample": null,
+              "voice": 42
+            }
+          ]
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000264",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000265",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        }
+      ]
+    },
+    {
+      "host": "Windows",
+      "audio_enabled": true,
+      "raw_report_sha256": "73a936da16da4d5b1e03f429d1710b8b82df6b9f83e92f52657763a1876a8def",
+      "rpc_count": 5962,
+      "checks": [
+        "Welcome gates game logic; missing Load surfaces a terminal outcome; Begin selects actual Idle",
+        "Wrong/no-hit/out-of-range Use cannot collect; real premature terminal Use remains locked",
+        "Repeated compiled saves, inert retries, stale guards and exact partial checkpoint restoration",
+        "Licensed native cues follow real gameplay; cadence/voices restore exactly; both characters produce grounded displacement steps",
+        "All three roots truly despawn; native collision/navigation/IdleRun courier arrives; terminal ray alone completes"
+      ],
+      "owners": [
+        {
+          "label": "relay-contract",
+          "calls": 5962,
+          "exit_code": 0,
+          "process_id": 26016,
+          "stderr": "",
+          "stderr_truncated": false
+        }
+      ],
+      "completed": {
+        "Collected": 3,
+        "Arrivals": 1,
+        "Won": 1,
+        "CheckpointVersion": 2
+      },
+      "immutable_checks": {
+        "inputs": true,
+        "sources": true,
+        "originals": true,
+        "audio_sources": true,
+        "authored": true,
+        "cooked": true,
+        "durable_checkpoint": true
+      },
+      "cue_probes": [
+        {
+          "label": "no-hit pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 20,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 21,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "no-hit denial",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 20,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 21,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "unrelated-hit pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 22,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 23,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "unrelated-hit denial",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 22,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 23,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "out-of-range pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 24,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 25,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "out-of-range denial",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 24,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "after": {
+            "tick": 25,
+            "next_voice": 1,
+            "emitting": 0,
+            "retained": 0
+          },
+          "selected": []
+        },
+        {
+          "label": "premature terminal",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 276,
+            "next_voice": 9,
+            "emitting": 0,
+            "retained": 8
+          },
+          "after": {
+            "tick": 278,
+            "next_voice": 10,
+            "emitting": 1,
+            "retained": 9
+          },
+          "selected": [
+            {
+              "asset": "ec06b0e156c9dfccf44e6b78990f4ceda784698f8a2a97226df0c1832c43bb60",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000263",
+              "emitter_gain": 0.3499999940395355,
+              "emitting": true,
+              "end_sample": "229498",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 277,
+              "stop_sample": null,
+              "voice": 9
+            }
+          ]
+        },
+        {
+          "label": "premature terminal pickup",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 276,
+            "next_voice": 9,
+            "emitting": 0,
+            "retained": 8
+          },
+          "after": {
+            "tick": 278,
+            "next_voice": 10,
+            "emitting": 1,
+            "retained": 9
+          },
+          "selected": []
+        },
+        {
+          "label": "first pickup survives despawn",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 567,
+            "next_voice": 19,
+            "emitting": 0,
+            "retained": 18
+          },
+          "after": {
+            "tick": 569,
+            "next_voice": 20,
+            "emitting": 1,
+            "retained": 19
+          },
+          "selected": [
+            {
+              "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000262",
+              "emitter_gain": 0.44999998807907104,
+              "emitting": true,
+              "end_sample": "468312",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 568,
+              "stop_sample": null,
+              "voice": 19
+            }
+          ]
+        },
+        {
+          "label": "courier arrival",
+          "emitter": "00000000000000000000000000000264",
+          "before": {
+            "tick": 769,
+            "next_voice": 29,
+            "emitting": 1,
+            "retained": 28
+          },
+          "after": {
+            "tick": 1121,
+            "next_voice": 39,
+            "emitting": 1,
+            "retained": 38
+          },
+          "selected": [
+            {
+              "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000264",
+              "emitter_gain": 0.6499999761581421,
+              "emitting": true,
+              "end_sample": "921872",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 1120,
+              "stop_sample": null,
+              "voice": 38
+            }
+          ]
+        },
+        {
+          "label": "final terminal win",
+          "emitter": "00000000000000000000000000000265",
+          "before": {
+            "tick": 1248,
+            "next_voice": 42,
+            "emitting": 0,
+            "retained": 41
+          },
+          "after": {
+            "tick": 1250,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": [
+            {
+              "asset": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+              "clip_frame": 800,
+              "emitter": "00000000000000000000000000000265",
+              "emitter_gain": 0.6499999761581421,
+              "emitting": true,
+              "end_sample": "1025072",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 1249,
+              "stop_sample": null,
+              "voice": 42
+            }
+          ]
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000262",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000263",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000264",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        },
+        {
+          "label": "completed extra Use",
+          "emitter": "00000000000000000000000000000265",
+          "before": {
+            "tick": 1252,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "after": {
+            "tick": 1253,
+            "next_voice": 43,
+            "emitting": 1,
+            "retained": 42
+          },
+          "selected": []
+        }
+      ]
+    },
+    {
+      "host": "Linux",
+      "audio_enabled": false,
+      "raw_report_sha256": "4726811c7d12f800fbcb2f4d99c23082095cba2bf2174f4328877b6c89442b6f",
+      "rpc_count": 5492,
+      "checks": [
+        "Welcome gates game logic; missing Load surfaces a terminal outcome; Begin selects actual Idle",
+        "Wrong/no-hit/out-of-range Use cannot collect; real premature terminal Use remains locked",
+        "Repeated compiled saves, inert retries, stale guards and exact partial checkpoint restoration",
+        "All three roots truly despawn; native collision/navigation/IdleRun courier arrives; terminal ray alone completes"
+      ],
+      "owners": [
+        {
+          "label": "relay-contract",
+          "calls": 5492,
+          "exit_code": 0,
+          "process_id": 17745,
+          "stderr": "",
+          "stderr_truncated": false
+        }
+      ],
+      "completed": {
+        "Collected": 3,
+        "Arrivals": 1,
+        "Won": 1,
+        "CheckpointVersion": 2
+      },
+      "immutable_checks": {
+        "inputs": true,
+        "sources": true,
+        "originals": true,
+        "authored": true,
+        "cooked": true,
+        "durable_checkpoint": true
+      }
+    }
+  ],
+  "continuous_audio": [
+    {
+      "host": "Linux",
+      "gpu": null,
+      "raw_report_sha256": "b1eb69e739d8007e7a35d67956822075a471e30c6ddde687af7510b0f364eb68",
+      "rpc_count": 743,
+      "owners": [
+        {
+          "label": "trace-author",
+          "calls": 420,
+          "exit_code": 0
+        },
+        {
+          "label": "pickup-offline",
+          "calls": 162,
+          "exit_code": 0
+        },
+        {
+          "label": "continuation-offline",
+          "calls": 161,
+          "exit_code": 0
+        }
+      ],
+      "recorded_controller_trace": [
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.5656854249492381,
+            -0.5656854249492381
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.5656854249492381,
+            -0.5656854249492381
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 5
+        },
+        {
+          "move": [
+            -0.0011657917255701005,
+            0.7999991505805819
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.0011657917252988052,
+            0.7999991505805824
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.0011657917245443729,
+            0.7999991505805835
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            0,
+            0
+          ],
+          "look": [
+            0.0031607686548511538,
+            -10.892213023779469
+          ],
+          "use": false,
+          "ticks": 1
+        },
+        {
+          "move": [
+            0,
+            0
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": true,
+          "ticks": 1
+        }
+      ],
+      "trace_segments": 10,
+      "trace_ticks": 91,
+      "groups": [
+        {
+          "name": "pickup-offline",
+          "success": true,
+          "tick": 92,
+          "previous_tick": 1,
+          "exact_pre_callback": true,
+          "frames": 72800,
+          "mixer_statistics": {
+            "blocks": 143,
+            "dsp_ms": 4.743408,
+            "frames": 72800,
+            "over_range_samples": 0,
+            "path_updates": 91,
+            "peak": 0.44530630111694336,
+            "voices_started": 3
+          },
+          "output_sha256": "15db12071d3af56a500f839ebb13783215ee8832e7b803eee46b89ae92ea7a84",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "continuation-offline",
+          "success": true,
+          "tick": 112,
+          "previous_tick": 92,
+          "exact_pre_callback": true,
+          "frames": 16000,
+          "mixer_statistics": {
+            "blocks": 32,
+            "dsp_ms": 2.936135,
+            "frames": 16000,
+            "over_range_samples": 0,
+            "path_updates": 1,
+            "peak": 0.3647335171699524,
+            "voices_started": 1
+          },
+          "output_sha256": "71b437723c24a101a1fffe3657503d66cc99ff46574bcd8be2b629aa32c7f543",
+          "receipt_retry_inert": true
+        }
+      ],
+      "stages": {
+        "pickup": {
+          "parity_qualified": false
+        },
+        "continuation": {
+          "parity_qualified": false
+        }
+      },
+      "baseline_checkpoint_sha256": "9f8956537928b59f90e0647613e6496bc168876f23240d0aeeccee7a216a9071",
+      "active_checkpoint_sha256": "42e5f697cc3cb2fd234791666d0af5ac68bf8087ed9f4b2630158e4175c37251",
+      "saved_voices": {
+        "emitting": 1,
+        "has_more": false,
+        "next_voice": 4,
+        "retained": 3,
+        "tick": 92,
+        "voices": [
+          {
+            "asset": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+            "clip_frame": null,
+            "emitter": "0000000000000000000000000000026c",
+            "emitter_gain": 0.6000000238418579,
+            "emitting": false,
+            "end_sample": "30684",
+            "gain": 0.44999998807907104,
+            "loop": false,
+            "start_tick": 32,
+            "stop_sample": null,
+            "voice": 1
+          },
+          {
+            "asset": "06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754",
+            "clip_frame": null,
+            "emitter": "0000000000000000000000000000026d",
+            "emitter_gain": 0.6000000238418579,
+            "emitting": false,
+            "end_sample": "54766",
+            "gain": 0.44999998807907104,
+            "loop": false,
+            "start_tick": 62,
+            "stop_sample": null,
+            "voice": 2
+          },
+          {
+            "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+            "clip_frame": 800,
+            "emitter": "00000000000000000000000000000262",
+            "emitter_gain": 0.44999998807907104,
+            "emitting": true,
+            "end_sample": "86712",
+            "gain": 1.0,
+            "loop": false,
+            "start_tick": 91,
+            "stop_sample": null,
+            "voice": 3
+          }
+        ]
+      },
+      "saved_cadence": {
+        "00000000000000000000000000000064": {
+          "raw": {
+            "component_revision": 91,
+            "id": "00000000000000000000000000000064",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 92,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026c",
+              "00000000000000000000000000000003": "0000000000000000000000000000026d",
+              "00000000000000000000000000000004": 1.6,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "91",
+              "00000000000000000000000000000008": -5.999885327270022,
+              "00000000000000000000000000000009": -5.960464477539063e-08,
+              "0000000000000000000000000000000a": 7.07869166135788,
+              "0000000000000000000000000000000b": 1.542711555834216,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "2",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "2",
+              "00000000000000000000000000000011": "91"
+            }
+          },
+          "values": {
+            "Enabled": 1,
+            "StepEmitterA": "0000000000000000000000000000026c",
+            "StepEmitterB": "0000000000000000000000000000026d",
+            "StrideMeters": 1.6,
+            "Gain": 0.44999998807907104,
+            "PreviousValid": 1,
+            "PreviousTick": "91",
+            "PreviousX": -5.999885327270022,
+            "PreviousY": -5.960464477539063e-08,
+            "PreviousZ": 7.07869166135788,
+            "TravelMeters": 1.542711555834216,
+            "NextVariation": 0,
+            "StepCount": "2",
+            "LastDisplacement": 0.0,
+            "Grounded": 1,
+            "LastVoice": "2",
+            "SampleCount": "91"
+          }
+        },
+        "0000000000000000000000000000012c": {
+          "raw": {
+            "component_revision": 91,
+            "id": "0000000000000000000000000000012c",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 92,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026e",
+              "00000000000000000000000000000003": "0000000000000000000000000000026f",
+              "00000000000000000000000000000004": 1.1,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "91",
+              "00000000000000000000000000000008": -4.0,
+              "00000000000000000000000000000009": 0.0,
+              "0000000000000000000000000000000a": 0.0,
+              "0000000000000000000000000000000b": 0.0,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "0",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "0",
+              "00000000000000000000000000000011": "91"
+            }
+          },
+          "values": {
+            "Enabled": 1,
+            "StepEmitterA": "0000000000000000000000000000026e",
+            "StepEmitterB": "0000000000000000000000000000026f",
+            "StrideMeters": 1.1,
+            "Gain": 0.44999998807907104,
+            "PreviousValid": 1,
+            "PreviousTick": "91",
+            "PreviousX": -4.0,
+            "PreviousY": 0.0,
+            "PreviousZ": 0.0,
+            "TravelMeters": 0.0,
+            "NextVariation": 0,
+            "StepCount": "0",
+            "LastDisplacement": 0.0,
+            "Grounded": 1,
+            "LastVoice": "0",
+            "SampleCount": "91"
+          }
+        }
+      }
+    },
+    {
+      "host": "Windows",
+      "gpu": 1,
+      "raw_report_sha256": "cc8547c873d0ef79f7d811885535270194a2e21f6f41c82df3aa74e48bee88e8",
+      "rpc_count": 1066,
+      "owners": [
+        {
+          "label": "trace-author",
+          "calls": 420,
+          "exit_code": 0
+        },
+        {
+          "label": "pickup-offline",
+          "calls": 162,
+          "exit_code": 0
+        },
+        {
+          "label": "pickup-device",
+          "calls": 162,
+          "exit_code": 0
+        },
+        {
+          "label": "continuation-offline",
+          "calls": 161,
+          "exit_code": 0
+        },
+        {
+          "label": "continuation-device",
+          "calls": 161,
+          "exit_code": 0
+        }
+      ],
+      "recorded_controller_trace": [
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.5656854249492381,
+            -0.5656854249492381
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.5656854249492381,
+            -0.5656854249492381
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 5
+        },
+        {
+          "move": [
+            -0.0011657917255701005,
+            0.7999991505805819
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.0011657917252988052,
+            0.7999991505805824
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.0011657917245443729,
+            0.7999991505805835
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            0,
+            0
+          ],
+          "look": [
+            0.0031607686548511538,
+            -10.892213023779469
+          ],
+          "use": false,
+          "ticks": 1
+        },
+        {
+          "move": [
+            0,
+            0
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": true,
+          "ticks": 1
+        }
+      ],
+      "trace_segments": 10,
+      "trace_ticks": 91,
+      "groups": [
+        {
+          "name": "pickup-offline",
+          "success": true,
+          "tick": 92,
+          "previous_tick": 1,
+          "exact_pre_callback": true,
+          "frames": 72800,
+          "mixer_statistics": {
+            "blocks": 143,
+            "dsp_ms": 1.4354000000000011,
+            "frames": 72800,
+            "over_range_samples": 0,
+            "path_updates": 91,
+            "peak": 0.4453069865703583,
+            "voices_started": 3
+          },
+          "output_sha256": "22f936815a7858463b314dc735808d8606b015d20433ed126334e7c4139f3ed1",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "pickup-device",
+          "success": true,
+          "tick": 92,
+          "previous_tick": 1,
+          "exact_pre_callback": true,
+          "frames": 72800,
+          "mixer_statistics": {
+            "backpressure_ms": 1284.9398,
+            "driver": "wasapi",
+            "dsp_ms": 6.238199999999999,
+            "empty_queue_observations": 0,
+            "enabled": true,
+            "max_queued_frames": 5824,
+            "over_range_samples": 0,
+            "peak": 0.4453069865703583,
+            "stream_drained": true,
+            "submitted_frames": 72800,
+            "timeline_resets": 0,
+            "voices_started": 3
+          },
+          "output_sha256": "993a831fb344d0d688aa6abbcdaf6fbbb2019f00f61f828494f200d38b4f5fd1",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "continuation-offline",
+          "success": true,
+          "tick": 112,
+          "previous_tick": 92,
+          "exact_pre_callback": true,
+          "frames": 16000,
+          "mixer_statistics": {
+            "blocks": 32,
+            "dsp_ms": 0.43490000000000006,
+            "frames": 16000,
+            "over_range_samples": 0,
+            "path_updates": 1,
+            "peak": 0.364734023809433,
+            "voices_started": 1
+          },
+          "output_sha256": "1323fabc197b37884529a96861e8e5e6b25402015a8ab3e38b574b0658001eee",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "continuation-device",
+          "success": true,
+          "tick": 112,
+          "previous_tick": 92,
+          "exact_pre_callback": true,
+          "frames": 16000,
+          "mixer_statistics": {
+            "backpressure_ms": 202.63670000000002,
+            "driver": "wasapi",
+            "dsp_ms": 0.9907,
+            "empty_queue_observations": 0,
+            "enabled": true,
+            "max_queued_frames": 5824,
+            "over_range_samples": 0,
+            "peak": 0.364734023809433,
+            "stream_drained": true,
+            "submitted_frames": 16000,
+            "timeline_resets": 0,
+            "voices_started": 1
+          },
+          "output_sha256": "efc62e32ca690417029e9cc5b81709561641c6edf198ace480ad9a3d9a1b0d86",
+          "receipt_retry_inert": true
+        }
+      ],
+      "stages": {
+        "pickup": {
+          "parity_qualified": true
+        },
+        "continuation": {
+          "parity_qualified": true
+        }
+      },
+      "baseline_checkpoint_sha256": "141e00655206d8ae6c0f6db49fee932585f943b6523dd51734785181498bcae3",
+      "active_checkpoint_sha256": "973f0abaa862b06c948418f5783b57140ee42d94e8ec4e07efe7d659bacb2e53",
+      "saved_voices": {
+        "emitting": 1,
+        "has_more": false,
+        "next_voice": 4,
+        "retained": 3,
+        "tick": 92,
+        "voices": [
+          {
+            "asset": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+            "clip_frame": null,
+            "emitter": "0000000000000000000000000000026c",
+            "emitter_gain": 0.6000000238418579,
+            "emitting": false,
+            "end_sample": "30684",
+            "gain": 0.44999998807907104,
+            "loop": false,
+            "start_tick": 32,
+            "stop_sample": null,
+            "voice": 1
+          },
+          {
+            "asset": "06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754",
+            "clip_frame": null,
+            "emitter": "0000000000000000000000000000026d",
+            "emitter_gain": 0.6000000238418579,
+            "emitting": false,
+            "end_sample": "54766",
+            "gain": 0.44999998807907104,
+            "loop": false,
+            "start_tick": 62,
+            "stop_sample": null,
+            "voice": 2
+          },
+          {
+            "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+            "clip_frame": 800,
+            "emitter": "00000000000000000000000000000262",
+            "emitter_gain": 0.44999998807907104,
+            "emitting": true,
+            "end_sample": "86712",
+            "gain": 1.0,
+            "loop": false,
+            "start_tick": 91,
+            "stop_sample": null,
+            "voice": 3
+          }
+        ]
+      },
+      "saved_cadence": {
+        "00000000000000000000000000000064": {
+          "raw": {
+            "component_revision": 91,
+            "id": "00000000000000000000000000000064",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 92,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026c",
+              "00000000000000000000000000000003": "0000000000000000000000000000026d",
+              "00000000000000000000000000000004": 1.6,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "91",
+              "00000000000000000000000000000008": -5.999885327270022,
+              "00000000000000000000000000000009": -5.960464477539063e-08,
+              "0000000000000000000000000000000a": 7.07869166135788,
+              "0000000000000000000000000000000b": 1.542711555834216,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "2",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "2",
+              "00000000000000000000000000000011": "91"
+            }
+          },
+          "values": {
+            "Enabled": 1,
+            "StepEmitterA": "0000000000000000000000000000026c",
+            "StepEmitterB": "0000000000000000000000000000026d",
+            "StrideMeters": 1.6,
+            "Gain": 0.44999998807907104,
+            "PreviousValid": 1,
+            "PreviousTick": "91",
+            "PreviousX": -5.999885327270022,
+            "PreviousY": -5.960464477539063e-08,
+            "PreviousZ": 7.07869166135788,
+            "TravelMeters": 1.542711555834216,
+            "NextVariation": 0,
+            "StepCount": "2",
+            "LastDisplacement": 0.0,
+            "Grounded": 1,
+            "LastVoice": "2",
+            "SampleCount": "91"
+          }
+        },
+        "0000000000000000000000000000012c": {
+          "raw": {
+            "component_revision": 91,
+            "id": "0000000000000000000000000000012c",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 92,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026e",
+              "00000000000000000000000000000003": "0000000000000000000000000000026f",
+              "00000000000000000000000000000004": 1.1,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "91",
+              "00000000000000000000000000000008": -4.0,
+              "00000000000000000000000000000009": 0.0,
+              "0000000000000000000000000000000a": 0.0,
+              "0000000000000000000000000000000b": 0.0,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "0",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "0",
+              "00000000000000000000000000000011": "91"
+            }
+          },
+          "values": {
+            "Enabled": 1,
+            "StepEmitterA": "0000000000000000000000000000026e",
+            "StepEmitterB": "0000000000000000000000000000026f",
+            "StrideMeters": 1.1,
+            "Gain": 0.44999998807907104,
+            "PreviousValid": 1,
+            "PreviousTick": "91",
+            "PreviousX": -4.0,
+            "PreviousY": 0.0,
+            "PreviousZ": 0.0,
+            "TravelMeters": 0.0,
+            "NextVariation": 0,
+            "StepCount": "0",
+            "LastDisplacement": 0.0,
+            "Grounded": 1,
+            "LastVoice": "0",
+            "SampleCount": "91"
+          }
+        }
+      }
+    },
+    {
+      "host": "Windows",
+      "gpu": 0,
+      "raw_report_sha256": "0c7716ca9d9e58fbf98909905547957317ed0e14d9ce3c49affbaf914390dce6",
+      "rpc_count": 1066,
+      "owners": [
+        {
+          "label": "trace-author",
+          "calls": 420,
+          "exit_code": 0
+        },
+        {
+          "label": "pickup-offline",
+          "calls": 162,
+          "exit_code": 0
+        },
+        {
+          "label": "pickup-device",
+          "calls": 162,
+          "exit_code": 0
+        },
+        {
+          "label": "continuation-offline",
+          "calls": 161,
+          "exit_code": 0
+        },
+        {
+          "label": "continuation-device",
+          "calls": 161,
+          "exit_code": 0
+        }
+      ],
+      "recorded_controller_trace": [
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.5656854249492381,
+            -0.5656854249492381
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.565685424949238,
+            -0.565685424949238
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.5656854249492381,
+            -0.5656854249492381
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 5
+        },
+        {
+          "move": [
+            -0.0011657917255701005,
+            0.7999991505805819
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.0011657917252988052,
+            0.7999991505805824
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            -0.0011657917245443729,
+            0.7999991505805835
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": false,
+          "ticks": 12
+        },
+        {
+          "move": [
+            0,
+            0
+          ],
+          "look": [
+            0.0031607686548511538,
+            -10.892213023779469
+          ],
+          "use": false,
+          "ticks": 1
+        },
+        {
+          "move": [
+            0,
+            0
+          ],
+          "look": [
+            0,
+            0
+          ],
+          "use": true,
+          "ticks": 1
+        }
+      ],
+      "trace_segments": 10,
+      "trace_ticks": 91,
+      "groups": [
+        {
+          "name": "pickup-offline",
+          "success": true,
+          "tick": 92,
+          "previous_tick": 1,
+          "exact_pre_callback": true,
+          "frames": 72800,
+          "mixer_statistics": {
+            "blocks": 143,
+            "dsp_ms": 1.655900000000001,
+            "frames": 72800,
+            "over_range_samples": 0,
+            "path_updates": 91,
+            "peak": 0.4453069865703583,
+            "voices_started": 3
+          },
+          "output_sha256": "22f936815a7858463b314dc735808d8606b015d20433ed126334e7c4139f3ed1",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "pickup-device",
+          "success": true,
+          "tick": 92,
+          "previous_tick": 1,
+          "exact_pre_callback": true,
+          "frames": 72800,
+          "mixer_statistics": {
+            "backpressure_ms": 1214.0884000000003,
+            "driver": "wasapi",
+            "dsp_ms": 5.3319,
+            "empty_queue_observations": 0,
+            "enabled": true,
+            "max_queued_frames": 5824,
+            "over_range_samples": 0,
+            "peak": 0.4453069865703583,
+            "stream_drained": true,
+            "submitted_frames": 72800,
+            "timeline_resets": 0,
+            "voices_started": 3
+          },
+          "output_sha256": "2158bc5a3be712c57d1772cad7a5f556a397dd24b36a31538805c413c2396bc9",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "continuation-offline",
+          "success": true,
+          "tick": 112,
+          "previous_tick": 92,
+          "exact_pre_callback": true,
+          "frames": 16000,
+          "mixer_statistics": {
+            "blocks": 32,
+            "dsp_ms": 0.428,
+            "frames": 16000,
+            "over_range_samples": 0,
+            "path_updates": 1,
+            "peak": 0.364734023809433,
+            "voices_started": 1
+          },
+          "output_sha256": "1323fabc197b37884529a96861e8e5e6b25402015a8ab3e38b574b0658001eee",
+          "receipt_retry_inert": true
+        },
+        {
+          "name": "continuation-device",
+          "success": true,
+          "tick": 112,
+          "previous_tick": 92,
+          "exact_pre_callback": true,
+          "frames": 16000,
+          "mixer_statistics": {
+            "backpressure_ms": 158.7313,
+            "driver": "wasapi",
+            "dsp_ms": 0.9625999999999999,
+            "empty_queue_observations": 0,
+            "enabled": true,
+            "max_queued_frames": 5824,
+            "over_range_samples": 0,
+            "peak": 0.364734023809433,
+            "stream_drained": true,
+            "submitted_frames": 16000,
+            "timeline_resets": 0,
+            "voices_started": 1
+          },
+          "output_sha256": "8b6080749dcca2629978636e81b5022b45aba6de801bdb7415afc3fb8d97e01a",
+          "receipt_retry_inert": true
+        }
+      ],
+      "stages": {
+        "pickup": {
+          "parity_qualified": true
+        },
+        "continuation": {
+          "parity_qualified": true
+        }
+      },
+      "baseline_checkpoint_sha256": "9dfc69e419a5912cf0f6030fe333c032bc178f5126b7d74a6cde12d8fe79d62d",
+      "active_checkpoint_sha256": "ce76e9e9867ec87602ec01c075e5a770b4a07ac0d131edcf397d2ce05977d9d5",
+      "saved_voices": {
+        "emitting": 1,
+        "has_more": false,
+        "next_voice": 4,
+        "retained": 3,
+        "tick": 92,
+        "voices": [
+          {
+            "asset": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+            "clip_frame": null,
+            "emitter": "0000000000000000000000000000026c",
+            "emitter_gain": 0.6000000238418579,
+            "emitting": false,
+            "end_sample": "30684",
+            "gain": 0.44999998807907104,
+            "loop": false,
+            "start_tick": 32,
+            "stop_sample": null,
+            "voice": 1
+          },
+          {
+            "asset": "06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754",
+            "clip_frame": null,
+            "emitter": "0000000000000000000000000000026d",
+            "emitter_gain": 0.6000000238418579,
+            "emitting": false,
+            "end_sample": "54766",
+            "gain": 0.44999998807907104,
+            "loop": false,
+            "start_tick": 62,
+            "stop_sample": null,
+            "voice": 2
+          },
+          {
+            "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+            "clip_frame": 800,
+            "emitter": "00000000000000000000000000000262",
+            "emitter_gain": 0.44999998807907104,
+            "emitting": true,
+            "end_sample": "86712",
+            "gain": 1.0,
+            "loop": false,
+            "start_tick": 91,
+            "stop_sample": null,
+            "voice": 3
+          }
+        ]
+      },
+      "saved_cadence": {
+        "00000000000000000000000000000064": {
+          "raw": {
+            "component_revision": 91,
+            "id": "00000000000000000000000000000064",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 92,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026c",
+              "00000000000000000000000000000003": "0000000000000000000000000000026d",
+              "00000000000000000000000000000004": 1.6,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "91",
+              "00000000000000000000000000000008": -5.999885327270022,
+              "00000000000000000000000000000009": -5.960464477539063e-08,
+              "0000000000000000000000000000000a": 7.07869166135788,
+              "0000000000000000000000000000000b": 1.542711555834216,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "2",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "2",
+              "00000000000000000000000000000011": "91"
+            }
+          },
+          "values": {
+            "Enabled": 1,
+            "StepEmitterA": "0000000000000000000000000000026c",
+            "StepEmitterB": "0000000000000000000000000000026d",
+            "StrideMeters": 1.6,
+            "Gain": 0.44999998807907104,
+            "PreviousValid": 1,
+            "PreviousTick": "91",
+            "PreviousX": -5.999885327270022,
+            "PreviousY": -5.960464477539063e-08,
+            "PreviousZ": 7.07869166135788,
+            "TravelMeters": 1.542711555834216,
+            "NextVariation": 0,
+            "StepCount": "2",
+            "LastDisplacement": 0.0,
+            "Grounded": 1,
+            "LastVoice": "2",
+            "SampleCount": "91"
+          }
+        },
+        "0000000000000000000000000000012c": {
+          "raw": {
+            "component_revision": 91,
+            "id": "0000000000000000000000000000012c",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 92,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026e",
+              "00000000000000000000000000000003": "0000000000000000000000000000026f",
+              "00000000000000000000000000000004": 1.1,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "91",
+              "00000000000000000000000000000008": -4.0,
+              "00000000000000000000000000000009": 0.0,
+              "0000000000000000000000000000000a": 0.0,
+              "0000000000000000000000000000000b": 0.0,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "0",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "0",
+              "00000000000000000000000000000011": "91"
+            }
+          },
+          "values": {
+            "Enabled": 1,
+            "StepEmitterA": "0000000000000000000000000000026e",
+            "StepEmitterB": "0000000000000000000000000000026f",
+            "StrideMeters": 1.1,
+            "Gain": 0.44999998807907104,
+            "PreviousValid": 1,
+            "PreviousTick": "91",
+            "PreviousX": -4.0,
+            "PreviousY": 0.0,
+            "PreviousZ": 0.0,
+            "TravelMeters": 0.0,
+            "NextVariation": 0,
+            "StepCount": "0",
+            "LastDisplacement": 0.0,
+            "Grounded": 1,
+            "LastVoice": "0",
+            "SampleCount": "91"
+          }
+        }
+      }
+    }
+  ],
+  "source_free_exports": [
+    {
+      "host": "Windows",
+      "gpu": 1,
+      "raw_report_sha256": "8eaf977c2ae3fc713e6e33ab9d66cce4087f92896eb47919a9d193b2a6889e72",
+      "rpc_count": 4601,
+      "source_removed_before_service": true,
+      "transports": [
+        {
+          "role": "author",
+          "process_id": 2044,
+          "exit_code": 0,
+          "stderr": "",
+          "stderr_truncated": false
+        },
+        {
+          "role": "first-process",
+          "process_id": 28044,
+          "exit_code": 0,
+          "stderr": "",
+          "stderr_truncated": false
+        },
+        {
+          "role": "fresh-process",
+          "process_id": 26940,
+          "exit_code": 0,
+          "stderr": "",
+          "stderr_truncated": false
+        }
+      ],
+      "bundle_inventory": {
+        "content/ASSET_CREDITS.txt": "5c7f54ce45f061f8821b180940b21e1dceec623b26d4c0f8c82c402526ee305d",
+        "content/world.json": "f47f9b947bd868170a826f1c82dd959b3c13434fabe419250336bfa7f3eef9a8",
+        "content/world.json.assets/01b613c17e6fd25cd272b4d8bab9d51eae3c18bf8824a335aa90a659ce70ec24.pprov": "01b613c17e6fd25cd272b4d8bab9d51eae3c18bf8824a335aa90a659ce70ec24",
+        "content/world.json.assets/06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754.paudio": "06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754",
+        "content/world.json.assets/2452c444107505c95475761ec9681a09ca8a7101678b943b74985ff8f7e3d8a4.pprov": "2452c444107505c95475761ec9681a09ca8a7101678b943b74985ff8f7e3d8a4",
+        "content/world.json.assets/2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8.paudio": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+        "content/world.json.assets/36a9e69e073d304b5d0b568bff4a336ea344cc4bfe6ddfadf9b1a3c22b79cc01.pprov": "36a9e69e073d304b5d0b568bff4a336ea344cc4bfe6ddfadf9b1a3c22b79cc01",
+        "content/world.json.assets/36c1b117e30d83bc9188c2083f95038e4bb41260129a40a742f2a1f7d81433d0.pprov": "36c1b117e30d83bc9188c2083f95038e4bb41260129a40a742f2a1f7d81433d0",
+        "content/world.json.assets/3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c.paudio": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+        "content/world.json.assets/44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857.pprov": "44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857",
+        "content/world.json.assets/a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f.paudio": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+        "content/world.json.assets/b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+        "content/world.json.assets/e6be35d1873b0319a782cda6df3febef7021e6d8667688897a14dbd10eaf5635.pprov": "e6be35d1873b0319a782cda6df3febef7021e6d8667688897a14dbd10eaf5635",
+        "content/world.json.assets/ec06b0e156c9dfccf44e6b78990f4ceda784698f8a2a97226df0c1832c43bb60.paudio": "ec06b0e156c9dfccf44e6b78990f4ceda784698f8a2a97226df0c1832c43bb60",
+        "content/world.json.assets/fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce.pnav": "fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce",
+        "game.json": "4e3baf728ccd77c3a9dc5c3241817b91811b27d6b33a2cc25907250654c25fd6",
+        "gameplay/game.poima-components.json": "764ade923f7e8eeb72b7b6fd1fd6c982962f59157de61014d84989b3fafb0286",
+        "gameplay/native-gameplay.json": "cd75b25afc4226f0fc14984abe9d6bbb2cb2892bbe80238ddc8b2a10001b1597",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "e18638eb334280167afd65b4888d6f5e0c34eb4365cf7518aab2b19c7fdec51f",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "4b19f3ea905ada22e8422345c631da68bde0e272c1e31c477e91b09a0df36ac6",
+        "runtime/bin/poima_desktop.dll": "b5747c814c564ce368fba4cd0bbf4b5c8ce19226711546367c283f6fe3675fea",
+        "runtime/runtime.json": "64b29f2da15ea43754793db3284d672014023c4683d2844a9ec3bbc54a8aebea",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "captures": {
+        "first-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "0ee7e498b9778973c4d78311030f014bcefc860a0da1f0e90de9301ad94f586d",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "partial-menu": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "a841cef9e5872a49a28843307a59f3712a177d968b8a7bc6f23ee3e9eebe9bf3",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "saved-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "63816638a1857c73758b291fb1c20e4d228a3b14c8fcefafc965066a1b3f940a",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "fresh-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "0ee7e498b9778973c4d78311030f014bcefc860a0da1f0e90de9301ad94f586d",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "restored-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "c1e7bb9ac216d3406992d93a37a9cb72a9eb9225fb44078bfea31d0dce9b0501",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 10808,
+            "distinct_scene_sample_colors": 77,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 2,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "courier-running": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "7ea8071617b333bcbdd8e918349d82974be1dc9a66cd8ce809f122c0a0a4958d",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 60,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "relay-complete": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "240aa97e4718354093580db9f94e80b8e80c29c9576d944c26c59a7259bbb664",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 123,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        }
+      },
+      "partial_checkpoint_sha256": "e9e674f64a638b316e6d2d09c2f576d13943e150d806f1b3ccb259e8cf05df72",
+      "saved_audio": {
+        "voices": {
+          "emitting": 1,
+          "has_more": false,
+          "next_voice": 3,
+          "retained": 2,
+          "tick": 40,
+          "voices": [
+            {
+              "asset": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+              "clip_frame": null,
+              "emitter": "0000000000000000000000000000026c",
+              "emitter_gain": 0.6000000238418579,
+              "emitting": false,
+              "end_sample": "30684",
+              "gain": 0.44999998807907104,
+              "loop": false,
+              "start_tick": 32,
+              "stop_sample": null,
+              "voice": 1
+            },
+            {
+              "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+              "clip_frame": 1600,
+              "emitter": "00000000000000000000000000000262",
+              "emitter_gain": 0.44999998807907104,
+              "emitting": true,
+              "end_sample": "44312",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 38,
+              "stop_sample": null,
+              "voice": 2
+            }
+          ]
+        },
+        "cadence": {
+          "00000000000000000000000000000064": {
+            "component_revision": 39,
+            "id": "00000000000000000000000000000064",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 40,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026c",
+              "00000000000000000000000000000003": "0000000000000000000000000000026d",
+              "00000000000000000000000000000004": 1.6,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "39",
+              "00000000000000000000000000000008": -5.9184001088142395,
+              "00000000000000000000000000000009": -5.960464477539063e-08,
+              "0000000000000000000000000000000a": 7.0,
+              "0000000000000000000000000000000b": 0.3184001088142394,
+              "0000000000000000000000000000000c": 1,
+              "0000000000000000000000000000000d": "1",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "1",
+              "00000000000000000000000000000011": "39"
+            }
+          },
+          "0000000000000000000000000000012c": {
+            "component_revision": 39,
+            "id": "0000000000000000000000000000012c",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 40,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026e",
+              "00000000000000000000000000000003": "0000000000000000000000000000026f",
+              "00000000000000000000000000000004": 1.1,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "39",
+              "00000000000000000000000000000008": -4.0,
+              "00000000000000000000000000000009": 0.0,
+              "0000000000000000000000000000000a": 0.0,
+              "0000000000000000000000000000000b": 0.0,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "0",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "0",
+              "00000000000000000000000000000011": "39"
+            }
+          }
+        }
+      },
+      "compiled_completion": {
+        "Collected": 3,
+        "Arrivals": 1,
+        "Won": 1,
+        "CheckpointVersion": 2
+      },
+      "checks": [
+        "Genuine Windows NativeAOT, imported body/Run/Idle, navigation, provenance and redistribution notices form an exact immutable export.",
+        "Owned original sources removed before relocated game serves from unrelated cwd with system-only PATH and runtime variables removed.",
+        "First native process drives its actual entry controller/ray to collect one cell, compiles no code, accepts native menu preferences and saves durable partial progress.",
+        "A distinct fresh native process invokes Welcome Load and restores the exact partial snapshot before any subsequent control; its current public player/configuration remains independent.",
+        "Remaining real controller pickups trigger native courier pathfinding and original Run/Idle playback; actual in-range terminal Use completes the objective.",
+        "Seven paused native captures observe welcome, menu, partial save/fresh restore, running courier and final scene/UI; no physical input or image-reference claim.",
+        "Both live players/runtime/hosts/transports exit cleanly; immutable bundle/supplied closures and durable checkpoint remain exact."
+      ]
+    },
+    {
+      "host": "Windows",
+      "gpu": 0,
+      "raw_report_sha256": "1c5a208def853217d7cf6dfa6c8e9f64af3c7c58b233ede00c12fcc14a4ddbf7",
+      "rpc_count": 4601,
+      "source_removed_before_service": true,
+      "transports": [
+        {
+          "role": "author",
+          "process_id": 4572,
+          "exit_code": 0,
+          "stderr": "",
+          "stderr_truncated": false
+        },
+        {
+          "role": "first-process",
+          "process_id": 22316,
+          "exit_code": 0,
+          "stderr": "",
+          "stderr_truncated": false
+        },
+        {
+          "role": "fresh-process",
+          "process_id": 10804,
+          "exit_code": 0,
+          "stderr": "",
+          "stderr_truncated": false
+        }
+      ],
+      "bundle_inventory": {
+        "content/ASSET_CREDITS.txt": "5c7f54ce45f061f8821b180940b21e1dceec623b26d4c0f8c82c402526ee305d",
+        "content/world.json": "2bcb08a0de83f4476db6da4c7c9b5ea14fdb22a9cd6d66d7cdbe758a455842a1",
+        "content/world.json.assets/01b613c17e6fd25cd272b4d8bab9d51eae3c18bf8824a335aa90a659ce70ec24.pprov": "01b613c17e6fd25cd272b4d8bab9d51eae3c18bf8824a335aa90a659ce70ec24",
+        "content/world.json.assets/06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754.paudio": "06ed7a9aaa43c779794a7481fe16381ce910d2887b51309649c2fbbb79c06754",
+        "content/world.json.assets/2452c444107505c95475761ec9681a09ca8a7101678b943b74985ff8f7e3d8a4.pprov": "2452c444107505c95475761ec9681a09ca8a7101678b943b74985ff8f7e3d8a4",
+        "content/world.json.assets/2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8.paudio": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+        "content/world.json.assets/36a9e69e073d304b5d0b568bff4a336ea344cc4bfe6ddfadf9b1a3c22b79cc01.pprov": "36a9e69e073d304b5d0b568bff4a336ea344cc4bfe6ddfadf9b1a3c22b79cc01",
+        "content/world.json.assets/36c1b117e30d83bc9188c2083f95038e4bb41260129a40a742f2a1f7d81433d0.pprov": "36c1b117e30d83bc9188c2083f95038e4bb41260129a40a742f2a1f7d81433d0",
+        "content/world.json.assets/3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c.paudio": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+        "content/world.json.assets/44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857.pprov": "44a15236373b1c4b0e2bb373f92e07501dca102ba4e24f0d1aaa0288b302c857",
+        "content/world.json.assets/a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f.paudio": "a6da9c42a121a3d8641f470b8ce1bf2c51af35bc839d21f0a5d6294a2d66832f",
+        "content/world.json.assets/b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b.pmodel": "b78950f8cc102dbc734541417f3e82b34660cbad187e625ecec02e26540c3e1b",
+        "content/world.json.assets/e6be35d1873b0319a782cda6df3febef7021e6d8667688897a14dbd10eaf5635.pprov": "e6be35d1873b0319a782cda6df3febef7021e6d8667688897a14dbd10eaf5635",
+        "content/world.json.assets/ec06b0e156c9dfccf44e6b78990f4ceda784698f8a2a97226df0c1832c43bb60.paudio": "ec06b0e156c9dfccf44e6b78990f4ceda784698f8a2a97226df0c1832c43bb60",
+        "content/world.json.assets/fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce.pnav": "fb6af13e1fbe06fb1b2ef506f16acff8b795f2dcae112b9d3c5bd39ed8e765ce",
+        "game.json": "8d35f5709ee74308a2eceb2098c239d91ae2670ed152d2f005c9f62671402b6d",
+        "gameplay/game.poima-components.json": "764ade923f7e8eeb72b7b6fd1fd6c982962f59157de61014d84989b3fafb0286",
+        "gameplay/native-gameplay.json": "cd75b25afc4226f0fc14984abe9d6bbb2cb2892bbe80238ddc8b2a10001b1597",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-NATIVEAOT-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-LICENSE.txt": "d7a68596ab69b06f51ca278a6545148e4269a9381c26d597c13df5d88e08cf5b",
+        "gameplay/notices/DOTNET-RUNTIME-10.0.12-THIRD-PARTY-NOTICES.txt": "6d15e10a101c6bfff2ab4429ed061bf76c456fc4b23ad6b03e0d0f8377148a21",
+        "gameplay/notices/POIMA-LICENSE.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "gameplay/notices/POIMA-THIRD-PARTY-NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "gameplay/Poima.NativeGame.dll": "e18638eb334280167afd65b4888d6f5e0c34eb4365cf7518aab2b19c7fdec51f",
+        "launch.cmd": "bc909269a2b9f718235ce884d99e03671eead5bbd344036c491d26722d93dca0",
+        "runtime/bin/phonon.dll": "ca3dbc01dbc24492717011e80f6a51404ca143ae344ca660971d2c983f1e058d",
+        "runtime/bin/poima.exe": "4b19f3ea905ada22e8422345c631da68bde0e272c1e31c477e91b09a0df36ac6",
+        "runtime/bin/poima_desktop.dll": "b5747c814c564ce368fba4cd0bbf4b5c8ce19226711546367c283f6fe3675fea",
+        "runtime/runtime.json": "64b29f2da15ea43754793db3284d672014023c4683d2844a9ec3bbc54a8aebea",
+        "runtime/share/poima/fonts/Inter-Regular.ttf": "40d692fce188e4471e2b3cba937be967878f631ad3ebbbdcd587687c7ebe0c82",
+        "runtime/share/poima/LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/cgltf/LICENSE": "f619925f80ef862497aaf8e8155ef218fa6a2190055129523ca3df9119a9ba95",
+        "runtime/share/poima/licenses/DearImGui/LICENSE.txt": "c80c5789748d955c4a650562baa0d750494e2c7128c2ca66aaebe2e3c4e198bf",
+        "runtime/share/poima/licenses/EnTT/LICENSE": "0785027ce472d7c61f05fba664a1d3ba6639c1593ced351ad9e4bed868765d99",
+        "runtime/share/poima/licenses/FidelityFX-SDK/LICENSE.txt": "82cf74fc23885107c7f69249ac3f1dac55898ff68320eb2c753984cae6b2d78a",
+        "runtime/share/poima/licenses/game_ui/FreeType-BDF.txt": "7984455e7e5a9faba3797c8bf095fbe10cc846316b7320aff8c58402e22b82fe",
+        "runtime/share/poima/licenses/game_ui/FreeType-FTL.TXT": "5a5ee54c5001bbad1cdc1a57cc3dd4c42199b2da09d39c7ee41fab002d02967f",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-bridge.txt": "9eb9395c70e884f61081775892fae5949ad7762461bea5753dc5478b0c080302",
+        "runtime/share/poima/licenses/game_ui/FreeType-HarfBuzz-script-list.txt": "260cfd522bf354ed9c2666777db248c0608e8c7a4110c672f16100aca98c772d",
+        "runtime/share/poima/licenses/game_ui/FreeType-hash.txt": "5285d96f6aa3188193d5fbefd8710ed6a46af185e0a43817c17acee5f4b1ab3d",
+        "runtime/share/poima/licenses/game_ui/FreeType-LICENSE.TXT": "bd36c8b474855fa294c2ec5c184544478ef3720aad37d65a6296a4f264fd2d3b",
+        "runtime/share/poima/licenses/game_ui/FreeType-PCF.txt": "18d9782898d9eac04476e2f744678137b2a889689ed3e923e052fc396a86f86b",
+        "runtime/share/poima/licenses/game_ui/FreeType-zlib.txt": "02421fcfbfb1d656ef0b6ff4cd3c39f2946f08c3219fa42db482add7ce1f53ea",
+        "runtime/share/poima/licenses/game_ui/PROVENANCE.json": "96c8df1fe67ded619e0fe1bbce77fed25ad2d8e26481de484a4525419b59d64c",
+        "runtime/share/poima/licenses/game_ui/RmlUi-Containers-LICENSE.txt": "f8314901f32a5e132372f2568c77d5482d226582bbc92456d9d4d486029835a6",
+        "runtime/share/poima/licenses/game_ui/RmlUi-LICENSE.txt": "64c049f65ec810b805457dc1f24745002203f919ea5a16b6fcd7ca5f45ea298e",
+        "runtime/share/poima/licenses/Inter/LICENSE.txt": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+        "runtime/share/poima/licenses/Jolt/LICENSE": "800abe35d64ad9defd636ff1ee8c961e06f0ebca3ef8d10083e8aa0e8ef86ac3",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64-runtime.txt": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.MinGW-w64.txt": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winpthreads.txt": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+        "runtime/share/poima/licenses/LLVM-MinGW/COPYING.winstorecompat.txt": "fa7368d1f93d890c173177475d8ec7aff265a7d08f1f364d66f74d138978ce36",
+        "runtime/share/poima/licenses/LLVM-MinGW/LICENSE.TXT": "8d85c1057d742e597985c7d4e6320b015a9139385cff4cbae06ffc0ebe89afee",
+        "runtime/share/poima/licenses/lodepng/LICENSE.txt": "9a2cdfcb0c5944d14ed9879b61e8e01ec2d837d2d534036934d5d1c8e806772c",
+        "runtime/share/poima/licenses/mikktspace/mikktspace.h": "17fc433894f24c73753d548086cc4d8c5c0379f4a6edfb98b5da243e4f0bc3d0",
+        "runtime/share/poima/licenses/nlohmann-json/LICENSE.MIT": "46a65cffd1ea955132d95a8dd921640714a8d6b537d2e4e482d31145ae95b603",
+        "runtime/share/poima/licenses/NVRHI/LICENSE.txt": "25179dae1293243f83e3c1293bd8c13dbbac4dd544f51a40a2dbb7c7cfd6e18a",
+        "runtime/share/poima/licenses/RecastNavigation/License.txt": "ffad87821cce7cfd3be00b63ffadd01b04e83a4c6a0bcc68f06362ffd42d705e",
+        "runtime/share/poima/licenses/SDL3/LICENSE.txt": "1c040b8271b37e5076359f8fd54240e371114112924d2df81ef87c7d6a1dfdfd",
+        "runtime/share/poima/licenses/SourceSans3/LICENSE.md": "db4728023c37bd1db542fd14ff9e4f3bcc23836b8374f6fe1f2351d38c2996d5",
+        "runtime/share/poima/licenses/stb/LICENSE": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+        "runtime/share/poima/licenses/SteamAudio/LICENSE.md": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/SteamAudio/THIRDPARTY.md": "a95e143e7d2466e82a28d6680c7287d9fc7d772136c323ab538a6d24472e70f0",
+        "runtime/share/poima/licenses/ufbx/LICENSE": "0dd48ebadf52273c736256325c8f078c03c8bb4facee22a4122de0ad3f615391",
+        "runtime/share/poima/licenses/Vulkan-Headers/Apache-2.0.txt": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "runtime/share/poima/licenses/Vulkan-Headers/LICENSE.md": "ac24e5ea920e4318e4d02c4086ae51f53cfb03feed06c18df1019e7ada1ec7bc",
+        "runtime/share/poima/licenses/Vulkan-Headers/MIT.txt": "1ca3502222d967f3be5751c55f6b7ee735b5383909c3b501495f54b216dbf227",
+        "runtime/share/poima/THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+        "runtime/share/poima/TRADEMARKS.md": "53cf4f72b40f6a346de50433054dc5552ed025d4489c2aeb7f4842823d3e777c"
+      },
+      "captures": {
+        "first-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "3d2d9c2a14da6f19c19ebbeb1857678170540463f2ad7f001ee4cfbfb6e32870",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "partial-menu": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "0f9fa132508df198c6b42eebea706b96dbf01c1114f55ef1a688626690039465",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "saved-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "419f3d1fa7b4943bfffd03ef2fecce168118beb8eabef178daf3c9250594c2cb",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 2599,
+            "menu_button_samples": 11428,
+            "distinct_scene_sample_colors": 78,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                662,
+                387
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.25,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "fresh-welcome": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "3d2d9c2a14da6f19c19ebbeb1857678170540463f2ad7f001ee4cfbfb6e32870",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 2342,
+            "distinct_scene_sample_colors": 87,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "0000000000000000000000000000038e",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 2,
+            "camera_draws": 7,
+            "camera_triangles": 1676,
+            "objects": 9,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "restored-partial": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "2bde2e9fb6e4c5a592e00c490a62c07fdd3662dd4691efb23f3463461e118d55",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 10808,
+            "distinct_scene_sample_colors": 77,
+            "scene_sampling_rect": [
+              640,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": "00000000000000000000000000000398",
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 2,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 8,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "courier-running": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "78a233051e37d38a10534f7d44ea6e7dd6f0ca1cf426c1a0bf603f37da6d4ff5",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 60,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 1,
+            "camera_draws": 5,
+            "camera_triangles": 1652,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        },
+        "relay-complete": {
+          "oracle": {
+            "kind": "native_renderer_readback",
+            "sha256": "c05fdf10939623fb1b7f07a4420174c19c58a43277e93cf527e554cae65da88f",
+            "bytes": 3686538,
+            "width": 1280,
+            "height": 720,
+            "branded_control_samples": 1656,
+            "menu_button_samples": 0,
+            "distinct_scene_sample_colors": 123,
+            "scene_sampling_rect": [
+              20,
+              110,
+              1180,
+              580
+            ],
+            "scene_ui_masks": [
+              [
+                638,
+                358,
+                658,
+                382
+              ]
+            ],
+            "observed_modal": null,
+            "observed_ui_scale": 1.0,
+            "scope": "Authored opaque UI colors and visible scene variation; native rig submissions checked separately. No OCR or full-image reference claim."
+          },
+          "hardware": true,
+          "nvrhi_errors": 0,
+          "draws": {
+            "camera_culled": 0,
+            "camera_draws": 6,
+            "camera_triangles": 1664,
+            "objects": 6,
+            "shadow_candidates": 0,
+            "shadow_culled": 0,
+            "shadow_draws": 0,
+            "shadow_triangles": 0,
+            "shadow_views": 0,
+            "skinned_instances": 1,
+            "skinned_vertices": 1029
+          }
+        }
+      },
+      "partial_checkpoint_sha256": "50117e4f350664a8d9824eeb2fe82ae873c56563e19a0a3fbd52910c6a8935ca",
+      "saved_audio": {
+        "voices": {
+          "emitting": 1,
+          "has_more": false,
+          "next_voice": 3,
+          "retained": 2,
+          "tick": 40,
+          "voices": [
+            {
+              "asset": "3f28747207a14c860be7566e57a3f9ce9863d7b0a9a4375088dc08959dbeab4c",
+              "clip_frame": null,
+              "emitter": "0000000000000000000000000000026c",
+              "emitter_gain": 0.6000000238418579,
+              "emitting": false,
+              "end_sample": "30684",
+              "gain": 0.44999998807907104,
+              "loop": false,
+              "start_tick": 32,
+              "stop_sample": null,
+              "voice": 1
+            },
+            {
+              "asset": "2de1e944925265cddf5a0ba74f4695979e1fa130e951171223e5bfebe49afbf8",
+              "clip_frame": 1600,
+              "emitter": "00000000000000000000000000000262",
+              "emitter_gain": 0.44999998807907104,
+              "emitting": true,
+              "end_sample": "44312",
+              "gain": 1.0,
+              "loop": false,
+              "start_tick": 38,
+              "stop_sample": null,
+              "voice": 2
+            }
+          ]
+        },
+        "cadence": {
+          "00000000000000000000000000000064": {
+            "component_revision": 39,
+            "id": "00000000000000000000000000000064",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 40,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026c",
+              "00000000000000000000000000000003": "0000000000000000000000000000026d",
+              "00000000000000000000000000000004": 1.6,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "39",
+              "00000000000000000000000000000008": -5.9184001088142395,
+              "00000000000000000000000000000009": -5.960464477539063e-08,
+              "0000000000000000000000000000000a": 7.0,
+              "0000000000000000000000000000000b": 0.3184001088142394,
+              "0000000000000000000000000000000c": 1,
+              "0000000000000000000000000000000d": "1",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "1",
+              "00000000000000000000000000000011": "39"
+            }
+          },
+          "0000000000000000000000000000012c": {
+            "component_revision": 39,
+            "id": "0000000000000000000000000000012c",
+            "schema": {
+              "fields": [
+                {
+                  "default": 1,
+                  "id": "00000000000000000000000000000001",
+                  "kind": "int32",
+                  "name": "Enabled",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000002",
+                  "kind": "entity",
+                  "name": "StepEmitterA",
+                  "unit": ""
+                },
+                {
+                  "default": "00000000000000000000000000000000",
+                  "id": "00000000000000000000000000000003",
+                  "kind": "entity",
+                  "name": "StepEmitterB",
+                  "unit": ""
+                },
+                {
+                  "default": 0.8,
+                  "id": "00000000000000000000000000000004",
+                  "kind": "float64",
+                  "name": "StrideMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.25,
+                  "id": "00000000000000000000000000000005",
+                  "kind": "float32",
+                  "name": "Gain",
+                  "unit": ""
+                },
+                {
+                  "default": 0,
+                  "id": "00000000000000000000000000000006",
+                  "kind": "int32",
+                  "name": "PreviousValid",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000007",
+                  "kind": "int64",
+                  "name": "PreviousTick",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000008",
+                  "kind": "float64",
+                  "name": "PreviousX",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "00000000000000000000000000000009",
+                  "kind": "float64",
+                  "name": "PreviousY",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000a",
+                  "kind": "float64",
+                  "name": "PreviousZ",
+                  "unit": "m"
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000b",
+                  "kind": "float64",
+                  "name": "TravelMeters",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000c",
+                  "kind": "int32",
+                  "name": "NextVariation",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "0000000000000000000000000000000d",
+                  "kind": "int64",
+                  "name": "StepCount",
+                  "unit": ""
+                },
+                {
+                  "default": 0.0,
+                  "id": "0000000000000000000000000000000e",
+                  "kind": "float64",
+                  "name": "LastDisplacement",
+                  "unit": "m"
+                },
+                {
+                  "default": 0,
+                  "id": "0000000000000000000000000000000f",
+                  "kind": "int32",
+                  "name": "Grounded",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000010",
+                  "kind": "int64",
+                  "name": "LastVoice",
+                  "unit": ""
+                },
+                {
+                  "default": "0",
+                  "id": "00000000000000000000000000000011",
+                  "kind": "int64",
+                  "name": "SampleCount",
+                  "unit": ""
+                }
+              ],
+              "fingerprint": "1d2694fe301bdd9f7d6093b2db0ec1c45917bf67d900afc52693742a02bfc1ed",
+              "id": "c0870000000000000000000000000001",
+              "name": "RelayAudioCadence",
+              "version": 1
+            },
+            "structure_revision": 2,
+            "tick": 40,
+            "type": "c0870000000000000000000000000001",
+            "values": {
+              "00000000000000000000000000000001": 1,
+              "00000000000000000000000000000002": "0000000000000000000000000000026e",
+              "00000000000000000000000000000003": "0000000000000000000000000000026f",
+              "00000000000000000000000000000004": 1.1,
+              "00000000000000000000000000000005": 0.44999998807907104,
+              "00000000000000000000000000000006": 1,
+              "00000000000000000000000000000007": "39",
+              "00000000000000000000000000000008": -4.0,
+              "00000000000000000000000000000009": 0.0,
+              "0000000000000000000000000000000a": 0.0,
+              "0000000000000000000000000000000b": 0.0,
+              "0000000000000000000000000000000c": 0,
+              "0000000000000000000000000000000d": "0",
+              "0000000000000000000000000000000e": 0.0,
+              "0000000000000000000000000000000f": 1,
+              "00000000000000000000000000000010": "0",
+              "00000000000000000000000000000011": "39"
+            }
+          }
+        }
+      },
+      "compiled_completion": {
+        "Collected": 3,
+        "Arrivals": 1,
+        "Won": 1,
+        "CheckpointVersion": 2
+      },
+      "checks": [
+        "Genuine Windows NativeAOT, imported body/Run/Idle, navigation, provenance and redistribution notices form an exact immutable export.",
+        "Owned original sources removed before relocated game serves from unrelated cwd with system-only PATH and runtime variables removed.",
+        "First native process drives its actual entry controller/ray to collect one cell, compiles no code, accepts native menu preferences and saves durable partial progress.",
+        "A distinct fresh native process invokes Welcome Load and restores the exact partial snapshot before any subsequent control; its current public player/configuration remains independent.",
+        "Remaining real controller pickups trigger native courier pathfinding and original Run/Idle playback; actual in-range terminal Use completes the objective.",
+        "Seven paused native captures observe welcome, menu, partial save/fresh restore, running courier and final scene/UI; no physical input or image-reference claim.",
+        "Both live players/runtime/hosts/transports exit cleanly; immutable bundle/supplied closures and durable checkpoint remain exact."
+      ]
+    }
+  ],
+  "retained_unsuccessful_attempts": [
+    {
+      "stage": "Isolated managed helper",
+      "raw_report_sha256": "e3ae68cee2fc9cef1e34739618dfc9cff7ef8d695e06ee4365042421e5b74492",
+      "log_sha256": "b639d90477ec7e3c3ceeb976073071e1865e64ea7fff1b74f62aaac2554d49bb",
+      "exit_code": 1,
+      "reason": "Helper did not stage the unrelated ABI test project; bridge, gameplay and generator compile succeeded. Native AOT publishing and the actual compiled consumers subsequently passed.",
+      "impact": "No gameplay runtime failure, source relaxation or false passing report."
+    }
+  ],
+  "source_hashes": {
+    "managed/Directory.Build.props": "1919d2e190bd08daa0964aa4fe7c85f76ec2b60d33e10af869d5ef6a3e1cc53d",
+    "managed/Poima.Components.Generator/Buffers.cs": "94c6719e9b00491e5a26ae0f3e8cd5876583fcfc0654c0b621e560162416109d",
+    "managed/Poima.Components.Generator/Generator.cs": "0fc907b247d2a29dcb7053c4409e93d2da93d5de3f92177d5c346f1d93971612",
+    "managed/Poima.Components.Generator/Poima.Components.Generator.csproj": "a0efd70e361774a8ea1fde88b9f1bb5fd94ed276a3d1c907f4b33684e80c530e",
+    "managed/Poima.Components.targets": "be51eef6e02f456ad64dbe71a9d8ca73b9969199776cf3be7a4d04f6762dc6a2",
+    "managed/Poima.Gameplay/Animation.cs": "7afba1ed993414b4daa424c7d40f91c97864079ba237cc22216b4a3ae8bcdfe9",
+    "managed/Poima.Gameplay/AnimationLayers.cs": "7b7f61c284e78d4eef1981b3524ad20b39aab1b4fa3118613a78f5c8d3251497",
+    "managed/Poima.Gameplay/Buffers.cs": "374d75c00df456c6b2fe09414baf67ad43dc9c31b7acb864daa03d5396a9cd0f",
+    "managed/Poima.Gameplay/CharacterInput.cs": "db52b13f0636c9cffd9cbf834e05c45354c61c5f46bd8326debfdd9b600ff118",
+    "managed/Poima.Gameplay/Components.cs": "b1213186f7ac3eab29a761ecca7d721d1f4e8910bc823e356abd99f5de6befd4",
+    "managed/Poima.Gameplay/Gameplay.cs": "1ffc8112a8422dc45a0673451aeda39098914a682efc9180f5266f14ddc98a8a",
+    "managed/Poima.Gameplay/GameplayRequirements.cs": "213eca52e48c8b2eba6c31e344336008e3b6c0627eb8a38a6bab2368f4fe714f",
+    "managed/Poima.Gameplay/Instances.cs": "290961926695ef5b32f363f431d24069a8e553db04f519c5f47390809968faf7",
+    "managed/Poima.Gameplay/Lifecycle.cs": "cb6c0465b1ee242c50115d479cac177da69604d80ac838f7bbc093d640428172",
+    "managed/Poima.Gameplay/Navigation.cs": "e935af2ecb4656718afb51854b3716fabdec31dc6de794f64d39abfbcade05ef",
+    "managed/Poima.Gameplay/Persistence.cs": "7cb7cc83eb4c45e36714766aa8f0d29ddc91fa859628a0dabf17605dadd361c2",
+    "managed/Poima.Gameplay/PlayerPreferences.cs": "859da987551064c59673e7923d799ab243cf8d375310b7bd0ed14bac6047ab3a",
+    "managed/Poima.Gameplay/Poima.Gameplay.csproj": "8d654c44b7bebb6b31a9f2f606927f45b5072193adc4eef8cce3f3cf3b278df3",
+    "managed/Poima.Gameplay/ServiceAbi.cs": "203bf7100158e9c024d0a031f89e623845074d25abb815466ccf8a85d0fefb4e",
+    "managed/Poima.Gameplay/Ui.cs": "69bc1bc21fc930e116f3c88222334f8281d41951b081a3e60d28d36a17db3f0c",
+    "managed/Poima.ManagedBridge/Entry.cs": "6dab8ba3306a86b1b6764339881ade8fe97aae2393937f010caa3cdadff99c39",
+    "managed/Poima.ManagedBridge/Poima.ManagedBridge.csproj": "fca83a20df45dea4f10593b7503f774d37ea2a4beceb7cd3b4a4072d1806ee8e",
+    "managed/Poima.NativeGame.Generator/Poima.NativeGame.Generator.csproj": "381b496f3715e7ec0d7fb16b268ad416607c8b6c543350d01da486df982ca098",
+    "managed/Poima.NativeGame.Generator/Program.cs": "019e650f4aba1b831da5ac2d81f70f2fce40c033d4bc93e92da7d2d0b52d6e64",
+    "managed/Poima.NativeGame/Entry.cs": "dff4ff2b5569bb5d0d463b1305fdb951f579143643c15a24157b17c540bc76f6",
+    "managed/Shared/ComponentMetadata.cs": "1c67e83c6a3b5048dd80737a542a843df5ca5ef68e5d01cccefbab1cc30e33d7",
+    "managed/Shared/PersistenceMetadata.cs": "953c5cbfef06b2b3ffa7814ee16b9486ecb6ac540358c8d9698829a5515206f8",
+    "examples/relay-yard/Poima.RelayYardGame.csproj": "8b557c74ee1f1fd1a413bbc53a469e0766ddea8a48d4e521f51c2c2fd3fc6801",
+    "examples/relay-yard/RelayYardGame.cs": "a84f2ba0328eabc5ab2c7266953d6d2620f05dbf5b7d108218ec8dd86bf5a0de",
+    "examples/locomotion-yard/LocomotionYardGame.cs": "9bc8d458da7ae509c57adda7dd7ecc6caabf736e3021e3993fad19aff3a0de0f",
+    "scripts/publish_native_gameplay.py": "3246b78de1d6d57f304f6d2b49ca96d810c04352694dfe8a39b9419506b3ca19",
+    "CMakeLists.txt": "a1946cf74cb7d89e415a86d03ad06c3c7f8bcd68d94d0efbe77a4b18881c5e1c",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "THIRD_PARTY_NOTICES.md": "26fba117603cbb8c1dfc02e613ea7327e30eac0de0d3f32f8340d8a19ed7c0e1",
+    "examples/relay-yard/RelayAudio.cs": "42fe87118178ae8cc3fea1a04a738501f35cba37c4f4647877b23b758a548bf4",
+    "tests/relay_yard_bundle.py": "520420b55d5b14f7974d74d682f3173a07b53ec85981eff85470af0fef3cf44c",
+    "tests/relay_yard_contract.py": "7e48857c259958f0c9b449dc15f284af2bab351494a82a6b3c9db5e26270a6a4",
+    "examples/relay-yard/run.py": "86e22cf8297994ab3f586fb54723b3de2b9b417276f84bca911b7f0a3c9b0ae0",
+    "examples/relay-yard/prepare_audio.py": "d5573165b1908a20bae863890cd8822913ad5401fe13e95d6147397338ebb783",
+    "examples/locomotion-yard/run.py": "d18cc3e186a910059604d7aa63a44698c708ccd07f7dbbd6eae7af102e23626b",
+    "tests/collection_gameplay_bundle.py": "1bc8f6393d7baabc8971fa159f04d3d22ebea3f41b1d9d1d314e8008f0b6409f",
+    "tests/player_preferences_gameplay_bundle.py": "90569cedefd4b7819af0765ebdf2c3ae22a2b4bdf49bd99899c00cac2410911f",
+    "tests/player_preferences_gameplay_contract.py": "f08bdf0208a6153676dcb405b46e0b6f31826ccfd28e670b58a1472e58db062b",
+    "tests/player_service_contract.py": "06c22b0cf0ada22f24e18596e0093dfa4b5e17734a7b659ccebd7e657bf2e4d7",
+    "tools/python/poima_client/__init__.py": "8f3f3fa18e56bc4f30f0e1f4574404e2d477b8327b245c004b94d981653ef68e",
+    "tools/python/poima_client/client.py": "1c26b156a153850b3e362a86a3e87ca8b50ddc88d7ca82f9f96ac1c640de9ab9",
+    "tools/python/poima_client/errors.py": "780ac7f99963c9096ce6e063b576a43b46184a7c718183cf8467cf5518c56739",
+    "tools/python/poima_client/responses.py": "a656b1d28d769eaa7be7724575eb3b691f876928fb7680bd247f8e165bec94c9",
+    "tools/python/poima_client/transport.py": "1de3ead898132534dfe46623d143752da0bb9f67265992e0f273128849aa8c92",
+    ".gitattributes": "66a79210dafe51f2d84e6bf3d586b899c14f7ebcadc4f4aba4ca50da706fbb58",
+    "tests/relay_yard_audio.py": "9048da4f9429ab1b40391f16c474dbc1f24f446b746afebd983113db2f447075",
+    "examples/relay-yard/audio/denied.wav": "5673e023e8a51199338ee9c68f1c465614e23415e428fdf60ae2b0d3fc493dd8",
+    "examples/relay-yard/audio/manifest.json": "c0fc16e9d5f12bad4a47020347e5c4d489c2d76422dec3238bd622ebae6f5159",
+    "examples/relay-yard/audio/pickup.wav": "7ddfe1006034e52f541c0c6017d6807111b4095ce55f2875d9eb67d979cc3ca1",
+    "examples/relay-yard/audio/relay.wav": "530e175a1ed5aa17951ae4e66892eae84012a63032353ff37631d2f3a6b66bd8",
+    "examples/relay-yard/audio/step-a.wav": "528818942d3913cc2d03d13b5c045edacccacb0dcba971e06d42a0eea8302e49",
+    "examples/relay-yard/audio/step-b.wav": "43c74b15aae8d545ae696c626b05533aef0323fdb41d49de4786ec12ac013800",
+    "examples/relay-yard/audio/sources/impact/footstep_concrete_000.ogg": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe",
+    "examples/relay-yard/audio/sources/impact/footstep_concrete_001.ogg": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d",
+    "examples/relay-yard/audio/sources/impact/License.txt": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db",
+    "examples/relay-yard/audio/sources/interface/confirmation_001.ogg": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+    "examples/relay-yard/audio/sources/interface/confirmation_002.ogg": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c",
+    "examples/relay-yard/audio/sources/interface/error_001.ogg": "46e67425d16339772e8d328fb36a49426c9467418686e11beeb71ff84b0f6433",
+    "examples/relay-yard/audio/sources/interface/License.txt": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+  },
+  "test_helper_source_provenance": {
+    "passed": true,
+    "at_run_bundle_helper_sha256": "59777203546e73ac7336dae831a42f61267924a82b25a22f3e6cb86d6c3a5298",
+    "current_bundle_helper_sha256": "520420b55d5b14f7974d74d682f3173a07b53ec85981eff85470af0fef3cf44c",
+    "shared_schema_definition_ast_identical": true,
+    "note": "Full audio playthroughs used the retained earlier bundle helper. Later source-free snapshot observations do not change their imported literal cadence declaration. The final silent playthrough and both source-free runs use the final helper."
+  },
+  "git_license_roundtrip": {
+    "passed": true,
+    "verbatim_git_blob_and_checkout": true,
+    "files": {
+      "examples/relay-yard/audio/sources/impact/License.txt": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db",
+      "examples/relay-yard/audio/sources/interface/License.txt": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+    }
+  },
+  "audio_inputs": {
+    "passed": true,
+    "files": {
+      "denied.wav": {
+        "bytes": 15840,
+        "sha256": "5673e023e8a51199338ee9c68f1c465614e23415e428fdf60ae2b0d3fc493dd8"
+      },
+      "manifest.json": {
+        "bytes": 4810,
+        "sha256": "c0fc16e9d5f12bad4a47020347e5c4d489c2d76422dec3238bd622ebae6f5159"
+      },
+      "pickup.wav": {
+        "bytes": 27868,
+        "sha256": "7ddfe1006034e52f541c0c6017d6807111b4095ce55f2875d9eb67d979cc3ca1"
+      },
+      "relay.wav": {
+        "bytes": 51788,
+        "sha256": "530e175a1ed5aa17951ae4e66892eae84012a63032353ff37631d2f3a6b66bd8"
+      },
+      "sources/impact/License.txt": {
+        "bytes": 608,
+        "sha256": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db"
+      },
+      "sources/impact/footstep_concrete_000.ogg": {
+        "bytes": 5808,
+        "sha256": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe"
+      },
+      "sources/impact/footstep_concrete_001.ogg": {
+        "bytes": 6308,
+        "sha256": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d"
+      },
+      "sources/interface/License.txt": {
+        "bytes": 574,
+        "sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9"
+      },
+      "sources/interface/confirmation_001.ogg": {
+        "bytes": 8968,
+        "sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a"
+      },
+      "sources/interface/confirmation_002.ogg": {
+        "bytes": 14169,
+        "sha256": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c"
+      },
+      "sources/interface/error_001.ogg": {
+        "bytes": 7373,
+        "sha256": "46e67425d16339772e8d328fb36a49426c9467418686e11beeb71ff84b0f6433"
+      },
+      "step-a.wav": {
+        "bytes": 10212,
+        "sha256": "528818942d3913cc2d03d13b5c045edacccacb0dcba971e06d42a0eea8302e49"
+      },
+      "step-b.wav": {
+        "bytes": 10376,
+        "sha256": "43c74b15aae8d545ae696c626b05533aef0323fdb41d49de4786ec12ac013800"
+      }
+    },
+    "scope": "Same pinned installed decoder/resampler binaries; no cross-library bit-equality claim."
+  },
+  "conversion_manifest": {
+    "format": "poima.relay-audio",
+    "version": 1,
+    "creator": "Kenney",
+    "license": "CC0-1.0",
+    "procedure": {
+      "id": "relay-audio-convert-v1",
+      "decoder": "sf_readf_float",
+      "downmix": "Arithmetic mean of original channels, rounded to float32",
+      "resampler": "libsamplerate SRC_SINC_BEST_QUALITY, end_of_input=1, mono, ratio=48000/source_rate",
+      "encoding": "48kHz mono PCM16; round-to-nearest-even(sample*32768), saturate to [-32768,32767]",
+      "script_sha256": "d5573165b1908a20bae863890cd8822913ad5401fe13e95d6147397338ebb783",
+      "libraries": {
+        "sndfile": {
+          "version": "libsndfile-1.2.2",
+          "sha256": "7ef24c51a786d6ced3798ef82a246b525bc78582f03773fc9902d16cde633fad"
+        },
+        "samplerate": {
+          "version": "libsamplerate-0.2.2 (c) 2002-2008 Erik de Castro Lopo",
+          "sha256": "46d125ec40a5ef38d39b356f4efb2de20bc8f5cf7264861324fd6013d9a96f48"
+        }
+      }
+    },
+    "packs": {
+      "impact": {
+        "archive_sha256": "029d734af1582474edf3a694d1b0cebc97c1c152f2f39fa34d4c2bafc5de77f8",
+        "source": "https://kenney.nl/assets/impact-sounds",
+        "license_sha256": "b49aa9c56b04528b95913de13e506a0f7c5e807b9925db9bfef86af1f91120db",
+        "license_path": "sources/impact/License.txt",
+        "license_bytes": 608
+      },
+      "interface": {
+        "archive_sha256": "f2193d072726d6758a5f7871b2dcc54dcce0d5c35c6f0a62f92549b327c81232",
+        "source": "https://kenney.nl/assets/interface-sounds",
+        "license_sha256": "f7966c773bbed0eca6a9c75081c44a178b38eae112724dbb5fdfbd4192d118a9",
+        "license_path": "sources/interface/License.txt",
+        "license_bytes": 574
+      }
+    },
+    "sounds": {
+      "step-a": {
+        "path": "step-a.wav",
+        "bytes": 10212,
+        "sha256": "528818942d3913cc2d03d13b5c045edacccacb0dcba971e06d42a0eea8302e49",
+        "frames": 5084,
+        "channels": 1,
+        "sample_rate": 48000,
+        "clamped_samples": 0,
+        "pack": "impact",
+        "original_path": "sources/impact/footstep_concrete_000.ogg",
+        "original_sha256": "d7267e183067757c92c169de2a379abea592cfca6b39bb2e8feea15221ad79fe",
+        "original_bytes": 5808,
+        "original_archive_member": "Audio/footstep_concrete_000.ogg",
+        "original_frames": 4671,
+        "original_channels": 2,
+        "original_sample_rate": 44100
+      },
+      "step-b": {
+        "path": "step-b.wav",
+        "bytes": 10376,
+        "sha256": "43c74b15aae8d545ae696c626b05533aef0323fdb41d49de4786ec12ac013800",
+        "frames": 5166,
+        "channels": 1,
+        "sample_rate": 48000,
+        "clamped_samples": 0,
+        "pack": "impact",
+        "original_path": "sources/impact/footstep_concrete_001.ogg",
+        "original_sha256": "507a75eb19b897087855a3be3cf11a12d7fa37d143ad535eeebe0b8031c7325d",
+        "original_bytes": 6308,
+        "original_archive_member": "Audio/footstep_concrete_001.ogg",
+        "original_frames": 4747,
+        "original_channels": 2,
+        "original_sample_rate": 44100
+      },
+      "pickup": {
+        "path": "pickup.wav",
+        "bytes": 27868,
+        "sha256": "7ddfe1006034e52f541c0c6017d6807111b4095ce55f2875d9eb67d979cc3ca1",
+        "frames": 13912,
+        "channels": 1,
+        "sample_rate": 48000,
+        "clamped_samples": 0,
+        "pack": "interface",
+        "original_path": "sources/interface/confirmation_001.ogg",
+        "original_sha256": "063564703b6094d70718a3e787a55cc9141611e4ecd6b6637f8828f79b4a8c3a",
+        "original_bytes": 8968,
+        "original_archive_member": "Audio/confirmation_001.ogg",
+        "original_frames": 12782,
+        "original_channels": 1,
+        "original_sample_rate": 44100
+      },
+      "relay": {
+        "path": "relay.wav",
+        "bytes": 51788,
+        "sha256": "530e175a1ed5aa17951ae4e66892eae84012a63032353ff37631d2f3a6b66bd8",
+        "frames": 25872,
+        "channels": 1,
+        "sample_rate": 48000,
+        "clamped_samples": 0,
+        "pack": "interface",
+        "original_path": "sources/interface/confirmation_002.ogg",
+        "original_sha256": "33b17a9a9a2397c62b285c52c33a907fdffb476909c99e42dde603f6a7a8b12c",
+        "original_bytes": 14169,
+        "original_archive_member": "Audio/confirmation_002.ogg",
+        "original_frames": 23770,
+        "original_channels": 1,
+        "original_sample_rate": 44100
+      },
+      "denied": {
+        "path": "denied.wav",
+        "bytes": 15840,
+        "sha256": "5673e023e8a51199338ee9c68f1c465614e23415e428fdf60ae2b0d3fc493dd8",
+        "frames": 7898,
+        "channels": 1,
+        "sample_rate": 48000,
+        "clamped_samples": 2,
+        "pack": "interface",
+        "original_path": "sources/interface/error_001.ogg",
+        "original_sha256": "46e67425d16339772e8d328fb36a49426c9467418686e11beeb71ff84b0f6433",
+        "original_bytes": 7373,
+        "original_archive_member": "Audio/error_001.ogg",
+        "original_frames": 7257,
+        "original_channels": 2,
+        "original_sample_rate": 44100
+      }
+    }
+  },
+  "preparation_rejection": {
+    "passed": true,
+    "raw_report_sha256": "bb4f2ee2b369373092f9038ec42b7b6c1d614b37f9410055b9c148ead2251ae2",
+    "no_output_created": true
+  },
+  "invalid_audio_inputs": {
+    "raw_report_sha256": "4a1255a8165d1dba503abf7ebfee920600f3c294161e6c394e83e924b3c666ac",
+    "checks": [
+      {
+        "name": "large",
+        "error": "Relay Yard audio manifest exceeds 64 KiB.",
+        "native_calls": 0
+      },
+      {
+        "name": "duplicate",
+        "error": "Duplicate audio manifest key: version",
+        "native_calls": 0
+      },
+      {
+        "name": "nonfinite",
+        "error": "Nonfinite audio manifest number: NaN",
+        "native_calls": 0
+      },
+      {
+        "name": "wrong-type",
+        "error": "Supply the published Relay Yard audio manifest and unchanged files.",
+        "native_calls": 0
+      },
+      {
+        "name": "changed-wav",
+        "error": "Audio input differs: step-a.wav",
+        "native_calls": 0
+      },
+      {
+        "name": "changed-original",
+        "error": "Audio input differs: sources/impact/footstep_concrete_000.ogg",
+        "native_calls": 0
+      },
+      {
+        "name": "changed-license",
+        "error": "Audio input differs: sources/impact/License.txt",
+        "native_calls": 0
+      }
+    ]
+  },
+  "runtime_install": {
+    "steps": [
+      {
+        "kind": "desktop",
+        "pid": 16996,
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "seconds": 25.00106611800038,
+        "log_sha256": "a08148194e74daad499b20241085489fb4e1cc297904df45a79c61e694631a81"
+      },
+      {
+        "kind": "install",
+        "pid": 17045,
+        "exit_code": 0,
+        "timed_out": false,
+        "forced_cleanup": false,
+        "seconds": 44.97463892400083,
+        "log_sha256": "8bfca6b255f92cd2d34713ccdc243c1d4c021fa1018c142a91a9330779ee3d30"
+      }
+    ],
+    "file_count": 45,
+    "raw_report_sha256": "a65f65f17fc23bd32fdc93bc34f2049accfcff852381ec432a35ea06a1af7502"
+  },
+  "limits": [
+    "Flat-yard displacement/support-ray cadence; no animation-driven foot contact, arbitrary terrain gait, spatial music or general material footsteps.",
+    "Continuous output measured by real WASAPI submission/drain and same-host fresh mixer parity; no subjective audibility, hardware loopback, click-to-sound latency or hardware-underrun proof.",
+    "Restored DSP is reconstructed from logical voice phase; no seamless uninterrupted waveform claim across save replacement.",
+    "One development laptop and small game; no representative 1080p performance, clean-machine installation, physical-device input, whole Alpha or AA/AAA claim.",
+    "Deterministic conversion reproduced with identical pinned installed decoder/resampler binaries; other library builds may produce different bytes.",
+    "Original .86 silent-content/artifacts remain distinct retained fixtures; current audio graph does not migrate or rebase them."
+  ]
+}

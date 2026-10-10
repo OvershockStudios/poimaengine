@@ -6,6 +6,7 @@ Caller supplies the original licensed Kenney sources and a prebuilt gameplay
 artifact. No downloads, compilation, image/audio/mesh generation or source edits.
 """
 import argparse
+import hashlib
 import importlib.util
 import json
 import os
@@ -30,6 +31,25 @@ ACTIONS = {'begin': 911, 'welcome.load': 913, 'welcome.refresh': 915, 'menu': 90
 CELLS = ((1101, 'Ruby power cell', (-6, 1.2, 5), (.8, .04, .08)),
          (1102, 'Emerald power cell', (-2, 1.2, 5.4), (.03, .6, .15)),
          (1103, 'Amber power cell', (4.5, 1.2, 5), (.9, .55, .05)))
+AUDIO_CADENCE = 'c0870000000000000000000000000001'
+
+
+def audio_manifest(path):
+    path=Path(path)
+    if path.is_symlink() or not path.is_file():
+        raise ValueError('Supply a regular Relay Yard audio manifest.')
+    with path.open('rb') as stream:
+        payload=stream.read(65537)
+    if len(payload)>65536:raise ValueError('Relay Yard audio manifest exceeds 64 KiB.')
+    def unique(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:raise ValueError('Duplicate audio manifest key: '+key)
+            result[key]=value
+        return result
+    def nonfinite(value):
+        raise ValueError('Nonfinite audio manifest number: '+value)
+    return json.loads(payload.decode('utf-8'),object_pairs_hook=unique,parse_constant=nonfinite)
 
 
 def relay_fixture():
@@ -136,7 +156,66 @@ class OwnedRelay(locomotion.OwnedGame):
                                       ops=[dict(op='navigation.set',asset=navigation)]))
         authored.update(revision=5,navigation=navigation,relay_cells=CELLS,terminal=uid(600),
                         module_type=TYPE,actions=ACTIONS)
+        if getattr(self.args,'audio_directory',None):
+            self.author_audio(self.args.audio_directory)
         return authored
+
+    def author_audio(self,directory):
+        directory=Path(directory).resolve(strict=True)
+        # The complete published manifest pins original licensed inputs, native
+        # conversion and each supplied WAV. No decoder or downloader runs here.
+        expected=audio_manifest(ROOT/'examples/relay-yard/audio/manifest.json')
+        actual=audio_manifest(directory/'manifest.json')
+        if json.dumps(actual,sort_keys=True,separators=(',',':'))!= \
+                json.dumps(expected,sort_keys=True,separators=(',',':')):
+            raise ValueError('Supply the published Relay Yard audio manifest and unchanged files.')
+        for row in list(actual['packs'].values())+list(actual['sounds'].values()):
+            for path_key,hash_key,size_key in (('license_path','license_sha256','license_bytes'),
+                ('path','sha256','bytes'),('original_path','original_sha256','original_bytes')):
+                if path_key not in row:continue
+                relative=Path(row[path_key]);path=directory/relative
+                if relative.is_absolute() or '..' in relative.parts or path.is_symlink() or \
+                        not path.is_file() or path.stat().st_size!=row[size_key] or \
+                        hashlib.sha256(path.read_bytes()).hexdigest()!=row[hash_key]:
+                    raise ValueError('Audio input differs: '+row[path_key])
+        schemas=[s for s in self.manifest['schemas'] if s['id']==AUDIO_CADENCE]
+        if len(schemas)!=1:raise ValueError('Compile the Relay Yard audio cadence component first.')
+        fields={f['name']:f for f in schemas[0]['fields']}
+        assets,ops={},[]
+        for name,row in actual['sounds'].items():
+            clip=self.rpc('asset.audio.import',dict(source=self.native(directory/row['path'])))
+            if clip['frames']!=row['frames'] or clip['channels']!=1 or clip['sample_rate']!=48000:
+                raise ValueError('Native imported audio profile differs.')
+            asset=clip['asset'];assets[name]=asset;pack=actual['packs'][row['pack']]
+            provenance=self.rpc('asset.provenance.create',dict(record=dict(
+                format='poima.asset-provenance',version=1,asset=asset,kind='audio',
+                title='Relay Yard — '+name,creator='Kenney',source=pack['source'],
+                license=dict(identifier='CC0-1.0',notice=(directory/pack['license_path']).read_text()+
+                    '\nOriginal '+row['original_archive_member']+'; deterministic mono 48kHz PCM16 conversion '
+                    'relay-audio-convert-v1. Recipe manifest SHA-256 '+hashlib.sha256((directory/'manifest.json').read_bytes()).hexdigest()+'.'),
+                inputs=[dict(sha256=row['original_sha256'],bytes=row['original_bytes']),
+                        dict(sha256=pack['license_sha256'],bytes=pack['license_bytes'])])))
+            ops.append(dict(op='asset.provenance.set',asset=asset,records=[provenance['record']]))
+        for identifier,parent,position,sound,gain in (
+            (610,101,[0,-.2,-.25],'pickup',.45),(611,101,[0,-.2,-.25],'denied',.35),
+            (612,300,[0,1.4,0],'relay',.65),(613,600,[0,.7,0],'relay',.65),
+            (620,100,[0,.15,0],'step-a',.6),(621,100,[0,.15,0],'step-b',.6),
+            (622,300,[0,.15,0],'step-a',.8),(623,300,[0,.15,0],'step-b',.8)):
+            ops += [dict(op='entity.create',id=uid(identifier),parent=uid(parent),name='Relay sound '+str(identifier)),
+                dict(op='component.set',id=uid(identifier),type='Transform',value=dict(
+                    position=position,rotation=[0,0,0,1],scale=[1,1,1])),
+                dict(op='component.set',id=uid(identifier),type='AudioEmitter',value=dict(
+                    asset=assets[sound],gain=gain,loop=False,enabled=True))]
+        for actor,a,b,stride in ((100,620,621,1.6),(300,622,623,1.1)):
+            values={f['id']:f['default'] for f in fields.values()}
+            for key,value in dict(Enabled=1,StepEmitterA=uid(a),StepEmitterB=uid(b),
+                                  StrideMeters=stride,Gain=.45).items():
+                values[fields[key]['id']]=value
+            ops.append(dict(op='component.set',id=uid(actor),type='game:'+AUDIO_CADENCE,value=values))
+        revision=self.rpc('world.inspect')['revision']
+        self.rpc('world.transact',dict(request_id=uuid.uuid4().hex,base_revision=revision,ops=ops))
+        self.authored.update(revision=revision+1,audio=dict(assets=assets,cadence_type=AUDIO_CADENCE,
+            manifest_sha256=hashlib.sha256((directory/'manifest.json').read_bytes()).hexdigest()))
 
     def start(self):
         if self.session:self.rpc('runtime.stop',dict(session_id=self.session))
@@ -177,6 +256,8 @@ def main():
     parser.add_argument('--windows-interop',action='store_true')
     parser.add_argument('--gpu',type=int,default=0)
     parser.add_argument('--author-only',action='store_true')
+    parser.add_argument('--audio-directory',type=Path,
+        help='Opt-in published licensed sound set (examples/relay-yard/audio); enables native player audio.')
     args=parser.parse_args()
     if bool(args.descriptor)==bool(args.assembly):parser.error('Supply assembly or descriptor, exclusively.')
     if not args.descriptor and not(args.hostfxr and args.bridge):parser.error('CoreCLR needs hostfxr and bridge.')
@@ -202,7 +283,7 @@ def main():
             print('Begin shift, collect three cells with E, follow the courier, use the relay. '
                   'Tab releases the cursor; Menu pauses. Close resumes; click the scene to capture look.',flush=True)
             terminal=game.rpc('runtime.play',dict(request_id=uuid.uuid4().hex,session_id=game.session,
-                expected_tick=0,controller=uid(100),camera=uid(101),mode='interactive',audio=False,
+                expected_tick=0,controller=uid(100),camera=uid(101),mode='interactive',audio=bool(args.audio_directory),
                 width=1280,height=720,gpu=args.gpu,samples=1,frames_in_flight=1),timeout=86400)
             record['player']=terminal
             if not terminal['success'] or terminal['nvrhi_errors']:

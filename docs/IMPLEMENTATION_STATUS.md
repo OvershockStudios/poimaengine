@@ -1,8 +1,45 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.87**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.88**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.88 integrates licensed audio into Relay Yard. Five original Kenney
+CC0 clips are preserved with licenses, hashes and a reproducible offline
+conversion recipe; native import supplies mono 48 kHz cooked audio. Eight
+permanent emitters carry pickup, denied interaction, courier arrival, completion
+and alternating footsteps. The pickup voice survives collectible removal.
+Per-character scalar cadence uses committed displacement, a short flat-floor
+support ray and bounded phase; it is not animation-driven foot contact or a
+general terrain/material gait model.
+
+Windows and Linux genuine Native AOT playthroughs each verify 5,962 native
+operations, including negative interaction, all cue events, exact voice/cadence
+checkpoint restoration, inert retries and completion. A newly authored silent
+profile also completes with the full three-schema module manifest. The 50 global
+state fields, their persistent IDs and services epoch 7/256-byte prefix are
+unchanged. The audio scene is a separate content cohort; retained two-schema
+0.0.86 worlds and artifacts are not silently converted.
+
+Real controller inputs independently reproduce two footsteps and a pickup
+through offline capture and continuous WASAPI playback on both laptop GPUs.
+Each Windows run uses five native owners and 1,066 operations. A saved active
+pickup resumes at its exact logical cursor in fresh owners; 20 neutral ticks
+finish it without another allocation. Device submissions of 72,800 and 16,000
+stereo frames match fresh offline mixer peaks/voice starts, drain cleanly and
+report zero timeline resets and over-range samples. This qualifies submission
+and mixer continuity, not listening, hardware loopback or an uninterrupted DSP
+waveform across restore. Linux headless coverage uses three owners/743 operations.
+
+Source-free Windows exports carry all five cooked audio assets, provenance,
+credits and redistribution notices. Both GPU runs remove the owned source copy,
+relocate the immutable bundle, restore exact voice/cadence/native game state in a
+fresh service and finish the objective. Selected protocol, audio, save and build
+metadata regressions pass across the three native build configurations.
+[Evidence](evidence/m2-relay-yard-audio.json) and
+[licensed-audio playbook](../examples/relay-yard/README.md#optional-licensed-audio).
+Physical input, listening, representative performance, fresh-project agent
+workflows and clean-machine delivery remain separate Alpha gates.
 
 Version 0.0.87 fixes saves after removing played runtime emitters. Emitter
 retirement legitimately leaves holes, removes the newest handle or empties
@@ -23,9 +60,9 @@ The retained real-game upgrade also passes on the corrected host without
 changing its compiled artifacts or content. [Evidence](evidence/m2-sound-retirement.json)
 and [lifetime/save task](AUDIO_EVENTS.md#removing-emitters-and-saving).
 
-This closes a sound/save lifecycle defect. Relay Yard still needs licensed
-gameplay cues and continuous-play audio integration; these checks do not close
-whole Alpha, general acoustic realism, representative performance or audibility.
+That checkpoint closes a sound/save lifecycle defect; its diagnostic audio
+checks do not establish whole Alpha, general acoustic realism, representative
+performance or audibility. Licensed game integration follows in 0.0.88.
 
 Version 0.0.86 gives Relay Yard persistent global field IDs and a meaningful
 checkpoint version. All 49 old fields keep their kinds; the new field defaults

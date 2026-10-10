@@ -86,6 +86,15 @@ artist files. Keep unused authored history and development source out of a
 shipping export according to [project packaging](PROJECTS.md). Content identities
 come from native observations, not world-file hashes guessed by a client.
 
+The [Relay Yard audio profile](../examples/relay-yard/README.md#optional-licensed-audio)
+preserves the original licensed OGG files and conversion recipe while importing
+the native mono 48 kHz WAVs. Export supplies their hashed cooked audio and credits.
+Permanent cue emitters survive collectible removal; saved scalar cadence state
+belongs to the character component. Register the full generated manifest even
+for a newly authored silent scene. Adding these schemas, instances and emitters
+creates a different content cohort: it does not authorize loading retained
+two-schema scene saves or rebasing their geometry.
+
 The full Windows target includes rendering; Linux currently qualifies native
 headless authoring/simulation. Linux graphics, browser, advanced 2D, multiplayer
 and consoles follow the [release roadmap](ROADMAP.md). An exported game checked

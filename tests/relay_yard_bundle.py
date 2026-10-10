@@ -9,6 +9,7 @@ The authored source copy is removed before either exported service starts.
 """
 import argparse
 import copy
+import hashlib
 import importlib.util
 import json
 import math
@@ -36,6 +37,42 @@ REQUIRED = {'baseline_v7', 'component_collections_v1', 'animation_inertial_v1',
             'character_input_v1', 'navigation_query_v1', 'player_preferences_v1'}
 WIDTH, HEIGHT = 1280, 720
 MAX_EVIDENCE = 128*1024*1024
+CADENCE = 'c0870000000000000000000000000001'
+# An independent literal declaration, not fields inferred from the supplied
+# artifact or launcher. Int64 defaults use their documented decimal strings.
+CADENCE_FIELDS = [
+    {'id':'00000000000000000000000000000001','name':'Enabled','kind':'int32','default':1,'unit':''},
+    {'id':'00000000000000000000000000000002','name':'StepEmitterA','kind':'entity','default':'00000000000000000000000000000000','unit':''},
+    {'id':'00000000000000000000000000000003','name':'StepEmitterB','kind':'entity','default':'00000000000000000000000000000000','unit':''},
+    {'id':'00000000000000000000000000000004','name':'StrideMeters','kind':'float64','default':0.8,'unit':'m'},
+    {'id':'00000000000000000000000000000005','name':'Gain','kind':'float32','default':0.25,'unit':''},
+    {'id':'00000000000000000000000000000006','name':'PreviousValid','kind':'int32','default':0,'unit':''},
+    {'id':'00000000000000000000000000000007','name':'PreviousTick','kind':'int64','default':'0','unit':''},
+    {'id':'00000000000000000000000000000008','name':'PreviousX','kind':'float64','default':0,'unit':'m'},
+    {'id':'00000000000000000000000000000009','name':'PreviousY','kind':'float64','default':0,'unit':'m'},
+    {'id':'0000000000000000000000000000000a','name':'PreviousZ','kind':'float64','default':0,'unit':'m'},
+    {'id':'0000000000000000000000000000000b','name':'TravelMeters','kind':'float64','default':0,'unit':'m'},
+    {'id':'0000000000000000000000000000000c','name':'NextVariation','kind':'int32','default':0,'unit':''},
+    {'id':'0000000000000000000000000000000d','name':'StepCount','kind':'int64','default':'0','unit':''},
+    {'id':'0000000000000000000000000000000e','name':'LastDisplacement','kind':'float64','default':0,'unit':'m'},
+    {'id':'0000000000000000000000000000000f','name':'Grounded','kind':'int32','default':0,'unit':''},
+    {'id':'00000000000000000000000000000010','name':'LastVoice','kind':'int64','default':'0','unit':''},
+    {'id':'00000000000000000000000000000011','name':'SampleCount','kind':'int64','default':'0','unit':''},
+]
+
+
+def cadence_schema():
+    # Fingerprints bind canonical native wire defaults; names and units are
+    # checked separately through the exact declaration comparison below.
+    semantic = f'poima.component.v1\n{CADENCE}\n1\n'
+    formats = {'int32':'<i','int64':'<q','float32':'<f','float64':'<d'}
+    for field in CADENCE_FIELDS:
+        kind, value = field['kind'], field['default']
+        cell = bytes(16) if kind == 'entity' else struct.pack(formats[kind],
+            int(value) if kind == 'int64' else value).ljust(16, b'\0')
+        semantic += f"{field['id']}:{kind}:{cell.hex()}\n"
+    return dict(id=CADENCE,name='RelayAudioCadence',version=1,fields=CADENCE_FIELDS,
+                fingerprint=hashlib.sha256(semantic.encode('utf-8')).hexdigest())
 
 
 def fresh():
@@ -103,8 +140,13 @@ def artifact_inputs(path, launcher):
     check(manifest['format'] == 'poima.components' and manifest['version'] == 1 and
           manifest['schemas'] == descriptor['schema']['components'], 'Component manifest/schema differ')
     schemas = {row['id']:row for row in manifest['schemas']}
-    check(set(schemas) == {launcher.locomotion.CONFIG, launcher.locomotion.COMPONENT} and
-          len(manifest['schemas']) == 2, 'Relay Yard native component identities differ')
+    historical = {launcher.locomotion.CONFIG, launcher.locomotion.COMPONENT}
+    check(set(schemas) in (historical, historical | {CADENCE}) and
+          len(manifest['schemas']) == len(schemas), 'Relay Yard native component identities differ')
+    if CADENCE in schemas:
+        check(json.dumps(schemas[CADENCE],sort_keys=True,separators=(',',':')) ==
+              json.dumps(cadence_schema(),sort_keys=True,separators=(',',':')),
+              'Relay Yard audio cadence declaration differs from the exact supported schema')
     return descriptor, manifest, libraries[0], frozen
 
 
@@ -177,6 +219,8 @@ def main():
     for name in ('binary','runtime','artifact','source-directory','output'):
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--gpu',type=int,default=1)
+    parser.add_argument('--audio-directory',type=Path,
+        help='Opt-in published Relay Yard licensed sound set; verifies its exported closure.')
     parser.add_argument('--timeout',type=float,default=1800)
     args = parser.parse_args()
     check(os.name == 'nt' and not sys.flags.optimize, 'Use native Windows Python without optimization')
@@ -196,7 +240,7 @@ def main():
         limitations=['Windows development host; source-free relocation is not clean-machine deployment.',
             'Semantic guarded controller/UI requests and native Vulkan readbacks; not physical input or editor qualification.',
             'Two actual native host processes with one live player each; not multiplayer, representative performance or whole Alpha.',
-            'Audio disabled; configured gain does not qualify sink behavior or audible output.',
+            'Paused semantic stepping does not qualify continuous audio; the separate audio verifier checks that path.',
             'Public player identities/configuration prove independent lifetimes; hidden preference epochs are not exposed or claimed.',
             'Original imported Run/Idle rig and native controller/navigation; no motion matching, IK, foot locking or general character creator.',
             'Owned source copies are deleted; caller originals, bundles, external saves and failed evidence are retained.'])
@@ -280,6 +324,7 @@ def main():
                        artifact=(artifact.parent,artifact_pin))
         dependencies=[Path(__file__),Path(contract.__file__),ROOT/'examples/relay-yard/run.py',
             ROOT/'examples/relay-yard/RelayYardGame.cs',ROOT/'examples/relay-yard/Poima.RelayYardGame.csproj',
+            ROOT/'examples/relay-yard/RelayAudio.cs',ROOT/'examples/relay-yard/prepare_audio.py',
             ROOT/'examples/locomotion-yard/run.py',ROOT/'examples/locomotion-yard/LocomotionYardGame.cs',
             ROOT/'tests/collection_gameplay_bundle.py',ROOT/'tests/player_preferences_gameplay_bundle.py',
             ROOT/'tests/player_preferences_gameplay_contract.py',ROOT/'tests/player_service_contract.py',
@@ -294,6 +339,12 @@ def main():
             target=owned_sources/name;target.parent.mkdir(parents=True,exist_ok=True)
             shutil.copy2(originals/name,target)
             check(sha(target)==originals_pin[name],'Owned original-source copy differs')
+        audio_originals = None
+        if args.audio_directory:
+            audio_originals=args.audio_directory.resolve(strict=True)
+            protected['audio']=(audio_originals,clean_inventory(audio_originals))
+            args.audio_directory=project/'Original sounds'
+            shutil.copytree(audio_originals,args.audio_directory)
         args.descriptor=artifact
         author=launcher.OwnedRelay(args,project/'world.json','author',record,deadline,
                                   lambda path:str(Path(path).resolve()),manifest)
@@ -306,7 +357,7 @@ def main():
         project_file=project/'project.json'
         project_file.write_text(json.dumps(dict(format='poima.project',version=2,project_id=fresh(),
             name='Relay Yard',entry=dict(world='world.json',controller=launcher.uid(100),camera=launcher.uid(101)),
-            audio=False,gameplay=dict(descriptor='gameplay/native-gameplay.json',values={})),indent=2)+'\n',encoding='utf-8')
+            audio=bool(args.audio_directory),gameplay=dict(descriptor='gameplay/native-gameplay.json',values={})),indent=2)+'\n',encoding='utf-8')
         project_pin=clean_inventory(project)
         cli(binary,'project','inspect',project_file)
         exported=output/'Exported Relay Yard game'
@@ -335,6 +386,16 @@ def main():
         credits=(bundle/'content/ASSET_CREDITS.txt').read_text(encoding='utf-8')
         check('Kenney' in credits and 'CC0-1.0' in credits and launcher.locomotion.SOURCE_URL in credits,
               'Licensed original source attribution differs')
+        if audio_originals:
+            check(game_spec['audio'] is True and 'audio' in authored,
+                  'Audio export lost its native launch flag/assets')
+            for name,asset in authored['audio']['assets'].items():
+                check(frozen.get('content/world.json.assets/'+asset+'.paudio')==asset,
+                      'Cooked licensed sound is absent from the exported closure: '+name)
+            for pack in read_json(audio_originals/'manifest.json')['packs'].values():
+                check(pack['source'] in credits,'Exported sound attribution is missing its source')
+            check(authored['audio']['manifest_sha256'] in credits,
+                  'Exported credits lost the deterministic conversion recipe reference')
         check((bundle/'runtime/share/poima/licenses/RecastNavigation/License.txt').is_file(),
               'Runtime navigation license is missing')
         forbidden={'hostfxr.dll','libhostfxr.so','coreclr.dll','libcoreclr.so','poima.gameplay.dll',
@@ -399,7 +460,7 @@ def main():
             def start_player(self):
                 params=dict(session_id=self.session,request_id=fresh(),expected_tick=self.tick,
                     expected_generation=0,camera=launcher.uid(101),controller=launcher.uid(100),mode='interactive',
-                    initially_paused=True,gamepad=dict(mode='disabled'),audio=False,width=WIDTH,height=HEIGHT,
+                    initially_paused=True,gamepad=dict(mode='disabled'),audio=bool(audio_originals),width=WIDTH,height=HEIGHT,
                     gpu=args.gpu,samples=1,frames_in_flight=1,settings_overrides={
                         'camera.vertical_fov':60,'ui.scale':1,'audio.master_gain':1})
                 if profile is not None:params['input_profile']=str(profile)
@@ -497,8 +558,20 @@ def main():
                       'Actual native host did not exit with its precise service diagnostics')
                 self.closed=True
 
+        class BundleDriver(contract.RelayDriver):
+            def snapshot(self):
+                result=super().snapshot()
+                if audio_originals:
+                    game=self.game
+                    sounds=game.rpc('runtime.audio.voices',dict(session_id=game.session,tick=game.tick,limit=256))
+                    check(not sounds['has_more'],'Exported sound observation is truncated')
+                    result['audio']=contract.normalized(dict(voices=sounds,cadence={launcher.uid(actor):
+                        game.rpc('runtime.component.get',dict(session_id=game.session,tick=game.tick,
+                            id=launcher.uid(actor),type=CADENCE)) for actor in (100,300)}))
+                return result
+
         first=HostedRelay('first-process')
-        driver=contract.RelayDriver(first,record)
+        driver=BundleDriver(first,record)
         first.start_player();driver.step(1)
         first.capture('first-welcome',rig=False)
         driver.control('begin')
@@ -537,7 +610,7 @@ def main():
 
         second=HostedRelay('fresh-process')
         check(second.child.pid!=first.child.pid,'Fresh continuation reused a native host process')
-        resumed=contract.RelayDriver(second,record)
+        resumed=BundleDriver(second,record)
         second.start_player();resumed.step(1)
         second.capture('fresh-welcome',rig=False)
         fresh_prefs=second.preferences()

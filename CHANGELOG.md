@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.88
+
+- Add licensed Relay Yard pickup, denial, arrival, completion and displacement-driven footstep cues, using permanent emitters and saved scalar cadence components.
+- Preserve original Kenney CC0 sounds, licenses and hashes; add pinned offline conversion and validated native import/provenance/export closure.
+- Verify genuine Native AOT playthroughs, active-cue fresh-process saves and continuous offline/WASAPI mixer parity on both laptop GPUs; verify source-free exported continuation with exact audio state.
+- Keep existing global persistence IDs and native gameplay services unchanged; document the separate audio scene/save cohort and [runnable checks](examples/relay-yard/README.md#optional-licensed-audio). [Evidence](docs/evidence/m2-relay-yard-audio.json).
+
 ## 0.0.87
 
 - Fix saves after removing played runtime sound emitters: preserve surviving voices and the monotonic allocator through gaps or completely retired history.

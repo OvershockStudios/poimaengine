@@ -303,6 +303,7 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
         context.Despawn(cell);
         cell=default;
         ++state.Collected;
+        RelayAudio.Cue(context,RelayAudio.Pickup);
     }
 
     static void Use(ref RelayState state,GameContext context)
@@ -319,8 +320,10 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
         {
             // A UI action, a cell count or touching the relay cannot win.
             // Completion requires this real in-range native ray after arrival.
-            if(state.Collected==3 && state.Phase==Delivered)state.Won=1;
-            else ++state.LockedUses;
+            if(state.Collected==3 && state.Phase==Delivered)
+            {state.Won=1;RelayAudio.Cue(context,RelayAudio.Win);}
+            else
+            {++state.LockedUses;RelayAudio.Cue(context,RelayAudio.Denied);}
         }
     }
 
@@ -371,7 +374,7 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
                 ++route.Cursor;
             routeChanged|=route.Cursor!=priorCursor;
             if(route.Cursor==route.Coordinates.Count/3)
-            {state.Phase=Delivered;++state.Arrivals;}
+            {state.Phase=Delivered;++state.Arrivals;RelayAudio.Cue(context,RelayAudio.Arrival);}
             else
             {
                 double dx=route.Coordinates[route.Cursor*3]-position.X,dz=route.Coordinates[route.Cursor*3+2]-position.Z;
@@ -402,6 +405,8 @@ public sealed class RelayYardGame : Game<RelayState>, INavigationGame,
         ++state.Ticks;
         Use(ref state,context);
         Courier(ref state,context);
+        RelayAudio.Steps(context,Player);
+        RelayAudio.Steps(context,Actor);
         Publish(context,in state);
     }
 

@@ -49,6 +49,7 @@ python examples/relay-yard/run.py `
   --source-directory C:/Assets/KenneyProtagonists `
   --manifest build/relay-yard-artifact/game.poima-components.json `
   --descriptor build/relay-yard-artifact/native-gameplay.json `
+  --audio-directory examples/relay-yard/audio `
   --output build/relay-yard-play --gpu 1
 ```
 
@@ -57,6 +58,54 @@ the world without launching the game. CoreCLR development is also available:
 replace `--descriptor` with `--hostfxr`, `--bridge` and `--assembly` paths built
 from this project and the managed bridge. Original content is supplied by the
 caller; the launcher does not download assets or compile code.
+
+## Optional licensed audio
+
+`--audio-directory` enables the included five Kenney CC0 clips: two concrete
+footsteps, pickup confirmation, denied interaction and relay confirmation. Eight
+permanent emitters provide pickup, denial, arrival and win feedback, plus two
+alternating footsteps each for the player and courier. Permanent pickup emitters
+keep the cue alive when its collectible despawns. Omit the option for silence.
+
+Footstep cadence follows committed native horizontal movement on the sample's
+flat floor. A short support ray and vertical-motion checks prevent airborne
+steps; stationary input, blocked movement and discontinuous position samples
+cannot advance cadence. The sample caps steps per tick and saves each
+character's phase and variation in its native `RelayAudioCadence` component.
+It is a displacement-based sample, not animation-driven foot contact or a
+general material-aware gait system.
+
+The [audio manifest](audio/manifest.json) records original files, CC0 licenses,
+source hashes, converted WAV hashes and the offline conversion recipe.
+[prepare_audio.py](prepare_audio.py) reproducibly decodes, downmixes and resamples
+the pinned originals to native 48 kHz mono PCM16 using recorded decoder and
+resampler builds. Those tools are only needed to prepare content; playing the
+included WAVs needs neither decoder library. Other converter builds can produce
+different bytes; the launcher checks the published manifest and file hashes.
+
+Newly compiled modules register the cadence schema even when the silent profile
+contains no cadence instances. Enabling audio also changes the authored scene,
+assets and component instances. These worlds are a separate content cohort from
+the retained 0.0.86 save-upgrade fixtures: there is no implicit conversion of
+those checkpoints into an audio-enabled world.
+
+The originals come from Kenney's [Impact Sounds](https://kenney.nl/assets/impact-sounds)
+and [Interface Sounds](https://kenney.nl/assets/interface-sounds). Their unchanged
+licenses are in [sources/impact](audio/sources/impact/License.txt) and
+[sources/interface](audio/sources/interface/License.txt). To reproduce the
+published set with the recorded native libraries and original archives:
+
+```bash
+python examples/relay-yard/prepare_audio.py \
+  --impact-archive /Assets/kenney_impact-sounds.zip \
+  --interface-archive /Assets/kenney_interface-sounds.zip \
+  --output build/relay-audio-reproduction
+```
+
+Preparation has no network requests. It rejects changed originals; the launcher
+rejects changed clips, licenses or manifests before native import. Export carries
+the referenced cooked audio and source/license/conversion credits, rather than
+the original decoder tools or artist files.
 
 ## Controls and checkpoints
 
@@ -115,6 +164,7 @@ python tests/relay_yard_contract.py `
   --manifest build/relay-yard-artifact/game.poima-components.json `
   --descriptor build/relay-yard-artifact/native-gameplay.json `
   --source-directory C:/Assets/KenneyProtagonists `
+  --audio-directory examples/relay-yard/audio `
   --output build/relay-yard-contract
 ```
 
@@ -130,6 +180,7 @@ python tests/relay_yard_bundle.py `
   --binary build/windows-runtime/poima.exe --runtime build/runtime-installed `
   --artifact build/relay-yard-artifact/native-gameplay.json `
   --source-directory C:/Assets/KenneyProtagonists `
+  --audio-directory examples/relay-yard/audio `
   --output build/relay-yard-bundle-check --gpu 1
 ```
 
@@ -138,3 +189,26 @@ checkpoint occurs before the courier starts travelling. Animation save/load
 while moving, the original-source retarget oracle and other subsystem coverage
 are separate checks. Native frame readbacks and semantic actions do not prove
 physical-device interaction or audible output.
+
+The separate sound verifier records real movement, a native pickup ray and Use,
+then reproduces those inputs from a checkpoint with offline capture and continuous
+device playback. It saves during the pickup cue, restores its exact cursor and
+cadence in fresh processes, and checks that neutral continuation finishes the
+cue without duplicating it:
+
+```powershell
+python tests/relay_yard_audio.py `
+  --binary build/windows-runtime/poima.exe `
+  --artifact build/relay-yard-artifact/native-gameplay.json `
+  --source-directory C:/Assets/KenneyProtagonists `
+  --audio-directory examples/relay-yard/audio `
+  --output build/relay-yard-audio-check --gpu 1
+```
+
+Use native Windows Python and a real output device for device checks. Linux
+headless checks use `--offline-only` with a Linux artifact. Paused graphical
+stepping resets the DSP timeline, so the bundle's paused observations do not
+substitute for this continuous-play test. Matching mixer statistics and drained
+device submission do not prove listening quality, physical loopback, latency or
+an uninterrupted waveform across checkpoint restoration. See
+[recorded audio evidence](../../docs/evidence/m2-relay-yard-audio.json).

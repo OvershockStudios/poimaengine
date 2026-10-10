@@ -300,6 +300,52 @@ def saved_generation(root):
 
 def qualify(game, driver, launcher, source_directory, output, record):
     authored = game.author(source_directory)
+    audio = 'audio' in authored
+
+    def voices():
+        state = game.rpc('runtime.audio.voices', dict(session_id=game.session,
+            tick=game.tick, limit=256))
+        need(not state['has_more'] and type(state['next_voice']) is int and
+             state['next_voice'] > 0 and state['retained'] == len(state['voices']) <= 256,
+             'Native audio observation is truncated or has an invalid allocator/history')
+        previous = 0
+        for voice in state['voices']:
+            need(type(voice['voice']) is int and previous < voice['voice'] < state['next_voice'] and
+                 type(voice['start_tick']) is int and 0 <= voice['start_tick'] <= game.tick and
+                 type(voice['gain']) in (int,float) and math.isfinite(voice['gain']) and
+                 0 <= voice['gain'] <= 4 and type(voice['emitter_gain']) in (int,float) and
+                 math.isfinite(voice['emitter_gain']) and 0 <= voice['emitter_gain'] <= 4,
+                 'Actual native voice chronology/gain is invalid')
+            previous = voice['voice']
+        return state
+
+    def audio_snapshot():
+        return normalized(dict(voices=voices(), cadence={uid(actor): game.rpc(
+            'runtime.component.get', dict(session_id=game.session, tick=game.tick,
+                id=uid(actor), type=launcher.AUDIO_CADENCE)) for actor in (PLAYER,ACTOR)}))
+
+    def snapshot():
+        result = driver.snapshot()
+        if audio:
+            result['audio'] = audio_snapshot()
+        return result
+
+    def cue_probe(before, emitter, label, expected, cursor=None):
+        current = voices()
+        selected = [voice for voice in current['voices']
+                    if voice['voice'] >= before['next_voice'] and voice['emitter'] == uid(emitter)]
+        need(len(selected) == expected, label + ': actual cue allocation count differs')
+        if expected:
+            need(selected[0]['start_tick'] == game.tick - 1 and selected[0]['stop_sample'] is None and
+                 not selected[0]['loop'] and selected[0]['asset'] == authored['audio']['assets'][
+                     {610:'pickup',611:'denied',612:'relay',613:'relay'}[emitter]],
+                 label + ': licensed cue did not begin on the actual Use/arrival tick')
+        if cursor is not None:
+            need(selected[0]['emitting'] and selected[0]['clip_frame'] == cursor,
+                 label + ': despawned pickup lost its permanent emitter or exact active cursor')
+        record.setdefault('audio_probes', []).append(dict(label=label, emitter=uid(emitter),
+            before=normalized(before), after=normalized(current), selected=selected))
+        return current
     world_bytes = game.world.read_bytes()
     assets = inventory(Path(str(game.world) + '.assets'))
     record['authored'] = authored
@@ -354,24 +400,59 @@ def qualify(game, driver, launcher, source_directory, output, record):
     wrong_ray = game.rpc('runtime.raycast', dict(session_id=game.session, tick=game.tick,
         origin=position(camera), direction=[-matrix[8], -matrix[9], -matrix[10]], distance=3, ignore=[uid(PLAYER)]))
     need(wrong_ray['hit'] is None, 'Wrong-direction probe accidentally hit geometry')
+    wrong_audio = voices() if audio else None
     driver.step(use=True)
     need(driver.values()['Collected'] == 0, 'Use without a native hit collected a cell')
+    if audio:
+        cue_probe(wrong_audio,610,'no-hit pickup',0)
+        cue_probe(wrong_audio,611,'no-hit denial',0)
+        # A genuine unrelated hit is distinct from an empty ray. Use the flat
+        # authored floor, without modifying any entity or gameplay value.
+        driver.step(look=(0,-80-game.entity(PLAYER)['pitch']))
+        camera = game.entity(CAMERA); matrix = camera['world_matrix']
+        floor_ray = game.rpc('runtime.raycast', dict(session_id=game.session, tick=game.tick,
+            origin=position(camera), direction=[-matrix[8],-matrix[9],-matrix[10]],
+            distance=3, ignore=[uid(PLAYER)]))
+        need(floor_ray['hit'] is not None and floor_ray['hit']['entity'] not in
+             {*initial_cells.values(),uid(TERMINAL)}, 'Unrelated-hit probe did not reach ordinary floor geometry')
+        floor_audio = voices()
+        driver.step(use=True)
+        need(driver.values()['Collected'] == 0 and driver.values()['LockedUses'] == 0,
+             'Unrelated floor Use changed the objective')
+        cue_probe(floor_audio,610,'unrelated-hit pickup',0)
+        cue_probe(floor_audio,611,'unrelated-hit denial',0)
+        record['negative_audio_floor_ray'] = floor_ray
     far_ray = driver.aim_at(initial_cells['CellThree'])
     need(far_ray['hit'] is None, 'Out-of-range target unexpectedly lies inside use distance')
+    far_audio = voices() if audio else None
     driver.step(use=True)
     need(driver.values()['Collected'] == 0, 'Out-of-range Use collected a cell')
+    if audio:
+        cue_probe(far_audio,610,'out-of-range pickup',0)
+        cue_probe(far_audio,611,'out-of-range denial',0)
     record['negative_use'] = dict(wrong_ray=wrong_ray, far_ray=far_ray, player_start=player_before)
 
     driver.follow_waypoints(((5.2, 5.2), (5.2, 1.4)), 'early-terminal')
+    early_audio = voices() if audio else None
     early = driver.use_target(TERMINAL)
     need(early['LockedUses'] == 1 and early['Won'] == 0 and early['Collected'] == 0,
          'Premature in-range relay Use bypassed cells or courier arrival')
+    if audio:
+        cue_probe(early_audio,611,'premature terminal',1)
+        cue_probe(early_audio,610,'premature terminal pickup',0)
     record['checks'].append('Wrong/no-hit/out-of-range Use cannot collect; real premature terminal Use remains locked')
 
     driver.follow_waypoints(((5.2, 5.2), CELL_APPROACHES[0]), 'first-cell')
+    pickup_audio = voices() if audio else None
     picked = driver.use_target(initial_cells['CellOne'])
     need(picked['Collected'] == 1 and not present_id(picked['CellOne']), 'First native ray failed to collect cell')
     game.rpc('runtime.entity', dict(session_id=game.session, id=initial_cells['CellOne']), error=-32004)
+    if audio:
+        current = cue_probe(pickup_audio,610,'first pickup survives despawn',1,cursor=800)
+        picked_voice = next(voice for voice in current['voices'] if voice['voice'] >=
+                           pickup_audio['next_voice'] and voice['emitter'] == uid(610))
+        need(picked_voice['asset'] == authored['audio']['assets']['pickup'] and
+             game.entity(610)['id'] == uid(610), 'Pickup cue is not its permanent licensed native emitter')
     opened = driver.control('menu')
     need(opened['intent'] == 2, 'Compiled menu must request native Pause')
     save_one = driver.control('save')
@@ -382,20 +463,20 @@ def qualify(game, driver, launcher, source_directory, output, record):
     save_parameters = copy.deepcopy(driver.last_control_parameters)
     need(save_two['save_operation']['state'] == 3 and saved_generation(output / 'saves') == 2,
          'Repeated compiled Save with omitted expected generation did not advance to generation two')
-    checkpoint = driver.snapshot()
+    checkpoint = snapshot()
     durable = saved_inventory(output / 'saves')
     record['durable_checkpoint_pin'] = durable
     repeated = game.rpc('runtime.ui.activate', save_parameters)
-    need(repeated == dict(save_two, replayed=True) and driver.snapshot() == checkpoint and
+    need(repeated == dict(save_two, replayed=True) and snapshot() == checkpoint and
          saved_inventory(output / 'saves') == durable,
          'Exact compiled Save retry repeated callback or durable write')
     game.rpc('runtime.ui.activate', dict(save_parameters, id=uid(ACTION_IDS['load'])), error=-32010)
     driver.control('refresh')
     stale = copy.deepcopy(driver.last_control_parameters);stale['request_id'] = uuid.uuid4().hex
     driver.control('refresh')
-    before_stale = driver.snapshot()
+    before_stale = snapshot()
     game.rpc('runtime.ui.activate', stale, error=-32009)
-    need(driver.snapshot() == before_stale, 'Stale control guard changed native/compiled state')
+    need(snapshot() == before_stale, 'Stale control guard changed native/compiled state')
     driver.control('close')
     driver.drive_to(*CELL_APPROACHES[1], 'second-before-load')
     second = driver.use_target(initial_cells['CellTwo'])
@@ -404,18 +485,18 @@ def qualify(game, driver, launcher, source_directory, output, record):
     loaded = driver.control('load')
     load_parameters = copy.deepcopy(driver.last_control_parameters)
     need(loaded['runtime_replaced'] and loaded['save_operation']['state'] == 3 and
-         loaded['save_operation']['generation'] == 2 and driver.snapshot() == checkpoint,
+         loaded['save_operation']['generation'] == 2 and snapshot() == checkpoint,
          'Compiled Load did not restore exact partial player/courier/rig/UI/component/allocated-cell checkpoint')
     game.rpc('runtime.entity', dict(session_id=game.session, id=initial_cells['CellOne']), error=-32004)
     need(game.entity(initial_cells['CellTwo'])['id'] == initial_cells['CellTwo'],
          'Load did not restore the collected-after-save cell under its original generated ID')
     retry = game.rpc('runtime.ui.activate', load_parameters)
-    need(retry == dict(loaded, replayed=True) and driver.snapshot() == checkpoint and
+    need(retry == dict(loaded, replayed=True) and snapshot() == checkpoint and
          saved_inventory(output / 'saves') == durable, 'Exact Load retry replaced runtime again')
     old_step = dict(session_id=loaded['session_id'], request_id=uuid.uuid4().hex,
                     expected_tick=loaded['tick'], expected_structure_revision=checkpoint['revisions']['structure_revision'], ticks=1)
     game.rpc('runtime.step', old_step, error=-32030)
-    need(driver.snapshot() == checkpoint, 'Old-session input advanced restored native state')
+    need(snapshot() == checkpoint, 'Old-session input advanced restored native state')
     record['checkpoint'] = dict(saved=checkpoint, save_one=save_one, save_two=save_two,
         loaded=loaded, load_retry=retry, durable_inventory=durable)
     record['checks'].append('Repeated compiled saves, inert retries, stale guards and exact partial checkpoint restoration')
@@ -432,21 +513,64 @@ def qualify(game, driver, launcher, source_directory, output, record):
          last['Phase'] == 1 and last['Won'] == 0, 'Three true pickups did not dispatch courier or won prematurely')
     for identifier in initial_cells.values():
         game.rpc('runtime.entity', dict(session_id=game.session, id=identifier), error=-32004)
-    travelling = driver.snapshot()
+    travelling = snapshot()
     route = travelling['route']['values'][uid(1)]
     need(len(route) >= 6 and travelling['values']['Plans'] == 1 and
          travelling['values']['LastCornerCount'] == len(route) // 3,
          'Courier did not query and persist a native path around cover')
-    delivered = driver.wait_for_delivery()
+    if not audio:
+        delivered = driver.wait_for_delivery()
+    else:
+        # Observe the actual phase transition immediately. Retained voice
+        # history is bounded and can prune an old cue during later movement.
+        before_arrival = voices()
+        for _ in range(2400):
+            need(driver.values()['Phase'] != 3, 'Native courier has no complete path')
+            driver.step()
+            if driver.values()['Phase'] == 2:
+                cue_probe(before_arrival,612,'courier arrival',1)
+                driver.step(20)
+                delivered = driver.values()
+                need(delivered['Arrivals'] == 1 and delivered['Won'] == 0 and
+                     game.entity(RIG)['animation']['clip'] ==
+                     game.visual_config()['values'][uid(2)],
+                     'Arrival must remain unique and return to Idle without winning')
+                break
+        else:
+            raise AssertionError('Courier did not arrive within bounded native ticks')
     need(delivered['AnimationTransitions'] >= 3 and delivered['RateChanges'] > 0 and
          any(row['clip'] == authored['clips']['Run']['index'] and row['sampled_speed'] > .1
              for row in record['courier_observations']),
          'Courier lacks actual Idle/Run switches and displacement-derived playback corrections')
     driver.follow_waypoints(((5.2, 5.2), (5.2, 1.4)), 'final-terminal')
+    win_audio = voices() if audio else None
     won = driver.use_target(TERMINAL)
     need(won['Won'] == 1 and won['Collected'] == 3 and won['Arrivals'] == 1,
          'Final in-range relay ray did not complete after native courier arrival')
-    record['completed'] = driver.snapshot()
+    if audio:
+        cue_probe(win_audio,613,'final terminal win',1)
+        # Settle the one-tick committed-motion sampling lag before testing
+        # extra Use and a neutral tick. No input or pose is patched.
+        driver.step(2)
+        finished_audio = voices()
+        driver.step(use=True)
+        for emitter in (610,611,612,613):
+            cue_probe(finished_audio,emitter,'completed extra Use',0)
+        before_neutral = voices()
+        driver.step()
+        after_neutral = voices()
+        need(before_neutral['next_voice'] == after_neutral['next_voice'] and
+             driver.values()['Won'] == 1 and driver.values()['Arrivals'] == 1,
+             'Completed stationary neutral tick allocated another cue or changed completion')
+        cadence = audio_snapshot()['cadence']
+        for actor in (PLAYER,ACTOR):
+            fields = cadence[uid(actor)]['values']
+            need(int(fields[uid(13)]) > 0 and int(fields[uid(17)]) > 0 and
+                 type(fields[uid(11)]) in (int,float) and math.isfinite(fields[uid(11)]) and
+                 0 <= fields[uid(11)] < fields[uid(4)] and fields[uid(15)] == 1,
+                 'Actual player/courier cadence lacks positive grounded footsteps or bounded phase')
+        record['checks'].append('Licensed native cues follow real gameplay; cadence/voices restore exactly; both characters produce grounded displacement steps')
+    record['completed'] = snapshot()
     record['checks'].append('All three roots truly despawn; native collision/navigation/IdleRun courier arrives; terminal ray alone completes')
     need(game.world.read_bytes() == world_bytes and inventory(Path(str(game.world) + '.assets')) == assets and
          saved_inventory(output / 'saves') == durable,
@@ -458,6 +582,8 @@ def main():
     for name in ('binary', 'manifest', 'descriptor', 'source-directory', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--windows-interop', action='store_true')
+    parser.add_argument('--audio-directory',type=Path,
+        help='Opt-in published licensed Relay Yard sound set; no audio device or renderer is opened')
     parser.add_argument('--timeout', type=float, default=900)
     args = parser.parse_args()
     need(math.isfinite(args.timeout) and 60 <= args.timeout <= 1800, 'Timeout must be finite 60..1800 seconds')
@@ -466,6 +592,12 @@ def main():
         need(path.is_file(), 'Supply a regular ' + name)
         setattr(args, name, path)
     args.source_directory = args.source_directory.resolve(strict=True)
+    if args.audio_directory is not None:
+        args.audio_directory = args.audio_directory.resolve(strict=True)
+        need(args.audio_directory.is_dir(),'Supply the published licensed audio directory')
+        audio_files = sorted(path for path in args.audio_directory.rglob('*') if path.is_file())
+        need(1 <= len(audio_files) <= 64,'Audio source closure must contain 1..64 files')
+        inputs.update({'audio_' + str(index):path for index,path in enumerate(audio_files)})
     launcher = load_launcher()
     originals = {name: args.source_directory / name for name in launcher.locomotion.SOURCE_SHA}
     need(all(path.is_file() and sha(path) == launcher.locomotion.SOURCE_SHA[name]
@@ -484,14 +616,36 @@ def main():
         library |= member['path'] == descriptor['library'] and member['role'] == 'library'
     need(library, 'Native artifact does not inventory its compiled library')
     manifest = json.loads(args.manifest.read_text(encoding='utf-8'))
-    need(manifest['format'] == 'poima.components' and {row['id'] for row in manifest['schemas']} == {CONFIG, ROUTE},
+    # Imported lazily: the graphical verifier reuses RelayDriver, whereas this
+    # CLI reuses its independently specified cadence declaration.
+    from relay_yard_bundle import CADENCE, cadence_schema
+    schema_rows = manifest['schemas']
+    schema_ids = {row['id'] for row in schema_rows}
+    need(manifest['format'] == 'poima.components' and manifest['version'] == 1 and
+         schema_ids in ({CONFIG,ROUTE},{CONFIG,ROUTE,CADENCE}) and len(schema_rows) == len(schema_ids) and
+         schema_rows == descriptor['schema']['components'],
          'Compiled Relay component schemas must retain original locomotion config/route IDs')
+    if CADENCE in schema_ids:
+        actual = next(row for row in schema_rows if row['id'] == CADENCE)
+        need(json.dumps(actual,sort_keys=True,separators=(',',':')) ==
+             json.dumps(cadence_schema(),sort_keys=True,separators=(',',':')),
+             'Compiled Relay audio cadence declaration differs from the exact supported schema')
+    need(args.audio_directory is None or CADENCE in schema_ids,
+         'Audio-enabled authoring requires the compiled cadence declaration')
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     sources = [Path(__file__), ROOT / 'examples/relay-yard/run.py',
         ROOT / 'examples/relay-yard/RelayYardGame.cs', ROOT / 'examples/relay-yard/Poima.RelayYardGame.csproj',
         ROOT / 'examples/locomotion-yard/run.py', ROOT / 'examples/locomotion-yard/LocomotionYardGame.cs',
+        ROOT / 'tests/relay_yard_bundle.py', ROOT / 'tests/collection_gameplay_bundle.py',
+        ROOT / 'tests/collection_gameplay_contract.py', ROOT / 'tests/player_preferences_gameplay_bundle.py',
+        ROOT / 'tests/player_preferences_gameplay_contract.py', ROOT / 'tests/player_live_settings_contract.py',
+        ROOT / 'tests/player_service_contract.py', ROOT / 'tests/scene_capture.py',
         *sorted((ROOT / 'tools/python/poima_client').glob('*.py'))]
+    for source in ('examples/relay-yard/RelayAudio.cs','examples/relay-yard/prepare_audio.py',
+                   'examples/relay-yard/audio/manifest.json'):
+        if (ROOT / source).is_file():
+            sources.append(ROOT / source)
     record = dict(passed=False, format='poima.relay-yard-contract', version=1,
         calls=[], owners=[], checks=[], cleanup_errors=[],
         inputs={name: sha(path) for name, path in inputs.items()},
@@ -500,7 +654,10 @@ def main():
         limitations=['Compiled native semantic inputs; no renderer or physical input',
             'Original FBX decoding/retargeting uses native importer; not an independent FBX parser',
             'Controller-derived in-place animation; no stride fitting, IK or foot locking',
+            'Optional logical audio events/cadence only; no acoustic, device, audible-output or general gait claim',
             'One small game; no clean-machine, performance, AA/AAA or full alpha claim'])
+    if args.audio_directory is not None:
+        record['audio_source_inventory'] = inventory(args.audio_directory)
     game = None
     started = time.monotonic()
     try:
@@ -539,6 +696,8 @@ def main():
             immutable = dict(inputs=all(sha(path) == record['inputs'][name] for name, path in inputs.items()),
                 sources=all(sha(path) == record['source_pins'][path.relative_to(ROOT).as_posix()] for path in sources),
                 originals=all(sha(path) == record['original_source_pins'][name] for name, path in originals.items()))
+            if args.audio_directory is not None:
+                immutable['audio_sources'] = inventory(args.audio_directory) == record['audio_source_inventory']
             if 'immutable_world' in record:
                 pins = record['immutable_world']
                 immutable['authored'] = sha(output / 'world.json') == pins['sha256']
