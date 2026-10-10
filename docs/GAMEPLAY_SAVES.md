@@ -64,7 +64,7 @@ Loading stages a separate runtime, verifies frozen content and the exact trusted
 
 The replacement's first callback can read `Saves.LastRestore`, including the initiating ticket for gameplay loads. A saved pending token may resolve through the live owner's ledger or expire after process restart; both are terminal outcomes. Code should reconcile that token instead of waiting forever or repeating its load trigger.
 
-The desktop editor pauses after a load and clears old input. The standalone player keeps its window and graphics device, replaces its audio timeline, clears held input and one-shot edges, resets timing, then waits for explicit click/Start resume. It revalidates the selected camera and controller; missing selections produce a player error. Interactive playback bounds replacements to 32 per invocation.
+The desktop editor pauses after a load and clears old input. The standalone player keeps its window and graphics device, replaces its audio timeline, clears held input and one-shot edges, resets timing, then waits for explicit click/Start resume. It revalidates the selected camera and controller; missing selections produce a player error. Interactive playback does not exit after its 32nd restore. The reported replacement count is diagnostic and saturates at `UINT32_MAX`; it does not limit the window's lifetime. Other host resource budgets still apply, including the current 10,000 runtime-session identity budget per world owner.
 
 Recorded player and audio replay stop at a successful replacement with `runtime_replaced`; they do not continue the old scripted timeline through a rewound world. A caller can issue a new replay against the current session.
 

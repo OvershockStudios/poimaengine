@@ -2,6 +2,12 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.84
+
+- Keep the interactive native player alive beyond 32 checkpoint restores while preserving input release, paused continuation, current preferences and restored-controller validation.
+- Share replacement diagnostics across initialized and deferred windows; saturate the count without limiting the player lifetime. Recorded replay still stops at Runtime replacement.
+- Add a real 40-restore graphical verifier with movement, exact controller/camera restoration, stale guards, receipt retries and same-context captures. Retain the reproduced 0.0.83 failure separately from the corrected runs. [Evidence](docs/evidence/m2-player-checkpoint-cycles.json).
+
 ## 0.0.83
 
 - Add `game serve` for verified immutable bundles, automatically starting the declared native Runtime and optional Native AOT gameplay before serving the existing agent API.

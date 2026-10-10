@@ -1,8 +1,31 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.83**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.84**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.84 removes the native player's artificial exit after 32 interactive
+checkpoint replacements. Restores retain the same window and current preference
+owner while clearing old input, pausing the restored game and revalidating its
+controller/camera. The replacement counter saturates at `UINT32_MAX`; recording
+a session change remains independent of that diagnostic count. Recorded replay
+still stops when its Runtime is replaced. World/session/module resource budgets
+remain separate; this is not an unlimited-lifetime guarantee.
+
+The [checkpoint-cycle verifier](LIVE_PLAYER.md#edits-replay-and-replacement)
+uses actual controller movement and look before every load, exact restored
+controller/camera state, fresh sessions, guarded retries and current live
+preferences. Its captures compare the same native context around restore 32.
+Forty restores pass on each of the NVIDIA and AMD laptop GPUs, with 21 selected
+native regressions across Windows, Linux and the authoring-only build. The
+retained exported C# menu checks also pass on both GPUs.
+Recorded player/audio replay checks pass on both GPUs with a freshly published
+Native AOT save fixture; replay still stops on Runtime replacement.
+[Recorded evidence](evidence/m2-player-checkpoint-cycles.json) retains the
+reproduced 0.0.83 exit and separates corrected runs from that negative result.
+The fixture does not establish physical input, audible output, memory-growth
+behavior, representative performance or whole-game/Alpha qualification. Protocol
+1, authoring-core v1, schema revision 70 and services epoch 7 are unchanged.
 
 Version 0.0.83 adds the [exported game service](GAME_SERVICE.md): `game serve`
 verifies the complete bundle, opens its read-only world, starts the declared

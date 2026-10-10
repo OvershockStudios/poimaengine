@@ -112,7 +112,7 @@ struct PlayerPreferenceReport {
 };
 struct PlayerReport {
     std::string initial_session,final_session;
-    std::uint32_t runtime_replacements=0;
+    std::uint32_t runtime_replacements=0; // Diagnostic only; saturates at UINT32_MAX.
     std::string gamepad_json="{}";
     PlayerAudioReport audio;
     RenderReport render;

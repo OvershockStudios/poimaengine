@@ -254,6 +254,33 @@ request. Interactive playback pauses for reconciliation; replay terminates.
 Old session/tick/control assumptions must reject. Earlier committed simulation
 is retained if later rendering fails; inspect actual state before continuing.
 
+Repeated interactive restores retain the same player and graphics lifetime;
+the player does not exit at its 32nd replacement. The report's
+`runtime_replacements` count saturates at `UINT32_MAX`, without blocking a later
+session identity change. This does not remove the world owner's separate
+runtime-session and module resource budgets. Replay still stops at a replacement
+rather than consuming old recorded input in the restored world.
+
+The opt-in checkpoint-cycle verifier exercises this boundary using one native
+window, two clients and a real controller. It moves and turns the controller
+before each guarded load, checks exact restored controller/camera state,
+retained live preferences, rejected stale requests and inert receipt retries.
+It also compares fresh captures around the former 32-load boundary. Use native
+Windows Python, a renderer-enabled executable and a new output directory:
+
+```powershell
+python tests/player_checkpoint_cycles.py `
+  --binary build/windows-runtime/poima.exe `
+  --output build/player-checkpoint-cycles --gpu 1 --cycles 40
+```
+
+Choose the GPU from actual device discovery. The verifier's allowed range is
+33–128 cycles; this is a test workload bound, not a player limit. It builds and
+downloads nothing. [Recorded evidence](evidence/m2-player-checkpoint-cycles.json)
+separates the former failure from corrected runs. This primitive fixture does
+not establish physical input, audio listening, memory-growth behavior,
+representative performance or whole-game stability.
+
 ## Native embedding
 
 `PlayerWindow` in `poima/player.hpp` owns a frame-driven graphics lifetime.

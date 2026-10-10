@@ -3126,6 +3126,13 @@ struct PlayerWindow::Impl {
         if(captured) require(SDL_SetWindowRelativeMouseMode(context.window,true),SDL_GetError());
         previous=SDL_GetTicksNS();
     }
+    void record_runtime_replacement(const std::string& identity) {
+        result.final_session=identity;
+        // This is a diagnostic count, not a limit on an interactive game's
+        // lifetime. Saturation must never prevent following the current owner.
+        if(result.runtime_replacements!=std::numeric_limits<std::uint32_t>::max())
+            ++result.runtime_replacements;
+    }
     bool after_advance(bool save_serviced) {
         if(save_serviced)previous=SDL_GetTicksNS();
         // A successful compiled boundary may have published new preferences.
@@ -3137,7 +3144,7 @@ struct PlayerWindow::Impl {
             if(audio)audio->advance(session.audio_state(options.camera));
             return false;
         }
-        result.final_session=current;++result.runtime_replacements;
+        record_runtime_replacement(current);
         // Runtime ownership changed only after the committed owner advance.
         // Never reuse catch-up ticks, pending edges or DSP from that timeline.
         captured=false;active=false;owner_paused=true;input.clear();
@@ -3150,7 +3157,6 @@ struct PlayerWindow::Impl {
         fresh_snapshot();
         if(audio)audio->reset(session.audio_state(options.camera));
         if(options.replay) { quit=true;result.stop_reason="runtime_replaced"; }
-        else if(result.runtime_replacements>=32) { quit=true;result.stop_reason="runtime_replacement_limit"; }
         return true;
     }
     bool ui_event(const UiInput& event) {
@@ -3199,7 +3205,7 @@ struct PlayerWindow::Impl {
         const auto identity=session.identity();
         if(!initialized) {
             if(identity!=result.final_session) {
-                result.final_session=identity;++result.runtime_replacements;owner_paused=true;
+                record_runtime_replacement(identity);owner_paused=true;
                 if(options.replay) {quit=true;result.stop_reason="runtime_replaced";}
             }
             result.final_tick=session.tick();return;
