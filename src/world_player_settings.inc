@@ -81,7 +81,7 @@
         return {{"format","poima.settings.application.v1"},{"application","next_player"},{"profile",profile},{"fields",rows}};
     }
     static Json player_live_settings(const PlayerOptions& options,const PlayerReport& report,
-        const std::optional<SceneSnapshot>& final_camera) {
+        const std::optional<RuntimeCameraState>& final_camera) {
         if(!options.preferences)return nullptr;
         auto result=Json::parse(options.preferences->inspect());
         const auto state=options.preferences->snapshot();
@@ -108,7 +108,7 @@
         }
         return result;
     }
-    static void finish_player_settings(Json& application,const PlayerOptions& options,const PlayerReport& report,const std::optional<SceneSnapshot>& final_camera) {
+    static void finish_player_settings(Json& application,const PlayerOptions& options,const PlayerReport& report,const std::optional<RuntimeCameraState>& final_camera) {
         if(options.preferences) {
             const auto current=player_live_settings(options,report,final_camera);
             application["fields"]=current.at("fields");

@@ -48,6 +48,7 @@ void Runtime::component_edit(const std::string&,const std::string&,const compone
 const SoundState& Runtime::sound_state() const { throw std::runtime_error("Simulation is not built."); }
 AudioSnapshot Runtime::audio_snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneLighting Runtime::lighting() const { throw std::runtime_error("Simulation is not built."); }
+RuntimeCameraState Runtime::camera_state(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot() const { throw std::runtime_error("Simulation is not built."); }
 SceneSnapshot Runtime::snapshot(const std::string&) const { throw std::runtime_error("Simulation is not built."); }
 }

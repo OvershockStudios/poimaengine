@@ -153,3 +153,10 @@ its measured cadence does not improve. These are short observed comparisons,
 not a guarantee that reducing one GPU pass reduces present-return cadence.
 Use the [paired capture verifier](AMBIENT_OCCLUSION.md#reproduce-the-paired-captures)
 to check bounded image/probe equivalence separately from timing.
+
+The [0.0.96 camera-report comparison](CAMERA_OBSERVATION.md) removes a redundant
+full scene extraction at the report boundary while retaining rendering and
+host waits. Both GPUs show lower mean host gaps. NVIDIA p95 is effectively
+unchanged; AMD p95 improves in the recorded pair but still misses its target.
+GPU durations also vary, so the entire cadence difference is not attributable
+to the CPU query alone. [Raw observations](evidence/m2-camera-observation.json).

@@ -1,8 +1,33 @@
 # Implementation status
 
-Updated 2026-10-10 for **0.0.95**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
+Updated 2026-10-10 for **0.0.96**. Capability discovery reports what is available in each build. The desktop editor and CLI are first-class interfaces over shared native authoring, a Vulkan renderer with forward and optional deferred opaque paths, a configurable physics runtime and a continuous native player. Headless builds run without the editor or its managed runtime. The gameplay SDK and broader production qualification remain incomplete.
 
 ## Current limits
+
+Version 0.0.96 avoids rebuilding mesh objects and animation skin palettes when
+projecting native player reports. A camera/lens/lighting-only query shares
+camera validation with full snapshots; rendering, cached report boundaries,
+JSON schemas, gameplay services and save formats stay unchanged. Native tests
+cover moving camera-attached lights, independent lenses, owned values and fresh
+checkpoint continuation.
+
+The unchanged Performance Yard workload shows mean host gaps of 3.440 → 3.000 ms
+on NVIDIA and 3.952 → 2.997 ms on AMD. NVIDIA present-return p95 is essentially
+unchanged (12.746 → 12.773 ms); AMD improves from 21.877 to 18.281 ms but still
+misses 16.7 ms. AMD candidate p99 is 19.172 ms. GPU durations also vary without
+renderer changes, so the entire cadence difference is not isolated to camera
+extraction. Runs are sequential one-minute pairs on one laptop, without thermal
+control or randomized repeats. [Comparison and reproduction](CAMERA_OBSERVATION.md),
+[raw measurements](evidence/m2-camera-observation.json).
+
+Nine selected Windows native CTests, nine simulation-disabled headless authoring
+CTests and two Linux simulation CTests pass, along with six native preference
+unit groups, 14 Windows world and nine runtime contract checks. Actual Windows
+player-service, live-settings and 40 repeated checkpoint-restoration cohorts
+pass. The restore cohort uses a small physics/UI fixture without compiled
+gameplay; it is separate from the Native AOT performance workload. A regression
+supervisor first stopped before launching an engine due to an incorrect client
+package path; that failed setup is retained alongside the corrected run.
 
 Version 0.0.95 reduces GTAO work without lowering resolution, slice/step counts,
 radius, filtering or quality settings. Front-facing slices use a direct form

@@ -37,6 +37,12 @@ struct CharacterController {
     std::string camera;
 };
 struct RuntimeCamera { double vertical_fov=60, near_plane=0.1, far_plane=1000; };
+// Owned live camera and lighting values, without geometry, skin palettes or UI.
+struct RuntimeCameraState {
+    Matrix4 camera_world=identity_matrix();
+    double vertical_fov=60,near_plane=0.1,far_plane=1000;
+    SceneLighting lighting;
+};
 struct RuntimeMesh {
     std::array<float,3> albedo{}; bool visible=true;
     std::shared_ptr<const MeshAsset> mesh;
@@ -351,6 +357,7 @@ public:
     const SoundState& sound_state() const;
     AudioSnapshot audio_snapshot(const std::string& listener) const;
     SceneLighting lighting() const;
+    RuntimeCameraState camera_state(const std::string& camera) const;
     // Live geometry/lighting, independent of an authored camera entity.
     SceneSnapshot snapshot() const;
     SceneSnapshot snapshot(const std::string& camera) const;

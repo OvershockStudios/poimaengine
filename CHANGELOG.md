@@ -2,6 +2,13 @@
 
 Version numbers identify source checkpoints. Feature qualification and packaged editor availability are recorded separately in [Implementation status](docs/IMPLEMENTATION_STATUS.md). During prototype development, APIs and file formats can change between checkpoints.
 
+## 0.0.96
+
+- Read current native camera and lighting values without rebuilding geometry or animation skin palettes for every player report. Preserve cached report boundaries, rendering and the JSON contract.
+- Share camera validation with full scene snapshots and test moving lights, independent lenses, owned observations, checkpoint continuation and invalid cameras.
+- Compare the unchanged interactive Performance Yard workload on both laptop GPUs, retaining raw frame/memory observations and timing-budget results. [Results](docs/evidence/m2-camera-observation.json), [reproduction](docs/CAMERA_OBSERVATION.md).
+- Recheck native runtime, authoring, shared-player, live-preference and repeated checkpoint behavior.
+
 ## 0.0.95
 
 - Reduce GTAO work with a direct front-facing integral and removal of unused neighbor normal reads under the renderer-owned G-buffer producer contract. Preserve resolution, quality settings, sample counts and filtering.

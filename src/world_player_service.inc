@@ -109,7 +109,7 @@
 
     Json player_report_json(const PlayerOptions& options,Json input_info,Json settings_application,
         const PlayerReport& report,const std::string& mode) const {
-        std::optional<SceneSnapshot> camera;try { camera=runtime_->snapshot(options.camera); }catch(const std::exception&) {}
+        std::optional<RuntimeCameraState> camera;try { camera=runtime_->camera_state(options.camera); }catch(const std::exception&) {}
         Json result={{"session_id",runtime_id_},{"world_id",runtime_definition_.world_id},{"revision",runtime_definition_.authored_revision},
             {"previous_tick",report.initial_tick},{"tick",report.final_tick},{"mode",mode},{"replayed",false},
             {"success",report.render.success},{"stop_reason",report.stop_reason},{"detail",report.render.detail},

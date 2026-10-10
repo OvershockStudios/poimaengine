@@ -232,10 +232,90 @@ void camera_free_characters() {
     rejected=false;try {Runtime invalid(malformed);}catch(const std::exception&) {rejected=true;}
     require(rejected,"Supplied non-camera entity accepted.");
 }
+void camera_state() {
+    auto definition=fixture();
+    for(auto& entity:definition.entities)if(entity.camera)entity.camera=RuntimeCamera{81,.2,250};
+    RuntimeEntityDefinition other;other.id="other-camera";other.camera=RuntimeCamera{35,.05,600};other.transform.position={3,4,5};
+    RuntimeEntityDefinition light;light.id="camera-light";light.parent="camera";light.transform.position={.5,0,-1};
+    light.light=Light{};light.light->kind=LightKind::spot;light.light->range=12;light.light->intensity=3;
+    RuntimeEntityDefinition environment;environment.id="environment";environment.environment=LightingEnvironment{};
+    environment.environment->ambient={.2f,.3f,.4f};environment.environment->exposure=1.3f;
+    definition.entities.insert(definition.entities.end(),{other,light,environment});
+    Runtime source(definition);
+    const auto check=[&](Runtime& runtime,const char* id) {
+        const auto view=runtime.camera_state(id);const auto full=runtime.snapshot(id);
+        require(view.camera_world==full.camera_world && view.camera_world==runtime.entity(id).world &&
+            view.vertical_fov==full.vertical_fov && view.near_plane==full.near_plane && view.far_plane==full.far_plane,
+            "Lightweight camera projection differs from live/full snapshot.");
+        require(view.lighting.preview==full.lighting.preview && !view.lighting.preview &&
+            view.lighting.environment.ambient==full.lighting.environment.ambient &&
+            view.lighting.environment.exposure==full.lighting.environment.exposure &&
+            view.lighting.lights.size()==1 && full.lighting.lights.size()==1,
+            "Lightweight camera lost the current lighting environment.");
+        const auto& value=view.lighting.lights.front();const auto& expected=full.lighting.lights.front();
+        require(value.entity_id==light.id && value.entity_id==expected.entity_id &&
+            value.position==expected.position && value.direction==expected.direction &&
+            value.light.kind==expected.light.kind && value.light.color==expected.light.color &&
+            value.light.intensity==expected.light.intensity && value.light.range==expected.light.range,
+            "Lightweight camera light values differ from the full snapshot.");
+        const auto world=runtime.entity(light.id).world;
+        require(value.position==std::array<double,3>{world[12],world[13],world[14]},
+            "Lightweight camera used an old light transform.");
+        return view;
+    };
+    const auto initial=check(source,"camera"),alternate=check(source,"other-camera");
+    require(initial.vertical_fov==81 && initial.near_plane==.2 && initial.far_plane==250 &&
+        alternate.vertical_fov==35 && alternate.near_plane==.05 && alternate.far_plane==600 &&
+        alternate.camera_world!=initial.camera_world,"Camera selection reused another camera's lens or pose.");
+    auto changed_definition=definition;
+    for(auto& entity:changed_definition.entities) {
+        if(entity.id=="camera")entity.camera=RuntimeCamera{50,.3,400};
+        if(entity.light)entity.light->intensity=8;
+    }
+    Runtime changed(changed_definition);const auto changed_view=check(changed,"camera");
+    require(changed_view.vertical_fov==50 && changed_view.near_plane==.3 && changed_view.far_plane==400 &&
+        changed_view.lighting.lights[0].light.intensity==8 && check(source,"camera").vertical_fov==81 &&
+        check(source,"camera").lighting.lights[0].light.intensity==3,
+        "A different runtime retained old lens/light values or changed its neighbor's state.");
+    source.step(120,{});
+    RuntimeInput look;look.entity="player";look.move={.25f,.5f};look.look={35,-10};source.step(6,{look});
+    const auto moved=check(source,"camera");
+    require(moved.camera_world!=initial.camera_world && moved.lighting.lights[0].position!=initial.lighting.lights[0].position &&
+        moved.lighting.lights[0].direction!=initial.lighting.lights[0].direction,
+        "Camera fixture did not exercise actual current controller/light motion.");
+    require(initial.camera_world!=source.entity("camera").world && initial.vertical_fov==81,
+        "Later simulation mutated an earlier owned camera state.");
+    const std::string hash(64,'c');const auto checkpoint=source.save_snapshot(hash);
+    auto restored=Runtime::from_snapshot(definition,hash,checkpoint);
+    const auto loaded=check(*restored,"camera");
+    require(loaded.camera_world==moved.camera_world && loaded.vertical_fov==moved.vertical_fov &&
+        loaded.lighting.lights[0].position==moved.lighting.lights[0].position &&
+        loaded.lighting.lights[0].direction==moved.lighting.lights[0].direction,
+        "Fresh checkpoint restore changed lightweight camera/light state.");
+    require(source.presentation_source_id()!=restored->presentation_source_id(),"Restore did not create a fresh presentation source.");
+    look.look={-15,5};source.step(3,{look});restored->step(3,{look});
+    require(check(source,"camera").camera_world==check(*restored,"camera").camera_world,
+        "Restored camera projection continuation differs.");
+    const auto reject_both=[](Runtime& runtime,const std::string& id,const std::string& expected) {
+        std::string lightweight,full;
+        try {(void)runtime.camera_state(id);}catch(const std::runtime_error& error){lightweight=error.what();}
+        try {(void)runtime.snapshot(id);}catch(const std::runtime_error& error){full=error.what();}
+        require(lightweight==expected && full==expected,"Lightweight/full camera validation diverged.");
+    };
+    const auto before=source.save_snapshot(hash);
+    reject_both(source,"missing","Runtime entity does not exist.");
+    reject_both(source,"floor","Runtime entity has no Camera component.");
+    require(source.save_snapshot(hash)==before,"Rejected camera read mutated native state.");
+    RuntimeDefinition scaled;scaled.world_id="scaled-camera";
+    RuntimeEntityDefinition parent;parent.id="parent";parent.transform.scale={2,1,1};
+    RuntimeEntityDefinition child;child.id="camera";child.parent=parent.id;child.camera=RuntimeCamera{};
+    scaled.entities={parent,child};Runtime nonrigid(scaled);
+    reject_both(nonrigid,child.id,"Runtime camera hierarchy must not scale or shear the camera.");
+}
 }
 int main() {
     try {
-        lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();
+        lifecycle();scheduled_lifecycle();scheduled_character_support();camera_free_characters();camera_state();
         const auto definition=fixture(); Runtime a(definition), b(definition);
         {
             RuntimeDefinition source;source.world_id="template-only";

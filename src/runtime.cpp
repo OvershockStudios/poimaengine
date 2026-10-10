@@ -198,6 +198,16 @@ struct Runtime::Impl {
         const auto found=topology->identities.find(id);
         require(found!=topology->identities.end(), "Runtime entity does not exist."); return found->second;
     }
+    RuntimeCameraState camera_projection(const std::string& camera) const {
+        const auto e=find(camera);
+        require(registry.all_of<RuntimeCamera>(e),"Runtime entity has no Camera component.");
+        const auto& lens=registry.get<RuntimeCamera>(e);
+        RuntimeCameraState result;
+        result.camera_world=registry.get<Node>(e).world;
+        result.vertical_fov=lens.vertical_fov;result.near_plane=lens.near_plane;result.far_plane=lens.far_plane;
+        require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
+        return result;
+    }
     void world_matrices() {
         profiling::Scope profile("runtime.hierarchy",static_cast<std::int64_t>(tick));
         for (auto e : topology->hierarchy) {
@@ -1413,14 +1423,15 @@ SceneLighting Runtime::lighting() const {
     }
     finalize_lighting(result);return result;
 }
+RuntimeCameraState Runtime::camera_state(const std::string& camera) const {
+    auto result=impl_->camera_projection(camera);result.lighting=lighting();return result;
+}
 SceneSnapshot Runtime::snapshot(const std::string& camera) const {
-    const auto e=impl_->find(camera);
-    require(impl_->registry.all_of<RuntimeCamera>(e),"Runtime entity has no Camera component.");
-    const auto& lens=impl_->registry.get<RuntimeCamera>(e);
+    const auto projection=impl_->camera_projection(camera);
     auto result=snapshot();result.camera_id=camera;
     if(!impl_->ui_model->definition().empty())result.logical_ui=impl_->ui_model->presentation();
-    result.camera_world=impl_->registry.get<Node>(e).world;result.vertical_fov=lens.vertical_fov;result.near_plane=lens.near_plane;result.far_plane=lens.far_plane;
-    require(rigid_transform(result.camera_world),"Runtime camera hierarchy must not scale or shear the camera.");
+    result.camera_world=projection.camera_world;result.vertical_fov=projection.vertical_fov;
+    result.near_plane=projection.near_plane;result.far_plane=projection.far_plane;
     return result;
 }
 const std::string& Runtime::presentation_source_id() const { return impl_->presentation_source_id; }
